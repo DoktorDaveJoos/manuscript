@@ -162,7 +162,7 @@ test('updateTitle validates title max length', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
 
     $this->patchJson(route('chapters.updateTitle', [$book, $chapter]), [
-        'title' => str_repeat('a', 256),
+        'title' => str_repeat('a', 1001),
     ])->assertUnprocessable();
 });
 

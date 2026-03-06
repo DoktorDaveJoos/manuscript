@@ -1,6 +1,6 @@
 import { beautify } from '@/actions/App/Http/Controllers/AiController';
 import { split, updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
-import { destroy as destroyScene, store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
+import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
 import AiPanel from '@/components/editor/AiPanel';
 import CommandPalette from '@/components/editor/CommandPalette';
@@ -23,6 +23,10 @@ type ChapterWithRelations = Chapter & {
     characters?: (Character & { pivot: CharacterChapterPivot })[];
 };
 
+function firstLine(text: string): string {
+    return text.split('\n')[0];
+}
+
 export default function ChapterShow({
     book,
     chapter,
@@ -34,6 +38,7 @@ export default function ChapterShow({
 }) {
     const { isActive: isLicensed } = useLicense();
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
+    const [chapterTitle, setChapterTitle] = useState(chapter.title);
     const [scenes, setScenes] = useState<Scene[]>(chapter.scenes ?? []);
     const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
     const [showVersions, setShowVersions] = useState(false);
@@ -61,6 +66,54 @@ export default function ChapterShow({
         });
     }, []);
 
+    const [isFocusMode, setIsFocusMode] = useState(() => {
+        try {
+            return localStorage.getItem('manuscript:focus-mode') === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    const toggleFocusMode = useCallback(() => {
+        setIsFocusMode((prev) => {
+            const next = !prev;
+            try {
+                localStorage.setItem('manuscript:focus-mode', String(next));
+            } catch {}
+            if (next) {
+                document.documentElement.requestFullscreen?.().catch(() => {});
+            } else {
+                if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+            }
+            return next;
+        });
+    }, []);
+
+    const exitFocusMode = useCallback(() => {
+        setIsFocusMode(false);
+        try {
+            localStorage.setItem('manuscript:focus-mode', 'false');
+        } catch {}
+        if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    }, []);
+
+    const [editorFont, setEditorFont] = useState(() => {
+        try {
+            return localStorage.getItem('manuscript:editor-font') || 'eb-garamond';
+        } catch {
+            return 'eb-garamond';
+        }
+    });
+
+    const handleFontChange = useCallback((fontId: string) => {
+        setEditorFont(fontId);
+        try {
+            localStorage.setItem('manuscript:editor-font', fontId);
+        } catch {
+            // Ignore storage errors
+        }
+    }, []);
+
     const [isAiPanelOpen, setIsAiPanelOpen] = useState(() => {
         try {
             return localStorage.getItem('manuscript:ai-panel-open') !== 'false';
@@ -81,10 +134,14 @@ export default function ChapterShow({
         });
     }, []);
 
-    // Reset scenes when chapter changes (e.g. after version restore)
+    // Reset scenes and title when chapter changes (e.g. after version restore)
     useEffect(() => {
         setScenes(chapter.scenes ?? []);
     }, [chapter.id, chapter.scenes]);
+
+    useEffect(() => {
+        setChapterTitle(chapter.title);
+    }, [chapter.id, chapter.title]);
 
     // Word count derived from scenes
     const wordCount = scenes.reduce((sum, s) => sum + s.word_count, 0);
@@ -150,6 +207,7 @@ export default function ChapterShow({
 
     const handleTitleUpdate = useCallback(
         (title: string) => {
+            setChapterTitle(title);
             setSaveStatus('unsaved');
             pendingTitleRef.current = title;
 
@@ -202,30 +260,6 @@ export default function ChapterShow({
         [book.id, chapter.id, scenes.length],
     );
 
-    const handleDeleteScene = useCallback(
-        async (sceneId: number) => {
-            try {
-                const response = await fetch(
-                    destroyScene.url({ book: book.id, chapter: chapter.id, scene: sceneId }),
-                    {
-                        method: 'DELETE',
-                        headers: {
-                            Accept: 'application/json',
-                            'X-XSRF-TOKEN': getXsrfToken(),
-                        },
-                    },
-                );
-
-                if (response.ok) {
-                    setScenes((prev) => prev.filter((s) => s.id !== sceneId));
-                }
-            } catch {
-                // Ignore
-            }
-        },
-        [book.id, chapter.id],
-    );
-
     const handleBeautify = useCallback(async () => {
         setIsBeautifying(true);
         try {
@@ -249,14 +283,33 @@ export default function ChapterShow({
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
-            if (e.key === '/' && e.shiftKey) {
+            if (e.code === 'Slash' && e.shiftKey) {
                 e.preventDefault();
                 setIsPaletteOpen((prev) => !prev);
+            } else if (e.key === 'Tab' && e.shiftKey) {
+                e.preventDefault();
+                setIsPaletteOpen((prev) => !prev);
+            } else if (e.key === 'Escape' && isFocusMode && !isPaletteOpen) {
+                e.preventDefault();
+                exitFocusMode();
             }
         };
         document.addEventListener('keydown', handler, { capture: true });
         return () => document.removeEventListener('keydown', handler, { capture: true });
-    }, []);
+    }, [isFocusMode, isPaletteOpen, exitFocusMode]);
+
+    useEffect(() => {
+        const onFullscreenChange = () => {
+            if (!document.fullscreenElement && isFocusMode) {
+                setIsFocusMode(false);
+                try {
+                    localStorage.setItem('manuscript:focus-mode', 'false');
+                } catch {}
+            }
+        };
+        document.addEventListener('fullscreenchange', onFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+    }, [isFocusMode]);
 
     const handleSplitChapter = useCallback(async () => {
         if (!activeEditor) return;
@@ -291,27 +344,56 @@ export default function ChapterShow({
         createChapter(book.id, chapter.storyline_id, book.storylines ?? []);
     }, [book, chapter.storyline_id, handleBeforeNavigate]);
 
+    // Callbacks for sidebar-initiated scene mutations
+    const handleSidebarSceneRename = useCallback((sceneId: number, newTitle: string) => {
+        setScenes(prev => prev.map(s => s.id === sceneId ? { ...s, title: newTitle } : s));
+    }, []);
+
+    const handleSidebarSceneDelete = useCallback((sceneId: number) => {
+        setScenes(prev => prev.filter(s => s.id !== sceneId));
+    }, []);
+
+    const handleSidebarSceneReorder = useCallback((orderedIds: number[]) => {
+        setScenes(prev => {
+            const map = new Map(prev.map(s => [s.id, s]));
+            return orderedIds.map(id => map.get(id)!).filter(Boolean);
+        });
+    }, []);
+
     const closePalette = useCallback(() => setIsPaletteOpen(false), []);
     const handlePaletteAddScene = useCallback(() => handleAddScene(scenes.length), [handleAddScene, scenes.length]);
 
     const povCharacterName = chapter.pov_character?.name ?? null;
     const timelineLabel = chapter.storyline?.timeline_label ?? null;
+    const displayTitle = firstLine(chapterTitle);
 
     return (
         <>
-            <Head title={`${chapter.title} — ${book.title}`} />
+            <Head title={`${displayTitle} — ${book.title}`} />
             <div className="flex h-screen overflow-hidden bg-surface">
-                <Sidebar
-                    book={book}
-                    storylines={book.storylines ?? []}
-                    activeChapterId={chapter.id}
-                    onBeforeNavigate={handleBeforeNavigate}
-                />
+                <div
+                    className={`overflow-hidden transition-[width,opacity] duration-300 ${isFocusMode ? 'w-0 opacity-0' : 'w-60'}`}
+                >
+                    <Sidebar
+                        book={book}
+                        storylines={book.storylines ?? []}
+                        activeChapterId={chapter.id}
+                        activeChapterTitle={displayTitle}
+                        onBeforeNavigate={handleBeforeNavigate}
+                        activeScenes={scenes}
+                        onSceneRename={handleSidebarSceneRename}
+                        onSceneDelete={handleSidebarSceneDelete}
+                        onSceneReorder={handleSidebarSceneReorder}
+                    />
+                </div>
 
                 <div className="relative flex min-w-0 flex-1 flex-col">
-                    <div className="relative">
+                    <div
+                        className={`relative overflow-hidden transition-[height,opacity] duration-300 ${isFocusMode ? 'h-0 opacity-0' : 'h-12'}`}
+                    >
                         <EditorBar
                             chapter={chapter}
+                            chapterTitle={displayTitle}
                             storylineName={chapter.storyline?.name ?? 'Untitled storyline'}
                             wordCount={wordCount}
                             versionCount={versionCount}
@@ -321,7 +403,7 @@ export default function ChapterShow({
                             isNotesOpen={isNotesOpen}
                             hasNotes={!!chapter.notes}
                         />
-                        {showVersions && (
+                        {showVersions && !isFocusMode && (
                             <VersionHistoryOverlay
                                 bookId={book.id}
                                 chapterId={chapter.id}
@@ -330,7 +412,7 @@ export default function ChapterShow({
                         )}
                     </div>
 
-                    {isNotesOpen && (
+                    {isNotesOpen && !isFocusMode && (
                         <NotesPanel
                             bookId={book.id}
                             chapterId={chapter.id}
@@ -339,31 +421,36 @@ export default function ChapterShow({
                         />
                     )}
 
-                    <FormattingToolbar
-                        editor={activeEditor}
-                        onNormalizeClick={() => setShowNormalize(true)}
-                        onBeautifyClick={handleBeautify}
-                        aiEnabled={book.ai_enabled}
-                        isBeautifying={isBeautifying}
-                        licensed={isLicensed}
-                        isTypewriterMode={isTypewriterMode}
-                        onTypewriterToggle={toggleTypewriterMode}
-                    />
+                    <div
+                        className={`transition-[height,opacity] duration-300 ${isFocusMode ? 'h-0 overflow-hidden opacity-0' : 'h-9'}`}
+                    >
+                        <FormattingToolbar
+                            editor={activeEditor}
+                            onNormalizeClick={() => setShowNormalize(true)}
+                            onBeautifyClick={handleBeautify}
+                            aiEnabled={book.ai_enabled}
+                            isBeautifying={isBeautifying}
+                            licensed={isLicensed}
+                            isTypewriterMode={isTypewriterMode}
+                            onTypewriterToggle={toggleTypewriterMode}
+                            editorFont={editorFont}
+                            onFontChange={handleFontChange}
+                        />
+                    </div>
 
                     <WritingSurface
                         scenes={scenes}
                         bookId={book.id}
                         chapterId={chapter.id}
-                        title={chapter.title}
+                        title={chapterTitle}
                         povCharacterName={povCharacterName}
                         timelineLabel={timelineLabel}
                         onTitleUpdate={handleTitleUpdate}
                         activeEditor={activeEditor}
                         onActiveEditorChange={setActiveEditor}
                         onWordCountChange={handleSceneWordCountChange}
-                        onAddScene={handleAddScene}
-                        onDeleteScene={handleDeleteScene}
                         isTypewriterMode={isTypewriterMode}
+                        editorFont={editorFont}
                     />
 
                     <CommandPalette
@@ -373,18 +460,32 @@ export default function ChapterShow({
                         onSplitChapter={handleSplitChapter}
                         onNewChapter={handleNewChapter}
                         onAddScene={handlePaletteAddScene}
+                        onEnterFocusMode={toggleFocusMode}
+                        isFocusMode={isFocusMode}
                     />
                 </div>
 
-                <AiPanel
-                    characters={(chapter.characters as (Character & { pivot: CharacterChapterPivot })[]) ?? []}
-                    book={book}
-                    chapter={chapter}
-                    isOpen={isAiPanelOpen}
-                    onToggle={toggleAiPanel}
-                    licensed={isLicensed}
-                />
+                <div
+                    className={`overflow-hidden transition-[width,opacity] duration-300 ${isFocusMode ? 'w-0 opacity-0' : ''}`}
+                >
+                    <AiPanel
+                        characters={(chapter.characters as (Character & { pivot: CharacterChapterPivot })[]) ?? []}
+                        book={book}
+                        chapter={chapter}
+                        isOpen={isAiPanelOpen}
+                        onToggle={toggleAiPanel}
+                        licensed={isLicensed}
+                    />
+                </div>
             </div>
+
+            {isFocusMode && (
+                <WhisperChrome
+                    chapterNumber={chapter.reader_order}
+                    chapterTitle={displayTitle}
+                    wordCount={wordCount}
+                />
+            )}
 
             {showNormalize && (
                 <NormalizePreview
@@ -394,5 +495,61 @@ export default function ChapterShow({
                 />
             )}
         </>
+    );
+}
+
+function WhisperChrome({
+    chapterNumber,
+    chapterTitle,
+    wordCount,
+}: {
+    chapterNumber: number;
+    chapterTitle: string;
+    wordCount: number;
+}) {
+    const [visible, setVisible] = useState(true);
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const visibleRef = useRef(true);
+
+    useEffect(() => {
+        const onMouseMove = () => {
+            if (!visibleRef.current) {
+                visibleRef.current = true;
+                setVisible(true);
+            }
+            if (timerRef.current) clearTimeout(timerRef.current);
+            timerRef.current = setTimeout(() => {
+                visibleRef.current = false;
+                setVisible(false);
+            }, 2500);
+        };
+
+        // Start the fade timer immediately
+        timerRef.current = setTimeout(() => {
+            visibleRef.current = false;
+            setVisible(false);
+        }, 2500);
+
+        document.addEventListener('mousemove', onMouseMove);
+        return () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            if (timerRef.current) clearTimeout(timerRef.current);
+        };
+    }, []);
+
+    return (
+        <div
+            className={`fixed inset-x-0 bottom-0 z-40 flex items-end justify-between px-12 pb-8 transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        >
+            <span className="text-[13px] leading-4 tracking-[0.02em] text-ink-whisper">
+                Chapter {chapterNumber} — {chapterTitle}
+            </span>
+            <span className="absolute left-1/2 -translate-x-1/2 text-[13px] leading-4 tracking-[0.02em] text-ink-whisper">
+                Esc to leave focus mode
+            </span>
+            <span className="text-[13px] leading-4 tracking-[0.02em] text-ink-whisper">
+                {wordCount.toLocaleString()} words
+            </span>
+        </div>
     );
 }
