@@ -17,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        $middleware->alias([
+            'license' => \App\Http\Middleware\RequiresLicense::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

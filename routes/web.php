@@ -1,5 +1,82 @@
 <?php
 
+use App\Http\Controllers\AiController;
+use App\Http\Controllers\AiPreparationController;
+use App\Http\Controllers\AiSettingsController;
+use App\Http\Controllers\BookController;
+use App\Http\Controllers\BookSettingsController;
+use App\Http\Controllers\CanvasController;
+use App\Http\Controllers\ChapterController;
+use App\Http\Controllers\CharacterController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LicenseController;
+use App\Http\Controllers\NormalizationController;
+use App\Http\Controllers\PlotController;
+use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
+Route::get('/', [BookController::class, 'index'])->name('books.index');
+Route::post('/books', [BookController::class, 'store'])->name('books.store');
+Route::patch('/books/{book}', [BookController::class, 'update'])->name('books.update');
+Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy');
+Route::post('/books/{book}/duplicate', [BookController::class, 'duplicate'])->name('books.duplicate');
+Route::get('/books/{book}/import', [BookController::class, 'import'])->name('books.import');
+Route::post('/books/{book}/import/parse', [BookController::class, 'parse'])->name('books.import.parse');
+Route::post('/books/{book}/import/confirm', [BookController::class, 'confirmImport'])->name('books.import.confirm');
+
+Route::get('/books/{book}/dashboard', [DashboardController::class, 'show'])->name('books.dashboard');
+Route::get('/books/{book}/characters', [CharacterController::class, 'index'])->name('books.characters');
+Route::get('/books/{book}/plot', [PlotController::class, 'index'])->name('books.plot');
+Route::get('/books/{book}/editor', [ChapterController::class, 'editor'])->name('books.editor');
+Route::post('/books/{book}/chapters', [ChapterController::class, 'store'])->name('chapters.store');
+Route::get('/books/{book}/chapters/{chapter}', [ChapterController::class, 'show'])->name('chapters.show');
+Route::patch('/books/{book}/chapters/{chapter}/title', [ChapterController::class, 'updateTitle'])->name('chapters.updateTitle');
+Route::put('/books/{book}/chapters/{chapter}/content', [ChapterController::class, 'updateContent'])->name('chapters.updateContent');
+Route::get('/books/{book}/chapters/{chapter}/versions', [ChapterController::class, 'versions'])->name('chapters.versions');
+Route::post('/books/{book}/chapters/{chapter}/versions/{version}/restore', [ChapterController::class, 'restoreVersion'])->name('chapters.restoreVersion');
+
+Route::post('/books/{book}/normalize/preview', [NormalizationController::class, 'previewBook'])->name('books.normalize.preview');
+Route::post('/books/{book}/normalize/apply', [NormalizationController::class, 'applyBook'])->name('books.normalize.apply');
+Route::post('/books/{book}/chapters/{chapter}/normalize/preview', [NormalizationController::class, 'previewChapter'])->name('chapters.normalize.preview');
+Route::post('/books/{book}/chapters/{chapter}/normalize/apply', [NormalizationController::class, 'applyChapter'])->name('chapters.normalize.apply');
+
+// AI settings index (free — licence activation form lives here)
+Route::get('/settings/ai', [AiSettingsController::class, 'index'])->name('ai-settings.index');
+
+// Pro features — require active licence
+Route::middleware('license')->group(function () {
+    Route::get('/books/{book}/canvas', [CanvasController::class, 'index'])->name('books.canvas');
+
+    Route::post('/books/{book}/ai/prepare', [AiPreparationController::class, 'start'])->name('books.ai.prepare');
+    Route::get('/books/{book}/ai/prepare/status', [AiPreparationController::class, 'status'])->name('books.ai.prepare.status');
+
+    Route::put('/settings/ai/{provider}', [AiSettingsController::class, 'update'])->name('ai-settings.update');
+    Route::post('/settings/ai/{provider}/test', [AiSettingsController::class, 'test'])->name('ai-settings.test');
+
+    Route::post('/books/{book}/ai/analyze', [AiController::class, 'analyze'])->name('books.ai.analyze');
+    Route::post('/books/{book}/ai/extract-characters/{chapter}', [AiController::class, 'extractCharacters'])->name('books.ai.extractCharacters');
+    Route::post('/books/{book}/ai/next-chapter', [AiController::class, 'nextChapter'])->name('books.ai.nextChapter');
+    Route::post('/books/{book}/ai/embed', [AiController::class, 'embed'])->name('books.ai.embed');
+    Route::post('/books/{book}/chapters/{chapter}/ai/revise', [AiController::class, 'revise'])->name('chapters.ai.revise');
+    Route::post('/books/{book}/chapters/{chapter}/ai/beautify', [AiController::class, 'beautify'])->name('chapters.ai.beautify');
+
+    Route::put('/books/{book}/settings/ai-model', [BookSettingsController::class, 'updateAiModel'])->name('books.settings.ai-model.update');
+    Route::post('/books/{book}/settings/writing-style/regenerate', [BookSettingsController::class, 'regenerateWritingStyle'])->name('books.settings.writing-style.regenerate');
+});
+
+// License
+Route::post('/license/activate', [LicenseController::class, 'activate'])->name('license.activate');
+Route::post('/license/deactivate', [LicenseController::class, 'deactivate'])->name('license.deactivate');
+
+// App-level settings
+Route::get('/settings/about', [SettingsController::class, 'about'])->name('settings.about');
+
+// Book-level settings
+Route::get('/books/{book}/settings', [BookSettingsController::class, 'index'])->name('books.settings');
+Route::get('/books/{book}/settings/ai-model', [BookSettingsController::class, 'aiModel'])->name('books.settings.ai-model');
+Route::get('/books/{book}/settings/writing-style', [BookSettingsController::class, 'writingStyle'])->name('books.settings.writing-style');
+Route::put('/books/{book}/settings/writing-style', [BookSettingsController::class, 'updateWritingStyle'])->name('books.settings.writing-style.update');
+Route::get('/books/{book}/settings/prose-pass-rules', [BookSettingsController::class, 'prosePassRules'])->name('books.settings.prose-pass-rules');
+Route::put('/books/{book}/settings/prose-pass-rules', [BookSettingsController::class, 'updateProsePassRules'])->name('books.settings.prose-pass-rules.update');
+Route::get('/books/{book}/settings/export', [BookSettingsController::class, 'export'])->name('books.settings.export');
+Route::post('/books/{book}/settings/export', [BookSettingsController::class, 'doExport'])->name('books.settings.export.run');

@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Book;
+use App\Models\License;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -41,6 +43,17 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'license' => function () {
+                $license = License::active();
+
+                return [
+                    'active' => $license !== null,
+                    'masked_key' => $license?->key
+                        ? 'MANU.'.substr(explode('.', $license->key, 3)[1] ?? '', 0, 4).'••••.••••••'.substr($license->key, -2)
+                        : null,
+                ];
+            },
+            'books_list' => fn () => Book::query()->select('id', 'title')->get(),
         ];
     }
 }
