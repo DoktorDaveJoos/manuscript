@@ -24,6 +24,7 @@ export default function Sidebar({
     onSceneRename,
     onSceneDelete,
     onSceneReorder,
+    onSceneAdd,
 }: {
     book: Book;
     storylines: Storyline[];
@@ -35,6 +36,7 @@ export default function Sidebar({
     onSceneRename?: (sceneId: number, newTitle: string) => void;
     onSceneDelete?: (sceneId: number) => void;
     onSceneReorder?: (orderedIds: number[]) => void;
+    onSceneAdd?: (afterPosition: number) => Promise<void>;
 }) {
     const { isActive: isLicensed } = useLicense();
     const currentUrl = usePage().url;
@@ -126,6 +128,7 @@ export default function Sidebar({
                     onSceneRename={onSceneRename}
                     onSceneDelete={onSceneDelete}
                     onSceneReorder={onSceneReorder}
+                    onSceneAdd={onSceneAdd}
                 />
             </div>
 

@@ -1,5 +1,5 @@
 import { beautify } from '@/actions/App/Http/Controllers/AiController';
-import { split, updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
+import { updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
 import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
 import AiPanel from '@/components/editor/AiPanel';
@@ -41,6 +41,8 @@ export default function ChapterShow({
     const [chapterTitle, setChapterTitle] = useState(chapter.title);
     const [scenes, setScenes] = useState<Scene[]>(chapter.scenes ?? []);
     const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
+    const [activeSceneId, setActiveSceneId] = useState<number | null>(null);
+    const [pendingFocusSceneId, setPendingFocusSceneId] = useState<number | null>(null);
     const [showVersions, setShowVersions] = useState(false);
     const [showNormalize, setShowNormalize] = useState(false);
     const [isBeautifying, setIsBeautifying] = useState(false);
@@ -252,6 +254,7 @@ export default function ChapterShow({
                         updated.splice(afterPosition, 0, newScene);
                         return updated.map((s, i) => ({ ...s, sort_order: i }));
                     });
+                    setPendingFocusSceneId(newScene.id);
                 }
             } catch {
                 // Ignore
@@ -311,8 +314,8 @@ export default function ChapterShow({
         return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
     }, [isFocusMode]);
 
-    const handleSplitChapter = useCallback(async () => {
-        if (!activeEditor) return;
+    const handleSplitScene = useCallback(async () => {
+        if (!activeEditor || !activeSceneId) return;
 
         const { from } = activeEditor.state.selection;
         const endPos = activeEditor.state.doc.content.size;
@@ -325,19 +328,34 @@ export default function ChapterShow({
 
         activeEditor.chain().deleteRange({ from, to: endPos }).run();
 
-        await handleBeforeNavigate();
+        // Flush the current scene's save
+        const sceneEl = document.getElementById(`scene-${activeSceneId}`);
+        const flush = (sceneEl as unknown as Record<string, () => Promise<void>>)?.__flush;
+        if (typeof flush === 'function') await flush();
 
-        const response = await fetch(split.url({ book: book.id, chapter: chapter.id }), {
+        const currentIndex = scenes.findIndex((s) => s.id === activeSceneId);
+        const insertPosition = currentIndex + 1;
+
+        const response = await fetch(storeScene.url({ book: book.id, chapter: chapter.id }), {
             method: 'POST',
             headers: jsonFetchHeaders(),
-            body: JSON.stringify({ title: 'Untitled', initial_content: belowHtml }),
+            body: JSON.stringify({
+                title: `Scene ${scenes.length + 1}`,
+                position: insertPosition,
+                content: belowHtml,
+            }),
         });
 
         if (!response.ok) return;
 
-        const data = await response.json();
-        router.visit(data.url);
-    }, [activeEditor, book.id, chapter.id, handleBeforeNavigate]);
+        const newScene: Scene = await response.json();
+        setScenes((prev) => {
+            const updated = [...prev];
+            updated.splice(insertPosition, 0, newScene);
+            return updated.map((s, i) => ({ ...s, sort_order: i }));
+        });
+        setPendingFocusSceneId(newScene.id);
+    }, [activeEditor, activeSceneId, book.id, chapter.id, scenes]);
 
     const handleNewChapter = useCallback(async () => {
         await handleBeforeNavigate();
@@ -379,11 +397,13 @@ export default function ChapterShow({
                         storylines={book.storylines ?? []}
                         activeChapterId={chapter.id}
                         activeChapterTitle={displayTitle}
+                        activeChapterWordCount={wordCount}
                         onBeforeNavigate={handleBeforeNavigate}
                         activeScenes={scenes}
                         onSceneRename={handleSidebarSceneRename}
                         onSceneDelete={handleSidebarSceneDelete}
                         onSceneReorder={handleSidebarSceneReorder}
+                        onSceneAdd={handleAddScene}
                     />
                 </div>
 
@@ -411,15 +431,6 @@ export default function ChapterShow({
                             />
                         )}
                     </div>
-
-                    {isNotesOpen && !isFocusMode && (
-                        <NotesPanel
-                            bookId={book.id}
-                            chapterId={chapter.id}
-                            initialNotes={chapter.notes}
-                            onClose={() => setIsNotesOpen(false)}
-                        />
-                    )}
 
                     <div
                         className={`transition-[height,opacity] duration-300 ${isFocusMode ? 'h-0 overflow-hidden opacity-0' : 'h-9'}`}
@@ -451,17 +462,31 @@ export default function ChapterShow({
                         onWordCountChange={handleSceneWordCountChange}
                         isTypewriterMode={isTypewriterMode}
                         editorFont={editorFont}
+                        pendingFocusSceneId={pendingFocusSceneId}
+                        onFocusHandled={() => setPendingFocusSceneId(null)}
+                        onActiveSceneIdChange={setActiveSceneId}
                     />
+
+                    {isNotesOpen && !isFocusMode && (
+                        <NotesPanel
+                            bookId={book.id}
+                            chapterId={chapter.id}
+                            initialNotes={chapter.notes}
+                            onClose={() => setIsNotesOpen(false)}
+                        />
+                    )}
 
                     <CommandPalette
                         editor={activeEditor}
                         isOpen={isPaletteOpen}
                         onClose={closePalette}
-                        onSplitChapter={handleSplitChapter}
+                        onSplitScene={handleSplitScene}
                         onNewChapter={handleNewChapter}
                         onAddScene={handlePaletteAddScene}
                         onEnterFocusMode={toggleFocusMode}
                         isFocusMode={isFocusMode}
+                        onToggleNotes={() => setIsNotesOpen((prev) => !prev)}
+                        licensed={isLicensed}
                     />
                 </div>
 
