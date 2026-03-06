@@ -433,7 +433,7 @@ export default function ChapterList({
 
                 <DragOverlay>
                     {activeItem?.type === 'chapter' && (
-                        <div className="flex items-center gap-2 rounded-[5px] bg-surface-card px-2.5 py-1.5 text-[13px] leading-4 text-ink opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
+                        <div className="flex items-center gap-1.5 rounded-[5px] bg-surface-card px-2 py-1.5 text-[13px] leading-4 text-ink opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
                             <span className="flex shrink-0 items-center text-ink-faint">
                                 <svg width="6" height="10" viewBox="0 0 6 10" fill="currentColor">
                                     <circle cx="1" cy="1" r="1" />
