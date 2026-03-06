@@ -15,6 +15,7 @@ export default function BookSwitcher({
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        if (!open) return;
         function handleClickOutside(e: MouseEvent) {
             if (ref.current && !ref.current.contains(e.target as Node)) {
                 setOpen(false);
@@ -22,24 +23,21 @@ export default function BookSwitcher({
         }
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }, [open]);
 
     const switchBook = (book: BookRef) => {
         setOpen(false);
         router.visit(bookSettingsIndex.url(book));
     };
 
-    const truncate = (text: string, maxLen: number) =>
-        text.length > maxLen ? text.slice(0, maxLen) + '...' : text;
-
     return (
         <div ref={ref} className="relative">
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-faint transition-colors hover:bg-[#F5F2EC]"
+                className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-faint transition-colors hover:bg-neutral-bg"
             >
-                <span className="truncate">{truncate(currentBook.title, 20)}</span>
+                <span className="truncate">{currentBook.title}</span>
                 <svg
                     width="12"
                     height="12"
@@ -53,13 +51,13 @@ export default function BookSwitcher({
             </button>
 
             {open && books.length > 1 && (
-                <div className="absolute left-0 right-0 z-10 mt-1 rounded-md border border-border bg-white py-1 shadow-sm">
+                <div className="absolute left-0 right-0 z-10 mt-1 rounded-md border border-border bg-surface-card py-1 shadow-sm">
                     {books.map((book) => (
                         <button
                             key={book.id}
                             type="button"
                             onClick={() => switchBook(book)}
-                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-ink-muted transition-colors hover:bg-[#F5F2EC] hover:text-ink"
+                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
                         >
                             <svg
                                 width="12"
@@ -70,7 +68,7 @@ export default function BookSwitcher({
                             >
                                 <path d="M3 8.5L6.5 12L13 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
-                            <span>{truncate(book.title, 24)}</span>
+                            <span className="truncate">{book.title}</span>
                         </button>
                     ))}
                 </div>

@@ -79,6 +79,14 @@ class Chapter extends Model
     }
 
     /**
+     * @return HasMany<Scene, $this>
+     */
+    public function scenes(): HasMany
+    {
+        return $this->hasMany(Scene::class)->orderBy('sort_order');
+    }
+
+    /**
      * @return BelongsToMany<Character, $this>
      */
     public function characters(): BelongsToMany
@@ -86,5 +94,17 @@ class Chapter extends Model
         return $this->belongsToMany(Character::class, 'character_chapter')
             ->withPivot(['role', 'notes'])
             ->withTimestamps();
+    }
+
+    public function getFullContent(): string
+    {
+        return $this->scenes->pluck('content')->filter()->implode("\n");
+    }
+
+    public function recalculateWordCount(): void
+    {
+        $this->update([
+            'word_count' => $this->scenes()->sum('word_count'),
+        ]);
     }
 }

@@ -24,6 +24,7 @@ class Book extends Model
             'writing_style' => 'array',
             'story_bible' => 'array',
             'prose_pass_rules' => 'array',
+            'daily_word_count_goal' => 'integer',
         ];
     }
 
@@ -119,5 +120,13 @@ class Book extends Model
     public function aiPreparations(): HasMany
     {
         return $this->hasMany(AiPreparation::class);
+    }
+
+    /**
+     * @return HasMany<WritingSession, $this>
+     */
+    public function writingSessions(): HasMany
+    {
+        return $this->hasMany(WritingSession::class);
     }
 }

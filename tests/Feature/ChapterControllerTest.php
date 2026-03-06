@@ -227,3 +227,253 @@ test('store rejects storyline from another book', function () {
         'storyline_id' => $otherStoryline->id,
     ])->assertNotFound();
 });
+
+test('split creates new chapter after current with initial content', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0]);
+    ChapterVersion::factory()->for($chapter)->create(['is_current' => true]);
+
+    $this->postJson(route('chapters.split', [$book, $chapter]), [
+        'title' => 'Split Chapter',
+        'initial_content' => '<p>Content from split</p>',
+    ])->assertSuccessful();
+
+    $newChapter = $book->chapters()->where('title', 'Split Chapter')->first();
+
+    expect($newChapter)->not->toBeNull();
+    expect($newChapter->reader_order)->toBe(1);
+    expect($newChapter->storyline_id)->toBe($storyline->id);
+    expect($newChapter->status->value)->toBe('draft');
+    expect($newChapter->word_count)->toBe(3);
+});
+
+test('split shifts reader_order of subsequent chapters', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+
+    $ch0 = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0, 'title' => 'Ch 0']);
+    $ch1 = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 1, 'title' => 'Ch 1']);
+    $ch2 = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 2, 'title' => 'Ch 2']);
+    ChapterVersion::factory()->for($ch1)->create(['is_current' => true]);
+
+    $this->postJson(route('chapters.split', [$book, $ch1]), [
+        'title' => 'Inserted',
+    ])->assertSuccessful();
+
+    expect($ch0->fresh()->reader_order)->toBe(0);
+    expect($ch1->fresh()->reader_order)->toBe(1);
+    expect($ch2->fresh()->reader_order)->toBe(3);
+
+    $inserted = $book->chapters()->where('title', 'Inserted')->first();
+    expect($inserted->reader_order)->toBe(2);
+});
+
+test('split stores initial content in version', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0]);
+    ChapterVersion::factory()->for($chapter)->create(['is_current' => true]);
+
+    $this->postJson(route('chapters.split', [$book, $chapter]), [
+        'title' => 'New',
+        'initial_content' => '<p>Hello world</p>',
+    ])->assertSuccessful();
+
+    $newChapter = $book->chapters()->where('title', 'New')->first();
+    $version = $newChapter->currentVersion;
+
+    expect($version)->not->toBeNull();
+    expect($version->version_number)->toBe(1);
+    expect($version->content)->toBe('<p>Hello world</p>');
+    expect($version->source->value)->toBe('original');
+    expect($version->is_current)->toBeTrue();
+});
+
+test('split validates title is required', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create(['is_current' => true]);
+
+    $this->postJson(route('chapters.split', [$book, $chapter]), [
+        'title' => '',
+    ])->assertUnprocessable();
+});
+
+test('split accepts empty initial_content', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0]);
+    ChapterVersion::factory()->for($chapter)->create(['is_current' => true]);
+
+    $this->postJson(route('chapters.split', [$book, $chapter]), [
+        'title' => 'Empty Split',
+    ])->assertSuccessful();
+
+    $newChapter = $book->chapters()->where('title', 'Empty Split')->first();
+    expect($newChapter)->not->toBeNull();
+    expect($newChapter->word_count)->toBe(0);
+    expect($newChapter->currentVersion->content)->toBe('');
+});
+
+test('split returns json with chapter_id and url', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0]);
+    ChapterVersion::factory()->for($chapter)->create(['is_current' => true]);
+
+    $this->postJson(route('chapters.split', [$book, $chapter]), [
+        'title' => 'JSON Test',
+    ])
+        ->assertSuccessful()
+        ->assertJsonStructure(['chapter_id', 'url']);
+});
+
+test('destroy deletes chapter and recompacts reader_order', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+
+    $ch0 = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0]);
+    $ch1 = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 1]);
+    $ch2 = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 2]);
+
+    $this->delete(route('chapters.destroy', [$book, $ch1]))
+        ->assertRedirect(route('chapters.show', [$book, $ch0]));
+
+    expect(Chapter::find($ch1->id))->toBeNull();
+    expect($ch0->fresh()->reader_order)->toBe(0);
+    expect($ch2->fresh()->reader_order)->toBe(1);
+});
+
+test('destroy redirects to empty state when last chapter deleted', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0]);
+
+    $this->delete(route('chapters.destroy', [$book, $chapter]))
+        ->assertRedirect(route('books.editor', $book));
+
+    expect(Chapter::find($chapter->id))->toBeNull();
+});
+
+test('destroy cascades chapter versions', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0]);
+    $v1 = ChapterVersion::factory()->for($chapter)->create(['is_current' => true]);
+    $v2 = ChapterVersion::factory()->for($chapter)->create(['is_current' => false]);
+
+    $this->delete(route('chapters.destroy', [$book, $chapter]));
+
+    expect(ChapterVersion::find($v1->id))->toBeNull();
+    expect(ChapterVersion::find($v2->id))->toBeNull();
+});
+
+test('updateStatus changes status', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['status' => 'draft']);
+
+    $this->patchJson(route('chapters.updateStatus', [$book, $chapter]), [
+        'status' => 'revised',
+    ])
+        ->assertOk()
+        ->assertJsonFragment(['status' => 'revised']);
+
+    expect($chapter->fresh()->status->value)->toBe('revised');
+});
+
+test('updateStatus validates status value', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $this->patchJson(route('chapters.updateStatus', [$book, $chapter]), [
+        'status' => 'invalid',
+    ])->assertUnprocessable();
+});
+
+test('reorder updates reader_order and storyline_id', function () {
+    $book = Book::factory()->create();
+    $s1 = Storyline::factory()->for($book)->create(['sort_order' => 0]);
+    $s2 = Storyline::factory()->for($book)->create(['sort_order' => 1]);
+
+    $ch0 = Chapter::factory()->for($book)->for($s1)->create(['reader_order' => 0]);
+    $ch1 = Chapter::factory()->for($book)->for($s1)->create(['reader_order' => 1]);
+    $ch2 = Chapter::factory()->for($book)->for($s2)->create(['reader_order' => 2]);
+
+    $this->postJson(route('chapters.reorder', $book), [
+        'order' => [
+            ['id' => $ch2->id, 'storyline_id' => $s1->id],
+            ['id' => $ch0->id, 'storyline_id' => $s1->id],
+            ['id' => $ch1->id, 'storyline_id' => $s2->id],
+        ],
+    ])->assertOk();
+
+    expect($ch2->fresh()->reader_order)->toBe(0);
+    expect($ch2->fresh()->storyline_id)->toBe($s1->id);
+    expect($ch0->fresh()->reader_order)->toBe(1);
+    expect($ch1->fresh()->reader_order)->toBe(2);
+    expect($ch1->fresh()->storyline_id)->toBe($s2->id);
+});
+
+test('reorder validates order is required', function () {
+    $book = Book::factory()->create();
+
+    $this->postJson(route('chapters.reorder', $book), [])
+        ->assertUnprocessable();
+});
+
+test('updateNotes saves notes and returns json', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['notes' => null]);
+
+    $this->patchJson(route('chapters.updateNotes', [$book, $chapter]), [
+        'notes' => 'Remember to foreshadow the villain here.',
+    ])
+        ->assertOk()
+        ->assertJsonStructure(['saved_at']);
+
+    $chapter->refresh();
+    expect($chapter->notes)->toBe('Remember to foreshadow the villain here.');
+});
+
+test('updateNotes accepts null to clear notes', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['notes' => 'Some notes']);
+
+    $this->patchJson(route('chapters.updateNotes', [$book, $chapter]), [
+        'notes' => null,
+    ])
+        ->assertOk();
+
+    $chapter->refresh();
+    expect($chapter->notes)->toBeNull();
+});
+
+test('updateNotes validates max length', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $this->patchJson(route('chapters.updateNotes', [$book, $chapter]), [
+        'notes' => str_repeat('a', 10001),
+    ])->assertUnprocessable();
+});
+
+test('show includes notes in response', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['notes' => 'Test note']);
+    ChapterVersion::factory()->for($chapter)->create(['is_current' => true]);
+
+    $this->get(route('chapters.show', [$book, $chapter]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('chapters/show')
+            ->where('chapter.notes', 'Test note')
+        );
+});

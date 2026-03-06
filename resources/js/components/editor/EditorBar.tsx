@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import type { Chapter } from '@/types/models';
 import StatusBadge from './StatusBadge';
 
@@ -17,6 +18,9 @@ export default function EditorBar({
     versionCount,
     saveStatus,
     onVersionClick,
+    onNotesToggle,
+    isNotesOpen,
+    hasNotes,
 }: {
     chapter: Chapter;
     storylineName: string;
@@ -24,6 +28,9 @@ export default function EditorBar({
     versionCount: number;
     saveStatus: SaveStatus;
     onVersionClick: () => void;
+    onNotesToggle: () => void;
+    isNotesOpen: boolean;
+    hasNotes: boolean;
 }) {
     return (
         <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-6">
@@ -43,6 +50,22 @@ export default function EditorBar({
                     {saveStatusLabel[saveStatus]}
                 </span>
                 <span className="text-xs text-ink-faint">{wordCount.toLocaleString('en-US')} words</span>
+                <button
+                    type="button"
+                    onClick={onNotesToggle}
+                    className={cn(
+                        'flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-neutral-bg hover:text-ink',
+                        isNotesOpen ? 'bg-neutral-bg text-ink' : 'text-ink-muted',
+                    )}
+                >
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Notes
+                    {hasNotes && !isNotesOpen && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-ink-muted" />
+                    )}
+                </button>
                 <button
                     type="button"
                     onClick={onVersionClick}

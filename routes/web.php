@@ -12,7 +12,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LicenseController;
 use App\Http\Controllers\NormalizationController;
 use App\Http\Controllers\PlotController;
+use App\Http\Controllers\SceneController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\StorylineController;
+use App\Http\Controllers\WritingGoalController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [BookController::class, 'index'])->name('books.index');
@@ -25,6 +28,7 @@ Route::post('/books/{book}/import/parse', [BookController::class, 'parse'])->nam
 Route::post('/books/{book}/import/confirm', [BookController::class, 'confirmImport'])->name('books.import.confirm');
 
 Route::get('/books/{book}/dashboard', [DashboardController::class, 'show'])->name('books.dashboard');
+Route::put('/books/{book}/writing-goal', [WritingGoalController::class, 'update'])->name('books.writing-goal.update');
 Route::get('/books/{book}/characters', [CharacterController::class, 'index'])->name('books.characters');
 Route::get('/books/{book}/plot', [PlotController::class, 'index'])->name('books.plot');
 Route::get('/books/{book}/editor', [ChapterController::class, 'editor'])->name('books.editor');
@@ -34,6 +38,21 @@ Route::patch('/books/{book}/chapters/{chapter}/title', [ChapterController::class
 Route::put('/books/{book}/chapters/{chapter}/content', [ChapterController::class, 'updateContent'])->name('chapters.updateContent');
 Route::get('/books/{book}/chapters/{chapter}/versions', [ChapterController::class, 'versions'])->name('chapters.versions');
 Route::post('/books/{book}/chapters/{chapter}/versions/{version}/restore', [ChapterController::class, 'restoreVersion'])->name('chapters.restoreVersion');
+Route::patch('/books/{book}/chapters/{chapter}/notes', [ChapterController::class, 'updateNotes'])->name('chapters.updateNotes');
+Route::post('/books/{book}/chapters/{chapter}/split', [ChapterController::class, 'split'])->name('chapters.split');
+Route::delete('/books/{book}/chapters/{chapter}', [ChapterController::class, 'destroy'])->name('chapters.destroy');
+Route::patch('/books/{book}/chapters/{chapter}/status', [ChapterController::class, 'updateStatus'])->name('chapters.updateStatus');
+Route::post('/books/{book}/chapters/reorder', [ChapterController::class, 'reorder'])->name('chapters.reorder');
+
+Route::post('/books/{book}/chapters/{chapter}/scenes', [SceneController::class, 'store'])->name('scenes.store');
+Route::put('/books/{book}/chapters/{chapter}/scenes/{scene}/content', [SceneController::class, 'updateContent'])->name('scenes.updateContent');
+Route::patch('/books/{book}/chapters/{chapter}/scenes/{scene}/title', [SceneController::class, 'updateTitle'])->name('scenes.updateTitle');
+Route::post('/books/{book}/chapters/{chapter}/scenes/reorder', [SceneController::class, 'reorder'])->name('scenes.reorder');
+Route::delete('/books/{book}/chapters/{chapter}/scenes/{scene}', [SceneController::class, 'destroy'])->name('scenes.destroy');
+
+Route::patch('/books/{book}/storylines/{storyline}', [StorylineController::class, 'update'])->name('storylines.update');
+Route::delete('/books/{book}/storylines/{storyline}', [StorylineController::class, 'destroy'])->name('storylines.destroy');
+Route::post('/books/{book}/storylines/reorder', [StorylineController::class, 'reorder'])->name('storylines.reorder');
 
 Route::post('/books/{book}/normalize/preview', [NormalizationController::class, 'previewBook'])->name('books.normalize.preview');
 Route::post('/books/{book}/normalize/apply', [NormalizationController::class, 'applyBook'])->name('books.normalize.apply');

@@ -52,7 +52,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
             aria-checked={checked}
             onClick={onChange}
             className={`relative inline-flex h-[22px] w-[40px] shrink-0 items-center rounded-full transition-colors ${
-                checked ? 'bg-accent' : 'bg-[#D4D1CA]'
+                checked ? 'bg-accent' : 'bg-status-draft'
             }`}
         >
             <span
@@ -68,7 +68,7 @@ function pillClass(active: boolean): string {
     return `rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
         active
             ? 'bg-ink text-white'
-            : 'border border-border bg-white text-ink-muted hover:border-ink hover:text-ink'
+            : 'border border-border bg-surface-card text-ink-muted hover:border-ink hover:text-ink'
     }`;
 }
 
@@ -185,12 +185,12 @@ function AiModelSection({ book, enabled_providers }: { book: BookData; enabled_p
                                 </button>
                             </div>
                             {message && (
-                                <span className="mt-2 block text-[12px] font-medium text-[#2E7D32]">{message}</span>
+                                <span className="mt-2 block text-[12px] font-medium text-status-final">{message}</span>
                             )}
                         </div>
 
                         {enabled_providers.length > 0 && (
-                            <p className="text-[13px] text-[#2E7D32]">
+                            <p className="text-[13px] text-status-final">
                                 <span className="mr-1">●</span>
                                 Connected — AI features are enabled
                             </p>
@@ -286,7 +286,7 @@ function WritingStyleSection({ book, writing_style_display }: { book: BookData; 
                     className="w-full resize-y rounded-md border border-border bg-surface px-3 py-2.5 text-[14px] leading-relaxed text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
                 />
                 {(message || saving) && (
-                    <span className="mt-2 block text-[12px] font-medium text-[#2E7D32]">
+                    <span className="mt-2 block text-[12px] font-medium text-status-final">
                         {saving ? 'Saving...' : message}
                     </span>
                 )}

@@ -36,7 +36,7 @@ class ExportService
     private function resolveChapters(Book $book, array $options): Collection
     {
         $query = $book->chapters()
-            ->with(['versions' => fn ($q) => $q->where('is_current', true), 'act', 'storyline'])
+            ->with(['versions' => fn ($q) => $q->where('is_current', true), 'act', 'storyline', 'scenes' => fn ($q) => $q->orderBy('sort_order')])
             ->orderBy('reader_order');
 
         $scope = $options['scope'] ?? 'full';
@@ -78,18 +78,25 @@ class ExportService
                 );
             }
 
-            $content = $chapter->versions?->first()?->content ?? '';
-            $plainText = strip_tags(str_replace(['<p>', '</p>', '<br>', '<br/>', '<br />', '<hr>', '<hr/>', '<hr />'], ["\n", "\n", "\n", "\n", "\n", "\n---\n", "\n---\n", "\n---\n"], $content));
-
-            foreach (explode("\n", $plainText) as $paragraph) {
-                $trimmed = trim($paragraph);
-                if ($trimmed === '') {
-                    continue;
-                }
-                if ($trimmed === '---') {
+            $scenes = $chapter->scenes ?? collect();
+            foreach ($scenes as $sceneIndex => $scene) {
+                if ($sceneIndex > 0) {
                     $section->addText('* * *', ['italic' => true], ['alignment' => 'center', 'spaceBefore' => 200, 'spaceAfter' => 200]);
-                } else {
-                    $section->addText($trimmed, ['size' => 12], ['spaceAfter' => 100]);
+                }
+
+                $content = $scene->content ?? '';
+                $plainText = strip_tags(str_replace(['<p>', '</p>', '<br>', '<br/>', '<br />', '<hr>', '<hr/>', '<hr />'], ["\n", "\n", "\n", "\n", "\n", "\n---\n", "\n---\n", "\n---\n"], $content));
+
+                foreach (explode("\n", $plainText) as $paragraph) {
+                    $trimmed = trim($paragraph);
+                    if ($trimmed === '') {
+                        continue;
+                    }
+                    if ($trimmed === '---') {
+                        $section->addText('* * *', ['italic' => true], ['alignment' => 'center', 'spaceBefore' => 200, 'spaceAfter' => 200]);
+                    } else {
+                        $section->addText($trimmed, ['size' => 12], ['spaceAfter' => 100]);
+                    }
                 }
             }
         }
@@ -124,10 +131,18 @@ class ExportService
                 $lines[] = '';
             }
 
-            $content = $chapter->versions?->first()?->content ?? '';
-            $plainText = strip_tags(str_replace(['<p>', '</p>', '<br>', '<br/>', '<br />', '<hr>', '<hr/>', '<hr />'], ["\n", "\n", "\n", "\n", "\n", "\n* * *\n", "\n* * *\n", "\n* * *\n"], $content));
+            $scenes = $chapter->scenes ?? collect();
+            foreach ($scenes as $sceneIndex => $scene) {
+                if ($sceneIndex > 0) {
+                    $lines[] = '';
+                    $lines[] = '* * *';
+                    $lines[] = '';
+                }
 
-            $lines[] = trim($plainText);
+                $content = $scene->content ?? '';
+                $plainText = strip_tags(str_replace(['<p>', '</p>', '<br>', '<br/>', '<br />', '<hr>', '<hr/>', '<hr />'], ["\n", "\n", "\n", "\n", "\n", "\n* * *\n", "\n* * *\n", "\n* * *\n"], $content));
+                $lines[] = trim($plainText);
+            }
             $lines[] = '';
         }
 

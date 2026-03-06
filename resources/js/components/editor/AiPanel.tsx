@@ -28,7 +28,7 @@ function SectionDivider() {
 function MetricRow({ label, value, color }: { label: string; value: string; color?: string }) {
     return (
         <div className="flex items-center justify-between">
-            <span className="text-[13px] text-[#5A574F]">{label}</span>
+            <span className="text-[13px] text-ink-soft">{label}</span>
             <span className={cn('text-xs font-medium', color ?? 'text-ink-faint')}>{value}</span>
         </div>
     );
@@ -39,7 +39,7 @@ function FindingDot({ variant }: { variant: 'warning' | 'info' }) {
         <span
             className={cn(
                 'mt-1.5 size-[5px] shrink-0 rounded-full',
-                variant === 'warning' ? 'bg-[#D4A843]' : 'bg-[#C8C4BC]',
+                variant === 'warning' ? 'bg-status-revised' : 'bg-ink-faint',
             )}
         />
     );
@@ -190,7 +190,7 @@ export default function AiPanel({
                                     <div className="flex flex-col gap-1.5">
                                         <MetricRow label="Pacing score" value="--" color="text-ai-green" />
                                         <MetricRow label="Readability" value="--" color="text-ai-green" />
-                                        <MetricRow label="Dialogue ratio" value="--" color="text-[#D4A843]" />
+                                        <MetricRow label="Dialogue ratio" value="--" color="text-status-revised" />
                                         <MetricRow label="Tension arc" value="--" color="text-ai-green" />
                                     </div>
                                 </div>
@@ -200,7 +200,7 @@ export default function AiPanel({
                                 {/* Findings */}
                                 <div className="flex flex-col gap-2.5">
                                     <SectionLabel>Findings</SectionLabel>
-                                    <p className="text-xs italic leading-relaxed text-[#6B6860]">
+                                    <p className="text-xs italic leading-relaxed text-ink-muted">
                                         No analysis run yet
                                     </p>
                                 </div>
@@ -210,13 +210,13 @@ export default function AiPanel({
                                 {/* Next Chapter */}
                                 <div className="flex flex-col gap-2.5">
                                     <SectionLabel>Next Chapter</SectionLabel>
-                                    <p className="text-[13px] leading-relaxed text-[#5A574F]">
+                                    <p className="text-[13px] leading-relaxed text-ink-soft">
                                         Run an analysis first to receive chapter continuation suggestions.
                                     </p>
                                     <button
                                         type="button"
                                         disabled
-                                        className="self-start text-xs font-medium text-[#B85C38] transition-colors hover:text-[#A04E2E] disabled:opacity-40"
+                                        className="self-start text-xs font-medium text-accent transition-colors hover:text-accent/80 disabled:opacity-40"
                                     >
                                         Generate outline
                                     </button>
@@ -234,7 +234,7 @@ export default function AiPanel({
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-xs italic leading-relaxed text-[#6B6860]">
+                                        <p className="text-xs italic leading-relaxed text-ink-muted">
                                             No characters linked
                                         </p>
                                     )}

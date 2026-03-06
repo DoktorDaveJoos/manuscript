@@ -4,7 +4,7 @@ import { useState } from 'react';
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
         <div className="flex flex-col gap-2">
-            <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A857D]">{title}</span>
+            <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">{title}</span>
             {children}
         </div>
     );
@@ -41,11 +41,11 @@ export default function StoryBibleSummary({ storyBible }: { storyBible: StoryBib
                     height="12"
                     viewBox="0 0 16 16"
                     fill="none"
-                    className={`text-[#8A857D] transition-transform ${expanded ? 'rotate-90' : ''}`}
+                    className={`text-ink-muted transition-transform ${expanded ? 'rotate-90' : ''}`}
                 >
                     <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A857D]">
+                <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
                     Story Bible
                 </span>
             </button>
@@ -62,7 +62,7 @@ export default function StoryBibleSummary({ storyBible }: { storyBible: StoryBib
                                     return (
                                         <div key={i} className="text-[13px] leading-[18px]">
                                             <span className="font-medium text-ink">{name}</span>
-                                            {desc && <span className="text-[#B0AAA2]"> — {desc}</span>}
+                                            {desc && <span className="text-ink-faint"> — {desc}</span>}
                                         </div>
                                     );
                                 })}
@@ -76,7 +76,7 @@ export default function StoryBibleSummary({ storyBible }: { storyBible: StoryBib
                                 {storyBible.themes.map((theme, i) => (
                                     <span
                                         key={i}
-                                        className="rounded-full bg-[#F5F3EF] px-2.5 py-0.5 text-[12px] text-[#8A857D]"
+                                        className="rounded-full bg-neutral-bg px-2.5 py-0.5 text-[12px] text-ink-muted"
                                     >
                                         {renderItem(theme)}
                                     </span>
@@ -89,7 +89,7 @@ export default function StoryBibleSummary({ storyBible }: { storyBible: StoryBib
                         <Section title="Plot Outline">
                             <div className="flex flex-col gap-1">
                                 {storyBible.plot_outline.map((beat, i) => (
-                                    <span key={i} className="text-[13px] leading-[18px] text-[#8A857D]">
+                                    <span key={i} className="text-[13px] leading-[18px] text-ink-muted">
                                         {i + 1}. {renderItem(beat)}
                                     </span>
                                 ))}
@@ -101,7 +101,7 @@ export default function StoryBibleSummary({ storyBible }: { storyBible: StoryBib
                         <Section title="Timeline">
                             <div className="flex flex-col gap-1">
                                 {storyBible.timeline.map((event, i) => (
-                                    <span key={i} className="text-[13px] leading-[18px] text-[#8A857D]">
+                                    <span key={i} className="text-[13px] leading-[18px] text-ink-muted">
                                         {renderItem(event)}
                                     </span>
                                 ))}

@@ -17,13 +17,13 @@ class NormalizationController extends Controller
 
     public function previewBook(Book $book): JsonResponse
     {
-        $chapters = $book->chapters()->with('currentVersion')->get();
+        $chapters = $book->chapters()->with(['currentVersion', 'scenes'])->get();
 
         $results = [];
         $totalChanges = 0;
 
         foreach ($chapters as $chapter) {
-            $content = $chapter->currentVersion?->content;
+            $content = $chapter->getFullContent();
             if (! $content) {
                 continue;
             }
@@ -110,7 +110,8 @@ class NormalizationController extends Controller
 
     private function applyToChapter(Chapter $chapter, string $language): bool
     {
-        $content = $chapter->currentVersion?->content;
+        $chapter->loadMissing('scenes');
+        $content = $chapter->getFullContent();
         if (! $content) {
             return false;
         }
@@ -135,10 +136,17 @@ class NormalizationController extends Controller
             'is_current' => true,
         ]);
 
-        // Recalculate word count
-        $chapter->update([
-            'word_count' => str_word_count(strip_tags($result['content'])),
+        // Replace scenes with normalized content
+        $chapter->scenes()->delete();
+        $wordCount = str_word_count(strip_tags($result['content']));
+        $chapter->scenes()->create([
+            'title' => 'Scene 1',
+            'content' => $result['content'],
+            'sort_order' => 0,
+            'word_count' => $wordCount,
         ]);
+
+        $chapter->update(['word_count' => $wordCount]);
 
         return true;
     }

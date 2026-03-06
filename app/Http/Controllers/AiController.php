@@ -99,9 +99,12 @@ class AiController extends Controller
     ): StreamableAgentResponse {
         $this->ensureAiConfigured($book);
 
-        $chapter->loadMissing('currentVersion');
+        $chapter->loadMissing(['currentVersion', 'scenes']);
         $currentVersion = $chapter->currentVersion;
-        $content = $currentVersion?->content;
+        $content = $chapter->getFullContent();
+        if (blank($content)) {
+            $content = $currentVersion?->content;
+        }
         abort_if(blank($content), 422, 'Chapter has no content to process.');
 
         return $agent->stream(

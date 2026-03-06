@@ -44,6 +44,8 @@ export default function FormattingToolbar({
     aiEnabled,
     isBeautifying,
     licensed = true,
+    isTypewriterMode,
+    onTypewriterToggle,
 }: {
     editor: Editor | null;
     onNormalizeClick: () => void;
@@ -51,6 +53,8 @@ export default function FormattingToolbar({
     aiEnabled: boolean;
     isBeautifying?: boolean;
     licensed?: boolean;
+    isTypewriterMode?: boolean;
+    onTypewriterToggle?: () => void;
 }) {
     const defaultState = {
         canUndo: false,
@@ -214,9 +218,9 @@ export default function FormattingToolbar({
                 </svg>
             </ToolbarButton>
             <ToolbarButton
-                disabled
-                onClick={() => {}}
-                title="Focus mode (coming soon)"
+                active={isTypewriterMode}
+                onClick={() => onTypewriterToggle?.()}
+                title="Typewriter mode"
             >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />

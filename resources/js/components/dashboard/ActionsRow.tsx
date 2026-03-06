@@ -1,6 +1,5 @@
-import { store } from '@/actions/App/Http/Controllers/ChapterController';
+import { createChapter } from '@/lib/utils';
 import type { AiPreparationStatus, Storyline } from '@/types/models';
-import { router } from '@inertiajs/react';
 import AiPreparationProgress from './AiPreparationProgress';
 
 export default function ActionsRow({
@@ -21,20 +20,14 @@ export default function ActionsRow({
     const handleAddChapter = () => {
         const firstStorylineId = storylines[0]?.id;
         if (!firstStorylineId) return;
-
-        const totalChapters = storylines.reduce((sum, s) => sum + (s.chapters?.length ?? 0), 0);
-
-        router.post(store.url({ book: bookId }), {
-            title: `Chapter ${totalChapters + 1}`,
-            storyline_id: firstStorylineId,
-        });
+        createChapter(bookId, firstStorylineId, storylines);
     };
 
     return (
         <div className="flex items-center justify-between">
             <AiPreparationProgress bookId={bookId} aiEnabled={aiEnabled} initialStatus={aiPreparation} licensed={licensed} />
 
-            <div className="flex items-center divide-x divide-[#D9D3C9] rounded-lg border border-[#D9D3C9] bg-white">
+            <div className="flex items-center divide-x divide-border rounded-lg border border-border bg-surface-card">
                 <button
                     type="button"
                     onClick={onNormalize}

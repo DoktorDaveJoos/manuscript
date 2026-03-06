@@ -3,6 +3,7 @@ import AiInsights from '@/components/dashboard/AiInsights';
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
 import StoryBibleSummary from '@/components/dashboard/StoryBibleSummary';
 import SuggestedNext from '@/components/dashboard/SuggestedNext';
+import WritingGoal from '@/components/dashboard/WritingGoal';
 import Sidebar from '@/components/editor/Sidebar';
 import ProgressBar from '@/components/onboarding/ProgressBar';
 import { useLicense } from '@/hooks/useLicense';
@@ -15,14 +16,15 @@ import type {
     StoryBible,
     Storyline,
     SuggestedNext as SuggestedNextType,
+    WritingGoalData,
 } from '@/types/models';
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
     return (
-        <div className="flex flex-1 flex-col gap-1 rounded-lg bg-white px-5 py-4">
-            <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#B0AAA2]">{label}</span>
+        <div className="flex flex-1 flex-col gap-1 rounded-lg bg-surface-card px-5 py-4">
+            <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">{label}</span>
             <span className="font-serif text-[26px] leading-[30px] font-medium text-ink">
                 {typeof value === 'number' ? value.toLocaleString('en-US') : value}
             </span>
@@ -38,6 +40,7 @@ export default function Dashboard({
     suggested_next,
     ai_preparation,
     story_bible,
+    writing_goal,
 }: {
     book: Book & { storylines?: Storyline[] };
     stats: DashboardStats;
@@ -46,6 +49,7 @@ export default function Dashboard({
     suggested_next: SuggestedNextType | null;
     ai_preparation?: AiPreparationStatus | null;
     story_bible?: StoryBible | null;
+    writing_goal: WritingGoalData;
 }) {
     const { isActive: isLicensed } = useLicense();
     const [showNormalize, setShowNormalize] = useState(false);
@@ -61,23 +65,26 @@ export default function Dashboard({
                     <div className="flex w-[720px] flex-col gap-10">
                         {/* Book Header */}
                         <div>
-                            <h1 className="font-serif text-[34px] leading-[40px] tracking-[-0.01em] text-[#2D2A26]">
+                            <h1 className="font-serif text-[34px] leading-[40px] tracking-[-0.01em] text-ink">
                                 {book.title}
                             </h1>
                             <div className="mt-2 flex items-center gap-1.5">
                                 {book.author && (
-                                    <span className="text-[14px] text-[#8A857D]">by {book.author}</span>
+                                    <span className="text-[14px] text-ink-muted">by {book.author}</span>
                                 )}
-                                {book.author && <span className="text-[14px] text-[#D1CCC4]">&middot;</span>}
-                                <span className="text-[13px] text-[#B0AAA2]">
+                                {book.author && <span className="text-[14px] text-ink-faint">&middot;</span>}
+                                <span className="text-[13px] text-ink-faint">
                                     {stats.total_words.toLocaleString('en-US')} words
                                 </span>
-                                <span className="text-[14px] text-[#D1CCC4]">&middot;</span>
-                                <span className="text-[13px] text-[#B0AAA2]">
+                                <span className="text-[14px] text-ink-faint">&middot;</span>
+                                <span className="text-[13px] text-ink-faint">
                                     {stats.chapter_count} chapter{stats.chapter_count !== 1 ? 's' : ''}
                                 </span>
                             </div>
                         </div>
+
+                        {/* Writing Goal */}
+                        <WritingGoal bookId={book.id} writingGoal={writing_goal} />
 
                         {/* Actions Row */}
                         <ActionsRow

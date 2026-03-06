@@ -139,7 +139,7 @@ class BookController extends Controller
 
             /** @var array<int, int> */
             $chapterMap = [];
-            foreach ($book->chapters()->with('versions')->get() as $chapter) {
+            foreach ($book->chapters()->with(['versions', 'scenes'])->get() as $chapter) {
                 $newChapter = $chapter->replicate();
                 $newChapter->book_id = $newBook->id;
                 $newChapter->storyline_id = $storylineMap[$chapter->storyline_id] ?? $chapter->storyline_id;
@@ -152,6 +152,12 @@ class BookController extends Controller
                     $newVersion = $version->replicate();
                     $newVersion->chapter_id = $newChapter->id;
                     $newVersion->save();
+                }
+
+                foreach ($chapter->scenes as $scene) {
+                    $newScene = $scene->replicate();
+                    $newScene->chapter_id = $newChapter->id;
+                    $newScene->save();
                 }
             }
 
@@ -256,6 +262,13 @@ class BookController extends Controller
                     'content' => $normalized['content'],
                     'source' => VersionSource::Original,
                     'is_current' => true,
+                ]);
+
+                $chapter->scenes()->create([
+                    'title' => 'Scene 1',
+                    'content' => $normalized['content'],
+                    'sort_order' => 0,
+                    'word_count' => $chapterData['word_count'],
                 ]);
             }
         }

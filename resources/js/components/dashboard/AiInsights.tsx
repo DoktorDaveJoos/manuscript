@@ -29,7 +29,7 @@ function ScoreGauge({ score }: { score: number }) {
                 cy={size / 2}
                 r={radius}
                 fill="none"
-                stroke="#E8E4DD"
+                className="stroke-neutral-bg"
                 strokeWidth={strokeWidth}
             />
             <circle
@@ -37,7 +37,7 @@ function ScoreGauge({ score }: { score: number }) {
                 cy={size / 2}
                 r={radius}
                 fill="none"
-                stroke="#C4873B"
+                className="stroke-accent"
                 strokeWidth={strokeWidth}
                 strokeLinecap="round"
                 strokeDasharray={circumference}
@@ -58,7 +58,7 @@ function ScoreGauge({ score }: { score: number }) {
                 y={size / 2 + 20}
                 textAnchor="middle"
                 dominantBaseline="central"
-                className="fill-[#B0AAA2] font-sans text-[11px]"
+                className="fill-ink-faint font-sans text-[11px]"
             >
                 of 100
             </text>
@@ -69,9 +69,9 @@ function ScoreGauge({ score }: { score: number }) {
 function MetricBar({ label, score }: { label: string; score: number }) {
     return (
         <div className="flex items-center gap-3">
-            <span className="w-[52px] text-[13px] text-[#8A857D]">{label}</span>
+            <span className="w-[52px] text-[13px] text-ink-muted">{label}</span>
             <div className="flex-1">
-                <div className="h-[5px] overflow-hidden rounded-[3px] bg-[#E8E4DD]">
+                <div className="h-[5px] overflow-hidden rounded-[3px] bg-neutral-bg">
                     <div
                         className="h-full rounded-[3px] bg-accent"
                         style={{ width: `${Math.min(100, Math.max(0, score))}%` }}
@@ -86,7 +86,7 @@ function MetricBar({ label, score }: { label: string; score: number }) {
 const severityColor: Record<string, string> = {
     high: 'bg-danger',
     medium: 'bg-accent',
-    low: 'bg-[#B0AAA2]',
+    low: 'bg-ink-faint',
 };
 
 export default function AiInsights({ healthMetrics }: { healthMetrics: HealthMetrics }) {
@@ -94,7 +94,7 @@ export default function AiInsights({ healthMetrics }: { healthMetrics: HealthMet
         <div className="flex gap-8">
             {/* Left — Manuscript Health */}
             <div className="flex flex-1 flex-col gap-5">
-                <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A857D]">
+                <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
                     Manuscript Health
                 </span>
 
@@ -108,31 +108,31 @@ export default function AiInsights({ healthMetrics }: { healthMetrics: HealthMet
                     </div>
                 </div>
 
-                <span className="text-[12px] text-[#8A857D]">
+                <span className="text-[12px] text-ink-muted">
                     Last analyzed{' '}
-                    <span className="text-[#B0AAA2]">{formatTimeAgo(healthMetrics.last_analyzed_at)}</span>
+                    <span className="text-ink-faint">{formatTimeAgo(healthMetrics.last_analyzed_at)}</span>
                 </span>
             </div>
 
             {/* Right — Attention Needed */}
             <div className="flex flex-1 flex-col gap-4">
-                <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A857D]">
+                <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
                     Attention Needed
                 </span>
 
                 {healthMetrics.attention_items.length === 0 && (
-                    <p className="text-[13px] text-[#B0AAA2]">No issues found.</p>
+                    <p className="text-[13px] text-ink-faint">No issues found.</p>
                 )}
 
                 <div className="flex flex-col gap-4">
                     {healthMetrics.attention_items.map((item, i) => (
                         <div key={i} className="flex gap-3">
                             <span
-                                className={`mt-[6px] size-[7px] shrink-0 rounded-full ${severityColor[item.severity] ?? 'bg-[#B0AAA2]'}`}
+                                className={`mt-[6px] size-[7px] shrink-0 rounded-full ${severityColor[item.severity] ?? 'bg-ink-faint'}`}
                             />
                             <div className="flex flex-col gap-0.5">
                                 <span className="text-[13px] font-medium text-ink">{item.title}</span>
-                                <span className="text-[12px] leading-[18px] text-[#B0AAA2]">
+                                <span className="text-[12px] leading-[18px] text-ink-faint">
                                     {item.description}
                                 </span>
                             </div>

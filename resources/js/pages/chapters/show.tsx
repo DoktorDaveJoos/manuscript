@@ -1,18 +1,23 @@
 import { beautify } from '@/actions/App/Http/Controllers/AiController';
-import { updateContent, updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
+import { split, updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
+import { destroy as destroyScene, store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
 import AiPanel from '@/components/editor/AiPanel';
+import CommandPalette from '@/components/editor/CommandPalette';
 import EditorBar, { type SaveStatus } from '@/components/editor/EditorBar';
 import FormattingToolbar from '@/components/editor/FormattingToolbar';
+import NotesPanel from '@/components/editor/NotesPanel';
 import Sidebar from '@/components/editor/Sidebar';
 import VersionHistoryOverlay from '@/components/editor/VersionHistoryOverlay';
 import WritingSurface from '@/components/editor/WritingSurface';
-import useChapterEditor from '@/hooks/useChapterEditor';
 import { useLicense } from '@/hooks/useLicense';
 import { getXsrfToken } from '@/lib/csrf';
-import type { Book, Chapter, Character, CharacterChapterPivot } from '@/types/models';
+import { createChapter } from '@/lib/utils';
+import type { Book, Chapter, Character, CharacterChapterPivot, Scene } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
-import { useCallback, useRef, useState } from 'react';
+import { DOMSerializer } from '@tiptap/pm/model';
+import type { Editor } from '@tiptap/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type ChapterWithRelations = Chapter & {
     characters?: (Character & { pivot: CharacterChapterPivot })[];
@@ -29,10 +34,33 @@ export default function ChapterShow({
 }) {
     const { isActive: isLicensed } = useLicense();
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
-    const [wordCount, setWordCount] = useState(chapter.word_count);
+    const [scenes, setScenes] = useState<Scene[]>(chapter.scenes ?? []);
+    const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
     const [showVersions, setShowVersions] = useState(false);
     const [showNormalize, setShowNormalize] = useState(false);
     const [isBeautifying, setIsBeautifying] = useState(false);
+    const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+    const [isNotesOpen, setIsNotesOpen] = useState(false);
+    const [isTypewriterMode, setIsTypewriterMode] = useState(() => {
+        try {
+            return localStorage.getItem('manuscript:typewriter-scrolling') === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    const toggleTypewriterMode = useCallback(() => {
+        setIsTypewriterMode((prev) => {
+            const next = !prev;
+            try {
+                localStorage.setItem('manuscript:typewriter-scrolling', String(next));
+            } catch {
+                // Ignore storage errors
+            }
+            return next;
+        });
+    }, []);
+
     const [isAiPanelOpen, setIsAiPanelOpen] = useState(() => {
         try {
             return localStorage.getItem('manuscript:ai-panel-open') !== 'false';
@@ -53,53 +81,31 @@ export default function ChapterShow({
         });
     }, []);
 
-    const abortRef = useRef<AbortController | null>(null);
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const pendingContentRef = useRef<string | null>(null);
+    // Reset scenes when chapter changes (e.g. after version restore)
+    useEffect(() => {
+        setScenes(chapter.scenes ?? []);
+    }, [chapter.id, chapter.scenes]);
 
+    // Word count derived from scenes
+    const wordCount = scenes.reduce((sum, s) => sum + s.word_count, 0);
+
+    // Save status timeout for scene edits
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleSceneWordCountChange = useCallback((sceneId: number, count: number) => {
+        setScenes((prev) => prev.map((s) => (s.id === sceneId ? { ...s, word_count: count } : s)));
+        setSaveStatus('unsaved');
+
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = setTimeout(() => {
+            setSaveStatus('saved');
+        }, 2000);
+    }, []);
+
+    // Chapter title auto-save
     const titleAbortRef = useRef<AbortController | null>(null);
     const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingTitleRef = useRef<string | null>(null);
-
-    const flushContentSave = useCallback(async () => {
-        if (timerRef.current) {
-            clearTimeout(timerRef.current);
-            timerRef.current = null;
-        }
-
-        const content = pendingContentRef.current;
-        if (content === null) return;
-        pendingContentRef.current = null;
-
-        abortRef.current?.abort();
-        const controller = new AbortController();
-        abortRef.current = controller;
-
-        setSaveStatus('saving');
-
-        try {
-            const response = await fetch(updateContent.url({ book: book.id, chapter: chapter.id }), {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
-                },
-                body: JSON.stringify({ content }),
-                signal: controller.signal,
-            });
-
-            if (!response.ok) throw new Error('Save failed');
-
-            const data = await response.json();
-            setWordCount(data.word_count);
-            setSaveStatus('saved');
-        } catch (e) {
-            if ((e as Error).name !== 'AbortError') {
-                setSaveStatus('error');
-            }
-        }
-    }, [book.id, chapter.id]);
 
     const flushTitleSave = useCallback(async () => {
         if (titleTimerRef.current) {
@@ -139,23 +145,6 @@ export default function ChapterShow({
         }
     }, [book.id, chapter.id]);
 
-    const handleEditorUpdate = useCallback(
-        (html: string, words: number) => {
-            setWordCount(words);
-            setSaveStatus('unsaved');
-            pendingContentRef.current = html;
-
-            if (timerRef.current) {
-                clearTimeout(timerRef.current);
-            }
-
-            timerRef.current = setTimeout(() => {
-                flushContentSave();
-            }, 1500);
-        },
-        [flushContentSave],
-    );
-
     const handleTitleUpdate = useCallback(
         (title: string) => {
             setSaveStatus('unsaved');
@@ -172,9 +161,74 @@ export default function ChapterShow({
         [flushTitleSave],
     );
 
+    // Flush all pending saves (title + all scenes)
     const handleBeforeNavigate = useCallback(async () => {
-        await Promise.all([flushContentSave(), flushTitleSave()]);
-    }, [flushContentSave, flushTitleSave]);
+        await flushTitleSave();
+
+        const sceneEls = document.querySelectorAll('[id^="scene-"]');
+        await Promise.all(
+            Array.from(sceneEls).map((el) => {
+                const flush = (el as unknown as Record<string, () => Promise<void>>).__flush;
+                return typeof flush === 'function' ? flush() : Promise.resolve();
+            }),
+        );
+    }, [flushTitleSave]);
+
+    // Scene management
+    const handleAddScene = useCallback(
+        async (afterPosition: number) => {
+            try {
+                const response = await fetch(storeScene.url({ book: book.id, chapter: chapter.id }), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-XSRF-TOKEN': getXsrfToken(),
+                    },
+                    body: JSON.stringify({
+                        title: `Scene ${scenes.length + 1}`,
+                        position: afterPosition,
+                    }),
+                });
+
+                if (response.ok) {
+                    const newScene: Scene = await response.json();
+                    setScenes((prev) => {
+                        const updated = [...prev];
+                        updated.splice(afterPosition, 0, newScene);
+                        return updated.map((s, i) => ({ ...s, sort_order: i }));
+                    });
+                }
+            } catch {
+                // Ignore
+            }
+        },
+        [book.id, chapter.id, scenes.length],
+    );
+
+    const handleDeleteScene = useCallback(
+        async (sceneId: number) => {
+            try {
+                const response = await fetch(
+                    destroyScene.url({ book: book.id, chapter: chapter.id, scene: sceneId }),
+                    {
+                        method: 'DELETE',
+                        headers: {
+                            Accept: 'application/json',
+                            'X-XSRF-TOKEN': getXsrfToken(),
+                        },
+                    },
+                );
+
+                if (response.ok) {
+                    setScenes((prev) => prev.filter((s) => s.id !== sceneId));
+                }
+            } catch {
+                // Ignore
+            }
+        },
+        [book.id, chapter.id],
+    );
 
     const handleBeautify = useCallback(async () => {
         setIsBeautifying(true);
@@ -197,10 +251,53 @@ export default function ChapterShow({
         }
     }, [book.id, chapter.id]);
 
-    const editor = useChapterEditor({
-        content: chapter.current_version?.content ?? '',
-        onUpdate: handleEditorUpdate,
-    });
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Tab' && e.shiftKey) {
+                e.preventDefault();
+                setIsPaletteOpen((prev) => !prev);
+            }
+        };
+        document.addEventListener('keydown', handler, { capture: true });
+        return () => document.removeEventListener('keydown', handler, { capture: true });
+    }, []);
+
+    const handleSplitChapter = useCallback(async () => {
+        if (!activeEditor) return;
+
+        const { from } = activeEditor.state.selection;
+        const endPos = activeEditor.state.doc.content.size;
+
+        const afterSlice = activeEditor.state.doc.slice(from, endPos);
+        const serializer = DOMSerializer.fromSchema(activeEditor.schema);
+        const container = document.createElement('div');
+        container.appendChild(serializer.serializeFragment(afterSlice.content));
+        const belowHtml = container.innerHTML;
+
+        activeEditor.chain().deleteRange({ from, to: endPos }).run();
+
+        await handleBeforeNavigate();
+
+        const response = await fetch(split.url({ book: book.id, chapter: chapter.id }), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'X-XSRF-TOKEN': getXsrfToken(),
+            },
+            body: JSON.stringify({ title: 'Untitled', initial_content: belowHtml }),
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        router.visit(data.url);
+    }, [activeEditor, book.id, chapter.id, handleBeforeNavigate]);
+
+    const handleNewChapter = useCallback(async () => {
+        await handleBeforeNavigate();
+        createChapter(book.id, chapter.storyline_id, book.storylines ?? []);
+    }, [book, chapter.storyline_id, handleBeforeNavigate]);
 
     const povCharacterName = chapter.pov_character?.name ?? null;
     const timelineLabel = chapter.storyline?.timeline_label ?? null;
@@ -216,7 +313,7 @@ export default function ChapterShow({
                     onBeforeNavigate={handleBeforeNavigate}
                 />
 
-                <div className="flex min-w-0 flex-1 flex-col">
+                <div className="relative flex min-w-0 flex-1 flex-col">
                     <div className="relative">
                         <EditorBar
                             chapter={chapter}
@@ -225,6 +322,9 @@ export default function ChapterShow({
                             versionCount={versionCount}
                             saveStatus={saveStatus}
                             onVersionClick={() => setShowVersions(!showVersions)}
+                            onNotesToggle={() => setIsNotesOpen((prev) => !prev)}
+                            isNotesOpen={isNotesOpen}
+                            hasNotes={!!chapter.notes}
                         />
                         {showVersions && (
                             <VersionHistoryOverlay
@@ -235,21 +335,49 @@ export default function ChapterShow({
                         )}
                     </div>
 
+                    {isNotesOpen && (
+                        <NotesPanel
+                            bookId={book.id}
+                            chapterId={chapter.id}
+                            initialNotes={chapter.notes}
+                            onClose={() => setIsNotesOpen(false)}
+                        />
+                    )}
+
                     <FormattingToolbar
-                        editor={editor}
+                        editor={activeEditor}
                         onNormalizeClick={() => setShowNormalize(true)}
                         onBeautifyClick={handleBeautify}
                         aiEnabled={book.ai_enabled}
                         isBeautifying={isBeautifying}
                         licensed={isLicensed}
+                        isTypewriterMode={isTypewriterMode}
+                        onTypewriterToggle={toggleTypewriterMode}
                     />
 
                     <WritingSurface
-                        editor={editor}
+                        scenes={scenes}
+                        bookId={book.id}
+                        chapterId={chapter.id}
                         title={chapter.title}
                         povCharacterName={povCharacterName}
                         timelineLabel={timelineLabel}
                         onTitleUpdate={handleTitleUpdate}
+                        onActiveEditorChange={setActiveEditor}
+                        onWordCountChange={handleSceneWordCountChange}
+                        onAddScene={handleAddScene}
+                        onDeleteScene={handleDeleteScene}
+                        isTypewriterMode={isTypewriterMode}
+                    />
+
+                    <CommandPalette
+                        editor={activeEditor}
+                        isOpen={isPaletteOpen}
+                        onClose={() => setIsPaletteOpen(false)}
+                        licensed={isLicensed}
+                        onSplitChapter={handleSplitChapter}
+                        onNewChapter={handleNewChapter}
+                        onAddScene={() => handleAddScene(scenes.length)}
                     />
                 </div>
 

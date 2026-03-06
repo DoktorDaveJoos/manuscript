@@ -4,12 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Enums\ChapterStatus;
 use App\Enums\VersionSource;
+use App\Http\Requests\ReorderChaptersRequest;
+use App\Http\Requests\SplitChapterRequest;
 use App\Http\Requests\StoreChapterRequest;
 use App\Http\Requests\UpdateChapterContentRequest;
+use App\Http\Requests\UpdateChapterNotesRequest;
+use App\Http\Requests\UpdateChapterStatusRequest;
 use App\Http\Requests\UpdateChapterTitleRequest;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
+use App\Models\WritingSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -57,6 +62,13 @@ class ChapterController extends Controller
                 'is_current' => true,
             ]);
 
+            $chapter->scenes()->create([
+                'title' => 'Scene 1',
+                'content' => '',
+                'sort_order' => 0,
+                'word_count' => 0,
+            ]);
+
             return $chapter;
         });
 
@@ -70,10 +82,14 @@ class ChapterController extends Controller
             'storylines.chapters' => fn ($q) => $q
                 ->select('id', 'book_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count')
                 ->orderBy('reader_order'),
+            'storylines.chapters.scenes' => fn ($q) => $q
+                ->select('id', 'chapter_id', 'title', 'sort_order', 'word_count')
+                ->orderBy('sort_order'),
         ]);
 
         $chapter->load([
             'currentVersion:id,chapter_id,version_number,content,source,is_current',
+            'scenes' => fn ($q) => $q->orderBy('sort_order'),
             'storyline:id,name,timeline_label',
             'povCharacter:id,name',
             'characters' => fn ($q) => $q->select('characters.id', 'characters.name'),
@@ -108,11 +124,36 @@ class ChapterController extends Controller
             'content' => $request->validated('content'),
         ]);
 
+        $previousWordCount = $chapter->word_count;
         $wordCount = str_word_count(strip_tags($request->validated('content')));
         $chapter->update(['word_count' => $wordCount]);
 
+        $delta = $wordCount - $previousWordCount;
+        if ($delta > 0) {
+            $session = WritingSession::updateOrCreate(
+                ['book_id' => $book->id, 'date' => now()->toDateString()],
+                [],
+            );
+
+            $session->increment('words_written', $delta);
+            $session->refresh();
+
+            if ($book->daily_word_count_goal && $session->words_written >= $book->daily_word_count_goal) {
+                $session->update(['goal_met' => true]);
+            }
+        }
+
         return response()->json([
             'word_count' => $wordCount,
+            'saved_at' => now()->toISOString(),
+        ]);
+    }
+
+    public function updateNotes(UpdateChapterNotesRequest $request, Book $book, Chapter $chapter): JsonResponse
+    {
+        $chapter->update(['notes' => $request->validated('notes')]);
+
+        return response()->json([
             'saved_at' => now()->toISOString(),
         ]);
     }
@@ -125,6 +166,47 @@ class ChapterController extends Controller
             ->get();
 
         return response()->json($versions);
+    }
+
+    public function split(SplitChapterRequest $request, Book $book, Chapter $chapter): JsonResponse
+    {
+        $newChapter = DB::transaction(function () use ($request, $book, $chapter) {
+            $book->chapters()
+                ->where('reader_order', '>', $chapter->reader_order)
+                ->increment('reader_order');
+
+            $content = $request->validated('initial_content') ?? '';
+            $wordCount = str_word_count(strip_tags($content));
+
+            $newChapter = $book->chapters()->create([
+                'storyline_id' => $chapter->storyline_id,
+                'title' => $request->validated('title'),
+                'reader_order' => $chapter->reader_order + 1,
+                'status' => ChapterStatus::Draft,
+                'word_count' => $wordCount,
+            ]);
+
+            $newChapter->versions()->create([
+                'version_number' => 1,
+                'content' => $content,
+                'source' => VersionSource::Original,
+                'is_current' => true,
+            ]);
+
+            $newChapter->scenes()->create([
+                'title' => 'Scene 1',
+                'content' => $content,
+                'sort_order' => 0,
+                'word_count' => $wordCount,
+            ]);
+
+            return $newChapter;
+        });
+
+        return response()->json([
+            'chapter_id' => $newChapter->id,
+            'url' => route('chapters.show', [$book, $newChapter]),
+        ]);
     }
 
     public function restoreVersion(Book $book, Chapter $chapter, ChapterVersion $version): RedirectResponse
@@ -141,8 +223,75 @@ class ChapterController extends Controller
                 'change_summary' => "Restored from version {$version->version_number}",
                 'is_current' => true,
             ]);
+
+            // Replace all scenes with single scene from restored content
+            $chapter->scenes()->delete();
+            $wordCount = str_word_count(strip_tags($version->content ?? ''));
+            $chapter->scenes()->create([
+                'title' => 'Scene 1',
+                'content' => $version->content,
+                'sort_order' => 0,
+                'word_count' => $wordCount,
+            ]);
+            $chapter->update(['word_count' => $wordCount]);
         });
 
         return redirect()->back();
+    }
+
+    public function destroy(Book $book, Chapter $chapter): RedirectResponse
+    {
+        $deletedOrder = $chapter->reader_order;
+        $chapter->delete();
+
+        $book->chapters()
+            ->where('reader_order', '>', $deletedOrder)
+            ->decrement('reader_order');
+
+        $nextChapter = $book->chapters()
+            ->orderBy('reader_order')
+            ->first();
+
+        if ($nextChapter) {
+            return redirect()->route('chapters.show', [$book, $nextChapter]);
+        }
+
+        return redirect()->route('books.editor', $book);
+    }
+
+    public function updateStatus(UpdateChapterStatusRequest $request, Book $book, Chapter $chapter): JsonResponse
+    {
+        $chapter->update(['status' => $request->validated('status')]);
+
+        return response()->json([
+            'status' => $chapter->status->value,
+        ]);
+    }
+
+    public function reorder(ReorderChaptersRequest $request, Book $book): JsonResponse
+    {
+        $order = $request->validated('order');
+
+        if (count($order) > 0) {
+            $orderCase = '';
+            $storylineCase = '';
+            $ids = [];
+
+            foreach ($order as $index => $item) {
+                $id = (int) $item['id'];
+                $storylineId = (int) $item['storyline_id'];
+                $ids[] = $id;
+                $orderCase .= "WHEN {$id} THEN {$index} ";
+                $storylineCase .= "WHEN {$id} THEN {$storylineId} ";
+            }
+
+            $idList = implode(',', $ids);
+
+            DB::statement(
+                "UPDATE chapters SET reader_order = CASE id {$orderCase}END, storyline_id = CASE id {$storylineCase}END WHERE id IN ({$idList})"
+            );
+        }
+
+        return response()->json(['success' => true]);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\AnalysisType;
 use App\Enums\ChapterStatus;
 use App\Models\Book;
+use App\Models\WritingSession;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -31,6 +32,12 @@ class DashboardController extends Controller
 
         $aiPreparation = $book->aiPreparations()->latest()->first();
 
+        $todaySession = $book->writingSessions()
+            ->whereDate('date', now()->toDateString())
+            ->first();
+
+        $streak = $this->calculateStreak($book, $todaySession);
+
         return Inertia::render('books/dashboard', [
             'book' => $book->only('id', 'title', 'author', 'language', 'ai_enabled', 'storylines'),
             'stats' => [
@@ -44,6 +51,12 @@ class DashboardController extends Controller
             'suggested_next' => $this->buildSuggestedNext($book),
             'ai_preparation' => $aiPreparation,
             'story_bible' => $book->story_bible,
+            'writing_goal' => [
+                'daily_word_count_goal' => $book->daily_word_count_goal,
+                'today_words' => $todaySession?->words_written ?? 0,
+                'goal_met_today' => (bool) $todaySession?->goal_met,
+                'streak' => $streak,
+            ],
         ]);
     }
 
@@ -206,6 +219,38 @@ class DashboardController extends Controller
             'last_analyzed_at' => $lastAnalyzedAt->toISOString(),
             'attention_items' => $attentionItems,
         ];
+    }
+
+    private function calculateStreak(Book $book, ?WritingSession $todaySession): int
+    {
+        $streak = 0;
+
+        if ($todaySession?->goal_met) {
+            $streak = 1;
+        }
+
+        $sessions = $book->writingSessions()
+            ->where('goal_met', true)
+            ->whereDate('date', '<', now()->toDateString())
+            ->orderByDesc('date')
+            ->pluck('date');
+
+        $checkDate = now()->subDay();
+
+        foreach ($sessions as $sessionDate) {
+            $dateString = $sessionDate instanceof \Carbon\Carbon
+                ? $sessionDate->toDateString()
+                : substr((string) $sessionDate, 0, 10);
+
+            if ($dateString === $checkDate->toDateString()) {
+                $streak++;
+                $checkDate = $checkDate->subDay();
+            } else {
+                break;
+            }
+        }
+
+        return $streak;
     }
 
     /**

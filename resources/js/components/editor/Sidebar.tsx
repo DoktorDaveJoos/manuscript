@@ -1,15 +1,14 @@
 import { index } from '@/actions/App/Http/Controllers/BookController';
 import { index as indexCanvas } from '@/actions/App/Http/Controllers/CanvasController';
 import { index as indexCharacters } from '@/actions/App/Http/Controllers/CharacterController';
-import { store } from '@/actions/App/Http/Controllers/ChapterController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
 import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
 import { about as settingsAbout } from '@/actions/App/Http/Controllers/SettingsController';
 import NavItem from '@/components/ui/NavItem';
 import { useLicense } from '@/hooks/useLicense';
-import { formatCompactCount } from '@/lib/utils';
+import { createChapter, formatCompactCount } from '@/lib/utils';
 import type { Book, Storyline } from '@/types/models';
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import ChapterList from './ChapterList';
 
 export default function Sidebar({
@@ -38,17 +37,11 @@ export default function Sidebar({
 
     const handleAddChapter = async (storylineId: number) => {
         await onBeforeNavigate?.();
-
-        const storylineChapters = storylines.find((s) => s.id === storylineId)?.chapters?.length ?? 0;
-
-        router.post(store.url(book), {
-            title: `Chapter ${totalChapters + 1}`,
-            storyline_id: storylineId,
-        });
+        createChapter(book.id, storylineId, storylines);
     };
 
     return (
-        <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border-light bg-white">
+        <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border-light bg-surface-card">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border-subtle px-5 py-4">
                 <Link href={index.url()} className="text-[13px] font-semibold uppercase tracking-[0.05em] text-ink">

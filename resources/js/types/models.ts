@@ -109,6 +109,7 @@ export type Chapter = {
     status: ChapterStatus;
     word_count: number;
     summary: string | null;
+    notes: string | null;
     tension_score: number | null;
     hook_score: number | null;
     hook_type: HookType | null;
@@ -118,9 +119,19 @@ export type Chapter = {
     storyline?: Storyline;
     act?: Act;
     pov_character?: Character;
+    scenes?: Scene[];
     versions?: ChapterVersion[];
     current_version?: ChapterVersion;
     characters?: (Character & { pivot: CharacterChapterPivot })[];
+};
+
+export type Scene = {
+    id: number;
+    chapter_id: number;
+    title: string;
+    content: string | null;
+    sort_order: number;
+    word_count: number;
 };
 
 export type ChapterVersion = {
@@ -193,6 +204,13 @@ export type HealthMetrics = {
     attention_items: AttentionItem[];
 };
 export type SuggestedNext = { title: string; description: string; chapter_id?: number };
+
+export type WritingGoalData = {
+    daily_word_count_goal: number | null;
+    today_words: number;
+    streak: number;
+    goal_met_today: boolean;
+};
 
 export type NormalizePreviewResult = {
     chapters: {

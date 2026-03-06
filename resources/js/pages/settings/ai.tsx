@@ -65,7 +65,7 @@ function LicenseCard() {
     if (license.active) {
         return (
             <div className="flex items-center gap-3 rounded-md border border-border-light bg-surface px-4 py-3">
-                <span className="text-[#2E7D32]">●</span>
+                <span className="text-status-final">●</span>
                 <span className="text-[14px] font-medium text-ink">License active</span>
                 <span className="text-[13px] text-ink-muted">{license.masked_key}</span>
                 <button
@@ -208,7 +208,7 @@ function ProviderCard({ setting, locked }: { setting: ProviderSetting; locked: b
     const configured = setting.has_api_key || !setting.requires_api_key;
 
     return (
-        <div className={`rounded-lg border border-border bg-white ${locked ? 'opacity-50' : ''}`}>
+        <div className={`rounded-lg border border-border bg-surface-card ${locked ? 'opacity-50' : ''}`}>
             {/* Header row */}
             <div className="flex items-center justify-between px-5 py-4">
                 <div className="flex items-center gap-3">
@@ -222,7 +222,7 @@ function ProviderCard({ setting, locked }: { setting: ProviderSetting; locked: b
                     {!locked && (
                         <span
                             className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                                configured ? 'bg-[#E8F5E9] text-[#2E7D32]' : 'bg-neutral-bg text-ink-muted'
+                                configured ? 'bg-status-final/15 text-status-final' : 'bg-neutral-bg text-ink-muted'
                             }`}
                         >
                             {configured ? 'Configured' : 'Not configured'}
@@ -236,7 +236,7 @@ function ProviderCard({ setting, locked }: { setting: ProviderSetting; locked: b
                     onClick={handleToggle}
                     disabled={locked}
                     className={`relative inline-flex h-[22px] w-[40px] shrink-0 items-center rounded-full transition-colors ${
-                        enabled && !locked ? 'bg-accent' : 'bg-[#D4D1CA]'
+                        enabled && !locked ? 'bg-accent' : 'bg-status-draft'
                     }`}
                 >
                     <span
@@ -348,10 +348,10 @@ function ProviderCard({ setting, locked }: { setting: ProviderSetting; locked: b
                             </button>
 
                             {saveMessage && (
-                                <span className="text-[12px] font-medium text-[#2E7D32]">{saveMessage}</span>
+                                <span className="text-[12px] font-medium text-status-final">{saveMessage}</span>
                             )}
                             {testStatus.type === 'success' && (
-                                <span className="text-[12px] font-medium text-[#2E7D32]">{testStatus.message}</span>
+                                <span className="text-[12px] font-medium text-status-final">{testStatus.message}</span>
                             )}
                             {testStatus.type === 'error' && (
                                 <span className="text-[12px] font-medium text-danger">{testStatus.message}</span>
