@@ -249,7 +249,7 @@ export default function ChapterShow({
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
-            if (e.key === 'Tab' && e.shiftKey) {
+            if (e.key === '/' && e.shiftKey) {
                 e.preventDefault();
                 setIsPaletteOpen((prev) => !prev);
             }
@@ -290,6 +290,9 @@ export default function ChapterShow({
         await handleBeforeNavigate();
         createChapter(book.id, chapter.storyline_id, book.storylines ?? []);
     }, [book, chapter.storyline_id, handleBeforeNavigate]);
+
+    const closePalette = useCallback(() => setIsPaletteOpen(false), []);
+    const handlePaletteAddScene = useCallback(() => handleAddScene(scenes.length), [handleAddScene, scenes.length]);
 
     const povCharacterName = chapter.pov_character?.name ?? null;
     const timelineLabel = chapter.storyline?.timeline_label ?? null;
@@ -366,11 +369,10 @@ export default function ChapterShow({
                     <CommandPalette
                         editor={activeEditor}
                         isOpen={isPaletteOpen}
-                        onClose={() => setIsPaletteOpen(false)}
-                        licensed={isLicensed}
+                        onClose={closePalette}
                         onSplitChapter={handleSplitChapter}
                         onNewChapter={handleNewChapter}
-                        onAddScene={() => handleAddScene(scenes.length)}
+                        onAddScene={handlePaletteAddScene}
                     />
                 </div>
 

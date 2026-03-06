@@ -7,11 +7,10 @@ type PaletteItem = {
     label: string;
     shortcut?: string;
     section: string;
-    icon?: React.ReactNode;
+    icon: React.ReactNode;
+    iconColorClass?: string;
+    highlighted?: boolean;
     disabled?: boolean;
-    proBadge?: boolean;
-    aiTag?: boolean;
-    comingSoon?: boolean;
     action: () => void;
 };
 
@@ -19,18 +18,18 @@ export default function CommandPalette({
     editor,
     isOpen,
     onClose,
-    licensed,
     onSplitChapter,
     onNewChapter,
     onAddScene,
+    onEnterFocusMode,
 }: {
     editor: Editor | null;
     isOpen: boolean;
     onClose: () => void;
-    licensed: boolean;
     onSplitChapter: () => Promise<void>;
     onNewChapter: () => void;
     onAddScene?: () => void;
+    onEnterFocusMode?: () => void;
 }) {
     const [query, setQuery] = useState('');
     const [activeIndex, setActiveIndex] = useState(0);
@@ -46,12 +45,29 @@ export default function CommandPalette({
 
         return [
             {
+                id: 'focus-mode',
+                label: 'Enter Focus Mode',
+                section: 'Focus',
+                icon: (
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 3.5V1.5h3M9.5 1.5h3v3M12.5 10.5v2h-3M4.5 12.5h-3v-3" />
+                    </svg>
+                ),
+                action: () => {
+                    onClose();
+                    onEnterFocusMode?.();
+                },
+            },
+            {
                 id: 'bold',
                 label: 'Bold',
                 shortcut: '⌘B',
                 section: 'Text Style',
                 icon: (
-                    <span className="text-[11px] font-bold">B</span>
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
+                        <path d="M4 2.5h4a2.5 2.5 0 010 5H4V2.5z" />
+                        <path d="M4 7.5h4.5a2.5 2.5 0 010 5H4V7.5z" />
+                    </svg>
                 ),
                 action: run(() => editor!.chain().focus().toggleBold().run()),
             },
@@ -61,99 +77,61 @@ export default function CommandPalette({
                 shortcut: '⌘I',
                 section: 'Text Style',
                 icon: (
-                    <span className="text-[11px] italic">I</span>
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
+                        <path strokeLinecap="round" d="M8.5 2.5h-3M8.5 11.5h-3M9 2.5L5 11.5" />
+                    </svg>
                 ),
                 action: run(() => editor!.chain().focus().toggleItalic().run()),
             },
             {
-                id: 'underline',
-                label: 'Underline',
-                shortcut: '⌘U',
-                section: 'Text Style',
-                icon: (
-                    <span className="text-[11px] underline">U</span>
-                ),
-                action: run(() => editor!.chain().focus().toggleUnderline().run()),
-            },
-            {
-                id: 'strikethrough',
-                label: 'Strikethrough',
-                shortcut: '⌘⇧X',
-                section: 'Text Style',
-                icon: (
-                    <span className="text-[11px] line-through">S</span>
-                ),
-                action: run(() => editor!.chain().focus().toggleStrike().run()),
-            },
-            {
                 id: 'ai-generate',
                 label: 'Generate next paragraph',
+                shortcut: '⌘↵',
                 section: 'AI Generate',
-                aiTag: true,
-                disabled: !licensed,
-                proBadge: !licensed,
-                comingSoon: licensed,
+                iconColorClass: 'text-status-revised',
+                highlighted: true,
+                icon: (
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
+                        <path strokeLinecap="round" d="M2 3h10M2 6.5h10M2 10h5" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 9l2 2-2 2" />
+                    </svg>
+                ),
                 action: () => {},
             },
             {
                 id: 'ai-continue',
                 label: 'Continue from here',
+                shortcut: '⌘⇧↵',
                 section: 'AI Generate',
-                aiTag: true,
-                disabled: !licensed,
-                proBadge: !licensed,
-                comingSoon: licensed,
-                action: () => {},
-            },
-            {
-                id: 'ai-rewrite',
-                label: 'Rewrite selection',
-                section: 'AI Generate',
-                aiTag: true,
-                disabled: !licensed,
-                proBadge: !licensed,
-                comingSoon: licensed,
-                action: () => {},
-            },
-            {
-                id: 'ai-dialogue',
-                label: 'Suggest dialogue',
-                section: 'AI Generate',
-                aiTag: true,
-                disabled: !licensed,
-                proBadge: !licensed,
-                comingSoon: licensed,
-                action: () => {},
-            },
-            {
-                id: 'split-chapter',
-                label: 'New chapter from here',
-                section: 'Chapter',
+                iconColorClass: 'text-status-revised',
                 icon: (
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
+                        <path strokeLinecap="round" d="M2 3h10M2 6.5h7M2 10h4" />
+                        <circle cx={10} cy={10} r={2} />
                     </svg>
                 ),
-                action: run(() => { onSplitChapter(); }),
+                action: () => {},
             },
             {
                 id: 'new-chapter',
                 label: 'New chapter',
                 section: 'Chapter',
                 icon: (
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
+                        <path strokeLinecap="round" d="M7 3v8M3 7h8" />
                     </svg>
                 ),
-                action: run(() => { onNewChapter(); }),
+                action: run(() => {
+                    onNewChapter();
+                }),
             },
             {
                 id: 'new-scene',
-                label: 'Add scene below',
+                label: 'New scene',
                 section: 'Chapter',
                 icon: (
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
+                        <path strokeLinecap="round" d="M3 7h8" />
                     </svg>
                 ),
                 disabled: !onAddScene,
@@ -162,8 +140,21 @@ export default function CommandPalette({
                     onClose();
                 },
             },
+            {
+                id: 'split-chapter',
+                label: 'Make selection own scene',
+                section: 'Chapter',
+                icon: (
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 9V3m0 0L3 5m2-2l2 2M9 5v6m0 0l2-2m-2 2L7 9" />
+                    </svg>
+                ),
+                action: run(() => {
+                    onSplitChapter();
+                }),
+            },
         ];
-    }, [editor, licensed, onClose, onSplitChapter, onNewChapter, onAddScene]);
+    }, [editor, onClose, onSplitChapter, onNewChapter, onAddScene, onEnterFocusMode]);
 
     const filtered = useMemo(() => {
         if (!query.trim()) return items;
@@ -181,8 +172,6 @@ export default function CommandPalette({
         return map;
     }, [filtered]);
 
-    const flatItems = filtered;
-
     useEffect(() => {
         setActiveIndex(0);
     }, [query]);
@@ -197,22 +186,22 @@ export default function CommandPalette({
 
     const executeItem = useCallback(
         (index: number) => {
-            const item = flatItems[index];
-            if (item && !item.disabled && !item.comingSoon) {
+            const item = filtered[index];
+            if (item && !item.disabled) {
                 item.action();
             }
         },
-        [flatItems],
+        [filtered],
     );
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                setActiveIndex((prev) => (prev + 1) % flatItems.length);
+                setActiveIndex((prev) => (prev + 1) % filtered.length);
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
-                setActiveIndex((prev) => (prev - 1 + flatItems.length) % flatItems.length);
+                setActiveIndex((prev) => (prev - 1 + filtered.length) % filtered.length);
             } else if (e.key === 'Enter') {
                 e.preventDefault();
                 executeItem(activeIndex);
@@ -221,7 +210,7 @@ export default function CommandPalette({
                 onClose();
             }
         },
-        [activeIndex, flatItems.length, executeItem, onClose],
+        [activeIndex, filtered.length, executeItem, onClose],
     );
 
     // Scroll active item into view
@@ -236,98 +225,98 @@ export default function CommandPalette({
     return (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]" onClick={onClose}>
             <div
-                className="w-[320px] animate-in fade-in zoom-in-95 rounded-lg border border-border bg-surface-card shadow-lg duration-150"
+                className="w-[480px] overflow-hidden rounded-[12px] border border-border bg-surface-card shadow-[0_4px_6px_#1A1A1A0F,0_12px_32px_#1A1A1A1A]"
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={handleKeyDown}
             >
                 {/* Search input */}
-                <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
+                <div className="flex items-center gap-2 border-b border-border-subtle px-3 py-2.5">
                     <svg
                         className="h-3.5 w-3.5 shrink-0 text-ink-faint"
                         fill="none"
-                        viewBox="0 0 24 24"
+                        viewBox="0 0 14 14"
                         stroke="currentColor"
-                        strokeWidth={2}
+                        strokeWidth={1.2}
                     >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        <circle cx={6} cy={6} r={3.5} />
+                        <path strokeLinecap="round" d="M9 9l2.5 2.5" />
                     </svg>
                     <input
                         ref={inputRef}
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Search actions..."
-                        className="min-w-0 flex-1 bg-transparent text-xs text-ink placeholder:text-ink-faint focus:outline-none"
+                        placeholder="Search actions\u2026"
+                        className="min-w-0 flex-1 bg-transparent text-[13px] text-ink placeholder:text-ink-faint focus:outline-none"
                     />
-                    <kbd className="shrink-0 rounded border border-border bg-neutral-bg px-1.5 py-0.5 text-[10px] text-ink-muted">
-                        ⇧Tab
+                    <kbd className="shrink-0 rounded-[3px] border border-border bg-kbd-bg px-[5px] py-px text-[10px] leading-5 text-ink-faint">
+                        ⇧/
                     </kbd>
                 </div>
 
                 {/* Items list */}
-                <div ref={listRef} className="max-h-[320px] overflow-y-auto py-1.5">
-                    {flatItems.length === 0 && (
-                        <div className="px-3 py-4 text-center text-xs text-ink-faint">No matching actions</div>
+                <div ref={listRef} className="max-h-[320px] overflow-y-auto">
+                    {filtered.length === 0 && (
+                        <div className="px-3 py-4 text-center text-[13px] text-ink-faint">No matching actions</div>
                     )}
-                    {Array.from(sections.entries()).map(([section, sectionItems]) => (
-                        <div key={section}>
-                            <div className="px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-wider text-ink-faint">
-                                {section}
-                            </div>
-                            {sectionItems.map((item) => {
-                                const globalIndex = flatItems.indexOf(item);
-                                const isActive = globalIndex === activeIndex;
-                                const isDisabled = item.disabled || item.comingSoon;
+                    {Array.from(sections.entries()).map(([section, sectionItems], index) => {
+                        const isFirst = index === 0;
+                        const isAiOrChapter = section === 'AI Generate' || section === 'Chapter';
 
-                                return (
-                                    <button
-                                        key={item.id}
-                                        type="button"
-                                        data-index={globalIndex}
-                                        disabled={isDisabled}
-                                        onClick={() => executeItem(globalIndex)}
-                                        onMouseEnter={() => setActiveIndex(globalIndex)}
-                                        className={cn(
-                                            'flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-xs transition-colors',
-                                            isActive && !isDisabled && 'bg-neutral-bg',
-                                            isDisabled && 'pointer-events-none opacity-40',
-                                        )}
-                                    >
-                                        {/* Icon */}
-                                        <span className="flex h-5 w-5 shrink-0 items-center justify-center text-ink-muted">
-                                            {item.aiTag ? (
-                                                <span className="h-1.5 w-1.5 rounded-full bg-status-revised" />
-                                            ) : (
-                                                item.icon
+                        return (
+                            <div
+                                key={section}
+                                className={cn(
+                                    isFirst ? 'px-1 pt-2 pb-1' : 'border-t border-border-subtle px-1 py-1',
+                                    !isFirst && isAiOrChapter && 'pb-2',
+                                )}
+                            >
+                                <div
+                                    className={cn(
+                                        'flex items-center px-2 py-1 text-[10px] font-medium uppercase leading-3 tracking-[0.08em] text-section-header',
+                                        section === 'AI Generate' && 'gap-1.5',
+                                    )}
+                                >
+                                    {section === 'AI Generate' && (
+                                        <span className="h-[5px] w-[5px] rounded-full bg-status-revised" />
+                                    )}
+                                    {section}
+                                </div>
+                                {sectionItems.map((item) => {
+                                    const globalIndex = filtered.indexOf(item);
+                                    const isActive = globalIndex === activeIndex;
+                                    const isDisabled = item.disabled;
+
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            type="button"
+                                            data-index={globalIndex}
+                                            disabled={isDisabled}
+                                            onClick={() => executeItem(globalIndex)}
+                                            onMouseEnter={() => setActiveIndex(globalIndex)}
+                                            className={cn(
+                                                'flex w-full items-center gap-2 rounded-[5px] px-2 py-1.5 text-left text-[13px] leading-4',
+                                                isActive && !isDisabled && 'bg-neutral-bg',
+                                                !isActive && item.highlighted && 'bg-surface',
+                                                isDisabled && 'pointer-events-none opacity-40',
                                             )}
-                                        </span>
-
-                                        {/* Label */}
-                                        <span className="flex-1 text-ink">{item.label}</span>
-
-                                        {/* Badges */}
-                                        {item.comingSoon && (
-                                            <span className="rounded bg-ink-faint/10 px-1 py-0.5 text-[10px] text-ink-faint">
-                                                Soon
+                                        >
+                                            <span className={cn('h-3.5 w-3.5 shrink-0', item.iconColorClass ?? 'text-ink-muted')}>
+                                                {item.icon}
                                             </span>
-                                        )}
-                                        {item.proBadge && (
-                                            <span className="flex items-center gap-0.5 rounded bg-ink-faint/10 px-1 py-0.5 text-[10px] font-medium text-ink-faint">
-                                                <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                                                    <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-                                                    <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                                </svg>
-                                                PRO
-                                            </span>
-                                        )}
-                                        {item.shortcut && !item.proBadge && (
-                                            <kbd className="text-[10px] text-ink-faint">{item.shortcut}</kbd>
-                                        )}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    ))}
+                                            <span className="flex-1 text-ink">{item.label}</span>
+                                            {item.shortcut && (
+                                                <kbd className="rounded-[3px] border border-border bg-kbd-bg px-[5px] py-px text-[10px] leading-5 text-ink-muted">
+                                                    {item.shortcut}
+                                                </kbd>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>
