@@ -1,8 +1,11 @@
+import Kbd from '@/components/ui/Kbd';
 import { cn } from '@/lib/utils';
 import {
     ArrowRight,
     ArrowsOutLineVertical,
     CornersIn,
+    Keyboard,
+    Lock,
     MagnifyingGlass,
     Minus,
     NotePencil,
@@ -30,22 +33,28 @@ export default function CommandPalette({
     editor,
     isOpen,
     onClose,
-    onSplitChapter,
+    onSplitScene,
     onNewChapter,
     onAddScene,
     onEnterFocusMode,
     isFocusMode,
+    onToggleTypewriterMode,
+    isTypewriterMode,
     onToggleNotes,
+    licensed,
 }: {
     editor: Editor | null;
     isOpen: boolean;
     onClose: () => void;
-    onSplitChapter: () => Promise<void>;
+    onSplitScene: () => Promise<void>;
     onNewChapter: () => void;
     onAddScene?: () => void;
     onEnterFocusMode?: () => void;
     isFocusMode?: boolean;
+    onToggleTypewriterMode?: () => void;
+    isTypewriterMode?: boolean;
     onToggleNotes?: () => void;
+    licensed?: boolean;
 }) {
     const [query, setQuery] = useState('');
     const [activeIndex, setActiveIndex] = useState(0);
@@ -72,6 +81,16 @@ export default function CommandPalette({
                 },
             },
             {
+                id: 'typewriter-mode',
+                label: isTypewriterMode ? 'Leave Typewriter Mode' : 'Enter Typewriter Mode',
+                section: 'Focus',
+                icon: <Keyboard size={14} weight="regular" />,
+                action: () => {
+                    onClose();
+                    onToggleTypewriterMode?.();
+                },
+            },
+            {
                 id: 'bold',
                 label: 'Bold',
                 shortcut: '⌘B',
@@ -94,6 +113,7 @@ export default function CommandPalette({
                 section: 'AI Generate',
                 iconColorClass: 'text-status-revised',
                 highlighted: true,
+                disabled: !licensed,
                 icon: <Sparkle size={14} weight="fill" />,
                 action: () => {},
             },
@@ -103,6 +123,7 @@ export default function CommandPalette({
                 shortcut: '⌘⇧↵',
                 section: 'AI Generate',
                 iconColorClass: 'text-status-revised',
+                disabled: !licensed,
                 icon: <ArrowRight size={14} weight="regular" />,
                 action: () => {},
             },
@@ -132,7 +153,7 @@ export default function CommandPalette({
                 section: 'Chapter',
                 icon: <ArrowsOutLineVertical size={14} weight="regular" />,
                 action: run(() => {
-                    onSplitChapter();
+                    onSplitScene();
                 }),
             },
             {
@@ -146,7 +167,7 @@ export default function CommandPalette({
                 },
             },
         ];
-    }, [editor, onClose, onSplitChapter, onNewChapter, onAddScene, onEnterFocusMode, isFocusMode, onToggleNotes]);
+    }, [editor, onClose, onSplitScene, onNewChapter, onAddScene, onEnterFocusMode, isFocusMode, onToggleTypewriterMode, isTypewriterMode, onToggleNotes, licensed]);
 
     const filtered = useMemo(() => {
         if (!query.trim()) return items;
@@ -231,12 +252,10 @@ export default function CommandPalette({
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Search actions\u2026"
+                        placeholder={"Search actions\u2026"}
                         className="min-w-0 flex-1 bg-transparent text-[13px] text-ink placeholder:text-ink-faint focus:outline-none"
                     />
-                    <kbd className="shrink-0 rounded-[3px] border border-border bg-kbd-bg px-[5px] py-px font-sans text-[10px] leading-3 text-ink-faint">
-                        ⇧/
-                    </kbd>
+                    <Kbd keys="⇧/" />
                 </div>
 
                 {/* Items list */}
@@ -291,11 +310,13 @@ export default function CommandPalette({
                                                 {item.icon}
                                             </span>
                                             <span className="flex-1 text-ink">{item.label}</span>
-                                            {item.shortcut && (
-                                                <kbd className="rounded-[3px] border border-border bg-kbd-bg px-[5px] py-px font-sans text-[10px] leading-3 text-ink-muted">
-                                                    {item.shortcut}
-                                                </kbd>
+                                            {isDisabled && item.id.startsWith('ai-') && (
+                                                <span className="flex items-center gap-0.5 rounded bg-ink-faint/10 px-1 py-0.5 text-[10px] font-medium text-ink-faint">
+                                                    <Lock size={10} />
+                                                    PRO
+                                                </span>
                                             )}
+                                            {item.shortcut && <Kbd keys={item.shortcut} />}
                                         </button>
                                     );
                                 })}
