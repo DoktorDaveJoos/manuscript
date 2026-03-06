@@ -7,8 +7,9 @@ import { about as settingsAbout } from '@/actions/App/Http/Controllers/SettingsC
 import NavItem from '@/components/ui/NavItem';
 import { useLicense } from '@/hooks/useLicense';
 import { createChapter, formatCompactCount } from '@/lib/utils';
-import type { Book, Storyline } from '@/types/models';
+import type { Book, Scene, Storyline } from '@/types/models';
 import { Link, usePage } from '@inertiajs/react';
+import { GearSix, Lock, Rectangle, SquaresFour, Strategy, User } from '@phosphor-icons/react';
 import ChapterList from './ChapterList';
 import TrashBin from './TrashBin';
 
@@ -16,12 +17,24 @@ export default function Sidebar({
     book,
     storylines,
     activeChapterId,
+    activeChapterTitle,
+    activeChapterWordCount,
     onBeforeNavigate,
+    activeScenes,
+    onSceneRename,
+    onSceneDelete,
+    onSceneReorder,
 }: {
     book: Book;
     storylines: Storyline[];
     activeChapterId?: number;
+    activeChapterTitle?: string;
+    activeChapterWordCount?: number;
     onBeforeNavigate?: () => Promise<void>;
+    activeScenes?: Scene[];
+    onSceneRename?: (sceneId: number, newTitle: string) => void;
+    onSceneDelete?: (sceneId: number) => void;
+    onSceneReorder?: (orderedIds: number[]) => void;
 }) {
     const { isActive: isLicensed } = useLicense();
     const currentUrl = usePage().url;
@@ -31,7 +44,8 @@ export default function Sidebar({
     const isCanvas = currentUrl.endsWith('/canvas');
 
     const totalWords = storylines.reduce(
-        (sum, s) => sum + (s.chapters?.reduce((c, ch) => c + ch.word_count, 0) ?? 0),
+        (sum, s) => sum + (s.chapters?.reduce((c, ch) =>
+            c + (ch.id === activeChapterId && activeChapterWordCount != null ? activeChapterWordCount : ch.word_count), 0) ?? 0),
         0,
     );
     const totalChapters = storylines.reduce((sum, s) => sum + (s.chapters?.length ?? 0), 0);
@@ -49,10 +63,7 @@ export default function Sidebar({
                     Manuscript
                 </Link>
                 <Link href={settingsAbout.url()} className="text-ink-muted hover:text-ink transition-colors">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-                        <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
+                    <GearSix size={16} weight="regular" />
                 </Link>
             </div>
 
@@ -63,12 +74,7 @@ export default function Sidebar({
                     isActive={isDashboard}
                     href={showDashboard.url(book)}
                     icon={
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
-                            <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
-                            <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
-                            <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
-                            <rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
-                        </svg>
+                        <SquaresFour size={16} weight="regular" className="shrink-0" />
                     }
                 />
                 <NavItem
@@ -76,10 +82,7 @@ export default function Sidebar({
                     href={indexCharacters.url(book)}
                     isActive={isCharacters}
                     icon={
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
-                            <circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.5" />
-                            <path d="M3 14c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
+                        <User size={16} weight="regular" className="shrink-0" />
                     }
                 />
                 <NavItem
@@ -87,9 +90,7 @@ export default function Sidebar({
                     href={indexPlot.url(book)}
                     isActive={isPlot}
                     icon={
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
-                            <path d="M2 8c1.5-3 3-4.5 4.5-4.5S9 5 8 8s-1 4.5.5 4.5S12 11 14 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
+                        <Strategy size={16} weight="regular" className="shrink-0" />
                     }
                 />
                 <NavItem
@@ -98,16 +99,11 @@ export default function Sidebar({
                     disabled={!isLicensed}
                     isActive={isCanvas}
                     icon={
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
-                            <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
-                        </svg>
+                        <Rectangle size={16} weight="regular" className="shrink-0" />
                     }
                     suffix={
                         !isLicensed ? (
-                            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="ml-auto shrink-0 text-ink-faint">
-                                <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-                                <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                            </svg>
+                            <Lock size={12} weight="regular" className="ml-auto shrink-0 text-ink-faint" />
                         ) : undefined
                     }
                 />
@@ -122,8 +118,14 @@ export default function Sidebar({
                     storylines={storylines}
                     bookId={book.id}
                     activeChapterId={activeChapterId}
+                    activeChapterTitle={activeChapterTitle}
+                    activeChapterWordCount={activeChapterWordCount}
                     onBeforeNavigate={onBeforeNavigate}
                     onAddChapter={handleAddChapter}
+                    activeScenes={activeScenes}
+                    onSceneRename={onSceneRename}
+                    onSceneDelete={onSceneDelete}
+                    onSceneReorder={onSceneReorder}
                 />
             </div>
 

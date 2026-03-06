@@ -1,4 +1,5 @@
 import type { StoryBible } from '@/types/models';
+import { CaretRight } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -36,15 +37,11 @@ export default function StoryBibleSummary({ storyBible }: { storyBible: StoryBib
                 onClick={() => setExpanded(!expanded)}
                 className="flex items-center gap-2 text-left"
             >
-                <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 16 16"
-                    fill="none"
+                <CaretRight
+                    size={12}
+                    weight="bold"
                     className={`text-ink-muted transition-transform ${expanded ? 'rotate-90' : ''}`}
-                >
-                    <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                />
                 <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
                     Story Bible
                 </span>

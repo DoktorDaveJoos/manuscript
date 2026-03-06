@@ -2,25 +2,13 @@ import { index as trashIndex, restore as trashRestore, empty as trashEmpty } fro
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { TrashItem } from '@/types/models';
 import { router } from '@inertiajs/react';
+import { CaretRight, Circle, File, TextAlignLeft, Trash } from '@phosphor-icons/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const typeIcon: Record<TrashItem['type'], React.ReactNode> = {
-    storyline: (
-        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" className="shrink-0">
-            <circle cx="4" cy="4" r="3" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
-    ),
-    chapter: (
-        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" className="shrink-0">
-            <path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M6 5h4M6 8h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-        </svg>
-    ),
-    scene: (
-        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" className="shrink-0">
-            <path d="M3 4h10M3 8h7M3 12h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-    ),
+    storyline: <Circle size={8} weight="regular" className="shrink-0" />,
+    chapter: <File size={10} weight="regular" className="shrink-0" />,
+    scene: <TextAlignLeft size={10} weight="regular" className="shrink-0" />,
 };
 
 export default function TrashBin({ bookId }: { bookId: number }) {
@@ -81,14 +69,9 @@ export default function TrashBin({ bookId }: { bookId: number }) {
                 className="flex w-full items-center gap-2 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint transition-colors hover:text-ink-muted"
             >
                 <span className={`flex shrink-0 items-center transition-transform ${isOpen ? 'rotate-90' : ''}`}>
-                    <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
-                        <path d="M2 1l4 3-4 3V1z" />
-                    </svg>
+                    <CaretRight size={8} weight="bold" />
                 </span>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0">
-                    <path d="M3 5h10l-.7 8.1a1 1 0 01-1 .9H4.7a1 1 0 01-1-.9L3 5z" stroke="currentColor" strokeWidth="1.3" />
-                    <path d="M2 5h12M6 2h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                </svg>
+                <Trash size={14} weight="regular" className="shrink-0" />
                 Trash
                 {items.length > 0 && (
                     <span className="ml-auto rounded-full bg-ink/[0.06] px-1.5 py-px text-[10px] font-medium tabular-nums text-ink-faint">

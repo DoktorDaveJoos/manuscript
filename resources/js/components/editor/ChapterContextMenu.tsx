@@ -1,6 +1,7 @@
 import { reorder, updateStatus } from '@/actions/App/Http/Controllers/ChapterController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Chapter, ChapterStatus, Storyline } from '@/types/models';
+import { ArrowRight, CaretRight, Circle, PencilSimple, Trash } from '@phosphor-icons/react';
 import { router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -86,9 +87,7 @@ export default function ChapterContextMenu({
                     }}
                     className={itemClass}
                 >
-                    <svg className="shrink-0 text-ink-muted" width="15" height="15" viewBox="0 0 16 16" fill="none">
-                        <path d="M11.5 2.5l2 2L5 13H3v-2l8.5-8.5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    <PencilSimple size={15} className="shrink-0 text-ink-muted" />
                     Rename
                 </button>
 
@@ -99,15 +98,10 @@ export default function ChapterContextMenu({
                 >
                     <button type="button" className={`${itemClass} justify-between`}>
                         <span className="flex items-center gap-2.5">
-                            <svg className="shrink-0 text-ink-muted" width="15" height="15" viewBox="0 0 16 16" fill="none">
-                                <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" />
-                                <circle cx="8" cy="8" r="2" fill="currentColor" />
-                            </svg>
+                            <Circle size={15} weight="fill" className="shrink-0 text-ink-muted" />
                             Status
                         </span>
-                        <svg className="h-2.5 w-2.5 text-ink-faint" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                        </svg>
+                        <CaretRight size={10} weight="bold" className="text-ink-faint" />
                     </button>
                     {statusOpen && (
                         <div className={`absolute left-full top-0 ml-1 w-[160px] rounded-lg bg-surface-card ${menuShadow}`}>
@@ -136,14 +130,10 @@ export default function ChapterContextMenu({
                     >
                         <button type="button" className={`${itemClass} justify-between`}>
                             <span className="flex items-center gap-2.5">
-                                <svg className="shrink-0 text-ink-muted" width="15" height="15" viewBox="0 0 16 16" fill="none">
-                                    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
+                                <ArrowRight size={15} className="shrink-0 text-ink-muted" />
                                 Move to
                             </span>
-                            <svg className="h-2.5 w-2.5 text-ink-faint" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                            </svg>
+                            <CaretRight size={10} weight="bold" className="text-ink-faint" />
                         </button>
                         {moveOpen && (
                             <div className={`absolute left-full top-0 ml-1 w-[180px] rounded-lg bg-surface-card ${menuShadow}`}>
@@ -170,9 +160,7 @@ export default function ChapterContextMenu({
                     }}
                     className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] font-medium leading-[18px] text-delete transition-colors hover:bg-neutral-bg"
                 >
-                    <svg className="shrink-0" width="15" height="15" viewBox="0 0 16 16" fill="none">
-                        <path d="M3 4h10M6 4V3h4v1M5 4l.5 9h5L11 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    <Trash size={15} className="shrink-0" />
                     Delete
                 </button>
             </div>

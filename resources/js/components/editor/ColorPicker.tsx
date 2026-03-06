@@ -1,3 +1,5 @@
+import { Check } from '@phosphor-icons/react';
+
 const PRESET_COLORS = [
     '#C44D3C',
     '#D97A35',
@@ -32,9 +34,7 @@ export default function ColorPicker({
                     style={{ backgroundColor: color }}
                 >
                     {value === color && (
-                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
+                        <Check size={12} weight="bold" className="text-white" />
                     )}
                 </button>
             ))}

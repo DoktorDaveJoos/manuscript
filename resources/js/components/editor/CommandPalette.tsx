@@ -1,4 +1,16 @@
 import { cn } from '@/lib/utils';
+import {
+    ArrowRight,
+    ArrowsOutLineVertical,
+    CornersIn,
+    MagnifyingGlass,
+    Minus,
+    NotePencil,
+    Plus,
+    Sparkle,
+    TextB,
+    TextItalic,
+} from '@phosphor-icons/react';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -22,6 +34,8 @@ export default function CommandPalette({
     onNewChapter,
     onAddScene,
     onEnterFocusMode,
+    isFocusMode,
+    onToggleNotes,
 }: {
     editor: Editor | null;
     isOpen: boolean;
@@ -30,6 +44,8 @@ export default function CommandPalette({
     onNewChapter: () => void;
     onAddScene?: () => void;
     onEnterFocusMode?: () => void;
+    isFocusMode?: boolean;
+    onToggleNotes?: () => void;
 }) {
     const [query, setQuery] = useState('');
     const [activeIndex, setActiveIndex] = useState(0);
@@ -46,13 +62,10 @@ export default function CommandPalette({
         return [
             {
                 id: 'focus-mode',
-                label: 'Enter Focus Mode',
+                label: isFocusMode ? 'Leave Focus Mode' : 'Enter Focus Mode',
+                shortcut: isFocusMode ? 'Esc' : undefined,
                 section: 'Focus',
-                icon: (
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 3.5V1.5h3M9.5 1.5h3v3M12.5 10.5v2h-3M4.5 12.5h-3v-3" />
-                    </svg>
-                ),
+                icon: <CornersIn size={14} weight="regular" />,
                 action: () => {
                     onClose();
                     onEnterFocusMode?.();
@@ -63,12 +76,7 @@ export default function CommandPalette({
                 label: 'Bold',
                 shortcut: '⌘B',
                 section: 'Text Style',
-                icon: (
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
-                        <path d="M4 2.5h4a2.5 2.5 0 010 5H4V2.5z" />
-                        <path d="M4 7.5h4.5a2.5 2.5 0 010 5H4V7.5z" />
-                    </svg>
-                ),
+                icon: <TextB size={14} weight="bold" />,
                 action: run(() => editor!.chain().focus().toggleBold().run()),
             },
             {
@@ -76,11 +84,7 @@ export default function CommandPalette({
                 label: 'Italic',
                 shortcut: '⌘I',
                 section: 'Text Style',
-                icon: (
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
-                        <path strokeLinecap="round" d="M8.5 2.5h-3M8.5 11.5h-3M9 2.5L5 11.5" />
-                    </svg>
-                ),
+                icon: <TextItalic size={14} weight="regular" />,
                 action: run(() => editor!.chain().focus().toggleItalic().run()),
             },
             {
@@ -90,12 +94,7 @@ export default function CommandPalette({
                 section: 'AI Generate',
                 iconColorClass: 'text-status-revised',
                 highlighted: true,
-                icon: (
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
-                        <path strokeLinecap="round" d="M2 3h10M2 6.5h10M2 10h5" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 9l2 2-2 2" />
-                    </svg>
-                ),
+                icon: <Sparkle size={14} weight="fill" />,
                 action: () => {},
             },
             {
@@ -104,23 +103,14 @@ export default function CommandPalette({
                 shortcut: '⌘⇧↵',
                 section: 'AI Generate',
                 iconColorClass: 'text-status-revised',
-                icon: (
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
-                        <path strokeLinecap="round" d="M2 3h10M2 6.5h7M2 10h4" />
-                        <circle cx={10} cy={10} r={2} />
-                    </svg>
-                ),
+                icon: <ArrowRight size={14} weight="regular" />,
                 action: () => {},
             },
             {
                 id: 'new-chapter',
                 label: 'New chapter',
                 section: 'Chapter',
-                icon: (
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
-                        <path strokeLinecap="round" d="M7 3v8M3 7h8" />
-                    </svg>
-                ),
+                icon: <Plus size={14} weight="regular" />,
                 action: run(() => {
                     onNewChapter();
                 }),
@@ -129,11 +119,7 @@ export default function CommandPalette({
                 id: 'new-scene',
                 label: 'New scene',
                 section: 'Chapter',
-                icon: (
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
-                        <path strokeLinecap="round" d="M3 7h8" />
-                    </svg>
-                ),
+                icon: <Minus size={14} weight="regular" />,
                 disabled: !onAddScene,
                 action: () => {
                     onAddScene?.();
@@ -144,17 +130,23 @@ export default function CommandPalette({
                 id: 'split-chapter',
                 label: 'Make selection own scene',
                 section: 'Chapter',
-                icon: (
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={1.2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 9V3m0 0L3 5m2-2l2 2M9 5v6m0 0l2-2m-2 2L7 9" />
-                    </svg>
-                ),
+                icon: <ArrowsOutLineVertical size={14} weight="regular" />,
                 action: run(() => {
                     onSplitChapter();
                 }),
             },
+            {
+                id: 'toggle-notes',
+                label: 'Toggle Chapter Notes',
+                section: 'Chapter',
+                icon: <NotePencil size={14} weight="regular" />,
+                action: () => {
+                    onToggleNotes?.();
+                    onClose();
+                },
+            },
         ];
-    }, [editor, onClose, onSplitChapter, onNewChapter, onAddScene, onEnterFocusMode]);
+    }, [editor, onClose, onSplitChapter, onNewChapter, onAddScene, onEnterFocusMode, isFocusMode, onToggleNotes]);
 
     const filtered = useMemo(() => {
         if (!query.trim()) return items;
@@ -198,9 +190,11 @@ export default function CommandPalette({
         (e: React.KeyboardEvent) => {
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
+                if (filtered.length === 0) return;
                 setActiveIndex((prev) => (prev + 1) % filtered.length);
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
+                if (filtered.length === 0) return;
                 setActiveIndex((prev) => (prev - 1 + filtered.length) % filtered.length);
             } else if (e.key === 'Enter') {
                 e.preventDefault();
@@ -223,7 +217,7 @@ export default function CommandPalette({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-surface/40 pt-[20vh]" onClick={onClose}>
             <div
                 className="w-[480px] overflow-hidden rounded-[12px] border border-border bg-surface-card shadow-[0_4px_6px_#1A1A1A0F,0_12px_32px_#1A1A1A1A]"
                 onClick={(e) => e.stopPropagation()}
@@ -231,16 +225,7 @@ export default function CommandPalette({
             >
                 {/* Search input */}
                 <div className="flex items-center gap-2 border-b border-border-subtle px-3 py-2.5">
-                    <svg
-                        className="h-3.5 w-3.5 shrink-0 text-ink-faint"
-                        fill="none"
-                        viewBox="0 0 14 14"
-                        stroke="currentColor"
-                        strokeWidth={1.2}
-                    >
-                        <circle cx={6} cy={6} r={3.5} />
-                        <path strokeLinecap="round" d="M9 9l2.5 2.5" />
-                    </svg>
+                    <MagnifyingGlass size={14} weight="regular" className="shrink-0 text-ink-faint" />
                     <input
                         ref={inputRef}
                         type="text"
@@ -249,13 +234,13 @@ export default function CommandPalette({
                         placeholder="Search actions\u2026"
                         className="min-w-0 flex-1 bg-transparent text-[13px] text-ink placeholder:text-ink-faint focus:outline-none"
                     />
-                    <kbd className="shrink-0 rounded-[3px] border border-border bg-kbd-bg px-[5px] py-px text-[10px] leading-5 text-ink-faint">
+                    <kbd className="shrink-0 rounded-[3px] border border-border bg-kbd-bg px-[5px] py-px font-sans text-[10px] leading-3 text-ink-faint">
                         ⇧/
                     </kbd>
                 </div>
 
                 {/* Items list */}
-                <div ref={listRef} className="max-h-[320px] overflow-y-auto">
+                <div ref={listRef}>
                     {filtered.length === 0 && (
                         <div className="px-3 py-4 text-center text-[13px] text-ink-faint">No matching actions</div>
                     )}
@@ -273,7 +258,7 @@ export default function CommandPalette({
                             >
                                 <div
                                     className={cn(
-                                        'flex items-center px-2 py-1 text-[10px] font-medium uppercase leading-3 tracking-[0.08em] text-section-header',
+                                        'flex items-center px-2 pt-1 pb-1.5 text-[10px] font-medium uppercase leading-3 tracking-[0.08em] text-section-header',
                                         section === 'AI Generate' && 'gap-1.5',
                                     )}
                                 >
@@ -296,7 +281,7 @@ export default function CommandPalette({
                                             onClick={() => executeItem(globalIndex)}
                                             onMouseEnter={() => setActiveIndex(globalIndex)}
                                             className={cn(
-                                                'flex w-full items-center gap-2 rounded-[5px] px-2 py-1.5 text-left text-[13px] leading-4',
+                                                'flex w-full items-center gap-2 rounded-[5px] px-2 py-2 text-left text-[13px] leading-4',
                                                 isActive && !isDisabled && 'bg-neutral-bg',
                                                 !isActive && item.highlighted && 'bg-surface',
                                                 isDisabled && 'pointer-events-none opacity-40',
@@ -307,7 +292,7 @@ export default function CommandPalette({
                                             </span>
                                             <span className="flex-1 text-ink">{item.label}</span>
                                             {item.shortcut && (
-                                                <kbd className="rounded-[3px] border border-border bg-kbd-bg px-[5px] py-px text-[10px] leading-5 text-ink-muted">
+                                                <kbd className="rounded-[3px] border border-border bg-kbd-bg px-[5px] py-px font-sans text-[10px] leading-3 text-ink-muted">
                                                     {item.shortcut}
                                                 </kbd>
                                             )}

@@ -1,3 +1,4 @@
+import { UploadSimple } from '@phosphor-icons/react';
 import { useCallback, useRef, useState, type DragEvent } from 'react';
 
 export default function DropZone({ onFiles }: { onFiles: (files: File[]) => void }) {
@@ -29,16 +30,7 @@ export default function DropZone({ onFiles }: { onFiles: (files: File[]) => void
                 dragging ? 'border-ink-muted bg-neutral-bg/50' : 'border-border-drop'
             }`}
         >
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <path
-                    d="M16 22V10m0 0l-5 5m5-5l5 5"
-                    stroke="#B5B0A6"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
-                <path d="M6 22h20" stroke="#B5B0A6" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
+            <UploadSimple size={32} className="text-[#B5B0A6]" />
             <div className="flex flex-col items-center gap-1">
                 <span className="text-sm font-medium leading-[18px] text-ink">Drop .docx files here</span>
                 <span className="text-[13px] leading-4 text-ink-muted">

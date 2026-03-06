@@ -1,3 +1,4 @@
+import { DotsThreeVertical, Lock } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 
 export default function TextActionsDropdown({
@@ -38,11 +39,7 @@ export default function TextActionsDropdown({
                 title="More actions"
                 className="flex h-7 w-7 items-center justify-center rounded text-xs text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
             >
-                <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
-                    <circle cx="5" cy="12" r="2" />
-                    <circle cx="12" cy="12" r="2" />
-                    <circle cx="19" cy="12" r="2" />
-                </svg>
+                <DotsThreeVertical size={14} weight="bold" />
             </button>
 
             {open && (
@@ -78,10 +75,7 @@ export default function TextActionsDropdown({
                                 </span>
                                 {!licensed && (
                                     <span className="flex items-center gap-0.5 rounded bg-ink-faint/10 px-1 py-0.5 text-[10px] font-medium text-ink-faint">
-                                        <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                                            <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-                                            <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                        </svg>
+                                        <Lock size={10} />
                                         PRO
                                     </span>
                                 )}

@@ -3,6 +3,7 @@ import ProFeatureLock from '@/components/ui/ProFeatureLock';
 import { getXsrfToken } from '@/lib/csrf';
 import { cn } from '@/lib/utils';
 import type { Book, Chapter, Character, CharacterChapterPivot, CharacterRole } from '@/types/models';
+import { CaretLeft, CaretRight, Lock, PaperPlaneTilt, Sparkle } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 type ChapterCharacter = Character & { pivot: CharacterChapterPivot };
@@ -62,35 +63,19 @@ function CharacterRow({ character }: { character: ChapterCharacter }) {
 }
 
 function CollapseIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-    );
+    return <CaretRight size={14} weight="bold" />;
 }
 
 function ExpandIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M9 3l-4 4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-    );
+    return <CaretLeft size={14} weight="bold" />;
 }
 
 function SparkleIcon() {
-    return (
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M8 1v3M8 12v3M1 8h3M12 8h3M3.5 3.5l2 2M10.5 10.5l2 2M12.5 3.5l-2 2M5.5 10.5l-2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-    );
+    return <Sparkle size={16} weight="fill" />;
 }
 
 function SendIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M12 2L6 8M12 2l-4 10-2-5-5-2 10-4z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-    );
+    return <PaperPlaneTilt size={14} weight="fill" />;
 }
 
 export default function AiPanel({
@@ -147,10 +132,7 @@ export default function AiPanel({
                             {licensed ? (
                                 <span className="size-1.5 rounded-full bg-ai-green" />
                             ) : (
-                                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="text-ink-faint">
-                                    <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-                                    <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                </svg>
+                                <Lock size={12} className="text-ink-faint" />
                             )}
                         </div>
                         <button
@@ -303,10 +285,7 @@ export default function AiPanel({
                             <span className="size-1.5 rounded-full bg-ai-green" />
                         </>
                     ) : (
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="text-ink-faint">
-                            <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-                            <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
+                        <Lock size={14} className="text-ink-faint" />
                     )}
                 </button>
             )}

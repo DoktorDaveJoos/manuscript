@@ -1,8 +1,9 @@
 import { show } from '@/actions/App/Http/Controllers/ChapterController';
 import { formatCompactCount } from '@/lib/utils';
 import type { Chapter, ChapterStatus } from '@/types/models';
-import { router } from '@inertiajs/react';
 import type { DraggableSyntheticListeners } from '@dnd-kit/core';
+import { router } from '@inertiajs/react';
+import { CaretRight, Circle, DotsSixVertical } from '@phosphor-icons/react';
 import { forwardRef } from 'react';
 
 export const statusDot: Record<ChapterStatus, string> = {
@@ -11,22 +12,29 @@ export const statusDot: Record<ChapterStatus, string> = {
     final: 'bg-status-final',
 };
 
+export const statusDotColor: Record<ChapterStatus, string> = {
+    draft: 'text-status-draft',
+    revised: 'text-status-revised',
+    final: 'text-status-final',
+};
+
 type ChapterListItemProps = {
     chapter: Chapter;
     bookId: number;
     index: number;
     isActive: boolean;
+    displayTitle?: string;
+    wordCount?: number;
     onBeforeNavigate?: () => Promise<void>;
     onContextMenu?: (e: React.MouseEvent) => void;
     dragListeners?: DraggableSyntheticListeners;
     isDragging?: boolean;
-    hasMultipleScenes?: boolean;
     isExpanded?: boolean;
     onToggleExpand?: () => void;
 };
 
 const ChapterListItem = forwardRef<HTMLButtonElement, ChapterListItemProps>(function ChapterListItem(
-    { chapter, bookId, index, isActive, onBeforeNavigate, onContextMenu, dragListeners, isDragging, hasMultipleScenes, isExpanded, onToggleExpand },
+    { chapter, bookId, index, isActive, displayTitle, wordCount, onBeforeNavigate, onContextMenu, dragListeners, isDragging, isExpanded, onToggleExpand },
     ref,
 ) {
     const handleClick = async () => {
@@ -43,13 +51,13 @@ const ChapterListItem = forwardRef<HTMLButtonElement, ChapterListItemProps>(func
             type="button"
             onClick={handleClick}
             onContextMenu={onContextMenu}
-            className={`group flex w-full items-center gap-1.5 rounded-[5px] ${isActive ? 'px-2' : 'px-2.5'} py-1.5 text-left text-[13px] leading-4 transition-colors ${
+            className={`group relative flex w-full items-center gap-1.5 rounded-[5px] ${isActive ? 'px-2' : 'px-2.5'} py-1.5 text-left text-[13px] leading-4 transition-colors ${
                 isDragging ? 'opacity-50' : ''
             } ${isActive ? 'bg-ink text-surface' : 'text-ink-soft hover:bg-ink/5 hover:text-ink'}`}
         >
-            {/* Chevron + Status Dot group */}
-            <span className="flex shrink-0 items-center gap-[3px]">
-                {hasMultipleScenes && (
+            {/* Chevron + Status Dot / Drag handle area */}
+            <span className="relative flex shrink-0 items-center" {...dragListeners}>
+                <span className="flex items-center gap-1.5 transition-opacity group-hover:opacity-0">
                     <span
                         role="button"
                         tabIndex={-1}
@@ -57,54 +65,26 @@ const ChapterListItem = forwardRef<HTMLButtonElement, ChapterListItemProps>(func
                             e.stopPropagation();
                             onToggleExpand?.();
                         }}
-                        className={`flex items-center transition-transform ${isExpanded ? 'rotate-90' : ''} ${isActive ? 'text-white/50' : 'text-ink-faint'}`}
+                        className={`flex items-center transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''} ${isActive ? 'text-white/70' : 'text-ink-faint'}`}
                     >
-                        <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
-                            <path d="M2 1l4 3-4 3V1z" />
-                        </svg>
+                        <CaretRight size={8} weight="bold" />
                     </span>
-                )}
-                <span className={`inline-block size-[7px] shrink-0 rounded-full ${statusDot[chapter.status]}`} />
-            </span>
-            {/* Drag handle */}
-            <span
-                {...dragListeners}
-                className={`flex shrink-0 cursor-grab items-center text-ink-faint opacity-0 transition-opacity active:cursor-grabbing group-hover:opacity-100 ${
-                    isActive ? 'text-white/40' : ''
-                }`}
-            >
-                <svg width="6" height="10" viewBox="0 0 6 10" fill="currentColor">
-                    <circle cx="1" cy="1" r="1" />
-                    <circle cx="5" cy="1" r="1" />
-                    <circle cx="1" cy="5" r="1" />
-                    <circle cx="5" cy="5" r="1" />
-                    <circle cx="1" cy="9" r="1" />
-                    <circle cx="5" cy="9" r="1" />
-                </svg>
+                    <Circle size={6} weight="fill" className={`shrink-0 ${statusDotColor[chapter.status]}`} />
+                </span>
+                <span
+                    className={`pointer-events-none absolute inset-0 flex cursor-grab items-center justify-center opacity-0 transition-opacity active:cursor-grabbing group-hover:opacity-100 ${
+                        isActive ? 'text-white/40' : 'text-ink-faint'
+                    }`}
+                >
+                    <DotsSixVertical size={12} weight="regular" />
+                </span>
             </span>
             <span className="min-w-0 flex-1 truncate">
-                <span className={isActive ? 'text-white/70' : 'text-ink-faint'}>{index}.</span> {chapter.title}
+                {index}. {displayTitle ?? chapter.title}
             </span>
             <span className={`shrink-0 text-[11px] ${isActive ? 'text-white/50' : 'text-ink-faint'}`}>
-                {formatCompactCount(chapter.word_count)}
+                {formatCompactCount(wordCount ?? chapter.word_count)}
             </span>
-            {isActive && (
-                <span
-                    role="button"
-                    tabIndex={-1}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onContextMenu?.(e);
-                    }}
-                    className="shrink-0 text-white/50 hover:text-white/70"
-                >
-                    <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor">
-                        <circle cx="3.5" cy="7.5" r="1.5" />
-                        <circle cx="7.5" cy="7.5" r="1.5" />
-                        <circle cx="11.5" cy="7.5" r="1.5" />
-                    </svg>
-                </span>
-            )}
         </button>
     );
 });

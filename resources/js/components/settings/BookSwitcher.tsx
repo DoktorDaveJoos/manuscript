@@ -1,4 +1,5 @@
 import { index as bookSettingsIndex } from '@/actions/App/Http/Controllers/BookSettingsController';
+import { CaretUpDown, Check } from '@phosphor-icons/react';
 import { router } from '@inertiajs/react';
 import { useState, useRef, useEffect } from 'react';
 
@@ -38,16 +39,7 @@ export default function BookSwitcher({
                 className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-faint transition-colors hover:bg-neutral-bg"
             >
                 <span className="truncate">{currentBook.title}</span>
-                <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    className="shrink-0"
-                >
-                    <path d="M5.5 3.5L8 1L10.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M5.5 12.5L8 15L10.5 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <CaretUpDown size={12} weight="bold" className="shrink-0" />
             </button>
 
             {open && books.length > 1 && (
@@ -59,15 +51,11 @@ export default function BookSwitcher({
                             onClick={() => switchBook(book)}
                             className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
                         >
-                            <svg
-                                width="12"
-                                height="12"
-                                viewBox="0 0 16 16"
-                                fill="none"
+                            <Check
+                                size={12}
+                                weight="bold"
                                 className={`shrink-0 ${book.id === currentBook.id ? 'opacity-100' : 'opacity-0'}`}
-                            >
-                                <path d="M3 8.5L6.5 12L13 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
+                            />
                             <span className="truncate">{book.title}</span>
                         </button>
                     ))}

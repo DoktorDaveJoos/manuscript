@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import type { Chapter } from '@/types/models';
+import { ClockCounterClockwise, NotePencil } from '@phosphor-icons/react';
 import StatusBadge from './StatusBadge';
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
@@ -13,6 +14,7 @@ const saveStatusLabel: Record<SaveStatus, string> = {
 
 export default function EditorBar({
     chapter,
+    chapterTitle,
     storylineName,
     wordCount,
     versionCount,
@@ -23,6 +25,7 @@ export default function EditorBar({
     hasNotes,
 }: {
     chapter: Chapter;
+    chapterTitle: string;
     storylineName: string;
     wordCount: number;
     versionCount: number;
@@ -38,7 +41,7 @@ export default function EditorBar({
                 <span className="flex items-center gap-1.5 text-sm">
                     <span className="text-ink-faint">{storylineName}</span>
                     <span className="text-ink-faint">/</span>
-                    <span className="text-ink">{chapter.title}</span>
+                    <span className="text-ink">{chapterTitle}</span>
                 </span>
                 <StatusBadge status={chapter.status} />
             </div>
@@ -58,9 +61,7 @@ export default function EditorBar({
                         isNotesOpen ? 'bg-neutral-bg text-ink' : 'text-ink-muted',
                     )}
                 >
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
+                    <NotePencil size={12} />
                     Notes
                     {hasNotes && !isNotesOpen && (
                         <span className="h-1.5 w-1.5 rounded-full bg-ink-muted" />
@@ -71,9 +72,7 @@ export default function EditorBar({
                     onClick={onVersionClick}
                     className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
                 >
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <ClockCounterClockwise size={12} />
                     v{versionCount}
                 </button>
                 <kbd className="rounded border border-border bg-neutral-bg px-1.5 py-0.5 text-[10px] text-ink-muted">
