@@ -1,0 +1,62 @@
+import { useCallback, useRef, useState, type DragEvent } from 'react';
+
+export default function DropZone({ onFiles }: { onFiles: (files: File[]) => void }) {
+    const [dragging, setDragging] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const handleDrop = useCallback(
+        (e: DragEvent) => {
+            e.preventDefault();
+            setDragging(false);
+            const files = Array.from(e.dataTransfer.files).filter((f) =>
+                f.name.endsWith('.docx'),
+            );
+            if (files.length > 0) onFiles(files);
+        },
+        [onFiles],
+    );
+
+    return (
+        <div
+            onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => inputRef.current?.click()}
+            className={`flex h-40 w-[560px] cursor-pointer flex-col items-center justify-center gap-3.5 rounded-xl border-[1.5px] border-dashed transition-colors ${
+                dragging ? 'border-ink-muted bg-neutral-bg/50' : 'border-border-drop'
+            }`}
+        >
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <path
+                    d="M16 22V10m0 0l-5 5m5-5l5 5"
+                    stroke="#B5B0A6"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+                <path d="M6 22h20" stroke="#B5B0A6" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <div className="flex flex-col items-center gap-1">
+                <span className="text-sm font-medium leading-[18px] text-ink">Drop .docx files here</span>
+                <span className="text-[13px] leading-4 text-ink-muted">
+                    or click to browse — add as many as you need
+                </span>
+            </div>
+            <input
+                ref={inputRef}
+                type="file"
+                accept=".docx"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    if (files.length > 0) onFiles(files);
+                    e.target.value = '';
+                }}
+            />
+        </div>
+    );
+}

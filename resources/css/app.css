@@ -4,8 +4,121 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
 @theme {
-    --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-serif: 'EB Garamond', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+
+    --color-surface: #FAFAF7;
+    --color-surface-card: #FFFFFF;
+    --color-ink: #1A1A1A;
+    --color-ink-muted: #8A8578;
+    --color-ink-faint: #B5B0A6;
+    --color-border: #E8E6E0;
+    --color-border-light: #ECEAE4;
+    --color-border-dashed: #D4D1CA;
+    --color-border-drop: #D0CEC8;
+    --color-neutral-bg: #F0EDE8;
+    --color-accent: #C4873B;
+    --color-danger: #C25B4A;
+    --color-status-final: #5A8F5C;
+    --color-status-revised: #D4A574;
+    --color-status-draft: #D4D1CA;
+    --color-border-subtle: #F0EEEA;
+    --color-ai-green: #6DBB7B;
+}
+
+@layer base {
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
+}
+
+/* Tiptap editor prose styles */
+.editor-prose {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    line-height: 1.8;
+    color: var(--color-ink);
+    outline: none;
+}
+
+.editor-prose p {
+    margin-bottom: 1em;
+}
+
+.editor-prose h1 {
+    font-size: 32px;
+    line-height: 1.3;
+    font-weight: 600;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    letter-spacing: -0.01em;
+}
+
+.editor-prose h2 {
+    font-size: 26px;
+    line-height: 1.35;
+    font-weight: 600;
+    margin-top: 1.4em;
+    margin-bottom: 0.4em;
+    letter-spacing: -0.01em;
+}
+
+.editor-prose h3 {
+    font-size: 22px;
+    line-height: 1.4;
+    font-weight: 600;
+    margin-top: 1.2em;
+    margin-bottom: 0.3em;
+}
+
+.editor-prose blockquote {
+    border-left: 3px solid var(--color-border);
+    padding-left: 1em;
+    margin: 1.2em 0;
+    color: var(--color-ink-muted);
+    font-style: italic;
+}
+
+.editor-prose ul,
+.editor-prose ol {
+    padding-left: 1.5em;
+    margin: 0.8em 0;
+}
+
+.editor-prose li {
+    margin-bottom: 0.3em;
+}
+
+.editor-prose hr {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 2em 0;
+}
+
+.editor-prose strong {
+    font-weight: 700;
+}
+
+.editor-prose em {
+    font-style: italic;
+}
+
+/* Chapter title placeholder */
+h1[contenteditable]:empty::before {
+    content: 'Untitled chapter';
+    color: var(--color-ink-faint);
+    pointer-events: none;
+}
+
+/* Tiptap placeholder */
+.tiptap p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: var(--color-ink-faint);
+    pointer-events: none;
+    height: 0;
+    font-family: var(--font-serif);
+    font-size: 18px;
 }
