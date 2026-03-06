@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\AiProvider;
+use App\Models\AiSetting;
 use App\Models\Book;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -27,11 +28,17 @@ class BookFactory extends Factory
         ];
     }
 
-    public function withAi(): static
+    public function withAi(?AiProvider $provider = null): static
     {
+        $provider ??= AiProvider::Anthropic;
+
         return $this->state(fn (array $attributes) => [
             'ai_enabled' => true,
-            'api_key' => 'sk-test-' . fake()->sha256(),
-        ]);
+            'ai_provider' => $provider,
+        ])->afterCreating(function (Book $book) use ($provider) {
+            AiSetting::factory()->create([
+                'provider' => $provider,
+            ]);
+        });
     }
 }

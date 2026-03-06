@@ -25,6 +25,8 @@ class Chapter extends Model
             'status' => ChapterStatus::class,
             'reader_order' => 'integer',
             'word_count' => 'integer',
+            'tension_score' => 'integer',
+            'hook_score' => 'integer',
         ];
     }
 

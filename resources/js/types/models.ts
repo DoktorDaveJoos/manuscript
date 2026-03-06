@@ -1,11 +1,34 @@
 export type StorylineType = 'main' | 'backstory' | 'parallel';
 export type ChapterStatus = 'draft' | 'revised' | 'final';
-export type VersionSource = 'original' | 'ai_revision' | 'manual_edit';
+export type VersionSource = 'original' | 'ai_revision' | 'manual_edit' | 'normalization' | 'beautify';
 export type PlotPointType = 'setup' | 'conflict' | 'turning_point' | 'resolution' | 'worldbuilding';
 export type PlotPointStatus = 'planned' | 'fulfilled' | 'abandoned';
 export type CharacterRole = 'protagonist' | 'supporting' | 'mentioned';
-export type AnalysisType = 'pacing' | 'plothole' | 'character_consistency' | 'density' | 'plot_deviation' | 'next_chapter_suggestion';
-export type AiProvider = 'anthropic' | 'openai';
+export type AnalysisType = 'pacing' | 'plothole' | 'character_consistency' | 'density' | 'plot_deviation' | 'next_chapter_suggestion' | 'chapter_hook' | 'scene_audit' | 'thriller_health';
+export type HookType = 'cliffhanger' | 'soft_hook' | 'closed' | 'dead_end';
+export type AiProvider = 'anthropic' | 'openai' | 'gemini' | 'groq' | 'xai' | 'deepseek' | 'mistral' | 'ollama' | 'azure' | 'openrouter';
+
+export type StoryBible = {
+    characters?: Record<string, unknown>[];
+    setting?: Record<string, unknown>[];
+    plot_outline?: Record<string, unknown>[];
+    themes?: (string | Record<string, unknown>)[];
+    style_rules?: (string | Record<string, unknown>)[];
+    genre_rules?: (string | Record<string, unknown>)[];
+    timeline?: Record<string, unknown>[];
+};
+
+export type ProsePassRule = {
+    key: string;
+    label: string;
+    description: string;
+    enabled: boolean;
+};
+
+export type License = {
+    active: boolean;
+    masked_key: string | null;
+};
 
 export type Book = {
     id: number;
@@ -14,6 +37,10 @@ export type Book = {
     language: string;
     ai_provider: AiProvider;
     ai_enabled: boolean;
+    ai_model: string | null;
+    prose_pass_rules: ProsePassRule[] | null;
+    writing_style_text: string | null;
+    story_bible?: StoryBible | null;
     created_at: string;
     updated_at: string;
     storylines?: Storyline[];
@@ -81,6 +108,10 @@ export type Chapter = {
     reader_order: number;
     status: ChapterStatus;
     word_count: number;
+    summary: string | null;
+    tension_score: number | null;
+    hook_score: number | null;
+    hook_type: HookType | null;
     created_at: string;
     updated_at: string;
     book?: Book;
@@ -138,6 +169,79 @@ export type Analysis = {
     updated_at: string;
     book?: Book;
     chapter?: Chapter;
+};
+
+export type DashboardStats = {
+    total_words: number;
+    chapter_count: number;
+    estimated_pages: number;
+    reading_time_minutes: number;
+};
+
+export type StatusCounts = {
+    draft: number;
+    revised: number;
+    final: number;
+};
+
+export type HealthMetric = { label: string; score: number };
+export type AttentionItem = { type: string; title: string; description: string; severity: 'low' | 'medium' | 'high' };
+export type HealthMetrics = {
+    composite_score: number;
+    metrics: HealthMetric[];
+    last_analyzed_at: string;
+    attention_items: AttentionItem[];
+};
+export type SuggestedNext = { title: string; description: string; chapter_id?: number };
+
+export type NormalizePreviewResult = {
+    chapters: {
+        id: number;
+        title: string;
+        changes: { rule: string; count: number }[];
+        total_changes: number;
+    }[];
+    total_changes: number;
+};
+
+export type PreparationPhase = 'chunking' | 'embedding' | 'writing_style' | 'chapter_analysis' | 'character_extraction' | 'story_bible' | 'health_analysis';
+
+export type PhaseError = {
+    phase: string;
+    chapter: string | null;
+    error: string;
+};
+
+export type AiPreparationStatus = {
+    id: number;
+    status: 'pending' | 'running' | 'completed' | 'failed';
+    current_phase: PreparationPhase | null;
+    current_phase_total: number;
+    current_phase_progress: number;
+    total_chapters: number;
+    processed_chapters: number;
+    embedded_chunks: number;
+    completed_phases: PreparationPhase[] | null;
+    phase_errors: PhaseError[] | null;
+    error_message: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+export type AiSetting = {
+    id: number;
+    provider: AiProvider;
+    has_api_key: boolean;
+    base_url: string | null;
+    api_version: string | null;
+    text_model: string | null;
+    embedding_model: string | null;
+    embedding_dimensions: number | null;
+    enabled: boolean;
+    requires_api_key: boolean;
+    requires_base_url: boolean;
+    created_at: string;
+    updated_at: string;
 };
 
 export type CharacterChapterPivot = {

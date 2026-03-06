@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Database\SqliteVecConnector;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind('db.connector.sqlite', SqliteVecConnector::class);
     }
 
     /**

@@ -7,4 +7,6 @@ enum VersionSource: string
     case Original = 'original';
     case AiRevision = 'ai_revision';
     case ManualEdit = 'manual_edit';
+    case Normalization = 'normalization';
+    case Beautify = 'beautify';
 }
