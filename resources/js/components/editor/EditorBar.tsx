@@ -1,3 +1,4 @@
+import Kbd from '@/components/ui/Kbd';
 import { cn } from '@/lib/utils';
 import type { Chapter } from '@/types/models';
 import { ClockCounterClockwise, NotePencil } from '@phosphor-icons/react';
@@ -75,9 +76,7 @@ export default function EditorBar({
                     <ClockCounterClockwise size={12} />
                     v{versionCount}
                 </button>
-                <kbd className="rounded border border-border bg-neutral-bg px-1.5 py-0.5 text-[10px] text-ink-muted">
-                    ⇧Tab
-                </kbd>
+                <Kbd keys="⇧Tab" />
             </div>
         </div>
     );

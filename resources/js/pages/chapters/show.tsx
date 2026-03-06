@@ -10,6 +10,7 @@ import NotesPanel from '@/components/editor/NotesPanel';
 import Sidebar from '@/components/editor/Sidebar';
 import VersionHistoryOverlay from '@/components/editor/VersionHistoryOverlay';
 import WritingSurface from '@/components/editor/WritingSurface';
+import Kbd from '@/components/ui/Kbd';
 import { useLicense } from '@/hooks/useLicense';
 import { getXsrfToken } from '@/lib/csrf';
 import { createChapter, jsonFetchHeaders } from '@/lib/utils';
@@ -485,6 +486,8 @@ export default function ChapterShow({
                         onAddScene={handlePaletteAddScene}
                         onEnterFocusMode={toggleFocusMode}
                         isFocusMode={isFocusMode}
+                        onToggleTypewriterMode={toggleTypewriterMode}
+                        isTypewriterMode={isTypewriterMode}
                         onToggleNotes={() => setIsNotesOpen((prev) => !prev)}
                         licensed={isLicensed}
                     />
@@ -569,8 +572,8 @@ function WhisperChrome({
             <span className="text-[13px] leading-4 tracking-[0.02em] text-ink-whisper">
                 Chapter {chapterNumber} — {chapterTitle}
             </span>
-            <span className="absolute left-1/2 -translate-x-1/2 text-[13px] leading-4 tracking-[0.02em] text-ink-whisper">
-                Esc to leave focus mode
+            <span className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1.5 text-[13px] leading-4 tracking-[0.02em] text-ink-whisper">
+                <Kbd keys="Esc" /> to leave focus mode
             </span>
             <span className="text-[13px] leading-4 tracking-[0.02em] text-ink-whisper">
                 {wordCount.toLocaleString()} words
