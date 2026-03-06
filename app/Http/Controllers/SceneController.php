@@ -9,7 +9,9 @@ use App\Http\Requests\UpdateSceneTitleRequest;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\Scene;
+use App\Models\WritingSession;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class SceneController extends Controller
 {
@@ -34,6 +36,7 @@ class SceneController extends Controller
 
     public function updateContent(UpdateSceneContentRequest $request, Book $book, Chapter $chapter, Scene $scene): JsonResponse
     {
+        $previousSceneWordCount = $scene->word_count;
         $wordCount = str_word_count(strip_tags($request->validated('content')));
 
         $scene->update([
@@ -42,6 +45,21 @@ class SceneController extends Controller
         ]);
 
         $chapter->recalculateWordCount();
+
+        $delta = $wordCount - $previousSceneWordCount;
+        if ($delta > 0) {
+            $session = WritingSession::updateOrCreate(
+                ['book_id' => $book->id, 'date' => now()->toDateString()],
+                [],
+            );
+
+            $session->increment('words_written', $delta);
+            $session->refresh();
+
+            if ($book->daily_word_count_goal && $session->words_written >= $book->daily_word_count_goal) {
+                $session->update(['goal_met' => true]);
+            }
+        }
 
         return response()->json([
             'word_count' => $wordCount,
@@ -64,8 +82,16 @@ class SceneController extends Controller
     {
         $order = $request->validated('order');
 
-        foreach ($order as $index => $sceneId) {
-            $chapter->scenes()->where('id', $sceneId)->update(['sort_order' => $index]);
+        if (count($order) > 0) {
+            $cases = '';
+            $ids = [];
+            foreach ($order as $index => $sceneId) {
+                $id = (int) $sceneId;
+                $ids[] = $id;
+                $cases .= "WHEN {$id} THEN {$index} ";
+            }
+            $idList = implode(',', $ids);
+            DB::statement("UPDATE scenes SET sort_order = CASE id {$cases}END WHERE id IN ({$idList})");
         }
 
         return response()->json(['success' => true]);
@@ -80,10 +106,18 @@ class SceneController extends Controller
         $scene->delete();
         $chapter->recalculateWordCount();
 
-        // Recompact sort_order
-        $chapter->scenes()->orderBy('sort_order')->get()->each(function (Scene $s, int $index) {
-            $s->update(['sort_order' => $index]);
-        });
+        // Recompact sort_order in a single query
+        $remaining = $chapter->scenes()->orderBy('sort_order')->pluck('id');
+        if ($remaining->isNotEmpty()) {
+            $cases = '';
+            $ids = [];
+            foreach ($remaining as $index => $id) {
+                $ids[] = $id;
+                $cases .= "WHEN {$id} THEN {$index} ";
+            }
+            $idList = implode(',', $ids);
+            DB::statement("UPDATE scenes SET sort_order = CASE id {$cases}END WHERE id IN ({$idList})");
+        }
 
         return response()->json(['success' => true]);
     }

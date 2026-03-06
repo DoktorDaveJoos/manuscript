@@ -12,7 +12,7 @@ import VersionHistoryOverlay from '@/components/editor/VersionHistoryOverlay';
 import WritingSurface from '@/components/editor/WritingSurface';
 import { useLicense } from '@/hooks/useLicense';
 import { getXsrfToken } from '@/lib/csrf';
-import { createChapter } from '@/lib/utils';
+import { createChapter, jsonFetchHeaders } from '@/lib/utils';
 import type { Book, Chapter, Character, CharacterChapterPivot, Scene } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
 import { DOMSerializer } from '@tiptap/pm/model';
@@ -102,6 +102,13 @@ export default function ChapterShow({
         }, 2000);
     }, []);
 
+    // Clean up save status timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        };
+    }, []);
+
     // Chapter title auto-save
     const titleAbortRef = useRef<AbortController | null>(null);
     const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -126,11 +133,7 @@ export default function ChapterShow({
         try {
             const response = await fetch(updateTitle.url({ book: book.id, chapter: chapter.id }), {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
-                },
+                headers: jsonFetchHeaders(),
                 body: JSON.stringify({ title }),
                 signal: controller.signal,
             });
@@ -161,17 +164,14 @@ export default function ChapterShow({
         [flushTitleSave],
     );
 
-    // Flush all pending saves (title + all scenes)
+    // Flush all pending saves (title + all scenes in parallel)
     const handleBeforeNavigate = useCallback(async () => {
-        await flushTitleSave();
+        const sceneFlushes = Array.from(document.querySelectorAll('[id^="scene-"]')).map((el) => {
+            const flush = (el as unknown as Record<string, () => Promise<void>>).__flush;
+            return typeof flush === 'function' ? flush() : Promise.resolve();
+        });
 
-        const sceneEls = document.querySelectorAll('[id^="scene-"]');
-        await Promise.all(
-            Array.from(sceneEls).map((el) => {
-                const flush = (el as unknown as Record<string, () => Promise<void>>).__flush;
-                return typeof flush === 'function' ? flush() : Promise.resolve();
-            }),
-        );
+        await Promise.all([flushTitleSave(), ...sceneFlushes]);
     }, [flushTitleSave]);
 
     // Scene management
@@ -180,11 +180,7 @@ export default function ChapterShow({
             try {
                 const response = await fetch(storeScene.url({ book: book.id, chapter: chapter.id }), {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Accept: 'application/json',
-                        'X-XSRF-TOKEN': getXsrfToken(),
-                    },
+                    headers: jsonFetchHeaders(),
                     body: JSON.stringify({
                         title: `Scene ${scenes.length + 1}`,
                         position: afterPosition,
@@ -280,11 +276,7 @@ export default function ChapterShow({
 
         const response = await fetch(split.url({ book: book.id, chapter: chapter.id }), {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'X-XSRF-TOKEN': getXsrfToken(),
-            },
+            headers: jsonFetchHeaders(),
             body: JSON.stringify({ title: 'Untitled', initial_content: belowHtml }),
         });
 
@@ -363,6 +355,7 @@ export default function ChapterShow({
                         povCharacterName={povCharacterName}
                         timelineLabel={timelineLabel}
                         onTitleUpdate={handleTitleUpdate}
+                        activeEditor={activeEditor}
                         onActiveEditorChange={setActiveEditor}
                         onWordCountChange={handleSceneWordCountChange}
                         onAddScene={handleAddScene}

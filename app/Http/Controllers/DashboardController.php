@@ -233,6 +233,7 @@ class DashboardController extends Controller
             ->where('goal_met', true)
             ->whereDate('date', '<', now()->toDateString())
             ->orderByDesc('date')
+            ->limit(365)
             ->pluck('date');
 
         $checkDate = now()->subDay();

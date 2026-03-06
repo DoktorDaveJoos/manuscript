@@ -1,6 +1,6 @@
 import type { Scene } from '@/types/models';
 import type { Editor } from '@tiptap/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import SceneEditor from './SceneEditor';
 
 export default function WritingSurface({
@@ -11,6 +11,7 @@ export default function WritingSurface({
     povCharacterName,
     timelineLabel,
     onTitleUpdate,
+    activeEditor,
     onActiveEditorChange,
     onWordCountChange,
     onAddScene,
@@ -24,6 +25,7 @@ export default function WritingSurface({
     povCharacterName?: string | null;
     timelineLabel?: string | null;
     onTitleUpdate: (title: string) => void;
+    activeEditor: Editor | null;
     onActiveEditorChange: (editor: Editor) => void;
     onWordCountChange: (sceneId: number, count: number) => void;
     onAddScene: (afterPosition: number) => void;
@@ -32,7 +34,6 @@ export default function WritingSurface({
 }) {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
 
     const handleTitleKeyDown = useCallback((e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
@@ -46,14 +47,6 @@ export default function WritingSurface({
         const text = titleRef.current?.textContent ?? '';
         onTitleUpdate(text);
     }, [onTitleUpdate]);
-
-    const handleFocus = useCallback(
-        (editor: Editor) => {
-            setActiveEditor(editor);
-            onActiveEditorChange(editor);
-        },
-        [onActiveEditorChange],
-    );
 
     // Typewriter scrolling: keep cursor vertically centered
     useEffect(() => {
@@ -108,7 +101,7 @@ export default function WritingSurface({
                             bookId={bookId}
                             chapterId={chapterId}
                             isFirst={i === 0}
-                            onFocus={handleFocus}
+                            onFocus={onActiveEditorChange}
                             onWordCountChange={onWordCountChange}
                             onAddScene={onAddScene}
                             onDeleteScene={onDeleteScene}

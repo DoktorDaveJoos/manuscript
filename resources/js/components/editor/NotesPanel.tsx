@@ -1,5 +1,5 @@
 import { updateNotes } from '@/actions/App/Http/Controllers/ChapterController';
-import { getXsrfToken } from '@/lib/csrf';
+import { jsonFetchHeaders } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export default function NotesPanel({
@@ -35,11 +35,7 @@ export default function NotesPanel({
         try {
             await fetch(updateNotes.url({ book: bookId, chapter: chapterId }), {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
-                },
+                headers: jsonFetchHeaders(),
                 body: JSON.stringify({ notes: value || null }),
                 signal: controller.signal,
             });

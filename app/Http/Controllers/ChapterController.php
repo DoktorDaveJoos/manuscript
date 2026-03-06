@@ -219,7 +219,7 @@ class ChapterController extends Controller
             $chapter->versions()->create([
                 'version_number' => $latestVersionNumber + 1,
                 'content' => $version->content,
-                'source' => 'manual_edit',
+                'source' => VersionSource::ManualEdit,
                 'change_summary' => "Restored from version {$version->version_number}",
                 'is_current' => true,
             ]);

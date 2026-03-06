@@ -1,6 +1,6 @@
 import { updateContent, updateTitle } from '@/actions/App/Http/Controllers/SceneController';
 import useChapterEditor from '@/hooks/useChapterEditor';
-import { getXsrfToken } from '@/lib/csrf';
+import { jsonFetchHeaders } from '@/lib/utils';
 import type { Scene } from '@/types/models';
 import type { Editor } from '@tiptap/react';
 import { EditorContent } from '@tiptap/react';
@@ -58,11 +58,7 @@ export default function SceneEditor({
                 updateContent.url({ book: bookId, chapter: chapterId, scene: scene.id }),
                 {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Accept: 'application/json',
-                        'X-XSRF-TOKEN': getXsrfToken(),
-                    },
+                    headers: jsonFetchHeaders(),
                     body: JSON.stringify({ content }),
                     signal: controller.signal,
                 },
@@ -114,6 +110,14 @@ export default function SceneEditor({
             (el as unknown as Record<string, unknown>).__flush = () =>
                 Promise.all([flushRef.current.flushContentSave(), flushRef.current.flushTitleSave()]);
         }
+
+        // Flush pending saves on unmount
+        return () => {
+            if (contentTimerRef.current) clearTimeout(contentTimerRef.current);
+            if (titleTimerRef.current) clearTimeout(titleTimerRef.current);
+            flushRef.current.flushContentSave();
+            flushRef.current.flushTitleSave();
+        };
     }, []);
 
     const handleEditorUpdate = useCallback(

@@ -234,7 +234,7 @@ export default function CommandPalette({
     if (!isOpen) return null;
 
     return (
-        <div className="absolute inset-0 z-50 flex items-start justify-center pt-[20vh]" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]" onClick={onClose}>
             <div
                 className="w-[320px] animate-in fade-in zoom-in-95 rounded-lg border border-border bg-surface-card shadow-lg duration-150"
                 onClick={(e) => e.stopPropagation()}

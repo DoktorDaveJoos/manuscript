@@ -5,6 +5,7 @@ use App\Models\Chapter;
 use App\Models\ChapterVersion;
 use App\Models\Scene;
 use App\Models\Storyline;
+use App\Models\WritingSession;
 
 test('store creates scene at default position', function () {
     $book = Book::factory()->create();
@@ -59,6 +60,35 @@ test('updateContent saves content and recalculates word count', function () {
 
     $chapter->refresh();
     expect($chapter->word_count)->toBe(5);
+});
+
+test('updateContent tracks writing session for word count increase', function () {
+    $book = Book::factory()->create(['daily_word_count_goal' => 10]);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 0]);
+    $scene = Scene::factory()->for($chapter)->create(['word_count' => 0, 'content' => '']);
+
+    $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
+        'content' => '<p>The quick brown fox jumps</p>',
+    ])->assertOk();
+
+    $session = WritingSession::where('book_id', $book->id)->first();
+    expect($session)->not->toBeNull();
+    expect($session->words_written)->toBe(5);
+    expect($session->goal_met)->toBeFalse();
+});
+
+test('updateContent does not track session on word decrease', function () {
+    $book = Book::factory()->create(['daily_word_count_goal' => 100]);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 10]);
+    $scene = Scene::factory()->for($chapter)->create(['word_count' => 10, 'content' => '<p>Hello world test words here and more stuff foo bar</p>']);
+
+    $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
+        'content' => '<p>Hello</p>',
+    ])->assertOk();
+
+    expect(WritingSession::where('book_id', $book->id)->first())->toBeNull();
 });
 
 test('updateTitle saves scene title', function () {
