@@ -118,6 +118,8 @@ return [
     |
     */
 
+    'license_public_key' => env('LICENSE_PUBLIC_KEY', 'adneTimYFMSpHvjva1Bw9muNWJl/cssBsAqAXYMrM9E='),
+
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
