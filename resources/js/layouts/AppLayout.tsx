@@ -8,7 +8,7 @@ export default function AppLayout({ children, title }: PropsWithChildren<{ title
         <>
             <Head title={title} />
             <div className="flex h-screen bg-gray-50">
-                <aside className="flex w-64 shrink-0 flex-col border-r border-gray-200 bg-white">
+                <aside className="flex w-64 shrink-0 flex-col border-r border-gray-200 bg-surface">
                     <div className="flex h-14 items-center border-b border-gray-200 px-5">
                         <span className="text-sm font-semibold tracking-tight text-gray-900">
                             {name}
