@@ -1,4 +1,4 @@
-import type { HealthMetrics } from '@/types/models';
+import type { AttentionItem, HealthMetrics } from '@/types/models';
 
 function formatTimeAgo(dateString: string): string {
     const now = new Date();
@@ -37,7 +37,7 @@ function ScoreGauge({ score }: { score: number }) {
                 cy={size / 2}
                 r={radius}
                 fill="none"
-                className="stroke-accent"
+                className="stroke-status-final"
                 strokeWidth={strokeWidth}
                 strokeLinecap="round"
                 strokeDasharray={circumference}
@@ -73,7 +73,7 @@ function MetricBar({ label, score }: { label: string; score: number }) {
             <div className="flex-1">
                 <div className="h-[5px] overflow-hidden rounded-[3px] bg-neutral-bg">
                     <div
-                        className="h-full rounded-[3px] bg-accent"
+                        className={`h-full rounded-[3px] ${score >= 80 ? 'bg-status-final' : 'bg-accent'}`}
                         style={{ width: `${Math.min(100, Math.max(0, score))}%` }}
                     />
                 </div>
@@ -83,7 +83,7 @@ function MetricBar({ label, score }: { label: string; score: number }) {
     );
 }
 
-const severityColor: Record<string, string> = {
+const severityColor: Record<AttentionItem['severity'], string> = {
     high: 'bg-danger',
     medium: 'bg-accent',
     low: 'bg-ink-faint',
@@ -98,20 +98,19 @@ export default function AiInsights({ healthMetrics }: { healthMetrics: HealthMet
                     Manuscript Health
                 </span>
 
-                <div className="flex items-start gap-5">
+                <div className="flex items-center gap-5">
                     <ScoreGauge score={healthMetrics.composite_score} />
-
-                    <div className="flex flex-1 flex-col gap-[10px] pt-1">
-                        {healthMetrics.metrics.map((metric) => (
-                            <MetricBar key={metric.label} label={metric.label} score={metric.score} />
-                        ))}
-                    </div>
+                    <span className="text-[12px] text-ink-muted">
+                        Last analyzed{' '}
+                        <span className="text-ink-faint">{formatTimeAgo(healthMetrics.last_analyzed_at)}</span>
+                    </span>
                 </div>
 
-                <span className="text-[12px] text-ink-muted">
-                    Last analyzed{' '}
-                    <span className="text-ink-faint">{formatTimeAgo(healthMetrics.last_analyzed_at)}</span>
-                </span>
+                <div className="flex flex-col gap-[10px]">
+                    {healthMetrics.metrics.map((metric) => (
+                        <MetricBar key={metric.label} label={metric.label} score={metric.score} />
+                    ))}
+                </div>
             </div>
 
             {/* Right — Attention Needed */}
@@ -126,9 +125,9 @@ export default function AiInsights({ healthMetrics }: { healthMetrics: HealthMet
 
                 <div className="flex flex-col gap-4">
                     {healthMetrics.attention_items.map((item, i) => (
-                        <div key={i} className="flex gap-3">
+                        <div key={i} className="flex gap-2.5">
                             <span
-                                className={`mt-[6px] size-[7px] shrink-0 rounded-full ${severityColor[item.severity] ?? 'bg-ink-faint'}`}
+                                className={`mt-1.5 size-[7px] shrink-0 rounded-full ${severityColor[item.severity]}`}
                             />
                             <div className="flex flex-col gap-0.5">
                                 <span className="text-[13px] font-medium text-ink">{item.title}</span>

@@ -1,18 +1,6 @@
-import { getXsrfToken } from '@/lib/csrf';
-import type { AiPreparationStatus, PreparationPhase } from '@/types/models';
-import { useCallback, useEffect, useRef, useState } from 'react';
-
-const TOTAL_PHASES = 7;
-
-const phaseLabels: Record<PreparationPhase, string> = {
-    chunking: 'Splitting chunks',
-    embedding: 'Generating embeddings',
-    writing_style: 'Extracting style',
-    chapter_analysis: 'Analyzing chapters',
-    character_extraction: 'Extracting characters',
-    story_bible: 'Building story bible',
-    health_analysis: 'Computing health',
-};
+import { useAiPreparation, TOTAL_PHASES, phaseLabels } from '@/hooks/useAiPreparation';
+import type { AiPreparationStatus } from '@/types/models';
+import { Check, Lock } from '@phosphor-icons/react';
 
 export default function AiPreparationProgress({
     bookId,
@@ -25,67 +13,7 @@ export default function AiPreparationProgress({
     initialStatus: AiPreparationStatus | null;
     licensed?: boolean;
 }) {
-    const [status, setStatus] = useState<AiPreparationStatus | null>(initialStatus);
-    const [starting, setStarting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-    const isRunning = status && !['completed', 'failed'].includes(status.status);
-
-    useEffect(() => {
-        if (!isRunning) {
-            if (pollRef.current) {
-                clearInterval(pollRef.current);
-                pollRef.current = null;
-            }
-            return;
-        }
-
-        pollRef.current = setInterval(async () => {
-            try {
-                const res = await fetch(`/books/${bookId}/ai/prepare/status`, {
-                    headers: { Accept: 'application/json' },
-                });
-                if (!res.ok) throw new Error();
-                const data = await res.json();
-                setStatus(data);
-            } catch {
-                // Silently retry on next interval
-            }
-        }, 2000);
-
-        return () => {
-            if (pollRef.current) clearInterval(pollRef.current);
-        };
-    }, [bookId, isRunning]);
-
-    const handleStart = useCallback(async () => {
-        setStarting(true);
-        setError(null);
-
-        try {
-            const res = await fetch(`/books/${bookId}/ai/prepare`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
-                },
-            });
-
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data.message || 'Failed to start');
-            }
-
-            const data = await res.json();
-            setStatus(data);
-        } catch (e) {
-            setError((e as Error).message);
-        } finally {
-            setStarting(false);
-        }
-    }, [bookId]);
+    const { status, isRunning, starting, error, handleStart } = useAiPreparation(bookId, initialStatus);
 
     if (!licensed) {
         return (
@@ -95,10 +23,7 @@ export default function AiPreparationProgress({
                 className="flex cursor-not-allowed items-center gap-2 rounded-md border border-border bg-surface-card px-4 py-2 text-sm text-ink-faint"
                 title="Requires Manuscript Pro licence"
             >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0">
-                    <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-                    <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
+                <Lock size={14} className="shrink-0" />
                 Prepare for AI
                 <span className="rounded bg-ink-faint/10 px-1 py-0.5 text-[10px] font-medium">PRO</span>
             </button>
@@ -118,7 +43,7 @@ export default function AiPreparationProgress({
         );
     }
 
-    if (isRunning) {
+    if (isRunning && status) {
         const completedCount = status.completed_phases?.length ?? 0;
         const currentPhase = status.current_phase;
         const phaseLabel = currentPhase ? phaseLabels[currentPhase] : 'Starting...';
@@ -156,9 +81,7 @@ export default function AiPreparationProgress({
 
         return (
             <div className="flex items-center gap-2 rounded-md border border-border bg-surface-card px-4 py-2">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="text-status-final">
-                    <path d="M4 8l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <Check size={14} weight="bold" className="text-status-final" />
                 <span className="text-sm text-ink-muted">AI ready</span>
                 {hasErrors && (
                     <span className="text-xs text-amber-600">({status.phase_errors!.length} warning{status.phase_errors!.length !== 1 ? 's' : ''})</span>
