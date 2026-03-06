@@ -123,6 +123,16 @@ class AiController extends Controller
                 'change_summary' => $changeSummary,
                 'is_current' => true,
             ]);
+
+            $chapter->scenes()->forceDelete();
+            $wordCount = str_word_count(strip_tags($response->text));
+            $chapter->scenes()->create([
+                'title' => 'Scene 1',
+                'content' => $response->text,
+                'sort_order' => 0,
+                'word_count' => $wordCount,
+            ]);
+            $chapter->update(['word_count' => $wordCount]);
         });
     }
 

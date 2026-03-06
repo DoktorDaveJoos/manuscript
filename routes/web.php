@@ -30,6 +30,7 @@ Route::post('/books/{book}/import/confirm', [BookController::class, 'confirmImpo
 
 Route::get('/books/{book}/dashboard', [DashboardController::class, 'show'])->name('books.dashboard');
 Route::put('/books/{book}/writing-goal', [WritingGoalController::class, 'update'])->name('books.writing-goal.update');
+Route::patch('/books/{book}/milestone/dismiss', [DashboardController::class, 'dismissMilestone'])->name('books.milestone.dismiss');
 Route::get('/books/{book}/characters', [CharacterController::class, 'index'])->name('books.characters');
 Route::get('/books/{book}/plot', [PlotController::class, 'index'])->name('books.plot');
 Route::get('/books/{book}/editor', [ChapterController::class, 'editor'])->name('books.editor');
@@ -38,7 +39,9 @@ Route::get('/books/{book}/chapters/{chapter}', [ChapterController::class, 'show'
 Route::patch('/books/{book}/chapters/{chapter}/title', [ChapterController::class, 'updateTitle'])->name('chapters.updateTitle');
 Route::put('/books/{book}/chapters/{chapter}/content', [ChapterController::class, 'updateContent'])->name('chapters.updateContent');
 Route::get('/books/{book}/chapters/{chapter}/versions', [ChapterController::class, 'versions'])->name('chapters.versions');
+Route::post('/books/{book}/chapters/{chapter}/versions', [ChapterController::class, 'createSnapshot'])->name('chapters.createSnapshot');
 Route::post('/books/{book}/chapters/{chapter}/versions/{version}/restore', [ChapterController::class, 'restoreVersion'])->name('chapters.restoreVersion');
+Route::delete('/books/{book}/chapters/{chapter}/versions/{version}', [ChapterController::class, 'destroyVersion'])->name('chapters.destroyVersion');
 Route::patch('/books/{book}/chapters/{chapter}/notes', [ChapterController::class, 'updateNotes'])->name('chapters.updateNotes');
 Route::post('/books/{book}/chapters/{chapter}/split', [ChapterController::class, 'split'])->name('chapters.split');
 Route::delete('/books/{book}/chapters/{chapter}', [ChapterController::class, 'destroy'])->name('chapters.destroy');

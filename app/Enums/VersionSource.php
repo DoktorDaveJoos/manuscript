@@ -9,4 +9,5 @@ enum VersionSource: string
     case ManualEdit = 'manual_edit';
     case Normalization = 'normalization';
     case Beautify = 'beautify';
+    case Snapshot = 'snapshot';
 }

@@ -3,6 +3,7 @@
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
+use App\Models\Scene;
 use App\Models\Storyline;
 
 test('editor redirects to first chapter by reader_order', function () {
@@ -466,6 +467,97 @@ test('updateNotes validates max length', function () {
     $this->patchJson(route('chapters.updateNotes', [$book, $chapter]), [
         'notes' => str_repeat('a', 10001),
     ])->assertUnprocessable();
+});
+
+test('createSnapshot creates new version with snapshot source', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => 'Old content',
+    ]);
+    Scene::factory()->for($chapter)->create([
+        'content' => '<p>Scene content here</p>',
+        'sort_order' => 0,
+    ]);
+
+    $this->postJson(route('chapters.createSnapshot', [$book, $chapter]), [
+        'change_summary' => 'Before restructuring',
+    ])->assertOk();
+
+    $chapter->refresh();
+    $versions = $chapter->versions()->orderByDesc('version_number')->get();
+
+    expect($versions)->toHaveCount(2);
+    expect($versions->first()->version_number)->toBe(2);
+    expect($versions->first()->source->value)->toBe('snapshot');
+    expect($versions->first()->change_summary)->toBe('Before restructuring');
+    expect($versions->first()->is_current)->toBeTrue();
+    expect($versions->first()->content)->toContain('Scene content here');
+    expect($versions->where('version_number', 1)->first()->is_current)->toBeFalse();
+});
+
+test('createSnapshot validates change_summary max length', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create(['is_current' => true]);
+
+    $this->postJson(route('chapters.createSnapshot', [$book, $chapter]), [
+        'change_summary' => str_repeat('a', 256),
+    ])->assertUnprocessable();
+});
+
+test('createSnapshot uses scene content for version content', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create(['is_current' => true, 'version_number' => 1]);
+    Scene::factory()->for($chapter)->create(['content' => '<p>First scene</p>', 'sort_order' => 0]);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Second scene</p>', 'sort_order' => 1]);
+
+    $this->postJson(route('chapters.createSnapshot', [$book, $chapter]))
+        ->assertOk();
+
+    $latest = $chapter->versions()->orderByDesc('version_number')->first();
+    expect($latest->content)->toBe("<p>First scene</p>\n<p>Second scene</p>");
+});
+
+test('destroyVersion deletes non-current version', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $v1 = ChapterVersion::factory()->for($chapter)->create(['is_current' => false, 'version_number' => 1]);
+    ChapterVersion::factory()->for($chapter)->create(['is_current' => true, 'version_number' => 2]);
+
+    $this->deleteJson(route('chapters.destroyVersion', [$book, $chapter, $v1]))
+        ->assertOk();
+
+    expect(ChapterVersion::find($v1->id))->toBeNull();
+    expect($chapter->versions()->count())->toBe(1);
+});
+
+test('destroyVersion rejects deleting current version', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create(['is_current' => false, 'version_number' => 1]);
+    $current = ChapterVersion::factory()->for($chapter)->create(['is_current' => true, 'version_number' => 2]);
+
+    $this->deleteJson(route('chapters.destroyVersion', [$book, $chapter, $current]))
+        ->assertForbidden();
+});
+
+test('destroyVersion rejects deleting last version', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $only = ChapterVersion::factory()->for($chapter)->create(['is_current' => false, 'version_number' => 1]);
+
+    $this->deleteJson(route('chapters.destroyVersion', [$book, $chapter, $only]))
+        ->assertForbidden();
 });
 
 test('show includes notes in response', function () {

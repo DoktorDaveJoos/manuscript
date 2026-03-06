@@ -107,8 +107,6 @@ test('revise streams prose revision and creates new version', function () {
     ]);
 
     $response = $this->post(route('chapters.ai.revise', [$book, $chapter]));
-
-    // The stream endpoint should return a response
     $response->assertOk();
 
     ProseReviser::assertPrompted(fn ($prompt) => true);
@@ -151,7 +149,6 @@ test('beautify streams and creates new version', function () {
     ]);
 
     $response = $this->post(route('chapters.ai.beautify', [$book, $chapter]));
-
     $response->assertOk();
 
     TextBeautifier::assertPrompted(fn ($prompt) => true);

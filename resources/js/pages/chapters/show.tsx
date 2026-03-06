@@ -48,7 +48,7 @@ export default function ChapterShow({
     const [showNormalize, setShowNormalize] = useState(false);
     const [isBeautifying, setIsBeautifying] = useState(false);
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-    const [isNotesOpen, setIsNotesOpen] = useState(false);
+    const [notesToggleTick, setNotesToggleTick] = useState(0);
     const [isTypewriterMode, setIsTypewriterMode] = useState(() => {
         try {
             return localStorage.getItem('manuscript:typewriter-scrolling') === 'true';
@@ -409,21 +409,20 @@ export default function ChapterShow({
                 </div>
 
                 <div className="relative flex min-w-0 flex-1 flex-col">
-                    <div
-                        className={`relative overflow-hidden transition-[height,opacity] duration-300 ${isFocusMode ? 'h-0 opacity-0' : 'h-12'}`}
-                    >
-                        <EditorBar
-                            chapter={chapter}
-                            chapterTitle={displayTitle}
-                            storylineName={chapter.storyline?.name ?? 'Untitled storyline'}
-                            wordCount={wordCount}
-                            versionCount={versionCount}
-                            saveStatus={saveStatus}
-                            onVersionClick={() => setShowVersions(!showVersions)}
-                            onNotesToggle={() => setIsNotesOpen((prev) => !prev)}
-                            isNotesOpen={isNotesOpen}
-                            hasNotes={!!chapter.notes}
-                        />
+                    <div className="relative">
+                        <div
+                            className={`overflow-hidden transition-[height,opacity] duration-300 ${isFocusMode ? 'h-0 opacity-0' : 'h-12'}`}
+                        >
+                            <EditorBar
+                                chapter={chapter}
+                                chapterTitle={displayTitle}
+                                storylineName={chapter.storyline?.name ?? 'Untitled storyline'}
+                                wordCount={wordCount}
+                                versionCount={versionCount}
+                                saveStatus={saveStatus}
+                                onVersionClick={() => setShowVersions(!showVersions)}
+                            />
+                        </div>
                         {showVersions && !isFocusMode && (
                             <VersionHistoryOverlay
                                 bookId={book.id}
@@ -468,14 +467,16 @@ export default function ChapterShow({
                         onActiveSceneIdChange={setActiveSceneId}
                     />
 
-                    {isNotesOpen && !isFocusMode && (
-                        <NotesPanel
-                            bookId={book.id}
-                            chapterId={chapter.id}
-                            initialNotes={chapter.notes}
-                            onClose={() => setIsNotesOpen(false)}
-                        />
-                    )}
+                    <NotesPanel
+                        bookId={book.id}
+                        chapterId={chapter.id}
+                        initialNotes={chapter.notes}
+                        isFocusMode={isFocusMode}
+                        toggleTick={notesToggleTick}
+                        onClose={() => {
+                            activeEditor?.commands.focus();
+                        }}
+                    />
 
                     <CommandPalette
                         editor={activeEditor}
@@ -488,7 +489,7 @@ export default function ChapterShow({
                         isFocusMode={isFocusMode}
                         onToggleTypewriterMode={toggleTypewriterMode}
                         isTypewriterMode={isTypewriterMode}
-                        onToggleNotes={() => setIsNotesOpen((prev) => !prev)}
+                        onToggleNotes={() => setNotesToggleTick((t) => t + 1)}
                         licensed={isLicensed}
                     />
                 </div>

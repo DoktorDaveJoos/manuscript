@@ -1,6 +1,12 @@
-import { restoreVersion, versions } from '@/actions/App/Http/Controllers/ChapterController';
+import {
+    createSnapshot,
+    destroyVersion,
+    restoreVersion,
+    versions,
+} from '@/actions/App/Http/Controllers/ChapterController';
 import type { ChapterVersion, VersionSource } from '@/types/models';
 import { router } from '@inertiajs/react';
+import { Trash } from '@phosphor-icons/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const sourceLabel: Record<VersionSource, string> = {
@@ -9,6 +15,7 @@ const sourceLabel: Record<VersionSource, string> = {
     manual_edit: 'Edit',
     normalization: 'Normalize',
     beautify: 'Beautify',
+    snapshot: 'Snapshot',
 };
 
 const sourceBadgeClass: Record<VersionSource, string> = {
@@ -17,6 +24,7 @@ const sourceBadgeClass: Record<VersionSource, string> = {
     manual_edit: 'bg-status-final/15 text-status-final',
     normalization: 'bg-neutral-bg text-ink-muted',
     beautify: 'bg-status-revised/15 text-status-revised',
+    snapshot: 'bg-status-final/15 text-status-final',
 };
 
 function formatDate(dateStr: string): string {
@@ -40,15 +48,24 @@ export default function VersionHistoryOverlay({
 }) {
     const [versionList, setVersionList] = useState<ChapterVersion[] | null>(null);
     const [restoring, setRestoring] = useState<number | null>(null);
+    const [deleting, setDeleting] = useState<number | null>(null);
+    const [showForm, setShowForm] = useState(false);
+    const [summary, setSummary] = useState('');
+    const [creating, setCreating] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
+    const fetchVersions = useCallback(() => {
         fetch(versions.url({ book: bookId, chapter: chapterId }), {
             headers: { Accept: 'application/json' },
         })
             .then((r) => r.json())
             .then(setVersionList);
     }, [bookId, chapterId]);
+
+    useEffect(() => {
+        fetchVersions();
+    }, [fetchVersions]);
 
     useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
@@ -59,6 +76,12 @@ export default function VersionHistoryOverlay({
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [onClose]);
+
+    useEffect(() => {
+        if (showForm) {
+            inputRef.current?.focus();
+        }
+    }, [showForm]);
 
     const handleRestore = useCallback(
         (version: ChapterVersion) => {
@@ -77,14 +100,109 @@ export default function VersionHistoryOverlay({
         [bookId, chapterId, onClose],
     );
 
+    const handleDelete = useCallback(
+        (version: ChapterVersion) => {
+            setDeleting(version.id);
+            fetch(destroyVersion.url({ book: bookId, chapter: chapterId, version: version.id }), {
+                method: 'DELETE',
+                headers: {
+                    Accept: 'application/json',
+                    'X-XSRF-TOKEN': decodeURIComponent(
+                        document.cookie
+                            .split('; ')
+                            .find((c) => c.startsWith('XSRF-TOKEN='))
+                            ?.split('=')[1] ?? '',
+                    ),
+                },
+            }).then(() => {
+                setDeleting(null);
+                fetchVersions();
+            });
+        },
+        [bookId, chapterId, fetchVersions],
+    );
+
+    const handleCreate = useCallback(
+        (e: React.FormEvent) => {
+            e.preventDefault();
+            setCreating(true);
+            fetch(createSnapshot.url({ book: bookId, chapter: chapterId }), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-XSRF-TOKEN': decodeURIComponent(
+                        document.cookie
+                            .split('; ')
+                            .find((c) => c.startsWith('XSRF-TOKEN='))
+                            ?.split('=')[1] ?? '',
+                    ),
+                },
+                body: JSON.stringify({ change_summary: summary || null }),
+            }).then(() => {
+                setCreating(false);
+                setShowForm(false);
+                setSummary('');
+                fetchVersions();
+            });
+        },
+        [bookId, chapterId, summary, fetchVersions],
+    );
+
     return (
         <div
             ref={ref}
             className="absolute right-0 top-full z-50 mt-1 w-[360px] rounded-lg border border-border bg-surface-card shadow-lg"
         >
-            <div className="border-b border-border px-4 py-3">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <span className="text-sm font-medium text-ink">Version History</span>
+                <button
+                    type="button"
+                    onClick={() => setShowForm((v) => !v)}
+                    className="rounded-md bg-neutral-bg px-2 py-1 text-[11px] font-medium text-ink-muted transition-colors hover:bg-border hover:text-ink"
+                >
+                    + New Version
+                </button>
             </div>
+
+            {showForm && (
+                <form onSubmit={handleCreate} className="border-b border-border px-4 py-3">
+                    <div className="mb-2 flex items-center gap-2">
+                        <span className="rounded-full bg-status-final/15 px-1.5 py-0.5 text-[10px] font-medium text-status-final">
+                            Snapshot
+                        </span>
+                        <span className="text-xs text-ink-muted">New version snapshot</span>
+                    </div>
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        value={summary}
+                        onChange={(e) => setSummary(e.target.value)}
+                        placeholder="e.g., A/B test: shorter opening"
+                        maxLength={255}
+                        className="mb-2 w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
+                    />
+                    <div className="flex justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowForm(false);
+                                setSummary('');
+                            }}
+                            className="rounded-md px-2.5 py-1 text-[11px] text-ink-muted hover:text-ink"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={creating}
+                            className="rounded-md bg-accent px-2.5 py-1 text-[11px] font-medium text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
+                        >
+                            {creating ? 'Creating...' : 'Create'}
+                        </button>
+                    </div>
+                </form>
+            )}
 
             <div className="max-h-[340px] overflow-y-auto">
                 {versionList === null ? (
@@ -139,6 +257,15 @@ export default function VersionHistoryOverlay({
                                             title="Coming in Phase 2"
                                         >
                                             Compare
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDelete(version)}
+                                            disabled={deleting !== null}
+                                            className="rounded-md border border-border p-1 text-ink-faint transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                                            title="Delete version"
+                                        >
+                                            <Trash size={14} />
                                         </button>
                                     </div>
                                 )}

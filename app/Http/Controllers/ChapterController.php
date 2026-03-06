@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\ChapterStatus;
 use App\Enums\VersionSource;
+use App\Http\Requests\CreateSnapshotRequest;
 use App\Http\Requests\ReorderChaptersRequest;
 use App\Http\Requests\SplitChapterRequest;
 use App\Http\Requests\StoreChapterRequest;
@@ -237,6 +238,37 @@ class ChapterController extends Controller
         });
 
         return redirect()->back();
+    }
+
+    public function createSnapshot(CreateSnapshotRequest $request, Book $book, Chapter $chapter): JsonResponse
+    {
+        $version = DB::transaction(function () use ($request, $chapter) {
+            $chapter->loadMissing('scenes');
+            $content = $chapter->getFullContent();
+
+            $chapter->versions()->update(['is_current' => false]);
+            $latestVersionNumber = $chapter->versions()->max('version_number');
+
+            return $chapter->versions()->create([
+                'version_number' => $latestVersionNumber + 1,
+                'content' => $content,
+                'source' => VersionSource::Snapshot,
+                'change_summary' => $request->validated('change_summary'),
+                'is_current' => true,
+            ]);
+        });
+
+        return response()->json($version);
+    }
+
+    public function destroyVersion(Book $book, Chapter $chapter, ChapterVersion $version): JsonResponse
+    {
+        abort_if($version->is_current, 403, 'Cannot delete the current version.');
+        abort_if($chapter->versions()->count() <= 1, 403, 'Cannot delete the last version.');
+
+        $version->delete();
+
+        return response()->json(['success' => true]);
     }
 
     public function destroy(Book $book, Chapter $chapter): RedirectResponse

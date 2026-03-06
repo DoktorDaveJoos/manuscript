@@ -1,6 +1,6 @@
 export type StorylineType = 'main' | 'backstory' | 'parallel';
 export type ChapterStatus = 'draft' | 'revised' | 'final';
-export type VersionSource = 'original' | 'ai_revision' | 'manual_edit' | 'normalization' | 'beautify';
+export type VersionSource = 'original' | 'ai_revision' | 'manual_edit' | 'normalization' | 'beautify' | 'snapshot';
 export type PlotPointType = 'setup' | 'conflict' | 'turning_point' | 'resolution' | 'worldbuilding';
 export type PlotPointStatus = 'planned' | 'fulfilled' | 'abandoned';
 export type CharacterRole = 'protagonist' | 'supporting' | 'mentioned';
@@ -210,6 +210,31 @@ export type WritingGoalData = {
     today_words: number;
     streak: number;
     goal_met_today: boolean;
+};
+
+export type HeatmapDay = {
+    date: string;
+    words: number;
+    goal_met: boolean;
+};
+
+export type HealthSnapshot = {
+    date: string;
+    composite: number;
+    hooks: number;
+    pacing: number;
+    tension: number;
+    weave: number;
+};
+
+export type ManuscriptTarget = {
+    target_word_count: number | null;
+    total_words: number;
+    progress_percent: number;
+    milestone_reached: boolean;
+    milestone_reached_at: string | null;
+    milestone_dismissed: boolean;
+    days_writing: number;
 };
 
 export type TrashItem = {
