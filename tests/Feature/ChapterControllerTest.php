@@ -330,7 +330,7 @@ test('split returns json with chapter_id and url', function () {
         ->assertJsonStructure(['chapter_id', 'url']);
 });
 
-test('destroy deletes chapter and recompacts reader_order', function () {
+test('destroy soft-deletes chapter and recompacts reader_order', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
 
@@ -342,6 +342,7 @@ test('destroy deletes chapter and recompacts reader_order', function () {
         ->assertRedirect(route('chapters.show', [$book, $ch0]));
 
     expect(Chapter::find($ch1->id))->toBeNull();
+    expect(Chapter::withTrashed()->find($ch1->id))->not->toBeNull();
     expect($ch0->fresh()->reader_order)->toBe(0);
     expect($ch2->fresh()->reader_order)->toBe(1);
 });
@@ -357,7 +358,7 @@ test('destroy redirects to empty state when last chapter deleted', function () {
     expect(Chapter::find($chapter->id))->toBeNull();
 });
 
-test('destroy cascades chapter versions', function () {
+test('destroy soft-deletes chapter but versions remain', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0]);
@@ -366,8 +367,11 @@ test('destroy cascades chapter versions', function () {
 
     $this->delete(route('chapters.destroy', [$book, $chapter]));
 
-    expect(ChapterVersion::find($v1->id))->toBeNull();
-    expect(ChapterVersion::find($v2->id))->toBeNull();
+    expect(Chapter::find($chapter->id))->toBeNull();
+    expect(Chapter::withTrashed()->find($chapter->id))->not->toBeNull();
+    // Versions still exist because soft delete doesn't trigger DB CASCADE
+    expect(ChapterVersion::find($v1->id))->not->toBeNull();
+    expect(ChapterVersion::find($v2->id))->not->toBeNull();
 });
 
 test('updateStatus changes status', function () {

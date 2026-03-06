@@ -137,7 +137,7 @@ class NormalizationController extends Controller
         ]);
 
         // Replace scenes with normalized content
-        $chapter->scenes()->delete();
+        $chapter->scenes()->forceDelete();
         $wordCount = str_word_count(strip_tags($result['content']));
         $chapter->scenes()->create([
             'title' => 'Scene 1',

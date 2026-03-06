@@ -36,10 +36,10 @@ export default function DeleteChapterDialog({
                             />
                         </svg>
                     </div>
-                    <h2 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">Delete chapter</h2>
+                    <h2 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">Move to trash</h2>
                     <p className="text-sm leading-[22px] text-ink-muted">
-                        This will permanently delete <span className="font-medium text-ink">{chapter.title}</span> and its version history. This action cannot
-                        be undone.
+                        This will move <span className="font-medium text-ink">{chapter.title}</span> and its scenes to the trash. You can restore it later
+                        from the sidebar.
                     </p>
                 </div>
 
@@ -53,7 +53,7 @@ export default function DeleteChapterDialog({
                         onClick={handleDelete}
                         className="rounded-md bg-delete px-6 py-2.5 text-sm font-medium leading-[18px] text-white transition-opacity disabled:opacity-40"
                     >
-                        Delete chapter
+                        Move to trash
                     </button>
                 </div>
             </div>

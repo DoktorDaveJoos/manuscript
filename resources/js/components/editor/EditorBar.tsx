@@ -76,6 +76,9 @@ export default function EditorBar({
                     </svg>
                     v{versionCount}
                 </button>
+                <kbd className="rounded border border-border bg-neutral-bg px-1.5 py-0.5 text-[10px] text-ink-muted">
+                    ⇧Tab
+                </kbd>
             </div>
         </div>
     );

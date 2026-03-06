@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ReorderStorylinesRequest;
 use App\Http\Requests\UpdateStorylineRequest;
 use App\Models\Book;
+use App\Models\Scene;
 use App\Models\Storyline;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -28,8 +29,11 @@ class StorylineController extends Controller
             abort(422, 'Cannot delete the last storyline.');
         }
 
-        $storyline->chapters()->delete();
-        $storyline->delete();
+        DB::transaction(function () use ($storyline) {
+            Scene::whereIn('chapter_id', $storyline->chapters()->select('id'))->delete();
+            $storyline->chapters()->delete();
+            $storyline->delete();
+        });
 
         $firstChapter = $book->chapters()
             ->orderBy('reader_order')

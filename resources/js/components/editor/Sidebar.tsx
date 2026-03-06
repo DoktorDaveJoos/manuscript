@@ -10,6 +10,7 @@ import { createChapter, formatCompactCount } from '@/lib/utils';
 import type { Book, Storyline } from '@/types/models';
 import { Link, usePage } from '@inertiajs/react';
 import ChapterList from './ChapterList';
+import TrashBin from './TrashBin';
 
 export default function Sidebar({
     book,
@@ -125,6 +126,9 @@ export default function Sidebar({
                     onAddChapter={handleAddChapter}
                 />
             </div>
+
+            {/* Trash */}
+            <TrashBin bookId={book.id} />
 
             {/* Footer */}
             <div className="flex items-center justify-between border-t border-border-subtle px-5 py-3.5">

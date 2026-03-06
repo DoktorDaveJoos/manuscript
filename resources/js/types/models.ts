@@ -212,6 +212,14 @@ export type WritingGoalData = {
     goal_met_today: boolean;
 };
 
+export type TrashItem = {
+    id: number;
+    type: 'storyline' | 'chapter' | 'scene';
+    name: string;
+    color?: string | null;
+    deleted_at: string;
+};
+
 export type NormalizePreviewResult = {
     chapters: {
         id: number;

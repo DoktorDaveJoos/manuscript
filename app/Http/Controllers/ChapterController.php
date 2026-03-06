@@ -225,7 +225,7 @@ class ChapterController extends Controller
             ]);
 
             // Replace all scenes with single scene from restored content
-            $chapter->scenes()->delete();
+            $chapter->scenes()->forceDelete();
             $wordCount = str_word_count(strip_tags($version->content ?? ''));
             $chapter->scenes()->create([
                 'title' => 'Scene 1',
@@ -241,22 +241,25 @@ class ChapterController extends Controller
 
     public function destroy(Book $book, Chapter $chapter): RedirectResponse
     {
-        $deletedOrder = $chapter->reader_order;
-        $chapter->delete();
+        return DB::transaction(function () use ($book, $chapter) {
+            $deletedOrder = $chapter->reader_order;
+            $chapter->scenes()->delete();
+            $chapter->delete();
 
-        $book->chapters()
-            ->where('reader_order', '>', $deletedOrder)
-            ->decrement('reader_order');
+            $book->chapters()
+                ->where('reader_order', '>', $deletedOrder)
+                ->decrement('reader_order');
 
-        $nextChapter = $book->chapters()
-            ->orderBy('reader_order')
-            ->first();
+            $nextChapter = $book->chapters()
+                ->orderBy('reader_order')
+                ->first();
 
-        if ($nextChapter) {
-            return redirect()->route('chapters.show', [$book, $nextChapter]);
-        }
+            if ($nextChapter) {
+                return redirect()->route('chapters.show', [$book, $nextChapter]);
+            }
 
-        return redirect()->route('books.editor', $book);
+            return redirect()->route('books.editor', $book);
+        });
     }
 
     public function updateStatus(UpdateChapterStatusRequest $request, Book $book, Chapter $chapter): JsonResponse

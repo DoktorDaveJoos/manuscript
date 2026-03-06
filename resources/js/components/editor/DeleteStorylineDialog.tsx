@@ -43,13 +43,13 @@ export default function DeleteStorylineDialog({
                             />
                         </svg>
                     </div>
-                    <h2 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">Delete storyline</h2>
+                    <h2 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">Move to trash</h2>
                     <p className="text-sm leading-[22px] text-ink-muted">
-                        This will permanently delete <span className="font-medium text-ink">{storyline.name}</span> and all{' '}
+                        This will move <span className="font-medium text-ink">{storyline.name}</span> and all{' '}
                         <span className="font-medium text-ink">
                             {chapterCount} {chapterCount === 1 ? 'chapter' : 'chapters'}
                         </span>{' '}
-                        within it. This action cannot be undone.
+                        within it to the trash. You can restore them later from the sidebar.
                     </p>
                 </div>
 
@@ -77,7 +77,7 @@ export default function DeleteStorylineDialog({
                         onClick={handleDelete}
                         className="rounded-md bg-delete px-6 py-2.5 text-sm font-medium leading-[18px] text-white transition-opacity disabled:opacity-40"
                     >
-                        Delete permanently
+                        Move to trash
                     </button>
                 </div>
             </div>

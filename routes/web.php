@@ -15,6 +15,7 @@ use App\Http\Controllers\PlotController;
 use App\Http\Controllers\SceneController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StorylineController;
+use App\Http\Controllers\TrashController;
 use App\Http\Controllers\WritingGoalController;
 use Illuminate\Support\Facades\Route;
 
@@ -53,6 +54,10 @@ Route::delete('/books/{book}/chapters/{chapter}/scenes/{scene}', [SceneControlle
 Route::patch('/books/{book}/storylines/{storyline}', [StorylineController::class, 'update'])->name('storylines.update');
 Route::delete('/books/{book}/storylines/{storyline}', [StorylineController::class, 'destroy'])->name('storylines.destroy');
 Route::post('/books/{book}/storylines/reorder', [StorylineController::class, 'reorder'])->name('storylines.reorder');
+
+Route::get('/books/{book}/trash', [TrashController::class, 'index'])->name('books.trash.index');
+Route::post('/books/{book}/trash/restore', [TrashController::class, 'restore'])->name('books.trash.restore');
+Route::delete('/books/{book}/trash', [TrashController::class, 'empty'])->name('books.trash.empty');
 
 Route::post('/books/{book}/normalize/preview', [NormalizationController::class, 'previewBook'])->name('books.normalize.preview');
 Route::post('/books/{book}/normalize/apply', [NormalizationController::class, 'applyBook'])->name('books.normalize.apply');
