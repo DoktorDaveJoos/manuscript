@@ -17,9 +17,9 @@ export default function NavItem({
     onClick?: () => void;
     suffix?: React.ReactNode;
 }) {
-    const classes = `flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors ${
+    const classes = `flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[14px] leading-[18px] transition-colors ${
         isActive
-            ? 'bg-[#F5F2EC] font-medium text-ink'
+            ? 'bg-[#F5F2EC] font-medium text-[#2D2A26]'
             : disabled
               ? 'cursor-default text-ink-faint'
               : 'text-ink-muted hover:bg-[#F5F2EC] hover:text-ink'

@@ -48,7 +48,7 @@ export default function Sidebar({
     };
 
     return (
-        <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border-light bg-surface">
+        <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border-light bg-white">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border-subtle px-5 py-4">
                 <Link href={index.url()} className="text-[13px] font-semibold uppercase tracking-[0.05em] text-ink">
