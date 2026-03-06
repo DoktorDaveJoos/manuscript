@@ -98,7 +98,7 @@ export default function AiInsights({ healthMetrics }: { healthMetrics: HealthMet
                     Manuscript Health
                 </span>
 
-                <div className="flex items-center gap-5">
+                <div className="flex items-center gap-6">
                     <ScoreGauge score={healthMetrics.composite_score} />
                     <span className="text-[12px] text-ink-muted">
                         Last analyzed{' '}
@@ -123,7 +123,7 @@ export default function AiInsights({ healthMetrics }: { healthMetrics: HealthMet
                     <p className="text-[13px] text-ink-faint">No issues found.</p>
                 )}
 
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3">
                     {healthMetrics.attention_items.map((item, i) => (
                         <div key={i} className="flex gap-2.5">
                             <span

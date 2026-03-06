@@ -144,7 +144,7 @@ export default function WritingGoal({
         <div className="flex flex-col gap-3 rounded-lg bg-surface-card px-6 py-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">
+                <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
                     Today&apos;s Writing
                 </span>
                 <button
@@ -161,11 +161,11 @@ export default function WritingGoal({
                 <span className="font-serif text-[48px] leading-[1] font-medium text-ink">
                     {writingGoal.today_words.toLocaleString('en-US')}
                 </span>
-                <span className="ml-1 font-serif text-[24px] font-medium text-ink-faint">
+                <span className="ml-1 font-serif text-[24px] text-ink-faint">
                     / {goal.toLocaleString('en-US')}
                 </span>
             </div>
-            <span className="text-[13px] text-ink-muted">words today</span>
+            <span className="mt-[-6px] text-[13px] text-ink-muted">words today</span>
 
             {/* Progress bar */}
             <div className="h-1.5 overflow-hidden rounded-[3px] bg-neutral-bg">

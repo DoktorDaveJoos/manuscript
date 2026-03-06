@@ -53,7 +53,7 @@ function ChapterStatusBar({ counts }: { counts: StatusCounts }) {
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex items-center">
+            <div className="flex items-center overflow-hidden rounded-[4px]">
                 {segments.map((s) => (
                     <div
                         key={s.label}
@@ -113,12 +113,12 @@ export default function Dashboard({
                         )}
 
                         {/* Book Header */}
-                        <div>
+                        <div className="flex flex-col gap-[6px]">
                             <h1 className="font-serif text-[34px] leading-[40px] tracking-[-0.01em] text-ink">
                                 {book.title}
                             </h1>
                             {book.author && (
-                                <p className="mt-2 text-[14px] text-ink-muted">by {book.author}</p>
+                                <p className="text-[14px] text-ink-muted">by {book.author}</p>
                             )}
                         </div>
 

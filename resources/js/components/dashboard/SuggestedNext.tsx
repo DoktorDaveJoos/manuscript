@@ -12,7 +12,7 @@ export default function SuggestedNext({
 }) {
     return (
         <div className="flex items-start gap-4">
-            <CheckCircle size={20} weight="fill" className="shrink-0 text-accent" />
+            <CheckCircle size={20} weight="fill" className="mt-0.5 shrink-0 text-accent" />
 
             <div className="flex flex-col gap-1">
                 <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-accent">
