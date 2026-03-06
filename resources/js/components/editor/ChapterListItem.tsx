@@ -65,7 +65,7 @@ const ChapterListItem = forwardRef<HTMLButtonElement, ChapterListItemProps>(func
                             e.stopPropagation();
                             onToggleExpand?.();
                         }}
-                        className={`flex items-center transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''} ${isActive ? 'text-white/70' : 'text-ink-faint'}`}
+                        className={`flex items-center transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''} ${isActive ? 'text-white/70' : 'text-ink-faint'}`}
                     >
                         <CaretRight size={8} weight="bold" />
                     </span>

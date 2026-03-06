@@ -152,7 +152,7 @@ function SortableStorylineGroup({
                 </span>
             )}
             <div
-                className="grid transition-[grid-template-rows] duration-150 ease-out"
+                className="grid transition-[grid-template-rows] duration-200 ease-out"
                 style={{ gridTemplateRows: isCollapsed ? '0fr' : '1fr' }}
             >
                 <div className="overflow-hidden">
@@ -343,9 +343,7 @@ export default function ChapterList({
     const [activeItem, setActiveItem] = useState<{ type: 'chapter'; chapter: Chapter } | { type: 'storyline'; storyline: Storyline } | null>(null);
     const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
     const [dialog, setDialog] = useState<DialogState>(null);
-    const [expandedChapterIds, setExpandedChapterIds] = useState<Set<number>>(() => {
-        return activeChapterId ? new Set([activeChapterId]) : new Set();
-    });
+    const [expandedChapterIds, setExpandedChapterIds] = useState<Set<number>>(new Set());
     const [collapsedStorylineIds, setCollapsedStorylineIds] = useState<Set<number>>(new Set());
     const [renamingChapterId, setRenamingChapterId] = useState<number | null>(null);
     const [renamingStorylineId, setRenamingStorylineId] = useState<number | null>(null);
@@ -660,7 +658,7 @@ export default function ChapterList({
                                                 />
                                                 {hasScenes && (
                                                     <div
-                                                        className="grid transition-[grid-template-rows] duration-150 ease-out"
+                                                        className="grid transition-[grid-template-rows] duration-200 ease-out"
                                                         style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
                                                     >
                                                         <div className="overflow-hidden">
