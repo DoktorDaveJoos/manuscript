@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ChapterStatus;
+use App\Enums\StorylineType;
+use App\Enums\VersionSource;
 use App\Http\Requests\ReorderStorylinesRequest;
+use App\Http\Requests\StoreStorylineRequest;
 use App\Http\Requests\UpdateStorylineRequest;
 use App\Models\Book;
 use App\Models\Scene;
@@ -13,6 +17,47 @@ use Illuminate\Support\Facades\DB;
 
 class StorylineController extends Controller
 {
+    public function store(StoreStorylineRequest $request, Book $book): RedirectResponse
+    {
+        $chapter = DB::transaction(function () use ($request, $book) {
+            $nextOrder = ($book->storylines()->max('sort_order') ?? -1) + 1;
+
+            $storyline = $book->storylines()->create([
+                'name' => $request->validated('name'),
+                'type' => StorylineType::Parallel,
+                'sort_order' => $nextOrder,
+            ]);
+
+            $nextChapterOrder = ($book->chapters()->max('reader_order') ?? -1) + 1;
+
+            $chapter = $book->chapters()->create([
+                'storyline_id' => $storyline->id,
+                'title' => 'Chapter 1',
+                'reader_order' => $nextChapterOrder,
+                'status' => ChapterStatus::Draft,
+                'word_count' => 0,
+            ]);
+
+            $chapter->versions()->create([
+                'version_number' => 1,
+                'content' => '',
+                'source' => VersionSource::Original,
+                'is_current' => true,
+            ]);
+
+            $chapter->scenes()->create([
+                'title' => 'Scene 1',
+                'content' => '',
+                'sort_order' => 0,
+                'word_count' => 0,
+            ]);
+
+            return $chapter;
+        });
+
+        return redirect()->route('chapters.show', [$book, $chapter]);
+    }
+
     public function update(UpdateStorylineRequest $request, Book $book, Storyline $storyline): JsonResponse
     {
         $storyline->update($request->validated());

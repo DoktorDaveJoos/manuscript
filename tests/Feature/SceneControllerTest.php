@@ -164,6 +164,26 @@ test('store creates default scene when creating chapter', function () {
     expect($chapter->scenes->first()->title)->toBe('Scene 1');
 });
 
+test('store creates scene with initial content', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 0]);
+    Scene::factory()->for($chapter)->create(['sort_order' => 0, 'word_count' => 0]);
+
+    $this->postJson(route('scenes.store', [$book, $chapter]), [
+        'title' => 'Split Scene',
+        'position' => 1,
+        'content' => '<p>The quick brown fox jumps over the lazy dog</p>',
+    ])
+        ->assertCreated()
+        ->assertJsonFragment(['title' => 'Split Scene']);
+
+    $scene = $chapter->scenes()->where('title', 'Split Scene')->first();
+    expect($scene->content)->toBe('<p>The quick brown fox jumps over the lazy dog</p>');
+    expect($scene->word_count)->toBe(9);
+    expect($chapter->fresh()->word_count)->toBe(9);
+});
+
 test('split creates scene in new chapter', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();

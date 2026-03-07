@@ -55,7 +55,7 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 ## Frontend Bundling
 
-- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `npm run build`, `npm run dev`, or `composer run dev`. Ask them.
+- After making CSS, TypeScript, or React component changes, always run `npm run build` (or remind the user to run `npm run dev` if the dev server is running) so the change takes effect.
 
 ## Documentation Files
 
@@ -288,3 +288,14 @@ Wayfinder generates TypeScript functions for Laravel routes. Import from `@/acti
 - IMPORTANT: Activate `tailwindcss-development` every time you're working with a Tailwind CSS or styling-related task.
 
 </laravel-boost-guidelines>
+
+## NativePHP Database
+
+- This is a NativePHP app. At runtime, it uses a dynamically registered `nativephp` database connection pointing to `database/nativephp.sqlite`.
+- After creating and running migrations with `php artisan migrate`, also run them against the NativePHP database: `DB_DATABASE=database/nativephp.sqlite php artisan migrate --no-interaction`
+- The `nativephp` connection name is NOT available from the CLI — use the `DB_DATABASE` env override instead.
+
+## Workflow Preferences
+
+- When the user asks for implementation, prioritize code changes over planning documents. Only produce a plan if explicitly asked for one.
+- Try the simplest approach first. Before committing to a complex solution, briefly state the approach and wait for confirmation if there are multiple options.

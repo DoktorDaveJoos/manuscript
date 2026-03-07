@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateWritingGoalRequest extends FormRequest
+class StoreStorylineRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -17,8 +17,7 @@ class UpdateWritingGoalRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'daily_word_count_goal' => ['required', 'integer', 'min:50', 'max:50000'],
-            'target_word_count' => ['sometimes', 'nullable', 'integer', 'min:1000', 'max:500000'],
+            'name' => ['required', 'string', 'max:255'],
         ];
     }
 }

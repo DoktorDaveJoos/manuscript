@@ -1,7 +1,6 @@
 import Kbd from '@/components/ui/Kbd';
-import { cn } from '@/lib/utils';
 import type { Chapter } from '@/types/models';
-import { ClockCounterClockwise, NotePencil } from '@phosphor-icons/react';
+import { ClockCounterClockwise } from '@phosphor-icons/react';
 import StatusBadge from './StatusBadge';
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
@@ -21,9 +20,6 @@ export default function EditorBar({
     versionCount,
     saveStatus,
     onVersionClick,
-    onNotesToggle,
-    isNotesOpen,
-    hasNotes,
 }: {
     chapter: Chapter;
     chapterTitle: string;
@@ -32,9 +28,6 @@ export default function EditorBar({
     versionCount: number;
     saveStatus: SaveStatus;
     onVersionClick: () => void;
-    onNotesToggle: () => void;
-    isNotesOpen: boolean;
-    hasNotes: boolean;
 }) {
     return (
         <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-6">
@@ -54,20 +47,6 @@ export default function EditorBar({
                     {saveStatusLabel[saveStatus]}
                 </span>
                 <span className="text-xs text-ink-faint">{wordCount.toLocaleString('en-US')} words</span>
-                <button
-                    type="button"
-                    onClick={onNotesToggle}
-                    className={cn(
-                        'flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-neutral-bg hover:text-ink',
-                        isNotesOpen ? 'bg-neutral-bg text-ink' : 'text-ink-muted',
-                    )}
-                >
-                    <NotePencil size={12} />
-                    Notes
-                    {hasNotes && !isNotesOpen && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-ink-muted" />
-                    )}
-                </button>
                 <button
                     type="button"
                     onClick={onVersionClick}

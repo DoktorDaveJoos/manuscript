@@ -1,9 +1,42 @@
 <?php
 
+use App\Enums\ChapterStatus;
+use App\Enums\StorylineType;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
 use App\Models\Storyline;
+
+test('store creates storyline with chapter and scene', function () {
+    $book = Book::factory()->create();
+    $existingStoryline = Storyline::factory()->for($book)->create(['sort_order' => 0]);
+    $existingChapter = Chapter::factory()->for($book)->for($existingStoryline)->create(['reader_order' => 0]);
+
+    $this->post(route('storylines.store', $book), ['name' => 'B-Plot'])
+        ->assertRedirect();
+
+    $storyline = $book->storylines()->where('name', 'B-Plot')->first();
+    expect($storyline)->not->toBeNull();
+    expect($storyline->type)->toBe(StorylineType::Parallel);
+    expect($storyline->sort_order)->toBe(1);
+
+    $chapter = $storyline->chapters()->first();
+    expect($chapter)->not->toBeNull();
+    expect($chapter->title)->toBe('Chapter 1');
+    expect($chapter->status)->toBe(ChapterStatus::Draft);
+    expect($chapter->reader_order)->toBe(1);
+
+    expect($chapter->versions()->count())->toBe(1);
+    expect($chapter->scenes()->count())->toBe(1);
+    expect($chapter->scenes()->first()->title)->toBe('Scene 1');
+});
+
+test('store validates name is required', function () {
+    $book = Book::factory()->create();
+
+    $this->post(route('storylines.store', $book), ['name' => ''])
+        ->assertSessionHasErrors('name');
+});
 
 test('update changes storyline name and color', function () {
     $book = Book::factory()->create();

@@ -28,9 +28,12 @@
     --color-delete: #C0392B;
     --color-delete-bg: #FDF2F0;
     --color-drop: #4A7C59;
-    --color-ink-soft: #3D3A36;
+    --color-ink-soft: #5A574F;
     --color-section-header: #D8D5CE;
     --color-kbd-bg: #F7F5F0;
+    --color-ink-whisper: #1A1A1A4D;
+    --color-surface-warm: #F5F0E8;
+    --color-ink-warm: #6B6358;
 }
 
 html.dark {
@@ -57,6 +60,9 @@ html.dark {
     --color-drop: #5A8F5C;
     --color-section-header: #4A4640;
     --color-kbd-bg: #2A2723;
+    --color-ink-whisper: #D4D0C84D;
+    --color-surface-warm: #332E26;
+    --color-ink-warm: #A89E92;
 }
 
 @layer base {
@@ -66,17 +72,29 @@ html.dark {
     }
 }
 
+/* Notes panel entry animation */
+@keyframes notes-enter {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Tiptap editor prose styles */
 .editor-prose {
     font-family: var(--font-serif);
     font-size: 18px;
-    line-height: 1.8;
+    line-height: 1.6;
     color: var(--color-ink);
     outline: none;
 }
 
 .editor-prose p {
-    margin-bottom: 1em;
+    margin-bottom: 0.4em;
 }
 
 .editor-prose h1 {

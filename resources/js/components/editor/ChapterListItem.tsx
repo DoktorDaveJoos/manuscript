@@ -31,10 +31,11 @@ type ChapterListItemProps = {
     isDragging?: boolean;
     isExpanded?: boolean;
     onToggleExpand?: () => void;
+    scenesVisible?: boolean;
 };
 
 const ChapterListItem = forwardRef<HTMLButtonElement, ChapterListItemProps>(function ChapterListItem(
-    { chapter, bookId, index, isActive, displayTitle, wordCount, onBeforeNavigate, onContextMenu, dragListeners, isDragging, isExpanded, onToggleExpand },
+    { chapter, bookId, index, isActive, displayTitle, wordCount, onBeforeNavigate, onContextMenu, dragListeners, isDragging, isExpanded, onToggleExpand, scenesVisible },
     ref,
 ) {
     const handleClick = async () => {
@@ -45,30 +46,36 @@ const ChapterListItem = forwardRef<HTMLButtonElement, ChapterListItemProps>(func
         router.visit(show.url({ book: bookId, chapter: chapter.id }));
     };
 
+    const paddingClass = scenesVisible === false
+        ? (isActive ? 'pl-[22px] pr-2' : 'pl-[22px] pr-2.5')
+        : (isActive ? 'px-2' : 'px-2.5');
+
     return (
         <button
             ref={ref}
             type="button"
             onClick={handleClick}
             onContextMenu={onContextMenu}
-            className={`group relative flex w-full items-center gap-1.5 rounded-[5px] ${isActive ? 'px-2' : 'px-2.5'} py-1.5 text-left text-[13px] leading-4 transition-colors ${
+            className={`group relative flex w-full items-center gap-1.5 rounded-[5px] ${paddingClass} py-1.5 text-left text-[13px] leading-4 transition-colors ${
                 isDragging ? 'opacity-50' : ''
             } ${isActive ? 'bg-ink text-surface' : 'text-ink-soft hover:bg-ink/5 hover:text-ink'}`}
         >
             {/* Chevron + Status Dot / Drag handle area */}
             <span className="relative flex shrink-0 items-center" {...dragListeners}>
                 <span className="flex items-center gap-1.5 transition-opacity group-hover:opacity-0">
-                    <span
-                        role="button"
-                        tabIndex={-1}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleExpand?.();
-                        }}
-                        className={`flex items-center transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''} ${isActive ? 'text-white/70' : 'text-ink-faint'}`}
-                    >
-                        <CaretRight size={8} weight="bold" />
-                    </span>
+                    {scenesVisible !== false && (
+                        <span
+                            role="button"
+                            tabIndex={-1}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onToggleExpand?.();
+                            }}
+                            className={`flex items-center transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''} ${isActive ? 'text-white/70' : 'text-ink-faint'}`}
+                        >
+                            <CaretRight size={8} weight="bold" />
+                        </span>
+                    )}
                     <Circle size={6} weight="fill" className={`shrink-0 ${statusDotColor[chapter.status]}`} />
                 </span>
                 <span

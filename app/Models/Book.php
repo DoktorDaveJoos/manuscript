@@ -25,6 +25,9 @@ class Book extends Model
             'story_bible' => 'array',
             'prose_pass_rules' => 'array',
             'daily_word_count_goal' => 'integer',
+            'target_word_count' => 'integer',
+            'milestone_reached_at' => 'datetime',
+            'milestone_dismissed' => 'boolean',
         ];
     }
 
@@ -128,5 +131,13 @@ class Book extends Model
     public function writingSessions(): HasMany
     {
         return $this->hasMany(WritingSession::class);
+    }
+
+    /**
+     * @return HasMany<HealthSnapshot, $this>
+     */
+    public function healthSnapshots(): HasMany
+    {
+        return $this->hasMany(HealthSnapshot::class);
     }
 }

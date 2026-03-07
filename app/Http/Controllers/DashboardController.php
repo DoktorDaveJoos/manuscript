@@ -6,6 +6,7 @@ use App\Enums\AnalysisType;
 use App\Enums\ChapterStatus;
 use App\Models\Book;
 use App\Models\WritingSession;
+use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -38,6 +39,13 @@ class DashboardController extends Controller
 
         $streak = $this->calculateStreak($book, $todaySession);
 
+        $healthMetrics = $this->buildHealthMetrics($book, $chapters);
+
+        // Auto-detect milestone
+        if ($book->target_word_count && $totalWords >= $book->target_word_count && ! $book->milestone_reached_at) {
+            $book->update(['milestone_reached_at' => now()]);
+        }
+
         return Inertia::render('books/dashboard', [
             'book' => $book->only('id', 'title', 'author', 'language', 'ai_enabled', 'storylines'),
             'stats' => [
@@ -47,7 +55,7 @@ class DashboardController extends Controller
                 'reading_time_minutes' => $chapterCount > 0 ? (int) ceil($totalWords / 230) : 0,
             ],
             'status_counts' => $statusCounts,
-            'health_metrics' => $this->buildHealthMetrics($book, $chapters),
+            'health_metrics' => $healthMetrics,
             'suggested_next' => $this->buildSuggestedNext($book),
             'ai_preparation' => $aiPreparation,
             'story_bible' => $book->story_bible,
@@ -57,7 +65,17 @@ class DashboardController extends Controller
                 'goal_met_today' => (bool) $todaySession?->goal_met,
                 'streak' => $streak,
             ],
+            'writing_heatmap' => $this->buildWritingHeatmap($book),
+            'health_history' => $this->buildHealthHistory($book),
+            'manuscript_target' => $this->buildManuscriptTarget($book, $totalWords),
         ]);
+    }
+
+    public function dismissMilestone(Book $book): JsonResponse
+    {
+        $book->update(['milestone_dismissed' => true]);
+
+        return response()->json(['dismissed' => true]);
     }
 
     /**
@@ -271,6 +289,66 @@ class DashboardController extends Controller
         return [
             'title' => $suggestion->result['title'] ?? 'Next Chapter',
             'description' => $suggestion->result['description'] ?? '',
+        ];
+    }
+
+    /**
+     * @return list<array{date: string, words: int, goal_met: bool}>
+     */
+    private function buildWritingHeatmap(Book $book): array
+    {
+        return $book->writingSessions()
+            ->where('date', '>=', now()->subDays(364))
+            ->get(['date', 'words_written', 'goal_met'])
+            ->map(fn ($session) => [
+                'date' => $session->date instanceof \Carbon\Carbon
+                    ? $session->date->toDateString()
+                    : substr((string) $session->date, 0, 10),
+                'words' => (int) $session->words_written,
+                'goal_met' => (bool) $session->goal_met,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<array{date: string, composite: int, hooks: int, pacing: int, tension: int, weave: int}>
+     */
+    private function buildHealthHistory(Book $book): array
+    {
+        return $book->healthSnapshots()
+            ->where('recorded_at', '>=', now()->subDays(90))
+            ->orderBy('recorded_at')
+            ->get()
+            ->map(fn ($snapshot) => [
+                'date' => $snapshot->recorded_at->toDateString(),
+                'composite' => $snapshot->composite_score,
+                'hooks' => $snapshot->hooks_score,
+                'pacing' => $snapshot->pacing_score,
+                'tension' => $snapshot->tension_score,
+                'weave' => $snapshot->weave_score,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array{target_word_count: int|null, total_words: int, progress_percent: int, milestone_reached: bool, milestone_reached_at: string|null, milestone_dismissed: bool, days_writing: int}
+     */
+    private function buildManuscriptTarget(Book $book, int $totalWords): array
+    {
+        $daysWriting = $book->writingSessions()->distinct('date')->count('date');
+
+        return [
+            'target_word_count' => $book->target_word_count,
+            'total_words' => $totalWords,
+            'progress_percent' => $book->target_word_count
+                ? min(100, (int) round(($totalWords / $book->target_word_count) * 100))
+                : 0,
+            'milestone_reached' => $book->milestone_reached_at !== null,
+            'milestone_reached_at' => $book->milestone_reached_at?->toISOString(),
+            'milestone_dismissed' => (bool) $book->milestone_dismissed,
+            'days_writing' => $daysWriting,
         ];
     }
 }

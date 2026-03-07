@@ -24,12 +24,19 @@ class SceneController extends Controller
             ->where('sort_order', '>=', $position)
             ->increment('sort_order');
 
+        $content = $request->validated('content') ?? '';
+        $wordCount = $content !== '' ? str_word_count(strip_tags($content)) : 0;
+
         $scene = $chapter->scenes()->create([
             'title' => $request->validated('title'),
-            'content' => '',
+            'content' => $content,
             'sort_order' => $position,
-            'word_count' => 0,
+            'word_count' => $wordCount,
         ]);
+
+        if ($wordCount > 0) {
+            $chapter->recalculateWordCount();
+        }
 
         return response()->json($scene, 201);
     }

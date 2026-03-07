@@ -7,6 +7,7 @@ use App\Ai\Agents\CharacterExtractor;
 use App\Models\AiPreparation;
 use App\Models\AiSetting;
 use App\Models\Book;
+use App\Models\HealthSnapshot;
 use App\Services\ChunkingService;
 use App\Services\EmbeddingService;
 use App\Services\StoryBibleService;
@@ -147,6 +148,7 @@ class PrepareBookForAi implements ShouldQueue
 
         // Phase 7: Health analysis (computed from chapter data, no AI call needed)
         $this->startPhase('health_analysis', 1);
+        $this->upsertHealthSnapshot($chapters);
         $this->advancePhase();
         $this->completePhase('health_analysis');
 
@@ -272,6 +274,65 @@ class PrepareBookForAi implements ShouldQueue
         }
 
         $this->completePhase('character_extraction');
+    }
+
+    /**
+     * Upsert a health snapshot from current chapter analysis data.
+     *
+     * @param  Collection<int, \App\Models\Chapter>  $chapters
+     */
+    private function upsertHealthSnapshot(Collection $chapters): void
+    {
+        $analyzed = $chapters->filter(fn ($ch) => $ch->hook_score !== null);
+
+        if ($analyzed->isEmpty()) {
+            return;
+        }
+
+        $avgHook = $analyzed->avg('hook_score');
+        $hookScore = min(100, max(0, (int) round($avgHook * 10)));
+
+        $wordCounts = $chapters->pluck('word_count')->filter(fn ($w) => $w > 0);
+        if ($wordCounts->count() > 1) {
+            $mean = $wordCounts->avg();
+            $variance = $wordCounts->map(fn ($w) => pow($w - $mean, 2))->avg();
+            $cv = $mean > 0 ? sqrt($variance) / $mean : 0;
+            $pacingScore = min(100, max(0, (int) round(100 - abs($cv - 0.25) * 200)));
+        } else {
+            $pacingScore = 50;
+        }
+
+        $tensionChapters = $analyzed->filter(fn ($ch) => $ch->tension_score !== null);
+        $tensionScore = $tensionChapters->count() > 2
+            ? min(100, max(0, (int) round($tensionChapters->avg('tension_score') * 10)))
+            : 50;
+
+        $storylineCounts = $chapters->groupBy('storyline_id')->map->count();
+        if ($storylineCounts->count() > 1) {
+            $weaveScore = min(100, max(0, (int) round(($storylineCounts->min() / $storylineCounts->max()) * 100)));
+        } else {
+            $weaveScore = 75;
+        }
+
+        $compositeScore = (int) round(
+            $hookScore * 0.35 + $pacingScore * 0.25 + $tensionScore * 0.25 + $weaveScore * 0.15
+        );
+
+        HealthSnapshot::query()->upsert(
+            [
+                'book_id' => $this->book->id,
+                'recorded_at' => now()->toDateString(),
+                'composite_score' => $compositeScore,
+                'hooks_score' => $hookScore,
+                'pacing_score' => $pacingScore,
+                'tension_score' => $tensionScore,
+                'weave_score' => $weaveScore,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            ['book_id', 'recorded_at'],
+            ['composite_score', 'hooks_score', 'pacing_score', 'tension_score', 'weave_score', 'updated_at'],
+        );
     }
 
     private function startPhase(string $phase, int $total): void

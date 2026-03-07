@@ -54,6 +54,7 @@ Route::patch('/books/{book}/chapters/{chapter}/scenes/{scene}/title', [SceneCont
 Route::post('/books/{book}/chapters/{chapter}/scenes/reorder', [SceneController::class, 'reorder'])->name('scenes.reorder');
 Route::delete('/books/{book}/chapters/{chapter}/scenes/{scene}', [SceneController::class, 'destroy'])->name('scenes.destroy');
 
+Route::post('/books/{book}/storylines', [StorylineController::class, 'store'])->name('storylines.store');
 Route::patch('/books/{book}/storylines/{storyline}', [StorylineController::class, 'update'])->name('storylines.update');
 Route::delete('/books/{book}/storylines/{storyline}', [StorylineController::class, 'destroy'])->name('storylines.destroy');
 Route::post('/books/{book}/storylines/reorder', [StorylineController::class, 'reorder'])->name('storylines.reorder');
