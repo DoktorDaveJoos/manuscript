@@ -102,8 +102,9 @@ export default function WritingSurface({
         (e: React.KeyboardEvent) => {
             if (e.key === 'Enter' && e.shiftKey) {
                 e.preventDefault();
-                const firstScene = document.querySelector('[id^="scene-"] .ProseMirror');
-                if (firstScene instanceof HTMLElement) firstScene.focus();
+                if (scenes.length > 0) {
+                    editorRegistry.current.get(scenes[0].id)?.commands.focus('start');
+                }
             } else if (e.key === 'Enter') {
                 e.preventDefault();
                 document.execCommand('insertLineBreak');
@@ -201,8 +202,7 @@ export default function WritingSurface({
     useEffect(() => {
         if (!pendingFocusSceneId) return;
         requestAnimationFrame(() => {
-            const el = document.querySelector(`#scene-${pendingFocusSceneId} .ProseMirror`);
-            if (el instanceof HTMLElement) el.focus();
+            editorRegistry.current.get(pendingFocusSceneId)?.commands.focus();
             onFocusHandled?.();
         });
     }, [pendingFocusSceneId, onFocusHandled]);
