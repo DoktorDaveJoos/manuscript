@@ -13,6 +13,7 @@ use App\Models\Chapter;
 use App\Models\ChapterVersion;
 use App\Models\Character;
 use App\Models\PlotPoint;
+use App\Models\Scene;
 use App\Models\Storyline;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -57,9 +58,9 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $chapters = collect([
-            ['title' => 'Der Anfang', 'act_id' => $acts[0]->id, 'reader_order' => 1, 'status' => ChapterStatus::Revised, 'word_count' => 2500],
-            ['title' => 'Die Entdeckung', 'act_id' => $acts[1]->id, 'reader_order' => 2, 'status' => ChapterStatus::Draft, 'word_count' => 3200],
-            ['title' => 'Der Wendepunkt', 'act_id' => $acts[2]->id, 'reader_order' => 3, 'status' => ChapterStatus::Draft, 'word_count' => 1800],
+            ['title' => 'Der Anfang', 'act_id' => $acts[0]->id, 'reader_order' => 1, 'status' => ChapterStatus::Revised],
+            ['title' => 'Die Entdeckung', 'act_id' => $acts[1]->id, 'reader_order' => 2, 'status' => ChapterStatus::Draft],
+            ['title' => 'Der Wendepunkt', 'act_id' => $acts[2]->id, 'reader_order' => 3, 'status' => ChapterStatus::Draft],
         ])->map(fn (array $data) => Chapter::factory()->create([
             'book_id' => $book->id,
             'storyline_id' => $storyline->id,
@@ -73,6 +74,20 @@ class DatabaseSeeder extends Seeder
             ChapterVersion::factory()->create([
                 'chapter_id' => $chapter->id,
             ]);
+
+            $sceneCount = fake()->numberBetween(2, 3);
+            $chapterWordCount = 0;
+
+            for ($i = 0; $i < $sceneCount; $i++) {
+                $scene = Scene::factory()->create([
+                    'chapter_id' => $chapter->id,
+                    'title' => 'Szene '.($i + 1),
+                    'sort_order' => $i,
+                ]);
+                $chapterWordCount += $scene->word_count;
+            }
+
+            $chapter->update(['word_count' => $chapterWordCount]);
 
             $chapter->characters()->attach($protagonist->id, [
                 'role' => CharacterRole::Protagonist->value,
