@@ -1,8 +1,14 @@
+import {
+    cancelTypewriterAnimation,
+    centerCursorInContainer,
+} from '@/extensions/TypewriterScrollExtension';
 import type { Scene } from '@/types/models';
-import type { Editor } from '@tiptap/react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import type { Editor } from '@tiptap/core';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DEFAULT_FONT_ID, FONTS } from './FontSelector';
 import SceneEditor from './SceneEditor';
+
+const NORMAL_PADDING_TOP = 48; // Tailwind pt-12
 
 function titleToHtml(title: string): string {
     return title
@@ -25,6 +31,10 @@ export default function WritingSurface({
     onWordCountChange,
     isTypewriterMode = false,
     editorFont = DEFAULT_FONT_ID,
+    pendingFocusSceneId,
+    onFocusHandled,
+    onActiveSceneIdChange,
+    scenesVisible = true,
 }: {
     scenes: Scene[];
     bookId: number;
@@ -38,6 +48,10 @@ export default function WritingSurface({
     onWordCountChange: (sceneId: number, count: number) => void;
     isTypewriterMode?: boolean;
     editorFont?: string;
+    pendingFocusSceneId?: number | null;
+    onFocusHandled?: () => void;
+    onActiveSceneIdChange?: (sceneId: number) => void;
+    scenesVisible?: boolean;
 }) {
     const fontFamily = useMemo(() => {
         return FONTS.find((f) => f.id === editorFont)?.family ?? FONTS[0].family;
@@ -46,6 +60,37 @@ export default function WritingSurface({
     const titleRef = useRef<HTMLHeadingElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+    // Track scroll container height for dynamic padding
+    const [containerHeight, setContainerHeight] = useState(0);
+    const halfContainer = containerHeight / 2;
+    const halfContainerRef = useRef(halfContainer);
+    halfContainerRef.current = halfContainer;
+
+    useEffect(() => {
+        const el = scrollContainerRef.current;
+        if (!el) return;
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const height = entry.contentBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
+                setContainerHeight(height);
+            }
+        });
+        observer.observe(el);
+        setContainerHeight(el.clientHeight);
+        return () => observer.disconnect();
+    }, []);
+
+    // Editor registry for cross-scene navigation
+    const editorRegistry = useRef<Map<number, Editor>>(new Map());
+
+    const handleEditorReady = useCallback((sceneId: number, editor: Editor) => {
+        editorRegistry.current.set(sceneId, editor);
+        const cleanup = () => {
+            editorRegistry.current.delete(sceneId);
+        };
+        editor.on('destroy', cleanup);
+    }, []);
+
     // Sync title prop into contentEditable only when not actively editing
     useEffect(() => {
         const el = titleRef.current;
@@ -53,16 +98,36 @@ export default function WritingSurface({
         el.innerHTML = titleToHtml(title);
     }, [title]);
 
-    const handleTitleKeyDown = useCallback((e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && e.shiftKey) {
-            e.preventDefault();
-            const firstScene = document.querySelector('[id^="scene-"] .ProseMirror');
-            if (firstScene instanceof HTMLElement) firstScene.focus();
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            document.execCommand('insertLineBreak');
-        }
-    }, []);
+    const handleTitleKeyDown = useCallback(
+        (e: React.KeyboardEvent) => {
+            if (e.key === 'Enter' && e.shiftKey) {
+                e.preventDefault();
+                const firstScene = document.querySelector('[id^="scene-"] .ProseMirror');
+                if (firstScene instanceof HTMLElement) firstScene.focus();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                document.execCommand('insertLineBreak');
+            } else if (e.key === 'ArrowDown') {
+                const sel = window.getSelection();
+                if (!sel || !titleRef.current) return;
+
+                // Check if cursor is on the last visual line of the title
+                const range = sel.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+                const titleRect = titleRef.current.getBoundingClientRect();
+                const lineHeight = parseFloat(getComputedStyle(titleRef.current).lineHeight) || 20;
+
+                if (titleRect.bottom - rect.bottom < lineHeight) {
+                    e.preventDefault();
+                    if (scenes.length > 0) {
+                        const firstEditor = editorRegistry.current.get(scenes[0].id);
+                        firstEditor?.commands.focus('start');
+                    }
+                }
+            }
+        },
+        [scenes],
+    );
 
     const handleTitleInput = useCallback(() => {
         const text = titleRef.current?.innerText ?? '';
@@ -75,29 +140,72 @@ export default function WritingSurface({
         document.execCommand('insertText', false, text);
     }, []);
 
-    // Typewriter scrolling: keep cursor vertically centered
+    // Track isTypewriterMode in a ref so the ProseMirror plugin can read it
+    const typewriterEnabledRef = useRef(isTypewriterMode);
     useEffect(() => {
-        if (!activeEditor || !isTypewriterMode) return;
+        typewriterEnabledRef.current = isTypewriterMode;
+    }, [isTypewriterMode]);
 
-        const handleSelectionUpdate = () => {
+    // Previous typewriter state for detecting transitions
+    const prevTypewriterRef = useRef(isTypewriterMode);
+
+    // Initial centering when typewriter mode activates or active editor changes
+    useEffect(() => {
+        const justEnabled = isTypewriterMode && !prevTypewriterRef.current;
+        const justDisabled = !isTypewriterMode && prevTypewriterRef.current;
+        prevTypewriterRef.current = isTypewriterMode;
+
+        if (justDisabled) {
+            cancelTypewriterAnimation();
             const container = scrollContainerRef.current;
-            if (!container) return;
+            if (container) {
+                container.scrollTop = Math.max(
+                    0,
+                    container.scrollTop - (halfContainerRef.current - NORMAL_PADDING_TOP),
+                );
+            }
+            return;
+        }
 
-            const { from } = activeEditor.state.selection;
-            const coords = activeEditor.view.coordsAtPos(from);
-            const containerRect = container.getBoundingClientRect();
-            const cursorRelativeY = coords.top - containerRect.top;
-            const targetY = containerRect.height / 2;
-            const scrollDelta = cursorRelativeY - targetY;
+        if (!isTypewriterMode || !activeEditor) {
+            if (!isTypewriterMode) {
+                cancelTypewriterAnimation();
+            }
+            return;
+        }
 
-            container.scrollBy({ top: scrollDelta, behavior: 'smooth' });
-        };
+        if (justEnabled) {
+            const container = scrollContainerRef.current;
+            if (container) {
+                container.scrollTop += halfContainerRef.current - NORMAL_PADDING_TOP;
+            }
+        }
 
-        activeEditor.on('selectionUpdate', handleSelectionUpdate);
-        return () => {
-            activeEditor.off('selectionUpdate', handleSelectionUpdate);
-        };
-    }, [activeEditor, isTypewriterMode]);
+        // Center the cursor (instant on mode activation)
+        requestAnimationFrame(() => {
+            if (!activeEditor?.view || !scrollContainerRef.current) return;
+            centerCursorInContainer(activeEditor.view, scrollContainerRef.current, justEnabled);
+        });
+    }, [isTypewriterMode, activeEditor]);
+
+    // Re-center cursor when container resizes (focus mode toggle, window resize)
+    useEffect(() => {
+        if (!isTypewriterMode || !activeEditor?.view || !scrollContainerRef.current) return;
+        requestAnimationFrame(() => {
+            if (!activeEditor?.view || !scrollContainerRef.current) return;
+            centerCursorInContainer(activeEditor.view, scrollContainerRef.current, true);
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-center on actual resize
+    }, [containerHeight]);
+
+    useEffect(() => {
+        if (!pendingFocusSceneId) return;
+        requestAnimationFrame(() => {
+            const el = document.querySelector(`#scene-${pendingFocusSceneId} .ProseMirror`);
+            if (el instanceof HTMLElement) el.focus();
+            onFocusHandled?.();
+        });
+    }, [pendingFocusSceneId, onFocusHandled]);
 
     const metadataParts: string[] = [];
     if (povCharacterName) metadataParts.push(`POV: ${povCharacterName}`);
@@ -106,10 +214,17 @@ export default function WritingSurface({
     return (
         <div
             ref={scrollContainerRef}
-            className="flex flex-1 justify-center overflow-y-auto"
+            className="flex flex-1 items-start justify-center overflow-y-auto"
             style={{ '--font-serif': fontFamily } as React.CSSProperties}
         >
-            <div className={`w-full max-w-[660px] px-[30px] ${isTypewriterMode ? 'py-[50vh]' : 'py-12'}`}>
+            <div
+                className="w-full max-w-[660px] px-[30px]"
+                style={{
+                    paddingTop: isTypewriterMode ? halfContainer : NORMAL_PADDING_TOP,
+                    paddingBottom: halfContainer,
+                    minHeight: containerHeight + halfContainer,
+                }}
+            >
                 <h1
                     ref={titleRef}
                     contentEditable
@@ -132,8 +247,44 @@ export default function WritingSurface({
                             bookId={bookId}
                             chapterId={chapterId}
                             isFirst={i === 0}
-                            onFocus={onActiveEditorChange}
+                            onFocus={(editor) => {
+                                onActiveEditorChange(editor);
+                                onActiveSceneIdChange?.(scene.id);
+                            }}
+                            onEditorReady={handleEditorReady}
+                            onExitUp={
+                                i === 0
+                                    ? () => {
+                                          const el = titleRef.current;
+                                          if (!el) return;
+                                          el.focus();
+                                          // Place cursor at end of title
+                                          const sel = window.getSelection();
+                                          if (sel) {
+                                              const range = document.createRange();
+                                              range.selectNodeContents(el);
+                                              range.collapse(false);
+                                              sel.removeAllRanges();
+                                              sel.addRange(range);
+                                          }
+                                      }
+                                    : () => {
+                                          const prevId = scenes[i - 1].id;
+                                          editorRegistry.current.get(prevId)?.commands.focus('end');
+                                      }
+                            }
+                            onExitDown={
+                                i < scenes.length - 1
+                                    ? () => {
+                                          const nextId = scenes[i + 1].id;
+                                          editorRegistry.current.get(nextId)?.commands.focus('start');
+                                      }
+                                    : undefined
+                            }
                             onWordCountChange={onWordCountChange}
+                            scrollContainerRef={scrollContainerRef}
+                            typewriterEnabledRef={typewriterEnabledRef}
+                            scenesVisible={scenesVisible}
                         />
                     ))}
                 </div>

@@ -49,6 +49,21 @@ export default function ChapterShow({
     const [isBeautifying, setIsBeautifying] = useState(false);
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
     const [notesToggleTick, setNotesToggleTick] = useState(0);
+    const [scenesVisible, setScenesVisible] = useState(() => {
+        try {
+            return localStorage.getItem('manuscript:scenesVisible') !== 'false';
+        } catch {
+            return true;
+        }
+    });
+
+    const handleScenesVisibleChange = useCallback((v: boolean) => {
+        setScenesVisible(v);
+        try {
+            localStorage.setItem('manuscript:scenesVisible', String(v));
+        } catch {}
+    }, []);
+
     const [isTypewriterMode, setIsTypewriterMode] = useState(() => {
         try {
             return localStorage.getItem('manuscript:typewriter-scrolling') === 'true';
@@ -405,6 +420,8 @@ export default function ChapterShow({
                         onSceneDelete={handleSidebarSceneDelete}
                         onSceneReorder={handleSidebarSceneReorder}
                         onSceneAdd={handleAddScene}
+                        scenesVisible={scenesVisible}
+                        onScenesVisibleChange={handleScenesVisibleChange}
                     />
                 </div>
 
@@ -465,6 +482,7 @@ export default function ChapterShow({
                         pendingFocusSceneId={pendingFocusSceneId}
                         onFocusHandled={() => setPendingFocusSceneId(null)}
                         onActiveSceneIdChange={setActiveSceneId}
+                        scenesVisible={scenesVisible}
                     />
 
                     <NotesPanel

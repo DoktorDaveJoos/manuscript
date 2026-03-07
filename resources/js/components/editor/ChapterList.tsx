@@ -55,6 +55,7 @@ function SortableChapterItem({
     onContextMenu,
     isExpanded,
     onToggleExpand,
+    scenesVisible,
 }: {
     chapter: Chapter;
     bookId: number;
@@ -66,6 +67,7 @@ function SortableChapterItem({
     onContextMenu: (e: React.MouseEvent) => void;
     isExpanded?: boolean;
     onToggleExpand?: () => void;
+    scenesVisible?: boolean;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
         id: `chapter-${chapter.id}`,
@@ -93,6 +95,7 @@ function SortableChapterItem({
                 isDragging={isDragging}
                 isExpanded={isExpanded}
                 onToggleExpand={onToggleExpand}
+                scenesVisible={scenesVisible}
             />
         </div>
     );
@@ -313,6 +316,7 @@ function SceneList({
 }
 
 export default function ChapterList({
+    bookTitle,
     storylines: initialStorylines,
     bookId,
     activeChapterId,
@@ -320,12 +324,16 @@ export default function ChapterList({
     activeChapterWordCount,
     onBeforeNavigate,
     onAddChapter,
+    onAddStoryline,
     activeScenes,
     onSceneRename,
     onSceneDelete,
     onSceneReorder,
     onSceneAdd,
+    scenesVisible,
+    onScenesVisibleChange,
 }: {
+    bookTitle: string;
     storylines: Storyline[];
     bookId: number;
     activeChapterId?: number;
@@ -333,11 +341,14 @@ export default function ChapterList({
     activeChapterWordCount?: number;
     onBeforeNavigate?: () => Promise<void>;
     onAddChapter?: (storylineId: number) => void;
+    onAddStoryline?: () => void;
     activeScenes?: Scene[];
     onSceneRename?: (sceneId: number, newTitle: string) => void;
     onSceneDelete?: (sceneId: number) => void;
     onSceneReorder?: (orderedIds: number[]) => void;
     onSceneAdd?: (afterPosition: number) => Promise<void>;
+    scenesVisible: boolean;
+    onScenesVisibleChange: (v: boolean) => void;
 }) {
     const [storylines, setStorylines] = useState(initialStorylines);
     const [activeItem, setActiveItem] = useState<{ type: 'chapter'; chapter: Chapter } | { type: 'storyline'; storyline: Storyline } | null>(null);
@@ -377,6 +388,22 @@ export default function ChapterList({
             return next;
         });
     }, []);
+
+    const isAllCollapsed = useMemo(() => {
+        const allStorylinesClosed = storylines.length > 1 && storylines.every((s) => collapsedStorylineIds.has(s.id));
+        const noChaptersExpanded = expandedChapterIds.size === 0;
+        return allStorylinesClosed && noChaptersExpanded;
+    }, [storylines, collapsedStorylineIds, expandedChapterIds]);
+
+    const handleToggleCollapseAll = useCallback(() => {
+        if (isAllCollapsed) {
+            setCollapsedStorylineIds(new Set());
+            setExpandedChapterIds(activeChapterId ? new Set([activeChapterId]) : new Set());
+        } else {
+            setCollapsedStorylineIds(new Set(storylines.map((s) => s.id)));
+            setExpandedChapterIds(new Set());
+        }
+    }, [isAllCollapsed, storylines, activeChapterId]);
 
     const sensors = useSensors(useSensor(PointerSensor, POINTER_SENSOR_OPTIONS));
 
@@ -604,6 +631,85 @@ export default function ChapterList({
         <>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
                 <div className="flex flex-col">
+                    <div className="flex items-center justify-between px-2.5 pb-2">
+                        <div className="flex items-center gap-1.5">
+                            <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 14 14"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="shrink-0 text-ink-faint"
+                            >
+                                <path d="M2 2.5C2 2.5 3 1.5 5 1.5C7 1.5 7 2.5 7 2.5V11.5C7 11.5 6.5 11 5 11C3.5 11 2 11.5 2 11.5V2.5Z" />
+                                <path d="M12 2.5C12 2.5 11 1.5 9 1.5C7 1.5 7 2.5 7 2.5V11.5C7 11.5 7.5 11 9 11C10.5 11 12 11.5 12 11.5V2.5Z" />
+                            </svg>
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-faint">
+                                {bookTitle}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={handleToggleCollapseAll}
+                                className="text-ink-faint transition-colors hover:text-ink"
+                            >
+                                <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 14 14"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className={`transition-transform duration-200 ${isAllCollapsed ? 'rotate-180' : ''}`}
+                                >
+                                    <path d="M3.5 6L7 3L10.5 6" />
+                                    <path d="M3.5 10L7 7L10.5 10" />
+                                </svg>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onScenesVisibleChange(!scenesVisible)}
+                                className="text-ink-faint transition-colors hover:text-ink"
+                            >
+                                {scenesVisible ? (
+                                    <svg
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 14 14"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <path d="M1.5 7C1.5 7 3.5 3.5 7 3.5C10.5 3.5 12.5 7 12.5 7C12.5 7 10.5 10.5 7 10.5C3.5 10.5 1.5 7 1.5 7Z" />
+                                        <circle cx="7" cy="7" r="1.5" />
+                                    </svg>
+                                ) : (
+                                    <svg
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 14 14"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <path d="M1.5 7C1.5 7 3.5 3.5 7 3.5C10.5 3.5 12.5 7 12.5 7C12.5 7 10.5 10.5 7 10.5C3.5 10.5 1.5 7 1.5 7Z" />
+                                        <circle cx="7" cy="7" r="1.5" />
+                                        <path d="M3 11L11 3" />
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
+                    </div>
                     <SortableContext items={storylineIds} strategy={verticalListSortingStrategy}>
                         {storylines.map((storyline, i) => (
                             <SortableStorylineGroup
@@ -655,8 +761,9 @@ export default function ChapterList({
                                                     onContextMenu={(e) => handleChapterContextMenu(e, chapter)}
                                                     isExpanded={isExpanded}
                                                     onToggleExpand={() => toggleChapterExpand(chapter.id)}
+                                                    scenesVisible={scenesVisible}
                                                 />
-                                                {hasScenes && (
+                                                {scenesVisible && hasScenes && (
                                                     <div
                                                         className="grid transition-[grid-template-rows] duration-200 ease-out"
                                                         style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
@@ -727,6 +834,16 @@ export default function ChapterList({
                             </SortableStorylineGroup>
                         ))}
                     </SortableContext>
+                    {onAddStoryline && (
+                        <button
+                            type="button"
+                            onClick={onAddStoryline}
+                            className="flex w-full items-center gap-1.5 px-2.5 pt-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint transition-colors hover:text-ink"
+                        >
+                            <span>+</span>
+                            <span>Add storyline</span>
+                        </button>
+                    )}
                 </div>
 
                 <DragOverlay>

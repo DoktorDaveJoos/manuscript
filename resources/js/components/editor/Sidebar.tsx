@@ -6,9 +6,10 @@ import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotControlle
 import { about as settingsAbout } from '@/actions/App/Http/Controllers/SettingsController';
 import NavItem from '@/components/ui/NavItem';
 import { useLicense } from '@/hooks/useLicense';
+import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
 import { createChapter, formatCompactCount } from '@/lib/utils';
 import type { Book, Scene, Storyline } from '@/types/models';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { GearSix, Lock, Rectangle, SquaresFour, Strategy, User } from '@phosphor-icons/react';
 import ChapterList from './ChapterList';
 import TrashBin from './TrashBin';
@@ -25,6 +26,8 @@ export default function Sidebar({
     onSceneDelete,
     onSceneReorder,
     onSceneAdd,
+    scenesVisible,
+    onScenesVisibleChange,
 }: {
     book: Book;
     storylines: Storyline[];
@@ -37,6 +40,8 @@ export default function Sidebar({
     onSceneDelete?: (sceneId: number) => void;
     onSceneReorder?: (orderedIds: number[]) => void;
     onSceneAdd?: (afterPosition: number) => Promise<void>;
+    scenesVisible: boolean;
+    onScenesVisibleChange: (v: boolean) => void;
 }) {
     const { isActive: isLicensed } = useLicense();
     const currentUrl = usePage().url;
@@ -55,6 +60,11 @@ export default function Sidebar({
     const handleAddChapter = async (storylineId: number) => {
         await onBeforeNavigate?.();
         createChapter(book.id, storylineId, storylines);
+    };
+
+    const handleAddStoryline = async () => {
+        await onBeforeNavigate?.();
+        router.post(storeStoryline.url({ book: book.id }), { name: `Storyline ${storylines.length + 1}` });
     };
 
     return (
@@ -117,6 +127,7 @@ export default function Sidebar({
             {/* Chapter list */}
             <div className="flex-1 overflow-y-auto px-2.5 py-3">
                 <ChapterList
+                    bookTitle={book.title}
                     storylines={storylines}
                     bookId={book.id}
                     activeChapterId={activeChapterId}
@@ -124,11 +135,14 @@ export default function Sidebar({
                     activeChapterWordCount={activeChapterWordCount}
                     onBeforeNavigate={onBeforeNavigate}
                     onAddChapter={handleAddChapter}
+                    onAddStoryline={handleAddStoryline}
                     activeScenes={activeScenes}
                     onSceneRename={onSceneRename}
                     onSceneDelete={onSceneDelete}
                     onSceneReorder={onSceneReorder}
                     onSceneAdd={onSceneAdd}
+                    scenesVisible={scenesVisible}
+                    onScenesVisibleChange={onScenesVisibleChange}
                 />
             </div>
 

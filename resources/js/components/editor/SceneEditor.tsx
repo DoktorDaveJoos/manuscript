@@ -1,10 +1,11 @@
-import { updateContent, updateTitle } from '@/actions/App/Http/Controllers/SceneController';
+import { updateContent } from '@/actions/App/Http/Controllers/SceneController';
 import useChapterEditor from '@/hooks/useChapterEditor';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Scene } from '@/types/models';
 import type { Editor } from '@tiptap/react';
 import { EditorContent } from '@tiptap/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export default function SceneEditor({
     scene,
@@ -12,32 +13,37 @@ export default function SceneEditor({
     chapterId,
     isFirst,
     onFocus,
+    onEditorReady,
+    onExitUp,
+    onExitDown,
     onWordCountChange,
-    onAddScene,
-    onDeleteScene,
-    canDelete,
+    scrollContainerRef,
+    typewriterEnabledRef,
+    scenesVisible = true,
 }: {
     scene: Scene;
     bookId: number;
     chapterId: number;
     isFirst: boolean;
     onFocus: (editor: Editor) => void;
+    onEditorReady?: (sceneId: number, editor: Editor) => void;
+    onExitUp?: () => void;
+    onExitDown?: () => void;
     onWordCountChange: (sceneId: number, count: number) => void;
-    onAddScene: (afterPosition: number) => void;
-    onDeleteScene: (sceneId: number) => void;
-    canDelete: boolean;
+    scrollContainerRef: RefObject<HTMLDivElement | null>;
+    typewriterEnabledRef: RefObject<boolean>;
+    scenesVisible?: boolean;
 }) {
-    const [showActions, setShowActions] = useState(false);
-    const titleRef = useRef<HTMLSpanElement>(null);
+    // Stable refs for cross-scene navigation callbacks (avoids editor re-creation)
+    const onExitUpRef = useRef<(() => void) | null>(onExitUp ?? null);
+    onExitUpRef.current = onExitUp ?? null;
+    const onExitDownRef = useRef<(() => void) | null>(onExitDown ?? null);
+    onExitDownRef.current = onExitDown ?? null;
 
     // Content auto-save
     const contentAbortRef = useRef<AbortController | null>(null);
     const contentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingContentRef = useRef<string | null>(null);
-
-    // Title auto-save
-    const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const pendingTitleRef = useRef<string | null>(null);
 
     const flushContentSave = useCallback(async () => {
         if (contentTimerRef.current) {
@@ -73,50 +79,22 @@ export default function SceneEditor({
         }
     }, [bookId, chapterId, scene.id, onWordCountChange]);
 
-    const flushTitleSave = useCallback(async () => {
-        if (titleTimerRef.current) {
-            clearTimeout(titleTimerRef.current);
-            titleTimerRef.current = null;
-        }
-
-        const title = pendingTitleRef.current;
-        if (title === null) return;
-        pendingTitleRef.current = null;
-
-        try {
-            await fetch(updateTitle.url({ book: bookId, chapter: chapterId, scene: scene.id }), {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
-                },
-                body: JSON.stringify({ title }),
-            });
-        } catch {
-            // Ignore errors
-        }
-    }, [bookId, chapterId, scene.id]);
-
     // Expose flush for parent
-    const flushRef = useRef({ flushContentSave, flushTitleSave });
-    flushRef.current = { flushContentSave, flushTitleSave };
+    const flushRef = useRef({ flushContentSave });
+    flushRef.current = { flushContentSave };
 
     // Attach flush to the DOM node so parent can call it
     const containerRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         const el = containerRef.current;
         if (el) {
-            (el as unknown as Record<string, unknown>).__flush = () =>
-                Promise.all([flushRef.current.flushContentSave(), flushRef.current.flushTitleSave()]);
+            (el as unknown as Record<string, unknown>).__flush = () => flushRef.current.flushContentSave();
         }
 
         // Flush pending saves on unmount
         return () => {
             if (contentTimerRef.current) clearTimeout(contentTimerRef.current);
-            if (titleTimerRef.current) clearTimeout(titleTimerRef.current);
             flushRef.current.flushContentSave();
-            flushRef.current.flushTitleSave();
         };
     }, []);
 
@@ -138,6 +116,10 @@ export default function SceneEditor({
     const editor = useChapterEditor({
         content: scene.content ?? '',
         onUpdate: handleEditorUpdate,
+        scrollContainerRef,
+        typewriterEnabledRef,
+        onExitUpRef,
+        onExitDownRef,
     });
 
     // Notify parent when this editor gains focus
@@ -151,82 +133,29 @@ export default function SceneEditor({
         };
     }, [editor, onFocus]);
 
-    const handleTitleInput = useCallback(() => {
-        const text = titleRef.current?.textContent ?? '';
-        pendingTitleRef.current = text;
-
-        if (titleTimerRef.current) {
-            clearTimeout(titleTimerRef.current);
-        }
-        titleTimerRef.current = setTimeout(() => {
-            flushTitleSave();
-        }, 1500);
-    }, [flushTitleSave]);
-
-    const handleTitleKeyDown = useCallback(
-        (e: React.KeyboardEvent) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                editor?.commands.focus('start');
-            }
-        },
-        [editor],
-    );
+    // Register editor with parent for cross-scene navigation
+    useEffect(() => {
+        if (!editor || !onEditorReady) return;
+        onEditorReady(scene.id, editor);
+    }, [editor, scene.id, onEditorReady]);
 
     return (
-        <div
-            ref={containerRef}
-            id={`scene-${scene.id}`}
-            className="relative"
-            onMouseEnter={() => setShowActions(true)}
-            onMouseLeave={() => setShowActions(false)}
-        >
+        <div ref={containerRef} id={`scene-${scene.id}`}>
             {/* Scene divider (except first) */}
-            {!isFirst && (
-                <div className="flex items-center justify-center py-6 text-ink-faint select-none">
-                    <span className="tracking-[0.3em] text-xs">•&nbsp;&nbsp;•&nbsp;&nbsp;•</span>
+            {!isFirst && scenesVisible && (
+                <div className="flex items-center justify-center py-2 select-none">
+                    <span className="tracking-[0.6em] text-[9px] text-ink-faint/40">•&nbsp;•&nbsp;•</span>
                 </div>
             )}
 
             {/* Scene header */}
-            <div className="mb-3 flex items-center gap-2">
-                <span
-                    ref={titleRef}
-                    contentEditable
-                    suppressContentEditableWarning
-                    onInput={handleTitleInput}
-                    onKeyDown={handleTitleKeyDown}
-                    className="text-xs font-medium uppercase tracking-[0.06em] text-ink-faint outline-none"
-                    dangerouslySetInnerHTML={{ __html: scene.title }}
-                />
-
-                {showActions && (
-                    <div className="flex items-center gap-1">
-                        <button
-                            type="button"
-                            onClick={() => onAddScene(scene.sort_order + 1)}
-                            title="Add scene below"
-                            className="flex h-5 w-5 items-center justify-center rounded text-ink-faint transition-colors hover:text-ink"
-                        >
-                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                            </svg>
-                        </button>
-                        {canDelete && (
-                            <button
-                                type="button"
-                                onClick={() => onDeleteScene(scene.id)}
-                                title="Delete scene"
-                                className="flex h-5 w-5 items-center justify-center rounded text-ink-faint transition-colors hover:text-red-600"
-                            >
-                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        )}
-                    </div>
-                )}
-            </div>
+            {scenesVisible && (
+                <div className="mb-2">
+                    <span className="text-[10px] tracking-[0.04em] text-ink-faint/50 select-none">
+                        {scene.title}
+                    </span>
+                </div>
+            )}
 
             {/* Editor */}
             <EditorContent editor={editor} />
