@@ -4,6 +4,7 @@ export type VersionSource = 'original' | 'ai_revision' | 'manual_edit' | 'normal
 export type VersionStatus = 'accepted' | 'pending';
 export type PlotPointType = 'setup' | 'conflict' | 'turning_point' | 'resolution' | 'worldbuilding';
 export type PlotPointStatus = 'planned' | 'fulfilled' | 'abandoned';
+export type ConnectionType = 'causes' | 'sets_up' | 'resolves' | 'contradicts';
 export type CharacterRole = 'protagonist' | 'supporting' | 'mentioned';
 export type AnalysisType = 'pacing' | 'plothole' | 'character_consistency' | 'density' | 'plot_deviation' | 'next_chapter_suggestion' | 'chapter_hook' | 'scene_audit' | 'thriller_health';
 export type HookType = 'cliffhanger' | 'soft_hook' | 'closed' | 'dead_end';
@@ -170,6 +171,7 @@ export type PlotPoint = {
     status: PlotPointStatus;
     sort_order: number;
     is_ai_derived: boolean;
+    tension_score: number | null;
     created_at: string;
     updated_at: string;
     book?: Book;
@@ -177,6 +179,21 @@ export type PlotPoint = {
     act?: Act;
     intended_chapter?: Chapter;
     actual_chapter?: Chapter;
+    outgoing_connections?: PlotPointConnection[];
+    incoming_connections?: PlotPointConnection[];
+};
+
+export type PlotPointConnection = {
+    id: number;
+    book_id: number;
+    source_plot_point_id: number;
+    target_plot_point_id: number;
+    type: ConnectionType;
+    description: string | null;
+    created_at: string;
+    updated_at: string;
+    source?: PlotPoint;
+    target?: PlotPoint;
 };
 
 export type Analysis = {
