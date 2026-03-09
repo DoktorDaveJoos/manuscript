@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\AiProvider;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -19,8 +18,6 @@ class Book extends Model
     protected function casts(): array
     {
         return [
-            'ai_provider' => AiProvider::class,
-            'ai_enabled' => 'boolean',
             'writing_style' => 'array',
             'story_bible' => 'array',
             'prose_pass_rules' => 'array',

@@ -126,11 +126,11 @@ test('revise fails when chapter has no content', function () {
 });
 
 test('next chapter fails without api key', function () {
-    $book = Book::factory()->create([
-        'ai_enabled' => true,
-        'ai_provider' => AiProvider::Anthropic,
+    $book = Book::factory()->create();
+    AiSetting::factory()->withoutKey()->create([
+        'provider' => AiProvider::Anthropic,
+        'enabled' => true,
     ]);
-    AiSetting::factory()->withoutKey()->create(['provider' => AiProvider::Anthropic]);
 
     $this->postJson(route('books.ai.nextChapter', $book))
         ->assertStatus(422);
@@ -168,11 +168,11 @@ test('beautify fails when chapter has no content', function () {
 });
 
 test('beautify fails without api key', function () {
-    $book = Book::factory()->create([
-        'ai_enabled' => true,
-        'ai_provider' => AiProvider::Anthropic,
+    $book = Book::factory()->create();
+    AiSetting::factory()->withoutKey()->create([
+        'provider' => AiProvider::Anthropic,
+        'enabled' => true,
     ]);
-    AiSetting::factory()->withoutKey()->create(['provider' => AiProvider::Anthropic]);
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
     ChapterVersion::factory()->for($chapter)->create([

@@ -16,6 +16,7 @@
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.11",
         "nativephp/desktop": "^2.1",
+        "paragonie/sodium_compat": "*",
         "phpoffice/phpword": "*"
     },
     "require-dev": {

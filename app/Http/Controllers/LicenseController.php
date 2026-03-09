@@ -3,11 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ActivateLicenseRequest;
+use App\Models\Book;
 use App\Models\License;
 use Illuminate\Http\JsonResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class LicenseController extends Controller
 {
+    public function index(): Response
+    {
+        $book = Book::query()->select('id', 'title')->first();
+
+        return Inertia::render('settings/license', [
+            'book' => $book?->only('id', 'title'),
+        ]);
+    }
+
     public function activate(ActivateLicenseRequest $request): JsonResponse
     {
         $key = $request->validated('license_key');

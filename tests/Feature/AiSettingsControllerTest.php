@@ -8,7 +8,7 @@ test('ai settings index returns all providers', function () {
     $this->get(route('ai-settings.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('settings/ai')
+            ->component('settings/ai-providers')
             ->has('settings', count(AiProvider::cases()))
         );
 });
@@ -154,4 +154,18 @@ test('ai settings index includes requires_api_key and requires_base_url', functi
         ->toHaveKey('requires_api_key', true)
         ->toHaveKey('requires_base_url', true)
         ->toHaveKey('api_version');
+});
+
+test('selecting a provider disables all others', function () {
+    License::factory()->create();
+
+    AiSetting::factory()->create(['provider' => AiProvider::Anthropic, 'enabled' => true]);
+    AiSetting::factory()->create(['provider' => AiProvider::Openai, 'enabled' => false]);
+
+    $this->putJson(route('ai-settings.update', 'openai'), [
+        'enabled' => true,
+    ])->assertOk();
+
+    expect(AiSetting::query()->where('provider', 'openai')->first()->enabled)->toBeTrue();
+    expect(AiSetting::query()->where('provider', 'anthropic')->first()->enabled)->toBeFalse();
 });

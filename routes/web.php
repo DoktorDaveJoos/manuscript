@@ -3,6 +3,7 @@
 use App\Http\Controllers\AiController;
 use App\Http\Controllers\AiPreparationController;
 use App\Http\Controllers\AiSettingsController;
+use App\Http\Controllers\AppSettingsController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\BookSettingsController;
 use App\Http\Controllers\CanvasController;
@@ -12,7 +13,6 @@ use App\Http\Controllers\LicenseController;
 use App\Http\Controllers\NormalizationController;
 use App\Http\Controllers\PlotController;
 use App\Http\Controllers\SceneController;
-use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StorylineController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\WikiController;
@@ -70,8 +70,18 @@ Route::post('/books/{book}/normalize/apply', [NormalizationController::class, 'a
 Route::post('/books/{book}/chapters/{chapter}/normalize/preview', [NormalizationController::class, 'previewChapter'])->name('chapters.normalize.preview');
 Route::post('/books/{book}/chapters/{chapter}/normalize/apply', [NormalizationController::class, 'applyChapter'])->name('chapters.normalize.apply');
 
+// App settings
+Route::get('/settings', fn () => redirect('/settings/appearance'));
+Route::get('/settings/appearance', [AppSettingsController::class, 'appearance'])->name('settings.appearance');
+Route::put('/settings', [AppSettingsController::class, 'update'])->name('settings.update');
+
 // AI settings index (free — licence activation form lives here)
 Route::get('/settings/ai', [AiSettingsController::class, 'index'])->name('ai-settings.index');
+
+// License
+Route::get('/settings/license', [LicenseController::class, 'index'])->name('settings.license');
+Route::post('/license/activate', [LicenseController::class, 'activate'])->name('license.activate');
+Route::post('/license/deactivate', [LicenseController::class, 'deactivate'])->name('license.deactivate');
 
 // Pro features — require active licence
 Route::middleware('license')->group(function () {
@@ -90,20 +100,10 @@ Route::middleware('license')->group(function () {
     Route::post('/books/{book}/chapters/{chapter}/ai/revise', [AiController::class, 'revise'])->name('chapters.ai.revise');
     Route::post('/books/{book}/chapters/{chapter}/ai/beautify', [AiController::class, 'beautify'])->name('chapters.ai.beautify');
 
-    Route::put('/books/{book}/settings/ai-model', [BookSettingsController::class, 'updateAiModel'])->name('books.settings.ai-model.update');
     Route::post('/books/{book}/settings/writing-style/regenerate', [BookSettingsController::class, 'regenerateWritingStyle'])->name('books.settings.writing-style.regenerate');
 });
 
-// License
-Route::post('/license/activate', [LicenseController::class, 'activate'])->name('license.activate');
-Route::post('/license/deactivate', [LicenseController::class, 'deactivate'])->name('license.deactivate');
-
-// App-level settings
-Route::get('/settings/about', [SettingsController::class, 'about'])->name('settings.about');
-
 // Book-level settings
-Route::get('/books/{book}/settings', [BookSettingsController::class, 'index'])->name('books.settings');
-Route::get('/books/{book}/settings/ai-model', [BookSettingsController::class, 'aiModel'])->name('books.settings.ai-model');
 Route::get('/books/{book}/settings/writing-style', [BookSettingsController::class, 'writingStyle'])->name('books.settings.writing-style');
 Route::put('/books/{book}/settings/writing-style', [BookSettingsController::class, 'updateWritingStyle'])->name('books.settings.writing-style.update');
 Route::get('/books/{book}/settings/prose-pass-rules', [BookSettingsController::class, 'prosePassRules'])->name('books.settings.prose-pass-rules');

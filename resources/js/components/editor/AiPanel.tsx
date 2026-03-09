@@ -1,10 +1,12 @@
 import { revise } from '@/actions/App/Http/Controllers/AiController';
 import ProFeatureLock from '@/components/ui/ProFeatureLock';
+import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { getXsrfToken } from '@/lib/csrf';
 import { cn } from '@/lib/utils';
 import type { Book, Chapter, Character, CharacterChapterPivot, CharacterRole } from '@/types/models';
 import { CaretLeft, CaretRight, Lock, PaperPlaneTilt, Sparkle } from '@phosphor-icons/react';
-import { useState } from 'react';
+import { Link, router } from '@inertiajs/react';
+import { useCallback, useState } from 'react';
 
 type ChapterCharacter = Character & { pivot: CharacterChapterPivot };
 
@@ -84,18 +86,22 @@ export default function AiPanel({
     chapter,
     isOpen,
     onToggle,
-    licensed = true,
+    onError,
 }: {
     characters: ChapterCharacter[];
     book: Book;
     chapter: Chapter;
     isOpen: boolean;
     onToggle: () => void;
-    licensed?: boolean;
+    onError?: (message: string) => void;
 }) {
+    const { visible, usable, licensed } = useAiFeatures();
+    const aiEnabled = usable;
+
+    if (!visible) return null;
     const [isRunningProse, setIsRunningProse] = useState(false);
 
-    const handleRunProse = async () => {
+    const handleRunProse = useCallback(async () => {
         setIsRunningProse(true);
         try {
             const response = await fetch(revise.url({ book: book.id, chapter: chapter.id }), {
@@ -107,17 +113,20 @@ export default function AiPanel({
             });
 
             if (!response.ok) throw new Error('Prose pass failed');
-        } catch {
-            // Silently handle — user will see no change
+
+            await response.text();
+            router.reload();
+        } catch (e) {
+            onError?.(e instanceof Error ? e.message : 'Prose pass failed');
         } finally {
             setIsRunningProse(false);
         }
-    };
+    }, [book.id, chapter.id, onError]);
 
     return (
         <aside
             className={cn(
-                'flex h-full shrink-0 flex-col border-l border-border bg-surface transition-[width] duration-200 ease-in-out',
+                'flex h-full shrink-0 flex-col border-l border-border bg-surface-card transition-[width] duration-200 ease-in-out',
                 isOpen ? 'w-[280px]' : 'w-10',
             )}
         >
@@ -130,7 +139,12 @@ export default function AiPanel({
                                 AI Assistant
                             </span>
                             {licensed ? (
-                                <span className="size-1.5 rounded-full bg-ai-green" />
+                                <span
+                                    className={cn(
+                                        'size-1.5 rounded-full',
+                                        aiEnabled ? 'bg-ai-green' : 'bg-status-revised',
+                                    )}
+                                />
                             ) : (
                                 <Lock size={12} className="text-ink-faint" />
                             )}
@@ -151,17 +165,31 @@ export default function AiPanel({
                                 {/* Prose section */}
                                 <div className="flex flex-col gap-2.5">
                                     <SectionLabel>Prose</SectionLabel>
-                                    <button
-                                        type="button"
-                                        onClick={handleRunProse}
-                                        disabled={isRunningProse}
-                                        className="rounded bg-ink px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-ink/90 disabled:opacity-50"
-                                    >
-                                        {isRunningProse ? 'Running...' : 'Run prose pass'}
-                                    </button>
-                                    <p className="text-xs leading-relaxed text-ink-muted">
-                                        Analyzes pacing, voice consistency, and prose quality.
-                                    </p>
+                                    {aiEnabled ? (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={handleRunProse}
+                                                disabled={isRunningProse}
+                                                className="rounded bg-ink px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-ink/90 disabled:opacity-50"
+                                            >
+                                                {isRunningProse ? 'Running...' : 'Run prose pass'}
+                                            </button>
+                                            <p className="text-xs leading-relaxed text-ink-muted">
+                                                Analyzes pacing, voice consistency, and prose quality.
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <p className="text-xs leading-relaxed text-ink-muted">
+                                            AI is not configured.{' '}
+                                            <Link
+                                                href="/settings/ai"
+                                                className="font-medium text-accent underline decoration-accent/30 hover:decoration-accent"
+                                            >
+                                                Configure AI settings
+                                            </Link>
+                                        </p>
+                                    )}
                                 </div>
 
                                 <SectionDivider />
@@ -282,7 +310,12 @@ export default function AiPanel({
                             <span className="flex size-5 items-center justify-center text-ink-faint">
                                 <SparkleIcon />
                             </span>
-                            <span className="size-1.5 rounded-full bg-ai-green" />
+                            <span
+                                className={cn(
+                                    'size-1.5 rounded-full',
+                                    aiEnabled ? 'bg-ai-green' : 'bg-status-revised',
+                                )}
+                            />
                         </>
                     ) : (
                         <Lock size={14} className="text-ink-faint" />

@@ -224,7 +224,7 @@ test('prepare book for ai isolates per-chapter failures', function () {
 });
 
 test('prepare book for ai fails when api key not configured', function () {
-    $book = Book::factory()->create(['ai_enabled' => true]);
+    $book = Book::factory()->create();
     $preparation = AiPreparation::create([
         'book_id' => $book->id,
         'status' => 'pending',
@@ -241,5 +241,5 @@ test('prepare book for ai fails when api key not configured', function () {
     $preparation->refresh();
 
     expect($preparation->status)->toBe('failed')
-        ->and($preparation->error_message)->toContain('No API key configured');
+        ->and($preparation->error_message)->toContain('No AI provider configured');
 });

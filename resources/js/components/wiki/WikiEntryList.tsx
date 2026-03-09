@@ -62,36 +62,36 @@ export default function WikiEntryList({
     );
 }
 
-function WikiEntryListEmpty({ tab }: { tab: WikiTab }) {
-    const messages: Record<WikiTab, { title: string; description: string }> = {
-        characters: {
-            title: 'No characters yet',
-            description: 'Characters will appear here once extracted from your chapters by AI.',
-        },
-        location: {
-            title: 'No locations yet',
-            description: 'Track meaningful places in your story — cities, buildings, landscapes, or any setting that shapes the narrative.',
-        },
-        organization: {
-            title: 'No organizations yet',
-            description: 'Track groups, factions, institutions, or any collective entity in your story.',
-        },
-        item: {
-            title: 'No items yet',
-            description: 'Track meaningful objects in your story — letters, keys, artifacts, or anything that carries narrative weight.',
-        },
-        lore: {
-            title: 'No lore yet',
-            description: 'Track legends, histories, prophecies, or any world-building detail that enriches your story.',
-        },
-    };
+const emptyMessages: Record<WikiTab, { title: string; description: string }> = {
+    characters: {
+        title: 'No characters yet',
+        description: 'Characters will appear here once extracted from your chapters by AI.',
+    },
+    location: {
+        title: 'No locations yet',
+        description: 'Track meaningful places in your story — cities, buildings, landscapes, or any setting that shapes the narrative.',
+    },
+    organization: {
+        title: 'No organizations yet',
+        description: 'Track groups, factions, institutions, or any collective entity in your story.',
+    },
+    item: {
+        title: 'No items yet',
+        description: 'Track meaningful objects in your story — letters, keys, artifacts, or anything that carries narrative weight.',
+    },
+    lore: {
+        title: 'No lore yet',
+        description: 'Track legends, histories, prophecies, or any world-building detail that enriches your story.',
+    },
+};
 
-    const { title, description } = messages[tab];
+function WikiEntryListEmpty({ tab }: { tab: WikiTab }) {
+    const { title, description } = emptyMessages[tab];
 
     return (
         <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-neutral-bg">
-                <WikiAvatar name="?" tab={tab} size="md" />
+            <div className="mb-3">
+                <WikiAvatar name="?" tab={tab} size="lg" />
             </div>
             <p className="text-[13px] font-medium text-ink">{title}</p>
             <p className="mt-1.5 max-w-[240px] text-[12px] leading-relaxed text-ink-muted">

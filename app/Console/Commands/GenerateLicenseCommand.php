@@ -27,7 +27,7 @@ class GenerateLicenseCommand extends Command
 
     private function generateKeypair(): int
     {
-        if (! extension_loaded('sodium')) {
+        if (! function_exists('sodium_crypto_sign_keypair')) {
             $this->error('The sodium PHP extension is required but not loaded.');
 
             return self::FAILURE;
@@ -50,7 +50,7 @@ class GenerateLicenseCommand extends Command
 
     private function generateKeys(): int
     {
-        if (! extension_loaded('sodium')) {
+        if (! function_exists('sodium_crypto_sign_keypair')) {
             $this->error('The sodium PHP extension is required but not loaded.');
 
             return self::FAILURE;

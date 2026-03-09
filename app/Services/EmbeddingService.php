@@ -52,11 +52,13 @@ class EmbeddingService
      */
     private function resolveConfig(Book $book): object
     {
-        $setting = AiSetting::forProvider($book->ai_provider);
+        $setting = AiSetting::activeProvider();
+        abort_if(! $setting, 422, 'No AI provider configured.');
+
         $setting->injectConfig();
 
         return (object) [
-            'provider' => $book->ai_provider->toLab()->value,
+            'provider' => $setting->provider->toLab()->value,
             'model' => $setting->embedding_model,
             'dimensions' => $setting->embedding_dimensions,
         ];

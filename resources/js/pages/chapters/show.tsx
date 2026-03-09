@@ -12,11 +12,11 @@ import Sidebar from '@/components/editor/Sidebar';
 import VersionHistoryOverlay from '@/components/editor/VersionHistoryOverlay';
 import WritingSurface from '@/components/editor/WritingSurface';
 import Kbd from '@/components/ui/Kbd';
-import { useLicense } from '@/hooks/useLicense';
+import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { getXsrfToken } from '@/lib/csrf';
 import { createChapter, jsonFetchHeaders } from '@/lib/utils';
 import type { Book, Chapter, Character, CharacterChapterPivot, Scene } from '@/types/models';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { DOMSerializer } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -39,7 +39,8 @@ export default function ChapterShow({
     versionCount: number;
 }) {
     const pendingVersion = chapter.pending_version ?? null;
-    const { isActive: isLicensed } = useLicense();
+    const { visible: aiVisible, licensed: isLicensed } = useAiFeatures();
+    const { app_settings } = usePage<{ app_settings: import('@/types/models').AppSettings }>().props;
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
     const [chapterTitle, setChapterTitle] = useState(chapter.title);
     const [scenes, setScenes] = useState<Scene[]>(chapter.scenes ?? []);
@@ -51,37 +52,27 @@ export default function ChapterShow({
     const [isBeautifying, setIsBeautifying] = useState(false);
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
     const [notesToggleTick, setNotesToggleTick] = useState(0);
-    const [scenesVisible, setScenesVisible] = useState(() => {
-        try {
-            return localStorage.getItem('manuscript:scenesVisible') !== 'false';
-        } catch {
-            return true;
-        }
-    });
+    const [scenesVisible, setScenesVisible] = useState(app_settings.show_scenes);
 
     const handleScenesVisibleChange = useCallback((v: boolean) => {
         setScenesVisible(v);
-        try {
-            localStorage.setItem('manuscript:scenesVisible', String(v));
-        } catch {}
+        fetch('/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': getXsrfToken(), Accept: 'application/json' },
+            body: JSON.stringify({ key: 'show_scenes', value: v }),
+        }).then(() => router.reload({ only: ['app_settings'] }));
     }, []);
 
-    const [isTypewriterMode, setIsTypewriterMode] = useState(() => {
-        try {
-            return localStorage.getItem('manuscript:typewriter-scrolling') === 'true';
-        } catch {
-            return false;
-        }
-    });
+    const [isTypewriterMode, setIsTypewriterMode] = useState(app_settings.typewriter_mode);
 
     const toggleTypewriterMode = useCallback(() => {
         setIsTypewriterMode((prev) => {
             const next = !prev;
-            try {
-                localStorage.setItem('manuscript:typewriter-scrolling', String(next));
-            } catch {
-                // Ignore storage errors
-            }
+            fetch('/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': getXsrfToken(), Accept: 'application/json' },
+                body: JSON.stringify({ key: 'typewriter_mode', value: next }),
+            }).then(() => router.reload({ only: ['app_settings'] }));
             return next;
         });
     }, []);
@@ -463,15 +454,13 @@ export default function ChapterShow({
                     ) : (
                         <>
                             <div
-                                className={`transition-[height,opacity] duration-300 ${isFocusMode ? 'h-0 overflow-hidden opacity-0' : 'h-9'}`}
+                                className={`transition-[height,opacity] duration-300 ${isFocusMode || app_settings.hide_formatting_toolbar ? 'h-0 overflow-hidden opacity-0' : 'h-9'}`}
                             >
                                 <FormattingToolbar
                                     editor={activeEditor}
                                     onNormalizeClick={() => setShowNormalize(true)}
                                     onBeautifyClick={handleBeautify}
-                                    aiEnabled={book.ai_enabled}
                                     isBeautifying={isBeautifying}
-                                    licensed={isLicensed}
                                     isTypewriterMode={isTypewriterMode}
                                     onTypewriterToggle={toggleTypewriterMode}
                                     editorFont={editorFont}
@@ -527,7 +516,7 @@ export default function ChapterShow({
                     )}
                 </div>
 
-                {!pendingVersion && (
+                {!pendingVersion && aiVisible && (
                     <div
                         className={`overflow-hidden transition-[width,opacity] duration-300 ${isFocusMode ? 'w-0 opacity-0' : ''}`}
                     >
@@ -537,8 +526,6 @@ export default function ChapterShow({
                             chapter={chapter}
                             isOpen={isAiPanelOpen}
                             onToggle={toggleAiPanel}
-                            licensed={isLicensed}
-                            aiEnabled={book.ai_enabled}
                             onError={() => setSaveStatus('error')}
                         />
                     </div>

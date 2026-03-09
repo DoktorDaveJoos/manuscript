@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\AiSetting;
+use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\License;
 use Illuminate\Http\Request;
@@ -54,6 +56,13 @@ class HandleInertiaRequests extends Middleware
                 ];
             },
             'books_list' => fn () => Book::query()->select('id', 'title')->get(),
+            'app_settings' => fn () => [
+                'show_ai_features' => AppSetting::get('show_ai_features', true),
+                'hide_formatting_toolbar' => AppSetting::get('hide_formatting_toolbar', false),
+                'typewriter_mode' => AppSetting::get('typewriter_mode', false),
+                'show_scenes' => AppSetting::get('show_scenes', true),
+            ],
+            'ai_configured' => fn () => AiSetting::activeProvider()?->isConfigured() ?? false,
         ];
     }
 }

@@ -12,7 +12,10 @@ class WikiController extends Controller
 {
     public function index(Book $book, Request $request): Response
     {
-        $tab = $request->query('tab', 'characters');
+        $validTabs = ['characters', 'location', 'organization', 'item', 'lore'];
+        $tab = in_array($request->query('tab'), $validTabs, true)
+            ? $request->query('tab')
+            : 'characters';
 
         $book->load([
             'storylines' => fn ($q) => $q->orderBy('sort_order'),

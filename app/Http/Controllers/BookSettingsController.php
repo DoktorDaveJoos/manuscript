@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ExportBookRequest;
-use App\Http\Requests\UpdateBookAiModelRequest;
-use App\Models\AiSetting;
 use App\Models\Book;
 use App\Services\ExportService;
 use App\Services\WritingStyleService;
@@ -16,36 +14,6 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BookSettingsController extends Controller
 {
-    public function index(Book $book): Response
-    {
-        $book->load('storylines');
-
-        return Inertia::render('settings/book/index', [
-            'book' => $book->only('id', 'title', 'ai_provider', 'ai_model', 'ai_enabled', 'writing_style_text'),
-            'enabled_providers' => $this->enabledProvidersPayload(),
-            'writing_style_display' => $book->writing_style_display,
-            'rules' => $book->prose_pass_rules ?? Book::defaultProsePassRules(),
-            'storylines' => $book->storylines->map(fn ($s) => $s->only('id', 'name')),
-        ]);
-    }
-
-    public function aiModel(Book $book): Response
-    {
-        $enabledProviders = $this->enabledProvidersPayload();
-
-        return Inertia::render('settings/book/ai-model', [
-            'book' => $book->only('id', 'title', 'ai_provider', 'ai_model', 'ai_enabled'),
-            'enabled_providers' => $enabledProviders,
-        ]);
-    }
-
-    public function updateAiModel(UpdateBookAiModelRequest $request, Book $book): JsonResponse
-    {
-        $book->update($request->validated());
-
-        return response()->json(['message' => 'AI model settings updated.']);
-    }
-
     public function writingStyle(Book $book): Response
     {
         return Inertia::render('settings/book/writing-style', [
@@ -137,17 +105,5 @@ class BookSettingsController extends Controller
     public function doExport(ExportBookRequest $request, Book $book, ExportService $service): BinaryFileResponse
     {
         return $service->export($book, $request->validated());
-    }
-
-    /**
-     * @return \Illuminate\Support\Collection<int, array{provider: string, label: string, text_model: string|null}>
-     */
-    private function enabledProvidersPayload(): \Illuminate\Support\Collection
-    {
-        return AiSetting::enabledProviders()->map(fn (AiSetting $s) => [
-            'provider' => $s->provider->value,
-            'label' => $s->provider->label(),
-            'text_model' => $s->text_model,
-        ]);
     }
 }

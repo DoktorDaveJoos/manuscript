@@ -53,9 +53,7 @@ export default function FormattingToolbar({
     editor,
     onNormalizeClick,
     onBeautifyClick,
-    aiEnabled,
     isBeautifying,
-    licensed = true,
     isTypewriterMode,
     onTypewriterToggle,
     editorFont,
@@ -64,9 +62,7 @@ export default function FormattingToolbar({
     editor: Editor | null;
     onNormalizeClick: () => void;
     onBeautifyClick: () => void;
-    aiEnabled: boolean;
     isBeautifying?: boolean;
-    licensed?: boolean;
     isTypewriterMode?: boolean;
     onTypewriterToggle?: () => void;
     editorFont: string;
@@ -229,9 +225,7 @@ export default function FormattingToolbar({
             <TextActionsDropdown
                 onNormalizeClick={onNormalizeClick}
                 onBeautifyClick={onBeautifyClick}
-                aiEnabled={aiEnabled}
                 isBeautifying={isBeautifying}
-                licensed={licensed}
             />
         </div>
     );

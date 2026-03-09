@@ -7,7 +7,7 @@ use App\Models\Storyline;
 use App\Models\WritingSession;
 
 test('dashboard shows health metrics from chapter analysis data', function () {
-    $book = Book::factory()->create(['ai_enabled' => true]);
+    $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
 
     $chapters = [];
@@ -35,7 +35,6 @@ test('dashboard shows health metrics from chapter analysis data', function () {
 
 test('dashboard shows story bible when available', function () {
     $book = Book::factory()->create([
-        'ai_enabled' => true,
         'story_bible' => [
             'characters' => [['name' => 'John', 'role' => 'protagonist']],
             'themes' => ['Courage', 'Betrayal'],
@@ -73,7 +72,7 @@ test('dashboard returns null health metrics when no chapter analysis exists', fu
 });
 
 test('dashboard identifies weakest hooks as attention items', function () {
-    $book = Book::factory()->create(['ai_enabled' => true]);
+    $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
 
     // Create chapters with varying hook scores

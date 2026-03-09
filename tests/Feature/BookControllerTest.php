@@ -162,8 +162,7 @@ test('duplicate resets AI-derived fields', function () {
         ->assertRedirect(route('books.index'));
 
     $copy = Book::query()->where('title', 'like', '%(Copy)%')->first();
-    expect($copy->ai_enabled)->toBeFalse()
-        ->and($copy->writing_style)->toBeNull()
+    expect($copy->writing_style)->toBeNull()
         ->and($copy->story_bible)->toBeNull()
         ->and($copy->prose_pass_rules)->toBeNull();
 });

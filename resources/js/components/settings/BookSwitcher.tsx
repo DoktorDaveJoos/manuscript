@@ -1,4 +1,4 @@
-import { index as bookSettingsIndex } from '@/actions/App/Http/Controllers/BookSettingsController';
+import { writingStyle } from '@/actions/App/Http/Controllers/BookSettingsController';
 import { CaretUpDown, Check } from '@phosphor-icons/react';
 import { router } from '@inertiajs/react';
 import { useState, useRef, useEffect } from 'react';
@@ -28,7 +28,7 @@ export default function BookSwitcher({
 
     const switchBook = (book: BookRef) => {
         setOpen(false);
-        router.visit(bookSettingsIndex.url(book));
+        router.visit(writingStyle.url(book));
     };
 
     return (

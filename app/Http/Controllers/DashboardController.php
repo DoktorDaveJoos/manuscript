@@ -47,7 +47,7 @@ class DashboardController extends Controller
         }
 
         return Inertia::render('books/dashboard', [
-            'book' => $book->only('id', 'title', 'author', 'language', 'ai_enabled', 'storylines'),
+            'book' => $book->only('id', 'title', 'author', 'language', 'storylines'),
             'stats' => [
                 'total_words' => $totalWords,
                 'chapter_count' => $chapterCount,

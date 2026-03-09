@@ -118,7 +118,7 @@ return [
     |
     */
 
-    'license_public_key' => env('LICENSE_PUBLIC_KEY', 'adneTimYFMSpHvjva1Bw9muNWJl/cssBsAqAXYMrM9E='),
+    'license_public_key' => env('LICENSE_PUBLIC_KEY', 'XZFjyCwZgI85kdblxetUumt6P07qbvkgiRJjg0yz4Jw='),
 
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),

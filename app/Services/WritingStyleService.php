@@ -18,11 +18,13 @@ class WritingStyleService
      */
     public function extract(string $sampleText, Book $book): array
     {
-        $setting = AiSetting::forProvider($book->ai_provider);
+        $setting = AiSetting::activeProvider();
+        abort_if(! $setting, 422, 'No AI provider configured.');
+
         $setting->injectConfig();
 
         $langName = $book->language === 'de' ? 'German' : 'English';
-        $provider = $book->ai_provider->toLab()->value;
+        $provider = $setting->provider->toLab()->value;
 
         /** @var AgentResponse $response */
         $response = agent(

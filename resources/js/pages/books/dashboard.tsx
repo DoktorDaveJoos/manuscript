@@ -7,6 +7,7 @@ import SuggestedNext from '@/components/dashboard/SuggestedNext';
 import WritingGoal from '@/components/dashboard/WritingGoal';
 import WritingHeatmap from '@/components/dashboard/WritingHeatmap';
 import Sidebar from '@/components/editor/Sidebar';
+import { useAiFeatures } from '@/hooks/useAiFeatures';
 import type {
     AiPreparationStatus,
     Book,
@@ -98,6 +99,7 @@ export default function Dashboard({
     manuscript_target: ManuscriptTarget;
 }) {
     const storylines = book.storylines ?? [];
+    const { visible: aiVisible } = useAiFeatures();
 
     return (
         <>
@@ -141,7 +143,6 @@ export default function Dashboard({
                         {/* AI Preparation */}
                         <AiPreparation
                             bookId={book.id}
-                            aiEnabled={book.ai_enabled}
                             initialStatus={ai_preparation ?? null}
                         />
 
@@ -149,13 +150,13 @@ export default function Dashboard({
                         {stats.chapter_count > 0 && <ChapterStatusBar counts={status_counts} />}
 
                         {/* AI Insights */}
-                        {health_metrics && <AiInsights healthMetrics={health_metrics} />}
+                        {aiVisible && health_metrics && <AiInsights healthMetrics={health_metrics} />}
 
                         {/* Health Timeline */}
                         <HealthTimeline history={health_history} />
 
                         {/* Suggested Next */}
-                        {suggested_next && <SuggestedNext suggestion={suggested_next} bookId={book.id} />}
+                        {aiVisible && suggested_next && <SuggestedNext suggestion={suggested_next} bookId={book.id} />}
 
                         {/* Stats Grid */}
                         <div className="flex gap-4">

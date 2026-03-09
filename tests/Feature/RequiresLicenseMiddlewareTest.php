@@ -56,16 +56,6 @@ test('free routes remain accessible without licence', function () {
     $this->get(route('books.plot', $book))->assertOk();
 });
 
-test('book settings ai model update requires licence', function () {
-    $book = Book::factory()->create();
-
-    $this->putJson(route('books.settings.ai-model.update', $book), [
-        'ai_model' => 'claude-sonnet-4-20250514',
-        'ai_enabled' => true,
-        'ai_provider' => 'anthropic',
-    ])->assertForbidden();
-});
-
 test('writing style regenerate requires licence', function () {
     $book = Book::factory()->create();
 

@@ -3,7 +3,7 @@ import { index as indexCanvas } from '@/actions/App/Http/Controllers/CanvasContr
 import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
 import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
-import { about as settingsAbout } from '@/actions/App/Http/Controllers/SettingsController';
+import { appearance as settingsAppearance } from '@/actions/App/Http/Controllers/AppSettingsController';
 import NavItem from '@/components/ui/NavItem';
 import { useLicense } from '@/hooks/useLicense';
 import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
@@ -70,11 +70,11 @@ export default function Sidebar({
     return (
         <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border-light bg-surface-card">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-border-subtle px-5 py-4">
+            <div className="flex h-12 items-center justify-between border-b border-border-subtle px-5">
                 <Link href={index.url()} className="text-[13px] font-semibold uppercase tracking-[0.05em] text-ink">
                     Manuscript
                 </Link>
-                <Link href={settingsAbout.url()} className="text-ink-muted hover:text-ink transition-colors">
+                <Link href={settingsAppearance.url()} className="text-ink-muted hover:text-ink transition-colors">
                     <GearSix size={16} weight="regular" />
                 </Link>
             </div>

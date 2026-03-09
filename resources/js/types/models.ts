@@ -31,14 +31,18 @@ export type License = {
     masked_key: string | null;
 };
 
+export type AppSettings = {
+    show_ai_features: boolean;
+    hide_formatting_toolbar: boolean;
+    typewriter_mode: boolean;
+    show_scenes: boolean;
+};
+
 export type Book = {
     id: number;
     title: string;
     author: string;
     language: string;
-    ai_provider: AiProvider;
-    ai_enabled: boolean;
-    ai_model: string | null;
     prose_pass_rules: ProsePassRule[] | null;
     writing_style_text: string | null;
     story_bible?: StoryBible | null;

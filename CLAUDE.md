@@ -55,7 +55,7 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 ## Frontend Bundling
 
-- After making CSS, TypeScript, or React component changes, always run `npm run build` (or remind the user to run `npm run dev` if the dev server is running) so the change takes effect.
+- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `npm run build`, `npm run dev`, or `composer run dev`. Ask them.
 
 ## Documentation Files
 

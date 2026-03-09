@@ -5,9 +5,11 @@ import WikiEntryDetail from '@/components/wiki/WikiEntryDetail';
 import WikiEntryList from '@/components/wiki/WikiEntryList';
 import WikiTabBar, { type WikiTab } from '@/components/wiki/WikiTabBar';
 import type { Book, Character, Storyline, WikiEntry } from '@/types/models';
-import { Head, router } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { Plus } from '@phosphor-icons/react';
 import { useState } from 'react';
+
+const validTabs: WikiTab[] = ['characters', 'location', 'organization', 'item', 'lore'];
 
 type Props = {
     book: Book & { storylines?: Storyline[] };
@@ -29,15 +31,13 @@ export default function WikiIndex({
     tab,
 }: Props) {
     const storylines = book.storylines ?? [];
-    const activeTab = (tab || 'characters') as WikiTab;
+    const initialTab = validTabs.includes(tab as WikiTab) ? (tab as WikiTab) : 'characters';
+    const [activeTab, setActiveTab] = useState<WikiTab>(initialTab);
     const [selectedId, setSelectedId] = useState<number | null>(null);
 
     const handleTabChange = (newTab: WikiTab) => {
         setSelectedId(null);
-        router.visit(`/books/${book.id}/wiki?tab=${newTab}`, {
-            preserveState: true,
-            preserveScroll: true,
-        });
+        setActiveTab(newTab);
     };
 
     const entriesByTab: Record<WikiTab, (Character | WikiEntry)[]> = {

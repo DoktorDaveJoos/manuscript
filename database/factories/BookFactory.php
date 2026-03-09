@@ -23,8 +23,6 @@ class BookFactory extends Factory
             'title' => fake()->sentence(3),
             'author' => fake()->name(),
             'language' => 'de',
-            'ai_provider' => AiProvider::Anthropic,
-            'ai_enabled' => false,
         ];
     }
 
@@ -32,10 +30,7 @@ class BookFactory extends Factory
     {
         $provider ??= AiProvider::Anthropic;
 
-        return $this->state(fn (array $attributes) => [
-            'ai_enabled' => true,
-            'ai_provider' => $provider,
-        ])->afterCreating(function (Book $book) use ($provider) {
+        return $this->afterCreating(function (Book $book) use ($provider) {
             AiSetting::factory()->create([
                 'provider' => $provider,
             ]);

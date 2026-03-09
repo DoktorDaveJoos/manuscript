@@ -30,7 +30,7 @@ class AiSettingsController extends Controller
 
         $book = Book::query()->select('id', 'title')->first();
 
-        return Inertia::render('settings/ai', [
+        return Inertia::render('settings/ai-providers', [
             'settings' => $settings,
             'book' => $book?->only('id', 'title'),
         ]);
@@ -38,9 +38,14 @@ class AiSettingsController extends Controller
 
     public function update(UpdateAiSettingRequest $request, AiProvider $provider): JsonResponse
     {
-        $setting = AiSetting::forProvider($provider);
-
         $data = $request->validated();
+
+        // If enabling this provider, use selectProvider to enforce single selection
+        if (! empty($data['enabled'])) {
+            $setting = AiSetting::selectProvider($provider);
+        } else {
+            $setting = AiSetting::forProvider($provider);
+        }
 
         // Only update api_key if provided (don't clear on empty)
         if (! array_key_exists('api_key', $data) || $data['api_key'] === null) {

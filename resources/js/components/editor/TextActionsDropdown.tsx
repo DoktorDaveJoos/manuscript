@@ -1,19 +1,17 @@
+import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { DotsThreeVertical, Lock } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 
 export default function TextActionsDropdown({
     onNormalizeClick,
     onBeautifyClick,
-    aiEnabled,
     isBeautifying = false,
-    licensed = true,
 }: {
     onNormalizeClick: () => void;
     onBeautifyClick: () => void;
-    aiEnabled: boolean;
     isBeautifying?: boolean;
-    licensed?: boolean;
 }) {
+    const { visible, usable, licensed } = useAiFeatures();
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -59,31 +57,33 @@ export default function TextActionsDropdown({
                             </span>
                         </button>
 
-                        <button
-                            type="button"
-                            disabled={!aiEnabled || !licensed || isBeautifying}
-                            onClick={() => {
-                                setOpen(false);
-                                onBeautifyClick();
-                            }}
-                            className="px-3 py-2 text-left transition-colors hover:bg-neutral-bg disabled:opacity-50"
-                        >
-                            <span className="flex items-center gap-1.5 text-xs font-medium text-ink">
-                                Beautify
-                                <span className="rounded bg-status-revised/15 px-1 py-0.5 text-[10px] font-medium text-status-revised">
-                                    AI
-                                </span>
-                                {!licensed && (
-                                    <span className="flex items-center gap-0.5 rounded bg-ink-faint/10 px-1 py-0.5 text-[10px] font-medium text-ink-faint">
-                                        <Lock size={10} />
-                                        PRO
+                        {visible && (
+                            <button
+                                type="button"
+                                disabled={!usable || isBeautifying}
+                                onClick={() => {
+                                    setOpen(false);
+                                    onBeautifyClick();
+                                }}
+                                className="px-3 py-2 text-left transition-colors hover:bg-neutral-bg disabled:opacity-50"
+                            >
+                                <span className="flex items-center gap-1.5 text-xs font-medium text-ink">
+                                    Beautify
+                                    <span className="rounded bg-status-revised/15 px-1 py-0.5 text-[10px] font-medium text-status-revised">
+                                        AI
                                     </span>
-                                )}
-                            </span>
-                            <span className="block text-[11px] text-ink-faint">
-                                {isBeautifying ? 'Processing...' : 'Restructure paragraphs and dialogue'}
-                            </span>
-                        </button>
+                                    {!licensed && (
+                                        <span className="flex items-center gap-0.5 rounded bg-ink-faint/10 px-1 py-0.5 text-[10px] font-medium text-ink-faint">
+                                            <Lock size={10} />
+                                            PRO
+                                        </span>
+                                    )}
+                                </span>
+                                <span className="block text-[11px] text-ink-faint">
+                                    {isBeautifying ? 'Processing...' : 'Restructure paragraphs and dialogue'}
+                                </span>
+                            </button>
+                        )}
                     </div>
                 </div>
             )}

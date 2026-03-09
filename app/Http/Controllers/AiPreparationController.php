@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\PrepareBookForAi;
 use App\Models\AiSetting;
+use App\Models\AppSetting;
 use App\Models\Book;
 use Illuminate\Http\JsonResponse;
 
@@ -11,9 +12,9 @@ class AiPreparationController extends Controller
 {
     public function start(Book $book): JsonResponse
     {
-        $setting = AiSetting::forProvider($book->ai_provider);
+        $setting = AiSetting::activeProvider();
 
-        if (! $book->ai_enabled || ! $setting->isConfigured()) {
+        if (! AppSetting::showAiFeatures() || ! $setting?->isConfigured()) {
             return response()->json([
                 'message' => 'AI is not enabled or no API key configured.',
             ], 422);

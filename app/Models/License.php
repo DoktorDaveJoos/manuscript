@@ -41,7 +41,7 @@ class License extends Model
      */
     public static function validate(string $key): bool
     {
-        if (! extension_loaded('sodium')) {
+        if (! function_exists('sodium_crypto_sign_verify_detached')) {
             return false;
         }
 
@@ -60,7 +60,7 @@ class License extends Model
 
         $signature = base64_decode(strtr($signatureB64, '-_', '+/'), strict: true);
 
-        if ($signature === false || strlen($signature) !== \SODIUM_CRYPTO_SIGN_BYTES) {
+        if ($signature === false || strlen($signature) !== SODIUM_CRYPTO_SIGN_BYTES) {
             return false;
         }
 

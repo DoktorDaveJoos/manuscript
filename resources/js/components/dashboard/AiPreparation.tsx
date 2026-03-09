@@ -1,20 +1,53 @@
 import { useAiPreparation, TOTAL_PHASES, phaseLabels } from '@/hooks/useAiPreparation';
+import { useAiFeatures } from '@/hooks/useAiFeatures';
 import type { AiPreparationStatus } from '@/types/models';
 import { Check, Lock, Sparkle } from '@phosphor-icons/react';
+import { Link } from '@inertiajs/react';
 
 export default function AiPreparation({
     bookId,
-    aiEnabled,
     initialStatus,
 }: {
     bookId: number;
-    aiEnabled: boolean;
     initialStatus: AiPreparationStatus | null;
 }) {
+    const { visible, usable, licensed, configured } = useAiFeatures();
     const { status, isRunning, starting, error, handleStart } = useAiPreparation(bookId, initialStatus);
 
-    // AI not enabled
-    if (!aiEnabled) {
+    if (!visible) return null;
+
+    // Not usable — show contextual guidance
+    if (!usable) {
+        let heading: string;
+        let description: string;
+        let linkContent: React.ReactNode = null;
+
+        if (!licensed) {
+            heading = 'Requires Manuscript Pro';
+            description = 'Upgrade to Pro to unlock AI-powered manuscript analysis.';
+            linkContent = (
+                <a
+                    href="https://getmanuscript.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[13px] font-medium text-accent transition-colors hover:text-accent/80"
+                >
+                    Learn more
+                </a>
+            );
+        } else if (!configured) {
+            heading = 'Set up an AI provider';
+            description = 'Add an API key in AI settings to enable manuscript analysis.';
+            linkContent = (
+                <Link
+                    href="/settings/ai"
+                    className="text-[13px] font-medium text-accent transition-colors hover:text-accent/80"
+                >
+                    Go to AI settings
+                </Link>
+            );
+        }
+
         return (
             <div className="flex items-center justify-between rounded-lg bg-surface-card px-6 py-6">
                 <div className="flex flex-col gap-2">
@@ -24,12 +57,13 @@ export default function AiPreparation({
                     <div className="flex items-center gap-2">
                         <Lock size={18} weight="fill" className="shrink-0 text-ink-faint" />
                         <span className="font-serif text-[20px] font-medium text-ink-muted">
-                            Configure AI to unlock insights
+                            {heading}
                         </span>
                     </div>
                     <p className="text-[13px] text-ink-muted">
-                        Add an API key in settings to enable AI-powered manuscript analysis.
+                        {description}
                     </p>
+                    {linkContent}
                 </div>
             </div>
         );

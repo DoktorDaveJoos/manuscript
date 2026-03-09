@@ -116,7 +116,6 @@ class BookController extends Controller
                 'prose_pass_rules',
             ]);
             $newBook->title = $book->title.' (Copy)';
-            $newBook->ai_enabled = false;
             $newBook->save();
 
             /** @var array<int, int> */
