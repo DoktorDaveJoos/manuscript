@@ -11,7 +11,7 @@ use App\Enums\VersionSource;
 use App\Enums\VersionStatus;
 use App\Http\Requests\RunAnalysisRequest;
 use App\Jobs\AnalyzeChapterJob;
-use App\Jobs\ExtractCharactersJob;
+use App\Jobs\ExtractEntitiesJob;
 use App\Jobs\GenerateEmbeddingsJob;
 use App\Jobs\RunAnalysisJob;
 use App\Models\AiSetting;
@@ -80,9 +80,9 @@ class AiController extends Controller
 
     public function extractCharacters(Book $book, Chapter $chapter): JsonResponse
     {
-        ExtractCharactersJob::dispatch($book, $chapter);
+        ExtractEntitiesJob::dispatch($book, $chapter);
 
-        return response()->json(['message' => 'Character extraction started.']);
+        return response()->json(['message' => 'Entity extraction started.']);
     }
 
     public function nextChapter(Book $book): JsonResponse

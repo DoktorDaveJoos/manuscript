@@ -4,7 +4,7 @@ use App\Ai\Agents\NextChapterAdvisor;
 use App\Ai\Agents\ProseReviser;
 use App\Ai\Agents\TextBeautifier;
 use App\Enums\AiProvider;
-use App\Jobs\ExtractCharactersJob;
+use App\Jobs\ExtractEntitiesJob;
 use App\Jobs\GenerateEmbeddingsJob;
 use App\Jobs\RunAnalysisJob;
 use App\Models\AiSetting;
@@ -53,7 +53,7 @@ test('analyze validates type is a valid analysis type', function () {
         ->assertJsonValidationErrors('type');
 });
 
-test('extract characters dispatches ExtractCharactersJob', function () {
+test('extract characters dispatches ExtractEntitiesJob', function () {
     Queue::fake();
 
     $book = Book::factory()->withAi()->create();
@@ -62,9 +62,9 @@ test('extract characters dispatches ExtractCharactersJob', function () {
 
     $this->postJson(route('books.ai.extractCharacters', [$book, $chapter]))
         ->assertOk()
-        ->assertJsonPath('message', 'Character extraction started.');
+        ->assertJsonPath('message', 'Entity extraction started.');
 
-    Queue::assertPushed(ExtractCharactersJob::class);
+    Queue::assertPushed(ExtractEntitiesJob::class);
 });
 
 test('embed dispatches GenerateEmbeddingsJob for each chapter', function () {

@@ -2,7 +2,7 @@
 
 use App\Ai\Agents\BookChatAgent;
 use App\Ai\Agents\ChapterAnalyzer;
-use App\Ai\Agents\CharacterExtractor;
+use App\Ai\Agents\EntityExtractor;
 use App\Ai\Agents\ManuscriptAnalyzer;
 use App\Enums\AiProvider;
 use App\Jobs\AnalyzeChapterJob;
@@ -92,8 +92,8 @@ test('AnalyzeChapterJob runs chapter analysis and updates chapter', function () 
             ],
         ];
     });
-    CharacterExtractor::fake(function () {
-        return ['characters' => [['name' => 'John', 'aliases' => [], 'description' => 'Main character']]];
+    EntityExtractor::fake(function () {
+        return ['characters' => [['name' => 'John', 'aliases' => [], 'description' => 'Main character']], 'entities' => []];
     });
     ManuscriptAnalyzer::fake(function () {
         return ['score' => 7, 'findings' => ['Good'], 'recommendations' => ['Keep going']];

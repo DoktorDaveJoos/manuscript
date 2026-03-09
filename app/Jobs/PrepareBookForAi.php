@@ -117,7 +117,7 @@ class PrepareBookForAi implements ShouldQueue
             preparation: $this->preparation,
             startPhase: 'story_bible',
             phaseTotal: 1,
-            completedPhases: ['chapter_analysis', 'character_extraction'],
+            completedPhases: ['chapter_analysis', 'entity_extraction'],
         );
 
         $jobs[] = new BuildStoryBible($this->book, $this->preparation);

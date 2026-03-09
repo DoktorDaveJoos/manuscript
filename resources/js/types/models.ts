@@ -11,13 +11,10 @@ export type HookType = 'cliffhanger' | 'soft_hook' | 'closed' | 'dead_end';
 export type AiProvider = 'anthropic' | 'openai' | 'gemini' | 'groq' | 'xai' | 'deepseek' | 'mistral' | 'ollama' | 'azure' | 'openrouter';
 
 export type StoryBible = {
-    characters?: Record<string, unknown>[];
-    setting?: Record<string, unknown>[];
-    plot_outline?: Record<string, unknown>[];
-    themes?: (string | Record<string, unknown>)[];
-    style_rules?: (string | Record<string, unknown>)[];
-    genre_rules?: (string | Record<string, unknown>)[];
-    timeline?: Record<string, unknown>[];
+    themes?: string[];
+    style_rules?: string[];
+    genre_rules?: string[];
+    timeline?: string[];
 };
 
 export type ProsePassRule = {
@@ -289,7 +286,7 @@ export type NormalizePreviewResult = {
     total_changes: number;
 };
 
-export type PreparationPhase = 'chunking' | 'embedding' | 'writing_style' | 'chapter_analysis' | 'character_extraction' | 'story_bible' | 'health_analysis';
+export type PreparationPhase = 'chunking' | 'embedding' | 'writing_style' | 'chapter_analysis' | 'entity_extraction' | 'story_bible' | 'health_analysis';
 
 export type PhaseError = {
     phase: string;

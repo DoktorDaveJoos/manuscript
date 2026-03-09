@@ -1,7 +1,7 @@
 <?php
 
 use App\Ai\Agents\ChapterAnalyzer;
-use App\Ai\Agents\CharacterExtractor;
+use App\Ai\Agents\EntityExtractor;
 use App\Ai\Agents\StoryBibleBuilder;
 use App\Jobs\PrepareBookForAi;
 use App\Models\AiPreparation;
@@ -52,11 +52,12 @@ test('prepare book for ai runs full 7-phase pipeline', function () {
         ];
     });
 
-    CharacterExtractor::fake(function () {
+    EntityExtractor::fake(function () {
         return [
             'characters' => [
                 ['name' => 'John', 'aliases' => null, 'description' => 'The hero', 'role' => 'protagonist'],
             ],
+            'entities' => [],
         ];
     });
 
@@ -82,7 +83,7 @@ test('prepare book for ai runs full 7-phase pipeline', function () {
     expect($preparation->status)->toBe('completed')
         ->and($preparation->completed_phases)->toContain('chunking')
         ->and($preparation->completed_phases)->toContain('chapter_analysis')
-        ->and($preparation->completed_phases)->toContain('character_extraction')
+        ->and($preparation->completed_phases)->toContain('entity_extraction')
         ->and($preparation->completed_phases)->toContain('story_bible')
         ->and($preparation->completed_phases)->toContain('health_analysis');
 
@@ -119,8 +120,8 @@ test('prepare book for ai tracks phase progress', function () {
         ];
     });
 
-    CharacterExtractor::fake(function () {
-        return ['characters' => []];
+    EntityExtractor::fake(function () {
+        return ['characters' => [], 'entities' => []];
     });
 
     StoryBibleBuilder::fake(function () {
@@ -167,8 +168,8 @@ test('prepare book for ai isolates per-chapter failures', function () {
         ];
     });
 
-    CharacterExtractor::fake(function () {
-        return ['characters' => []];
+    EntityExtractor::fake(function () {
+        return ['characters' => [], 'entities' => []];
     });
 
     StoryBibleBuilder::fake(function () {

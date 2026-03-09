@@ -10,7 +10,7 @@ export const phaseLabels: Record<PreparationPhase, string> = {
     embedding: 'Generating embeddings',
     writing_style: 'Extracting style',
     chapter_analysis: 'Analyzing chapters',
-    character_extraction: 'Extracting characters',
+    entity_extraction: 'Extracting entities',
     story_bible: 'Building story bible',
     health_analysis: 'Computing health',
 };

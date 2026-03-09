@@ -1,7 +1,7 @@
 <?php
 
 use App\Ai\Agents\ChapterAnalyzer;
-use App\Ai\Agents\CharacterExtractor;
+use App\Ai\Agents\EntityExtractor;
 use App\Jobs\Preparation\AnalyzeChapter;
 use App\Models\AiPreparation;
 use App\Models\Book;
@@ -38,7 +38,7 @@ function createBookForAnalysis(int $chapterCount = 2): array
     return [$book, $chapters, $preparation];
 }
 
-test('analyze chapter performs analysis and character extraction', function () {
+test('analyze chapter performs analysis and entity extraction', function () {
     ChapterAnalyzer::fake(function () {
         return [
             'summary' => 'The hero enters the castle.',
@@ -54,10 +54,13 @@ test('analyze chapter performs analysis and character extraction', function () {
         ];
     });
 
-    CharacterExtractor::fake(function () {
+    EntityExtractor::fake(function () {
         return [
             'characters' => [
                 ['name' => 'John', 'aliases' => null, 'description' => 'The hero', 'role' => 'protagonist'],
+            ],
+            'entities' => [
+                ['name' => 'The Castle', 'kind' => 'location', 'type' => 'Fortress', 'description' => 'An ancient stronghold.'],
             ],
         ];
     });
@@ -75,6 +78,12 @@ test('analyze chapter performs analysis and character extraction', function () {
 
     expect($book->characters()->where('name', 'John')->exists())->toBeTrue();
     expect($book->plotPoints()->where('is_ai_derived', true)->count())->toBe(1);
+
+    $castle = $book->wikiEntries()->where('name', 'The Castle')->first();
+    expect($castle)->not->toBeNull()
+        ->and($castle->kind->value)->toBe('location')
+        ->and($castle->type)->toBe('Fortress')
+        ->and($castle->is_ai_extracted)->toBeTrue();
 
     $preparation->refresh();
     expect($preparation->current_phase_progress)->toBe(1);
@@ -97,8 +106,8 @@ test('analyze chapter builds rolling context from preceding chapters', function 
         ];
     });
 
-    CharacterExtractor::fake(function () {
-        return ['characters' => []];
+    EntityExtractor::fake(function () {
+        return ['characters' => [], 'entities' => []];
     });
 
     [$book, $chapters, $preparation] = createBookForAnalysis(2);
@@ -120,8 +129,8 @@ test('analyze chapter logs errors without throwing', function () {
         throw new \RuntimeException('AI service unavailable');
     });
 
-    CharacterExtractor::fake(function () {
-        return ['characters' => []];
+    EntityExtractor::fake(function () {
+        return ['characters' => [], 'entities' => []];
     });
 
     [$book, $chapters, $preparation] = createBookForAnalysis(1);

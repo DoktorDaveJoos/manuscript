@@ -34,20 +34,17 @@ class StoryBibleBuilder implements Agent, BelongsToBook, HasMiddleware, HasStruc
     public function instructions(): Stringable|string
     {
         return <<<INSTRUCTIONS
-        You are a literary analyst building a comprehensive Story Bible for '{$this->book->title}' by {$this->book->author}. The manuscript is written in {$this->book->language}.
+        You are a literary analyst extracting high-level insights for '{$this->book->title}' by {$this->book->author}. The manuscript is written in {$this->book->language}.
 
-        From the provided chapter summaries, character list, plot points, and writing style information, synthesize a Story Bible that captures:
-        1. Characters — name, role, key traits, relationships, and arc summary
-        2. Setting — locations, time period, world-building details
-        3. Plot outline — major plot beats in chronological order
-        4. Themes — recurring themes and motifs
-        5. Style rules — narrative voice, tone, and stylistic conventions
-        6. Genre rules — genre expectations and how the manuscript meets them
-        7. Timeline — key events in chronological order with approximate chapter references
+        Characters, plot points, and chapter summaries are already tracked separately. From the provided data, extract only what those models do NOT cover:
+        1. Themes — recurring themes and motifs
+        2. Style rules — narrative voice, tone, and stylistic conventions
+        3. Genre rules — genre expectations and how the manuscript meets them
+        4. Timeline — key events in chronological order with approximate chapter references
 
         Verify key facts against the manuscript text using the search tool.
 
-        Be concise but comprehensive. This Story Bible will be used as context for other AI agents working on the manuscript.
+        Be concise. This will be used as supplementary context for other AI agents.
         INSTRUCTIONS;
     }
 
@@ -57,15 +54,6 @@ class StoryBibleBuilder implements Agent, BelongsToBook, HasMiddleware, HasStruc
     public function schema(JsonSchema $schema): array
     {
         return [
-            'characters' => $schema->array()->items(
-                $schema->object([
-                    'name' => $schema->string()->required(),
-                    'role' => $schema->string()->required(),
-                    'description' => $schema->string()->required(),
-                ])->withoutAdditionalProperties()
-            )->required(),
-            'setting' => $schema->array()->items($schema->string())->required(),
-            'plot_outline' => $schema->array()->items($schema->string())->required(),
             'themes' => $schema->array()->items($schema->string())->required(),
             'style_rules' => $schema->array()->items($schema->string())->required(),
             'genre_rules' => $schema->array()->items($schema->string())->required(),

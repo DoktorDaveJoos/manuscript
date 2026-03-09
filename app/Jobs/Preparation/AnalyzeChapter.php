@@ -3,7 +3,8 @@
 namespace App\Jobs\Preparation;
 
 use App\Ai\Agents\ChapterAnalyzer;
-use App\Ai\Agents\CharacterExtractor;
+use App\Ai\Agents\EntityExtractor;
+use App\Jobs\Concerns\PersistsExtractedEntities;
 use App\Models\AiPreparation;
 use App\Models\Book;
 use App\Models\Chapter;
@@ -17,7 +18,7 @@ use Throwable;
 
 class AnalyzeChapter implements ShouldQueue
 {
-    use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Batchable, Dispatchable, InteractsWithQueue, PersistsExtractedEntities, Queueable, SerializesModels;
 
     public int $tries = 1;
 
@@ -46,7 +47,7 @@ class AnalyzeChapter implements ShouldQueue
         }
 
         $this->runChapterAnalysis($chapter);
-        $this->runCharacterExtraction($chapter);
+        $this->runEntityExtraction($chapter);
 
         $this->preparation->increment('current_phase_progress');
     }
@@ -107,33 +108,17 @@ class AnalyzeChapter implements ShouldQueue
         }
     }
 
-    private function runCharacterExtraction(Chapter $chapter): void
+    private function runEntityExtraction(Chapter $chapter): void
     {
         $content = $chapter->currentVersion->content;
 
         try {
-            $agent = new CharacterExtractor($this->book);
-            $response = $agent->prompt("Extract all characters from the following chapter text:\n\n{$content}");
+            $agent = new EntityExtractor($this->book);
+            $response = $agent->prompt("Extract all characters and narratively important entities from the following chapter text:\n\n{$content}");
 
-            $characters = $response['characters'] ?? [];
-
-            foreach ($characters as $characterData) {
-                if (! is_array($characterData) || empty($characterData['name'])) {
-                    continue;
-                }
-
-                $this->book->characters()->updateOrCreate(
-                    ['name' => $characterData['name']],
-                    [
-                        'aliases' => $characterData['aliases'] ?? null,
-                        'description' => $characterData['description'] ?? null,
-                        'is_ai_extracted' => true,
-                        'first_appearance' => $chapter->id,
-                    ],
-                );
-            }
+            $this->persistExtractedEntities($this->book, $chapter, $response->toArray());
         } catch (Throwable $e) {
-            $this->preparation->appendPhaseError('character_extraction', $chapter->title, $e->getMessage());
+            $this->preparation->appendPhaseError('entity_extraction', $chapter->title, $e->getMessage());
         }
     }
 }
