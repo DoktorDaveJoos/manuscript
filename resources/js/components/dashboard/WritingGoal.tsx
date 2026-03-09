@@ -21,6 +21,7 @@ export default function WritingGoal({
     const [isEditing, setIsEditing] = useState(false);
     const [inputValue, setInputValue] = useState(String(goal ?? 500));
     const [targetValue, setTargetValue] = useState(String(targetWordCount ?? ''));
+    const [saveError, setSaveError] = useState(false);
 
     const handleSave = useCallback(async () => {
         const parsed = parseInt(inputValue, 10);
@@ -33,6 +34,8 @@ export default function WritingGoal({
         }
         body.target_word_count = parsedTarget;
 
+        setSaveError(false);
+
         try {
             const response = await fetch(updateWritingGoal.url(bookId), {
                 method: 'PUT',
@@ -40,12 +43,15 @@ export default function WritingGoal({
                 body: JSON.stringify(body),
             });
 
-            if (!response.ok) return;
+            if (!response.ok) {
+                setSaveError(true);
+                return;
+            }
 
             setGoal(parsed);
             setIsEditing(false);
         } catch {
-            // Ignore errors
+            setSaveError(true);
         }
     }, [bookId, inputValue, targetValue]);
 
@@ -91,7 +97,7 @@ export default function WritingGoal({
                             min={50}
                             max={50000}
                             value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
+                            onChange={(e) => { setInputValue(e.target.value); setSaveError(false); }}
                             onKeyDown={handleKeyDown}
                             className="w-28 rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-ink focus:border-ink focus:ring-0 focus:outline-none"
                             autoFocus
@@ -104,7 +110,7 @@ export default function WritingGoal({
                             min={1000}
                             max={500000}
                             value={targetValue}
-                            onChange={(e) => setTargetValue(e.target.value)}
+                            onChange={(e) => { setTargetValue(e.target.value); setSaveError(false); }}
                             onKeyDown={handleKeyDown}
                             placeholder="Optional"
                             className="w-28 rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint/50 focus:border-ink focus:ring-0 focus:outline-none"
@@ -118,6 +124,7 @@ export default function WritingGoal({
                             onClick={() => {
                                 setIsEditing(false);
                                 setInputValue(String(goal ?? 500));
+                                setSaveError(false);
                             }}
                             className="rounded-md px-3 py-1.5 text-xs text-ink-muted transition-colors hover:bg-neutral-bg"
                         >
@@ -131,6 +138,9 @@ export default function WritingGoal({
                             Save
                         </button>
                     </div>
+                    {saveError && (
+                        <p className="text-xs text-red-600">Failed to save. Please try again.</p>
+                    )}
                 </div>
             </div>
         );
