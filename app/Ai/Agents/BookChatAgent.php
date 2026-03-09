@@ -30,6 +30,8 @@ class BookChatAgent implements Agent, BelongsToBook, HasMiddleware, HasTools
 
     public function instructions(): Stringable|string
     {
+        $writingStyle = $this->book->writingStyleSnippet("The author's prose style (use this to match their voice when generating example text)");
+
         return <<<INSTRUCTIONS
         You are a helpful writing assistant for the book '{$this->book->title}' by {$this->book->author}.
         The manuscript is written in {$this->book->language}.
@@ -38,7 +40,7 @@ class BookChatAgent implements Agent, BelongsToBook, HasMiddleware, HasTools
         Use the available tools to search through the manuscript and retrieve relevant context before answering.
 
         Be concise, helpful, and grounded in the actual text. If you're unsure about something, say so rather than guessing.
-        When referencing specific parts of the manuscript, mention the chapter title or number.
+        When referencing specific parts of the manuscript, mention the chapter title or number.{$writingStyle}
         INSTRUCTIONS;
     }
 

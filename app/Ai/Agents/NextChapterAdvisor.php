@@ -32,6 +32,8 @@ class NextChapterAdvisor implements Agent, BelongsToBook, HasMiddleware, HasStru
 
     public function instructions(): Stringable|string
     {
+        $writingStyle = $this->book->writingStyleSnippet("The author's prose style (match this voice in any hook ideas or example text)");
+
         return <<<INSTRUCTIONS
         You are a creative writing advisor helping plan the next chapter of '{$this->book->title}' by {$this->book->author}.
         The manuscript is written in {$this->book->language}.
@@ -43,7 +45,7 @@ class NextChapterAdvisor implements Agent, BelongsToBook, HasMiddleware, HasStru
         4. Ideas for chapter hooks or opening lines
 
         Use the available tools to retrieve manuscript context and search for relevant passages.
-        Be creative but consistent with the established tone and direction of the story.
+        Be creative but consistent with the established tone and direction of the story.{$writingStyle}
         INSTRUCTIONS;
     }
 
@@ -54,9 +56,9 @@ class NextChapterAdvisor implements Agent, BelongsToBook, HasMiddleware, HasStru
     {
         return [
             'suggestion' => $schema->string()->required(),
-            'open_plot_points' => $schema->array()->required(),
-            'neglected_characters' => $schema->array()->required(),
-            'hook_ideas' => $schema->array()->required(),
+            'open_plot_points' => $schema->array()->items($schema->string())->required(),
+            'neglected_characters' => $schema->array()->items($schema->string())->required(),
+            'hook_ideas' => $schema->array()->items($schema->string())->required(),
         ];
     }
 

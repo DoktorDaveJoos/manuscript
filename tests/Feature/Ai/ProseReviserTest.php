@@ -14,7 +14,7 @@ test('prose reviser includes book title in instructions', function () {
 
 test('prose reviser includes writing style when available', function () {
     $book = Book::factory()->create([
-        'writing_style' => ['tone' => 'literary', 'pov' => 'first_person'],
+        'writing_style' => ['tone' => 'literary', 'narrative_voice' => 'first person, close narrator distance'],
     ]);
 
     $agent = new ProseReviser($book);

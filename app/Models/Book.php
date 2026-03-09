@@ -96,6 +96,16 @@ class Book extends Model
     }
 
     /**
+     * Return a writing-style snippet ready to append to agent instructions.
+     */
+    public function writingStyleSnippet(string $label = 'Writing style preferences'): string
+    {
+        $display = $this->writing_style_display;
+
+        return $display ? "\n\n{$label}:\n".$display : '';
+    }
+
+    /**
      * @return HasMany<Storyline, $this>
      */
     public function storylines(): HasMany

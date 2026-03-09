@@ -25,7 +25,7 @@ test('text beautifier emphasizes no word changes', function () {
 
 test('text beautifier includes writing style when available', function () {
     $book = Book::factory()->create([
-        'writing_style' => ['tone' => 'literary', 'pov' => 'first_person'],
+        'writing_style' => ['tone' => 'literary', 'narrative_voice' => 'first person, close narrator distance'],
     ]);
 
     $agent = new TextBeautifier($book);

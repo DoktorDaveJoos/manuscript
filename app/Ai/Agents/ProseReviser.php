@@ -31,9 +31,7 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware, HasTools
 
     public function instructions(): Stringable|string
     {
-        $writingStyle = $this->book->writing_style_display
-            ? "\n\nWriting style preferences:\n".$this->book->writing_style_display
-            : '';
+        $writingStyle = $this->book->writingStyleSnippet();
 
         $rules = $this->book->prose_pass_rules ?? Book::defaultProsePassRules();
         $enabledRules = collect($rules)->filter(fn ($rule) => $rule['enabled']);
