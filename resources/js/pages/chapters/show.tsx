@@ -4,6 +4,7 @@ import { store as storeScene } from '@/actions/App/Http/Controllers/SceneControl
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
 import AiPanel from '@/components/editor/AiPanel';
 import CommandPalette from '@/components/editor/CommandPalette';
+import DiffView from '@/components/editor/DiffView';
 import EditorBar, { type SaveStatus } from '@/components/editor/EditorBar';
 import FormattingToolbar from '@/components/editor/FormattingToolbar';
 import NotesPanel from '@/components/editor/NotesPanel';
@@ -14,7 +15,7 @@ import Kbd from '@/components/ui/Kbd';
 import { useLicense } from '@/hooks/useLicense';
 import { getXsrfToken } from '@/lib/csrf';
 import { createChapter, jsonFetchHeaders } from '@/lib/utils';
-import type { Book, Chapter, Character, CharacterChapterPivot, Scene } from '@/types/models';
+import type { Book, Chapter, ChapterVersion, Character, CharacterChapterPivot, Scene } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
 import { DOMSerializer } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
@@ -32,10 +33,12 @@ export default function ChapterShow({
     book,
     chapter,
     versionCount,
+    pendingVersion,
 }: {
     book: Book;
     chapter: ChapterWithRelations;
     versionCount: number;
+    pendingVersion: ChapterVersion | null;
 }) {
     const { isActive: isLicensed } = useLicense();
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
@@ -292,6 +295,7 @@ export default function ChapterShow({
 
             if (!response.ok) throw new Error('Beautify failed');
 
+            await response.text();
             router.reload();
         } catch {
             setSaveStatus('error');
@@ -449,81 +453,97 @@ export default function ChapterShow({
                         )}
                     </div>
 
+                    {pendingVersion && chapter.current_version ? (
+                        <DiffView
+                            bookId={book.id}
+                            chapterId={chapter.id}
+                            chapterTitle={displayTitle}
+                            currentVersion={chapter.current_version}
+                            pendingVersion={pendingVersion}
+                        />
+                    ) : (
+                        <>
+                            <div
+                                className={`transition-[height,opacity] duration-300 ${isFocusMode ? 'h-0 overflow-hidden opacity-0' : 'h-9'}`}
+                            >
+                                <FormattingToolbar
+                                    editor={activeEditor}
+                                    onNormalizeClick={() => setShowNormalize(true)}
+                                    onBeautifyClick={handleBeautify}
+                                    aiEnabled={book.ai_enabled}
+                                    isBeautifying={isBeautifying}
+                                    licensed={isLicensed}
+                                    isTypewriterMode={isTypewriterMode}
+                                    onTypewriterToggle={toggleTypewriterMode}
+                                    editorFont={editorFont}
+                                    onFontChange={handleFontChange}
+                                />
+                            </div>
+
+                            <WritingSurface
+                                scenes={scenes}
+                                bookId={book.id}
+                                chapterId={chapter.id}
+                                title={chapterTitle}
+                                povCharacterName={povCharacterName}
+                                timelineLabel={timelineLabel}
+                                onTitleUpdate={handleTitleUpdate}
+                                activeEditor={activeEditor}
+                                onActiveEditorChange={setActiveEditor}
+                                onWordCountChange={handleSceneWordCountChange}
+                                isTypewriterMode={isTypewriterMode}
+                                editorFont={editorFont}
+                                pendingFocusSceneId={pendingFocusSceneId}
+                                onFocusHandled={() => setPendingFocusSceneId(null)}
+                                onActiveSceneIdChange={setActiveSceneId}
+                                scenesVisible={scenesVisible}
+                            />
+
+                            <NotesPanel
+                                bookId={book.id}
+                                chapterId={chapter.id}
+                                initialNotes={chapter.notes}
+                                isFocusMode={isFocusMode}
+                                toggleTick={notesToggleTick}
+                                onClose={() => {
+                                    activeEditor?.commands.focus();
+                                }}
+                            />
+
+                            <CommandPalette
+                                editor={activeEditor}
+                                isOpen={isPaletteOpen}
+                                onClose={closePalette}
+                                onSplitScene={handleSplitScene}
+                                onNewChapter={handleNewChapter}
+                                onAddScene={handlePaletteAddScene}
+                                onEnterFocusMode={toggleFocusMode}
+                                isFocusMode={isFocusMode}
+                                onToggleTypewriterMode={toggleTypewriterMode}
+                                isTypewriterMode={isTypewriterMode}
+                                onToggleNotes={() => setNotesToggleTick((t) => t + 1)}
+                                licensed={isLicensed}
+                            />
+                        </>
+                    )}
+                </div>
+
+                {!pendingVersion && (
                     <div
-                        className={`transition-[height,opacity] duration-300 ${isFocusMode ? 'h-0 overflow-hidden opacity-0' : 'h-9'}`}
+                        className={`overflow-hidden transition-[width,opacity] duration-300 ${isFocusMode ? 'w-0 opacity-0' : ''}`}
                     >
-                        <FormattingToolbar
-                            editor={activeEditor}
-                            onNormalizeClick={() => setShowNormalize(true)}
-                            onBeautifyClick={handleBeautify}
-                            aiEnabled={book.ai_enabled}
-                            isBeautifying={isBeautifying}
+                        <AiPanel
+                            characters={(chapter.characters as (Character & { pivot: CharacterChapterPivot })[]) ?? []}
+                            book={book}
+                            chapter={chapter}
+                            isOpen={isAiPanelOpen}
+                            onToggle={toggleAiPanel}
                             licensed={isLicensed}
-                            isTypewriterMode={isTypewriterMode}
-                            onTypewriterToggle={toggleTypewriterMode}
-                            editorFont={editorFont}
-                            onFontChange={handleFontChange}
+                            aiEnabled={book.ai_enabled}
+                            onError={() => setSaveStatus('error')}
                         />
                     </div>
-
-                    <WritingSurface
-                        scenes={scenes}
-                        bookId={book.id}
-                        chapterId={chapter.id}
-                        title={chapterTitle}
-                        povCharacterName={povCharacterName}
-                        timelineLabel={timelineLabel}
-                        onTitleUpdate={handleTitleUpdate}
-                        activeEditor={activeEditor}
-                        onActiveEditorChange={setActiveEditor}
-                        onWordCountChange={handleSceneWordCountChange}
-                        isTypewriterMode={isTypewriterMode}
-                        editorFont={editorFont}
-                        pendingFocusSceneId={pendingFocusSceneId}
-                        onFocusHandled={() => setPendingFocusSceneId(null)}
-                        onActiveSceneIdChange={setActiveSceneId}
-                        scenesVisible={scenesVisible}
-                    />
-
-                    <NotesPanel
-                        bookId={book.id}
-                        chapterId={chapter.id}
-                        initialNotes={chapter.notes}
-                        isFocusMode={isFocusMode}
-                        toggleTick={notesToggleTick}
-                        onClose={() => {
-                            activeEditor?.commands.focus();
-                        }}
-                    />
-
-                    <CommandPalette
-                        editor={activeEditor}
-                        isOpen={isPaletteOpen}
-                        onClose={closePalette}
-                        onSplitScene={handleSplitScene}
-                        onNewChapter={handleNewChapter}
-                        onAddScene={handlePaletteAddScene}
-                        onEnterFocusMode={toggleFocusMode}
-                        isFocusMode={isFocusMode}
-                        onToggleTypewriterMode={toggleTypewriterMode}
-                        isTypewriterMode={isTypewriterMode}
-                        onToggleNotes={() => setNotesToggleTick((t) => t + 1)}
-                        licensed={isLicensed}
-                    />
-                </div>
-
-                <div
-                    className={`overflow-hidden transition-[width,opacity] duration-300 ${isFocusMode ? 'w-0 opacity-0' : ''}`}
-                >
-                    <AiPanel
-                        characters={(chapter.characters as (Character & { pivot: CharacterChapterPivot })[]) ?? []}
-                        book={book}
-                        chapter={chapter}
-                        isOpen={isAiPanelOpen}
-                        onToggle={toggleAiPanel}
-                        licensed={isLicensed}
-                    />
-                </div>
+                )}
             </div>
 
             {isFocusMode && (
