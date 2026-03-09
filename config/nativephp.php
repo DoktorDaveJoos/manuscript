@@ -153,14 +153,8 @@ return [
     'queue_workers' => [
         'default' => [
             'queues' => ['default'],
-            'memory_limit' => 128,
-            'timeout' => 60,
-            'sleep' => 3,
-        ],
-        'analysis' => [
-            'queues' => ['analysis'],
             'memory_limit' => 256,
-            'timeout' => 120,
+            'timeout' => 1800,
             'sleep' => 3,
         ],
     ],

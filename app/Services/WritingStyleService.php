@@ -40,7 +40,7 @@ class WritingStyleService
                 'dialogue_style' => $schema->string()->required(),
                 'imagery' => $schema->string()->required(),
                 'pacing' => $schema->string()->required(),
-                'distinctive_features' => $schema->array()->required(),
+                'distinctive_features' => $schema->array()->items($schema->string())->required(),
             ],
         )->prompt(
             "Analyze this {$langName} manuscript excerpt and extract the writing style:\n\n{$sampleText}",
@@ -49,7 +49,14 @@ class WritingStyleService
 
         $usage = $response->usage;
         $model = $response->meta->model ?? 'unknown';
-        $cost = $this->usageService->calculateCost($usage->promptTokens, $usage->completionTokens, $model);
+        $cost = $this->usageService->calculateCost(
+            $usage->promptTokens,
+            $usage->completionTokens,
+            $model,
+            $usage->cacheReadInputTokens,
+            $usage->cacheWriteInputTokens,
+            $response->meta->provider,
+        );
         $book->recordAiUsage($usage->promptTokens, $usage->completionTokens, $cost);
 
         return $response->toArray();

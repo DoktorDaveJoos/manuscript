@@ -9,10 +9,6 @@ use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
 use App\Models\Storyline;
-use App\Services\ChunkingService;
-use App\Services\EmbeddingService;
-use App\Services\StoryBibleService;
-use App\Services\WritingStyleService;
 
 function createBookWithChapters(int $chapterCount = 3): array
 {
@@ -79,12 +75,7 @@ test('prepare book for ai runs full 7-phase pipeline', function () {
     [$book, $chapters, $preparation] = createBookWithChapters(2);
 
     $job = new PrepareBookForAi($book, $preparation);
-    $job->handle(
-        app(ChunkingService::class),
-        app(EmbeddingService::class),
-        app(WritingStyleService::class),
-        app(StoryBibleService::class),
-    );
+    $job->handle();
 
     $preparation->refresh();
 
@@ -147,12 +138,7 @@ test('prepare book for ai tracks phase progress', function () {
     [$book, $chapters, $preparation] = createBookWithChapters(1);
 
     $job = new PrepareBookForAi($book, $preparation);
-    $job->handle(
-        app(ChunkingService::class),
-        app(EmbeddingService::class),
-        app(WritingStyleService::class),
-        app(StoryBibleService::class),
-    );
+    $job->handle();
 
     $preparation->refresh();
 
@@ -200,12 +186,7 @@ test('prepare book for ai isolates per-chapter failures', function () {
     [$book, $chapters, $preparation] = createBookWithChapters(2);
 
     $job = new PrepareBookForAi($book, $preparation);
-    $job->handle(
-        app(ChunkingService::class),
-        app(EmbeddingService::class),
-        app(WritingStyleService::class),
-        app(StoryBibleService::class),
-    );
+    $job->handle();
 
     $preparation->refresh();
 
@@ -231,12 +212,7 @@ test('prepare book for ai fails when api key not configured', function () {
     ]);
 
     $job = new PrepareBookForAi($book, $preparation);
-    $job->handle(
-        app(ChunkingService::class),
-        app(EmbeddingService::class),
-        app(WritingStyleService::class),
-        app(StoryBibleService::class),
-    );
+    $job->handle();
 
     $preparation->refresh();
 

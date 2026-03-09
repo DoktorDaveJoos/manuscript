@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Jobs\Preparation;
+
+use App\Models\AiPreparation;
+use App\Models\AiSetting;
+use App\Models\Book;
+use App\Services\ChunkingService;
+use App\Services\EmbeddingService;
+use Illuminate\Bus\Batchable;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Throwable;
+
+class ChunkAndEmbedChapter implements ShouldQueue
+{
+    use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public int $tries = 1;
+
+    public int $timeout = 300;
+
+    public function __construct(
+        private Book $book,
+        private AiPreparation $preparation,
+        private int $chapterId,
+    ) {}
+
+    public function handle(ChunkingService $chunking, EmbeddingService $embedding): void
+    {
+        if ($this->batch()?->cancelled()) {
+            return;
+        }
+
+        try {
+            $chapter = $this->book->chapters()
+                ->with('currentVersion')
+                ->find($this->chapterId);
+
+            if (! $chapter || ! $chapter->currentVersion?->content) {
+                $this->preparation->increment('current_phase_progress');
+                $this->preparation->increment('processed_chapters');
+
+                return;
+            }
+
+            $chapter->currentVersion->chunks()->each(fn ($chunk) => $chunk->deleteEmbedding());
+            $chunks = $chunking->chunkVersion($chapter->currentVersion);
+
+            $setting = AiSetting::activeProvider();
+            if ($setting?->provider->supportsEmbeddings() && $chunks->isNotEmpty()) {
+                $embedding->embedChunks($chunks, $this->book);
+                $this->preparation->increment('embedded_chunks', $chunks->count());
+            }
+
+            $this->preparation->increment('current_phase_progress');
+            $this->preparation->increment('processed_chapters');
+        } catch (Throwable $e) {
+            $this->preparation->appendPhaseError('chunking', "Chapter #{$this->chapterId}", $e->getMessage());
+        }
+    }
+}

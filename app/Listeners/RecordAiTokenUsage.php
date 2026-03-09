@@ -23,7 +23,14 @@ class RecordAiTokenUsage
 
         $inputTokens = $usage->promptTokens;
         $outputTokens = $usage->completionTokens;
-        $cost = $this->usageService->calculateCost($inputTokens, $outputTokens, $model);
+        $cost = $this->usageService->calculateCost(
+            $inputTokens,
+            $outputTokens,
+            $model,
+            $usage->cacheReadInputTokens,
+            $usage->cacheWriteInputTokens,
+            $event->response->meta->provider,
+        );
 
         $agent->book()->recordAiUsage($inputTokens, $outputTokens, $cost);
     }

@@ -7,6 +7,7 @@ use App\Models\AiSetting;
 use App\Models\AppSetting;
 use App\Models\Book;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Bus;
 
 class AiPreparationController extends Controller
 {
@@ -20,10 +21,17 @@ class AiPreparationController extends Controller
             ], 422);
         }
 
-        // Cancel any running preparation
-        $book->aiPreparations()
+        // Cancel any running preparation and its batch
+        $existing = $book->aiPreparations()
             ->whereNotIn('status', ['completed', 'failed'])
-            ->update(['status' => 'failed', 'error_message' => 'Superseded by new preparation']);
+            ->get();
+
+        foreach ($existing as $prep) {
+            if ($prep->batch_id) {
+                Bus::findBatch($prep->batch_id)?->cancel();
+            }
+            $prep->update(['status' => 'failed', 'error_message' => 'Superseded by new preparation']);
+        }
 
         $preparation = $book->aiPreparations()->create([
             'status' => 'pending',

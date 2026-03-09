@@ -35,4 +35,29 @@ class AiPreparation extends Model
     {
         return $this->belongsTo(Book::class);
     }
+
+    /**
+     * Atomically append a phase error (refreshes from DB to avoid stale overwrites).
+     */
+    public function appendPhaseError(string $phase, ?string $chapter, string $error): void
+    {
+        $this->refresh();
+        $errors = $this->phase_errors ?? [];
+        $errors[] = ['phase' => $phase, 'chapter' => $chapter, 'error' => $error];
+        $this->update(['phase_errors' => $errors]);
+    }
+
+    /**
+     * Merge phases into completed_phases (refreshes from DB to avoid stale overwrites).
+     *
+     * @param  list<string>  $phases
+     */
+    public function markPhasesCompleted(array $phases): void
+    {
+        $this->refresh();
+        $existing = $this->completed_phases ?? [];
+        $this->update([
+            'completed_phases' => array_values(array_unique(array_merge($existing, $phases))),
+        ]);
+    }
 }
