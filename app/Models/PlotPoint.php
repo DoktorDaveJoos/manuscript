@@ -7,6 +7,7 @@ use App\Enums\PlotPointType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PlotPoint extends Model
 {
@@ -24,6 +25,7 @@ class PlotPoint extends Model
             'status' => PlotPointStatus::class,
             'sort_order' => 'integer',
             'is_ai_derived' => 'boolean',
+            'tension_score' => 'integer',
         ];
     }
 
@@ -65,5 +67,21 @@ class PlotPoint extends Model
     public function actualChapter(): BelongsTo
     {
         return $this->belongsTo(Chapter::class, 'actual_chapter_id');
+    }
+
+    /**
+     * @return HasMany<PlotPointConnection, $this>
+     */
+    public function outgoingConnections(): HasMany
+    {
+        return $this->hasMany(PlotPointConnection::class, 'source_plot_point_id');
+    }
+
+    /**
+     * @return HasMany<PlotPointConnection, $this>
+     */
+    public function incomingConnections(): HasMany
+    {
+        return $this->hasMany(PlotPointConnection::class, 'target_plot_point_id');
     }
 }
