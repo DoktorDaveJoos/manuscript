@@ -170,6 +170,13 @@ class AiController extends Controller
         });
     }
 
+    public function resetUsage(Book $book): JsonResponse
+    {
+        $book->resetAiUsage();
+
+        return response()->json(['message' => 'AI usage counters reset.']);
+    }
+
     private function ensureAiConfigured(): void
     {
         set_time_limit(300);

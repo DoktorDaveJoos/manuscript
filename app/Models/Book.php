@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Book extends Model
 {
@@ -25,7 +26,35 @@ class Book extends Model
             'target_word_count' => 'integer',
             'milestone_reached_at' => 'datetime',
             'milestone_dismissed' => 'boolean',
+            'ai_input_tokens' => 'integer',
+            'ai_output_tokens' => 'integer',
+            'ai_cost_microdollars' => 'integer',
+            'ai_usage_reset_at' => 'datetime',
         ];
+    }
+
+    public function recordAiUsage(int $inputTokens, int $outputTokens, int $costMicrodollars): void
+    {
+        static::query()->where('id', $this->id)->update([
+            'ai_input_tokens' => DB::raw("ai_input_tokens + {$inputTokens}"),
+            'ai_output_tokens' => DB::raw("ai_output_tokens + {$outputTokens}"),
+            'ai_cost_microdollars' => DB::raw("ai_cost_microdollars + {$costMicrodollars}"),
+        ]);
+    }
+
+    public function resetAiUsage(): void
+    {
+        $this->update([
+            'ai_input_tokens' => 0,
+            'ai_output_tokens' => 0,
+            'ai_cost_microdollars' => 0,
+            'ai_usage_reset_at' => now(),
+        ]);
+    }
+
+    public function getAiCostDisplayAttribute(): string
+    {
+        return '$'.number_format($this->ai_cost_microdollars / 1_000_000, 4);
     }
 
     /**

@@ -237,6 +237,13 @@ export type HealthSnapshot = {
     weave: number;
 };
 
+export type AiUsage = {
+    input_tokens: number;
+    output_tokens: number;
+    cost_display: string;
+    reset_at: string | null;
+};
+
 export type ManuscriptTarget = {
     target_word_count: number | null;
     total_words: number;

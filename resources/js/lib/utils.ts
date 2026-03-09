@@ -11,10 +11,13 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCompactCount(count: number): string {
-    if (count >= 1000) {
-        return `${(count / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+    if (count >= 1_000_000) {
+        return `${(count / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
     }
-    return count.toString();
+    if (count >= 1_000) {
+        return `${(count / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
+    }
+    return count.toLocaleString('en-US');
 }
 
 export function createChapter(bookId: number, storylineId: number, storylines: Storyline[]): void {

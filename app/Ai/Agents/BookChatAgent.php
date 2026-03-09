@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Ai\Tools\SearchSimilarChunks;
@@ -16,11 +17,16 @@ use Stringable;
 
 #[Temperature(0.5)]
 #[Timeout(120)]
-class BookChatAgent implements Agent, HasMiddleware, HasTools
+class BookChatAgent implements Agent, BelongsToBook, HasMiddleware, HasTools
 {
     use Promptable;
 
     public function __construct(protected Book $book) {}
+
+    public function book(): Book
+    {
+        return $this->book;
+    }
 
     public function instructions(): Stringable|string
     {

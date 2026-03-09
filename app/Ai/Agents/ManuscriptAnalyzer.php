@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Ai\Tools\SearchSimilarChunks;
@@ -19,7 +20,7 @@ use Stringable;
 
 #[Temperature(0.3)]
 #[Timeout(120)]
-class ManuscriptAnalyzer implements Agent, HasMiddleware, HasStructuredOutput, HasTools
+class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput, HasTools
 {
     use Promptable;
 
@@ -27,6 +28,11 @@ class ManuscriptAnalyzer implements Agent, HasMiddleware, HasStructuredOutput, H
         protected Book $book,
         protected AnalysisType $analysisType,
     ) {}
+
+    public function book(): Book
+    {
+        return $this->book;
+    }
 
     public function instructions(): Stringable|string
     {

@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Models\Book;
@@ -17,11 +18,16 @@ use Stringable;
 #[MaxTokens(8192)]
 #[Temperature(0.2)]
 #[Timeout(180)]
-class TextBeautifier implements Agent, HasMiddleware, HasTools
+class TextBeautifier implements Agent, BelongsToBook, HasMiddleware, HasTools
 {
     use Promptable;
 
     public function __construct(protected Book $book) {}
+
+    public function book(): Book
+    {
+        return $this->book;
+    }
 
     public function instructions(): Stringable|string
     {

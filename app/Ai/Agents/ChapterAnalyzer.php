@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -15,7 +16,7 @@ use Stringable;
 
 #[Temperature(0.2)]
 #[Timeout(90)]
-class ChapterAnalyzer implements Agent, HasMiddleware, HasStructuredOutput
+class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput
 {
     use Promptable;
 
@@ -23,6 +24,11 @@ class ChapterAnalyzer implements Agent, HasMiddleware, HasStructuredOutput
         protected Book $book,
         protected string $precedingContext = '',
     ) {}
+
+    public function book(): Book
+    {
+        return $this->book;
+    }
 
     public function instructions(): Stringable|string
     {

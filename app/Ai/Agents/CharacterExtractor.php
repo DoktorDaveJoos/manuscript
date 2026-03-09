@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -15,11 +16,16 @@ use Stringable;
 
 #[Temperature(0.2)]
 #[Timeout(90)]
-class CharacterExtractor implements Agent, HasMiddleware, HasStructuredOutput
+class CharacterExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput
 {
     use Promptable;
 
     public function __construct(protected Book $book) {}
+
+    public function book(): Book
+    {
+        return $this->book;
+    }
 
     public function instructions(): Stringable|string
     {

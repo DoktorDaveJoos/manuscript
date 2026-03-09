@@ -68,6 +68,12 @@ class DashboardController extends Controller
             'writing_heatmap' => $this->buildWritingHeatmap($book),
             'health_history' => $this->buildHealthHistory($book),
             'manuscript_target' => $this->buildManuscriptTarget($book, $totalWords),
+            'ai_usage' => [
+                'input_tokens' => $book->ai_input_tokens,
+                'output_tokens' => $book->ai_output_tokens,
+                'cost_display' => $book->ai_cost_display,
+                'reset_at' => $book->ai_usage_reset_at?->toISOString(),
+            ],
         ]);
     }
 

@@ -1,5 +1,6 @@
 import AiInsights from '@/components/dashboard/AiInsights';
 import AiPreparation from '@/components/dashboard/AiPreparation';
+import AiUsageStats from '@/components/dashboard/AiUsageStats';
 import HealthTimeline from '@/components/dashboard/HealthTimeline';
 import ManuscriptProgress from '@/components/dashboard/ManuscriptProgress';
 import MilestoneCelebration from '@/components/dashboard/MilestoneCelebration';
@@ -10,6 +11,7 @@ import Sidebar from '@/components/editor/Sidebar';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import type {
     AiPreparationStatus,
+    AiUsage,
     Book,
     DashboardStats,
     HeatmapDay,
@@ -86,6 +88,7 @@ export default function Dashboard({
     writing_heatmap,
     health_history,
     manuscript_target,
+    ai_usage,
 }: {
     book: Book & { storylines?: Storyline[] };
     stats: DashboardStats;
@@ -97,6 +100,7 @@ export default function Dashboard({
     writing_heatmap: HeatmapDay[];
     health_history: HealthSnapshot[];
     manuscript_target: ManuscriptTarget;
+    ai_usage: AiUsage;
 }) {
     const storylines = book.storylines ?? [];
     const { visible: aiVisible } = useAiFeatures();
@@ -154,6 +158,9 @@ export default function Dashboard({
 
                         {/* Health Timeline */}
                         <HealthTimeline history={health_history} />
+
+                        {/* AI Usage Stats */}
+                        {aiVisible && <AiUsageStats bookId={book.id} usage={ai_usage} />}
 
                         {/* Suggested Next */}
                         {aiVisible && suggested_next && <SuggestedNext suggestion={suggested_next} bookId={book.id} />}

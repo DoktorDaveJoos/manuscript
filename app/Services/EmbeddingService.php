@@ -11,6 +11,8 @@ use Laravel\Ai\Responses\EmbeddingsResponse;
 
 class EmbeddingService
 {
+    public function __construct(private AiUsageService $usageService) {}
+
     /**
      * Generate and store embeddings for a collection of chunks.
      *
@@ -24,7 +26,7 @@ class EmbeddingService
 
         $config = $this->resolveConfig($book);
 
-        $chunks->chunk(20)->each(function (Collection $batch) use ($config) {
+        $chunks->chunk(20)->each(function (Collection $batch) use ($config, $book) {
             $texts = $batch->pluck('content')->all();
 
             $response = $this->generate($texts, $config);
@@ -32,6 +34,8 @@ class EmbeddingService
             foreach ($batch->values() as $index => $chunk) {
                 $chunk->storeEmbedding($response->embeddings[$index]);
             }
+
+            $this->recordEmbeddingUsage($book, $response);
         });
     }
 
@@ -44,7 +48,11 @@ class EmbeddingService
     {
         $config = $this->resolveConfig($book);
 
-        return $this->generate([$text], $config)->embeddings[0];
+        $response = $this->generate([$text], $config);
+
+        $this->recordEmbeddingUsage($book, $response);
+
+        return $response->embeddings[0];
     }
 
     /**
@@ -76,5 +84,13 @@ class EmbeddingService
         }
 
         return $builder->generate($config->provider, $config->model);
+    }
+
+    private function recordEmbeddingUsage(Book $book, EmbeddingsResponse $response): void
+    {
+        $model = $response->meta->model ?? 'unknown';
+        $cost = $this->usageService->calculateEmbeddingCost($response->tokens, $model);
+
+        $book->recordAiUsage($response->tokens, 0, $cost);
     }
 }

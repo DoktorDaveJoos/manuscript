@@ -11,6 +11,8 @@ use function Laravel\Ai\agent;
 
 class WritingStyleService
 {
+    public function __construct(private AiUsageService $usageService) {}
+
     /**
      * Extract writing style from sample chapter content.
      *
@@ -44,6 +46,11 @@ class WritingStyleService
             "Analyze this {$langName} manuscript excerpt and extract the writing style:\n\n{$sampleText}",
             provider: $provider,
         );
+
+        $usage = $response->usage;
+        $model = $response->meta->model ?? 'unknown';
+        $cost = $this->usageService->calculateCost($usage->promptTokens, $usage->completionTokens, $model);
+        $book->recordAiUsage($usage->promptTokens, $usage->completionTokens, $cost);
 
         return $response->toArray();
     }
