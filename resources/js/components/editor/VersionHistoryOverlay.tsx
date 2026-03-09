@@ -4,6 +4,7 @@ import {
     restoreVersion,
     versions,
 } from '@/actions/App/Http/Controllers/ChapterController';
+import { getXsrfToken } from '@/lib/csrf';
 import type { ChapterVersion, VersionSource } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { Trash } from '@phosphor-icons/react';
@@ -107,12 +108,7 @@ export default function VersionHistoryOverlay({
                 method: 'DELETE',
                 headers: {
                     Accept: 'application/json',
-                    'X-XSRF-TOKEN': decodeURIComponent(
-                        document.cookie
-                            .split('; ')
-                            .find((c) => c.startsWith('XSRF-TOKEN='))
-                            ?.split('=')[1] ?? '',
-                    ),
+                    'X-XSRF-TOKEN': getXsrfToken(),
                 },
             }).then(() => {
                 setDeleting(null);
@@ -131,12 +127,7 @@ export default function VersionHistoryOverlay({
                 headers: {
                     'Content-Type': 'application/json',
                     Accept: 'application/json',
-                    'X-XSRF-TOKEN': decodeURIComponent(
-                        document.cookie
-                            .split('; ')
-                            .find((c) => c.startsWith('XSRF-TOKEN='))
-                            ?.split('=')[1] ?? '',
-                    ),
+                    'X-XSRF-TOKEN': getXsrfToken(),
                 },
                 body: JSON.stringify({ change_summary: summary || null }),
             }).then(() => {

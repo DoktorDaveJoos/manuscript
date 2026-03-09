@@ -3,12 +3,12 @@ import {
     rejectVersion,
 } from '@/actions/App/Http/Controllers/ChapterController';
 import { getXsrfToken } from '@/lib/csrf';
-import type { ChapterVersion } from '@/types/models';
+import type { ChapterVersion, VersionSource } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { diffWords } from 'diff';
 import { useCallback, useMemo, useState } from 'react';
 
-const sourceLabel: Record<string, string> = {
+const sourceLabel: Record<VersionSource, string> = {
     original: 'original',
     ai_revision: 'ai prose pass',
     manual_edit: 'manual edit',

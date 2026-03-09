@@ -136,17 +136,7 @@ class NormalizationController extends Controller
             'is_current' => true,
         ]);
 
-        // Replace scenes with normalized content
-        $chapter->scenes()->forceDelete();
-        $wordCount = str_word_count(strip_tags($result['content']));
-        $chapter->scenes()->create([
-            'title' => 'Scene 1',
-            'content' => $result['content'],
-            'sort_order' => 0,
-            'word_count' => $wordCount,
-        ]);
-
-        $chapter->update(['word_count' => $wordCount]);
+        $chapter->replaceScenesWithContent($result['content']);
 
         return true;
     }

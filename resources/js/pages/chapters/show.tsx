@@ -15,7 +15,7 @@ import Kbd from '@/components/ui/Kbd';
 import { useLicense } from '@/hooks/useLicense';
 import { getXsrfToken } from '@/lib/csrf';
 import { createChapter, jsonFetchHeaders } from '@/lib/utils';
-import type { Book, Chapter, ChapterVersion, Character, CharacterChapterPivot, Scene } from '@/types/models';
+import type { Book, Chapter, Character, CharacterChapterPivot, Scene } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
 import { DOMSerializer } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
@@ -33,13 +33,12 @@ export default function ChapterShow({
     book,
     chapter,
     versionCount,
-    pendingVersion,
 }: {
     book: Book;
     chapter: ChapterWithRelations;
     versionCount: number;
-    pendingVersion: ChapterVersion | null;
 }) {
+    const pendingVersion = chapter.pending_version ?? null;
     const { isActive: isLicensed } = useLicense();
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
     const [chapterTitle, setChapterTitle] = useState(chapter.title);

@@ -682,9 +682,9 @@ test('show includes pending version when one exists', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('chapters/show')
-            ->has('pendingVersion')
-            ->where('pendingVersion.version_number', 2)
-            ->where('pendingVersion.content', 'Pending content')
+            ->has('chapter.pending_version')
+            ->where('chapter.pending_version.version_number', 2)
+            ->where('chapter.pending_version.content', 'Pending content')
         );
 });
 
@@ -702,7 +702,7 @@ test('show does not include pending version when none exists', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('chapters/show')
-            ->where('pendingVersion', null)
+            ->where('chapter.pending_version', null)
         );
 });
 

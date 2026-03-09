@@ -117,4 +117,17 @@ class Chapter extends Model
             'word_count' => $this->scenes()->sum('word_count'),
         ]);
     }
+
+    public function replaceScenesWithContent(?string $content): void
+    {
+        $this->scenes()->forceDelete();
+        $wordCount = str_word_count(strip_tags($content ?? ''));
+        $this->scenes()->create([
+            'title' => 'Scene 1',
+            'content' => $content,
+            'sort_order' => 0,
+            'word_count' => $wordCount,
+        ]);
+        $this->update(['word_count' => $wordCount]);
+    }
 }

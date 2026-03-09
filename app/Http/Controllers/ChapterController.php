@@ -102,7 +102,6 @@ class ChapterController extends Controller
             'book' => $book,
             'chapter' => $chapter,
             'versionCount' => $chapter->versions()->count(),
-            'pendingVersion' => $chapter->pendingVersion,
         ]);
     }
 
@@ -228,16 +227,7 @@ class ChapterController extends Controller
                 'is_current' => true,
             ]);
 
-            // Replace all scenes with single scene from restored content
-            $chapter->scenes()->forceDelete();
-            $wordCount = str_word_count(strip_tags($version->content ?? ''));
-            $chapter->scenes()->create([
-                'title' => 'Scene 1',
-                'content' => $version->content,
-                'sort_order' => 0,
-                'word_count' => $wordCount,
-            ]);
-            $chapter->update(['word_count' => $wordCount]);
+            $chapter->replaceScenesWithContent($version->content);
         });
 
         return redirect()->back();
@@ -286,15 +276,7 @@ class ChapterController extends Controller
                 'status' => VersionStatus::Accepted,
             ]);
 
-            $chapter->scenes()->forceDelete();
-            $wordCount = str_word_count(strip_tags($version->content ?? ''));
-            $chapter->scenes()->create([
-                'title' => 'Scene 1',
-                'content' => $version->content,
-                'sort_order' => 0,
-                'word_count' => $wordCount,
-            ]);
-            $chapter->update(['word_count' => $wordCount]);
+            $chapter->replaceScenesWithContent($version->content);
         });
 
         return response()->json(['success' => true]);
