@@ -165,7 +165,7 @@ class ChapterController extends Controller
     public function versions(Book $book, Chapter $chapter): JsonResponse
     {
         $versions = $chapter->versions()
-            ->select('id', 'chapter_id', 'version_number', 'source', 'change_summary', 'is_current', 'created_at')
+            ->select('id', 'chapter_id', 'version_number', 'source', 'change_summary', 'is_current', 'status', 'created_at')
             ->orderByDesc('version_number')
             ->get();
 

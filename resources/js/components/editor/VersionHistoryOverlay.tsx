@@ -229,6 +229,9 @@ export default function VersionHistoryOverlay({
                                         {version.is_current && (
                                             <span className="text-[10px] font-medium text-status-final">Current</span>
                                         )}
+                                        {version.status === 'pending' && (
+                                            <span className="text-[10px] font-medium text-accent">Pending review</span>
+                                        )}
                                     </div>
                                     {version.change_summary && (
                                         <span className="truncate text-xs text-ink-faint">
@@ -249,14 +252,6 @@ export default function VersionHistoryOverlay({
                                             className="rounded-md border border-border px-2 py-1 text-[11px] text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink disabled:opacity-50"
                                         >
                                             {restoring === version.id ? 'Restoring...' : 'Restore'}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            disabled
-                                            className="rounded-md border border-border px-2 py-1 text-[11px] text-ink-faint"
-                                            title="Coming in Phase 2"
-                                        >
-                                            Compare
                                         </button>
                                         <button
                                             type="button"
