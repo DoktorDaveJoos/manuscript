@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\VersionSource;
+use App\Enums\VersionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,6 +22,7 @@ class ChapterVersion extends Model
     {
         return [
             'source' => VersionSource::class,
+            'status' => VersionStatus::class,
             'version_number' => 'integer',
             'is_current' => 'boolean',
         ];

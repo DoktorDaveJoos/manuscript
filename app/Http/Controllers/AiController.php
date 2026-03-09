@@ -7,6 +7,7 @@ use App\Ai\Agents\ProseReviser;
 use App\Ai\Agents\TextBeautifier;
 use App\Enums\AnalysisType;
 use App\Enums\VersionSource;
+use App\Enums\VersionStatus;
 use App\Http\Requests\RunAnalysisRequest;
 use App\Jobs\ExtractCharactersJob;
 use App\Jobs\GenerateEmbeddingsJob;
@@ -112,27 +113,14 @@ class AiController extends Controller
         )->then(function ($response) use ($chapter, $currentVersion, $source, $changeSummary) {
             $nextNumber = ($currentVersion?->version_number ?? 0) + 1;
 
-            if ($currentVersion) {
-                $currentVersion->update(['is_current' => false]);
-            }
-
             $chapter->versions()->create([
                 'version_number' => $nextNumber,
                 'content' => $response->text,
                 'source' => $source,
                 'change_summary' => $changeSummary,
-                'is_current' => true,
+                'is_current' => false,
+                'status' => VersionStatus::Pending,
             ]);
-
-            $chapter->scenes()->forceDelete();
-            $wordCount = str_word_count(strip_tags($response->text));
-            $chapter->scenes()->create([
-                'title' => 'Scene 1',
-                'content' => $response->text,
-                'sort_order' => 0,
-                'word_count' => $wordCount,
-            ]);
-            $chapter->update(['word_count' => $wordCount]);
         });
     }
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ChapterStatus;
+use App\Enums\VersionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -77,6 +78,14 @@ class Chapter extends Model
     public function currentVersion(): HasOne
     {
         return $this->hasOne(ChapterVersion::class)->where('is_current', true);
+    }
+
+    /**
+     * @return HasOne<ChapterVersion, $this>
+     */
+    public function pendingVersion(): HasOne
+    {
+        return $this->hasOne(ChapterVersion::class)->where('status', VersionStatus::Pending);
     }
 
     /**

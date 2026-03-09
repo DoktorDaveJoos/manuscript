@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\VersionStatus;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
@@ -558,6 +559,151 @@ test('destroyVersion rejects deleting last version', function () {
 
     $this->deleteJson(route('chapters.destroyVersion', [$book, $chapter, $only]))
         ->assertForbidden();
+});
+
+test('chapter version has status column defaulting to accepted', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $version = ChapterVersion::factory()->for($chapter)->create(['is_current' => true]);
+
+    expect($version->fresh()->status->value)->toBe('accepted');
+});
+
+test('acceptVersion promotes pending version to current', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 10]);
+
+    $current = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => '<p>Original text</p>',
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    Scene::factory()->for($chapter)->create(['content' => '<p>Original text</p>', 'sort_order' => 0]);
+
+    $pending = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => false,
+        'version_number' => 2,
+        'content' => '<p>Beautified text here</p>',
+        'source' => 'beautify',
+        'status' => VersionStatus::Pending,
+    ]);
+
+    $this->postJson(route('chapters.acceptVersion', [$book, $chapter, $pending]))
+        ->assertOk();
+
+    expect($current->fresh()->is_current)->toBeFalse();
+    expect($pending->fresh()->is_current)->toBeTrue();
+    expect($pending->fresh()->status->value)->toBe('accepted');
+
+    $chapter->refresh();
+    $chapter->load('scenes');
+    expect($chapter->scenes)->toHaveCount(1);
+    expect($chapter->scenes->first()->content)->toBe('<p>Beautified text here</p>');
+    expect($chapter->word_count)->toBe(3);
+});
+
+test('acceptVersion rejects non-pending version', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $version = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $this->postJson(route('chapters.acceptVersion', [$book, $chapter, $version]))
+        ->assertForbidden();
+});
+
+test('rejectVersion deletes pending version', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $current = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $pending = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => false,
+        'version_number' => 2,
+        'status' => VersionStatus::Pending,
+    ]);
+
+    $this->postJson(route('chapters.rejectVersion', [$book, $chapter, $pending]))
+        ->assertOk();
+
+    expect(ChapterVersion::find($pending->id))->toBeNull();
+    expect($current->fresh()->is_current)->toBeTrue();
+});
+
+test('rejectVersion rejects non-pending version', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $version = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $this->postJson(route('chapters.rejectVersion', [$book, $chapter, $version]))
+        ->assertForbidden();
+});
+
+test('show includes pending version when one exists', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'status' => VersionStatus::Accepted,
+    ]);
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => false,
+        'version_number' => 2,
+        'status' => VersionStatus::Pending,
+        'content' => 'Pending content',
+        'source' => 'beautify',
+        'change_summary' => 'AI text beautification',
+    ]);
+
+    $this->get(route('chapters.show', [$book, $chapter]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('chapters/show')
+            ->has('pendingVersion')
+            ->where('pendingVersion.version_number', 2)
+            ->where('pendingVersion.content', 'Pending content')
+        );
+});
+
+test('show does not include pending version when none exists', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $this->get(route('chapters.show', [$book, $chapter]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('chapters/show')
+            ->where('pendingVersion', null)
+        );
 });
 
 test('show includes notes in response', function () {

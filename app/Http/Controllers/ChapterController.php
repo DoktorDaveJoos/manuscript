@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\ChapterStatus;
 use App\Enums\VersionSource;
+use App\Enums\VersionStatus;
 use App\Http\Requests\CreateSnapshotRequest;
 use App\Http\Requests\ReorderChaptersRequest;
 use App\Http\Requests\SplitChapterRequest;
@@ -90,6 +91,7 @@ class ChapterController extends Controller
 
         $chapter->load([
             'currentVersion:id,chapter_id,version_number,content,source,is_current',
+            'pendingVersion:id,chapter_id,version_number,content,source,change_summary,status',
             'scenes' => fn ($q) => $q->orderBy('sort_order'),
             'storyline:id,name,timeline_label',
             'povCharacter:id,name',
@@ -100,6 +102,7 @@ class ChapterController extends Controller
             'book' => $book,
             'chapter' => $chapter,
             'versionCount' => $chapter->versions()->count(),
+            'pendingVersion' => $chapter->pendingVersion,
         ]);
     }
 
@@ -265,6 +268,41 @@ class ChapterController extends Controller
     {
         abort_if($version->is_current, 403, 'Cannot delete the current version.');
         abort_if($chapter->versions()->count() <= 1, 403, 'Cannot delete the last version.');
+
+        $version->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function acceptVersion(Book $book, Chapter $chapter, ChapterVersion $version): JsonResponse
+    {
+        abort_if($version->status !== VersionStatus::Pending, 403, 'Only pending versions can be accepted.');
+
+        DB::transaction(function () use ($chapter, $version) {
+            $chapter->versions()->where('is_current', true)->update(['is_current' => false]);
+
+            $version->update([
+                'is_current' => true,
+                'status' => VersionStatus::Accepted,
+            ]);
+
+            $chapter->scenes()->forceDelete();
+            $wordCount = str_word_count(strip_tags($version->content ?? ''));
+            $chapter->scenes()->create([
+                'title' => 'Scene 1',
+                'content' => $version->content,
+                'sort_order' => 0,
+                'word_count' => $wordCount,
+            ]);
+            $chapter->update(['word_count' => $wordCount]);
+        });
+
+        return response()->json(['success' => true]);
+    }
+
+    public function rejectVersion(Book $book, Chapter $chapter, ChapterVersion $version): JsonResponse
+    {
+        abort_if($version->status !== VersionStatus::Pending, 403, 'Only pending versions can be rejected.');
 
         $version->delete();
 
