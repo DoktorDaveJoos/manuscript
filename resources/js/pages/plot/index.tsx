@@ -1,5 +1,7 @@
-import { store as storePlotPoint } from '@/actions/App/Http/Controllers/PlotPointController';
+import { store as storePlotPoint, update as updatePlotPoint } from '@/actions/App/Http/Controllers/PlotPointController';
 import Sidebar from '@/components/editor/Sidebar';
+import DetailPanel from '@/components/plot/DetailPanel';
+import PlotPointList from '@/components/plot/PlotPointList';
 import SwimLaneTimeline from '@/components/plot/SwimLaneTimeline';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import type { Act, Book, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
@@ -46,6 +48,12 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
             type: 'setup',
             storyline_id: storylineId,
             intended_chapter_id: chapterId,
+        });
+    };
+
+    const handleUpdatePlotPoint = (id: number, data: Record<string, unknown>) => {
+        router.patch(updatePlotPoint.url({ book: book.id, plotPoint: id }), data, {
+            preserveScroll: true,
         });
     };
 
@@ -118,21 +126,37 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                         </div>
                     </div>
 
-                    {/* Content */}
-                    <div className="flex-1 overflow-auto p-5">
-                        {activeTab === 'timeline' ? (
-                            <SwimLaneTimeline
+                    {/* Content + Detail Panel */}
+                    <div className="flex min-h-0 flex-1">
+                        <div className="flex-1 overflow-auto p-5">
+                            {activeTab === 'timeline' ? (
+                                <SwimLaneTimeline
+                                    acts={acts}
+                                    storylines={filteredStorylines}
+                                    plotPoints={filteredPlotPoints}
+                                    connections={connections}
+                                    onSelectPlotPoint={setSelectedPlotPoint}
+                                    onCreatePlotPoint={handleCreatePlotPoint}
+                                />
+                            ) : (
+                                <PlotPointList
+                                    acts={acts}
+                                    plotPoints={filteredPlotPoints}
+                                    storylines={storylines}
+                                    onSelectPlotPoint={setSelectedPlotPoint}
+                                />
+                            )}
+                        </div>
+
+                        {selectedPlotPoint && (
+                            <DetailPanel
+                                plotPoint={selectedPlotPoint}
+                                storylines={storylines}
                                 acts={acts}
-                                storylines={filteredStorylines}
-                                plotPoints={filteredPlotPoints}
                                 connections={connections}
-                                onSelectPlotPoint={setSelectedPlotPoint}
-                                onCreatePlotPoint={handleCreatePlotPoint}
+                                onClose={() => setSelectedPlotPoint(null)}
+                                onUpdate={(data) => handleUpdatePlotPoint(selectedPlotPoint.id, data)}
                             />
-                        ) : (
-                            <div className="flex items-center justify-center py-20 text-[13px] text-[#8A857D]">
-                                List view coming soon
-                            </div>
                         )}
                     </div>
                 </main>
