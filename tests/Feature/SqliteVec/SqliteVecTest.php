@@ -31,17 +31,19 @@ it('returns a version string from vec_version()', function () {
 });
 
 it('can store and verify an embedding exists', function () {
+    $book = Book::factory()->create();
     $chunk = Chunk::factory()->create();
     $embedding = array_fill(0, 1536, 0.1);
 
-    $chunk->storeEmbedding($embedding);
+    $chunk->storeEmbedding($embedding, $book->id);
 
     expect($chunk->hasEmbedding())->toBeTrue();
 });
 
 it('can delete an embedding', function () {
+    $book = Book::factory()->create();
     $chunk = Chunk::factory()->create();
-    $chunk->storeEmbedding(array_fill(0, 1536, 0.1));
+    $chunk->storeEmbedding(array_fill(0, 1536, 0.1), $book->id);
 
     $chunk->deleteEmbedding();
 
@@ -49,6 +51,7 @@ it('can delete an embedding', function () {
 });
 
 it('returns correct KNN ordering by distance', function () {
+    $book = Book::factory()->create();
     $chapterVersion = ChapterVersion::factory()->create();
 
     $chunkA = Chunk::factory()->create(['chapter_version_id' => $chapterVersion->id]);
@@ -56,13 +59,13 @@ it('returns correct KNN ordering by distance', function () {
     $chunkC = Chunk::factory()->create(['chapter_version_id' => $chapterVersion->id]);
 
     // Embedding A: all 1.0
-    $chunkA->storeEmbedding(array_fill(0, 1536, 1.0));
+    $chunkA->storeEmbedding(array_fill(0, 1536, 1.0), $book->id);
 
     // Embedding B: all 0.5
-    $chunkB->storeEmbedding(array_fill(0, 1536, 0.5));
+    $chunkB->storeEmbedding(array_fill(0, 1536, 0.5), $book->id);
 
     // Embedding C: all 0.0
-    $chunkC->storeEmbedding(array_fill(0, 1536, 0.0));
+    $chunkC->storeEmbedding(array_fill(0, 1536, 0.0), $book->id);
 
     // Query with all 1.0 — A should be closest, then B, then C
     $query = array_fill(0, 1536, 1.0);
@@ -73,7 +76,7 @@ it('returns correct KNN ordering by distance', function () {
     expect($results->last()->id)->toBe($chunkC->id);
 });
 
-it('scopes similarity search to a specific book', function () {
+it('scopes similarity search to a specific book via partition key', function () {
     $bookA = Book::factory()->create();
     $bookB = Book::factory()->create();
 
@@ -87,8 +90,8 @@ it('scopes similarity search to a specific book', function () {
     $chunkB = Chunk::factory()->create(['chapter_version_id' => $versionB->id]);
 
     $embedding = array_fill(0, 1536, 0.5);
-    $chunkA->storeEmbedding($embedding);
-    $chunkB->storeEmbedding($embedding);
+    $chunkA->storeEmbedding($embedding, $bookA->id);
+    $chunkB->storeEmbedding($embedding, $bookB->id);
 
     $results = Chunk::findSimilarForBook($bookA->id, $embedding, 10);
 

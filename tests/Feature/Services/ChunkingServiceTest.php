@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
+use App\Models\Scene;
 use App\Models\Storyline;
 use App\Services\ChunkingService;
 
@@ -76,4 +78,118 @@ test('chunk version handles null content', function () {
     $chunks = $service->chunkVersion($version);
 
     expect($chunks)->toBeEmpty();
+});
+
+test('chunkByScenes creates one chunk per small scene', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create([
+        'title' => 'Scene A',
+        'content' => '<p>Short scene content here.</p>',
+        'sort_order' => 0,
+    ]);
+    Scene::factory()->for($chapter)->create([
+        'title' => 'Scene B',
+        'content' => '<p>Another short scene.</p>',
+        'sort_order' => 1,
+    ]);
+
+    $service = new ChunkingService;
+    $result = $service->chunkByScenes($chapter);
+
+    expect($result)->toHaveCount(2)
+        ->and($result[0]['scene_id'])->toBe($chapter->scenes()->orderBy('sort_order')->first()->id)
+        ->and($result[0]['position'])->toBe(0)
+        ->and($result[1]['position'])->toBe(1);
+});
+
+test('chunkByScenes splits large scenes on paragraph boundaries', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    // Create a scene with ~1000 words across two paragraphs
+    $paragraph1 = implode(' ', array_fill(0, 500, 'alpha'));
+    $paragraph2 = implode(' ', array_fill(0, 500, 'beta'));
+    Scene::factory()->for($chapter)->create([
+        'title' => 'Long Scene',
+        'content' => "<p>{$paragraph1}</p><p>{$paragraph2}</p>",
+        'sort_order' => 0,
+    ]);
+
+    $service = new ChunkingService;
+    $result = $service->chunkByScenes($chapter);
+
+    expect($result)->toHaveCount(2)
+        ->and($result[0]['content'])->toContain('alpha')
+        ->and($result[1]['content'])->toContain('beta');
+});
+
+test('chunkByScenes skips empty scenes', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create([
+        'content' => '',
+        'sort_order' => 0,
+    ]);
+    Scene::factory()->for($chapter)->create([
+        'content' => '<p>Has content.</p>',
+        'sort_order' => 1,
+    ]);
+
+    $service = new ChunkingService;
+    $result = $service->chunkByScenes($chapter);
+
+    expect($result)->toHaveCount(1);
+});
+
+test('chunkByScenes returns empty when chapter has no scenes', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $service = new ChunkingService;
+    $result = $service->chunkByScenes($chapter);
+
+    expect($result)->toBeEmpty();
+});
+
+test('chunkVersion uses scene-based chunking when chapter is provided', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $version = ChapterVersion::factory()->for($chapter)->create([
+        'content' => 'Version content that should not be used.',
+        'is_current' => true,
+    ]);
+    Scene::factory()->for($chapter)->create([
+        'content' => '<p>Scene-based content.</p>',
+        'sort_order' => 0,
+    ]);
+
+    $service = new ChunkingService;
+    $chunks = $service->chunkVersion($version, $chapter);
+
+    expect($chunks)->toHaveCount(1)
+        ->and($chunks->first()->content)->toContain('Scene-based content')
+        ->and($chunks->first()->scene_id)->not->toBeNull();
+});
+
+test('chunkVersion falls back to word-based when chapter has no scenes', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $version = ChapterVersion::factory()->for($chapter)->create([
+        'content' => 'Fallback content here.',
+        'is_current' => true,
+    ]);
+
+    $service = new ChunkingService;
+    $chunks = $service->chunkVersion($version, $chapter);
+
+    expect($chunks)->toHaveCount(1)
+        ->and($chunks->first()->content)->toContain('Fallback content here')
+        ->and($chunks->first()->scene_id)->toBeNull();
 });

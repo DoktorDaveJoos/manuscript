@@ -20,6 +20,7 @@ class ChunkFactory extends Factory
     {
         return [
             'chapter_version_id' => ChapterVersion::factory(),
+            'scene_id' => null,
             'content' => fake()->paragraph(),
             'position' => fake()->numberBetween(0, 100),
         ];

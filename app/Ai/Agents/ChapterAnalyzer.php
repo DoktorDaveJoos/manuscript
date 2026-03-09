@@ -4,6 +4,7 @@ namespace App\Ai\Agents;
 
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
+use App\Ai\Tools\SearchSimilarChunks;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
@@ -11,12 +12,13 @@ use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasStructuredOutput;
+use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
 use Stringable;
 
 #[Temperature(0.2)]
 #[Timeout(90)]
-class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput
+class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput, HasTools
 {
     use Promptable;
 
@@ -51,6 +53,8 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
         7. Brief reasoning for the hook classification
         8. Plot points extracted from the chapter with their type and description
 
+        Use the search tool to find related passages from other chapters when cross-referencing themes or plot threads.
+
         Be precise and analytical. Score tension and hooks honestly — not every chapter needs high scores.
         INSTRUCTIONS;
     }
@@ -62,13 +66,26 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
     {
         return [
             'summary' => $schema->string()->required(),
-            'key_events' => $schema->array()->required(),
-            'characters_present' => $schema->array()->required(),
+            'key_events' => $schema->array()->items($schema->string())->required(),
+            'characters_present' => $schema->array()->items($schema->string())->required(),
             'tension_score' => $schema->integer()->min(1)->max(10)->required(),
             'hook_score' => $schema->integer()->min(1)->max(10)->required(),
-            'hook_type' => $schema->string()->required(),
+            'hook_type' => $schema->string()->enum(['cliffhanger', 'soft_hook', 'closed', 'dead_end'])->required(),
             'hook_reasoning' => $schema->string()->required(),
-            'plot_points' => $schema->array()->required(),
+            'plot_points' => $schema->array()->items(
+                $schema->object([
+                    'title' => $schema->string()->required(),
+                    'description' => $schema->string()->required(),
+                    'type' => $schema->string()->required(),
+                ])->withoutAdditionalProperties()
+            )->required(),
+        ];
+    }
+
+    public function tools(): iterable
+    {
+        return [
+            new SearchSimilarChunks,
         ];
     }
 

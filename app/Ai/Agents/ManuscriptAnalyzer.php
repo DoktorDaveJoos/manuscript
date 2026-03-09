@@ -58,8 +58,8 @@ class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStru
     {
         return [
             'score' => $schema->integer()->min(1)->max(10)->required(),
-            'findings' => $schema->array()->required(),
-            'recommendations' => $schema->array()->required(),
+            'findings' => $schema->array()->items($schema->string())->required(),
+            'recommendations' => $schema->array()->items($schema->string())->required(),
         ];
     }
 

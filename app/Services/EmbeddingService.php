@@ -32,7 +32,7 @@ class EmbeddingService
             $response = $this->generate($texts, $config);
 
             foreach ($batch->values() as $index => $chunk) {
-                $chunk->storeEmbedding($response->embeddings[$index]);
+                $chunk->storeEmbedding($response->embeddings[$index], $book->id);
             }
 
             $this->recordEmbeddingUsage($book, $response);

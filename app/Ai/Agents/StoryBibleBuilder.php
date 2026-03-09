@@ -4,6 +4,7 @@ namespace App\Ai\Agents;
 
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
+use App\Ai\Tools\SearchSimilarChunks;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\MaxTokens;
@@ -12,13 +13,14 @@ use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasStructuredOutput;
+use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
 use Stringable;
 
 #[Temperature(0.3)]
 #[Timeout(120)]
 #[MaxTokens(4096)]
-class StoryBibleBuilder implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput
+class StoryBibleBuilder implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput, HasTools
 {
     use Promptable;
 
@@ -43,6 +45,8 @@ class StoryBibleBuilder implements Agent, BelongsToBook, HasMiddleware, HasStruc
         6. Genre rules — genre expectations and how the manuscript meets them
         7. Timeline — key events in chronological order with approximate chapter references
 
+        Verify key facts against the manuscript text using the search tool.
+
         Be concise but comprehensive. This Story Bible will be used as context for other AI agents working on the manuscript.
         INSTRUCTIONS;
     }
@@ -53,13 +57,26 @@ class StoryBibleBuilder implements Agent, BelongsToBook, HasMiddleware, HasStruc
     public function schema(JsonSchema $schema): array
     {
         return [
-            'characters' => $schema->array()->required(),
-            'setting' => $schema->array()->required(),
-            'plot_outline' => $schema->array()->required(),
-            'themes' => $schema->array()->required(),
-            'style_rules' => $schema->array()->required(),
-            'genre_rules' => $schema->array()->required(),
-            'timeline' => $schema->array()->required(),
+            'characters' => $schema->array()->items(
+                $schema->object([
+                    'name' => $schema->string()->required(),
+                    'role' => $schema->string()->required(),
+                    'description' => $schema->string()->required(),
+                ])->withoutAdditionalProperties()
+            )->required(),
+            'setting' => $schema->array()->items($schema->string())->required(),
+            'plot_outline' => $schema->array()->items($schema->string())->required(),
+            'themes' => $schema->array()->items($schema->string())->required(),
+            'style_rules' => $schema->array()->items($schema->string())->required(),
+            'genre_rules' => $schema->array()->items($schema->string())->required(),
+            'timeline' => $schema->array()->items($schema->string())->required(),
+        ];
+    }
+
+    public function tools(): iterable
+    {
+        return [
+            new SearchSimilarChunks,
         ];
     }
 

@@ -33,15 +33,23 @@ class Chunk extends Model
     }
 
     /**
+     * @return BelongsTo<Scene, $this>
+     */
+    public function scene(): BelongsTo
+    {
+        return $this->belongsTo(Scene::class);
+    }
+
+    /**
      * Store an embedding vector in the chunk_embeddings virtual table.
      *
      * @param  array<int, float>  $embedding
      */
-    public function storeEmbedding(array $embedding): void
+    public function storeEmbedding(array $embedding, int $bookId): void
     {
         DB::statement(
-            'INSERT OR REPLACE INTO chunk_embeddings (chunk_id, embedding) VALUES (?, ?)',
-            [$this->id, self::serializeEmbedding($embedding)],
+            'INSERT OR REPLACE INTO chunk_embeddings (book_id, chunk_id, embedding) VALUES (?, ?, ?)',
+            [$bookId, $this->id, self::serializeEmbedding($embedding)],
         );
     }
 
@@ -81,33 +89,120 @@ class Chunk extends Model
     }
 
     /**
-     * Find similar chunks scoped to a specific book.
+     * Find similar chunks scoped to a specific book using partition key.
      *
      * @param  array<int, float>  $embedding
      * @return Collection<int, static>
      */
     public static function findSimilarForBook(int $bookId, array $embedding, int $limit = 10): Collection
     {
-        // vec0 KNN queries don't support JOINs, so we fetch a broader set
-        // of candidates then filter by book. We request more results to
-        // ensure we have enough after filtering.
-        $candidateLimit = $limit * 5;
-
-        $results = DB::select(<<<'SQL'
-            SELECT ce.chunk_id, ce.distance
-            FROM chunk_embeddings ce
-            WHERE ce.embedding MATCH ?
-            AND ce.chunk_id IN (
-                SELECT c.id FROM chunks c
-                JOIN chapter_versions cv ON cv.id = c.chapter_version_id
-                JOIN chapters ch ON ch.id = cv.chapter_id
-                WHERE ch.book_id = ?
-            )
-            ORDER BY ce.distance
-            LIMIT ?
-        SQL, [self::serializeEmbedding($embedding), $bookId, $candidateLimit]);
+        $results = DB::select(
+            'SELECT chunk_id, distance FROM chunk_embeddings WHERE book_id = ? AND embedding MATCH ? ORDER BY distance LIMIT ?',
+            [$bookId, self::serializeEmbedding($embedding), $limit],
+        );
 
         return self::hydrateByDistance($results, $limit);
+    }
+
+    /**
+     * Find chunks matching a keyword query using FTS5, scoped to a book.
+     *
+     * @return Collection<int, static>
+     */
+    public static function findByKeywordForBook(int $bookId, string $query, int $limit = 10): Collection
+    {
+        $ids = self::findKeywordIdsForBook($bookId, $query, $limit);
+
+        return self::hydrateInOrder($ids);
+    }
+
+    /**
+     * Hybrid search combining vector KNN and FTS5 keyword results using Reciprocal Rank Fusion.
+     *
+     * @param  array<int, float>  $embedding
+     * @return Collection<int, static>
+     */
+    public static function hybridSearchForBook(int $bookId, array $embedding, string $query, int $limit = 10): Collection
+    {
+        $vectorIds = self::findSimilarIdsForBook($bookId, $embedding, $limit * 2);
+        $keywordIds = self::findKeywordIdsForBook($bookId, $query, $limit * 2);
+
+        // Reciprocal Rank Fusion: score = Σ 1/(k + rank) where k=60
+        $k = 60;
+        $scores = [];
+
+        foreach ($vectorIds as $rank => $id) {
+            $scores[$id] = ($scores[$id] ?? 0) + (1 / ($k + $rank));
+        }
+
+        foreach ($keywordIds as $rank => $id) {
+            $scores[$id] = ($scores[$id] ?? 0) + (1 / ($k + $rank));
+        }
+
+        arsort($scores);
+        $topIds = array_slice(array_keys($scores), 0, $limit);
+
+        return self::hydrateInOrder($topIds);
+    }
+
+    /**
+     * Return ordered chunk IDs from a vector KNN search (no model hydration).
+     *
+     * @param  array<int, float>  $embedding
+     * @return array<int, int>
+     */
+    private static function findSimilarIdsForBook(int $bookId, array $embedding, int $limit): array
+    {
+        $results = DB::select(
+            'SELECT chunk_id FROM chunk_embeddings WHERE book_id = ? AND embedding MATCH ? ORDER BY distance LIMIT ?',
+            [$bookId, self::serializeEmbedding($embedding), $limit],
+        );
+
+        return array_map(fn ($row) => $row->chunk_id, $results);
+    }
+
+    /**
+     * Return ordered chunk IDs from an FTS5 keyword search (no model hydration).
+     *
+     * @return array<int, int>
+     */
+    private static function findKeywordIdsForBook(int $bookId, string $query, int $limit): array
+    {
+        $sanitizedQuery = self::sanitizeFtsQuery($query);
+
+        if ($sanitizedQuery === '') {
+            return [];
+        }
+
+        $results = DB::select(<<<'SQL'
+            SELECT c.id
+            FROM chunks_fts fts
+            JOIN chunks c ON c.id = fts.rowid
+            JOIN chapter_versions cv ON cv.id = c.chapter_version_id
+            JOIN chapters ch ON ch.id = cv.chapter_id
+            WHERE chunks_fts MATCH ?
+            AND ch.book_id = ?
+            ORDER BY rank
+            LIMIT ?
+        SQL, [$sanitizedQuery, $bookId, $limit]);
+
+        return array_map(fn ($row) => $row->id, $results);
+    }
+
+    /**
+     * Sanitize a query string for FTS5 MATCH.
+     */
+    private static function sanitizeFtsQuery(string $query): string
+    {
+        // Remove FTS5 special characters, keep alphanumeric and spaces
+        $sanitized = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $query);
+        $sanitized = trim(preg_replace('/\s+/', ' ', $sanitized));
+
+        // Remove FTS5 operator keywords that could cause syntax errors
+        $words = preg_split('/\s+/', $sanitized);
+        $words = array_filter($words, fn ($w) => ! in_array(strtoupper($w), ['AND', 'OR', 'NOT', 'NEAR'], true));
+
+        return trim(implode(' ', $words));
     }
 
     /**
@@ -141,5 +236,29 @@ class Chunk extends Model
             ->sortBy(fn (self $chunk) => $distances[$chunk->id]->distance)
             ->take($limit)
             ->values();
+    }
+
+    /**
+     * Hydrate Chunk models preserving the given ID order.
+     *
+     * @param  array<int, int>  $orderedIds
+     * @return Collection<int, static>
+     */
+    private static function hydrateInOrder(array $orderedIds): Collection
+    {
+        if (empty($orderedIds)) {
+            return new Collection;
+        }
+
+        $chunks = static::query()->whereIn('id', $orderedIds)->get()->keyBy('id');
+
+        $sorted = new Collection;
+        foreach ($orderedIds as $id) {
+            if ($chunks->has($id)) {
+                $sorted->push($chunks->get($id));
+            }
+        }
+
+        return $sorted;
     }
 }

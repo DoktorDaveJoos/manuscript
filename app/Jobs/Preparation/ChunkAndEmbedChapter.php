@@ -37,7 +37,7 @@ class ChunkAndEmbedChapter implements ShouldQueue
 
         try {
             $chapter = $this->book->chapters()
-                ->with('currentVersion')
+                ->with(['currentVersion', 'scenes'])
                 ->find($this->chapterId);
 
             if (! $chapter || ! $chapter->currentVersion?->content) {
@@ -48,7 +48,7 @@ class ChunkAndEmbedChapter implements ShouldQueue
             }
 
             $chapter->currentVersion->chunks()->each(fn ($chunk) => $chunk->deleteEmbedding());
-            $chunks = $chunking->chunkVersion($chapter->currentVersion);
+            $chunks = $chunking->chunkVersion($chapter->currentVersion, $chapter);
 
             $setting = AiSetting::activeProvider();
             if ($setting?->provider->supportsEmbeddings() && $chunks->isNotEmpty()) {
