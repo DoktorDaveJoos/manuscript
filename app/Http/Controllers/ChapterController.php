@@ -102,6 +102,9 @@ class ChapterController extends Controller
             'book' => $book,
             'chapter' => $chapter,
             'versionCount' => $chapter->versions()->count(),
+            'chapterAnalyses' => Inertia::defer(fn () => $chapter->analyses()
+                ->get()
+                ->keyBy(fn ($a) => $a->type->value)),
         ]);
     }
 

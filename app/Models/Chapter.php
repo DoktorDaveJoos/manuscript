@@ -29,6 +29,7 @@ class Chapter extends Model
             'word_count' => 'integer',
             'tension_score' => 'integer',
             'hook_score' => 'integer',
+            'analyzed_at' => 'datetime',
         ];
     }
 
@@ -94,6 +95,14 @@ class Chapter extends Model
     public function scenes(): HasMany
     {
         return $this->hasMany(Scene::class)->orderBy('sort_order');
+    }
+
+    /**
+     * @return HasMany<Analysis, $this>
+     */
+    public function analyses(): HasMany
+    {
+        return $this->hasMany(Analysis::class);
     }
 
     /**

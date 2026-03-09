@@ -1,12 +1,13 @@
 import { revise } from '@/actions/App/Http/Controllers/AiController';
 import ProFeatureLock from '@/components/ui/ProFeatureLock';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
+import { useChapterAnalysis } from '@/hooks/useChapterAnalysis';
 import { getXsrfToken } from '@/lib/csrf';
 import { cn } from '@/lib/utils';
-import type { Book, Chapter, Character, CharacterChapterPivot, CharacterRole } from '@/types/models';
-import { CaretLeft, CaretRight, Lock, PaperPlaneTilt, Sparkle } from '@phosphor-icons/react';
+import type { Analysis, Book, Chapter, Character, CharacterChapterPivot, CharacterRole } from '@/types/models';
+import { CaretLeft, CaretRight, ChatCircle, Lock, Sparkle, Table } from '@phosphor-icons/react';
 import { Link, router } from '@inertiajs/react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 type ChapterCharacter = Character & { pivot: CharacterChapterPivot };
 
@@ -26,6 +27,13 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function SectionDivider() {
     return <div className="h-px bg-border-subtle" />;
+}
+
+function scoreLabel(score: number | null): { text: string; color: string } {
+    if (score === null) return { text: '--', color: 'text-ink-faint' };
+    if (score >= 7) return { text: 'Good', color: 'text-ai-green' };
+    if (score >= 4) return { text: 'Fair', color: 'text-status-revised' };
+    return { text: 'Weak', color: 'text-red-600' };
 }
 
 function MetricRow({ label, value, color }: { label: string; value: string; color?: string }) {
@@ -76,9 +84,30 @@ function SparkleIcon() {
     return <Sparkle size={16} weight="fill" />;
 }
 
-function SendIcon() {
-    return <PaperPlaneTilt size={14} weight="fill" />;
+function collectFindings(analyses: Record<string, Analysis>): { text: string; variant: 'warning' | 'info' }[] {
+    const items: { text: string; variant: 'warning' | 'info' }[] = [];
+    for (const analysis of Object.values(analyses)) {
+        const result = analysis.result as { findings?: string[]; recommendations?: string[] } | null;
+        if (!result) continue;
+        for (const f of result.findings ?? []) {
+            items.push({ text: f, variant: 'warning' });
+        }
+        for (const r of result.recommendations ?? []) {
+            items.push({ text: r, variant: 'info' });
+        }
+    }
+    return items;
 }
+
+function getNextChapterSuggestion(analyses: Record<string, Analysis>): string | null {
+    const ncs = analyses['next_chapter_suggestion'];
+    if (!ncs?.result) return null;
+    const result = ncs.result as { suggestion?: string };
+    return result.suggestion ?? null;
+}
+
+const actionButtonClass =
+    'flex items-center justify-center gap-2 rounded-md bg-ink px-3 py-[9px] text-[13px] font-medium text-white transition-colors hover:bg-ink/90 disabled:opacity-50';
 
 export default function AiPanel({
     characters,
@@ -87,6 +116,8 @@ export default function AiPanel({
     isOpen,
     onToggle,
     onError,
+    onOpenChat,
+    chapterAnalyses,
 }: {
     characters: ChapterCharacter[];
     book: Book;
@@ -94,12 +125,17 @@ export default function AiPanel({
     isOpen: boolean;
     onToggle: () => void;
     onError?: (message: string) => void;
+    onOpenChat?: () => void;
+    chapterAnalyses?: Record<string, Analysis>;
 }) {
     const { visible, usable, licensed } = useAiFeatures();
     const aiEnabled = usable;
 
     if (!visible) return null;
+
     const [isRunningProse, setIsRunningProse] = useState(false);
+    const { status: analysisStatus, isAnalyzing, error: analysisError, analyses, handleAnalyze } =
+        useChapterAnalysis(book.id, chapter.id, chapter.analysis_status, chapterAnalyses);
 
     const handleRunProse = useCallback(async () => {
         setIsRunningProse(true);
@@ -122,6 +158,17 @@ export default function AiPanel({
             setIsRunningProse(false);
         }
     }, [book.id, chapter.id, onError]);
+
+    const tensionLabel = scoreLabel(chapter.tension_score);
+    const hookLabel = scoreLabel(chapter.hook_score);
+    const findings = useMemo(() => collectFindings(analyses), [analyses]);
+    const nextSuggestion = useMemo(() => getNextChapterSuggestion(analyses), [analyses]);
+
+    // Derive pacing & density labels from analyses
+    const pacingAnalysis = analyses['pacing']?.result as { score?: number } | null;
+    const densityAnalysis = analyses['density']?.result as { score?: number } | null;
+    const pacingLabel = scoreLabel(pacingAnalysis?.score ?? null);
+    const densityLabel = scoreLabel(densityAnalysis?.score ?? null);
 
     return (
         <aside
@@ -162,22 +209,26 @@ export default function AiPanel({
                         <>
                             {/* Scrollable content */}
                             <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-4">
-                                {/* Prose section */}
+                                {/* Actions section */}
                                 <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>Prose</SectionLabel>
+                                    <SectionLabel>Actions</SectionLabel>
                                     {aiEnabled ? (
                                         <>
                                             <button
                                                 type="button"
-                                                onClick={handleRunProse}
-                                                disabled={isRunningProse}
-                                                className="rounded bg-ink px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-ink/90 disabled:opacity-50"
+                                                onClick={handleAnalyze}
+                                                disabled={isAnalyzing}
+                                                className={actionButtonClass}
                                             >
-                                                {isRunningProse ? 'Running...' : 'Run prose pass'}
+                                                <Table size={14} weight="bold" />
+                                                {isAnalyzing ? 'Analyzing...' : 'Analyze chapter'}
                                             </button>
                                             <p className="text-xs leading-relaxed text-ink-muted">
-                                                Analyzes pacing, voice consistency, and prose quality.
+                                                Runs chapter analysis, character extraction, and manuscript checks.
                                             </p>
+                                            {analysisError && (
+                                                <p className="text-xs leading-relaxed text-red-600">{analysisError}</p>
+                                            )}
                                         </>
                                     ) : (
                                         <p className="text-xs leading-relaxed text-ink-muted">
@@ -194,15 +245,43 @@ export default function AiPanel({
 
                                 <SectionDivider />
 
+                                {/* Prose section */}
+                                <div className="flex flex-col gap-2.5">
+                                    <SectionLabel>Prose</SectionLabel>
+                                    {aiEnabled ? (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={handleRunProse}
+                                                disabled={isRunningProse}
+                                                className={actionButtonClass}
+                                            >
+                                                <Sparkle size={14} weight="fill" />
+                                                {isRunningProse ? 'Running...' : 'Run prose pass'}
+                                            </button>
+                                            <p className="text-xs leading-relaxed text-ink-muted">
+                                                Analyzes pacing, voice consistency, and prose quality.
+                                            </p>
+                                        </>
+                                    ) : null}
+                                </div>
+
+                                <SectionDivider />
+
                                 {/* Chapter Analysis */}
                                 <div className="flex flex-col gap-2.5">
                                     <SectionLabel>Chapter Analysis</SectionLabel>
                                     <div className="flex flex-col gap-1.5">
-                                        <MetricRow label="Pacing score" value="--" color="text-ai-green" />
-                                        <MetricRow label="Readability" value="--" color="text-ai-green" />
-                                        <MetricRow label="Dialogue ratio" value="--" color="text-status-revised" />
-                                        <MetricRow label="Tension arc" value="--" color="text-ai-green" />
+                                        <MetricRow label="Tension" value={tensionLabel.text} color={tensionLabel.color} />
+                                        <MetricRow label="Hook strength" value={hookLabel.text} color={hookLabel.color} />
+                                        <MetricRow label="Pacing" value={pacingLabel.text} color={pacingLabel.color} />
+                                        <MetricRow label="Density" value={densityLabel.text} color={densityLabel.color} />
                                     </div>
+                                    {chapter.hook_type && (
+                                        <span className="text-[11px] text-ink-faint">
+                                            Hook type: {chapter.hook_type.replace('_', ' ')}
+                                        </span>
+                                    )}
                                 </div>
 
                                 <SectionDivider />
@@ -210,9 +289,20 @@ export default function AiPanel({
                                 {/* Findings */}
                                 <div className="flex flex-col gap-2.5">
                                     <SectionLabel>Findings</SectionLabel>
-                                    <p className="text-xs italic leading-relaxed text-ink-muted">
-                                        No analysis run yet
-                                    </p>
+                                    {findings.length > 0 ? (
+                                        <div className="flex flex-col gap-3">
+                                            {findings.map((f, i) => (
+                                                <div key={i} className="flex gap-2">
+                                                    <FindingDot variant={f.variant} />
+                                                    <span className="text-xs leading-relaxed text-ink-soft">{f.text}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs italic leading-relaxed text-ink-muted">
+                                            {analysisStatus === 'completed' ? 'No findings' : 'No analysis run yet'}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <SectionDivider />
@@ -220,12 +310,16 @@ export default function AiPanel({
                                 {/* Next Chapter */}
                                 <div className="flex flex-col gap-2.5">
                                     <SectionLabel>Next Chapter</SectionLabel>
-                                    <p className="text-[13px] leading-relaxed text-ink-soft">
-                                        Run an analysis first to receive chapter continuation suggestions.
-                                    </p>
+                                    {nextSuggestion ? (
+                                        <p className="text-[13px] leading-relaxed text-ink-soft">{nextSuggestion}</p>
+                                    ) : (
+                                        <p className="text-[13px] leading-relaxed text-ink-soft">
+                                            Run an analysis first to receive chapter continuation suggestions.
+                                        </p>
+                                    )}
                                     <button
                                         type="button"
-                                        disabled
+                                        disabled={!nextSuggestion}
                                         className="self-start text-xs font-medium text-accent transition-colors hover:text-accent/80 disabled:opacity-40"
                                     >
                                         Generate outline
@@ -251,44 +345,33 @@ export default function AiPanel({
                                 </div>
                             </div>
 
-                            {/* Chat Input */}
-                            <div className="px-4 pb-3">
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Ask about this chapter..."
-                                        disabled
-                                        className="h-10 flex-1 rounded-md border border-border bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint disabled:opacity-60"
-                                    />
-                                    <button
-                                        type="button"
-                                        disabled
-                                        className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border text-ink-faint transition-colors hover:text-ink disabled:opacity-40"
-                                    >
-                                        <SendIcon />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Token Footer */}
-                            <div className="border-t border-border-subtle px-5 py-3.5">
-                                <span className="text-[11px] text-ink-faint">~820 tokens ~ $0.003</span>
+                            {/* Bottom bar */}
+                            <div className="flex items-center justify-between border-t border-border-subtle px-4 py-3">
+                                <button
+                                    type="button"
+                                    onClick={onOpenChat}
+                                    className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:bg-surface hover:text-ink"
+                                >
+                                    <ChatCircle size={14} weight="regular" />
+                                    Ask AI
+                                </button>
+                                <span className="text-[11px] text-ink-faint">~820 tokens</span>
                             </div>
                         </>
                     ) : (
                         <ProFeatureLock>
                             <div className="flex flex-1 flex-col gap-5 p-4 opacity-40">
                                 <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>Prose</SectionLabel>
-                                    <div className="h-8 rounded bg-border/50" />
+                                    <SectionLabel>Actions</SectionLabel>
+                                    <div className="h-9 rounded-md bg-border/50" />
                                 </div>
                                 <SectionDivider />
                                 <div className="flex flex-col gap-2.5">
                                     <SectionLabel>Chapter Analysis</SectionLabel>
                                     <div className="flex flex-col gap-1.5">
-                                        <MetricRow label="Pacing score" value="--" />
-                                        <MetricRow label="Readability" value="--" />
-                                        <MetricRow label="Dialogue ratio" value="--" />
+                                        <MetricRow label="Tension" value="--" />
+                                        <MetricRow label="Hook strength" value="--" />
+                                        <MetricRow label="Pacing" value="--" />
                                     </div>
                                 </div>
                             </div>

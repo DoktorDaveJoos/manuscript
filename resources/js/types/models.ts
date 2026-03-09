@@ -118,6 +118,9 @@ export type Chapter = {
     tension_score: number | null;
     hook_score: number | null;
     hook_type: HookType | null;
+    analysis_status: 'pending' | 'running' | 'completed' | 'failed' | null;
+    analysis_error: string | null;
+    analyzed_at: string | null;
     created_at: string;
     updated_at: string;
     book?: Book;

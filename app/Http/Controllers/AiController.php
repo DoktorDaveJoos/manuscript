@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Ai\Agents\BookChatAgent;
 use App\Ai\Agents\NextChapterAdvisor;
 use App\Ai\Agents\ProseReviser;
 use App\Ai\Agents\TextBeautifier;
@@ -9,6 +10,7 @@ use App\Enums\AnalysisType;
 use App\Enums\VersionSource;
 use App\Enums\VersionStatus;
 use App\Http\Requests\RunAnalysisRequest;
+use App\Jobs\AnalyzeChapterJob;
 use App\Jobs\ExtractCharactersJob;
 use App\Jobs\GenerateEmbeddingsJob;
 use App\Jobs\RunAnalysisJob;
@@ -16,11 +18,55 @@ use App\Models\AiSetting;
 use App\Models\Book;
 use App\Models\Chapter;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Responses\StreamableAgentResponse;
 
 class AiController extends Controller
 {
+    public function analyzeChapter(Book $book, Chapter $chapter): JsonResponse
+    {
+        $chapter->update([
+            'analysis_status' => 'pending',
+            'analysis_error' => null,
+        ]);
+
+        AnalyzeChapterJob::dispatch($book, $chapter);
+
+        return response()->json(['status' => 'pending']);
+    }
+
+    public function chapterAnalysisStatus(Book $book, Chapter $chapter): JsonResponse
+    {
+        $analyses = $chapter->analyses()
+            ->get()
+            ->keyBy(fn ($a) => $a->type->value);
+
+        return response()->json([
+            'analysis_status' => $chapter->analysis_status,
+            'analysis_error' => $chapter->analysis_error,
+            'analyzed_at' => $chapter->analyzed_at?->toISOString(),
+            'tension_score' => $chapter->tension_score,
+            'hook_score' => $chapter->hook_score,
+            'hook_type' => $chapter->hook_type,
+            'summary' => $chapter->summary,
+            'analyses' => $analyses,
+        ]);
+    }
+
+    public function chat(Request $request, Book $book): StreamableAgentResponse
+    {
+        $this->ensureAiConfigured();
+
+        $request->validate([
+            'message' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $agent = new BookChatAgent($book);
+
+        return $agent->stream($request->input('message'));
+    }
+
     public function analyze(RunAnalysisRequest $request, Book $book): JsonResponse
     {
         $type = AnalysisType::from($request->validated('type'));

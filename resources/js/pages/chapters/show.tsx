@@ -2,6 +2,7 @@ import { beautify } from '@/actions/App/Http/Controllers/AiController';
 import { updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
 import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
+import AiChatDrawer from '@/components/editor/AiChatDrawer';
 import AiPanel from '@/components/editor/AiPanel';
 import CommandPalette from '@/components/editor/CommandPalette';
 import DiffView from '@/components/editor/DiffView';
@@ -15,7 +16,7 @@ import Kbd from '@/components/ui/Kbd';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { getXsrfToken } from '@/lib/csrf';
 import { createChapter, jsonFetchHeaders } from '@/lib/utils';
-import type { Book, Chapter, Character, CharacterChapterPivot, Scene } from '@/types/models';
+import type { Analysis, Book, Chapter, Character, CharacterChapterPivot, Scene } from '@/types/models';
 import { Head, router, usePage } from '@inertiajs/react';
 import { DOMSerializer } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
@@ -33,10 +34,12 @@ export default function ChapterShow({
     book,
     chapter,
     versionCount,
+    chapterAnalyses,
 }: {
     book: Book;
     chapter: ChapterWithRelations;
     versionCount: number;
+    chapterAnalyses?: Record<string, Analysis>;
 }) {
     const pendingVersion = chapter.pending_version ?? null;
     const { visible: aiVisible, licensed: isLicensed } = useAiFeatures();
@@ -124,6 +127,8 @@ export default function ChapterShow({
             // Ignore storage errors
         }
     }, []);
+
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     const [isAiPanelOpen, setIsAiPanelOpen] = useState(() => {
         try {
@@ -518,7 +523,7 @@ export default function ChapterShow({
 
                 {!pendingVersion && aiVisible && (
                     <div
-                        className={`overflow-hidden transition-[width,opacity] duration-300 ${isFocusMode ? 'w-0 opacity-0' : ''}`}
+                        className={`flex overflow-hidden transition-[width,opacity] duration-300 ${isFocusMode ? 'w-0 opacity-0' : ''}`}
                     >
                         <AiPanel
                             characters={(chapter.characters as (Character & { pivot: CharacterChapterPivot })[]) ?? []}
@@ -527,7 +532,12 @@ export default function ChapterShow({
                             isOpen={isAiPanelOpen}
                             onToggle={toggleAiPanel}
                             onError={() => setSaveStatus('error')}
+                            onOpenChat={() => setIsChatOpen(true)}
+                            chapterAnalyses={chapterAnalyses}
                         />
+                        {isChatOpen && (
+                            <AiChatDrawer bookId={book.id} onClose={() => setIsChatOpen(false)} />
+                        )}
                     </div>
                 )}
             </div>
