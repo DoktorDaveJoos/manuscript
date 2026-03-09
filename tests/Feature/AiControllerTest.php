@@ -183,3 +183,52 @@ test('beautify fails without api key', function () {
     $this->post(route('chapters.ai.beautify', [$book, $chapter]))
         ->assertStatus(422);
 });
+
+test('revise rejects chapter over 12000 words', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    // Create a scene with enough words to exceed the limit
+    $longContent = '<p>'.implode(' ', array_fill(0, 13000, 'word')).'</p>';
+    \App\Models\Scene::factory()->for($chapter)->create([
+        'content' => $longContent,
+        'sort_order' => 0,
+    ]);
+
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => $longContent,
+    ]);
+
+    $this->post(route('chapters.ai.revise', [$book, $chapter]))
+        ->assertStatus(422);
+});
+
+test('revise uses scene breaks in prompt', function () {
+    ProseReviser::fake(['The revised prose text.']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    \App\Models\Scene::factory()->for($chapter)->create([
+        'content' => '<p>Scene one</p>',
+        'sort_order' => 0,
+    ]);
+    \App\Models\Scene::factory()->for($chapter)->create([
+        'content' => '<p>Scene two</p>',
+        'sort_order' => 1,
+    ]);
+
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => 'Original.',
+    ]);
+
+    $this->post(route('chapters.ai.revise', [$book, $chapter]));
+
+    ProseReviser::assertPrompted(fn ($prompt) => str_contains($prompt->prompt, '<hr>'));
+});

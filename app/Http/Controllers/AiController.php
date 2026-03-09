@@ -148,15 +148,23 @@ class AiController extends Controller
 
         $chapter->loadMissing(['currentVersion', 'scenes']);
         $currentVersion = $chapter->currentVersion;
-        $content = $chapter->getFullContent();
+        $content = $chapter->getContentWithSceneBreaks();
         if (blank($content)) {
             $content = $currentVersion?->content;
         }
         abort_if(blank($content), 422, 'Chapter has no content to process.');
 
+        $wordCount = str_word_count(strip_tags($content));
+        abort_if($wordCount > 12000, 422, 'Chapter is too long for AI revision ('.$wordCount.' words). Consider splitting it into smaller chapters.');
+
+        $sceneMap = $chapter->scenes->map(fn ($s) => [
+            'title' => $s->title,
+            'sort_order' => $s->sort_order,
+        ])->values()->toArray();
+
         return $agent->stream(
             "{$promptPrefix}\n\n{$content}",
-        )->then(function ($response) use ($chapter, $currentVersion, $source, $changeSummary) {
+        )->then(function ($response) use ($chapter, $currentVersion, $source, $changeSummary, $sceneMap) {
             $nextNumber = ($currentVersion?->version_number ?? 0) + 1;
 
             $chapter->versions()->create([
@@ -166,6 +174,7 @@ class AiController extends Controller
                 'change_summary' => $changeSummary,
                 'is_current' => false,
                 'status' => VersionStatus::Pending,
+                'scene_map' => $sceneMap,
             ]);
         });
     }

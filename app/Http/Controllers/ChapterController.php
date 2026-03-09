@@ -19,6 +19,7 @@ use App\Models\ChapterVersion;
 use App\Models\WritingSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -102,6 +103,7 @@ class ChapterController extends Controller
             'book' => $book,
             'chapter' => $chapter,
             'versionCount' => $chapter->versions()->count(),
+            'prosePassRules' => $book->prose_pass_rules ?? Book::defaultProsePassRules(),
             'chapterPlotPoints' => $book->plotPoints()
                 ->where('intended_chapter_id', $chapter->id)
                 ->orderBy('sort_order')
@@ -275,18 +277,37 @@ class ChapterController extends Controller
     {
         abort_if($version->status !== VersionStatus::Pending, 403, 'Only pending versions can be accepted.');
 
-        DB::transaction(function () use ($chapter, $version) {
+        $this->applyVersion($chapter, $version, $version->content);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function acceptPartialVersion(Request $request, Book $book, Chapter $chapter, ChapterVersion $version): JsonResponse
+    {
+        abort_if($version->status !== VersionStatus::Pending, 403, 'Only pending versions can be accepted.');
+
+        $request->validate([
+            'content' => ['required', 'string'],
+        ]);
+
+        $this->applyVersion($chapter, $version, $request->input('content'));
+
+        return response()->json(['success' => true]);
+    }
+
+    private function applyVersion(Chapter $chapter, ChapterVersion $version, string $content): void
+    {
+        DB::transaction(function () use ($chapter, $version, $content) {
             $chapter->versions()->where('is_current', true)->update(['is_current' => false]);
 
             $version->update([
+                'content' => $content,
                 'is_current' => true,
                 'status' => VersionStatus::Accepted,
             ]);
 
-            $chapter->replaceScenesWithContent($version->content);
+            $chapter->replaceSceneContents($content, $version->scene_map);
         });
-
-        return response()->json(['success' => true]);
     }
 
     public function rejectVersion(Book $book, Chapter $chapter, ChapterVersion $version): JsonResponse

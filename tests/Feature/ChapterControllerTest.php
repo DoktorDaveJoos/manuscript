@@ -719,3 +719,238 @@ test('show includes notes in response', function () {
             ->where('chapter.notes', 'Test note')
         );
 });
+
+test('show includes prose pass rules', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create(['is_current' => true]);
+
+    $this->get(route('chapters.show', [$book, $chapter]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('chapters/show')
+            ->has('prosePassRules')
+        );
+});
+
+test('acceptVersion preserves scenes with hr boundaries', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 10]);
+
+    $current = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => '<p>Scene one text</p>',
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    Scene::factory()->for($chapter)->create(['title' => 'Opening', 'content' => '<p>Scene one text</p>', 'sort_order' => 0]);
+    Scene::factory()->for($chapter)->create(['title' => 'Climax', 'content' => '<p>Scene two text</p>', 'sort_order' => 1]);
+    Scene::factory()->for($chapter)->create(['title' => 'Denouement', 'content' => '<p>Scene three text</p>', 'sort_order' => 2]);
+
+    $pending = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => false,
+        'version_number' => 2,
+        'content' => '<p>Revised scene one</p><hr><p>Revised scene two</p><hr><p>Revised scene three</p>',
+        'source' => 'ai_revision',
+        'status' => VersionStatus::Pending,
+        'scene_map' => [
+            ['title' => 'Opening', 'sort_order' => 0],
+            ['title' => 'Climax', 'sort_order' => 1],
+            ['title' => 'Denouement', 'sort_order' => 2],
+        ],
+    ]);
+
+    $this->postJson(route('chapters.acceptVersion', [$book, $chapter, $pending]))
+        ->assertOk();
+
+    $chapter->refresh();
+    $chapter->load('scenes');
+
+    expect($chapter->scenes)->toHaveCount(3);
+    expect($chapter->scenes[0]->title)->toBe('Opening');
+    expect($chapter->scenes[0]->content)->toBe('<p>Revised scene one</p>');
+    expect($chapter->scenes[1]->title)->toBe('Climax');
+    expect($chapter->scenes[1]->content)->toBe('<p>Revised scene two</p>');
+    expect($chapter->scenes[2]->title)->toBe('Denouement');
+    expect($chapter->scenes[2]->content)->toBe('<p>Revised scene three</p>');
+});
+
+test('acceptVersion falls back to single scene when no hr tags', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 5]);
+
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => '<p>Original</p>',
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    Scene::factory()->for($chapter)->create(['content' => '<p>Original</p>', 'sort_order' => 0]);
+
+    $pending = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => false,
+        'version_number' => 2,
+        'content' => '<p>Revised text without scene breaks</p>',
+        'source' => 'ai_revision',
+        'status' => VersionStatus::Pending,
+        'scene_map' => [['title' => 'Scene 1', 'sort_order' => 0]],
+    ]);
+
+    $this->postJson(route('chapters.acceptVersion', [$book, $chapter, $pending]))
+        ->assertOk();
+
+    $chapter->refresh();
+    $chapter->load('scenes');
+
+    expect($chapter->scenes)->toHaveCount(1);
+    expect($chapter->scenes->first()->content)->toBe('<p>Revised text without scene breaks</p>');
+});
+
+test('acceptPartialVersion saves provided content', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 5]);
+
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => '<p>Original</p>',
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    Scene::factory()->for($chapter)->create(['content' => '<p>Original</p>', 'sort_order' => 0]);
+
+    $pending = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => false,
+        'version_number' => 2,
+        'content' => '<p>Full revision</p>',
+        'source' => 'ai_revision',
+        'status' => VersionStatus::Pending,
+    ]);
+
+    $mergedContent = '<p>Partially merged content</p>';
+
+    $this->postJson(route('chapters.acceptPartialVersion', [$book, $chapter, $pending]), [
+        'content' => $mergedContent,
+    ])->assertOk();
+
+    expect($pending->fresh()->is_current)->toBeTrue();
+    expect($pending->fresh()->status->value)->toBe('accepted');
+    expect($pending->fresh()->content)->toBe($mergedContent);
+
+    $chapter->refresh();
+    $chapter->load('scenes');
+    expect($chapter->scenes->first()->content)->toBe($mergedContent);
+});
+
+test('acceptPartialVersion rejects non-pending version', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $version = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $this->postJson(route('chapters.acceptPartialVersion', [$book, $chapter, $version]), [
+        'content' => '<p>Anything</p>',
+    ])->assertForbidden();
+});
+
+test('acceptPartialVersion validates content is required', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $pending = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => false,
+        'version_number' => 2,
+        'status' => VersionStatus::Pending,
+    ]);
+
+    $this->postJson(route('chapters.acceptPartialVersion', [$book, $chapter, $pending]), [
+        'content' => '',
+    ])->assertUnprocessable();
+});
+
+test('acceptPartialVersion preserves scenes with hr tags', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 10]);
+
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    Scene::factory()->for($chapter)->create(['title' => 'Act I', 'content' => '<p>First</p>', 'sort_order' => 0]);
+    Scene::factory()->for($chapter)->create(['title' => 'Act II', 'content' => '<p>Second</p>', 'sort_order' => 1]);
+
+    $pending = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => false,
+        'version_number' => 2,
+        'status' => VersionStatus::Pending,
+        'scene_map' => [
+            ['title' => 'Act I', 'sort_order' => 0],
+            ['title' => 'Act II', 'sort_order' => 1],
+        ],
+    ]);
+
+    $this->postJson(route('chapters.acceptPartialVersion', [$book, $chapter, $pending]), [
+        'content' => '<p>Merged first</p><hr><p>Merged second</p>',
+    ])->assertOk();
+
+    $chapter->refresh();
+    $chapter->load('scenes');
+
+    expect($chapter->scenes)->toHaveCount(2);
+    expect($chapter->scenes[0]->title)->toBe('Act I');
+    expect($chapter->scenes[0]->content)->toBe('<p>Merged first</p>');
+    expect($chapter->scenes[1]->title)->toBe('Act II');
+    expect($chapter->scenes[1]->content)->toBe('<p>Merged second</p>');
+});
+
+test('getContentWithSceneBreaks joins scenes with hr tags', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    Scene::factory()->for($chapter)->create(['content' => '<p>Scene one</p>', 'sort_order' => 0]);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Scene two</p>', 'sort_order' => 1]);
+
+    $chapter->load('scenes');
+
+    expect($chapter->getContentWithSceneBreaks())->toBe('<p>Scene one</p><hr><p>Scene two</p>');
+});
+
+test('replaceSceneContents handles fewer segments than existing scenes', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    Scene::factory()->for($chapter)->create(['title' => 'One', 'content' => '<p>One</p>', 'sort_order' => 0]);
+    Scene::factory()->for($chapter)->create(['title' => 'Two', 'content' => '<p>Two</p>', 'sort_order' => 1]);
+    Scene::factory()->for($chapter)->create(['title' => 'Three', 'content' => '<p>Three</p>', 'sort_order' => 2]);
+
+    $sceneMap = [
+        ['title' => 'Combined', 'sort_order' => 0],
+        ['title' => 'Final', 'sort_order' => 1],
+    ];
+
+    $chapter->replaceSceneContents('<p>Combined content</p><hr><p>Final content</p>', $sceneMap);
+
+    $chapter->refresh();
+    $chapter->load('scenes');
+
+    expect($chapter->scenes)->toHaveCount(2);
+    expect($chapter->scenes[0]->title)->toBe('Combined');
+    expect($chapter->scenes[1]->title)->toBe('Final');
+});

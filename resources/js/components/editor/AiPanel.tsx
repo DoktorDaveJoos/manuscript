@@ -138,6 +138,15 @@ export default function AiPanel({
         useChapterAnalysis(book.id, chapter.id, chapter.analysis_status, chapterAnalyses);
 
     const handleRunProse = useCallback(async () => {
+        if (
+            chapter.word_count > 8000 &&
+            !confirm(
+                `This chapter has ${chapter.word_count.toLocaleString()} words. Very long chapters may produce lower quality revisions or exceed AI output limits. Continue?`,
+            )
+        ) {
+            return;
+        }
+
         setIsRunningProse(true);
         try {
             const response = await fetch(revise.url({ book: book.id, chapter: chapter.id }), {
@@ -157,7 +166,7 @@ export default function AiPanel({
         } finally {
             setIsRunningProse(false);
         }
-    }, [book.id, chapter.id, onError]);
+    }, [book.id, chapter.id, chapter.word_count, onError]);
 
     const tensionLabel = scoreLabel(chapter.tension_score);
     const hookLabel = scoreLabel(chapter.hook_score);

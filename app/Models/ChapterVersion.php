@@ -25,6 +25,7 @@ class ChapterVersion extends Model
             'status' => VersionStatus::class,
             'version_number' => 'integer',
             'is_current' => 'boolean',
+            'scene_map' => 'array',
         ];
     }
 

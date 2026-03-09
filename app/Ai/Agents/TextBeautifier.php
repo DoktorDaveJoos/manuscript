@@ -15,7 +15,7 @@ use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-#[MaxTokens(8192)]
+#[MaxTokens(16384)]
 #[Temperature(0.2)]
 #[Timeout(180)]
 class TextBeautifier implements Agent, BelongsToBook, HasMiddleware, HasTools
@@ -43,7 +43,7 @@ class TextBeautifier implements Agent, BelongsToBook, HasMiddleware, HasTools
         Apply these structural improvements:
         - Dialogue breathing: each new speaker gets their own paragraph. Action beats stay with the speaker's dialogue.
         - Paragraph rhythm: split long paragraphs that shift topic or focus at their natural break points.
-        - Scene transitions: insert <hr> where there is an implicit time jump, location change, or significant perspective shift.
+        - Scene transitions: existing <hr> tags in the input mark scene boundaries and MUST be preserved in the output. You may add additional <hr> tags only for new scene transitions you identify.
         - Emotional pacing: let impactful short sentences or revelations stand alone as their own paragraph.
 
         Preserve ALL existing HTML formatting (<strong>, <em>, <u>, <blockquote>, <br>, <hr>).

@@ -15,7 +15,7 @@ use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-#[MaxTokens(8192)]
+#[MaxTokens(16384)]
 #[Temperature(0.4)]
 #[Timeout(180)]
 class ProseReviser implements Agent, BelongsToBook, HasMiddleware, HasTools
@@ -49,6 +49,8 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware, HasTools
         - Show-don't-tell where appropriate
         - Dialogue naturalness
         - Consistent narrative voice
+
+        The text contains <hr> tags marking scene boundaries. Preserve these exactly — do not add or remove <hr> tags.
 
         Preserve the author's intent, plot, and character voice. Do not change plot points or character actions.
         Return ONLY the revised text, without commentary or explanations.{$writingStyle}{$rulesSection}

@@ -16,7 +16,7 @@ import Kbd from '@/components/ui/Kbd';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { getXsrfToken } from '@/lib/csrf';
 import { createChapter, jsonFetchHeaders } from '@/lib/utils';
-import type { Analysis, Book, Chapter, Character, CharacterChapterPivot, Scene } from '@/types/models';
+import type { Analysis, Book, Chapter, Character, CharacterChapterPivot, ProsePassRule, Scene } from '@/types/models';
 import { Head, router, usePage } from '@inertiajs/react';
 import { DOMSerializer } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
@@ -34,11 +34,13 @@ export default function ChapterShow({
     book,
     chapter,
     versionCount,
+    prosePassRules,
     chapterAnalyses,
 }: {
     book: Book;
     chapter: ChapterWithRelations;
     versionCount: number;
+    prosePassRules?: ProsePassRule[];
     chapterAnalyses?: Record<string, Analysis>;
 }) {
     const pendingVersion = chapter.pending_version ?? null;
@@ -455,6 +457,7 @@ export default function ChapterShow({
                             chapterTitle={displayTitle}
                             currentVersion={chapter.current_version}
                             pendingVersion={pendingVersion}
+                            prosePassRules={prosePassRules}
                         />
                     ) : (
                         <>

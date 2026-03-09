@@ -125,6 +125,11 @@ class Chapter extends Model
         return $this->scenes->pluck('content')->filter()->implode("\n");
     }
 
+    public function getContentWithSceneBreaks(): string
+    {
+        return $this->scenes->pluck('content')->filter()->implode('<hr>');
+    }
+
     public function recalculateWordCount(): void
     {
         $this->update([
@@ -143,5 +148,55 @@ class Chapter extends Model
             'word_count' => $wordCount,
         ]);
         $this->update(['word_count' => $wordCount]);
+    }
+
+    /**
+     * @param  array<int, array{title: string, sort_order: int}>|null  $sceneMap
+     */
+    public function replaceSceneContents(string $content, ?array $sceneMap): void
+    {
+        $segments = preg_split('/<hr\s*\/?>/', $content);
+        $segments = array_values(array_filter($segments, fn ($s) => trim($s) !== ''));
+
+        if (count($segments) <= 1) {
+            $this->replaceScenesWithContent($content);
+
+            return;
+        }
+
+        $existingScenes = $this->scenes()->orderBy('sort_order')->get();
+        $totalWordCount = 0;
+
+        foreach ($segments as $index => $segment) {
+            $segment = trim($segment);
+            $wordCount = str_word_count(strip_tags($segment));
+            $totalWordCount += $wordCount;
+
+            $title = $sceneMap[$index]['title'] ?? 'Scene '.($index + 1);
+
+            if ($index < $existingScenes->count()) {
+                $existingScenes[$index]->update([
+                    'title' => $title,
+                    'content' => $segment,
+                    'sort_order' => $index,
+                    'word_count' => $wordCount,
+                ]);
+            } else {
+                $this->scenes()->create([
+                    'title' => $title,
+                    'content' => $segment,
+                    'sort_order' => $index,
+                    'word_count' => $wordCount,
+                ]);
+            }
+        }
+
+        // Delete excess scenes
+        if (count($segments) < $existingScenes->count()) {
+            $excessIds = $existingScenes->slice(count($segments))->pluck('id');
+            $this->scenes()->whereIn('id', $excessIds)->forceDelete();
+        }
+
+        $this->update(['word_count' => $totalWordCount]);
     }
 }
