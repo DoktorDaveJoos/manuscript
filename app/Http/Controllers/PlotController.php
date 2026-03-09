@@ -16,8 +16,6 @@ class PlotController extends Controller
             'acts.chapters' => fn ($q) => $q->orderBy('reader_order')
                 ->select('id', 'book_id', 'act_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count', 'tension_score'),
             'plotPoints' => fn ($q) => $q->orderBy('sort_order'),
-            'plotPoints.outgoingConnections',
-            'plotPoints.incomingConnections',
             'plotPointConnections.source',
             'plotPointConnections.target',
         ]);

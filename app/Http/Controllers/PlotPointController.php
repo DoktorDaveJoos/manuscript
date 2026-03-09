@@ -48,7 +48,7 @@ class PlotPointController extends Controller
     {
         $validated = $request->validate([
             'items' => ['required', 'array'],
-            'items.*.id' => ['required', 'exists:plot_points,id'],
+            'items.*.id' => ['required', Rule::exists('plot_points', 'id')->where('book_id', $book->id)],
             'items.*.storyline_id' => ['nullable', 'exists:storylines,id'],
             'items.*.intended_chapter_id' => ['nullable', 'exists:chapters,id'],
             'items.*.sort_order' => ['required', 'integer', 'min:0'],

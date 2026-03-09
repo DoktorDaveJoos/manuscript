@@ -1,27 +1,15 @@
+import { CONNECTION_LABELS, TYPE_LABELS } from '@/lib/plot-constants';
 import type { Act, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
 import { X } from '@phosphor-icons/react';
 import { useState } from 'react';
 
-const TYPE_OPTIONS = [
-    { value: 'setup', label: 'Setup' },
-    { value: 'conflict', label: 'Conflict' },
-    { value: 'turning_point', label: 'Turning point' },
-    { value: 'resolution', label: 'Resolution' },
-    { value: 'worldbuilding', label: 'Worldbuilding' },
-] as const;
+const TYPE_OPTIONS = Object.entries(TYPE_LABELS).map(([value, label]) => ({ value, label }));
 
 const STATUS_OPTIONS = [
     { value: 'planned', label: 'Planned' },
     { value: 'fulfilled', label: 'Fulfilled' },
     { value: 'abandoned', label: 'Abandoned' },
 ] as const;
-
-const CONNECTION_LABELS: Record<string, { incoming: string; outgoing: string }> = {
-    causes: { incoming: 'Caused by:', outgoing: 'Leads to:' },
-    sets_up: { incoming: 'Set up by:', outgoing: 'Sets up:' },
-    resolves: { incoming: 'Resolved by:', outgoing: 'Resolves:' },
-    contradicts: { incoming: 'Contradicted by:', outgoing: 'Contradicts:' },
-};
 
 type Props = {
     plotPoint: PlotPoint;

@@ -1,35 +1,8 @@
 import { store, updateStatus } from '@/actions/App/Http/Controllers/PlotPointController';
+import { NEXT_STATUS, STATUS_COLORS, TYPE_LABELS_SHORT, TYPE_STYLES } from '@/lib/plot-constants';
 import type { PlotPoint } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { Plus } from '@phosphor-icons/react';
-
-const TYPE_STYLES: Record<string, string> = {
-    setup: 'bg-[#EDE8F5] text-[#6B5A8E]',
-    conflict: 'bg-[#F5E8E8] text-[#8E5A5A]',
-    turning_point: 'bg-[#F5EDE0] text-[#8A7A5A]',
-    resolution: 'bg-[#E8F0E8] text-[#5A8E5A]',
-    worldbuilding: 'bg-[#E8EDF5] text-[#5A6B8E]',
-};
-
-const TYPE_LABELS: Record<string, string> = {
-    setup: 'Setup',
-    conflict: 'Conflict',
-    turning_point: 'Turning pt.',
-    resolution: 'Resolution',
-    worldbuilding: 'World',
-};
-
-const STATUS_COLORS: Record<string, string> = {
-    planned: '#D4A843',
-    fulfilled: '#6DBB7B',
-    abandoned: '#B0A99F',
-};
-
-const NEXT_STATUS: Record<string, string> = {
-    planned: 'fulfilled',
-    fulfilled: 'abandoned',
-    abandoned: 'planned',
-};
 
 type Props = {
     plotPoints: PlotPoint[];
@@ -97,7 +70,7 @@ export default function ChapterBeats({ plotPoints, bookId, chapterId }: Props) {
                             <span
                                 className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-medium leading-none ${TYPE_STYLES[pp.type] ?? ''}`}
                             >
-                                {TYPE_LABELS[pp.type] ?? pp.type}
+                                {TYPE_LABELS_SHORT[pp.type] ?? pp.type}
                             </span>
                         </li>
                     ))}

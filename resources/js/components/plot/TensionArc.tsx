@@ -46,7 +46,7 @@ export default function TensionArc({ data, chapterCount, labelWidth, columnWidth
 
     const points = sortedData.map((d) => ({
         x: labelWidth + (d.reader_order + 0.5) * columnWidth,
-        y: H - (d.tension_score / 100) * (H - 12) - 6,
+        y: H - (d.tension_score / 10) * (H - 12) - 6,
         score: d.tension_score,
     }));
 

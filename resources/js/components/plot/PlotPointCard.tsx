@@ -1,26 +1,5 @@
+import { STATUS_COLORS, TYPE_LABELS, TYPE_STYLES } from '@/lib/plot-constants';
 import type { PlotPoint } from '@/types/models';
-
-const TYPE_STYLES: Record<string, string> = {
-    setup: 'bg-[#EDE8F5] text-[#6B5A8E]',
-    conflict: 'bg-[#F5E8E8] text-[#8E5A5A]',
-    turning_point: 'bg-[#F5EDE0] text-[#8A7A5A]',
-    resolution: 'bg-[#E8F0E8] text-[#5A8E5A]',
-    worldbuilding: 'bg-[#E8EDF5] text-[#5A6B8E]',
-};
-
-const TYPE_LABELS: Record<string, string> = {
-    setup: 'Setup',
-    conflict: 'Conflict',
-    turning_point: 'Turning point',
-    resolution: 'Resolution',
-    worldbuilding: 'Worldbuilding',
-};
-
-const STATUS_COLORS: Record<string, string> = {
-    planned: '#D4A843',
-    fulfilled: '#6DBB7B',
-    abandoned: '#B0A99F',
-};
 
 type Props = {
     plotPoint: PlotPoint;

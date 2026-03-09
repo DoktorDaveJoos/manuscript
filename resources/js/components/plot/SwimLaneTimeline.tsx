@@ -1,5 +1,5 @@
 import { buildTimelineGrid, cellKey } from '@/lib/plot-utils';
-import type { Act, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
+import type { Act, PlotPoint, Storyline } from '@/types/models';
 import PlotPointCard from './PlotPointCard';
 
 type ChapterColumn = {
@@ -15,7 +15,6 @@ type Props = {
     acts: (Act & { chapters: ChapterColumn[] })[];
     storylines: Storyline[];
     plotPoints: PlotPoint[];
-    connections: PlotPointConnection[];
     onSelectPlotPoint: (pp: PlotPoint) => void;
     onCreatePlotPoint: (storylineId: number, chapterId: number) => void;
 };
@@ -30,7 +29,6 @@ export default function SwimLaneTimeline({
     acts,
     storylines,
     plotPoints,
-    connections: _connections,
     onSelectPlotPoint,
     onCreatePlotPoint,
 }: Props) {

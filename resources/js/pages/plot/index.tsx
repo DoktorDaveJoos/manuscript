@@ -32,14 +32,15 @@ type Tab = 'timeline' | 'list';
 
 export default function Plot({ book, storylines, acts, plotPoints, connections }: PlotPageProps) {
     const [activeTab, setActiveTab] = useState<Tab>('timeline');
-    const [selectedPlotPoint, setSelectedPlotPoint] = useState<PlotPoint | null>(null);
+    const [selectedPlotPointId, setSelectedPlotPointId] = useState<number | null>(null);
+    const selectedPlotPoint = selectedPlotPointId ? plotPoints.find((pp) => pp.id === selectedPlotPointId) ?? null : null;
     const [storylineFilter, setStorylineFilter] = useState<number | null>(null);
     const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
     const ai = useAiFeatures();
 
     const allChapterCount = acts.reduce((sum, act) => sum + act.chapters.length, 0);
 
-    const initialTensionData = useMemo<TensionData[] | null>(() => {
+    const serverTensionData = useMemo<TensionData[] | null>(() => {
         const chapters = acts.flatMap((act) => act.chapters);
         const withScores = chapters.filter((ch) => ch.tension_score !== null);
         if (withScores.length === 0) return null;
@@ -51,16 +52,19 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
         }));
     }, [acts]);
 
-    const [tensionData, setTensionData] = useState<TensionData[] | null>(initialTensionData);
-    const [tensionArcVisible, setTensionArcVisible] = useState(initialTensionData !== null);
+    const [aiTensionData, setAiTensionData] = useState<TensionData[] | null>(null);
+    const tensionData = aiTensionData ?? serverTensionData;
+    const [tensionArcVisible, setTensionArcVisible] = useState(serverTensionData !== null);
 
-    const filteredPlotPoints = storylineFilter
-        ? plotPoints.filter((pp) => pp.storyline_id === storylineFilter)
-        : plotPoints;
+    const filteredPlotPoints = useMemo(
+        () => (storylineFilter ? plotPoints.filter((pp) => pp.storyline_id === storylineFilter) : plotPoints),
+        [plotPoints, storylineFilter],
+    );
 
-    const filteredStorylines = storylineFilter
-        ? storylines.filter((s) => s.id === storylineFilter)
-        : storylines;
+    const filteredStorylines = useMemo(
+        () => (storylineFilter ? storylines.filter((s) => s.id === storylineFilter) : storylines),
+        [storylines, storylineFilter],
+    );
 
     const handleCreatePlotPoint = (storylineId: number, chapterId: number) => {
         router.post(storePlotPoint.url({ book: book.id }), {
@@ -163,8 +167,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                                     acts={acts}
                                     storylines={filteredStorylines}
                                     plotPoints={filteredPlotPoints}
-                                    connections={connections}
-                                    onSelectPlotPoint={setSelectedPlotPoint}
+                                    onSelectPlotPoint={(pp) => setSelectedPlotPointId(pp.id)}
                                     onCreatePlotPoint={handleCreatePlotPoint}
                                 />
                             ) : (
@@ -172,7 +175,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                                     acts={acts}
                                     plotPoints={filteredPlotPoints}
                                     storylines={storylines}
-                                    onSelectPlotPoint={setSelectedPlotPoint}
+                                    onSelectPlotPoint={(pp) => setSelectedPlotPointId(pp.id)}
                                 />
                             )}
                         </div>
@@ -183,7 +186,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                                 storylines={storylines}
                                 acts={acts}
                                 connections={connections}
-                                onClose={() => setSelectedPlotPoint(null)}
+                                onClose={() => setSelectedPlotPointId(null)}
                                 onUpdate={(data) => handleUpdatePlotPoint(selectedPlotPoint.id, data)}
                             />
                         )}
@@ -195,7 +198,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                     isOpen={aiSidebarOpen}
                     onToggle={() => setAiSidebarOpen((prev) => !prev)}
                     onTensionArcGenerated={(data) => {
-                        setTensionData(data);
+                        setAiTensionData(data);
                         setTensionArcVisible(true);
                     }}
                 />
