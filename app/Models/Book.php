@@ -136,6 +136,14 @@ class Book extends Model
     }
 
     /**
+     * @return HasMany<PlotPointConnection, $this>
+     */
+    public function plotPointConnections(): HasMany
+    {
+        return $this->hasMany(PlotPointConnection::class);
+    }
+
+    /**
      * @return HasMany<Analysis, $this>
      */
     public function analyses(): HasMany

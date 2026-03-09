@@ -12,17 +12,22 @@ class PlotController extends Controller
     {
         $book->load([
             'storylines' => fn ($q) => $q->orderBy('sort_order'),
-            'storylines.chapters' => fn ($q) => $q
-                ->select('id', 'book_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count')
-                ->orderBy('reader_order'),
             'acts' => fn ($q) => $q->orderBy('sort_order'),
-            'plotPoints',
+            'acts.chapters' => fn ($q) => $q->orderBy('reader_order')
+                ->select('id', 'book_id', 'act_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count', 'tension_score'),
+            'plotPoints' => fn ($q) => $q->orderBy('sort_order'),
+            'plotPoints.outgoingConnections',
+            'plotPoints.incomingConnections',
+            'plotPointConnections.source',
+            'plotPointConnections.target',
         ]);
 
         return Inertia::render('plot/index', [
-            'book' => $book->only('id', 'title', 'storylines'),
+            'book' => $book,
+            'storylines' => $book->storylines,
             'acts' => $book->acts,
             'plotPoints' => $book->plotPoints,
+            'connections' => $book->plotPointConnections,
         ]);
     }
 }

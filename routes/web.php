@@ -12,6 +12,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LicenseController;
 use App\Http\Controllers\NormalizationController;
 use App\Http\Controllers\PlotController;
+use App\Http\Controllers\PlotPointConnectionController;
+use App\Http\Controllers\PlotPointController;
 use App\Http\Controllers\SceneController;
 use App\Http\Controllers\StorylineController;
 use App\Http\Controllers\TrashController;
@@ -33,6 +35,16 @@ Route::put('/books/{book}/writing-goal', [WritingGoalController::class, 'update'
 Route::patch('/books/{book}/milestone/dismiss', [DashboardController::class, 'dismissMilestone'])->name('books.milestone.dismiss');
 Route::get('/books/{book}/wiki', [WikiController::class, 'index'])->name('books.wiki');
 Route::get('/books/{book}/plot', [PlotController::class, 'index'])->name('books.plot');
+
+Route::post('/books/{book}/plot-points', [PlotPointController::class, 'store'])->name('plotPoints.store');
+Route::patch('/books/{book}/plot-points/{plotPoint}', [PlotPointController::class, 'update'])->name('plotPoints.update');
+Route::delete('/books/{book}/plot-points/{plotPoint}', [PlotPointController::class, 'destroy'])->name('plotPoints.destroy');
+Route::post('/books/{book}/plot-points/reorder', [PlotPointController::class, 'reorder'])->name('plotPoints.reorder');
+Route::patch('/books/{book}/plot-points/{plotPoint}/status', [PlotPointController::class, 'updateStatus'])->name('plotPoints.updateStatus');
+
+Route::post('/books/{book}/plot-connections', [PlotPointConnectionController::class, 'store'])->name('plotConnections.store');
+Route::delete('/books/{book}/plot-connections/{plotPointConnection}', [PlotPointConnectionController::class, 'destroy'])->name('plotConnections.destroy');
+
 Route::get('/books/{book}/editor', [ChapterController::class, 'editor'])->name('books.editor');
 Route::post('/books/{book}/chapters', [ChapterController::class, 'store'])->name('chapters.store');
 Route::get('/books/{book}/chapters/{chapter}', [ChapterController::class, 'show'])->name('chapters.show');
