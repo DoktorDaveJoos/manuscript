@@ -58,7 +58,7 @@ class TextBeautifier implements Agent, HasMiddleware, HasTools
     public function middleware(): array
     {
         return [
-            new InjectProviderCredentials($this->book),
+            new InjectProviderCredentials,
         ];
     }
 }

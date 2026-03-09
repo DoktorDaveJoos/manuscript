@@ -68,7 +68,7 @@ class ManuscriptAnalyzer implements Agent, HasMiddleware, HasStructuredOutput, H
     public function middleware(): array
     {
         return [
-            new InjectProviderCredentials($this->book),
+            new InjectProviderCredentials,
         ];
     }
 }

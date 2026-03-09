@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Ai\Agents\CharacterExtractor;
+use App\Models\AiSetting;
 use App\Models\Book;
 use App\Models\Chapter;
 use Illuminate\Bus\Queueable;
@@ -32,6 +33,14 @@ class ExtractCharactersJob implements ShouldQueue
         if (blank($content)) {
             return;
         }
+
+        $setting = AiSetting::activeProvider();
+
+        if (! $setting || ! $setting->isConfigured()) {
+            return;
+        }
+
+        $setting->injectConfig();
 
         $agent = new CharacterExtractor($this->book);
         $response = $agent->prompt("Extract all characters from the following chapter text:\n\n{$content}");

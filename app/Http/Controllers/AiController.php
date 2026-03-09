@@ -41,7 +41,7 @@ class AiController extends Controller
 
     public function nextChapter(Book $book): JsonResponse
     {
-        $this->ensureAiConfigured($book);
+        $this->ensureAiConfigured();
 
         $agent = new NextChapterAdvisor($book);
         $response = $agent->prompt(
@@ -98,7 +98,7 @@ class AiController extends Controller
         VersionSource $source,
         string $changeSummary,
     ): StreamableAgentResponse {
-        $this->ensureAiConfigured($book);
+        $this->ensureAiConfigured();
 
         $chapter->loadMissing(['currentVersion', 'scenes']);
         $currentVersion = $chapter->currentVersion;
@@ -124,14 +124,18 @@ class AiController extends Controller
         });
     }
 
-    private function ensureAiConfigured(Book $book): void
+    private function ensureAiConfigured(): void
     {
-        $setting = AiSetting::forProvider($book->ai_provider);
+        set_time_limit(300);
+
+        $setting = AiSetting::activeProvider();
 
         abort_if(
-            ! $setting->isConfigured(),
+            ! $setting || ! $setting->isConfigured(),
             422,
-            'No API key configured for '.$book->ai_provider->label().'.',
+            'No AI provider configured.',
         );
+
+        $setting->injectConfig();
     }
 }

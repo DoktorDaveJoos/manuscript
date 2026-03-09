@@ -59,6 +59,8 @@ class AiSetting extends Model
     {
         $key = $this->provider->value;
 
+        config(['ai.default' => $key]);
+
         if ($this->api_key) {
             config(["ai.providers.{$key}.key" => $this->api_key]);
         }
@@ -90,5 +92,26 @@ class AiSetting extends Model
     public static function enabledProviders(): \Illuminate\Database\Eloquent\Collection
     {
         return self::query()->where('enabled', true)->get();
+    }
+
+    /**
+     * Select a single provider, disabling all others.
+     */
+    public static function selectProvider(AiProvider $provider): self
+    {
+        self::query()->where('provider', '!=', $provider)->update(['enabled' => false]);
+
+        $setting = self::forProvider($provider);
+        $setting->update(['enabled' => true]);
+
+        return $setting;
+    }
+
+    /**
+     * Get the currently active (selected) provider, if any.
+     */
+    public static function activeProvider(): ?self
+    {
+        return self::query()->where('enabled', true)->first();
     }
 }

@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Ai\Agents\ManuscriptAnalyzer;
 use App\Enums\AnalysisType;
+use App\Models\AiSetting;
 use App\Models\Book;
 use App\Models\Chapter;
 use Illuminate\Bus\Queueable;
@@ -28,6 +29,14 @@ class RunAnalysisJob implements ShouldQueue
 
     public function handle(): void
     {
+        $setting = AiSetting::activeProvider();
+
+        if (! $setting || ! $setting->isConfigured()) {
+            return;
+        }
+
+        $setting->injectConfig();
+
         $agent = new ManuscriptAnalyzer($this->book, $this->analysisType);
 
         $chapterContext = $this->chapter

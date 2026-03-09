@@ -50,7 +50,7 @@ class CharacterExtractor implements Agent, HasMiddleware, HasStructuredOutput
     public function middleware(): array
     {
         return [
-            new InjectProviderCredentials($this->book),
+            new InjectProviderCredentials,
         ];
     }
 }

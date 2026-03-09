@@ -45,13 +45,15 @@ class PrepareBookForAi implements ShouldQueue
         WritingStyleService $styleService,
         StoryBibleService $storyBibleService,
     ): void {
-        $setting = AiSetting::forProvider($this->book->ai_provider);
+        $setting = AiSetting::activeProvider();
 
-        if (! $setting->isConfigured()) {
-            $this->markFailed('No API key configured for '.$this->book->ai_provider->label());
+        if (! $setting || ! $setting->isConfigured()) {
+            $this->markFailed('No AI provider configured.');
 
             return;
         }
+
+        $setting->injectConfig();
 
         $chapters = $this->book->chapters()
             ->with('currentVersion')
@@ -91,7 +93,7 @@ class PrepareBookForAi implements ShouldQueue
         $this->completePhase('chunking');
 
         // Phase 2: Generate embeddings
-        if ($this->book->ai_provider->supportsEmbeddings() && $allChunks->isNotEmpty()) {
+        if ($setting->provider->supportsEmbeddings() && $allChunks->isNotEmpty()) {
             $this->startPhase('embedding', 1);
 
             try {
