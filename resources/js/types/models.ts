@@ -1,6 +1,7 @@
 export type StorylineType = 'main' | 'backstory' | 'parallel';
 export type ChapterStatus = 'draft' | 'revised' | 'final';
 export type VersionSource = 'original' | 'ai_revision' | 'manual_edit' | 'normalization' | 'beautify' | 'snapshot';
+export type VersionStatus = 'accepted' | 'pending';
 export type PlotPointType = 'setup' | 'conflict' | 'turning_point' | 'resolution' | 'worldbuilding';
 export type PlotPointStatus = 'planned' | 'fulfilled' | 'abandoned';
 export type CharacterRole = 'protagonist' | 'supporting' | 'mentioned';
@@ -122,6 +123,7 @@ export type Chapter = {
     scenes?: Scene[];
     versions?: ChapterVersion[];
     current_version?: ChapterVersion;
+    pending_version?: ChapterVersion;
     characters?: (Character & { pivot: CharacterChapterPivot })[];
 };
 
@@ -142,6 +144,7 @@ export type ChapterVersion = {
     source: VersionSource;
     change_summary: string | null;
     is_current: boolean;
+    status: VersionStatus;
     created_at: string;
     updated_at: string;
     chapter?: Chapter;
