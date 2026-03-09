@@ -25,6 +25,10 @@ class HealthSnapshotFactory extends Factory
             'pacing_score' => fake()->numberBetween(30, 100),
             'tension_score' => fake()->numberBetween(30, 100),
             'weave_score' => fake()->numberBetween(30, 100),
+            'scene_purpose_score' => fake()->numberBetween(30, 100),
+            'tension_dynamics_score' => fake()->numberBetween(30, 100),
+            'emotional_arc_score' => fake()->numberBetween(30, 100),
+            'craft_score' => fake()->numberBetween(30, 100),
             'recorded_at' => fake()->date(),
         ];
     }

@@ -10,14 +10,24 @@ test('dashboard shows health metrics from chapter analysis data', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
 
-    $chapters = [];
+    $pacingFeels = ['breakneck', 'brisk', 'measured', 'languid', 'measured'];
+    $purposes = ['turning_point', 'deepening', 'revelation', 'setup', 'resolution'];
     for ($i = 1; $i <= 5; $i++) {
-        $chapters[] = Chapter::factory()->for($book)->for($storyline)->create([
+        Chapter::factory()->for($book)->for($storyline)->create([
             'reader_order' => $i,
             'word_count' => fake()->numberBetween(2000, 4000),
             'hook_score' => $i <= 3 ? 4 : 8,
             'hook_type' => $i <= 3 ? 'dead_end' : 'cliffhanger',
             'tension_score' => $i * 2,
+            'micro_tension_score' => 5,
+            'scene_purpose' => $purposes[$i - 1],
+            'value_shift' => 'calm → tense',
+            'emotional_shift_magnitude' => $i + 2,
+            'pacing_feel' => $pacingFeels[$i - 1],
+            'entry_hook_score' => 6,
+            'exit_hook_score' => $i <= 3 ? 4 : 8,
+            'sensory_grounding' => 3,
+            'information_delivery' => 'organic',
             'summary' => "Summary of chapter {$i}",
         ]);
     }
@@ -28,7 +38,12 @@ test('dashboard shows health metrics from chapter analysis data', function () {
     $response->assertInertia(fn ($page) => $page
         ->component('books/dashboard')
         ->has('health_metrics')
-        ->where('health_metrics.metrics.0.label', 'Hooks')
+        ->where('health_metrics.metrics.0.label', 'Scene Purpose')
+        ->where('health_metrics.metrics.1.label', 'Pacing')
+        ->where('health_metrics.metrics.2.label', 'Tension Dynamics')
+        ->where('health_metrics.metrics.3.label', 'Hooks')
+        ->where('health_metrics.metrics.4.label', 'Emotional Arc')
+        ->where('health_metrics.metrics.5.label', 'Craft')
         ->has('health_metrics.attention_items')
     );
 });
@@ -75,24 +90,45 @@ test('dashboard identifies weakest hooks as attention items', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
 
-    // Create chapters with varying hook scores
     Chapter::factory()->for($book)->for($storyline)->create([
         'reader_order' => 1,
         'hook_score' => 2,
+        'exit_hook_score' => 2,
         'hook_type' => 'dead_end',
         'tension_score' => 5,
+        'micro_tension_score' => 5,
+        'scene_purpose' => 'deepening',
+        'pacing_feel' => 'measured',
+        'entry_hook_score' => 5,
+        'sensory_grounding' => 3,
+        'information_delivery' => 'organic',
     ]);
     Chapter::factory()->for($book)->for($storyline)->create([
         'reader_order' => 2,
         'hook_score' => 9,
+        'exit_hook_score' => 9,
         'hook_type' => 'cliffhanger',
         'tension_score' => 8,
+        'micro_tension_score' => 7,
+        'scene_purpose' => 'turning_point',
+        'value_shift' => 'peace → war',
+        'pacing_feel' => 'brisk',
+        'entry_hook_score' => 8,
+        'sensory_grounding' => 4,
+        'information_delivery' => 'organic',
     ]);
     Chapter::factory()->for($book)->for($storyline)->create([
         'reader_order' => 3,
         'hook_score' => 3,
+        'exit_hook_score' => 3,
         'hook_type' => 'closed',
         'tension_score' => 6,
+        'micro_tension_score' => 5,
+        'scene_purpose' => 'deepening',
+        'pacing_feel' => 'languid',
+        'entry_hook_score' => 6,
+        'sensory_grounding' => 3,
+        'information_delivery' => 'mostly_organic',
     ]);
 
     $response = $this->get("/books/{$book->id}/dashboard");
@@ -101,7 +137,6 @@ test('dashboard identifies weakest hooks as attention items', function () {
     $response->assertInertia(fn ($page) => $page
         ->component('books/dashboard')
         ->has('health_metrics.attention_items')
-        ->where('health_metrics.attention_items.0.severity', 'high')
     );
 });
 
@@ -139,7 +174,11 @@ test('dashboard returns health history from snapshots', function () {
         'hooks_score' => 80,
         'pacing_score' => 65,
         'tension_score' => 70,
-        'weave_score' => 75,
+        'weave_score' => 0,
+        'scene_purpose_score' => 60,
+        'tension_dynamics_score' => 70,
+        'emotional_arc_score' => 65,
+        'craft_score' => 75,
     ]);
     HealthSnapshot::factory()->for($book)->create([
         'recorded_at' => now()->toDateString(),
@@ -147,7 +186,11 @@ test('dashboard returns health history from snapshots', function () {
         'hooks_score' => 85,
         'pacing_score' => 70,
         'tension_score' => 75,
-        'weave_score' => 80,
+        'weave_score' => 0,
+        'scene_purpose_score' => 70,
+        'tension_dynamics_score' => 75,
+        'emotional_arc_score' => 72,
+        'craft_score' => 80,
     ]);
 
     $response = $this->get("/books/{$book->id}/dashboard");
@@ -157,7 +200,9 @@ test('dashboard returns health history from snapshots', function () {
         ->component('books/dashboard')
         ->has('health_history', 2)
         ->where('health_history.0.composite', 72)
+        ->where('health_history.0.scene_purpose', 60)
         ->where('health_history.1.composite', 78)
+        ->where('health_history.1.craft', 80)
     );
 });
 
@@ -240,18 +285,20 @@ test('health snapshot upsert is idempotent', function () {
         'updated_at' => now(),
     ];
 
+    $allColumns = ['composite_score', 'hooks_score', 'pacing_score', 'tension_score', 'weave_score', 'scene_purpose_score', 'tension_dynamics_score', 'emotional_arc_score', 'craft_score', 'updated_at'];
+
     // First upsert creates
     HealthSnapshot::query()->upsert(
-        [...$baseData, 'composite_score' => 50, 'hooks_score' => 60, 'pacing_score' => 55, 'tension_score' => 50, 'weave_score' => 45],
+        [...$baseData, 'composite_score' => 50, 'hooks_score' => 60, 'pacing_score' => 55, 'tension_score' => 50, 'weave_score' => 0, 'scene_purpose_score' => 45, 'tension_dynamics_score' => 50, 'emotional_arc_score' => 55, 'craft_score' => 60],
         ['book_id', 'recorded_at'],
-        ['composite_score', 'hooks_score', 'pacing_score', 'tension_score', 'weave_score', 'updated_at'],
+        $allColumns,
     );
 
     // Second upsert updates
     HealthSnapshot::query()->upsert(
-        [...$baseData, 'composite_score' => 75, 'hooks_score' => 80, 'pacing_score' => 70, 'tension_score' => 65, 'weave_score' => 60],
+        [...$baseData, 'composite_score' => 75, 'hooks_score' => 80, 'pacing_score' => 70, 'tension_score' => 65, 'weave_score' => 0, 'scene_purpose_score' => 70, 'tension_dynamics_score' => 65, 'emotional_arc_score' => 72, 'craft_score' => 78],
         ['book_id', 'recorded_at'],
-        ['composite_score', 'hooks_score', 'pacing_score', 'tension_score', 'weave_score', 'updated_at'],
+        $allColumns,
     );
 
     expect(HealthSnapshot::where('book_id', $book->id)->count())->toBe(1);

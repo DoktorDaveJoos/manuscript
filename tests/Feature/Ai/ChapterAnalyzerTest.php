@@ -15,9 +15,18 @@ test('chapter analyzer returns structured chapter analysis', function () {
         ->and($response['key_events'])->toBeArray()
         ->and($response['characters_present'])->toBeArray()
         ->and($response['tension_score'])->toBeInt()
+        ->and($response['micro_tension_score'])->toBeInt()
+        ->and($response['scene_purpose'])->toBeString()
+        ->and($response['emotional_state_open'])->toBeString()
+        ->and($response['emotional_state_close'])->toBeString()
+        ->and($response['emotional_shift_magnitude'])->toBeInt()
         ->and($response['hook_score'])->toBeInt()
         ->and($response['hook_type'])->toBeString()
         ->and($response['hook_reasoning'])->toBeString()
+        ->and($response['entry_hook_score'])->toBeInt()
+        ->and($response['pacing_feel'])->toBeString()
+        ->and($response['sensory_grounding'])->toBeInt()
+        ->and($response['information_delivery'])->toBeString()
         ->and($response['plot_points'])->toBeArray();
 
     ChapterAnalyzer::assertPrompted(fn ($prompt) => true);

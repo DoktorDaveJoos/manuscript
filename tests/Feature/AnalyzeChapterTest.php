@@ -84,9 +84,19 @@ test('AnalyzeChapterJob runs chapter analysis and updates chapter', function () 
             'key_events' => ['Event 1'],
             'characters_present' => ['John'],
             'tension_score' => 7,
+            'micro_tension_score' => 6,
+            'scene_purpose' => 'turning_point',
+            'value_shift' => 'safety → danger',
+            'emotional_state_open' => 'cautious',
+            'emotional_state_close' => 'terrified',
+            'emotional_shift_magnitude' => 8,
             'hook_score' => 8,
             'hook_type' => 'cliffhanger',
             'hook_reasoning' => 'Strong ending.',
+            'entry_hook_score' => 7,
+            'pacing_feel' => 'brisk',
+            'sensory_grounding' => 4,
+            'information_delivery' => 'organic',
             'plot_points' => [
                 ['title' => 'Plot point 1', 'description' => 'Something happened', 'type' => 'conflict'],
             ],
@@ -119,13 +129,21 @@ test('AnalyzeChapterJob runs chapter analysis and updates chapter', function () 
         ->and($chapter->summary)->toBe('A test chapter summary.')
         ->and($chapter->tension_score)->toBe(7)
         ->and($chapter->hook_score)->toBe(8)
-        ->and($chapter->hook_type)->toBe('cliffhanger');
+        ->and($chapter->hook_type)->toBe('cliffhanger')
+        ->and($chapter->scene_purpose)->toBe('turning_point')
+        ->and($chapter->value_shift)->toBe('safety → danger')
+        ->and($chapter->micro_tension_score)->toBe(6)
+        ->and($chapter->pacing_feel)->toBe('brisk')
+        ->and($chapter->entry_hook_score)->toBe(7)
+        ->and($chapter->exit_hook_score)->toBe(8)
+        ->and($chapter->sensory_grounding)->toBe(4)
+        ->and($chapter->information_delivery)->toBe('organic');
 
     // Character was created
     expect($book->characters()->where('name', 'John')->exists())->toBeTrue();
 
-    // Analyses were stored
-    expect($book->analyses()->where('chapter_id', $chapter->id)->count())->toBe(4);
+    // Analyses were stored (2 ManuscriptAnalyzer types: CharacterConsistency + PlotDeviation)
+    expect($book->analyses()->where('chapter_id', $chapter->id)->count())->toBe(2);
 });
 
 test('AnalyzeChapterJob marks chapter as failed when no AI provider configured', function () {

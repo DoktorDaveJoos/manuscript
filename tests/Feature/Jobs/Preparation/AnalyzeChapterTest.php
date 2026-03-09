@@ -45,9 +45,19 @@ test('analyze chapter performs analysis and entity extraction', function () {
             'key_events' => ['Entered castle'],
             'characters_present' => ['John'],
             'tension_score' => 7,
+            'micro_tension_score' => 6,
+            'scene_purpose' => 'turning_point',
+            'value_shift' => 'safety → danger',
+            'emotional_state_open' => 'cautious',
+            'emotional_state_close' => 'terrified',
+            'emotional_shift_magnitude' => 8,
             'hook_score' => 8,
             'hook_type' => 'cliffhanger',
             'hook_reasoning' => 'Strong ending.',
+            'entry_hook_score' => 7,
+            'pacing_feel' => 'brisk',
+            'sensory_grounding' => 4,
+            'information_delivery' => 'organic',
             'plot_points' => [
                 ['title' => 'Castle entry', 'description' => 'Hero enters the castle', 'type' => 'conflict'],
             ],
@@ -74,7 +84,18 @@ test('analyze chapter performs analysis and entity extraction', function () {
     expect($chapters[0]->summary)->toBe('The hero enters the castle.')
         ->and($chapters[0]->tension_score)->toBe(7)
         ->and($chapters[0]->hook_score)->toBe(8)
-        ->and($chapters[0]->hook_type)->toBe('cliffhanger');
+        ->and($chapters[0]->hook_type)->toBe('cliffhanger')
+        ->and($chapters[0]->scene_purpose)->toBe('turning_point')
+        ->and($chapters[0]->value_shift)->toBe('safety → danger')
+        ->and($chapters[0]->emotional_state_open)->toBe('cautious')
+        ->and($chapters[0]->emotional_state_close)->toBe('terrified')
+        ->and($chapters[0]->emotional_shift_magnitude)->toBe(8)
+        ->and($chapters[0]->micro_tension_score)->toBe(6)
+        ->and($chapters[0]->pacing_feel)->toBe('brisk')
+        ->and($chapters[0]->entry_hook_score)->toBe(7)
+        ->and($chapters[0]->exit_hook_score)->toBe(8)
+        ->and($chapters[0]->sensory_grounding)->toBe(4)
+        ->and($chapters[0]->information_delivery)->toBe('organic');
 
     expect($book->characters()->where('name', 'John')->exists())->toBeTrue();
     expect($book->plotPoints()->where('is_ai_derived', true)->count())->toBe(1);
@@ -99,9 +120,19 @@ test('analyze chapter builds rolling context from preceding chapters', function 
             'key_events' => [],
             'characters_present' => [],
             'tension_score' => 5,
+            'micro_tension_score' => 4,
+            'scene_purpose' => 'deepening',
+            'value_shift' => null,
+            'emotional_state_open' => 'calm',
+            'emotional_state_close' => 'hopeful',
+            'emotional_shift_magnitude' => 3,
             'hook_score' => 5,
             'hook_type' => 'closed',
             'hook_reasoning' => 'OK.',
+            'entry_hook_score' => 5,
+            'pacing_feel' => 'measured',
+            'sensory_grounding' => 2,
+            'information_delivery' => 'mixed',
             'plot_points' => [],
         ];
     });

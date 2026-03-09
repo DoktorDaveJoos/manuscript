@@ -24,6 +24,10 @@ class HealthSnapshot extends Model
             'pacing_score' => 'integer',
             'tension_score' => 'integer',
             'weave_score' => 'integer',
+            'scene_purpose_score' => 'integer',
+            'tension_dynamics_score' => 'integer',
+            'emotional_arc_score' => 'integer',
+            'craft_score' => 'integer',
             'recorded_at' => 'immutable_date',
         ];
     }

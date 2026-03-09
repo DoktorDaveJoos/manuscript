@@ -5,6 +5,7 @@ namespace App\Jobs\Preparation;
 use App\Models\AiPreparation;
 use App\Models\Book;
 use App\Models\HealthSnapshot;
+use App\Services\HealthScoreCalculator;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -32,7 +33,15 @@ class CompletePreparation implements ShouldQueue
             return;
         }
 
-        $chapters = $this->book->chapters()->get();
+        $chapters = $this->book->chapters()
+            ->select([
+                'id', 'book_id', 'reader_order', 'hook_score', 'hook_type',
+                'scene_purpose', 'value_shift', 'pacing_feel', 'tension_score',
+                'micro_tension_score', 'exit_hook_score', 'entry_hook_score',
+                'emotional_shift_magnitude', 'sensory_grounding', 'information_delivery',
+            ])
+            ->get();
+
         $this->upsertHealthSnapshot($chapters);
 
         $this->preparation->markPhasesCompleted(['health_analysis']);
@@ -55,49 +64,26 @@ class CompletePreparation implements ShouldQueue
             return;
         }
 
-        $avgHook = $analyzed->avg('hook_score');
-        $hookScore = min(100, max(0, (int) round($avgHook * 10)));
-
-        $wordCounts = $chapters->pluck('word_count')->filter(fn ($w) => $w > 0);
-        if ($wordCounts->count() > 1) {
-            $mean = $wordCounts->avg();
-            $variance = $wordCounts->map(fn ($w) => pow($w - $mean, 2))->avg();
-            $cv = $mean > 0 ? sqrt($variance) / $mean : 0;
-            $pacingScore = min(100, max(0, (int) round(100 - abs($cv - 0.25) * 200)));
-        } else {
-            $pacingScore = 50;
-        }
-
-        $tensionChapters = $analyzed->filter(fn ($ch) => $ch->tension_score !== null);
-        $tensionScore = $tensionChapters->count() > 2
-            ? min(100, max(0, (int) round($tensionChapters->avg('tension_score') * 10)))
-            : 50;
-
-        $storylineCounts = $chapters->groupBy('storyline_id')->map->count();
-        if ($storylineCounts->count() > 1) {
-            $weaveScore = min(100, max(0, (int) round(($storylineCounts->min() / $storylineCounts->max()) * 100)));
-        } else {
-            $weaveScore = 75;
-        }
-
-        $compositeScore = (int) round(
-            $hookScore * 0.35 + $pacingScore * 0.25 + $tensionScore * 0.25 + $weaveScore * 0.15
-        );
+        $scores = (new HealthScoreCalculator($analyzed))->calculate();
 
         HealthSnapshot::query()->upsert(
             [
                 'book_id' => $this->book->id,
                 'recorded_at' => now()->toDateString(),
-                'composite_score' => $compositeScore,
-                'hooks_score' => $hookScore,
-                'pacing_score' => $pacingScore,
-                'tension_score' => $tensionScore,
-                'weave_score' => $weaveScore,
+                'composite_score' => $scores['composite'],
+                'hooks_score' => $scores['hooks'],
+                'pacing_score' => $scores['pacing'],
+                'tension_score' => $scores['tension_dynamics'],
+                'weave_score' => 0,
+                'scene_purpose_score' => $scores['scene_purpose'],
+                'tension_dynamics_score' => $scores['tension_dynamics'],
+                'emotional_arc_score' => $scores['emotional_arc'],
+                'craft_score' => $scores['craft'],
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             ['book_id', 'recorded_at'],
-            ['composite_score', 'hooks_score', 'pacing_score', 'tension_score', 'weave_score', 'updated_at'],
+            ['composite_score', 'hooks_score', 'pacing_score', 'tension_score', 'weave_score', 'scene_purpose_score', 'tension_dynamics_score', 'emotional_arc_score', 'craft_score', 'updated_at'],
         );
     }
 }

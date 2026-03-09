@@ -6,6 +6,7 @@ use App\Ai\Agents\ChapterAnalyzer;
 use App\Ai\Agents\EntityExtractor;
 use App\Ai\Agents\ManuscriptAnalyzer;
 use App\Enums\AnalysisType;
+use App\Jobs\Concerns\PersistsChapterAnalysis;
 use App\Jobs\Concerns\PersistsExtractedEntities;
 use App\Models\AiSetting;
 use App\Models\Book;
@@ -19,7 +20,7 @@ use Throwable;
 
 class AnalyzeChapterJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, PersistsExtractedEntities, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, PersistsChapterAnalysis, PersistsExtractedEntities, Queueable, SerializesModels;
 
     public int $tries = 1;
 
@@ -88,29 +89,7 @@ class AnalyzeChapterJob implements ShouldQueue
         $agent = new ChapterAnalyzer($this->book, $rollingContext);
         $response = $agent->prompt("Analyze this chapter:\n\nTitle: {$this->chapter->title}\n\n{$capped}");
 
-        $this->chapter->update([
-            'summary' => $response['summary'] ?? null,
-            'tension_score' => $response['tension_score'] ?? null,
-            'hook_score' => $response['hook_score'] ?? null,
-            'hook_type' => $response['hook_type'] ?? null,
-        ]);
-
-        $plotPoints = $response['plot_points'] ?? [];
-        foreach ($plotPoints as $point) {
-            if (! is_array($point) || empty($point['description'])) {
-                continue;
-            }
-
-            $this->book->plotPoints()->create([
-                'title' => $point['title'] ?? $point['description'],
-                'description' => $point['description'],
-                'type' => $point['type'] ?? 'worldbuilding',
-                'status' => 'fulfilled',
-                'actual_chapter_id' => $this->chapter->id,
-                'sort_order' => $this->chapter->reader_order,
-                'is_ai_derived' => true,
-            ]);
-        }
+        $this->persistChapterAnalysis($this->book, $this->chapter, $response->toArray());
     }
 
     private function runEntityExtraction(): void
@@ -130,8 +109,6 @@ class AnalyzeChapterJob implements ShouldQueue
     private function runManuscriptAnalyses(): void
     {
         $analysisTypes = [
-            AnalysisType::Pacing,
-            AnalysisType::Density,
             AnalysisType::CharacterConsistency,
             AnalysisType::PlotDeviation,
         ];

@@ -29,6 +29,11 @@ class Chapter extends Model
             'word_count' => 'integer',
             'tension_score' => 'integer',
             'hook_score' => 'integer',
+            'emotional_shift_magnitude' => 'integer',
+            'micro_tension_score' => 'integer',
+            'entry_hook_score' => 'integer',
+            'exit_hook_score' => 'integer',
+            'sensory_grounding' => 'integer',
             'analyzed_at' => 'datetime',
         ];
     }

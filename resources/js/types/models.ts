@@ -100,6 +100,10 @@ export type Character = {
     chapters?: (Chapter & { pivot: CharacterChapterPivot })[];
 };
 
+export type ScenePurpose = 'turning_point' | 'revelation' | 'deepening' | 'setup' | 'resolution' | 'transition';
+export type PacingFeel = 'breakneck' | 'brisk' | 'measured' | 'languid' | 'static';
+export type InformationDelivery = 'organic' | 'mostly_organic' | 'mixed' | 'exposition_heavy' | 'info_dump';
+
 export type Chapter = {
     id: number;
     book_id: number;
@@ -116,6 +120,17 @@ export type Chapter = {
     tension_score: number | null;
     hook_score: number | null;
     hook_type: HookType | null;
+    scene_purpose: ScenePurpose | null;
+    value_shift: string | null;
+    emotional_state_open: string | null;
+    emotional_state_close: string | null;
+    emotional_shift_magnitude: number | null;
+    micro_tension_score: number | null;
+    pacing_feel: PacingFeel | null;
+    entry_hook_score: number | null;
+    exit_hook_score: number | null;
+    sensory_grounding: number | null;
+    information_delivery: InformationDelivery | null;
     analysis_status: 'pending' | 'running' | 'completed' | 'failed' | null;
     analysis_error: string | null;
     analyzed_at: string | null;
@@ -248,7 +263,11 @@ export type HealthSnapshot = {
     hooks: number;
     pacing: number;
     tension: number;
-    weave: number;
+    weave: number | null;
+    scene_purpose: number | null;
+    tension_dynamics: number | null;
+    emotional_arc: number | null;
+    craft: number | null;
 };
 
 export type AiUsage = {

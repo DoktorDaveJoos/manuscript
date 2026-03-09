@@ -6,6 +6,7 @@ use App\Enums\AnalysisType;
 use App\Enums\ChapterStatus;
 use App\Models\Book;
 use App\Models\WritingSession;
+use App\Services\HealthScoreCalculator;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,7 +18,7 @@ class DashboardController extends Controller
         $book->load([
             'storylines' => fn ($q) => $q->orderBy('sort_order'),
             'storylines.chapters' => fn ($q) => $q
-                ->select('id', 'book_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count', 'summary', 'tension_score', 'hook_score', 'hook_type')
+                ->select('id', 'book_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count', 'summary', 'tension_score', 'hook_score', 'hook_type', 'scene_purpose', 'value_shift', 'emotional_shift_magnitude', 'micro_tension_score', 'pacing_feel', 'entry_hook_score', 'exit_hook_score', 'sensory_grounding', 'information_delivery')
                 ->orderBy('reader_order'),
         ]);
 
@@ -92,85 +93,83 @@ class DashboardController extends Controller
      */
     private function buildHealthMetrics(Book $book, $chapters): ?array
     {
-        $analyzedChapters = $chapters->filter(fn ($ch) => $ch->hook_score !== null);
+        $analyzed = $chapters->filter(fn ($ch) => $ch->hook_score !== null);
 
-        if ($analyzedChapters->isEmpty()) {
+        if ($analyzed->isEmpty()) {
             return $this->buildLegacyHealthMetrics($book);
         }
 
-        $metrics = [];
+        $scores = (new HealthScoreCalculator($analyzed))->calculate();
+
+        $metrics = [
+            ['label' => 'Scene Purpose', 'score' => $scores['scene_purpose']],
+            ['label' => 'Pacing', 'score' => $scores['pacing']],
+            ['label' => 'Tension Dynamics', 'score' => $scores['tension_dynamics']],
+            ['label' => 'Hooks', 'score' => $scores['hooks']],
+            ['label' => 'Emotional Arc', 'score' => $scores['emotional_arc']],
+            ['label' => 'Craft', 'score' => $scores['craft']],
+        ];
+
         $attentionItems = [];
 
-        // Hooks (35% weight): average hook_score × 10
-        $avgHook = $analyzedChapters->avg('hook_score');
-        $hookScore = min(100, max(0, (int) round($avgHook * 10)));
-        $metrics[] = ['label' => 'Hooks', 'score' => $hookScore];
-
-        // Pacing (25% weight): coefficient of variation of word_count
-        $wordCounts = $chapters->pluck('word_count')->filter(fn ($w) => $w > 0);
-        if ($wordCounts->count() > 1) {
-            $mean = $wordCounts->avg();
-            $variance = $wordCounts->map(fn ($w) => pow($w - $mean, 2))->avg();
-            $cv = $mean > 0 ? sqrt($variance) / $mean : 0;
-            // CV of 0.15-0.35 is ideal (some variation). Map to 0-100.
-            $pacingScore = min(100, max(0, (int) round(100 - abs($cv - 0.25) * 200)));
-        } else {
-            $pacingScore = 50;
-        }
-        $metrics[] = ['label' => 'Pacing', 'score' => $pacingScore];
-
-        // Tension (25% weight): tension arc progression
-        $tensionChapters = $analyzedChapters->filter(fn ($ch) => $ch->tension_score !== null);
-        if ($tensionChapters->count() > 2) {
-            $avgTension = $tensionChapters->avg('tension_score');
-            $tensionScore = min(100, max(0, (int) round($avgTension * 10)));
-        } else {
-            $tensionScore = 50;
-        }
-        $metrics[] = ['label' => 'Tension', 'score' => $tensionScore];
-
-        // Weave (15% weight): storyline distribution balance
-        $storylineCounts = $chapters->groupBy('storyline_id')->map->count();
-        if ($storylineCounts->count() > 1) {
-            $maxCount = $storylineCounts->max();
-            $minCount = $storylineCounts->min();
-            $weaveScore = $maxCount > 0
-                ? min(100, max(0, (int) round(($minCount / $maxCount) * 100)))
-                : 50;
-        } else {
-            $weaveScore = 75;
-        }
-        $metrics[] = ['label' => 'Weave', 'score' => $weaveScore];
-
-        // Composite score (weighted)
-        $compositeScore = (int) round(
-            $hookScore * 0.35 + $pacingScore * 0.25 + $tensionScore * 0.25 + $weaveScore * 0.15
-        );
-
-        // Attention items: weakest 3 chapter hooks
-        $weakestHooks = $analyzedChapters
-            ->sortBy('hook_score')
-            ->take(3);
-
-        foreach ($weakestHooks as $chapter) {
-            if ($chapter->hook_score <= 5) {
-                $severity = $chapter->hook_score <= 3 ? 'high' : 'medium';
+        foreach ($analyzed as $chapter) {
+            if ($chapter->scene_purpose === 'transition' && $chapter->value_shift === null) {
                 $attentionItems[] = [
-                    'type' => 'Hooks',
+                    'type' => 'Scene Purpose',
                     'title' => "Ch{$chapter->reader_order}: {$chapter->title}",
-                    'description' => "Hook score {$chapter->hook_score}/10 ({$chapter->hook_type})",
-                    'severity' => $severity,
+                    'description' => 'Transition chapter with no value shift — consider adding purpose',
+                    'severity' => 'medium',
+                ];
+            }
+
+            if (in_array($chapter->information_delivery, ['info_dump', 'exposition_heavy'])) {
+                $attentionItems[] = [
+                    'type' => 'Craft',
+                    'title' => "Ch{$chapter->reader_order}: {$chapter->title}",
+                    'description' => "Information delivery: {$chapter->information_delivery}",
+                    'severity' => $chapter->information_delivery === 'info_dump' ? 'high' : 'medium',
+                ];
+            }
+
+            if ($chapter->tension_score !== null && $chapter->tension_score <= 3
+                && $chapter->micro_tension_score !== null && $chapter->micro_tension_score <= 3) {
+                $attentionItems[] = [
+                    'type' => 'Tension Dynamics',
+                    'title' => "Ch{$chapter->reader_order}: {$chapter->title}",
+                    'description' => 'Low conflict and low micro-tension — chapter may feel flat',
+                    'severity' => 'high',
+                ];
+            }
+
+            if ($chapter->sensory_grounding !== null && $chapter->sensory_grounding <= 1) {
+                $attentionItems[] = [
+                    'type' => 'Craft',
+                    'title' => "Ch{$chapter->reader_order}: {$chapter->title}",
+                    'description' => "Only {$chapter->sensory_grounding} sense engaged — consider grounding the reader",
+                    'severity' => 'medium',
                 ];
             }
         }
 
-        $lastAnalyzed = $analyzedChapters->max('updated_at');
+        $weakestHooks = $analyzed->sortBy('hook_score')->take(3);
+        foreach ($weakestHooks as $chapter) {
+            if ($chapter->hook_score <= 5) {
+                $attentionItems[] = [
+                    'type' => 'Hooks',
+                    'title' => "Ch{$chapter->reader_order}: {$chapter->title}",
+                    'description' => "Hook score {$chapter->hook_score}/10 ({$chapter->hook_type})",
+                    'severity' => $chapter->hook_score <= 3 ? 'high' : 'medium',
+                ];
+            }
+        }
+
+        $lastAnalyzed = $analyzed->max('updated_at');
 
         return [
-            'composite_score' => $compositeScore,
+            'composite_score' => $scores['composite'],
             'metrics' => $metrics,
             'last_analyzed_at' => $lastAnalyzed?->toISOString() ?? now()->toISOString(),
-            'attention_items' => array_slice($attentionItems, 0, 3),
+            'attention_items' => array_slice($attentionItems, 0, 5),
         ];
     }
 
@@ -318,7 +317,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return list<array{date: string, composite: int, hooks: int, pacing: int, tension: int, weave: int}>
+     * @return list<array{date: string, composite: int, hooks: int, pacing: int, tension: int, weave: int|null, scene_purpose: int|null, tension_dynamics: int|null, emotional_arc: int|null, craft: int|null}>
      */
     private function buildHealthHistory(Book $book): array
     {
@@ -333,6 +332,10 @@ class DashboardController extends Controller
                 'pacing' => $snapshot->pacing_score,
                 'tension' => $snapshot->tension_score,
                 'weave' => $snapshot->weave_score,
+                'scene_purpose' => $snapshot->scene_purpose_score,
+                'tension_dynamics' => $snapshot->tension_dynamics_score,
+                'emotional_arc' => $snapshot->emotional_arc_score,
+                'craft' => $snapshot->craft_score,
             ])
             ->values()
             ->all();

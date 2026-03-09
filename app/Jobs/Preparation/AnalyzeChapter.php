@@ -4,6 +4,7 @@ namespace App\Jobs\Preparation;
 
 use App\Ai\Agents\ChapterAnalyzer;
 use App\Ai\Agents\EntityExtractor;
+use App\Jobs\Concerns\PersistsChapterAnalysis;
 use App\Jobs\Concerns\PersistsExtractedEntities;
 use App\Models\AiPreparation;
 use App\Models\Book;
@@ -18,7 +19,7 @@ use Throwable;
 
 class AnalyzeChapter implements ShouldQueue
 {
-    use Batchable, Dispatchable, InteractsWithQueue, PersistsExtractedEntities, Queueable, SerializesModels;
+    use Batchable, Dispatchable, InteractsWithQueue, PersistsChapterAnalysis, PersistsExtractedEntities, Queueable, SerializesModels;
 
     public int $tries = 1;
 
@@ -80,29 +81,7 @@ class AnalyzeChapter implements ShouldQueue
             $agent = new ChapterAnalyzer($this->book, $rollingContext);
             $response = $agent->prompt("Analyze this chapter:\n\nTitle: {$chapter->title}\n\n{$capped}");
 
-            $chapter->update([
-                'summary' => $response['summary'] ?? null,
-                'tension_score' => $response['tension_score'] ?? null,
-                'hook_score' => $response['hook_score'] ?? null,
-                'hook_type' => $response['hook_type'] ?? null,
-            ]);
-
-            $plotPoints = $response['plot_points'] ?? [];
-            foreach ($plotPoints as $point) {
-                if (! is_array($point) || empty($point['description'])) {
-                    continue;
-                }
-
-                $this->book->plotPoints()->create([
-                    'title' => $point['title'] ?? $point['description'],
-                    'description' => $point['description'],
-                    'type' => $point['type'] ?? 'worldbuilding',
-                    'status' => 'fulfilled',
-                    'actual_chapter_id' => $chapter->id,
-                    'sort_order' => $chapter->reader_order,
-                    'is_ai_derived' => true,
-                ]);
-            }
+            $this->persistChapterAnalysis($this->book, $chapter, $response->toArray());
         } catch (Throwable $e) {
             $this->preparation->appendPhaseError('chapter_analysis', $chapter->title, $e->getMessage());
         }
