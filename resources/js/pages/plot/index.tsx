@@ -4,11 +4,12 @@ import AiActionSidebar from '@/components/plot/AiActionSidebar';
 import DetailPanel from '@/components/plot/DetailPanel';
 import PlotPointList from '@/components/plot/PlotPointList';
 import SwimLaneTimeline from '@/components/plot/SwimLaneTimeline';
+import TensionArc, { type TensionData } from '@/components/plot/TensionArc';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import type { Act, Book, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
 import { Funnel, List, Rows, SidebarSimple } from '@phosphor-icons/react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 type ChapterCol = {
     id: number;
@@ -35,6 +36,23 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
     const [storylineFilter, setStorylineFilter] = useState<number | null>(null);
     const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
     const ai = useAiFeatures();
+
+    const allChapterCount = acts.reduce((sum, act) => sum + act.chapters.length, 0);
+
+    const initialTensionData = useMemo<TensionData[] | null>(() => {
+        const chapters = acts.flatMap((act) => act.chapters);
+        const withScores = chapters.filter((ch) => ch.tension_score !== null);
+        if (withScores.length === 0) return null;
+        return withScores.map((ch) => ({
+            chapter_id: ch.id,
+            reader_order: ch.reader_order,
+            tension_score: ch.tension_score as number,
+            title: ch.title,
+        }));
+    }, [acts]);
+
+    const [tensionData, setTensionData] = useState<TensionData[] | null>(initialTensionData);
+    const [tensionArcVisible, setTensionArcVisible] = useState(initialTensionData !== null);
 
     const filteredPlotPoints = storylineFilter
         ? plotPoints.filter((pp) => pp.storyline_id === storylineFilter)
@@ -131,6 +149,15 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                     {/* Content + Detail Panel */}
                     <div className="flex min-h-0 flex-1">
                         <div className="flex-1 overflow-auto p-5">
+                            {activeTab === 'timeline' && tensionArcVisible && tensionData && (
+                                <TensionArc
+                                    data={tensionData}
+                                    chapterCount={allChapterCount}
+                                    labelWidth={120}
+                                    columnWidth={160}
+                                    onCollapse={() => setTensionArcVisible(false)}
+                                />
+                            )}
                             {activeTab === 'timeline' ? (
                                 <SwimLaneTimeline
                                     acts={acts}
@@ -167,6 +194,10 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                     book={book}
                     isOpen={aiSidebarOpen}
                     onToggle={() => setAiSidebarOpen((prev) => !prev)}
+                    onTensionArcGenerated={(data) => {
+                        setTensionData(data);
+                        setTensionArcVisible(true);
+                    }}
                 />
             </div>
         </>

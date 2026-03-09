@@ -52,14 +52,23 @@ const actions: { key: ActionKey; label: string; description: string; icon: typeo
     },
 ];
 
+type TensionData = {
+    chapter_id: number;
+    reader_order: number;
+    tension_score: number;
+    title?: string;
+};
+
 export default function AiActionSidebar({
     book,
     isOpen,
     onToggle,
+    onTensionArcGenerated,
 }: {
     book: Book;
     isOpen: boolean;
     onToggle: () => void;
+    onTensionArcGenerated?: (data: TensionData[]) => void;
 }) {
     const { visible, usable, licensed } = useAiFeatures();
 
@@ -88,6 +97,10 @@ export default function AiActionSidebar({
                     setErrors((prev) => ({ ...prev, [action.key]: data.message ?? 'Action failed' }));
                 } else {
                     setResults((prev) => ({ ...prev, [action.key]: data }));
+
+                    if (action.key === 'tension' && data.tension_arc) {
+                        onTensionArcGenerated?.(data.tension_arc);
+                    }
                 }
             } catch {
                 setErrors((prev) => ({ ...prev, [action.key]: 'Network error. Please try again.' }));
@@ -95,7 +108,7 @@ export default function AiActionSidebar({
                 setRunningAction(null);
             }
         },
-        [book.id],
+        [book.id, onTensionArcGenerated],
     );
 
     if (!visible) return null;
