@@ -140,4 +140,12 @@ class Book extends Model
     {
         return $this->hasMany(HealthSnapshot::class);
     }
+
+    /**
+     * @return HasMany<WikiEntry, $this>
+     */
+    public function wikiEntries(): HasMany
+    {
+        return $this->hasMany(WikiEntry::class);
+    }
 }

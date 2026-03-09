@@ -304,3 +304,27 @@ export type CharacterChapterPivot = {
     role: CharacterRole;
     notes: string | null;
 };
+
+export type WikiEntryKind = 'location' | 'organization' | 'item' | 'lore';
+
+export type WikiEntry = {
+    id: number;
+    book_id: number;
+    kind: WikiEntryKind;
+    name: string;
+    type: string | null;
+    description: string | null;
+    first_appearance: number | null;
+    metadata: Record<string, unknown> | null;
+    is_ai_extracted: boolean;
+    created_at: string;
+    updated_at: string;
+    first_appearance_chapter?: Chapter;
+    chapters?: Chapter[];
+};
+
+export type WikiEntryChapterPivot = {
+    wiki_entry_id: number;
+    chapter_id: number;
+    notes: string | null;
+};

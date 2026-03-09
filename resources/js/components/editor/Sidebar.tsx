@@ -1,6 +1,6 @@
 import { index } from '@/actions/App/Http/Controllers/BookController';
 import { index as indexCanvas } from '@/actions/App/Http/Controllers/CanvasController';
-import { index as indexCharacters } from '@/actions/App/Http/Controllers/CharacterController';
+import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
 import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
 import { about as settingsAbout } from '@/actions/App/Http/Controllers/SettingsController';
@@ -10,7 +10,7 @@ import { store as storeStoryline } from '@/actions/App/Http/Controllers/Storylin
 import { createChapter, formatCompactCount } from '@/lib/utils';
 import type { Book, Scene, Storyline } from '@/types/models';
 import { Link, router, usePage } from '@inertiajs/react';
-import { GearSix, Lock, Rectangle, SquaresFour, Strategy, User } from '@phosphor-icons/react';
+import { BookOpen, GearSix, Lock, Rectangle, SquaresFour, Strategy } from '@phosphor-icons/react';
 import ChapterList from './ChapterList';
 import TrashBin from './TrashBin';
 
@@ -46,7 +46,7 @@ export default function Sidebar({
     const { isActive: isLicensed } = useLicense();
     const currentUrl = usePage().url;
     const isDashboard = currentUrl.endsWith('/dashboard');
-    const isCharacters = currentUrl.endsWith('/characters');
+    const isWiki = currentUrl.includes('/wiki');
     const isPlot = currentUrl.endsWith('/plot');
     const isCanvas = currentUrl.endsWith('/canvas');
 
@@ -90,11 +90,11 @@ export default function Sidebar({
                     }
                 />
                 <NavItem
-                    label="Characters"
-                    href={indexCharacters.url(book)}
-                    isActive={isCharacters}
+                    label="Wiki"
+                    href={indexWiki.url(book)}
+                    isActive={isWiki}
                     icon={
-                        <User size={16} weight="regular" className="shrink-0" />
+                        <BookOpen size={16} weight="regular" className="shrink-0" />
                     }
                 />
                 <NavItem

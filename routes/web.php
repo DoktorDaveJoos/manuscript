@@ -7,7 +7,6 @@ use App\Http\Controllers\BookController;
 use App\Http\Controllers\BookSettingsController;
 use App\Http\Controllers\CanvasController;
 use App\Http\Controllers\ChapterController;
-use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LicenseController;
 use App\Http\Controllers\NormalizationController;
@@ -16,6 +15,7 @@ use App\Http\Controllers\SceneController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StorylineController;
 use App\Http\Controllers\TrashController;
+use App\Http\Controllers\WikiController;
 use App\Http\Controllers\WritingGoalController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,7 +31,7 @@ Route::post('/books/{book}/import/confirm', [BookController::class, 'confirmImpo
 Route::get('/books/{book}/dashboard', [DashboardController::class, 'show'])->name('books.dashboard');
 Route::put('/books/{book}/writing-goal', [WritingGoalController::class, 'update'])->name('books.writing-goal.update');
 Route::patch('/books/{book}/milestone/dismiss', [DashboardController::class, 'dismissMilestone'])->name('books.milestone.dismiss');
-Route::get('/books/{book}/characters', [CharacterController::class, 'index'])->name('books.characters');
+Route::get('/books/{book}/wiki', [WikiController::class, 'index'])->name('books.wiki');
 Route::get('/books/{book}/plot', [PlotController::class, 'index'])->name('books.plot');
 Route::get('/books/{book}/editor', [ChapterController::class, 'editor'])->name('books.editor');
 Route::post('/books/{book}/chapters', [ChapterController::class, 'store'])->name('chapters.store');

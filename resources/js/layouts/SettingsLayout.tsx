@@ -2,7 +2,7 @@ import { index as aiSettingsIndex } from '@/actions/App/Http/Controllers/AiSetti
 import { index as booksIndex } from '@/actions/App/Http/Controllers/BookController';
 import { index as bookSettingsIndex } from '@/actions/App/Http/Controllers/BookSettingsController';
 import { index as indexCanvas } from '@/actions/App/Http/Controllers/CanvasController';
-import { index as indexCharacters } from '@/actions/App/Http/Controllers/CharacterController';
+import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
 import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
 import { about } from '@/actions/App/Http/Controllers/SettingsController';
@@ -94,12 +94,12 @@ export default function SettingsLayout({ children, activeSection, book, title }:
                                     }
                                 />
                                 <NavItem
-                                    label="Characters"
-                                    href={indexCharacters.url(book)}
+                                    label="Wiki"
+                                    href={indexWiki.url(book)}
                                     icon={
                                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0">
-                                            <circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.5" />
-                                            <path d="M3 14c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                            <path d="M2 3.5C2 2.672 2.672 2 3.5 2h2C6.328 2 7 2.672 7 3.5v9c0 .828-.672 1.5-1.5 1.5h-2C2.672 14 2 13.328 2 12.5v-9Z" stroke="currentColor" strokeWidth="1.5" />
+                                            <path d="M9 3.5C9 2.672 9.672 2 10.5 2h2c.828 0 1.5.672 1.5 1.5v9c0 .828-.672 1.5-1.5 1.5h-2C9.672 14 9 13.328 9 12.5v-9Z" stroke="currentColor" strokeWidth="1.5" />
                                         </svg>
                                     }
                                 />
