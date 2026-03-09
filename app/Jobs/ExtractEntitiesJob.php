@@ -41,8 +41,6 @@ class ExtractEntitiesJob implements ShouldQueue
             return;
         }
 
-        $setting->injectConfig();
-
         $agent = new EntityExtractor($this->book);
         $response = $agent->prompt("Extract all characters and narratively important entities from the following chapter text:\n\n{$content}");
 

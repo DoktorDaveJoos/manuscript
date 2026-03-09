@@ -11,14 +11,16 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     );
 }
 
+const listSections = [
+    { key: 'style_rules', title: 'Style Rules' },
+    { key: 'genre_rules', title: 'Genre Rules' },
+    { key: 'timeline', title: 'Timeline' },
+] as const;
+
 export default function StoryBibleSummary({ storyBible }: { storyBible: StoryBible }) {
     const [expanded, setExpanded] = useState(false);
 
-    const hasContent =
-        (storyBible.themes?.length ?? 0) > 0 ||
-        (storyBible.style_rules?.length ?? 0) > 0 ||
-        (storyBible.genre_rules?.length ?? 0) > 0 ||
-        (storyBible.timeline?.length ?? 0) > 0;
+    const hasContent = Object.values(storyBible).some((v) => Array.isArray(v) && v.length > 0);
 
     if (!hasContent) return null;
 
@@ -56,41 +58,21 @@ export default function StoryBibleSummary({ storyBible }: { storyBible: StoryBib
                         </Section>
                     )}
 
-                    {storyBible.style_rules && storyBible.style_rules.length > 0 && (
-                        <Section title="Style Rules">
-                            <div className="flex flex-col gap-1">
-                                {storyBible.style_rules.map((rule, i) => (
-                                    <span key={i} className="text-[13px] leading-[18px] text-ink-muted">
-                                        {rule}
-                                    </span>
-                                ))}
-                            </div>
-                        </Section>
-                    )}
-
-                    {storyBible.genre_rules && storyBible.genre_rules.length > 0 && (
-                        <Section title="Genre Rules">
-                            <div className="flex flex-col gap-1">
-                                {storyBible.genre_rules.map((rule, i) => (
-                                    <span key={i} className="text-[13px] leading-[18px] text-ink-muted">
-                                        {rule}
-                                    </span>
-                                ))}
-                            </div>
-                        </Section>
-                    )}
-
-                    {storyBible.timeline && storyBible.timeline.length > 0 && (
-                        <Section title="Timeline">
-                            <div className="flex flex-col gap-1">
-                                {storyBible.timeline.map((event, i) => (
-                                    <span key={i} className="text-[13px] leading-[18px] text-ink-muted">
-                                        {event}
-                                    </span>
-                                ))}
-                            </div>
-                        </Section>
-                    )}
+                    {listSections.map(({ key, title }) => {
+                        const items = storyBible[key];
+                        if (!items || items.length === 0) return null;
+                        return (
+                            <Section key={key} title={title}>
+                                <div className="flex flex-col gap-1">
+                                    {items.map((item, i) => (
+                                        <span key={i} className="text-[13px] leading-[18px] text-ink-muted">
+                                            {item}
+                                        </span>
+                                    ))}
+                                </div>
+                            </Section>
+                        );
+                    })}
                 </div>
             )}
         </div>

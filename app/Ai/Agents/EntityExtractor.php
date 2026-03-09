@@ -5,6 +5,7 @@ namespace App\Ai\Agents;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\LookupExistingEntities;
+use App\Enums\WikiEntryKind;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
@@ -87,7 +88,7 @@ class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructu
             'entities' => $schema->array()->items(
                 $schema->object([
                     'name' => $schema->string()->required(),
-                    'kind' => $schema->string()->enum(['location', 'organization', 'item', 'lore'])->required(),
+                    'kind' => $schema->string()->enum(array_column(WikiEntryKind::cases(), 'value'))->required(),
                     'type' => $schema->string()->required(),
                     'description' => $schema->string()->required(),
                 ])->withoutAdditionalProperties()

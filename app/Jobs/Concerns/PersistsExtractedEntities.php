@@ -19,15 +19,18 @@ trait PersistsExtractedEntities
                 continue;
             }
 
-            $book->characters()->updateOrCreate(
+            $character = $book->characters()->updateOrCreate(
                 ['name' => $characterData['name']],
                 [
                     'aliases' => $characterData['aliases'] ?? null,
                     'description' => $characterData['description'] ?? null,
                     'is_ai_extracted' => true,
-                    'first_appearance' => $chapter->id,
                 ],
             );
+
+            if (is_null($character->first_appearance)) {
+                $character->update(['first_appearance' => $chapter->id]);
+            }
         }
 
         foreach ($response['entities'] ?? [] as $entityData) {
@@ -35,15 +38,18 @@ trait PersistsExtractedEntities
                 continue;
             }
 
-            $book->wikiEntries()->updateOrCreate(
+            $entry = $book->wikiEntries()->updateOrCreate(
                 ['name' => $entityData['name'], 'kind' => $entityData['kind']],
                 [
                     'type' => $entityData['type'] ?? null,
                     'description' => $entityData['description'] ?? null,
                     'is_ai_extracted' => true,
-                    'first_appearance' => $chapter->id,
                 ],
             );
+
+            if (is_null($entry->first_appearance)) {
+                $entry->update(['first_appearance' => $chapter->id]);
+            }
         }
     }
 }
