@@ -20,10 +20,12 @@ class PlotPointConnectionFactory extends Factory
      */
     public function definition(): array
     {
+        $book = Book::factory();
+
         return [
-            'book_id' => Book::factory(),
-            'source_plot_point_id' => PlotPoint::factory(),
-            'target_plot_point_id' => PlotPoint::factory(),
+            'book_id' => $book,
+            'source_plot_point_id' => PlotPoint::factory()->state(['book_id' => $book]),
+            'target_plot_point_id' => PlotPoint::factory()->state(['book_id' => $book]),
             'type' => ConnectionType::Causes,
             'description' => fake()->optional()->sentence(),
         ];
