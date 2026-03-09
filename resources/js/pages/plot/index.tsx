@@ -1,5 +1,6 @@
 import { store as storePlotPoint, update as updatePlotPoint } from '@/actions/App/Http/Controllers/PlotPointController';
 import Sidebar from '@/components/editor/Sidebar';
+import AiActionSidebar from '@/components/plot/AiActionSidebar';
 import DetailPanel from '@/components/plot/DetailPanel';
 import PlotPointList from '@/components/plot/PlotPointList';
 import SwimLaneTimeline from '@/components/plot/SwimLaneTimeline';
@@ -32,6 +33,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
     const [activeTab, setActiveTab] = useState<Tab>('timeline');
     const [selectedPlotPoint, setSelectedPlotPoint] = useState<PlotPoint | null>(null);
     const [storylineFilter, setStorylineFilter] = useState<number | null>(null);
+    const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
     const ai = useAiFeatures();
 
     const filteredPlotPoints = storylineFilter
@@ -116,8 +118,8 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                             {/* AI sidebar toggle */}
                             {ai.visible && (
                                 <button
-                                    onClick={() => setSelectedPlotPoint(null)}
-                                    className="rounded p-1.5 text-[#8A857D] transition-colors hover:bg-[#F0EEEA] hover:text-[#5A574F]"
+                                    onClick={() => setAiSidebarOpen((prev) => !prev)}
+                                    className={`rounded p-1.5 transition-colors hover:bg-[#F0EEEA] hover:text-[#5A574F] ${aiSidebarOpen ? 'bg-[#F0EEEA] text-[#5A574F]' : 'text-[#8A857D]'}`}
                                     title="Toggle AI sidebar"
                                 >
                                     <SidebarSimple size={18} weight="regular" />
@@ -160,6 +162,12 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                         )}
                     </div>
                 </main>
+
+                <AiActionSidebar
+                    book={book}
+                    isOpen={aiSidebarOpen}
+                    onToggle={() => setAiSidebarOpen((prev) => !prev)}
+                />
             </div>
         </>
     );

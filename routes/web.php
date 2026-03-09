@@ -11,6 +11,7 @@ use App\Http\Controllers\ChapterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LicenseController;
 use App\Http\Controllers\NormalizationController;
+use App\Http\Controllers\PlotAiController;
 use App\Http\Controllers\PlotController;
 use App\Http\Controllers\PlotPointConnectionController;
 use App\Http\Controllers\PlotPointController;
@@ -117,6 +118,12 @@ Route::middleware('license')->group(function () {
     Route::post('/books/{book}/ai/reset-usage', [AiController::class, 'resetUsage'])->name('books.ai.resetUsage');
 
     Route::post('/books/{book}/settings/writing-style/regenerate', [BookSettingsController::class, 'regenerateWritingStyle'])->name('books.settings.writing-style.regenerate');
+
+    Route::post('/books/{book}/plot/ai/health', [PlotAiController::class, 'runPlotHealth'])->name('books.plot.ai.health');
+    Route::post('/books/{book}/plot/ai/holes', [PlotAiController::class, 'detectPlotHoles'])->name('books.plot.ai.holes');
+    Route::post('/books/{book}/plot/ai/beats', [PlotAiController::class, 'suggestBeats'])->name('books.plot.ai.beats');
+    Route::post('/books/{book}/plot/ai/tension', [PlotAiController::class, 'generateTensionArc'])->name('books.plot.ai.tension');
+    Route::get('/books/{book}/plot/ai/status', [PlotAiController::class, 'analysisStatus'])->name('books.plot.ai.status');
 });
 
 // Book-level settings
