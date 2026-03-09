@@ -10,7 +10,9 @@ import { store as storeStoryline } from '@/actions/App/Http/Controllers/Storylin
 import { createChapter, formatCompactCount } from '@/lib/utils';
 import type { Book, Scene, Storyline } from '@/types/models';
 import { Link, router, usePage } from '@inertiajs/react';
-import { BookOpen, GearSix, Lock, Rectangle, SquaresFour, Strategy } from '@phosphor-icons/react';
+import type { PlotPoint } from '@/types/models';
+import { GearSix, Lock, Notebook, Rectangle, SquaresFour, Strategy } from '@phosphor-icons/react';
+import ChapterBeats from './ChapterBeats';
 import ChapterList from './ChapterList';
 import TrashBin from './TrashBin';
 
@@ -44,7 +46,9 @@ export default function Sidebar({
     onScenesVisibleChange: (v: boolean) => void;
 }) {
     const { isActive: isLicensed } = useLicense();
-    const currentUrl = usePage().url;
+    const page = usePage<{ chapterPlotPoints?: PlotPoint[] }>();
+    const chapterPlotPoints = page.props.chapterPlotPoints ?? [];
+    const currentUrl = page.url;
     const isDashboard = currentUrl.endsWith('/dashboard');
     const isWiki = currentUrl.includes('/wiki');
     const isPlot = currentUrl.endsWith('/plot');
@@ -94,7 +98,7 @@ export default function Sidebar({
                     href={indexWiki.url(book)}
                     isActive={isWiki}
                     icon={
-                        <BookOpen size={16} weight="regular" className="shrink-0" />
+                        <Notebook size={16} weight="regular" className="shrink-0" />
                     }
                 />
                 <NavItem
@@ -145,6 +149,18 @@ export default function Sidebar({
                     onScenesVisibleChange={onScenesVisibleChange}
                 />
             </div>
+
+            {/* Chapter Beats */}
+            {activeChapterId && (
+                <>
+                    <div className="mx-5 h-px bg-border-subtle" />
+                    <ChapterBeats
+                        plotPoints={chapterPlotPoints}
+                        bookId={book.id}
+                        chapterId={activeChapterId}
+                    />
+                </>
+            )}
 
             {/* Trash */}
             <TrashBin bookId={book.id} />
