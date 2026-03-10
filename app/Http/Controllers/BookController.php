@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\StorylineType;
 use App\Enums\VersionSource;
 use App\Http\Requests\ConfirmImportRequest;
 use App\Http\Requests\ParseImportRequest;
@@ -42,13 +43,18 @@ class BookController extends Controller
     {
         $book = Book::create($request->validated());
 
+        return redirect()->route('books.import', $book);
+    }
+
+    public function skipImport(Book $book): RedirectResponse
+    {
         $book->storylines()->create([
             'name' => 'Main',
-            'type' => 'main',
+            'type' => StorylineType::Main,
             'sort_order' => 0,
         ]);
 
-        return redirect()->route('books.import', $book);
+        return redirect()->route('books.editor', $book);
     }
 
     public function import(Book $book): Response

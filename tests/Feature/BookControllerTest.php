@@ -37,18 +37,30 @@ test('lists existing books with counts', function () {
         );
 });
 
-test('creates a book with valid data and default storyline', function () {
-    $this->post(route('books.store'), [
+test('creates a book with valid data and redirects to import', function () {
+    $response = $this->post(route('books.store'), [
         'title' => 'My Novel',
         'author' => 'Jane Doe',
         'language' => 'en',
-    ])->assertRedirect();
+    ]);
 
     $book = Book::query()->where('title', 'My Novel')->first();
+
+    $response->assertRedirect(route('books.import', $book));
+
     expect($book)->not->toBeNull()
         ->and($book->author)->toBe('Jane Doe')
         ->and($book->language)->toBe('en')
-        ->and($book->storylines)->toHaveCount(1)
+        ->and($book->storylines)->toHaveCount(0);
+});
+
+test('skip import creates default storyline and redirects to editor', function () {
+    $book = Book::factory()->create();
+
+    $this->post(route('books.import.skip', $book))
+        ->assertRedirect(route('books.editor', $book));
+
+    expect($book->storylines)->toHaveCount(1)
         ->and($book->storylines->first()->name)->toBe('Main');
 });
 
@@ -61,14 +73,13 @@ test('validates title is required', function () {
 
 test('shows import page for a book', function () {
     $book = Book::factory()->create();
-    Storyline::factory()->for($book)->create(['name' => 'Main']);
 
     $this->get(route('books.import', $book))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('books/import')
             ->where('book.id', $book->id)
-            ->has('book.storylines', 1)
+            ->has('book.storylines', 0)
         );
 });
 

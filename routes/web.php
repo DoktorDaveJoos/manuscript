@@ -30,6 +30,7 @@ Route::post('/books/{book}/duplicate', [BookController::class, 'duplicate'])->na
 Route::get('/books/{book}/import', [BookController::class, 'import'])->name('books.import');
 Route::post('/books/{book}/import/parse', [BookController::class, 'parse'])->name('books.import.parse');
 Route::post('/books/{book}/import/confirm', [BookController::class, 'confirmImport'])->name('books.import.confirm');
+Route::post('/books/{book}/import/skip', [BookController::class, 'skipImport'])->name('books.import.skip');
 
 Route::get('/books/{book}/dashboard', [DashboardController::class, 'show'])->name('books.dashboard');
 Route::put('/books/{book}/writing-goal', [WritingGoalController::class, 'update'])->name('books.writing-goal.update');

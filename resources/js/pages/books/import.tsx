@@ -1,4 +1,4 @@
-import { confirmImport, parse } from '@/actions/App/Http/Controllers/BookController';
+import { confirmImport, parse, skipImport } from '@/actions/App/Http/Controllers/BookController';
 import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 import DropZone from '@/components/onboarding/DropZone';
 import FileRow from '@/components/onboarding/FileRow';
@@ -86,7 +86,7 @@ function UploadPhase({
             <div className="flex items-center gap-4 pt-4">
                 <button
                     type="button"
-                    onClick={() => router.visit(editor.url(book))}
+                    onClick={() => router.post(skipImport.url(book))}
                     className="rounded-md border border-border px-6 py-2.5 text-sm font-medium leading-[18px] text-ink-muted"
                 >
                     Skip — start blank
