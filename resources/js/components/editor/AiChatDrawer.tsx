@@ -2,7 +2,7 @@ import { chat } from '@/actions/App/Http/Controllers/AiController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import { ChatCircle, PaperPlaneTilt, X } from '@phosphor-icons/react';
 import MarkdownIt from 'markdown-it';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const md = new MarkdownIt({ linkify: true, breaks: true });
 
@@ -15,6 +15,11 @@ type Message = {
     role: 'user' | 'assistant';
     content: string;
 };
+
+const AssistantMessage = memo(function AssistantMessage({ content }: { content: string }) {
+    const html = useMemo(() => md.render(content), [content]);
+    return <div className="ai-chat-markdown" dangerouslySetInnerHTML={{ __html: html }} />;
+});
 
 export default function AiChatDrawer({
     bookId,
@@ -247,20 +252,13 @@ export default function AiChatDrawer({
                                     : 'rounded-t-xl rounded-bl-sm rounded-br-xl border border-border-subtle bg-surface'
                             }`}
                         >
-                            {msg.content ? (
-                                msg.role === 'assistant' ? (
-                                    <div
-                                        className="ai-chat-markdown"
-                                        dangerouslySetInnerHTML={{ __html: md.render(msg.content) }}
-                                    />
-                                ) : (
-                                    msg.content
-                                )
-                            ) : (
-                                isStreaming && i === messages.length - 1 ? (
-                                    <span className="inline-block h-4 w-1 animate-pulse bg-ink-faint" />
-                                ) : null
-                            )}
+                            {msg.content
+                                ? msg.role === 'assistant'
+                                    ? <AssistantMessage content={msg.content} />
+                                    : msg.content
+                                : isStreaming && i === messages.length - 1
+                                    ? <span className="inline-block h-4 w-1 animate-pulse bg-ink-faint" />
+                                    : null}
                         </div>
                     </div>
                 ))}
