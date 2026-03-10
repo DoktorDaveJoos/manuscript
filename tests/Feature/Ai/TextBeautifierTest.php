@@ -34,13 +34,6 @@ test('text beautifier includes writing style when available', function () {
     expect((string) $instructions)->toContain('literary');
 });
 
-test('text beautifier has tools', function () {
-    $book = Book::factory()->create();
-    $agent = new TextBeautifier($book);
-
-    expect(iterator_to_array($agent->tools()))->toHaveCount(1);
-});
-
 test('text beautifier can be faked for streaming', function () {
     TextBeautifier::fake(['Restructured text output.']);
 

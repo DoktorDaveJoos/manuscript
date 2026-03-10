@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Ai\Agents\EntityExtractor;
+use App\Ai\Support\TextPrep;
 use App\Jobs\Concerns\PersistsExtractedEntities;
 use App\Models\AiSetting;
 use App\Models\Book;
@@ -41,8 +42,10 @@ class ExtractEntitiesJob implements ShouldQueue
             return;
         }
 
+        $capped = TextPrep::plainTextCapped($content);
+
         $agent = new EntityExtractor($this->book);
-        $response = $agent->prompt("Extract all characters and narratively important entities from the following chapter text:\n\n{$content}");
+        $response = $agent->prompt("Extract all characters and narratively important entities from the following chapter text:\n\n{$capped}");
 
         $this->persistExtractedEntities($this->book, $this->chapter, $response->toArray());
     }

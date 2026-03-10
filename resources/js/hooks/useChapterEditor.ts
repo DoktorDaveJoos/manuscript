@@ -4,7 +4,6 @@ import CharacterCount from '@tiptap/extension-character-count';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import Typography from '@tiptap/extension-typography';
-import Underline from '@tiptap/extension-underline';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type { RefObject } from 'react';
@@ -35,7 +34,6 @@ export default function useChapterEditor({
                 Placeholder.configure({ placeholder: 'Start writing...' }),
                 CharacterCount,
                 Typography,
-                Underline,
                 TextAlign.configure({ types: ['heading', 'paragraph'] }),
                 TypewriterScrollExtension.configure({
                     scrollContainerRef,

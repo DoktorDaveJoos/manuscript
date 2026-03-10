@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Ai\Agents\ChapterAnalyzer;
 use App\Ai\Agents\EntityExtractor;
 use App\Ai\Agents\ManuscriptAnalyzer;
+use App\Ai\Support\TextPrep;
 use App\Enums\AnalysisType;
 use App\Jobs\Concerns\PersistsChapterAnalysis;
 use App\Jobs\Concerns\PersistsExtractedEntities;
@@ -65,9 +66,7 @@ class AnalyzeChapterJob implements ShouldQueue
             return;
         }
 
-        $plainText = strip_tags($content);
-        $words = preg_split('/\s+/', $plainText);
-        $capped = count($words) > 3000 ? implode(' ', array_slice($words, 0, 3000)) : $plainText;
+        $capped = TextPrep::plainTextCapped($content);
 
         // Build rolling context from preceding chapters
         $precedingChapters = $this->book->chapters()
@@ -100,8 +99,10 @@ class AnalyzeChapterJob implements ShouldQueue
             return;
         }
 
+        $capped = TextPrep::plainTextCapped($content);
+
         $agent = new EntityExtractor($this->book);
-        $response = $agent->prompt("Extract all characters and narratively important entities from the following chapter text:\n\n{$content}");
+        $response = $agent->prompt("Extract all characters and narratively important entities from the following chapter text:\n\n{$capped}");
 
         $this->persistExtractedEntities($this->book, $this->chapter, $response->toArray());
     }

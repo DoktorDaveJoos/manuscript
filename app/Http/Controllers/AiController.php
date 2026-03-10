@@ -17,6 +17,7 @@ use App\Jobs\RunAnalysisJob;
 use App\Models\AiSetting;
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Services\Normalization\NormalizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Laravel\Ai\Contracts\Agent;
@@ -60,9 +61,17 @@ class AiController extends Controller
 
         $request->validate([
             'message' => ['required', 'string', 'max:2000'],
+            'chapter_id' => ['nullable', 'integer'],
+            'history' => ['nullable', 'array', 'max:50'],
+            'history.*.role' => ['required_with:history', 'string', 'in:user,assistant'],
+            'history.*.content' => ['required_with:history', 'string', 'max:10000'],
         ]);
 
-        $agent = new BookChatAgent($book);
+        $chapter = $request->input('chapter_id')
+            ? $book->chapters()->findOrFail($request->input('chapter_id'))
+            : null;
+
+        $agent = new BookChatAgent($book, $chapter, $request->input('history', []));
 
         return $agent->stream($request->input('message'));
     }
@@ -117,7 +126,7 @@ class AiController extends Controller
         return $this->streamAgentRevision(
             $book,
             $chapter,
-            new ProseReviser($book),
+            new ProseReviser($book, $chapter),
             'Revise the following chapter text:',
             VersionSource::AiRevision,
             'AI prose revision',
@@ -157,6 +166,11 @@ class AiController extends Controller
         $wordCount = str_word_count(strip_tags($content));
         abort_if($wordCount > 12000, 422, 'Chapter is too long for AI revision ('.$wordCount.' words). Consider splitting it into smaller chapters.');
 
+        // Sync currentVersion content from scenes so the diff baseline is accurate
+        if ($currentVersion) {
+            $currentVersion->update(['content' => $chapter->getFullContent()]);
+        }
+
         $sceneMap = $chapter->scenes->map(fn ($s) => [
             'title' => $s->title,
             'sort_order' => $s->sort_order,
@@ -164,12 +178,17 @@ class AiController extends Controller
 
         return $agent->stream(
             "{$promptPrefix}\n\n{$content}",
-        )->then(function ($response) use ($chapter, $currentVersion, $source, $changeSummary, $sceneMap) {
+        )->then(function ($response) use ($book, $chapter, $currentVersion, $source, $changeSummary, $sceneMap) {
             $nextNumber = ($currentVersion?->version_number ?? 0) + 1;
+
+            $normalized = app(NormalizationService::class)->normalize(
+                html_entity_decode($response->text, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                $book->language,
+            );
 
             $chapter->versions()->create([
                 'version_number' => $nextNumber,
-                'content' => $response->text,
+                'content' => $normalized['content'],
                 'source' => $source,
                 'change_summary' => $changeSummary,
                 'is_current' => false,

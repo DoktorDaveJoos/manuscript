@@ -23,6 +23,7 @@ const sourceLabel: Record<VersionSource, string> = {
 function splitParagraphs(html: string | null): string[] {
     if (!html) return [];
     return html
+        .replace(/<hr\s*\/?>/gi, '\n')
         .replace(/<\/p>\s*<p>/gi, '</p>\n<p>')
         .split(/\n/)
         .map((p) => p.trim())
@@ -38,6 +39,12 @@ type AlignedParagraph = {
     index: number;
 };
 
+function htmlDecode(text: string): string {
+    const el = document.createElement('textarea');
+    el.innerHTML = text;
+    return el.value;
+}
+
 function computeDiff(
     originalHtml: string | null,
     revisedHtml: string | null,
@@ -49,8 +56,8 @@ function computeDiff(
     const origParagraphs = splitParagraphs(originalHtml);
     const revParagraphs = splitParagraphs(revisedHtml);
 
-    const origTexts = origParagraphs.map(stripTags);
-    const revTexts = revParagraphs.map(stripTags);
+    const origTexts = origParagraphs.map((p) => htmlDecode(stripTags(p)));
+    const revTexts = revParagraphs.map((p) => htmlDecode(stripTags(p)));
 
     // Use diffArrays to align paragraphs
     const arrayDiff = diffArrays(origTexts, revTexts);
@@ -137,8 +144,8 @@ function mergeParagraphs(
     const origParagraphs = splitParagraphs(originalHtml);
     const revParagraphs = splitParagraphs(revisedHtml);
 
-    const origTexts = origParagraphs.map(stripTags);
-    const revTexts = revParagraphs.map(stripTags);
+    const origTexts = origParagraphs.map((p) => htmlDecode(stripTags(p)));
+    const revTexts = revParagraphs.map((p) => htmlDecode(stripTags(p)));
 
     // Build lookup maps from text to original HTML paragraph
     const origMap = new Map<string, string[]>();

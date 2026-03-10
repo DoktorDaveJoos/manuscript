@@ -139,6 +139,15 @@ export default function AiPanel({
 
     const handleRunProse = useCallback(async () => {
         if (
+            !chapter.analyzed_at &&
+            !confirm(
+                "This chapter hasn't been analyzed yet. The prose pass works better with character and entity context. Continue anyway?",
+            )
+        ) {
+            return;
+        }
+
+        if (
             chapter.word_count > 8000 &&
             !confirm(
                 `This chapter has ${chapter.word_count.toLocaleString()} words. Very long chapters may produce lower quality revisions or exceed AI output limits. Continue?`,
@@ -166,7 +175,7 @@ export default function AiPanel({
         } finally {
             setIsRunningProse(false);
         }
-    }, [book.id, chapter.id, chapter.word_count, onError]);
+    }, [book.id, chapter.id, chapter.word_count, chapter.analyzed_at, onError]);
 
     const tensionLabel = scoreLabel(chapter.tension_score);
     const hookLabel = scoreLabel(chapter.hook_score);

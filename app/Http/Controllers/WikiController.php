@@ -22,17 +22,27 @@ class WikiController extends Controller
             'storylines.chapters' => fn ($q) => $q
                 ->select('id', 'book_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count')
                 ->orderBy('reader_order'),
-            'characters.chapters',
-            'characters.firstAppearanceChapter',
         ]);
+
+        $characters = $book->characters()
+            ->with(['chapters', 'firstAppearanceChapter'])
+            ->withCount('chapters as appearance_count')
+            ->withCount(['chapters as protagonist_count' => fn ($q) => $q->where('character_chapter.role', 'protagonist')])
+            ->orderByDesc('protagonist_count')
+            ->orderByDesc('appearance_count')
+            ->orderBy('name')
+            ->get();
 
         $wikiEntries = $book->wikiEntries()
             ->with(['chapters', 'firstAppearanceChapter'])
+            ->withCount('chapters as appearance_count')
+            ->orderByDesc('appearance_count')
+            ->orderBy('name')
             ->get();
 
         return Inertia::render('wiki/index', [
             'book' => $book->only('id', 'title', 'storylines'),
-            'characters' => $book->characters,
+            'characters' => $characters,
             'locations' => $wikiEntries->where('kind', WikiEntryKind::Location)->values(),
             'organizations' => $wikiEntries->where('kind', WikiEntryKind::Organization)->values(),
             'items' => $wikiEntries->where('kind', WikiEntryKind::Item)->values(),

@@ -4,21 +4,19 @@ namespace App\Ai\Agents;
 
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
-use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Models\Book;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
-use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
 use Stringable;
 
 #[MaxTokens(16384)]
 #[Temperature(0.2)]
 #[Timeout(180)]
-class TextBeautifier implements Agent, BelongsToBook, HasMiddleware, HasTools
+class TextBeautifier implements Agent, BelongsToBook, HasMiddleware
 {
     use Promptable;
 
@@ -50,13 +48,6 @@ class TextBeautifier implements Agent, BelongsToBook, HasMiddleware, HasTools
         Return the result as HTML using <p> tags for paragraphs and <hr> for scene breaks.
         Return ONLY the reformatted text, without commentary or explanations.{$writingStyle}
         INSTRUCTIONS;
-    }
-
-    public function tools(): iterable
-    {
-        return [
-            new RetrieveManuscriptContext,
-        ];
     }
 
     public function middleware(): array

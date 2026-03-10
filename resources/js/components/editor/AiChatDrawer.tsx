@@ -10,9 +10,11 @@ type Message = {
 
 export default function AiChatDrawer({
     bookId,
+    chapterId,
     onClose,
 }: {
     bookId: number;
+    chapterId: number;
     onClose: () => void;
 }) {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -33,9 +35,16 @@ export default function AiChatDrawer({
     const inputValueRef = useRef(input);
     inputValueRef.current = input;
 
+    // Snapshot messages for history without adding to useCallback deps
+    const messagesRef = useRef(messages);
+    messagesRef.current = messages;
+
     const handleSend = useCallback(async () => {
         const trimmed = inputValueRef.current.trim();
         if (!trimmed || isStreaming) return;
+
+        // Capture completed messages as history before adding new ones
+        const history = messagesRef.current.filter((m) => m.content.length > 0);
 
         setInput('');
         setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);
@@ -51,7 +60,11 @@ export default function AiChatDrawer({
                     ...jsonFetchHeaders(),
                     Accept: 'text/event-stream',
                 },
-                body: JSON.stringify({ message: trimmed }),
+                body: JSON.stringify({
+                    message: trimmed,
+                    chapter_id: chapterId,
+                    history: history.length > 0 ? history : undefined,
+                }),
             });
 
             if (!response.ok) {
@@ -121,7 +134,7 @@ export default function AiChatDrawer({
         } finally {
             setIsStreaming(false);
         }
-    }, [bookId, isStreaming]);
+    }, [bookId, chapterId, isStreaming]);
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {

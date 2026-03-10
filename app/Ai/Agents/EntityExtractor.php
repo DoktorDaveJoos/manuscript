@@ -43,6 +43,18 @@ class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructu
         - A brief description based on what is revealed in the text
         - Their role: 'protagonist' if they are a main character driving the action, 'supporting' if they play a significant secondary role, or 'mentioned' if they are only referenced
 
+        ### INCLUDE a character when:
+        - They have a proper name (first name, last name, nickname, or title + name)
+        - They take action, speak dialogue, or directly affect the plot
+        - They are referenced by name across multiple scenes or chapters
+
+        ### EXCLUDE a character when:
+        - They are unnamed or identified only by a generic role ("the taxi driver", "a waiter", "the guard")
+        - They appear only as part of a crowd or background
+        - They are a real-world historical or public figure mentioned in passing
+
+        When in doubt about a character, still extract them but mark their role as 'mentioned'.
+
         ## World Entities (locations, organizations, items, lore)
         ONLY extract entities that are narratively important to the story. For each entity, determine:
         - Its name as used in the text
@@ -65,6 +77,8 @@ class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructu
         When in doubt, EXCLUDE.
 
         Before extracting, use the lookup tool to check existing characters and entities to avoid duplicates and match aliases.
+
+        The book ID is {$this->book->id}. Use this when calling the lookup tool.
 
         The manuscript '{$this->book->title}' is written in {$this->book->language}.
         Return names as they appear in the text (respect the original language).

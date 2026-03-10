@@ -295,6 +295,9 @@ Wayfinder generates TypeScript functions for Laravel routes. Import from `@/acti
 - After creating and running migrations with `php artisan migrate`, also run them against the NativePHP database: `DB_DATABASE=database/nativephp.sqlite php artisan migrate --no-interaction`
 - The `nativephp` connection name is NOT available from the CLI — use the `DB_DATABASE` env override instead.
 
+## Cortex
+- Cortex folder for this project: `MANUSCRIPT`
+
 ## Workflow Preferences
 
 - When the user asks for implementation, prioritize code changes over planning documents. Only produce a plan if explicitly asked for one.

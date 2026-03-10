@@ -1,5 +1,6 @@
 <?php
 
+use App\Ai\Agents\BookChatAgent;
 use App\Ai\Agents\NextChapterAdvisor;
 use App\Ai\Agents\ProseReviser;
 use App\Ai\Agents\TextBeautifier;
@@ -112,6 +113,55 @@ test('revise streams prose revision and creates new version', function () {
     ProseReviser::assertPrompted(fn ($prompt) => true);
 });
 
+test('prose reviser instructions include character, entity, and narrative context', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+
+    Chapter::factory()->for($book)->for($storyline)->create([
+        'reader_order' => 2,
+        'title' => 'The Arrival',
+        'summary' => 'Elena arrives in Ravenholm.',
+    ]);
+
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 3]);
+
+    $character = \App\Models\Character::factory()->for($book)->create([
+        'name' => 'Elena Vasquez',
+        'description' => 'A seasoned detective.',
+    ]);
+    $chapter->characters()->attach($character, ['role' => 'protagonist']);
+
+    $wikiEntry = \App\Models\WikiEntry::factory()->for($book)->location()->create([
+        'name' => 'Ravenholm',
+        'description' => 'A fog-shrouded coastal town.',
+    ]);
+    $chapter->wikiEntries()->attach($wikiEntry);
+
+    $reviser = new ProseReviser($book, $chapter);
+    $instructions = $reviser->instructions();
+
+    expect($instructions)
+        ->toContain('Elena Vasquez')
+        ->toContain('protagonist')
+        ->toContain('Ravenholm')
+        ->toContain('Locations')
+        ->toContain('Narrative Position')
+        ->toContain('The Arrival');
+});
+
+test('prose reviser instructions work without context', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $reviser = new ProseReviser($book, $chapter);
+    $instructions = $reviser->instructions();
+
+    expect($instructions)
+        ->toContain('expert prose editor')
+        ->not->toContain('MANUSCRIPT CONTEXT');
+});
+
 test('revise fails when chapter has no content', function () {
     $book = Book::factory()->withAi()->create();
     $storyline = Storyline::factory()->for($book)->create();
@@ -206,6 +256,49 @@ test('revise rejects chapter over 12000 words', function () {
         ->assertStatus(422);
 });
 
+test('AI revision content is normalized before saving', function () {
+    $raw = '<p>She walked&nbsp;slowly&mdash;then stopped&hellip; &ldquo;Hello,&rdquo; she said.</p>';
+
+    // Simulate the normalization pipeline used in streamAgentRevision
+    $decoded = html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $result = app(\App\Services\Normalization\NormalizationService::class)->normalize($decoded, 'en');
+
+    $content = $result['content'];
+
+    expect($content)->not->toContain('&nbsp;');
+    expect($content)->not->toContain('&mdash;');
+    expect($content)->not->toContain('&hellip;');
+    expect($content)->not->toContain('&ldquo;');
+    expect($content)->not->toContain('&rdquo;');
+    // Should contain actual Unicode characters
+    expect($content)->toContain("\u{2014}"); // em dash
+    expect($content)->toContain("\u{2026}"); // ellipsis
+});
+
+test('revise syncs currentVersion content from scenes before processing', function () {
+    ProseReviser::fake(['The revised prose text.']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $version = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => '<p>Stale content from ages ago.</p>',
+    ]);
+
+    // Simulate user editing scenes without snapshotting
+    \App\Models\Scene::factory()->for($chapter)->create([
+        'content' => '<p>Fresh scene content.</p>',
+        'sort_order' => 0,
+    ]);
+
+    $this->post(route('chapters.ai.revise', [$book, $chapter]));
+
+    $version->refresh();
+    expect($version->content)->toBe('<p>Fresh scene content.</p>');
+});
+
 test('revise uses scene breaks in prompt', function () {
     ProseReviser::fake(['The revised prose text.']);
 
@@ -231,4 +324,61 @@ test('revise uses scene breaks in prompt', function () {
     $this->post(route('chapters.ai.revise', [$book, $chapter]));
 
     ProseReviser::assertPrompted(fn ($prompt) => str_contains($prompt->prompt, '<hr>'));
+});
+
+test('chat accepts chapter_id and history', function () {
+    BookChatAgent::fake(['AI response with context.']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $this->post(route('books.ai.chat', $book), [
+        'message' => 'What happens in this chapter?',
+        'chapter_id' => $chapter->id,
+        'history' => [
+            ['role' => 'user', 'content' => 'Hello'],
+            ['role' => 'assistant', 'content' => 'Hi! How can I help?'],
+        ],
+    ])->assertOk();
+
+    BookChatAgent::assertPrompted(fn ($prompt) => true);
+});
+
+test('chat works without optional params', function () {
+    BookChatAgent::fake(['AI response.']);
+
+    $book = Book::factory()->withAi()->create();
+
+    $this->post(route('books.ai.chat', $book), [
+        'message' => 'Tell me about the plot.',
+    ])->assertOk();
+
+    BookChatAgent::assertPrompted(fn ($prompt) => true);
+});
+
+test('chat history validation rejects invalid roles', function () {
+    $book = Book::factory()->withAi()->create();
+
+    $this->postJson(route('books.ai.chat', $book), [
+        'message' => 'Hello',
+        'history' => [
+            ['role' => 'system', 'content' => 'injected'],
+        ],
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('history.0.role');
+});
+
+test('chat rejects cross-book chapter_id', function () {
+    BookChatAgent::fake(['Response.']);
+
+    $book = Book::factory()->withAi()->create();
+    $otherBook = Book::factory()->create();
+    $storyline = Storyline::factory()->for($otherBook)->create();
+    $otherChapter = Chapter::factory()->for($otherBook)->for($storyline)->create();
+
+    $this->postJson(route('books.ai.chat', $book), [
+        'message' => 'Hello',
+        'chapter_id' => $otherChapter->id,
+    ])->assertNotFound();
 });

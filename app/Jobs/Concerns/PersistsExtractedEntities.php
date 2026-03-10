@@ -14,23 +14,46 @@ trait PersistsExtractedEntities
      */
     protected function persistExtractedEntities(Book $book, Chapter $chapter, array $response): void
     {
+        $readerOrderCache = [];
+
         foreach ($response['characters'] ?? [] as $characterData) {
             if (! is_array($characterData) || empty($characterData['name'])) {
                 continue;
             }
 
-            $character = $book->characters()->updateOrCreate(
-                ['name' => $characterData['name']],
-                [
-                    'aliases' => $characterData['aliases'] ?? null,
-                    'description' => $characterData['description'] ?? null,
-                    'is_ai_extracted' => true,
-                ],
-            );
+            $character = $book->characters()->firstOrNew(['name' => $characterData['name']]);
 
-            if (is_null($character->first_appearance)) {
-                $character->update(['first_appearance' => $chapter->id]);
+            $character->aliases = array_values(array_unique(array_merge(
+                $character->aliases ?? [],
+                $characterData['aliases'] ?? [],
+            )));
+
+            $newDescription = $characterData['description'] ?? null;
+            if (! $character->description || mb_strlen($newDescription ?? '') > mb_strlen($character->description)) {
+                $character->description = $newDescription;
             }
+
+            $character->is_ai_extracted = true;
+
+            // Resolve first_appearance using reader_order
+            if ($character->first_appearance) {
+                $currentFirstOrder = $readerOrderCache[$character->first_appearance]
+                    ??= Chapter::where('id', $character->first_appearance)->value('reader_order');
+            } else {
+                $currentFirstOrder = null;
+            }
+
+            if (is_null($currentFirstOrder) || $chapter->reader_order < $currentFirstOrder) {
+                $character->first_appearance = $chapter->id;
+                $readerOrderCache[$chapter->id] = $chapter->reader_order;
+            }
+
+            $character->save();
+
+            // Populate character-chapter pivot with role
+            $character->chapters()->syncWithoutDetaching([
+                $chapter->id => ['role' => $characterData['role'] ?? 'mentioned'],
+            ]);
         }
 
         foreach ($response['entities'] ?? [] as $entityData) {
@@ -38,18 +61,38 @@ trait PersistsExtractedEntities
                 continue;
             }
 
-            $entry = $book->wikiEntries()->updateOrCreate(
-                ['name' => $entityData['name'], 'kind' => $entityData['kind']],
-                [
-                    'type' => $entityData['type'] ?? null,
-                    'description' => $entityData['description'] ?? null,
-                    'is_ai_extracted' => true,
-                ],
-            );
+            $entry = $book->wikiEntries()->firstOrNew([
+                'name' => $entityData['name'],
+                'kind' => $entityData['kind'],
+            ]);
 
-            if (is_null($entry->first_appearance)) {
-                $entry->update(['first_appearance' => $chapter->id]);
+            $newDescription = $entityData['description'] ?? null;
+            if (! $entry->description || mb_strlen($newDescription ?? '') > mb_strlen($entry->description)) {
+                $entry->description = $newDescription;
             }
+
+            $entry->type = $entityData['type'] ?? null;
+            $entry->is_ai_extracted = true;
+
+            // Resolve first_appearance using reader_order
+            if ($entry->first_appearance) {
+                $currentFirstOrder = $readerOrderCache[$entry->first_appearance]
+                    ??= Chapter::where('id', $entry->first_appearance)->value('reader_order');
+            } else {
+                $currentFirstOrder = null;
+            }
+
+            if (is_null($currentFirstOrder) || $chapter->reader_order < $currentFirstOrder) {
+                $entry->first_appearance = $chapter->id;
+                $readerOrderCache[$chapter->id] = $chapter->reader_order;
+            }
+
+            $entry->save();
+
+            // Populate wiki entry-chapter pivot
+            $entry->chapters()->syncWithoutDetaching([
+                $chapter->id => [],
+            ]);
         }
     }
 }

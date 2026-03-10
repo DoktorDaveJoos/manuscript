@@ -539,7 +539,7 @@ export default function ChapterShow({
                             chapterAnalyses={chapterAnalyses}
                         />
                         {isChatOpen && (
-                            <AiChatDrawer bookId={book.id} onClose={() => setIsChatOpen(false)} />
+                            <AiChatDrawer bookId={book.id} chapterId={chapter.id} onClose={() => setIsChatOpen(false)} />
                         )}
                     </div>
                 )}
