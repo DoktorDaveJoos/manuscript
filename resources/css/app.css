@@ -162,6 +162,94 @@ h1[contenteditable]:empty::before {
     pointer-events: none;
 }
 
+/* AI chat markdown styles */
+.ai-chat-markdown {
+    line-height: 1.5;
+}
+
+.ai-chat-markdown > *:first-child {
+    margin-top: 0;
+}
+
+.ai-chat-markdown > *:last-child {
+    margin-bottom: 0;
+}
+
+.ai-chat-markdown p {
+    margin: 0.4em 0;
+}
+
+.ai-chat-markdown h1,
+.ai-chat-markdown h2,
+.ai-chat-markdown h3 {
+    font-weight: 600;
+    margin: 0.6em 0 0.3em;
+    line-height: 1.3;
+}
+
+.ai-chat-markdown h1 { font-size: 1.15em; }
+.ai-chat-markdown h2 { font-size: 1.1em; }
+.ai-chat-markdown h3 { font-size: 1.05em; }
+
+.ai-chat-markdown ul,
+.ai-chat-markdown ol {
+    padding-left: 1.4em;
+    margin: 0.4em 0;
+}
+
+.ai-chat-markdown li {
+    margin-bottom: 0.15em;
+}
+
+.ai-chat-markdown li::marker {
+    color: var(--color-ink-muted);
+}
+
+.ai-chat-markdown code {
+    font-size: 0.9em;
+    padding: 0.15em 0.35em;
+    border-radius: 4px;
+    background: var(--color-neutral-bg);
+}
+
+.ai-chat-markdown pre {
+    margin: 0.5em 0;
+    padding: 0.6em 0.8em;
+    border-radius: 6px;
+    background: var(--color-neutral-bg);
+    overflow-x: auto;
+    font-size: 0.85em;
+    line-height: 1.45;
+}
+
+.ai-chat-markdown pre code {
+    padding: 0;
+    background: transparent;
+}
+
+.ai-chat-markdown blockquote {
+    border-left: 2px solid var(--color-border);
+    padding-left: 0.8em;
+    margin: 0.4em 0;
+    color: var(--color-ink-muted);
+}
+
+.ai-chat-markdown a {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.ai-chat-markdown hr {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 0.6em 0;
+}
+
+.ai-chat-markdown strong {
+    font-weight: 600;
+}
+
 /* Tiptap placeholder */
 .tiptap p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);

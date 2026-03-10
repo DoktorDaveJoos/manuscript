@@ -1,7 +1,15 @@
 import { chat } from '@/actions/App/Http/Controllers/AiController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import { ChatCircle, PaperPlaneTilt, X } from '@phosphor-icons/react';
+import MarkdownIt from 'markdown-it';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+const md = new MarkdownIt({ linkify: true, breaks: true });
+
+const STORAGE_KEY = 'ai-chat-drawer-width';
+const MIN_WIDTH = 280;
+const MAX_WIDTH = 600;
+const DEFAULT_WIDTH = 320;
 
 type Message = {
     role: 'user' | 'assistant';
@@ -23,6 +31,19 @@ export default function AiChatDrawer({
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    const [width, setWidth] = useState(() => {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            const parsed = Number(stored);
+            if (parsed >= MIN_WIDTH && parsed <= MAX_WIDTH) return parsed;
+        }
+        return DEFAULT_WIDTH;
+    });
+    const widthRef = useRef(width);
+    widthRef.current = width;
+    const asideRef = useRef<HTMLDivElement>(null);
+    const dragCleanupRef = useRef<(() => void) | null>(null);
+
     useEffect(() => {
         inputRef.current?.focus();
     }, []);
@@ -30,6 +51,44 @@ export default function AiChatDrawer({
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    useEffect(() => {
+        return () => dragCleanupRef.current?.();
+    }, []);
+
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        const startX = e.clientX;
+        const startWidth = widthRef.current;
+
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        const cleanup = () => {
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            dragCleanupRef.current = null;
+        };
+
+        const handleMouseMove = (e: MouseEvent) => {
+            const delta = startX - e.clientX;
+            const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
+            widthRef.current = newWidth;
+            if (asideRef.current) asideRef.current.style.width = `${newWidth}px`;
+        };
+
+        const handleMouseUp = () => {
+            setWidth(widthRef.current);
+            localStorage.setItem(STORAGE_KEY, String(widthRef.current));
+            cleanup();
+        };
+
+        dragCleanupRef.current = cleanup;
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    }, []);
 
     // Use ref for input so handleSend doesn't recreate on every keystroke
     const inputValueRef = useRef(input);
@@ -147,7 +206,15 @@ export default function AiChatDrawer({
     );
 
     return (
-        <aside className="flex h-full w-80 shrink-0 flex-col border-l border-border bg-surface-card">
+        <aside ref={asideRef} className="relative flex h-full shrink-0 flex-col border-l border-border bg-surface-card" style={{ width }}>
+            {/* Resize handle */}
+            <div
+                onMouseDown={handleMouseDown}
+                className="group absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize"
+            >
+                <div className="absolute inset-y-0 left-[3px] w-px bg-transparent transition-colors group-hover:bg-ink/20" />
+            </div>
+
             {/* Header */}
             <div className="flex h-12 items-center justify-between border-b border-border-subtle px-5">
                 <div className="flex items-center gap-2">
@@ -180,9 +247,20 @@ export default function AiChatDrawer({
                                     : 'rounded-t-xl rounded-bl-sm rounded-br-xl border border-border-subtle bg-surface'
                             }`}
                         >
-                            {msg.content || (isStreaming && i === messages.length - 1 ? (
-                                <span className="inline-block h-4 w-1 animate-pulse bg-ink-faint" />
-                            ) : null)}
+                            {msg.content ? (
+                                msg.role === 'assistant' ? (
+                                    <div
+                                        className="ai-chat-markdown"
+                                        dangerouslySetInnerHTML={{ __html: md.render(msg.content) }}
+                                    />
+                                ) : (
+                                    msg.content
+                                )
+                            ) : (
+                                isStreaming && i === messages.length - 1 ? (
+                                    <span className="inline-block h-4 w-1 animate-pulse bg-ink-faint" />
+                                ) : null
+                            )}
                         </div>
                     </div>
                 ))}
