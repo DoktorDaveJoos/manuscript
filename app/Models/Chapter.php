@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ChapterStatus;
 use App\Enums\VersionStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,6 +36,7 @@ class Chapter extends Model
             'exit_hook_score' => 'integer',
             'sensory_grounding' => 'integer',
             'analyzed_at' => 'datetime',
+            'ai_prepared_at' => 'datetime',
         ];
     }
 
@@ -120,6 +122,46 @@ class Chapter extends Model
             ->withTimestamps();
     }
 
+    /**
+     * @return BelongsToMany<WikiEntry, $this>
+     */
+    public function wikiEntries(): BelongsToMany
+    {
+        return $this->belongsToMany(WikiEntry::class, 'wiki_entry_chapter')
+            ->withPivot(['notes'])
+            ->withTimestamps();
+    }
+
+    public function refreshContentHash(): void
+    {
+        $this->load('scenes');
+        $content = $this->getFullContent();
+        $this->updateQuietly([
+            'content_hash' => $content !== '' ? hash('xxh128', $content) : null,
+        ]);
+    }
+
+    public function needsAiPreparation(): bool
+    {
+        if ($this->content_hash === null && $this->prepared_content_hash === null) {
+            return false;
+        }
+
+        return $this->content_hash !== $this->prepared_content_hash;
+    }
+
+    /**
+     * @param  Builder<Chapter>  $query
+     */
+    public function scopeNeedsAiPreparation(Builder $query): void
+    {
+        $query->whereNotNull('content_hash')
+            ->where(function (Builder $q) {
+                $q->whereColumn('content_hash', '!=', 'prepared_content_hash')
+                    ->orWhereNull('prepared_content_hash');
+            });
+    }
+
     public function getFullContent(): string
     {
         return $this->scenes->pluck('content')->filter()->implode("\n");
@@ -135,6 +177,8 @@ class Chapter extends Model
         $this->update([
             'word_count' => $this->scenes()->sum('word_count'),
         ]);
+
+        $this->refreshContentHash();
     }
 
     public function replaceScenesWithContent(?string $content): void
@@ -148,6 +192,8 @@ class Chapter extends Model
             'word_count' => $wordCount,
         ]);
         $this->update(['word_count' => $wordCount]);
+
+        $this->refreshContentHash();
     }
 
     /**
@@ -198,5 +244,7 @@ class Chapter extends Model
         }
 
         $this->update(['word_count' => $totalWordCount]);
+
+        $this->refreshContentHash();
     }
 }

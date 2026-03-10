@@ -6,35 +6,6 @@ use App\Ai\Agents\StoryBibleBuilder;
 use App\Jobs\PrepareBookForAi;
 use App\Models\AiPreparation;
 use App\Models\Book;
-use App\Models\Chapter;
-use App\Models\ChapterVersion;
-use App\Models\Storyline;
-
-function createBookWithChapters(int $chapterCount = 3): array
-{
-    $book = Book::factory()->withAi()->create();
-    $storyline = Storyline::factory()->for($book)->create();
-    $chapters = [];
-
-    for ($i = 1; $i <= $chapterCount; $i++) {
-        $chapter = Chapter::factory()->for($book)->for($storyline)->create([
-            'reader_order' => $i,
-            'title' => "Chapter {$i}",
-        ]);
-        ChapterVersion::factory()->for($chapter)->create([
-            'is_current' => true,
-            'content' => "<p>Chapter {$i} content. ".fake()->paragraphs(3, true).'</p>',
-        ]);
-        $chapters[] = $chapter;
-    }
-
-    $preparation = AiPreparation::create([
-        'book_id' => $book->id,
-        'status' => 'pending',
-    ]);
-
-    return [$book, $chapters, $preparation];
-}
 
 test('prepare book for ai runs full 7-phase pipeline', function () {
     ChapterAnalyzer::fake(function () {

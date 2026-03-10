@@ -101,6 +101,8 @@ class SceneController extends Controller
             DB::statement("UPDATE scenes SET sort_order = CASE id {$cases}END WHERE id IN ({$idList})");
         }
 
+        $chapter->refreshContentHash();
+
         return response()->json(['success' => true]);
     }
 

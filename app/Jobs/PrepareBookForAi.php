@@ -55,7 +55,15 @@ class PrepareBookForAi implements ShouldQueue
             'status' => 'running',
         ]);
 
-        $jobs = $this->buildJobList($chapters);
+        $dirtyChapters = $chapters->filter(fn ($ch) => $ch->needsAiPreparation());
+
+        if ($dirtyChapters->isEmpty()) {
+            $this->completeImmediately();
+
+            return;
+        }
+
+        $jobs = $this->buildJobList($chapters, $dirtyChapters);
 
         $batch = Bus::batch($jobs)
             ->allowFailures()
@@ -64,29 +72,41 @@ class PrepareBookForAi implements ShouldQueue
         $this->preparation->update(['batch_id' => $batch->id]);
     }
 
+    private function completeImmediately(): void
+    {
+        $this->preparation->update([
+            'status' => 'completed',
+            'completed_phases' => [
+                'chunking', 'embedding', 'writing_style',
+                'chapter_analysis', 'entity_extraction',
+                'story_bible', 'health_analysis',
+            ],
+        ]);
+    }
+
     /**
      * Build the flat list of jobs for the batch pipeline.
      *
      * @param  Collection<int, \App\Models\Chapter>  $chapters
+     * @param  Collection<int, \App\Models\Chapter>  $dirtyChapters
      * @return list<object>
      */
-    private function buildJobList(Collection $chapters): array
+    private function buildJobList(Collection $chapters, Collection $dirtyChapters): array
     {
         $jobs = [];
-        $chapterCount = $chapters->count();
 
-        // Phase 1+2: Chunk and embed each chapter
+        // Phase 1+2: Chunk and embed dirty chapters
         $jobs[] = new PhaseTransition(
             preparation: $this->preparation,
             startPhase: 'chunking',
-            phaseTotal: $chapterCount,
+            phaseTotal: $dirtyChapters->count(),
         );
 
-        foreach ($chapters as $chapter) {
+        foreach ($dirtyChapters as $chapter) {
             $jobs[] = new ChunkAndEmbedChapter($this->book, $this->preparation, $chapter->id);
         }
 
-        // Phase 3: Writing style extraction
+        // Phase 3: Writing style extraction (always runs)
         $jobs[] = new PhaseTransition(
             preparation: $this->preparation,
             startPhase: 'writing_style',
@@ -96,23 +116,23 @@ class PrepareBookForAi implements ShouldQueue
 
         $jobs[] = new ExtractWritingStyle($this->book, $this->preparation);
 
-        // Phase 4+5: Chapter analysis + character extraction
-        $chaptersWithContent = $chapters->filter(fn ($ch) => $ch->currentVersion?->content);
+        // Phase 4+5: Chapter analysis + entity extraction (dirty chapters only)
+        $dirtyWithContent = $dirtyChapters->filter(fn ($ch) => $ch->currentVersion?->content);
 
         $jobs[] = new PhaseTransition(
             preparation: $this->preparation,
             startPhase: 'chapter_analysis',
-            phaseTotal: $chaptersWithContent->count(),
+            phaseTotal: $dirtyWithContent->count(),
             completedPhases: ['writing_style'],
         );
 
-        foreach ($chapters as $chapter) {
+        foreach ($dirtyChapters as $chapter) {
             if ($chapter->currentVersion?->content) {
                 $jobs[] = new AnalyzeChapter($this->book, $this->preparation, $chapter->id);
             }
         }
 
-        // Phase 6: Story bible
+        // Phase 6: Story bible (always runs)
         $jobs[] = new PhaseTransition(
             preparation: $this->preparation,
             startPhase: 'story_bible',
@@ -122,7 +142,7 @@ class PrepareBookForAi implements ShouldQueue
 
         $jobs[] = new BuildStoryBible($this->book, $this->preparation);
 
-        // Phase 7: Health analysis + completion
+        // Phase 7: Health analysis + completion (always runs)
         $jobs[] = new PhaseTransition(
             preparation: $this->preparation,
             startPhase: 'health_analysis',

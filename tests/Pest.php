@@ -41,7 +41,35 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function createBookWithChapters(int $chapterCount = 3): array
 {
-    // ..
+    $book = App\Models\Book::factory()->withAi()->create();
+    $storyline = App\Models\Storyline::factory()->for($book)->create();
+    $chapters = [];
+
+    for ($i = 1; $i <= $chapterCount; $i++) {
+        $content = "<p>Chapter {$i} content. ".fake()->paragraphs(3, true).'</p>';
+        $chapter = App\Models\Chapter::factory()->for($book)->for($storyline)->create([
+            'reader_order' => $i,
+            'title' => "Chapter {$i}",
+        ]);
+        App\Models\ChapterVersion::factory()->for($chapter)->create([
+            'is_current' => true,
+            'content' => $content,
+        ]);
+        App\Models\Scene::factory()->for($chapter)->create([
+            'content' => $content,
+            'sort_order' => 0,
+            'word_count' => str_word_count(strip_tags($content)),
+        ]);
+        $chapter->refreshContentHash();
+        $chapters[] = $chapter;
+    }
+
+    $preparation = App\Models\AiPreparation::create([
+        'book_id' => $book->id,
+        'status' => 'pending',
+    ]);
+
+    return [$book, $chapters, $preparation];
 }
