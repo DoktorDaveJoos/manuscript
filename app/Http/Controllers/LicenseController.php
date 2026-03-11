@@ -26,7 +26,7 @@ class LicenseController extends Controller
 
         if (! License::validate($key)) {
             return response()->json([
-                'message' => 'Invalid license key.',
+                'message' => __('Invalid license key.'),
             ], 422);
         }
 
@@ -39,7 +39,7 @@ class LicenseController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'License activated successfully.',
+            'message' => __('License activated successfully.'),
         ]);
     }
 
@@ -48,7 +48,7 @@ class LicenseController extends Controller
         License::query()->delete();
 
         return response()->json([
-            'message' => 'License deactivated.',
+            'message' => __('License deactivated.'),
         ]);
     }
 }

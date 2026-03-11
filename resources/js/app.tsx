@@ -2,6 +2,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import '../css/app.css';
+import i18n from './i18n';
 import { initTheme } from './lib/theme';
 
 initTheme();
@@ -16,6 +17,9 @@ createInertiaApp({
             import.meta.glob('./pages/**/*.tsx'),
         ),
     setup({ el, App, props }) {
+        const locale = (props.initialPage.props.locale as string) ?? 'en';
+        i18n.changeLanguage(locale);
+
         const root = createRoot(el);
 
         root.render(<App {...props} />);

@@ -1,20 +1,24 @@
+import { appearance as settingsAppearance } from '@/actions/App/Http/Controllers/AppSettingsController';
 import { index } from '@/actions/App/Http/Controllers/BookController';
 import { index as indexCanvas } from '@/actions/App/Http/Controllers/CanvasController';
-import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
 import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
-import { appearance as settingsAppearance } from '@/actions/App/Http/Controllers/AppSettingsController';
+import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
+import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
+import LanguageSelector from '@/components/ui/LanguageSelector';
 import NavItem from '@/components/ui/NavItem';
 import { useLicense } from '@/hooks/useLicense';
-import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
 import { createChapter, formatCompactCount } from '@/lib/utils';
-import type { Book, Scene, Storyline } from '@/types/models';
+import type { Book, PlotPoint, Scene, Storyline } from '@/types/models';
 import { Link, router, usePage } from '@inertiajs/react';
-import type { PlotPoint } from '@/types/models';
 import { GearSix, Lock, Notebook, Rectangle, SquaresFour, Strategy } from '@phosphor-icons/react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import ChapterBeats from './ChapterBeats';
 import ChapterList from './ChapterList';
 import TrashBin from './TrashBin';
+
+let savedScrollTop = 0;
 
 export default function Sidebar({
     book,
@@ -45,7 +49,22 @@ export default function Sidebar({
     scenesVisible: boolean;
     onScenesVisibleChange: (v: boolean) => void;
 }) {
+    const { t } = useTranslation();
     const { isActive: isLicensed } = useLicense();
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    useLayoutEffect(() => {
+        if (scrollContainerRef.current && savedScrollTop > 0) {
+            scrollContainerRef.current.scrollTop = savedScrollTop;
+        }
+    }, []);
+
+    const handleSidebarScroll = useCallback(() => {
+        if (scrollContainerRef.current) {
+            savedScrollTop = scrollContainerRef.current.scrollTop;
+        }
+    }, []);
+
     const page = usePage<{ chapterPlotPoints?: PlotPoint[] }>();
     const chapterPlotPoints = page.props.chapterPlotPoints ?? [];
     const currentUrl = page.url;
@@ -78,15 +97,18 @@ export default function Sidebar({
                 <Link href={index.url()} className="text-[13px] font-semibold uppercase tracking-[0.05em] text-ink">
                     Manuscript
                 </Link>
-                <Link href={settingsAppearance.url()} className="text-ink-muted hover:text-ink transition-colors">
-                    <GearSix size={16} weight="regular" />
-                </Link>
+                <div className="flex items-center gap-2">
+                    <LanguageSelector />
+                    <Link href={settingsAppearance.url()} className="text-ink-muted hover:text-ink transition-colors">
+                        <GearSix size={16} weight="regular" />
+                    </Link>
+                </div>
             </div>
 
             {/* Nav */}
             <div className="flex flex-col gap-px px-2.5 py-3">
                 <NavItem
-                    label="Dashboard"
+                    label={t('nav.dashboard')}
                     isActive={isDashboard}
                     href={showDashboard.url(book)}
                     icon={
@@ -94,7 +116,7 @@ export default function Sidebar({
                     }
                 />
                 <NavItem
-                    label="Wiki"
+                    label={t('nav.wiki')}
                     href={indexWiki.url(book)}
                     isActive={isWiki}
                     icon={
@@ -102,7 +124,7 @@ export default function Sidebar({
                     }
                 />
                 <NavItem
-                    label="Plot"
+                    label={t('nav.plot')}
                     href={indexPlot.url(book)}
                     isActive={isPlot}
                     icon={
@@ -110,7 +132,7 @@ export default function Sidebar({
                     }
                 />
                 <NavItem
-                    label="Canvas"
+                    label={t('nav.canvas')}
                     href={isLicensed ? indexCanvas.url(book) : undefined}
                     disabled={!isLicensed}
                     isActive={isCanvas}
@@ -129,7 +151,7 @@ export default function Sidebar({
             <div className="mx-5 my-1 h-px bg-border-subtle" />
 
             {/* Chapter list */}
-            <div className="flex-1 overflow-y-auto px-2.5 py-3">
+            <div ref={scrollContainerRef} onScroll={handleSidebarScroll} className="flex-1 overflow-y-auto px-2.5 py-3">
                 <ChapterList
                     bookTitle={book.title}
                     storylines={storylines}
@@ -167,8 +189,8 @@ export default function Sidebar({
 
             {/* Footer */}
             <div className="flex items-center justify-between border-t border-border-subtle px-5 py-3.5">
-                <span className="text-[11px] text-ink-faint">{formatCompactCount(totalWords)} words</span>
-                <span className="text-[11px] text-ink-faint">{totalChapters} chapters</span>
+                <span className="text-[11px] text-ink-faint">{t('wordsCompact', { formatted: formatCompactCount(totalWords) })}</span>
+                <span className="text-[11px] text-ink-faint">{t('chapters', { count: totalChapters })}</span>
             </div>
         </aside>
     );

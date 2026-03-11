@@ -148,6 +148,6 @@ class NormalizationController extends Controller
     {
         $parts = array_map(fn ($c) => "{$c['rule']}: {$c['count']}", $changes);
 
-        return 'Normalization — '.implode(', ', $parts);
+        return __('Normalization').' — '.implode(', ', $parts);
     }
 }

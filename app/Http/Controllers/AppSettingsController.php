@@ -18,6 +18,7 @@ class AppSettingsController extends Controller
         'show_scenes',
         'reranking_enabled',
         'cohere_api_key',
+        'locale',
     ];
 
     public function appearance(): Response
@@ -48,6 +49,6 @@ class AppSettingsController extends Controller
 
         AppSetting::set($key, $value);
 
-        return response()->json(['message' => 'Setting updated.']);
+        return response()->json(['message' => __('Setting updated.')]);
     }
 }

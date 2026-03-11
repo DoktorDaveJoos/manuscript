@@ -16,7 +16,7 @@ class PlotAiController extends Controller
 
         RunAnalysisJob::dispatch($book, AnalysisType::ThrillerHealth);
 
-        return response()->json(['message' => 'Plot health analysis started.']);
+        return response()->json(['message' => __('Plot health analysis started.')]);
     }
 
     public function detectPlotHoles(Book $book): JsonResponse
@@ -25,7 +25,7 @@ class PlotAiController extends Controller
 
         RunAnalysisJob::dispatch($book, AnalysisType::Plothole);
 
-        return response()->json(['message' => 'Plot hole detection started.']);
+        return response()->json(['message' => __('Plot hole detection started.')]);
     }
 
     public function suggestBeats(Book $book): JsonResponse
@@ -34,7 +34,7 @@ class PlotAiController extends Controller
 
         RunAnalysisJob::dispatch($book, AnalysisType::NextChapterSuggestion);
 
-        return response()->json(['message' => 'Beat suggestion started.']);
+        return response()->json(['message' => __('Beat suggestion started.')]);
     }
 
     public function generateTensionArc(Book $book): JsonResponse
@@ -45,7 +45,7 @@ class PlotAiController extends Controller
 
         if ($chapters->isEmpty()) {
             return response()->json([
-                'message' => 'No tension data available. Run chapter analysis first via AI Preparation.',
+                'message' => __('No tension data available. Run chapter analysis first via AI Preparation.'),
             ], 422);
         }
 
@@ -81,7 +81,7 @@ class PlotAiController extends Controller
         abort_if(
             ! $setting || ! $setting->isConfigured(),
             422,
-            'No AI provider configured.',
+            __('No AI provider configured.'),
         );
 
         $setting->injectConfig();

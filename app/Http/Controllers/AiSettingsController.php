@@ -55,7 +55,7 @@ class AiSettingsController extends Controller
         $setting->update($data);
 
         return response()->json([
-            'message' => "{$provider->label()} settings updated.",
+            'message' => __(':provider settings updated.', ['provider' => $provider->label()]),
             'setting' => $this->serializeSetting($setting),
         ]);
     }
@@ -65,7 +65,7 @@ class AiSettingsController extends Controller
         $setting = AiSetting::forProvider($provider);
 
         if (! $setting->isConfigured()) {
-            return response()->json(['success' => false, 'message' => 'No API key configured.'], 422);
+            return response()->json(['success' => false, 'message' => __('No API key configured.')], 422);
         }
 
         $setting->injectConfig();
@@ -77,12 +77,12 @@ class AiSettingsController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Connection successful.',
+                'message' => __('Connection successful.'),
             ]);
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Connection failed: '.$e->getMessage(),
+                'message' => __('Connection failed: :error', ['error' => $e->getMessage()]),
             ], 422);
         }
     }

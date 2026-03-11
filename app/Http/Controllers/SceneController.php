@@ -109,7 +109,7 @@ class SceneController extends Controller
     public function destroy(Book $book, Chapter $chapter, Scene $scene): JsonResponse
     {
         if ($chapter->scenes()->count() <= 1) {
-            return response()->json(['error' => 'Cannot delete the last scene'], 422);
+            return response()->json(['error' => __('Cannot delete the last scene')], 422);
         }
 
         $scene->delete();

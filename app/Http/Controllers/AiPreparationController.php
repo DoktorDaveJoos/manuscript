@@ -17,7 +17,7 @@ class AiPreparationController extends Controller
 
         if (! AppSetting::showAiFeatures() || ! $setting?->isConfigured()) {
             return response()->json([
-                'message' => 'AI is not enabled or no API key configured.',
+                'message' => __('AI is not enabled or no API key configured.'),
             ], 422);
         }
 
@@ -30,7 +30,7 @@ class AiPreparationController extends Controller
             if ($prep->batch_id) {
                 Bus::findBatch($prep->batch_id)?->cancel();
             }
-            $prep->update(['status' => 'failed', 'error_message' => 'Superseded by new preparation']);
+            $prep->update(['status' => 'failed', 'error_message' => __('Superseded by new preparation')]);
         }
 
         $preparation = $book->aiPreparations()->create([

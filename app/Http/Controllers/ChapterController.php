@@ -66,7 +66,7 @@ class ChapterController extends Controller
             ]);
 
             $chapter->scenes()->create([
-                'title' => 'Scene 1',
+                'title' => __('Scene 1'),
                 'content' => '',
                 'sort_order' => 0,
                 'word_count' => 0,
@@ -129,7 +129,7 @@ class ChapterController extends Controller
         $version = $chapter->currentVersion;
 
         if (! $version) {
-            return response()->json(['error' => 'No current version found'], 404);
+            return response()->json(['error' => __('No current version found')], 404);
         }
 
         $version->update([
@@ -206,7 +206,7 @@ class ChapterController extends Controller
             ]);
 
             $newChapter->scenes()->create([
-                'title' => 'Scene 1',
+                'title' => __('Scene 1'),
                 'content' => $content,
                 'sort_order' => 0,
                 'word_count' => $wordCount,
@@ -232,7 +232,7 @@ class ChapterController extends Controller
                 'version_number' => $latestVersionNumber + 1,
                 'content' => $version->content,
                 'source' => VersionSource::ManualEdit,
-                'change_summary' => "Restored from version {$version->version_number}",
+                'change_summary' => __('Restored from version :number', ['number' => $version->version_number]),
                 'is_current' => true,
             ]);
 
@@ -265,8 +265,8 @@ class ChapterController extends Controller
 
     public function destroyVersion(Book $book, Chapter $chapter, ChapterVersion $version): JsonResponse
     {
-        abort_if($version->is_current, 403, 'Cannot delete the current version.');
-        abort_if($chapter->versions()->count() <= 1, 403, 'Cannot delete the last version.');
+        abort_if($version->is_current, 403, __('Cannot delete the current version.'));
+        abort_if($chapter->versions()->count() <= 1, 403, __('Cannot delete the last version.'));
 
         $version->delete();
 
@@ -275,7 +275,7 @@ class ChapterController extends Controller
 
     public function acceptVersion(Book $book, Chapter $chapter, ChapterVersion $version): JsonResponse
     {
-        abort_if($version->status !== VersionStatus::Pending, 403, 'Only pending versions can be accepted.');
+        abort_if($version->status !== VersionStatus::Pending, 403, __('Only pending versions can be accepted.'));
 
         $this->applyVersion($chapter, $version, $version->content);
 
@@ -284,7 +284,7 @@ class ChapterController extends Controller
 
     public function acceptPartialVersion(Request $request, Book $book, Chapter $chapter, ChapterVersion $version): JsonResponse
     {
-        abort_if($version->status !== VersionStatus::Pending, 403, 'Only pending versions can be accepted.');
+        abort_if($version->status !== VersionStatus::Pending, 403, __('Only pending versions can be accepted.'));
 
         $request->validate([
             'content' => ['required', 'string'],
@@ -312,7 +312,7 @@ class ChapterController extends Controller
 
     public function rejectVersion(Book $book, Chapter $chapter, ChapterVersion $version): JsonResponse
     {
-        abort_if($version->status !== VersionStatus::Pending, 403, 'Only pending versions can be rejected.');
+        abort_if($version->status !== VersionStatus::Pending, 403, __('Only pending versions can be rejected.'));
 
         $version->delete();
 

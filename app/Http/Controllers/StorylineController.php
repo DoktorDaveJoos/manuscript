@@ -32,7 +32,7 @@ class StorylineController extends Controller
 
             $chapter = $book->chapters()->create([
                 'storyline_id' => $storyline->id,
-                'title' => 'Chapter 1',
+                'title' => __('Chapter 1'),
                 'reader_order' => $nextChapterOrder,
                 'status' => ChapterStatus::Draft,
                 'word_count' => 0,
@@ -46,7 +46,7 @@ class StorylineController extends Controller
             ]);
 
             $chapter->scenes()->create([
-                'title' => 'Scene 1',
+                'title' => __('Scene 1'),
                 'content' => '',
                 'sort_order' => 0,
                 'word_count' => 0,
@@ -71,7 +71,7 @@ class StorylineController extends Controller
     public function destroy(Book $book, Storyline $storyline): RedirectResponse
     {
         if ($book->storylines()->count() <= 1) {
-            abort(422, 'Cannot delete the last storyline.');
+            abort(422, __('Cannot delete the last storyline.'));
         }
 
         DB::transaction(function () use ($storyline) {

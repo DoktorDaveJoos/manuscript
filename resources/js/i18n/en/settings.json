@@ -1,0 +1,11 @@
+{
+    "title": "Settings",
+    "back": "Back",
+    "section.app": "App",
+    "section.appearance": "Appearance",
+    "section.license": "License",
+    "section.aiProviders": "AI Providers",
+    "section.writingStyle": "Writing Style",
+    "section.prosePassRules": "Prose Pass Rules",
+    "section.export": "Export"
+}

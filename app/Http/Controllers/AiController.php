@@ -95,14 +95,14 @@ class AiController extends Controller
 
         RunAnalysisJob::dispatch($book, $type, $chapter);
 
-        return response()->json(['message' => 'Analysis started.']);
+        return response()->json(['message' => __('Analysis started.')]);
     }
 
     public function extractCharacters(Book $book, Chapter $chapter): JsonResponse
     {
         ExtractEntitiesJob::dispatch($book, $chapter);
 
-        return response()->json(['message' => 'Entity extraction started.']);
+        return response()->json(['message' => __('Entity extraction started.')]);
     }
 
     public function nextChapter(Book $book): JsonResponse
@@ -129,7 +129,7 @@ class AiController extends Controller
             }
         }
 
-        return response()->json(['message' => "{$dispatched} embedding jobs dispatched."]);
+        return response()->json(['message' => __(':count embedding jobs dispatched.', ['count' => $dispatched])]);
     }
 
     public function revise(Book $book, Chapter $chapter): StreamableAgentResponse
@@ -138,9 +138,9 @@ class AiController extends Controller
             $book,
             $chapter,
             new ProseReviser($book, $chapter),
-            'Revise the following chapter text:',
+            __('Revise the following chapter text:'),
             VersionSource::AiRevision,
-            'AI prose revision',
+            __('AI prose revision'),
         );
     }
 
@@ -150,9 +150,9 @@ class AiController extends Controller
             $book,
             $chapter,
             new TextBeautifier($book),
-            'Restructure the following chapter text:',
+            __('Restructure the following chapter text:'),
             VersionSource::Beautify,
-            'AI text beautification',
+            __('AI text beautification'),
         );
     }
 
@@ -172,10 +172,10 @@ class AiController extends Controller
         if (blank($content)) {
             $content = $currentVersion?->content;
         }
-        abort_if(blank($content), 422, 'Chapter has no content to process.');
+        abort_if(blank($content), 422, __('Chapter has no content to process.'));
 
         $wordCount = str_word_count(strip_tags($content));
-        abort_if($wordCount > 12000, 422, 'Chapter is too long for AI revision ('.$wordCount.' words). Consider splitting it into smaller chapters.');
+        abort_if($wordCount > 12000, 422, __('Chapter is too long for AI revision (:count words). Consider splitting it into smaller chapters.', ['count' => $wordCount]));
 
         // Sync currentVersion content from scenes so the diff baseline is accurate
         if ($currentVersion) {
@@ -213,7 +213,7 @@ class AiController extends Controller
     {
         $book->resetAiUsage();
 
-        return response()->json(['message' => 'AI usage counters reset.']);
+        return response()->json(['message' => __('AI usage counters reset.')]);
     }
 
     private function ensureAiConfigured(): void
@@ -225,7 +225,7 @@ class AiController extends Controller
         abort_if(
             ! $setting || ! $setting->isConfigured(),
             422,
-            'No AI provider configured.',
+            __('No AI provider configured.'),
         );
 
         $setting->injectConfig();

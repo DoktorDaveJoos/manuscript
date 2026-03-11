@@ -63,6 +63,7 @@ class HandleInertiaRequests extends Middleware
                 'show_scenes' => AppSetting::get('show_scenes', true),
             ],
             'ai_configured' => fn () => AiSetting::activeProvider()?->isConfigured() ?? false,
+            'locale' => fn () => app()->getLocale(),
         ];
     }
 }

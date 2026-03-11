@@ -32,7 +32,7 @@ class BookSettingsController extends Controller
             'writing_style_text' => $request->input('writing_style_text'),
         ]);
 
-        return response()->json(['message' => 'Writing style updated.']);
+        return response()->json(['message' => __('Writing style updated.')]);
     }
 
     public function regenerateWritingStyle(Book $book, WritingStyleService $service): JsonResponse
@@ -49,7 +49,7 @@ class BookSettingsController extends Controller
             ->implode("\n\n");
 
         if (blank($sampleText)) {
-            return response()->json(['message' => 'No chapter content available for style analysis.'], 422);
+            return response()->json(['message' => __('No chapter content available for style analysis.')], 422);
         }
 
         $result = $service->extract($sampleText, $book);
@@ -62,7 +62,7 @@ class BookSettingsController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Writing style regenerated.',
+            'message' => __('Writing style regenerated.'),
             'writing_style_text' => $proseText,
         ]);
     }
@@ -89,7 +89,7 @@ class BookSettingsController extends Controller
             'prose_pass_rules' => $request->input('rules'),
         ]);
 
-        return response()->json(['message' => 'Prose pass rules updated.']);
+        return response()->json(['message' => __('Prose pass rules updated.')]);
     }
 
     public function export(Book $book): Response

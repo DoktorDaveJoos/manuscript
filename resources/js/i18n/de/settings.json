@@ -1,0 +1,11 @@
+{
+    "title": "Einstellungen",
+    "back": "Zurück",
+    "section.app": "App",
+    "section.appearance": "Erscheinungsbild",
+    "section.license": "Lizenz",
+    "section.aiProviders": "KI-Anbieter",
+    "section.writingStyle": "Schreibstil",
+    "section.prosePassRules": "Stilregeln",
+    "section.export": "Export"
+}

@@ -1,0 +1,21 @@
+{
+    "wordsCompact": "{{formatted}} words",
+    "words_one": "{{count}} word",
+    "words_other": "{{count}} words",
+    "chapters_one": "{{count}} chapter",
+    "chapters_other": "{{count}} chapters",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "close": "Close",
+    "back": "Back",
+    "loading": "Loading…",
+    "search": "Search…",
+    "noResults": "No results",
+    "settings": "Settings",
+    "nav.dashboard": "Dashboard",
+    "nav.wiki": "Wiki",
+    "nav.plot": "Plot",
+    "nav.canvas": "Canvas"
+}
