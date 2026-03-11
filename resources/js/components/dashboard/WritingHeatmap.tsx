@@ -1,12 +1,18 @@
-import type { HeatmapDay } from '@/types/models';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { HeatmapDay } from '@/types/models';
 
 const CELL = 12;
 const GAP = 2;
 const COLS = 53;
 const ROWS = 7;
-const DAY_LABELS = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
-const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const DAY_LABEL_KEYS = ['', 'heatmap.dayLabels.mon', '', 'heatmap.dayLabels.wed', '', 'heatmap.dayLabels.fri', ''] as const;
+const MONTH_LABEL_KEYS = [
+    'heatmap.monthLabels.jan', 'heatmap.monthLabels.feb', 'heatmap.monthLabels.mar',
+    'heatmap.monthLabels.apr', 'heatmap.monthLabels.may', 'heatmap.monthLabels.jun',
+    'heatmap.monthLabels.jul', 'heatmap.monthLabels.aug', 'heatmap.monthLabels.sep',
+    'heatmap.monthLabels.oct', 'heatmap.monthLabels.nov', 'heatmap.monthLabels.dec',
+] as const;
 
 function intensityClass(words: number, dailyGoal: number | null): string {
     if (words === 0) return 'fill-neutral-bg';
@@ -30,6 +36,7 @@ export default function WritingHeatmap({
     heatmap: HeatmapDay[];
     dailyGoal: number | null;
 }) {
+    const { t, i18n } = useTranslation('dashboard');
     const [tooltip, setTooltip] = useState<{ x: number; y: number; day: HeatmapDay } | null>(null);
 
     const { grid, monthMarkers } = useMemo(() => {
@@ -59,13 +66,13 @@ export default function WritingHeatmap({
 
                 if (row === 0 && d.getMonth() !== lastMonth) {
                     lastMonth = d.getMonth();
-                    months.push({ col, label: MONTH_LABELS[lastMonth] });
+                    months.push({ col, label: t(MONTH_LABEL_KEYS[lastMonth]) });
                 }
             }
         }
 
         return { grid: cells, monthMarkers: months };
-    }, [heatmap]);
+    }, [heatmap, t]);
 
     const leftPad = 28;
     const topPad = 16;
@@ -93,16 +100,16 @@ export default function WritingHeatmap({
                 ))}
 
                 {/* Day labels */}
-                {DAY_LABELS.map(
-                    (label, i) =>
-                        label && (
+                {DAY_LABEL_KEYS.map(
+                    (key, i) =>
+                        key && (
                             <text
                                 key={i}
                                 x={0}
                                 y={topPad + i * (CELL + GAP) + CELL - 2}
                                 className="fill-ink-faint text-[10px]"
                             >
-                                {label}
+                                {t(key)}
                             </text>
                         ),
                 )}
@@ -131,9 +138,9 @@ export default function WritingHeatmap({
                     className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full rounded-md bg-ink px-2.5 py-1.5 text-xs text-surface shadow-md"
                     style={{ left: tooltip.x, top: tooltip.y - 6 }}
                 >
-                    <span className="font-medium">{tooltip.day.words.toLocaleString('en-US')} words</span>
+                    <span className="font-medium">{t('heatmap.words', { value: tooltip.day.words.toLocaleString(i18n.language) })}</span>
                     <span className="ml-1.5 text-surface/70">
-                        {new Date(tooltip.day.date + 'T12:00:00').toLocaleDateString('en-US', {
+                        {new Date(tooltip.day.date + 'T12:00:00').toLocaleDateString(i18n.language, {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric',

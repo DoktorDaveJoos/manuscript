@@ -1,5 +1,6 @@
-import type { HealthSnapshot } from '@/types/models';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { HealthSnapshot } from '@/types/models';
 
 const WIDTH = 720;
 const HEIGHT = 180;
@@ -29,6 +30,8 @@ function toAreaPath(points: { x: number; y: number }[]): string {
 }
 
 export default function HealthTimeline({ history }: { history: HealthSnapshot[] }) {
+    const { t, i18n } = useTranslation('dashboard');
+
     const data = useMemo(() => {
         if (history.length < 2) return null;
 
@@ -49,17 +52,17 @@ export default function HealthTimeline({ history }: { history: HealthSnapshot[] 
             const d = new Date(history[idx].date + 'T12:00:00');
             dateLabels.push({
                 x: xScale(idx),
-                label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                label: d.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' }),
             });
         }
 
         return { compositePoints, metricLines, dateLabels };
-    }, [history]);
+    }, [history, i18n.language]);
 
     if (!data) {
         return (
             <p className="py-6 text-center text-[13px] text-ink-faint">
-                Health history appears after your first analysis
+                {t('healthTimeline.noHistory')}
             </p>
         );
     }

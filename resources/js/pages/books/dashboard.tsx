@@ -1,3 +1,5 @@
+import { Head } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 import AiInsights from '@/components/dashboard/AiInsights';
 import AiPreparation from '@/components/dashboard/AiPreparation';
 import AiUsageStats from '@/components/dashboard/AiUsageStats';
@@ -23,22 +25,23 @@ import type {
     SuggestedNext as SuggestedNextType,
     WritingGoalData,
 } from '@/types/models';
-import { Head } from '@inertiajs/react';
 
 function StatCard({
     label,
     value,
     suffix,
+    locale,
 }: {
     label: string;
     value: string | number;
     suffix?: string;
+    locale: string;
 }) {
     return (
         <div className="flex flex-1 flex-col gap-1 rounded-lg bg-surface-card px-5 py-4">
             <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">{label}</span>
             <span className="font-serif text-[26px] leading-[30px] font-medium text-ink">
-                {typeof value === 'number' ? value.toLocaleString('en-US') : value}
+                {typeof value === 'number' ? value.toLocaleString(locale) : value}
                 {suffix && <span className="ml-1 font-sans text-[12px] font-normal text-ink-muted">{suffix}</span>}
             </span>
         </div>
@@ -46,13 +49,14 @@ function StatCard({
 }
 
 function ChapterStatusBar({ counts }: { counts: StatusCounts }) {
+    const { t } = useTranslation('dashboard');
     const total = counts.final + counts.revised + counts.draft;
     if (total === 0) return null;
 
     const segments: { count: number; label: string; color: string }[] = [];
-    if (counts.final > 0) segments.push({ count: counts.final, label: 'final', color: 'bg-status-final' });
-    if (counts.revised > 0) segments.push({ count: counts.revised, label: 'revised', color: 'bg-status-revised' });
-    if (counts.draft > 0) segments.push({ count: counts.draft, label: 'draft', color: 'bg-status-draft' });
+    if (counts.final > 0) segments.push({ count: counts.final, label: t('statusBar.final'), color: 'bg-status-final' });
+    if (counts.revised > 0) segments.push({ count: counts.revised, label: t('statusBar.revised'), color: 'bg-status-revised' });
+    if (counts.draft > 0) segments.push({ count: counts.draft, label: t('statusBar.draft'), color: 'bg-status-draft' });
 
     return (
         <div className="flex flex-col gap-2">
@@ -102,6 +106,7 @@ export default function Dashboard({
     manuscript_target: ManuscriptTarget;
     ai_usage: AiUsage;
 }) {
+    const { t, i18n } = useTranslation('dashboard');
     const storylines = book.storylines ?? [];
     const { visible: aiVisible } = useAiFeatures();
 
@@ -124,7 +129,7 @@ export default function Dashboard({
                                 {book.title}
                             </h1>
                             {book.author && (
-                                <p className="text-[14px] text-ink-muted">by {book.author}</p>
+                                <p className="text-[14px] text-ink-muted">{t('header.by', { author: book.author })}</p>
                             )}
                         </div>
 
@@ -167,10 +172,10 @@ export default function Dashboard({
 
                         {/* Stats Grid */}
                         <div className="flex gap-4">
-                            <StatCard label="Words" value={stats.total_words} />
-                            <StatCard label="Pages" value={stats.estimated_pages} suffix="est." />
-                            <StatCard label="Reading Time" value={stats.reading_time_minutes} suffix="min" />
-                            <StatCard label="Chapters" value={stats.chapter_count} />
+                            <StatCard label={t('stats.words')} value={stats.total_words} locale={i18n.language} />
+                            <StatCard label={t('stats.pages')} value={stats.estimated_pages} suffix={t('stats.pagesEst')} locale={i18n.language} />
+                            <StatCard label={t('stats.readingTime')} value={stats.reading_time_minutes} suffix={t('stats.readingTimeMin')} locale={i18n.language} />
+                            <StatCard label={t('stats.chapters')} value={stats.chapter_count} locale={i18n.language} />
                         </div>
                     </div>
                 </main>

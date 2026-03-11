@@ -1,8 +1,9 @@
-import { update as updateWritingGoal } from '@/actions/App/Http/Controllers/WritingGoalController';
-import { jsonFetchHeaders } from '@/lib/utils';
-import type { WritingGoalData } from '@/types/models';
 import { Flame } from '@phosphor-icons/react';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type { WritingGoalData } from '@/types/models';
+import { update as updateWritingGoal } from '@/actions/App/Http/Controllers/WritingGoalController';
 
 function FlameIcon({ className }: { className?: string }) {
     return <Flame size={16} weight="fill" className={className} />;
@@ -17,6 +18,7 @@ export default function WritingGoal({
     writingGoal: WritingGoalData;
     targetWordCount?: number | null;
 }) {
+    const { t, i18n } = useTranslation('dashboard');
     const [goal, setGoal] = useState(writingGoal.daily_word_count_goal);
     const [isEditing, setIsEditing] = useState(false);
     const [inputValue, setInputValue] = useState(String(goal ?? 500));
@@ -71,13 +73,13 @@ export default function WritingGoal({
     if (!goal && !isEditing) {
         return (
             <div className="rounded-lg bg-surface-card px-6 py-6">
-                <p className="text-sm text-ink-muted">Set a daily writing goal to track your progress and build a streak.</p>
+                <p className="text-sm text-ink-muted">{t('writingGoal.setupPrompt')}</p>
                 <button
                     type="button"
                     onClick={() => setIsEditing(true)}
                     className="mt-3 rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-surface transition-colors hover:bg-ink/90"
                 >
-                    Set writing goal
+                    {t('writingGoal.setGoal')}
                 </button>
             </div>
         );
@@ -88,7 +90,7 @@ export default function WritingGoal({
         return (
             <div className="rounded-lg bg-surface-card px-6 py-6">
                 <label className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">
-                    Daily word goal
+                    {t('writingGoal.dailyWordGoal')}
                 </label>
                 <div className="mt-2 flex flex-col gap-3">
                     <div className="flex items-center gap-2">
@@ -102,7 +104,7 @@ export default function WritingGoal({
                             className="w-28 rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-ink focus:border-ink focus:ring-0 focus:outline-none"
                             autoFocus
                         />
-                        <span className="text-xs text-ink-faint">words per day</span>
+                        <span className="text-xs text-ink-faint">{t('writingGoal.wordsPerDay')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <input
@@ -112,10 +114,10 @@ export default function WritingGoal({
                             value={targetValue}
                             onChange={(e) => { setTargetValue(e.target.value); setSaveError(false); }}
                             onKeyDown={handleKeyDown}
-                            placeholder="Optional"
+                            placeholder={t('writingGoal.optional')}
                             className="w-28 rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint/50 focus:border-ink focus:ring-0 focus:outline-none"
                         />
-                        <span className="text-xs text-ink-faint">manuscript target (total words)</span>
+                        <span className="text-xs text-ink-faint">{t('writingGoal.manuscriptTarget')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="flex-1" />
@@ -128,18 +130,18 @@ export default function WritingGoal({
                             }}
                             className="rounded-md px-3 py-1.5 text-xs text-ink-muted transition-colors hover:bg-neutral-bg"
                         >
-                            Cancel
+                            {t('writingGoal.cancel')}
                         </button>
                         <button
                             type="button"
                             onClick={handleSave}
                             className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-surface transition-colors hover:bg-ink/90"
                         >
-                            Save
+                            {t('writingGoal.save')}
                         </button>
                     </div>
                     {saveError && (
-                        <p className="text-xs text-red-600">Failed to save. Please try again.</p>
+                        <p className="text-xs text-red-600">{t('writingGoal.saveError')}</p>
                     )}
                 </div>
             </div>
@@ -155,27 +157,27 @@ export default function WritingGoal({
             {/* Header */}
             <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
-                    Today&apos;s Writing
+                    {t('writingGoal.todaysWriting')}
                 </span>
                 <button
                     type="button"
                     onClick={() => setIsEditing(true)}
                     className="text-[12px] text-ink-faint transition-colors hover:text-ink"
                 >
-                    Edit goal
+                    {t('writingGoal.editGoal')}
                 </button>
             </div>
 
             {/* Large number display */}
             <div>
                 <span className="font-serif text-[48px] leading-[1] font-medium text-ink">
-                    {writingGoal.today_words.toLocaleString('en-US')}
+                    {writingGoal.today_words.toLocaleString(i18n.language)}
                 </span>
                 <span className="ml-1 font-serif text-[24px] text-ink-faint">
-                    / {goal.toLocaleString('en-US')}
+                    / {goal.toLocaleString(i18n.language)}
                 </span>
             </div>
-            <span className="mt-[-6px] text-[13px] text-ink-muted">words today</span>
+            <span className="mt-[-6px] text-[13px] text-ink-muted">{t('writingGoal.wordsToday')}</span>
 
             {/* Progress bar */}
             <div className="h-1.5 overflow-hidden rounded-[3px] bg-neutral-bg">
@@ -189,14 +191,14 @@ export default function WritingGoal({
             <div className="flex items-center justify-between">
                 <span className="text-[13px] text-ink-muted">
                     {wordsToGo > 0
-                        ? `${wordsToGo.toLocaleString('en-US')} words to go`
-                        : 'Goal reached!'}
+                        ? t('writingGoal.wordsToGo', { value: wordsToGo.toLocaleString(i18n.language) })
+                        : t('writingGoal.goalReached')}
                 </span>
 
                 {writingGoal.streak > 0 && (
                     <span className="flex items-center gap-1 text-[13px] font-medium text-accent">
                         <FlameIcon className="text-accent" />
-                        {writingGoal.streak} day{writingGoal.streak !== 1 ? 's' : ''}
+                        {t('writingGoal.streak', { count: writingGoal.streak })}
                     </span>
                 )}
             </div>

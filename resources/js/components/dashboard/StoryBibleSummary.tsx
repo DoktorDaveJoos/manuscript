@@ -1,6 +1,7 @@
-import type { StoryBible } from '@/types/models';
 import { CaretRight } from '@phosphor-icons/react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { StoryBible } from '@/types/models';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
@@ -11,14 +12,15 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     );
 }
 
-const listSections = [
-    { key: 'style_rules', title: 'Style Rules' },
-    { key: 'genre_rules', title: 'Genre Rules' },
-    { key: 'timeline', title: 'Timeline' },
-] as const;
-
 export default function StoryBibleSummary({ storyBible }: { storyBible: StoryBible }) {
+    const { t } = useTranslation('dashboard');
     const [expanded, setExpanded] = useState(false);
+
+    const listSections = [
+        { key: 'style_rules' as const, title: t('storyBible.styleRules') },
+        { key: 'genre_rules' as const, title: t('storyBible.genreRules') },
+        { key: 'timeline' as const, title: t('storyBible.timeline') },
+    ];
 
     const hasContent = Object.values(storyBible).some((v) => Array.isArray(v) && v.length > 0);
 
@@ -37,14 +39,14 @@ export default function StoryBibleSummary({ storyBible }: { storyBible: StoryBib
                     className={`text-ink-muted transition-transform ${expanded ? 'rotate-90' : ''}`}
                 />
                 <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
-                    Story Bible
+                    {t('storyBible.title')}
                 </span>
             </button>
 
             {expanded && (
                 <div className="flex flex-col gap-6 pl-5">
                     {storyBible.themes && storyBible.themes.length > 0 && (
-                        <Section title="Themes">
+                        <Section title={t('storyBible.themes')}>
                             <div className="flex flex-wrap gap-2">
                                 {storyBible.themes.map((theme, i) => (
                                     <span

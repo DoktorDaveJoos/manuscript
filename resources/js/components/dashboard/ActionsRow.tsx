@@ -1,6 +1,7 @@
+import { Export, FunnelSimple, Plus } from '@phosphor-icons/react';
+import { useTranslation } from 'react-i18next';
 import { createChapter } from '@/lib/utils';
 import type { AiPreparationStatus, Storyline } from '@/types/models';
-import { Export, FunnelSimple, Plus } from '@phosphor-icons/react';
 import AiPreparationProgress from './AiPreparationProgress';
 
 export default function ActionsRow({
@@ -18,6 +19,8 @@ export default function ActionsRow({
     storylines: Storyline[];
     licensed?: boolean;
 }) {
+    const { t } = useTranslation('dashboard');
+
     const handleAddChapter = () => {
         const firstStorylineId = storylines[0]?.id;
         if (!firstStorylineId) return;
@@ -35,7 +38,7 @@ export default function ActionsRow({
                     className="flex items-center gap-2 px-[18px] py-[11px] text-[13px] font-medium text-ink transition-colors hover:bg-neutral-bg/50"
                 >
                     <FunnelSimple size={14} className="shrink-0" />
-                    Normalize
+                    {t('actions.normalize')}
                 </button>
 
                 <button
@@ -44,7 +47,7 @@ export default function ActionsRow({
                     className="flex items-center gap-2 px-[18px] py-[11px] text-[13px] font-medium text-ink-faint"
                 >
                     <Export size={14} className="shrink-0" />
-                    Export
+                    {t('actions.export')}
                 </button>
 
                 <button
@@ -53,7 +56,7 @@ export default function ActionsRow({
                     className="flex items-center gap-2 px-[18px] py-[11px] text-[13px] font-medium text-ink transition-colors hover:bg-neutral-bg/50"
                 >
                     <Plus size={14} className="shrink-0" />
-                    Add chapter
+                    {t('actions.addChapter')}
                 </button>
             </div>
         </div>

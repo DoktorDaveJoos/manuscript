@@ -1,7 +1,8 @@
-import { dismissMilestone } from '@/actions/App/Http/Controllers/DashboardController';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { ManuscriptTarget } from '@/types/models';
-import { useCallback, useEffect, useState } from 'react';
+import { dismissMilestone } from '@/actions/App/Http/Controllers/DashboardController';
 
 export default function MilestoneCelebration({
     bookId,
@@ -10,6 +11,7 @@ export default function MilestoneCelebration({
     bookId: number;
     target: ManuscriptTarget;
 }) {
+    const { t, i18n } = useTranslation('dashboard');
     const [visible, setVisible] = useState(false);
     const [dismissed, setDismissed] = useState(false);
 
@@ -34,7 +36,7 @@ export default function MilestoneCelebration({
     if (dismissed || !target.milestone_reached) return null;
 
     const reachedDate = target.milestone_reached_at
-        ? new Date(target.milestone_reached_at).toLocaleDateString('en-US', {
+        ? new Date(target.milestone_reached_at).toLocaleDateString(i18n.language, {
               month: 'long',
               day: 'numeric',
               year: 'numeric',
@@ -50,10 +52,10 @@ export default function MilestoneCelebration({
             <div className="flex items-start justify-between">
                 <div>
                     <p className="font-serif text-[32px] leading-[40px] text-ink">
-                        {target.total_words.toLocaleString('en-US')} words.
+                        {t('milestone.words', { value: target.total_words.toLocaleString(i18n.language) })}
                     </p>
                     <p className="mt-0.5 font-serif text-[32px] leading-[40px] text-ink-muted">
-                        {target.days_writing} day{target.days_writing !== 1 ? 's' : ''}.
+                        {t('milestone.days', { count: target.days_writing })}
                     </p>
                 </div>
                 <button
@@ -61,33 +63,33 @@ export default function MilestoneCelebration({
                     onClick={handleDismiss}
                     className="mt-1 text-xs text-ink-faint transition-colors hover:text-ink"
                 >
-                    Dismiss
+                    {t('milestone.dismiss')}
                 </button>
             </div>
 
             <div className="mt-6 flex gap-8">
                 <div className="flex flex-col gap-0.5">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">Target</span>
+                    <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">{t('milestone.target')}</span>
                     <span className="font-serif text-[18px] leading-[22px] text-ink">
-                        {target.target_word_count?.toLocaleString('en-US')}
+                        {target.target_word_count?.toLocaleString(i18n.language)}
                     </span>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">Written</span>
+                    <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">{t('milestone.written')}</span>
                     <span className="font-serif text-[18px] leading-[22px] text-ink">
-                        {target.total_words.toLocaleString('en-US')}
+                        {target.total_words.toLocaleString(i18n.language)}
                     </span>
                 </div>
                 <div className="flex flex-col gap-0.5">
                     <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">
-                        Days writing
+                        {t('milestone.daysWriting')}
                     </span>
                     <span className="font-serif text-[18px] leading-[22px] text-ink">{target.days_writing}</span>
                 </div>
                 {reachedDate && (
                     <div className="flex flex-col gap-0.5">
                         <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">
-                            Reached
+                            {t('milestone.reached')}
                         </span>
                         <span className="font-serif text-[18px] leading-[22px] text-ink">{reachedDate}</span>
                     </div>

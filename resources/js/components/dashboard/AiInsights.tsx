@@ -1,20 +1,7 @@
+import { useTranslation } from 'react-i18next';
 import type { AttentionItem, HealthMetrics } from '@/types/models';
 
-function formatTimeAgo(dateString: string): string {
-    const now = new Date();
-    const date = new Date(dateString);
-    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (seconds < 60) return 'just now';
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-    const days = Math.floor(hours / 24);
-    return `${days} day${days === 1 ? '' : 's'} ago`;
-}
-
-function ScoreGauge({ score }: { score: number }) {
+function ScoreGauge({ score, of100Label }: { score: number; of100Label: string }) {
     const size = 96;
     const strokeWidth = 6;
     const radius = (size - strokeWidth) / 2;
@@ -60,7 +47,7 @@ function ScoreGauge({ score }: { score: number }) {
                 dominantBaseline="central"
                 className="fill-ink-faint font-sans text-[11px]"
             >
-                of 100
+                {of100Label}
             </text>
         </svg>
     );
@@ -90,18 +77,34 @@ const severityColor: Record<AttentionItem['severity'], string> = {
 };
 
 export default function AiInsights({ healthMetrics }: { healthMetrics: HealthMetrics }) {
+    const { t } = useTranslation('dashboard');
+
+    function formatTimeAgo(dateString: string): string {
+        const now = new Date();
+        const date = new Date(dateString);
+        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+        if (seconds < 60) return t('aiInsights.timeAgo.justNow');
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return t('aiInsights.timeAgo.minutes', { count: minutes });
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return t('aiInsights.timeAgo.hours', { count: hours });
+        const days = Math.floor(hours / 24);
+        return t('aiInsights.timeAgo.days', { count: days });
+    }
+
     return (
         <div className="flex gap-8">
             {/* Left — Manuscript Health */}
             <div className="flex flex-1 flex-col gap-5">
                 <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
-                    Manuscript Health
+                    {t('aiInsights.manuscriptHealth')}
                 </span>
 
                 <div className="flex items-center gap-6">
-                    <ScoreGauge score={healthMetrics.composite_score} />
+                    <ScoreGauge score={healthMetrics.composite_score} of100Label={t('aiInsights.of100')} />
                     <span className="text-[12px] text-ink-muted">
-                        Last analyzed{' '}
+                        {t('aiInsights.lastAnalyzed')}{' '}
                         <span className="text-ink-faint">{formatTimeAgo(healthMetrics.last_analyzed_at)}</span>
                     </span>
                 </div>
@@ -116,11 +119,11 @@ export default function AiInsights({ healthMetrics }: { healthMetrics: HealthMet
             {/* Right — Attention Needed */}
             <div className="flex flex-1 flex-col gap-4">
                 <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
-                    Attention Needed
+                    {t('aiInsights.attentionNeeded')}
                 </span>
 
                 {healthMetrics.attention_items.length === 0 && (
-                    <p className="text-[13px] text-ink-faint">No issues found.</p>
+                    <p className="text-[13px] text-ink-faint">{t('aiInsights.noIssues')}</p>
                 )}
 
                 <div className="flex flex-col gap-3">

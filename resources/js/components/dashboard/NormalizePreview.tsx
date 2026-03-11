@@ -1,7 +1,8 @@
-import { getXsrfToken } from '@/lib/csrf';
-import type { NormalizePreviewResult } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { getXsrfToken } from '@/lib/csrf';
+import type { NormalizePreviewResult } from '@/types/models';
 
 export default function NormalizePreview({
     bookId,
@@ -12,6 +13,7 @@ export default function NormalizePreview({
     chapterId?: number;
     onClose: () => void;
 }) {
+    const { t } = useTranslation('dashboard');
     const [loading, setLoading] = useState(true);
     const [applying, setApplying] = useState(false);
     const [preview, setPreview] = useState<NormalizePreviewResult | null>(null);
@@ -47,13 +49,13 @@ export default function NormalizePreview({
             })
             .catch((e) => {
                 if (e.name !== 'AbortError') {
-                    setError('Failed to load normalization preview');
+                    setError(t('normalize.loadError'));
                     setLoading(false);
                 }
             });
 
         return () => controller.abort();
-    }, [previewUrl]);
+    }, [previewUrl, t]);
 
     const handleApply = useCallback(async () => {
         setApplying(true);
@@ -73,10 +75,10 @@ export default function NormalizePreview({
             onClose();
             router.reload();
         } catch {
-            setError('Failed to apply normalization');
+            setError(t('normalize.applyError'));
             setApplying(false);
         }
-    }, [applyUrl, onClose]);
+    }, [applyUrl, onClose, t]);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/20" onClick={onClose}>
@@ -86,7 +88,7 @@ export default function NormalizePreview({
             >
                 <div className="flex items-center justify-between border-b border-border px-6 py-4">
                     <h2 className="text-sm font-medium text-ink">
-                        {chapterId ? 'Normalize chapter' : 'Normalize manuscript'}
+                        {chapterId ? t('normalize.titleChapter') : t('normalize.titleManuscript')}
                     </h2>
                     <button
                         type="button"
@@ -103,21 +105,23 @@ export default function NormalizePreview({
                     {loading && (
                         <div className="flex items-center gap-2 text-sm text-ink-muted">
                             <span className="inline-block size-3 animate-spin rounded-full border-2 border-ink-faint border-t-ink" />
-                            Analyzing...
+                            {t('normalize.analyzing')}
                         </div>
                     )}
 
                     {error && <p className="text-sm text-red-600">{error}</p>}
 
                     {preview && preview.total_changes === 0 && (
-                        <p className="text-sm text-ink-muted">No changes needed. Your text is already clean.</p>
+                        <p className="text-sm text-ink-muted">{t('normalize.noChanges')}</p>
                     )}
 
                     {preview && preview.total_changes > 0 && (
                         <div className="flex flex-col gap-3">
                             <p className="text-sm text-ink-muted">
-                                Found <span className="font-medium text-ink">{preview.total_changes}</span> changes
-                                across {preview.chapters.filter((c) => c.total_changes > 0).length} chapter(s).
+                                {t('normalize.foundChanges', {
+                                    count: preview.total_changes,
+                                    chapters: preview.chapters.filter((c) => c.total_changes > 0).length,
+                                })}
                             </p>
                             {preview.chapters
                                 .filter((c) => c.total_changes > 0)
@@ -146,7 +150,7 @@ export default function NormalizePreview({
                         onClick={onClose}
                         className="rounded-md px-4 py-2 text-sm text-ink-muted transition-colors hover:text-ink"
                     >
-                        Cancel
+                        {t('normalize.cancel')}
                     </button>
                     {preview && preview.total_changes > 0 && (
                         <button
@@ -155,7 +159,7 @@ export default function NormalizePreview({
                             disabled={applying}
                             className="rounded-md bg-ink px-4 py-2 text-sm font-medium text-surface transition-colors hover:bg-ink/90 disabled:opacity-50"
                         >
-                            {applying ? 'Applying...' : 'Apply changes'}
+                            {applying ? t('normalize.applying') : t('normalize.applyChanges')}
                         </button>
                     )}
                 </div>

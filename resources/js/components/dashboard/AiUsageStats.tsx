@@ -1,10 +1,12 @@
-import { resetUsage } from '@/actions/App/Http/Controllers/AiController';
-import { formatCompactCount, jsonFetchHeaders } from '@/lib/utils';
-import type { AiUsage } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatCompactCount, jsonFetchHeaders } from '@/lib/utils';
+import type { AiUsage } from '@/types/models';
+import { resetUsage } from '@/actions/App/Http/Controllers/AiController';
 
 export default function AiUsageStats({ bookId, usage }: { bookId: number; usage: AiUsage }) {
+    const { t, i18n } = useTranslation('dashboard');
     const [confirming, setConfirming] = useState(false);
 
     const handleReset = useCallback(async () => {
@@ -32,7 +34,7 @@ export default function AiUsageStats({ bookId, usage }: { bookId: number; usage:
         <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
-                    AI Token Usage
+                    {t('aiUsage.title')}
                 </span>
                 <button
                     type="button"
@@ -40,26 +42,26 @@ export default function AiUsageStats({ bookId, usage }: { bookId: number; usage:
                     onBlur={() => setConfirming(false)}
                     className="text-[12px] text-ink-faint transition-colors hover:text-ink"
                 >
-                    {confirming ? 'Confirm reset?' : 'Reset'}
+                    {confirming ? t('aiUsage.confirmReset') : t('aiUsage.reset')}
                 </button>
             </div>
 
             <div className="flex gap-4">
                 <div className="flex flex-1 flex-col gap-1 rounded-lg bg-surface-card px-5 py-4">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">Input</span>
+                    <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">{t('aiUsage.input')}</span>
                     <span className="font-serif text-[22px] leading-[26px] font-medium text-ink">
                         {formatCompactCount(usage.input_tokens)}
                     </span>
                 </div>
                 <div className="flex flex-1 flex-col gap-1 rounded-lg bg-surface-card px-5 py-4">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">Output</span>
+                    <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">{t('aiUsage.output')}</span>
                     <span className="font-serif text-[22px] leading-[26px] font-medium text-ink">
                         {formatCompactCount(usage.output_tokens)}
                     </span>
                 </div>
                 <div className="flex flex-1 flex-col gap-1 rounded-lg bg-surface-card px-5 py-4">
                     <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">
-                        Est. Cost
+                        {t('aiUsage.estCost')}
                     </span>
                     <span className="font-serif text-[22px] leading-[26px] font-medium text-ink">
                         {usage.cost_display}
@@ -69,7 +71,7 @@ export default function AiUsageStats({ bookId, usage }: { bookId: number; usage:
 
             {usage.reset_at && (
                 <span className="text-[12px] text-ink-faint">
-                    Tracking since {new Date(usage.reset_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {t('aiUsage.trackingSince', { date: new Date(usage.reset_at).toLocaleDateString(i18n.language, { month: 'short', day: 'numeric', year: 'numeric' }) })}
                 </span>
             )}
         </div>
