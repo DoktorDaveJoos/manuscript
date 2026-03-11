@@ -3,6 +3,7 @@ import { jsonFetchHeaders } from '@/lib/utils';
 import { ChatCircle, PaperPlaneTilt, X } from '@phosphor-icons/react';
 import MarkdownIt from 'markdown-it';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const md = new MarkdownIt({ linkify: true, breaks: true });
 
@@ -30,6 +31,7 @@ export default function AiChatDrawer({
     chapterId: number;
     onClose: () => void;
 }) {
+    const { t } = useTranslation('ai');
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isStreaming, setIsStreaming] = useState(false);
@@ -190,7 +192,7 @@ export default function AiChatDrawer({
                 if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
                     updated[updated.length - 1] = {
                         ...updated[updated.length - 1],
-                        content: updated[updated.length - 1].content || 'Connection failed. Please try again.',
+                        content: updated[updated.length - 1].content || t('chat.connectionFailed'),
                     };
                 }
                 return updated;
@@ -224,7 +226,7 @@ export default function AiChatDrawer({
             <div className="flex h-12 items-center justify-between border-b border-border-subtle px-5">
                 <div className="flex items-center gap-2">
                     <ChatCircle size={14} weight="fill" className="text-ink" />
-                    <span className="text-xs font-semibold uppercase tracking-[0.06em] text-ink">Ask AI</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.06em] text-ink">{t('askAi')}</span>
                 </div>
                 <button
                     type="button"
@@ -239,12 +241,12 @@ export default function AiChatDrawer({
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-5">
                 {messages.length === 0 && (
                     <p className="text-center text-xs leading-relaxed text-ink-faint">
-                        Ask anything about your book — characters, plot, writing style, or chapter feedback.
+                        {t('chat.emptyState')}
                     </p>
                 )}
                 {messages.map((msg, i) => (
                     <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                        <span className="mb-1 text-[11px] text-ink-faint">{msg.role === 'user' ? 'You' : 'AI'}</span>
+                        <span className="mb-1 text-[11px] text-ink-faint">{msg.role === 'user' ? t('chat.senderYou') : t('chat.senderAi')}</span>
                         <div
                             className={`max-w-[85%] px-3.5 py-2.5 text-[13px] leading-relaxed text-ink ${
                                 msg.role === 'user'
@@ -273,7 +275,7 @@ export default function AiChatDrawer({
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask about this book..."
+                    placeholder={t('chat.placeholder')}
                     disabled={isStreaming}
                     className="h-10 flex-1 rounded-lg border border-border bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint disabled:opacity-60"
                 />

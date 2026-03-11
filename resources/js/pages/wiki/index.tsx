@@ -8,6 +8,7 @@ import type { Book, Character, Storyline, WikiEntry } from '@/types/models';
 import { Head } from '@inertiajs/react';
 import { Plus } from '@phosphor-icons/react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const validTabs: WikiTab[] = ['characters', 'location', 'organization', 'item', 'lore'];
 
@@ -30,6 +31,7 @@ export default function WikiIndex({
     lore,
     tab,
 }: Props) {
+    const { t } = useTranslation('wiki');
     const storylines = book.storylines ?? [];
     const initialTab = validTabs.includes(tab as WikiTab) ? (tab as WikiTab) : 'characters';
     const [activeTab, setActiveTab] = useState<WikiTab>(initialTab);
@@ -63,7 +65,7 @@ export default function WikiIndex({
 
     return (
         <>
-            <Head title={`Wiki — ${book.title}`} />
+            <Head title={t('pageTitle', { title: book.title })} />
             <div className="flex h-screen overflow-hidden bg-surface">
                 <Sidebar book={book} storylines={storylines} scenesVisible={false} onScenesVisibleChange={() => {}} />
 
@@ -72,7 +74,7 @@ export default function WikiIndex({
                     {/* Header */}
                     <div className="flex items-center justify-between px-5 pb-0 pt-5">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-[18px] font-semibold text-ink">Wiki</h1>
+                            <h1 className="text-[18px] font-semibold text-ink">{t('heading')}</h1>
                             <span className="text-[13px] text-ink-faint">{count}</span>
                         </div>
                         <button className="flex h-6 w-6 items-center justify-center rounded border border-border text-ink-muted transition-colors hover:bg-neutral-bg">

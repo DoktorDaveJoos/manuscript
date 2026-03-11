@@ -8,14 +8,9 @@ import type { Analysis, Book, Chapter, Character, CharacterChapterPivot, Charact
 import { CaretLeft, CaretRight, ChatCircle, Lock, Sparkle, Table } from '@phosphor-icons/react';
 import { Link, router } from '@inertiajs/react';
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type ChapterCharacter = Character & { pivot: CharacterChapterPivot };
-
-const roleLabel: Record<CharacterRole, string> = {
-    protagonist: 'POV',
-    supporting: 'Supporting',
-    mentioned: 'Mentioned',
-};
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
     return (
@@ -31,24 +26,13 @@ function SectionDivider() {
 
 type ScoreLabel = { text: string; textColor: string; dotColor: string };
 
-const EMPTY_SCORE: ScoreLabel = { text: '--', textColor: 'text-ink-faint', dotColor: 'bg-ink-faint' };
-
 function makeScoreLabeler(good: string, fair: string, weak: string) {
-    return (score: number | null): ScoreLabel => {
-        if (score === null) return EMPTY_SCORE;
+    return (score: number | null, empty: ScoreLabel): ScoreLabel => {
+        if (score === null) return empty;
         if (score >= 7) return { text: good, textColor: 'text-ai-green', dotColor: 'bg-ai-green' };
         if (score >= 4) return { text: fair, textColor: 'text-status-revised', dotColor: 'bg-status-revised' };
         return { text: weak, textColor: 'text-red-600', dotColor: 'bg-red-600' };
     };
-}
-
-const scoreLabel = makeScoreLabeler('Good', 'Fair', 'Weak');
-const densityScoreLabel = makeScoreLabeler('Rich', 'Thin', 'Sparse');
-const plotScoreLabel = makeScoreLabeler('On track', 'Drifting', 'Off course');
-
-function presenceLabel(value: unknown): ScoreLabel {
-    if (value != null) return { text: 'Strong', textColor: 'text-ai-green', dotColor: 'bg-ai-green' };
-    return EMPTY_SCORE;
 }
 
 function CraftMetricRow({ label, score, detail }: { label: string; score: ScoreLabel; detail?: string | null }) {
@@ -90,7 +74,7 @@ function FindingDot({ variant }: { variant: 'warning' | 'info' }) {
     );
 }
 
-function CharacterRow({ character }: { character: ChapterCharacter }) {
+function CharacterRow({ character, roleText }: { character: ChapterCharacter; roleText: string }) {
     const initial = character.name.charAt(0).toUpperCase();
 
     return (
@@ -100,7 +84,7 @@ function CharacterRow({ character }: { character: ChapterCharacter }) {
             </div>
             <div className="flex flex-col">
                 <span className="text-[13px] font-medium text-ink">{character.name}</span>
-                <span className="text-[11px] text-ink-faint">{roleLabel[character.pivot.role]}</span>
+                <span className="text-[11px] text-ink-faint">{roleText}</span>
             </div>
         </div>
     );
@@ -162,6 +146,7 @@ export default function AiPanel({
     onOpenChat?: () => void;
     chapterAnalyses?: Record<string, Analysis>;
 }) {
+    const { t, i18n } = useTranslation('ai');
     const { visible, usable, licensed } = useAiFeatures();
     const aiEnabled = usable;
 
@@ -171,21 +156,27 @@ export default function AiPanel({
     const { status: analysisStatus, isAnalyzing, error: analysisError, analyses, handleAnalyze } =
         useChapterAnalysis(book.id, chapter.id, chapter.analysis_status, chapterAnalyses);
 
+    const EMPTY_SCORE: ScoreLabel = { text: t('score.empty'), textColor: 'text-ink-faint', dotColor: 'bg-ink-faint' };
+    const scoreLabel = makeScoreLabeler(t('score.good'), t('score.fair'), t('score.weak'));
+    const densityScoreLabel = makeScoreLabeler(t('score.rich'), t('score.thin'), t('score.sparse'));
+    const plotScoreLabel = makeScoreLabeler(t('score.onTrack'), t('score.drifting'), t('score.offCourse'));
+
+    const presenceLabel = (value: unknown): ScoreLabel => {
+        if (value != null) return { text: t('score.strong'), textColor: 'text-ai-green', dotColor: 'bg-ai-green' };
+        return EMPTY_SCORE;
+    };
+
     const handleRunProse = useCallback(async () => {
         if (
             !chapter.analyzed_at &&
-            !confirm(
-                "This chapter hasn't been analyzed yet. The prose pass works better with character and entity context. Continue anyway?",
-            )
+            !confirm(t('confirm.notAnalyzed'))
         ) {
             return;
         }
 
         if (
             chapter.word_count > 8000 &&
-            !confirm(
-                `This chapter has ${chapter.word_count.toLocaleString()} words. Very long chapters may produce lower quality revisions or exceed AI output limits. Continue?`,
-            )
+            !confirm(t('confirm.longChapter', { wordCount: chapter.word_count.toLocaleString(i18n.language) }))
         ) {
             return;
         }
@@ -200,31 +191,31 @@ export default function AiPanel({
                 },
             });
 
-            if (!response.ok) throw new Error('Prose pass failed');
+            if (!response.ok) throw new Error(t('error.prosePassFailed'));
 
             await response.text();
             router.reload();
         } catch (e) {
-            onError?.(e instanceof Error ? e.message : 'Prose pass failed');
+            onError?.(e instanceof Error ? e.message : t('error.prosePassFailed'));
         } finally {
             setIsRunningProse(false);
         }
-    }, [book.id, chapter.id, chapter.word_count, chapter.analyzed_at, onError]);
+    }, [book.id, chapter.id, chapter.word_count, chapter.analyzed_at, onError, t, i18n.language]);
 
     const findings = useMemo(() => collectFindings(analyses), [analyses]);
     const nextSuggestion = useMemo(() => getNextChapterSuggestion(analyses), [analyses]);
 
     // Chapter level
-    const tensionLabel = scoreLabel(chapter.tension_score);
-    const emotionalLabel = scoreLabel(chapter.emotional_shift_magnitude);
+    const tensionLabel = scoreLabel(chapter.tension_score, EMPTY_SCORE);
+    const emotionalLabel = scoreLabel(chapter.emotional_shift_magnitude, EMPTY_SCORE);
     const pacingAnalysis = analyses['pacing']?.result as { score?: number } | null;
-    const pacingLabel = scoreLabel(pacingAnalysis?.score ?? null);
+    const pacingLabel = scoreLabel(pacingAnalysis?.score ?? null, EMPTY_SCORE);
 
     // Prose level
     const craftScore = chapter.sensory_grounding != null ? chapter.sensory_grounding * 2 : null;
-    const craftLabel = scoreLabel(craftScore);
+    const craftLabel = scoreLabel(craftScore, EMPTY_SCORE);
     const densityAnalysis = analyses['density']?.result as { score?: number; recommendations?: string[] } | null;
-    const densityLabel = densityScoreLabel(densityAnalysis?.score ?? null);
+    const densityLabel = densityScoreLabel(densityAnalysis?.score ?? null, EMPTY_SCORE);
     const densityDetail = densityAnalysis?.recommendations?.[0] ?? null;
 
     // Scene level
@@ -232,14 +223,14 @@ export default function AiPanel({
     const avgHookScore = chapter.entry_hook_score != null && chapter.exit_hook_score != null
         ? Math.round((chapter.entry_hook_score + chapter.exit_hook_score) / 2)
         : chapter.entry_hook_score ?? chapter.exit_hook_score ?? null;
-    const hookLabel = scoreLabel(avgHookScore);
+    const hookLabel = scoreLabel(avgHookScore, EMPTY_SCORE);
 
     // Manuscript level
     const consistencyAnalysis = analyses['character_consistency']?.result as { score?: number; findings?: string[] } | null;
-    const consistencyLabel = scoreLabel(consistencyAnalysis?.score ?? null);
+    const consistencyLabel = scoreLabel(consistencyAnalysis?.score ?? null, EMPTY_SCORE);
     const consistencyDetail = consistencyAnalysis?.findings?.[0] ?? null;
     const plotAnalysis = analyses['plot_deviation']?.result as { score?: number; findings?: string[] } | null;
-    const plotLabel = plotScoreLabel(plotAnalysis?.score ?? null);
+    const plotLabel = plotScoreLabel(plotAnalysis?.score ?? null, EMPTY_SCORE);
     const plotDetail = plotAnalysis?.findings?.[0] ?? null;
 
     return (
@@ -255,7 +246,7 @@ export default function AiPanel({
                     <div className="flex h-12 items-center justify-between border-b border-border-subtle px-5">
                         <div className="flex items-center gap-2">
                             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-ink">
-                                AI Assistant
+                                {t('header')}
                             </span>
                             {licensed ? (
                                 <span
@@ -283,7 +274,7 @@ export default function AiPanel({
                             <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-4">
                                 {/* Actions section */}
                                 <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>Actions</SectionLabel>
+                                    <SectionLabel>{t('section.actions')}</SectionLabel>
                                     {aiEnabled ? (
                                         <>
                                             <button
@@ -293,10 +284,10 @@ export default function AiPanel({
                                                 className={actionButtonClass}
                                             >
                                                 <Table size={14} weight="bold" />
-                                                {isAnalyzing ? 'Analyzing...' : 'Analyze chapter'}
+                                                {isAnalyzing ? t('actions.analyzing') : t('actions.analyze')}
                                             </button>
                                             <p className="text-xs leading-relaxed text-ink-muted">
-                                                Runs chapter analysis, character extraction, and manuscript checks.
+                                                {t('actions.analyzeDescription')}
                                             </p>
                                             {analysisError && (
                                                 <p className="text-xs leading-relaxed text-red-600">{analysisError}</p>
@@ -304,12 +295,12 @@ export default function AiPanel({
                                         </>
                                     ) : (
                                         <p className="text-xs leading-relaxed text-ink-muted">
-                                            AI is not configured.{' '}
+                                            {t('actions.notConfigured')}{' '}
                                             <Link
                                                 href="/settings/ai"
                                                 className="font-medium text-accent underline decoration-accent/30 hover:decoration-accent"
                                             >
-                                                Configure AI settings
+                                                {t('actions.configureSettings')}
                                             </Link>
                                         </p>
                                     )}
@@ -319,7 +310,7 @@ export default function AiPanel({
 
                                 {/* Prose section */}
                                 <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>Prose</SectionLabel>
+                                    <SectionLabel>{t('section.prose')}</SectionLabel>
                                     {aiEnabled ? (
                                         <>
                                             <button
@@ -329,10 +320,10 @@ export default function AiPanel({
                                                 className={actionButtonClass}
                                             >
                                                 <Sparkle size={14} weight="fill" />
-                                                {isRunningProse ? 'Running...' : 'Run prose pass'}
+                                                {isRunningProse ? t('prose.running') : t('prose.runProsePass')}
                                             </button>
                                             <p className="text-xs leading-relaxed text-ink-muted">
-                                                Analyzes pacing, voice consistency, and prose quality.
+                                                {t('prose.description')}
                                             </p>
                                         </>
                                     ) : null}
@@ -342,25 +333,25 @@ export default function AiPanel({
 
                                 {/* Craft Metrics */}
                                 <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>Craft Metrics</SectionLabel>
+                                    <SectionLabel>{t('section.craftMetrics')}</SectionLabel>
                                     <div className="flex flex-col gap-4">
-                                        <LevelGroup title="Chapter">
+                                        <LevelGroup title={t('level.chapter')}>
                                             <CraftMetricRow
-                                                label="Tension Dynamics"
+                                                label={t('metric.tensionDynamics')}
                                                 score={tensionLabel}
                                                 detail={chapter.tension_score != null
-                                                    ? `${chapter.tension_score}/10 · Micro-tension: ${chapter.micro_tension_score ?? '--'}`
+                                                    ? t('metric.tensionDetail', { score: chapter.tension_score, microTension: chapter.micro_tension_score ?? '--' })
                                                     : null}
                                             />
                                             <CraftMetricRow
-                                                label="Emotional Arc"
+                                                label={t('metric.emotionalArc')}
                                                 score={emotionalLabel}
                                                 detail={chapter.emotional_shift_magnitude != null
-                                                    ? `${chapter.emotional_state_open ?? '?'} → ${chapter.emotional_state_close ?? '?'} · Shift: ${chapter.emotional_shift_magnitude}`
+                                                    ? t('metric.emotionalDetail', { open: chapter.emotional_state_open ?? '?', close: chapter.emotional_state_close ?? '?', magnitude: chapter.emotional_shift_magnitude })
                                                     : null}
                                             />
                                             <CraftMetricRow
-                                                label="Pacing"
+                                                label={t('metric.pacing')}
                                                 score={pacingLabel}
                                                 detail={chapter.pacing_feel
                                                     ? chapter.pacing_feel.charAt(0).toUpperCase() + chapter.pacing_feel.slice(1)
@@ -368,46 +359,48 @@ export default function AiPanel({
                                             />
                                         </LevelGroup>
 
-                                        <LevelGroup title="Prose">
+                                        <LevelGroup title={t('level.prose')}>
                                             <CraftMetricRow
-                                                label="Craft Score"
+                                                label={t('metric.craftScore')}
                                                 score={craftLabel}
                                                 detail={chapter.sensory_grounding != null
-                                                    ? `${chapter.sensory_grounding} senses · ${chapter.information_delivery ?? '--'}`
+                                                    ? t('metric.craftDetail', { senses: chapter.sensory_grounding, delivery: chapter.information_delivery ?? '--' })
                                                     : null}
                                             />
                                             <CraftMetricRow
-                                                label="Narrative Density"
+                                                label={t('metric.narrativeDensity')}
                                                 score={densityLabel}
                                                 detail={densityDetail}
                                             />
                                         </LevelGroup>
 
-                                        <LevelGroup title="Scene">
+                                        <LevelGroup title={t('level.scene')}>
                                             <CraftMetricRow
-                                                label="Scene Purpose"
+                                                label={t('metric.scenePurpose')}
                                                 score={scenePurposeLabel}
                                                 detail={chapter.scene_purpose
-                                                    ? `${chapter.scene_purpose} · Value shift ${chapter.value_shift ? 'present' : 'absent'}`
+                                                    ? t('metric.scenePurposeDetail', { purpose: chapter.scene_purpose, valueShift: chapter.value_shift ? t('metric.valueShiftPresent') : t('metric.valueShiftAbsent') })
                                                     : null}
                                             />
                                             <CraftMetricRow
-                                                label="Hooks"
+                                                label={t('metric.hooks')}
                                                 score={hookLabel}
                                                 detail={avgHookScore != null
-                                                    ? `Entry: ${chapter.entry_hook_score ?? '--'} · Exit: ${chapter.exit_hook_score ?? '--'}${chapter.hook_type ? ` · ${chapter.hook_type.replace('_', ' ')}` : ''}`
+                                                    ? chapter.hook_type
+                                                        ? t('metric.hooksDetailWithType', { entry: chapter.entry_hook_score ?? '--', exit: chapter.exit_hook_score ?? '--', hookType: chapter.hook_type.replace('_', ' ') })
+                                                        : t('metric.hooksDetail', { entry: chapter.entry_hook_score ?? '--', exit: chapter.exit_hook_score ?? '--' })
                                                     : null}
                                             />
                                         </LevelGroup>
 
-                                        <LevelGroup title="Manuscript">
+                                        <LevelGroup title={t('level.manuscript')}>
                                             <CraftMetricRow
-                                                label="Consistency"
+                                                label={t('metric.consistency')}
                                                 score={consistencyLabel}
                                                 detail={consistencyDetail}
                                             />
                                             <CraftMetricRow
-                                                label="Plot Alignment"
+                                                label={t('metric.plotAlignment')}
                                                 score={plotLabel}
                                                 detail={plotDetail}
                                             />
@@ -419,7 +412,7 @@ export default function AiPanel({
 
                                 {/* Findings */}
                                 <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>Findings</SectionLabel>
+                                    <SectionLabel>{t('section.findings')}</SectionLabel>
                                     {findings.length > 0 ? (
                                         <div className="flex flex-col gap-3">
                                             {findings.map((f, i) => (
@@ -431,7 +424,7 @@ export default function AiPanel({
                                         </div>
                                     ) : (
                                         <p className="text-xs italic leading-relaxed text-ink-muted">
-                                            {analysisStatus === 'completed' ? 'No findings' : 'No analysis run yet'}
+                                            {analysisStatus === 'completed' ? t('findings.none') : t('findings.noAnalysis')}
                                         </p>
                                     )}
                                 </div>
@@ -440,12 +433,12 @@ export default function AiPanel({
 
                                 {/* Next Chapter */}
                                 <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>Next Chapter</SectionLabel>
+                                    <SectionLabel>{t('section.nextChapter')}</SectionLabel>
                                     {nextSuggestion ? (
                                         <p className="text-[13px] leading-relaxed text-ink-soft">{nextSuggestion}</p>
                                     ) : (
                                         <p className="text-[13px] leading-relaxed text-ink-soft">
-                                            Run an analysis first to receive chapter continuation suggestions.
+                                            {t('nextChapter.noSuggestion')}
                                         </p>
                                     )}
                                     <button
@@ -453,7 +446,7 @@ export default function AiPanel({
                                         disabled={!nextSuggestion}
                                         className="self-start text-xs font-medium text-accent transition-colors hover:text-accent/80 disabled:opacity-40"
                                     >
-                                        Generate outline
+                                        {t('nextChapter.generateOutline')}
                                     </button>
                                 </div>
 
@@ -461,16 +454,16 @@ export default function AiPanel({
 
                                 {/* In This Chapter — Characters */}
                                 <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>In This Chapter</SectionLabel>
+                                    <SectionLabel>{t('section.inThisChapter')}</SectionLabel>
                                     {characters.length > 0 ? (
                                         <div className="flex flex-col gap-2">
                                             {characters.map((character) => (
-                                                <CharacterRow key={character.id} character={character} />
+                                                <CharacterRow key={character.id} character={character} roleText={t(`role.${character.pivot.role}`)} />
                                             ))}
                                         </div>
                                     ) : (
                                         <p className="text-xs italic leading-relaxed text-ink-muted">
-                                            No characters linked
+                                            {t('characters.none')}
                                         </p>
                                     )}
                                 </div>
@@ -484,30 +477,30 @@ export default function AiPanel({
                                     className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:bg-surface hover:text-ink"
                                 >
                                     <ChatCircle size={14} weight="regular" />
-                                    Ask AI
+                                    {t('askAi')}
                                 </button>
-                                <span className="text-[11px] text-ink-faint">~820 tokens</span>
+                                <span className="text-[11px] text-ink-faint">{t('tokensEstimate')}</span>
                             </div>
                         </>
                     ) : (
                         <ProFeatureLock>
                             <div className="flex flex-1 flex-col gap-5 p-4 opacity-40">
                                 <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>Actions</SectionLabel>
+                                    <SectionLabel>{t('section.actions')}</SectionLabel>
                                     <div className="h-9 rounded-md bg-border/50" />
                                 </div>
                                 <SectionDivider />
                                 <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>Craft Metrics</SectionLabel>
+                                    <SectionLabel>{t('section.craftMetrics')}</SectionLabel>
                                     <div className="flex flex-col gap-4">
-                                        <LevelGroup title="Chapter">
-                                            <CraftMetricRow label="Tension Dynamics" score={EMPTY_SCORE} />
-                                            <CraftMetricRow label="Emotional Arc" score={EMPTY_SCORE} />
-                                            <CraftMetricRow label="Pacing" score={EMPTY_SCORE} />
+                                        <LevelGroup title={t('level.chapter')}>
+                                            <CraftMetricRow label={t('metric.tensionDynamics')} score={EMPTY_SCORE} />
+                                            <CraftMetricRow label={t('metric.emotionalArc')} score={EMPTY_SCORE} />
+                                            <CraftMetricRow label={t('metric.pacing')} score={EMPTY_SCORE} />
                                         </LevelGroup>
-                                        <LevelGroup title="Prose">
-                                            <CraftMetricRow label="Craft Score" score={EMPTY_SCORE} />
-                                            <CraftMetricRow label="Density" score={EMPTY_SCORE} />
+                                        <LevelGroup title={t('level.prose')}>
+                                            <CraftMetricRow label={t('metric.craftScore')} score={EMPTY_SCORE} />
+                                            <CraftMetricRow label={t('metric.density')} score={EMPTY_SCORE} />
                                         </LevelGroup>
                                     </div>
                                 </div>

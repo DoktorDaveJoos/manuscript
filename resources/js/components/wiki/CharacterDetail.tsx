@@ -1,9 +1,12 @@
 import type { Character } from '@/types/models';
+import { useTranslation } from 'react-i18next';
 import WikiAvatar from './WikiAvatar';
 
 export default function CharacterDetail({ character }: { character: Character }) {
+    const { t } = useTranslation('wiki');
+
     const storylineLabels = character.storylines?.length
-        ? character.storylines.map((s) => `Storyline ${s}`).join(', ')
+        ? character.storylines.map((s) => t('storylineLabel', { name: s })).join(', ')
         : null;
 
     return (
@@ -17,7 +20,7 @@ export default function CharacterDetail({ character }: { character: Character })
                     </h2>
                     {character.aliases && character.aliases.length > 0 && (
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
-                            <span className="text-[12px] text-ink-muted">Also known as</span>
+                            <span className="text-[12px] text-ink-muted">{t('alsoKnownAs')}</span>
                             {character.aliases.map((alias) => (
                                 <span
                                     key={alias}
@@ -35,7 +38,7 @@ export default function CharacterDetail({ character }: { character: Character })
             {character.description && (
                 <div>
                     <h3 className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
-                        Description
+                        {t('description')}
                     </h3>
                     <p className="text-[14px] leading-relaxed text-ink">{character.description}</p>
                 </div>
@@ -46,18 +49,20 @@ export default function CharacterDetail({ character }: { character: Character })
                 {character.first_appearance_chapter && (
                     <div>
                         <h4 className="mb-1 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
-                            First Appearance
+                            {t('firstAppearance')}
                         </h4>
                         <p className="text-[13px] text-ink">
-                            Ch. {character.first_appearance_chapter.reader_order} —{' '}
-                            {character.first_appearance_chapter.title}
+                            {t('chapterEntry', {
+                                order: character.first_appearance_chapter.reader_order,
+                                title: character.first_appearance_chapter.title,
+                            })}
                         </p>
                     </div>
                 )}
                 {storylineLabels && (
                     <div>
                         <h4 className="mb-1 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
-                            Storylines
+                            {t('storylinesHeading')}
                         </h4>
                         <p className="text-[13px] text-ink">{storylineLabels}</p>
                     </div>
@@ -65,9 +70,9 @@ export default function CharacterDetail({ character }: { character: Character })
                 {character.is_ai_extracted && (
                     <div>
                         <h4 className="mb-1 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
-                            Source
+                            {t('source')}
                         </h4>
-                        <p className="text-[13px] text-ink">AI-extracted</p>
+                        <p className="text-[13px] text-ink">{t('aiExtracted')}</p>
                     </div>
                 )}
             </div>
@@ -76,7 +81,7 @@ export default function CharacterDetail({ character }: { character: Character })
             {character.chapters && character.chapters.length > 0 && (
                 <div>
                     <h3 className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
-                        Appears In
+                        {t('appearsIn')}
                     </h3>
                     <div className="flex flex-col">
                         {character.chapters.map((chapter) => (
@@ -96,11 +101,7 @@ export default function CharacterDetail({ character }: { character: Character })
                                               : 'bg-neutral-bg text-ink-faint'
                                     }`}
                                 >
-                                    {chapter.pivot.role === 'protagonist'
-                                        ? 'POV'
-                                        : chapter.pivot.role === 'supporting'
-                                          ? 'Supporting'
-                                          : 'Mentioned'}
+                                    {t(`role.${chapter.pivot.role}`)}
                                 </span>
                                 {chapter.pivot.notes && (
                                     <span className="text-[12px] italic text-ink-muted">

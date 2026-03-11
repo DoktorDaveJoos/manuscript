@@ -1,8 +1,9 @@
-import { useAiPreparation, TOTAL_PHASES, phaseLabels } from '@/hooks/useAiPreparation';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
+import { useAiPreparation, TOTAL_PHASES, phaseLabels } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
-import { Check, Lock, Sparkle } from '@phosphor-icons/react';
 import { Link } from '@inertiajs/react';
+import { Check, Lock, Sparkle } from '@phosphor-icons/react';
+import { useTranslation } from 'react-i18next';
 
 export default function AiPreparation({
     bookId,
@@ -11,6 +12,7 @@ export default function AiPreparation({
     bookId: number;
     initialStatus: AiPreparationStatus | null;
 }) {
+    const { t } = useTranslation('ai');
     const { visible, usable, licensed, configured } = useAiFeatures();
     const { status, isRunning, starting, error, handleStart } = useAiPreparation(bookId, initialStatus);
 
@@ -23,8 +25,8 @@ export default function AiPreparation({
         let linkContent: React.ReactNode = null;
 
         if (!licensed) {
-            heading = 'Requires Manuscript Pro';
-            description = 'Upgrade to Pro to unlock AI-powered manuscript analysis.';
+            heading = t('preparation.requiresPro');
+            description = t('preparation.upgradeDescription');
             linkContent = (
                 <a
                     href="https://getmanuscript.app"
@@ -32,18 +34,18 @@ export default function AiPreparation({
                     rel="noopener noreferrer"
                     className="text-[13px] font-medium text-accent transition-colors hover:text-accent/80"
                 >
-                    Learn more
+                    {t('preparation.learnMore')}
                 </a>
             );
         } else if (!configured) {
-            heading = 'Set up an AI provider';
-            description = 'Add an API key in AI settings to enable manuscript analysis.';
+            heading = t('preparation.setupProvider');
+            description = t('preparation.addApiKey');
             linkContent = (
                 <Link
                     href="/settings/ai"
                     className="text-[13px] font-medium text-accent transition-colors hover:text-accent/80"
                 >
-                    Go to AI settings
+                    {t('preparation.goToSettings')}
                 </Link>
             );
         }
@@ -52,7 +54,7 @@ export default function AiPreparation({
             <div className="flex items-center justify-between rounded-lg bg-surface-card px-6 py-6">
                 <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
-                        AI Preparation
+                        {t('preparation.title')}
                     </span>
                     <div className="flex items-center gap-2">
                         <Lock size={18} weight="fill" className="shrink-0 text-ink-faint" />
@@ -73,7 +75,7 @@ export default function AiPreparation({
     if (isRunning && status) {
         const completedCount = status.completed_phases?.length ?? 0;
         const currentPhase = status.current_phase;
-        const phaseLabel = currentPhase ? phaseLabels[currentPhase] : 'Starting...';
+        const phaseLabel = currentPhase ? phaseLabels[currentPhase] : t('preparation.starting');
         const overallProgress = Math.round((completedCount / TOTAL_PHASES) * 100);
 
         return (
@@ -86,7 +88,7 @@ export default function AiPreparation({
                     <div className="flex flex-col gap-0.5">
                         <span className="text-[14px] font-medium text-ink">{phaseLabel}...</span>
                         <span className="text-[12px] text-ink-faint">
-                            Phase {completedCount + 1}/{TOTAL_PHASES} &middot; {overallProgress}% overall
+                            {t('preparation.phaseProgress', { current: completedCount + 1, total: TOTAL_PHASES, percent: overallProgress })}
                         </span>
                     </div>
                 </div>
@@ -106,11 +108,11 @@ export default function AiPreparation({
             <div className="flex items-center justify-between rounded-lg bg-surface-card px-6 py-6">
                 <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
-                        AI Preparation
+                        {t('preparation.title')}
                     </span>
                     <div className="flex items-center gap-2">
                         <Check size={18} weight="bold" className="text-status-final" />
-                        <span className="font-serif text-[20px] font-medium text-ink">AI ready</span>
+                        <span className="font-serif text-[20px] font-medium text-ink">{t('preparation.aiReady')}</span>
                     </div>
                 </div>
                 <button
@@ -118,7 +120,7 @@ export default function AiPreparation({
                     onClick={handleStart}
                     className="text-[13px] font-medium text-ink-faint transition-colors hover:text-ink"
                 >
-                    Re-run
+                    {t('preparation.reRun')}
                 </button>
             </div>
         );
@@ -134,16 +136,15 @@ export default function AiPreparation({
                 <div className="flex items-center gap-1.5">
                     <Sparkle size={18} weight="fill" className="shrink-0 text-accent" />
                     <span className="font-serif text-[20px] font-medium text-ink">
-                        Unlock AI-powered insights
+                        {t('preparation.unlockInsights')}
                     </span>
                 </div>
                 <p className="text-[13px] text-ink-muted">
-                    Analyzes your manuscript to extract characters, map entities, understand your writing style, and
-                    build a story bible — enabling all AI features.
+                    {t('preparation.unlockDescription')}
                 </p>
                 {error && <span className="text-[12px] text-red-600">{error}</span>}
                 {status?.status === 'failed' && (
-                    <span className="text-[12px] text-red-600">{status.error_message ?? 'Preparation failed'}</span>
+                    <span className="text-[12px] text-red-600">{status.error_message ?? t('preparation.failed')}</span>
                 )}
             </div>
             <div className="flex w-[200px] shrink-0 flex-col items-center gap-2">
@@ -153,9 +154,9 @@ export default function AiPreparation({
                     disabled={starting}
                     className="w-full justify-center rounded-lg bg-ink px-5 py-2.5 text-[13px] font-medium text-surface transition-colors hover:bg-ink/90 disabled:opacity-50"
                 >
-                    {starting ? 'Starting...' : 'Prepare manuscript'}
+                    {starting ? t('preparation.starting') : t('preparation.prepareManuscript')}
                 </button>
-                <span className="text-[11px] text-ink-faint">One-time setup, takes ~2 min</span>
+                <span className="text-[11px] text-ink-faint">{t('preparation.setupTime')}</span>
             </div>
         </div>
     );
