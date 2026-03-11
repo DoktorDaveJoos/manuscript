@@ -149,8 +149,9 @@ export default function WritingGoal({
     }
 
     // Goal display
-    const progress = goal > 0 ? Math.min(100, Math.round((writingGoal.today_words / goal) * 100)) : 0;
-    const wordsToGo = Math.max(0, goal - writingGoal.today_words);
+    const effectiveGoal = goal ?? 0;
+    const progress = effectiveGoal > 0 ? Math.min(100, Math.round((writingGoal.today_words / effectiveGoal) * 100)) : 0;
+    const wordsToGo = Math.max(0, effectiveGoal - writingGoal.today_words);
 
     return (
         <div className="flex flex-col gap-3 rounded-lg bg-surface-card px-6 py-6">
@@ -174,7 +175,7 @@ export default function WritingGoal({
                     {writingGoal.today_words.toLocaleString(i18n.language)}
                 </span>
                 <span className="ml-1 font-serif text-[24px] text-ink-faint">
-                    / {goal.toLocaleString(i18n.language)}
+                    / {effectiveGoal.toLocaleString(i18n.language)}
                 </span>
             </div>
             <span className="mt-[-6px] text-[13px] text-ink-muted">{t('writingGoal.wordsToday')}</span>

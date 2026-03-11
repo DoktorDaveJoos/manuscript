@@ -42,7 +42,7 @@ export default function HealthTimeline({ history }: { history: HealthSnapshot[] 
 
         const metricLines = METRICS.map((m) => ({
             ...m,
-            points: history.map((d, i) => ({ x: xScale(i), y: yScale(d[m.key]) })),
+            points: history.map((d, i) => ({ x: xScale(i), y: yScale(d[m.key] ?? 0) })),
         }));
 
         // Date labels: first, middle, last

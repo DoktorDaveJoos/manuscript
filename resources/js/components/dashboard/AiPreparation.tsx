@@ -20,8 +20,8 @@ export default function AiPreparation({
 
     // Not usable — show contextual guidance
     if (!usable) {
-        let heading: string;
-        let description: string;
+        let heading = '';
+        let description = '';
         let linkContent: React.ReactNode = null;
 
         if (!licensed) {
