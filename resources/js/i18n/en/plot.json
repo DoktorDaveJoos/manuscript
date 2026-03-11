@@ -1,2 +1,62 @@
 {
+    "actTitle": "Act {{number}} \u2014 {{title}}",
+    "unassigned": "Unassigned",
+    "noPlotPointsYet": "No plot points yet",
+
+    "detailPanel.header": "Plot Point",
+    "detailPanel.title": "Title",
+    "detailPanel.description": "Description",
+    "detailPanel.descriptionPlaceholder": "Add a description...",
+    "detailPanel.type": "Type",
+    "detailPanel.status": "Status",
+    "detailPanel.connections": "Connections",
+    "detailPanel.plotPointFallback": "Plot point #{{id}}",
+    "detailPanel.jumpToChapter": "Jump to chapter",
+
+    "type.setup": "Setup",
+    "type.conflict": "Conflict",
+    "type.turning_point": "Turning point",
+    "type.resolution": "Resolution",
+    "type.worldbuilding": "Worldbuilding",
+
+    "status.planned": "Planned",
+    "status.fulfilled": "Fulfilled",
+    "status.abandoned": "Abandoned",
+
+    "connection.causes.incoming": "Caused by",
+    "connection.causes.outgoing": "Causes",
+    "connection.sets_up.incoming": "Set up by",
+    "connection.sets_up.outgoing": "Sets up",
+    "connection.resolves.incoming": "Resolved by",
+    "connection.resolves.outgoing": "Resolves",
+    "connection.contradicts.incoming": "Contradicted by",
+    "connection.contradicts.outgoing": "Contradicts",
+
+    "aiActions.header": "AI Actions",
+    "aiActions.running": "Running...",
+    "aiActions.actionFailed": "Action failed",
+    "aiActions.networkError": "Network error. Please try again.",
+    "aiActions.tensionArc": "Tension Arc",
+    "aiActions.notConfigured": "AI is not configured. Go to <1>AI Settings</1> to set up a provider.",
+
+    "aiActions.tension.label": "Generate Tension Arc",
+    "aiActions.tension.description": "Visualize tension across chapters",
+    "aiActions.health.label": "Run Plot Health",
+    "aiActions.health.description": "Evaluate overall structure",
+    "aiActions.holes.label": "Detect Plot Holes",
+    "aiActions.holes.description": "Find gaps and contradictions",
+    "aiActions.beats.label": "Suggest Next Beats",
+    "aiActions.beats.description": "AI-recommended plot points",
+
+    "timeline.chapterAbbrev": "Ch. {{number}}",
+
+    "tensionArc.label": "Tension",
+    "tensionArc.collapseTitle": "Collapse tension arc",
+    "tensionArc.aiGenerated": "AI generated",
+
+    "page.tabs.timeline": "Timeline",
+    "page.tabs.list": "List",
+    "page.allStorylines": "All storylines",
+    "page.toggleAiSidebar": "Toggle AI sidebar",
+    "page.newPlotPointTitle": "New plot point"
 }

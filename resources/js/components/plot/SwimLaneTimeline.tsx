@@ -1,5 +1,6 @@
 import { buildTimelineGrid, cellKey } from '@/lib/plot-utils';
 import type { Act, PlotPoint, Storyline } from '@/types/models';
+import { useTranslation } from 'react-i18next';
 import PlotPointCard from './PlotPointCard';
 
 type ChapterColumn = {
@@ -32,6 +33,7 @@ export default function SwimLaneTimeline({
     onSelectPlotPoint,
     onCreatePlotPoint,
 }: Props) {
+    const { t } = useTranslation('plot');
     const { grid, allChapters } = buildTimelineGrid(acts, storylines, plotPoints);
     const COL_W = 160;
     const LABEL_W = 120;
@@ -52,7 +54,7 @@ export default function SwimLaneTimeline({
                                 style={{ backgroundColor: ACT_COLORS[i] ?? '#C8B88A' }}
                             />
                             <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A574F]">
-                                Act {act.number} — {act.title}
+                                {t('actTitle', { number: act.number, title: act.title })}
                             </span>
                         </div>
                     ))}
@@ -66,7 +68,7 @@ export default function SwimLaneTimeline({
                             className="px-3 py-1.5 text-[11px] text-[#8A857D]"
                             style={{ width: COL_W }}
                         >
-                            Ch. {ch.reader_order + 1}
+                            {t('timeline.chapterAbbrev', { number: ch.reader_order + 1 })}
                         </div>
                     ))}
                 </div>

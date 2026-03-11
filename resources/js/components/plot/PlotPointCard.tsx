@@ -1,5 +1,6 @@
-import { STATUS_COLORS, TYPE_LABELS, TYPE_STYLES } from '@/lib/plot-constants';
+import { STATUS_COLORS, TYPE_STYLES } from '@/lib/plot-constants';
 import type { PlotPoint } from '@/types/models';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
     plotPoint: PlotPoint;
@@ -7,6 +8,8 @@ type Props = {
 };
 
 export default function PlotPointCard({ plotPoint, onClick }: Props) {
+    const { t } = useTranslation('plot');
+
     return (
         <button
             onClick={(e) => {
@@ -26,7 +29,7 @@ export default function PlotPointCard({ plotPoint, onClick }: Props) {
                 <span
                     className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${TYPE_STYLES[plotPoint.type] ?? ''}`}
                 >
-                    {TYPE_LABELS[plotPoint.type] ?? plotPoint.type}
+                    {t(`type.${plotPoint.type}`)}
                 </span>
             </div>
         </button>

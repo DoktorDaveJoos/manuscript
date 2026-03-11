@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import { useTheme } from '@/hooks/useTheme';
 import SettingsLayout from '@/layouts/SettingsLayout';
@@ -13,10 +14,10 @@ interface Props {
     version: string;
 }
 
-const THEME_OPTIONS: { value: Theme; label: string; description: string }[] = [
-    { value: 'light', label: 'Light', description: 'Always use light mode' },
-    { value: 'dark', label: 'Dark', description: 'Always use dark mode' },
-    { value: 'system', label: 'System', description: 'Match your OS preference' },
+const THEME_OPTIONS = [
+    { value: 'light' as Theme, labelKey: 'appearance.theme.light' as const, descriptionKey: 'appearance.theme.lightDescription' as const },
+    { value: 'dark' as Theme, labelKey: 'appearance.theme.dark' as const, descriptionKey: 'appearance.theme.darkDescription' as const },
+    { value: 'system' as Theme, labelKey: 'appearance.theme.system' as const, descriptionKey: 'appearance.theme.systemDescription' as const },
 ];
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
@@ -64,6 +65,7 @@ function SettingRow({
 }
 
 export default function Appearance({ settings, book, version }: Props) {
+    const { t } = useTranslation('settings');
     const { theme, setTheme } = useTheme();
     const [showAi, setShowAi] = useState(settings.show_ai_features);
     const [hideToolbar, setHideToolbar] = useState(settings.hide_formatting_toolbar);
@@ -83,12 +85,12 @@ export default function Appearance({ settings, book, version }: Props) {
     }, []);
 
     return (
-        <SettingsLayout activeSection="appearance" book={book} title="Appearance">
+        <SettingsLayout activeSection="appearance" book={book} title={t('appearance.title')}>
             <div className="flex flex-col gap-6">
                 <div>
-                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">Appearance</h1>
+                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">{t('appearance.title')}</h1>
                     <p className="mt-1 text-[14px] text-ink-muted">
-                        Customize the look and behavior of Manuscript.
+                        {t('appearance.description')}
                     </p>
                 </div>
 
@@ -96,8 +98,8 @@ export default function Appearance({ settings, book, version }: Props) {
                 <div className="rounded-lg border border-border bg-surface-card p-6">
                     <div className="flex flex-col gap-4">
                         <div>
-                            <span className="text-[15px] font-medium text-ink">Theme</span>
-                            <p className="mt-0.5 text-[13px] text-ink-muted">Choose your preferred color scheme.</p>
+                            <span className="text-[15px] font-medium text-ink">{t('appearance.theme.title')}</span>
+                            <p className="mt-0.5 text-[13px] text-ink-muted">{t('appearance.theme.description')}</p>
                         </div>
                         <div className="flex gap-3">
                             {THEME_OPTIONS.map((option) => (
@@ -111,8 +113,8 @@ export default function Appearance({ settings, book, version }: Props) {
                                             : 'border-border text-ink-muted hover:border-border-dashed hover:text-ink'
                                     }`}
                                 >
-                                    <span className="text-[14px] font-medium">{option.label}</span>
-                                    <span className="mt-0.5 text-[12px] text-ink-muted">{option.description}</span>
+                                    <span className="text-[14px] font-medium">{t(option.labelKey)}</span>
+                                    <span className="mt-0.5 text-[12px] text-ink-muted">{t(option.descriptionKey)}</span>
                                 </button>
                             ))}
                         </div>
@@ -122,8 +124,8 @@ export default function Appearance({ settings, book, version }: Props) {
                 {/* Show AI Features */}
                 <div className="rounded-lg border border-border bg-surface-card px-6">
                     <SettingRow
-                        label="Show AI features"
-                        description="Show AI panels, preparation, and analysis across the app."
+                        label={t('appearance.showAi.label')}
+                        description={t('appearance.showAi.description')}
                         checked={showAi}
                         onChange={() => {
                             const next = !showAi;
@@ -137,12 +139,12 @@ export default function Appearance({ settings, book, version }: Props) {
                 {/* Editor section */}
                 <div>
                     <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
-                        Editor
+                        {t('appearance.editor')}
                     </span>
                     <div className="mt-3 rounded-lg border border-border bg-surface-card px-6">
                         <SettingRow
-                            label="Hide formatting toolbar"
-                            description="Hide the toolbar at the top of the editor."
+                            label={t('appearance.hideToolbar.label')}
+                            description={t('appearance.hideToolbar.description')}
                             checked={hideToolbar}
                             onChange={() => {
                                 const next = !hideToolbar;
@@ -157,7 +159,7 @@ export default function Appearance({ settings, book, version }: Props) {
                 {/* Version info */}
                 <div className="rounded-lg border border-border bg-surface-card p-6">
                     <div className="flex flex-col gap-2">
-                        <span className="text-[13px] font-medium text-ink-muted">Version</span>
+                        <span className="text-[13px] font-medium text-ink-muted">{t('appearance.version')}</span>
                         <p className="text-[15px] text-ink">{version}</p>
                     </div>
                 </div>

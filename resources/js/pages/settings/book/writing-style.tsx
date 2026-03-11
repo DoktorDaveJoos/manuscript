@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
     updateWritingStyle,
     regenerateWritingStyle,
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function WritingStyle({ book, writing_style_display }: Props) {
+    const { t } = useTranslation('settings');
     const [text, setText] = useState(book.writing_style_text ?? writing_style_display);
     const [saving, setSaving] = useState(false);
     const [regenerating, setRegenerating] = useState(false);
@@ -42,7 +44,7 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
                 setMessage(json.message);
                 setTimeout(() => setMessage(''), 3000);
             })
-            .catch(() => setMessage('Failed to save.'))
+            .catch(() => setMessage(t('writingStyle.saveFailed')))
             .finally(() => setSaving(false));
     }, [book, text]);
 
@@ -61,25 +63,25 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
             .then(async (res) => {
                 const json = await res.json();
                 if (!res.ok) {
-                    setMessage(json.message || 'Failed to regenerate.');
+                    setMessage(json.message || t('writingStyle.regenerateFailed'));
                     return;
                 }
                 setText(json.writing_style_text);
                 setMessage(json.message);
                 setTimeout(() => setMessage(''), 3000);
             })
-            .catch(() => setMessage('Failed to regenerate writing style.'))
+            .catch(() => setMessage(t('writingStyle.regenerateFailed')))
             .finally(() => setRegenerating(false));
     }, [book]);
 
     return (
-        <SettingsLayout activeSection="writing-style" book={book} title={`Writing Style — ${book.title}`}>
+        <SettingsLayout activeSection="writing-style" book={book} title={t('writingStyle.pageTitle', { bookTitle: book.title })}>
             <div className="flex flex-col gap-4">
                 <div className="flex items-start justify-between">
                     <div>
-                        <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">Writing Style</h1>
+                        <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">{t('writingStyle.title')}</h1>
                         <p className="mt-1 text-[13px] text-ink-muted">
-                            Describe the prose voice for AI to follow when working with this book.
+                            {t('writingStyle.description')}
                         </p>
                     </div>
                     <button
@@ -88,7 +90,7 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
                         disabled={regenerating}
                         className="h-8 rounded-md border border-border px-3.5 text-[13px] font-medium text-ink transition-colors hover:bg-neutral-bg disabled:opacity-50"
                     >
-                        {regenerating ? 'Regenerating...' : 'Regenerate'}
+                        {regenerating ? t('writingStyle.regenerating') : t('writingStyle.regenerate')}
                     </button>
                 </div>
 
@@ -97,13 +99,13 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         onBlur={handleSave}
-                        placeholder="Describe the prose voice, sentence rhythm, vocabulary, and distinctive features..."
+                        placeholder={t('writingStyle.placeholder')}
                         rows={10}
                         className="w-full resize-y rounded-md border border-border bg-surface px-3 py-2.5 text-[14px] leading-relaxed text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
                     />
                     {(message || saving) && (
                         <span className="mt-2 block text-[12px] font-medium text-status-final">
-                            {saving ? 'Saving...' : message}
+                            {saving ? t('writingStyle.saving') : message}
                         </span>
                     )}
                 </div>

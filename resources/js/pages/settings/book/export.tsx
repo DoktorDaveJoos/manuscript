@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { doExport } from '@/actions/App/Http/Controllers/BookSettingsController';
 import SettingsLayout from '@/layouts/SettingsLayout';
 import { getXsrfToken } from '@/lib/csrf';
@@ -48,6 +49,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 export default function Export({ book, storylines }: Props) {
+    const { t } = useTranslation('settings');
     type Format = 'docx' | 'txt';
     type Scope = 'full' | 'chapter' | 'storyline';
 
@@ -93,18 +95,18 @@ export default function Export({ book, storylines }: Props) {
     }, [book, format, scope, storylineId, includeChapterTitles, includeActBreaks]);
 
     return (
-        <SettingsLayout activeSection="export" book={book} title={`Export — ${book.title}`}>
+        <SettingsLayout activeSection="export" book={book} title={t('export.pageTitle', { bookTitle: book.title })}>
             <div className="flex flex-col gap-4">
                 <div>
-                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">Export</h1>
+                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">{t('export.title')}</h1>
                     <p className="mt-1 text-[13px] text-ink-muted">
-                        Export your manuscript as a file.
+                        {t('export.description')}
                     </p>
                 </div>
 
                 <div className="flex flex-col gap-5">
                     <div>
-                        <SectionLabel>Format</SectionLabel>
+                        <SectionLabel>{t('export.format')}</SectionLabel>
                         <div className="mt-2 flex gap-2">
                             {(['docx', 'txt'] as Format[]).map((f) => (
                                 <button
@@ -120,21 +122,21 @@ export default function Export({ book, storylines }: Props) {
                     </div>
 
                     <div>
-                        <SectionLabel>Scope</SectionLabel>
+                        <SectionLabel>{t('export.scope')}</SectionLabel>
                         <div className="mt-2 flex flex-wrap gap-2">
                             <button
                                 type="button"
                                 onClick={() => setScope('full')}
                                 className={pillClass(scope === 'full')}
                             >
-                                Full manuscript
+                                {t('export.scope.full')}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setScope('chapter')}
                                 className={pillClass(scope === 'chapter')}
                             >
-                                Current chapter
+                                {t('export.scope.chapter')}
                             </button>
                             {storylines.length > 1 && (
                                 <button
@@ -142,7 +144,7 @@ export default function Export({ book, storylines }: Props) {
                                     onClick={() => setScope('storyline')}
                                     className={pillClass(scope === 'storyline')}
                                 >
-                                    Selected storyline
+                                    {t('export.scope.storyline')}
                                 </button>
                             )}
                         </div>
@@ -161,14 +163,14 @@ export default function Export({ book, storylines }: Props) {
                     </div>
 
                     <div>
-                        <SectionLabel>Options</SectionLabel>
+                        <SectionLabel>{t('export.options')}</SectionLabel>
                         <div className="mt-3 flex flex-col">
                             <div className="flex items-center justify-between border-b border-border-light py-3">
-                                <span className="text-[14px] text-ink">Include chapter titles</span>
+                                <span className="text-[14px] text-ink">{t('export.includeChapterTitles')}</span>
                                 <Toggle checked={includeChapterTitles} onChange={() => setIncludeChapterTitles(!includeChapterTitles)} />
                             </div>
                             <div className="flex items-center justify-between py-3">
-                                <span className="text-[14px] text-ink">Include act breaks</span>
+                                <span className="text-[14px] text-ink">{t('export.includeActBreaks')}</span>
                                 <Toggle checked={includeActBreaks} onChange={() => setIncludeActBreaks(!includeActBreaks)} />
                             </div>
                         </div>
@@ -180,7 +182,7 @@ export default function Export({ book, storylines }: Props) {
                         disabled={exporting}
                         className="h-10 rounded-md bg-ink px-6 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                     >
-                        {exporting ? 'Exporting...' : 'Export manuscript'}
+                        {exporting ? t('export.exporting') : t('export.exportManuscript')}
                     </button>
                 </div>
             </div>

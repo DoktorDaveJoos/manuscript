@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AiSetting, License } from '@/types/models';
 import { update, test as testConnection } from '@/actions/App/Http/Controllers/AiSettingsController';
 import SettingsLayout from '@/layouts/SettingsLayout';
@@ -25,6 +26,7 @@ function ProviderCard({
     isSelected: boolean;
     onSelect: () => void;
 }) {
+    const { t } = useTranslation('settings');
     const [apiKey, setApiKey] = useState('');
     const [baseUrl, setBaseUrl] = useState(setting.base_url ?? '');
     const [apiVersion, setApiVersion] = useState(setting.api_version ?? '');
@@ -69,7 +71,7 @@ function ProviderCard({
                     router.reload({ only: ['settings'] });
                     setTimeout(() => setSaveMessage(''), 3000);
                 })
-                .catch(() => setSaveMessage('Failed to save settings.'))
+                .catch(() => setSaveMessage(t('aiProviders.saveFailed')))
                 .finally(() => setSaving(false));
         },
         [apiKey, baseUrl, apiVersion, textModel, embeddingModel, embeddingDimensions, setting.provider],
@@ -92,7 +94,7 @@ function ProviderCard({
                 setTimeout(() => setTestStatus({ type: 'idle' }), 5000);
             })
             .catch(() => {
-                setTestStatus({ type: 'error', message: 'Connection test failed.' });
+                setTestStatus({ type: 'error', message: t('aiProviders.testFailed') });
                 setTimeout(() => setTestStatus({ type: 'idle' }), 5000);
             });
     }, [setting.provider]);
@@ -130,7 +132,7 @@ function ProviderCard({
                                 configured ? 'bg-status-final/15 text-status-final' : 'bg-neutral-bg text-ink-muted'
                             }`}
                         >
-                            {configured ? 'Configured' : 'Not configured'}
+                            {configured ? t('aiProviders.configured') : t('aiProviders.notConfigured')}
                         </span>
                     )}
                 </div>
@@ -142,12 +144,12 @@ function ProviderCard({
                     <div className="flex flex-col gap-4">
                         {setting.requires_api_key && (
                             <label className="flex flex-col gap-1.5">
-                                <span className="text-[13px] font-medium text-ink-muted">API Key</span>
+                                <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.apiKey')}</span>
                                 <input
                                     type="password"
                                     value={apiKey}
                                     onChange={(e) => setApiKey(e.target.value)}
-                                    placeholder={setting.has_api_key ? '••••••••••••••••' : 'Enter API key'}
+                                    placeholder={setting.has_api_key ? t('aiProviders.apiKeyMask') : t('aiProviders.apiKeyPlaceholder')}
                                     className="h-9 rounded-md border border-border bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
                                 />
                             </label>
@@ -155,7 +157,7 @@ function ProviderCard({
 
                         {setting.requires_base_url && (
                             <label className="flex flex-col gap-1.5">
-                                <span className="text-[13px] font-medium text-ink-muted">Base URL</span>
+                                <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.baseUrl')}</span>
                                 <input
                                     type="url"
                                     value={baseUrl}
@@ -168,7 +170,7 @@ function ProviderCard({
 
                         {isAzure && (
                             <label className="flex flex-col gap-1.5">
-                                <span className="text-[13px] font-medium text-ink-muted">API Version</span>
+                                <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.apiVersion')}</span>
                                 <input
                                     type="text"
                                     value={apiVersion}
@@ -181,13 +183,13 @@ function ProviderCard({
 
                         <label className="flex flex-col gap-1.5">
                             <span className="text-[13px] font-medium text-ink-muted">
-                                {isAzure ? 'Deployment Name' : 'Text Model'}
+                                {isAzure ? t('aiProviders.deploymentName') : t('aiProviders.textModel')}
                             </span>
                             <input
                                 type="text"
                                 value={textModel}
                                 onChange={(e) => setTextModel(e.target.value)}
-                                placeholder={isAzure ? 'gpt-4o' : 'Model identifier'}
+                                placeholder={isAzure ? 'gpt-4o' : t('aiProviders.modelPlaceholder')}
                                 className="h-9 rounded-md border border-border bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
                             />
                         </label>
@@ -196,18 +198,18 @@ function ProviderCard({
                             <div className="flex gap-3">
                                 <label className="flex flex-1 flex-col gap-1.5">
                                     <span className="text-[13px] font-medium text-ink-muted">
-                                        {isAzure ? 'Embedding Deployment' : 'Embedding Model'}
+                                        {isAzure ? t('aiProviders.embeddingDeployment') : t('aiProviders.embeddingModel')}
                                     </span>
                                     <input
                                         type="text"
                                         value={embeddingModel}
                                         onChange={(e) => setEmbeddingModel(e.target.value)}
-                                        placeholder={isAzure ? 'text-embedding-3-small' : 'Model identifier'}
+                                        placeholder={isAzure ? 'text-embedding-3-small' : t('aiProviders.modelPlaceholder')}
                                         className="h-9 rounded-md border border-border bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
                                     />
                                 </label>
                                 <label className="flex w-32 flex-col gap-1.5">
-                                    <span className="text-[13px] font-medium text-ink-muted">Dimensions</span>
+                                    <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.dimensions')}</span>
                                     <input
                                         type="number"
                                         value={embeddingDimensions}
@@ -225,7 +227,7 @@ function ProviderCard({
                                 disabled={saving}
                                 className="h-8 rounded-md bg-ink px-3.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                             >
-                                {saving ? 'Saving...' : 'Save'}
+                                {saving ? t('aiProviders.saving') : t('aiProviders.save')}
                             </button>
                             <button
                                 type="button"
@@ -233,7 +235,7 @@ function ProviderCard({
                                 disabled={testStatus.type === 'loading' || !configured}
                                 className="h-8 rounded-md border border-border px-3.5 text-[13px] font-medium text-ink transition-colors hover:bg-neutral-bg disabled:opacity-50"
                             >
-                                {testStatus.type === 'loading' ? 'Testing...' : 'Test connection'}
+                                {testStatus.type === 'loading' ? t('aiProviders.testing') : t('aiProviders.testConnection')}
                             </button>
 
                             {saveMessage && (
@@ -254,6 +256,7 @@ function ProviderCard({
 }
 
 export default function AiProviders({ settings, book }: Props) {
+    const { t } = useTranslation('settings');
     const { license } = usePage<{ license: License }>().props;
     const locked = !license.active;
 
@@ -277,12 +280,12 @@ export default function AiProviders({ settings, book }: Props) {
     );
 
     return (
-        <SettingsLayout activeSection="ai-providers" book={book} title="AI Providers">
+        <SettingsLayout activeSection="ai-providers" book={book} title={t('aiProviders.title')}>
             <div className="flex flex-col gap-6">
                 <div>
-                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">AI Providers</h1>
+                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">{t('aiProviders.title')}</h1>
                     <p className="mt-1 text-[14px] text-ink-muted">
-                        Choose your AI provider and configure its API key.
+                        {t('aiProviders.description')}
                     </p>
                 </div>
 

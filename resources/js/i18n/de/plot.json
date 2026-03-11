@@ -1,2 +1,62 @@
 {
+    "actTitle": "Akt {{number}} \u2014 {{title}}",
+    "unassigned": "Nicht zugeordnet",
+    "noPlotPointsYet": "Noch keine Handlungspunkte",
+
+    "detailPanel.header": "Handlungspunkt",
+    "detailPanel.title": "Titel",
+    "detailPanel.description": "Beschreibung",
+    "detailPanel.descriptionPlaceholder": "Beschreibung hinzuf\u00fcgen\u2026",
+    "detailPanel.type": "Typ",
+    "detailPanel.status": "Status",
+    "detailPanel.connections": "Verbindungen",
+    "detailPanel.plotPointFallback": "Handlungspunkt #{{id}}",
+    "detailPanel.jumpToChapter": "Zum Kapitel springen",
+
+    "type.setup": "Einf\u00fchrung",
+    "type.conflict": "Konflikt",
+    "type.turning_point": "Wendepunkt",
+    "type.resolution": "Aufl\u00f6sung",
+    "type.worldbuilding": "Weltenbau",
+
+    "status.planned": "Geplant",
+    "status.fulfilled": "Erf\u00fcllt",
+    "status.abandoned": "Verworfen",
+
+    "connection.causes.incoming": "Verursacht durch",
+    "connection.causes.outgoing": "Verursacht",
+    "connection.sets_up.incoming": "Vorbereitet durch",
+    "connection.sets_up.outgoing": "Bereitet vor",
+    "connection.resolves.incoming": "Aufgel\u00f6st durch",
+    "connection.resolves.outgoing": "L\u00f6st auf",
+    "connection.contradicts.incoming": "Widersprochen durch",
+    "connection.contradicts.outgoing": "Widerspricht",
+
+    "aiActions.header": "KI-Aktionen",
+    "aiActions.running": "Wird ausgef\u00fchrt\u2026",
+    "aiActions.actionFailed": "Aktion fehlgeschlagen",
+    "aiActions.networkError": "Netzwerkfehler. Bitte erneut versuchen.",
+    "aiActions.tensionArc": "Spannungsbogen",
+    "aiActions.notConfigured": "KI ist nicht konfiguriert. Gehe zu <1>KI-Einstellungen</1>, um einen Anbieter einzurichten.",
+
+    "aiActions.tension.label": "Spannungsbogen erzeugen",
+    "aiActions.tension.description": "Spannung \u00fcber Kapitel visualisieren",
+    "aiActions.health.label": "Plot-Zustand pr\u00fcfen",
+    "aiActions.health.description": "Gesamtstruktur auswerten",
+    "aiActions.holes.label": "Plotl\u00f6cher erkennen",
+    "aiActions.holes.description": "L\u00fccken und Widerspr\u00fcche finden",
+    "aiActions.beats.label": "N\u00e4chste Beats vorschlagen",
+    "aiActions.beats.description": "KI-empfohlene Handlungspunkte",
+
+    "timeline.chapterAbbrev": "Kap. {{number}}",
+
+    "tensionArc.label": "Spannung",
+    "tensionArc.collapseTitle": "Spannungsbogen einklappen",
+    "tensionArc.aiGenerated": "KI-generiert",
+
+    "page.tabs.timeline": "Zeitstrahl",
+    "page.tabs.list": "Liste",
+    "page.allStorylines": "Alle Erz\u00e4hlstr\u00e4nge",
+    "page.toggleAiSidebar": "KI-Seitenleiste umschalten",
+    "page.newPlotPointTitle": "Neuer Handlungspunkt"
 }

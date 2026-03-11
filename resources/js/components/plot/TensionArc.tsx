@@ -1,4 +1,5 @@
 import { CaretUp } from '@phosphor-icons/react';
+import { useTranslation } from 'react-i18next';
 
 export type TensionData = {
     chapter_id: number;
@@ -40,6 +41,7 @@ function buildSmoothPath(points: { x: number; y: number }[]): string {
 }
 
 export default function TensionArc({ data, chapterCount, labelWidth, columnWidth, onCollapse }: Props) {
+    const { t } = useTranslation('plot');
     const H = 60;
     const sortedData = [...data].sort((a, b) => a.reader_order - b.reader_order);
     const totalWidth = labelWidth + chapterCount * columnWidth;
@@ -66,18 +68,18 @@ export default function TensionArc({ data, chapterCount, labelWidth, columnWidth
             >
                 <div className="flex items-center gap-1.5">
                     <span className="text-[10px] font-semibold uppercase tracking-wide text-[#5A574F]">
-                        Tension
+                        {t('tensionArc.label')}
                     </span>
                     <button
                         type="button"
                         onClick={onCollapse}
                         className="flex size-4 items-center justify-center rounded text-[#B0A99F] transition-colors hover:text-[#5A574F]"
-                        title="Collapse tension arc"
+                        title={t('tensionArc.collapseTitle')}
                     >
                         <CaretUp size={10} weight="bold" />
                     </button>
                 </div>
-                <span className="text-[9px] text-[#B0A99F]">AI generated</span>
+                <span className="text-[9px] text-[#B0A99F]">{t('tensionArc.aiGenerated')}</span>
             </div>
 
             {/* SVG chart */}

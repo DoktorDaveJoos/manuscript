@@ -1,5 +1,6 @@
-import { STATUS_COLORS, TYPE_LABELS, TYPE_STYLES } from '@/lib/plot-constants';
+import { STATUS_COLORS, TYPE_STYLES } from '@/lib/plot-constants';
 import type { Act, PlotPoint, Storyline } from '@/types/models';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
     acts: (Act & { chapters: { id: number; title: string }[] })[];
@@ -17,6 +18,7 @@ function PlotPointRow({
     storylines: Storyline[];
     onClick: () => void;
 }) {
+    const { t } = useTranslation('plot');
     const storyline = storylines.find((s) => s.id === plotPoint.storyline_id);
 
     return (
@@ -33,7 +35,7 @@ function PlotPointRow({
                 <span
                     className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${TYPE_STYLES[plotPoint.type] ?? ''}`}
                 >
-                    {TYPE_LABELS[plotPoint.type] ?? plotPoint.type}
+                    {t(`type.${plotPoint.type}`)}
                 </span>
             </div>
             {plotPoint.description && (
@@ -45,6 +47,7 @@ function PlotPointRow({
 }
 
 export default function PlotPointList({ acts, plotPoints, storylines, onSelectPlotPoint }: Props) {
+    const { t } = useTranslation('plot');
     const assignedActIds = new Set(acts.map((a) => a.id));
     const unassigned = plotPoints.filter((pp) => !pp.act_id || !assignedActIds.has(pp.act_id));
 
@@ -57,7 +60,7 @@ export default function PlotPointList({ acts, plotPoints, storylines, onSelectPl
                 return (
                     <div key={act.id} className="flex flex-col gap-2">
                         <h3 className="text-[13px] font-semibold text-[#2D2A26]">
-                            Act {act.number} &mdash; {act.title}
+                            {t('actTitle', { number: act.number, title: act.title })}
                         </h3>
                         <div className="flex flex-col gap-1.5">
                             {actPlotPoints.map((pp) => (
@@ -75,7 +78,7 @@ export default function PlotPointList({ acts, plotPoints, storylines, onSelectPl
 
             {unassigned.length > 0 && (
                 <div className="flex flex-col gap-2">
-                    <h3 className="text-[13px] font-semibold text-[#8A857D]">Unassigned</h3>
+                    <h3 className="text-[13px] font-semibold text-[#8A857D]">{t('unassigned')}</h3>
                     <div className="flex flex-col gap-1.5">
                         {unassigned.map((pp) => (
                             <PlotPointRow
@@ -91,7 +94,7 @@ export default function PlotPointList({ acts, plotPoints, storylines, onSelectPl
 
             {plotPoints.length === 0 && (
                 <div className="flex items-center justify-center py-20 text-[13px] text-[#8A857D]">
-                    No plot points yet
+                    {t('noPlotPointsYet')}
                 </div>
             )}
         </div>

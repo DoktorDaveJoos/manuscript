@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { updateProsePassRules } from '@/actions/App/Http/Controllers/BookSettingsController';
 import SettingsLayout from '@/layouts/SettingsLayout';
 import { getXsrfToken } from '@/lib/csrf';
@@ -32,6 +33,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 }
 
 export default function ProsePassRules({ book, rules: initialRules }: Props) {
+    const { t } = useTranslation('settings');
     const [rules, setRules] = useState(initialRules);
 
     const toggleRule = useCallback(
@@ -57,12 +59,12 @@ export default function ProsePassRules({ book, rules: initialRules }: Props) {
     );
 
     return (
-        <SettingsLayout activeSection="prose-pass-rules" book={book} title={`Prose Pass Rules — ${book.title}`}>
+        <SettingsLayout activeSection="prose-pass-rules" book={book} title={t('prosePassRules.pageTitle', { bookTitle: book.title })}>
             <div className="flex flex-col gap-4">
                 <div>
-                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">Prose Pass Rules</h1>
+                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">{t('prosePassRules.title')}</h1>
                     <p className="mt-1 text-[13px] text-ink-muted">
-                        Control which revision rules AI applies when editing prose.
+                        {t('prosePassRules.description')}
                     </p>
                 </div>
 

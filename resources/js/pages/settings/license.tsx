@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { activate, deactivate } from '@/actions/App/Http/Controllers/LicenseController';
 import SettingsLayout from '@/layouts/SettingsLayout';
 import { getXsrfToken } from '@/lib/csrf';
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function LicensePage({ book }: Props) {
+    const { t } = useTranslation('settings');
     const { license } = usePage<{ license: License }>().props;
     const [key, setKey] = useState('');
     const [activating, setActivating] = useState(false);
@@ -33,13 +35,13 @@ export default function LicensePage({ book }: Props) {
                 .then(async (res) => {
                     const json = await res.json();
                     if (!res.ok) {
-                        setError(json.message || 'Invalid license key.');
+                        setError(json.message || t('license.error.invalid'));
                         return;
                     }
                     setKey('');
                     router.reload();
                 })
-                .catch(() => setError('Failed to activate license.'))
+                .catch(() => setError(t('license.error.failed')))
                 .finally(() => setActivating(false));
         },
         [key],
@@ -57,12 +59,12 @@ export default function LicensePage({ book }: Props) {
     }, []);
 
     return (
-        <SettingsLayout activeSection="license" book={book} title="License">
+        <SettingsLayout activeSection="license" book={book} title={t('license.title')}>
             <div className="flex flex-col gap-6">
                 <div>
-                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">License</h1>
+                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">{t('license.title')}</h1>
                     <p className="mt-1 text-[14px] text-ink-muted">
-                        Manage your Manuscript license.
+                        {t('license.description')}
                     </p>
                 </div>
 
@@ -70,26 +72,26 @@ export default function LicensePage({ book }: Props) {
                     <div className="rounded-lg border border-border bg-surface-card p-6">
                         <div className="flex items-center gap-3">
                             <span className="text-status-final">●</span>
-                            <span className="text-[15px] font-medium text-ink">License active</span>
+                            <span className="text-[15px] font-medium text-ink">{t('license.active')}</span>
                             <span className="text-[13px] text-ink-muted">{license.masked_key}</span>
                             <button
                                 type="button"
                                 onClick={handleDeactivate}
                                 className="ml-auto text-[13px] text-accent transition-colors hover:opacity-80"
                             >
-                                Deactivate
+                                {t('license.deactivate')}
                             </button>
                         </div>
                     </div>
                 ) : (
                     <div className="rounded-lg border border-border bg-surface-card p-6">
-                        <h2 className="text-[15px] font-medium text-ink">Manuscript License</h2>
+                        <h2 className="text-[15px] font-medium text-ink">{t('license.formTitle')}</h2>
                         <p className="mt-1 text-[13px] text-ink-muted">
-                            Enter your license key to unlock AI features, Canvas, and more.
+                            {t('license.formDescription')}
                         </p>
                         <form onSubmit={handleActivate} className="mt-4">
                             <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
-                                License Key
+                                {t('license.keyLabel')}
                             </span>
                             <div className="flex items-start gap-3">
                                 <div className="flex flex-1 flex-col gap-1">
@@ -97,7 +99,7 @@ export default function LicensePage({ book }: Props) {
                                         type="text"
                                         value={key}
                                         onChange={(e) => setKey(e.target.value)}
-                                        placeholder="MANU.XXXXXXXX.…"
+                                        placeholder={t('license.keyPlaceholder')}
                                         className="h-9 rounded-md border border-border bg-surface px-3 font-mono text-[13px] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
                                     />
                                     {error && <span className="text-[12px] text-danger">{error}</span>}
@@ -107,7 +109,7 @@ export default function LicensePage({ book }: Props) {
                                     disabled={activating || !key}
                                     className="h-9 rounded-md bg-accent px-4 text-[13px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                                 >
-                                    {activating ? 'Activating...' : 'Activate'}
+                                    {activating ? t('license.activating') : t('license.activate')}
                                 </button>
                             </div>
                         </form>

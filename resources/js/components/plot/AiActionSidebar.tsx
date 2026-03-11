@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import type { Book } from '@/types/models';
 import { CaretLeft, CaretRight, Heartbeat, Lightning, MagnifyingGlass, Sparkle } from '@phosphor-icons/react';
 import { useCallback, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 type TensionPoint = {
     chapter_id: number;
@@ -21,35 +22,11 @@ type ActionResult = {
 
 type ActionKey = 'tension' | 'health' | 'holes' | 'beats';
 
-const actions: { key: ActionKey; label: string; description: string; icon: typeof Lightning; route: string }[] = [
-    {
-        key: 'tension',
-        label: 'Generate Tension Arc',
-        description: 'Visualize tension across chapters',
-        icon: Lightning,
-        route: 'plot/ai/tension',
-    },
-    {
-        key: 'health',
-        label: 'Run Plot Health',
-        description: 'Evaluate overall structure',
-        icon: Heartbeat,
-        route: 'plot/ai/health',
-    },
-    {
-        key: 'holes',
-        label: 'Detect Plot Holes',
-        description: 'Find gaps and contradictions',
-        icon: MagnifyingGlass,
-        route: 'plot/ai/holes',
-    },
-    {
-        key: 'beats',
-        label: 'Suggest Next Beats',
-        description: 'AI-recommended plot points',
-        icon: Sparkle,
-        route: 'plot/ai/beats',
-    },
+const actionDefs: { key: ActionKey; icon: typeof Lightning; route: string }[] = [
+    { key: 'tension', icon: Lightning, route: 'plot/ai/tension' },
+    { key: 'health', icon: Heartbeat, route: 'plot/ai/health' },
+    { key: 'holes', icon: MagnifyingGlass, route: 'plot/ai/holes' },
+    { key: 'beats', icon: Sparkle, route: 'plot/ai/beats' },
 ];
 
 type TensionData = {
@@ -70,6 +47,7 @@ export default function AiActionSidebar({
     onToggle: () => void;
     onTensionArcGenerated?: (data: TensionData[]) => void;
 }) {
+    const { t } = useTranslation('plot');
     const { visible, usable, licensed } = useAiFeatures();
 
     const [runningAction, setRunningAction] = useState<ActionKey | null>(null);
@@ -77,7 +55,7 @@ export default function AiActionSidebar({
     const [errors, setErrors] = useState<Partial<Record<ActionKey, string>>>({});
 
     const handleAction = useCallback(
-        async (action: (typeof actions)[number]) => {
+        async (action: (typeof actionDefs)[number]) => {
             setRunningAction(action.key);
             setErrors((prev) => ({ ...prev, [action.key]: undefined }));
 
@@ -94,7 +72,10 @@ export default function AiActionSidebar({
                 const data = await response.json();
 
                 if (!response.ok) {
-                    setErrors((prev) => ({ ...prev, [action.key]: data.message ?? 'Action failed' }));
+                    setErrors((prev) => ({
+                        ...prev,
+                        [action.key]: data.message ?? t('aiActions.actionFailed'),
+                    }));
                 } else {
                     setResults((prev) => ({ ...prev, [action.key]: data }));
 
@@ -103,12 +84,12 @@ export default function AiActionSidebar({
                     }
                 }
             } catch {
-                setErrors((prev) => ({ ...prev, [action.key]: 'Network error. Please try again.' }));
+                setErrors((prev) => ({ ...prev, [action.key]: t('aiActions.networkError') }));
             } finally {
                 setRunningAction(null);
             }
         },
-        [book.id, onTensionArcGenerated],
+        [book.id, onTensionArcGenerated, t],
     );
 
     if (!visible) return null;
@@ -125,7 +106,7 @@ export default function AiActionSidebar({
                     {/* Header */}
                     <div className="flex h-12 items-center justify-between border-b border-[#ECEAE4] px-4">
                         <span className="text-xs font-semibold uppercase tracking-[0.06em] text-[#2D2A26]">
-                            AI Actions
+                            {t('aiActions.header')}
                         </span>
                         <button
                             type="button"
@@ -139,7 +120,7 @@ export default function AiActionSidebar({
                     {licensed ? (
                         <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
                             {usable ? (
-                                actions.map((action) => {
+                                actionDefs.map((action) => {
                                     const Icon = action.icon;
                                     const isRunning = runningAction === action.key;
                                     const result = results[action.key];
@@ -156,10 +137,12 @@ export default function AiActionSidebar({
                                                 <Icon size={18} weight="regular" className="shrink-0 text-[#8A857D]" />
                                                 <div className="flex flex-col">
                                                     <span className="text-[13px] font-medium text-[#2D2A26]">
-                                                        {isRunning ? 'Running...' : action.label}
+                                                        {isRunning
+                                                            ? t('aiActions.running')
+                                                            : t(`aiActions.${action.key}.label`)}
                                                     </span>
                                                     <span className="text-[11px] text-[#8A857D]">
-                                                        {action.description}
+                                                        {t(`aiActions.${action.key}.description`)}
                                                     </span>
                                                 </div>
                                             </button>
@@ -175,7 +158,9 @@ export default function AiActionSidebar({
                                                     {result.message && <p>{result.message}</p>}
                                                     {result.tension_arc && (
                                                         <div className="flex flex-col gap-1">
-                                                            <p className="font-medium">Tension Arc</p>
+                                                            <p className="font-medium">
+                                                                {t('aiActions.tensionArc')}
+                                                            </p>
                                                             {result.tension_arc.map((point) => (
                                                                 <div
                                                                     key={point.chapter_id}
@@ -198,21 +183,25 @@ export default function AiActionSidebar({
                                 })
                             ) : (
                                 <p className="text-xs leading-relaxed text-[#8A857D]">
-                                    AI is not configured. Go to{' '}
-                                    <a
-                                        href="/settings/ai"
-                                        className="font-medium text-[#5A574F] underline decoration-[#5A574F]/30 hover:decoration-[#5A574F]"
-                                    >
-                                        AI Settings
-                                    </a>{' '}
-                                    to set up a provider.
+                                    <Trans
+                                        i18nKey="aiActions.notConfigured"
+                                        ns="plot"
+                                        components={{
+                                            1: (
+                                                <a
+                                                    href="/settings/ai"
+                                                    className="font-medium text-[#5A574F] underline decoration-[#5A574F]/30 hover:decoration-[#5A574F]"
+                                                />
+                                            ),
+                                        }}
+                                    />
                                 </p>
                             )}
                         </div>
                     ) : (
                         <ProFeatureLock>
                             <div className="flex flex-1 flex-col gap-3 p-4 opacity-40">
-                                {actions.map((action) => {
+                                {actionDefs.map((action) => {
                                     const Icon = action.icon;
                                     return (
                                         <div
@@ -222,10 +211,10 @@ export default function AiActionSidebar({
                                             <Icon size={18} className="shrink-0 text-[#8A857D]" />
                                             <div className="flex flex-col">
                                                 <span className="text-[13px] font-medium text-[#2D2A26]">
-                                                    {action.label}
+                                                    {t(`aiActions.${action.key}.label`)}
                                                 </span>
                                                 <span className="text-[11px] text-[#8A857D]">
-                                                    {action.description}
+                                                    {t(`aiActions.${action.key}.description`)}
                                                 </span>
                                             </div>
                                         </div>

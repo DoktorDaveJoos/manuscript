@@ -10,6 +10,7 @@ import type { Act, Book, PlotPoint, PlotPointConnection, Storyline } from '@/typ
 import { Head, router } from '@inertiajs/react';
 import { Funnel, List, Rows, SidebarSimple } from '@phosphor-icons/react';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type ChapterCol = {
     id: number;
@@ -31,6 +32,7 @@ type PlotPageProps = {
 type Tab = 'timeline' | 'list';
 
 export default function Plot({ book, storylines, acts, plotPoints, connections }: PlotPageProps) {
+    const { t } = useTranslation('plot');
     const [activeTab, setActiveTab] = useState<Tab>('timeline');
     const [selectedPlotPointId, setSelectedPlotPointId] = useState<number | null>(null);
     const selectedPlotPoint = selectedPlotPointId ? plotPoints.find((pp) => pp.id === selectedPlotPointId) ?? null : null;
@@ -68,7 +70,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
 
     const handleCreatePlotPoint = (storylineId: number, chapterId: number) => {
         router.post(storePlotPoint.url({ book: book.id }), {
-            title: 'New plot point',
+            title: t('page.newPlotPointTitle'),
             type: 'setup',
             storyline_id: storylineId,
             intended_chapter_id: chapterId,
@@ -100,7 +102,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                                 }`}
                             >
                                 <Rows size={16} weight="regular" />
-                                Timeline
+                                {t('page.tabs.timeline')}
                             </button>
                             <button
                                 onClick={() => setActiveTab('list')}
@@ -111,7 +113,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                                 }`}
                             >
                                 <List size={16} weight="regular" />
-                                List
+                                {t('page.tabs.list')}
                             </button>
                         </div>
 
@@ -123,7 +125,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                                     onChange={(e) => setStorylineFilter(e.target.value ? Number(e.target.value) : null)}
                                     className="appearance-none rounded border border-[#ECEAE4] bg-white py-1.5 pl-7 pr-3 text-[13px] text-[#5A574F] focus:outline-none focus:ring-1 focus:ring-[#C8B88A]"
                                 >
-                                    <option value="">All storylines</option>
+                                    <option value="">{t('page.allStorylines')}</option>
                                     {storylines.map((s) => (
                                         <option key={s.id} value={s.id}>
                                             {s.name}
@@ -142,7 +144,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                                 <button
                                     onClick={() => setAiSidebarOpen((prev) => !prev)}
                                     className={`rounded p-1.5 transition-colors hover:bg-[#F0EEEA] hover:text-[#5A574F] ${aiSidebarOpen ? 'bg-[#F0EEEA] text-[#5A574F]' : 'text-[#8A857D]'}`}
-                                    title="Toggle AI sidebar"
+                                    title={t('page.toggleAiSidebar')}
                                 >
                                     <SidebarSimple size={18} weight="regular" />
                                 </button>
