@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class AiPreparation extends Model
 {
@@ -37,14 +38,18 @@ class AiPreparation extends Model
     }
 
     /**
-     * Atomically append a phase error (refreshes from DB to avoid stale overwrites).
+     * Atomically append a phase error using a transaction to avoid race conditions.
      */
     public function appendPhaseError(string $phase, ?string $chapter, string $error): void
     {
+        DB::transaction(function () use ($phase, $chapter, $error) {
+            $record = self::query()->lockForUpdate()->find($this->id);
+            $errors = $record->phase_errors ?? [];
+            $errors[] = ['phase' => $phase, 'chapter' => $chapter, 'error' => $error];
+            $record->update(['phase_errors' => $errors]);
+        });
+
         $this->refresh();
-        $errors = $this->phase_errors ?? [];
-        $errors[] = ['phase' => $phase, 'chapter' => $chapter, 'error' => $error];
-        $this->update(['phase_errors' => $errors]);
     }
 
     /**

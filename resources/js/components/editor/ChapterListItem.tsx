@@ -43,7 +43,7 @@ const ChapterListItem = forwardRef<HTMLButtonElement, ChapterListItemProps>(func
         if (onBeforeNavigate) {
             await onBeforeNavigate();
         }
-        router.visit(show.url({ book: bookId, chapter: chapter.id }));
+        router.visit(show.url({ book: bookId, chapter: chapter.id }), { preserveScroll: true });
     };
 
     const paddingClass = scenesVisible === false

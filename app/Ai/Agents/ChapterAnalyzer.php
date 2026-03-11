@@ -5,6 +5,7 @@ namespace App\Ai\Agents;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\SearchSimilarChunks;
+use App\Enums\PlotPointType;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
@@ -17,7 +18,7 @@ use Laravel\Ai\Promptable;
 use Stringable;
 
 #[Temperature(0.2)]
-#[Timeout(90)]
+#[Timeout(180)]
 class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput, HasTools
 {
     use Promptable;
@@ -76,6 +77,7 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
         18. information_delivery: How is new information revealed? One of: organic (through action/dialogue), mostly_organic, mixed, exposition_heavy, info_dump.
 
         Use the search tool to find related passages from other chapters when cross-referencing themes or plot threads.
+        The book ID is {$this->book->id}. Use this when calling the search tool.
 
         Be precise and analytical. Score honestly — not every chapter needs high scores. Low tension or quiet pacing can be exactly right for a chapter's role in the story.
         INSTRUCTIONS;
@@ -108,7 +110,7 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
                 $schema->object([
                     'title' => $schema->string()->required(),
                     'description' => $schema->string()->required(),
-                    'type' => $schema->string()->required(),
+                    'type' => $schema->string()->enum(array_column(PlotPointType::cases(), 'value'))->required(),
                 ])->withoutAdditionalProperties()
             )->required(),
         ];

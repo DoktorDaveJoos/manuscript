@@ -4,11 +4,10 @@ namespace App\Jobs;
 
 use App\Ai\Agents\ChapterAnalyzer;
 use App\Ai\Agents\EntityExtractor;
-use App\Ai\Agents\ManuscriptAnalyzer;
 use App\Ai\Support\TextPrep;
-use App\Enums\AnalysisType;
 use App\Jobs\Concerns\PersistsChapterAnalysis;
 use App\Jobs\Concerns\PersistsExtractedEntities;
+use App\Jobs\Concerns\RunsManuscriptAnalyses;
 use App\Models\AiSetting;
 use App\Models\Book;
 use App\Models\Chapter;
@@ -21,9 +20,12 @@ use Throwable;
 
 class AnalyzeChapterJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, PersistsChapterAnalysis, PersistsExtractedEntities, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, PersistsChapterAnalysis, PersistsExtractedEntities, Queueable, RunsManuscriptAnalyses, SerializesModels;
 
-    public int $tries = 1;
+    public int $tries = 2;
+
+    /** @var list<int> */
+    public array $backoff = [15];
 
     public int $timeout = 600;
 
@@ -46,13 +48,34 @@ class AnalyzeChapterJob implements ShouldQueue
 
         $this->chapter->update(['analysis_status' => 'running']);
 
-        $this->runChapterAnalysis();
-        $this->runEntityExtraction();
-        $this->runManuscriptAnalyses();
+        try {
+            $this->runChapterAnalysis();
+        } catch (Throwable $e) {
+            $this->markFailed($e->getMessage());
 
+            throw $e;
+        }
+
+        try {
+            $this->runEntityExtraction();
+        } catch (Throwable $e) {
+            // Log but continue — analysis already succeeded
+            report($e);
+        }
+
+        try {
+            $this->runManuscriptAnalyses($this->book, $this->chapter);
+        } catch (Throwable $e) {
+            report($e);
+        }
+
+        // Sync preparation state so "Prepare manuscript" won't redo this chapter
+        $this->chapter->refreshContentHash();
         $this->chapter->update([
             'analysis_status' => 'completed',
             'analysis_error' => null,
+            'prepared_content_hash' => $this->chapter->content_hash,
+            'ai_prepared_at' => now(),
         ]);
     }
 
@@ -104,34 +127,6 @@ class AnalyzeChapterJob implements ShouldQueue
         $response = $agent->prompt("Extract all characters and narratively important entities from the following chapter text:\n\n{$capped}");
 
         $this->persistExtractedEntities($this->book, $this->chapter, $response->toArray());
-    }
-
-    private function runManuscriptAnalyses(): void
-    {
-        $analysisTypes = [
-            AnalysisType::CharacterConsistency,
-            AnalysisType::PlotDeviation,
-        ];
-
-        foreach ($analysisTypes as $type) {
-            $agent = new ManuscriptAnalyzer($this->book, $type);
-
-            $prompt = "Perform a {$type->value} analysis of the manuscript (book ID: {$this->book->id})."
-                ." Focus on chapter '{$this->chapter->title}' (ID: {$this->chapter->id}).";
-
-            $response = $agent->prompt($prompt);
-
-            $this->book->analyses()->updateOrCreate(
-                [
-                    'chapter_id' => $this->chapter->id,
-                    'type' => $type,
-                ],
-                [
-                    'result' => $response->toArray(),
-                    'ai_generated' => true,
-                ],
-            );
-        }
     }
 
     public function failed(?Throwable $exception): void

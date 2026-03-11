@@ -161,6 +161,55 @@ test('AnalyzeChapterJob marks chapter as failed when no AI provider configured',
         ->and($chapter->fresh()->analysis_error)->toBe('No AI provider configured.');
 });
 
+test('AnalyzeChapterJob completes even if ManuscriptAnalyzer throws', function () {
+    ChapterAnalyzer::fake(function () {
+        return [
+            'summary' => 'A test chapter summary.',
+            'key_events' => ['Event 1'],
+            'characters_present' => ['John'],
+            'tension_score' => 7,
+            'micro_tension_score' => 6,
+            'scene_purpose' => 'turning_point',
+            'value_shift' => 'safety → danger',
+            'emotional_state_open' => 'cautious',
+            'emotional_state_close' => 'terrified',
+            'emotional_shift_magnitude' => 8,
+            'hook_score' => 8,
+            'hook_type' => 'cliffhanger',
+            'hook_reasoning' => 'Strong ending.',
+            'entry_hook_score' => 7,
+            'exit_hook_score' => 8,
+            'pacing_feel' => 'brisk',
+            'sensory_grounding' => 4,
+            'information_delivery' => 'organic',
+            'plot_points' => [],
+        ];
+    });
+    EntityExtractor::fake(function () {
+        return ['characters' => [], 'entities' => []];
+    });
+    ManuscriptAnalyzer::fake(function () {
+        throw new \RuntimeException('Manuscript analysis exploded');
+    });
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create([
+        'analysis_status' => 'pending',
+    ]);
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'content' => '<p>Some chapter content for analysis.</p>',
+    ]);
+
+    $job = new AnalyzeChapterJob($book, $chapter);
+    $job->handle();
+
+    $chapter->refresh();
+    expect($chapter->analysis_status)->toBe('completed')
+        ->and($chapter->summary)->toBe('A test chapter summary.');
+});
+
 // --- Chat endpoint tests ---
 
 test('chat streams response from BookChatAgent', function () {

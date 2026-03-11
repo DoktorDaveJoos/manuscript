@@ -28,6 +28,15 @@ test('story bible builder includes book title in instructions', function () {
     expect((string) $instructions)->toContain('Epic Fantasy');
 });
 
+test('story bible builder includes book id in instructions for search tool', function () {
+    $book = Book::factory()->create();
+
+    $agent = new StoryBibleBuilder($book);
+    $instructions = $agent->instructions();
+
+    expect((string) $instructions)->toContain("The book ID is {$book->id}");
+});
+
 test('story bible builder includes middleware', function () {
     $book = Book::factory()->withAi()->create();
     $agent = new StoryBibleBuilder($book);

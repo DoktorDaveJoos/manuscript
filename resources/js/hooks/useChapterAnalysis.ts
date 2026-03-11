@@ -13,7 +13,7 @@ type AnalysisStatusResponse = {
     hook_type: string | null;
     summary: string | null;
     scene_purpose: string | null;
-    value_shift: boolean | null;
+    value_shift: string | null;
     emotional_state_open: string | null;
     emotional_state_close: string | null;
     emotional_shift_magnitude: number | null;
@@ -88,6 +88,12 @@ export function useChapterAnalysis(
     }, [bookId, chapterId, isAnalyzing]);
 
     const handleAnalyze = useCallback(async () => {
+        if (!bookId || !chapterId) {
+            setError('Invalid book or chapter. Please reload the page and try again.');
+            setStatus('failed');
+            return;
+        }
+
         setError(null);
         setStatus('pending');
         pollCountRef.current = 0;

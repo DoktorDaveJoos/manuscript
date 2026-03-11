@@ -14,9 +14,19 @@ test('prepare book for ai runs full 7-phase pipeline', function () {
             'key_events' => ['Event 1'],
             'characters_present' => ['John'],
             'tension_score' => 7,
+            'micro_tension_score' => 6,
+            'scene_purpose' => 'turning_point',
+            'value_shift' => 'safety → danger',
+            'emotional_state_open' => 'cautious',
+            'emotional_state_close' => 'terrified',
+            'emotional_shift_magnitude' => 8,
             'hook_score' => 8,
             'hook_type' => 'cliffhanger',
             'hook_reasoning' => 'Strong ending.',
+            'entry_hook_score' => 7,
+            'pacing_feel' => 'brisk',
+            'sensory_grounding' => 4,
+            'information_delivery' => 'organic',
             'plot_points' => [
                 ['title' => 'Plot point 1', 'description' => 'Something happened', 'type' => 'conflict'],
             ],
@@ -58,12 +68,14 @@ test('prepare book for ai runs full 7-phase pipeline', function () {
         ->and($preparation->completed_phases)->toContain('story_bible')
         ->and($preparation->completed_phases)->toContain('health_analysis');
 
-    // Verify chapters got analyzed
+    // Verify chapters got analyzed and marked as prepared
     $chapters[0]->refresh();
     expect($chapters[0]->summary)->toBe('A test chapter summary.')
         ->and($chapters[0]->tension_score)->toBe(7)
         ->and($chapters[0]->hook_score)->toBe(8)
-        ->and($chapters[0]->hook_type)->toBe('cliffhanger');
+        ->and($chapters[0]->hook_type)->toBe('cliffhanger')
+        ->and($chapters[0]->prepared_content_hash)->toBe($chapters[0]->content_hash)
+        ->and($chapters[0]->ai_prepared_at)->not->toBeNull();
 
     // Verify characters were extracted
     expect($book->characters()->count())->toBeGreaterThanOrEqual(1);
@@ -84,9 +96,19 @@ test('prepare book for ai tracks phase progress', function () {
             'key_events' => [],
             'characters_present' => [],
             'tension_score' => 5,
+            'micro_tension_score' => 4,
+            'scene_purpose' => 'deepening',
+            'value_shift' => null,
+            'emotional_state_open' => 'calm',
+            'emotional_state_close' => 'calm',
+            'emotional_shift_magnitude' => 1,
             'hook_score' => 5,
             'hook_type' => 'closed',
             'hook_reasoning' => 'OK.',
+            'entry_hook_score' => 5,
+            'pacing_feel' => 'measured',
+            'sensory_grounding' => 2,
+            'information_delivery' => 'mixed',
             'plot_points' => [],
         ];
     });
@@ -132,9 +154,19 @@ test('prepare book for ai isolates per-chapter failures', function () {
             'key_events' => [],
             'characters_present' => [],
             'tension_score' => 6,
+            'micro_tension_score' => 5,
+            'scene_purpose' => 'setup',
+            'value_shift' => null,
+            'emotional_state_open' => 'calm',
+            'emotional_state_close' => 'tense',
+            'emotional_shift_magnitude' => 4,
             'hook_score' => 7,
             'hook_type' => 'soft_hook',
             'hook_reasoning' => 'OK.',
+            'entry_hook_score' => 6,
+            'pacing_feel' => 'brisk',
+            'sensory_grounding' => 3,
+            'information_delivery' => 'organic',
             'plot_points' => [],
         ];
     });
@@ -171,9 +203,14 @@ test('prepare book for ai isolates per-chapter failures', function () {
     $chapterErrors = collect($preparation->phase_errors)->where('phase', 'chapter_analysis');
     expect($chapterErrors)->not->toBeEmpty();
 
-    // Second chapter should still have been analyzed
+    // Second chapter should still have been analyzed and marked as prepared
     $chapters[1]->refresh();
-    expect($chapters[1]->summary)->toBe('Second chapter summary.');
+    expect($chapters[1]->summary)->toBe('Second chapter summary.')
+        ->and($chapters[1]->prepared_content_hash)->toBe($chapters[1]->content_hash);
+
+    // First chapter (failed) should NOT be marked as prepared
+    $chapters[0]->refresh();
+    expect($chapters[0]->prepared_content_hash)->toBeNull();
 });
 
 test('prepare book for ai fails when api key not configured', function () {

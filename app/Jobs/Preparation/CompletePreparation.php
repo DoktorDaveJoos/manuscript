@@ -13,7 +13,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 class CompletePreparation implements ShouldQueue
 {
@@ -44,13 +43,6 @@ class CompletePreparation implements ShouldQueue
             ->get();
 
         $this->upsertHealthSnapshot($chapters);
-
-        $this->book->chapters()
-            ->needsAiPreparation()
-            ->update([
-                'prepared_content_hash' => DB::raw('content_hash'),
-                'ai_prepared_at' => now(),
-            ]);
 
         $this->preparation->markPhasesCompleted(['health_analysis']);
         $this->preparation->refresh();

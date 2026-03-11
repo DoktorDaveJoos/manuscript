@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Concerns;
 
+use App\Enums\PlotPointType;
 use App\Models\Book;
 use App\Models\Chapter;
 
@@ -37,10 +38,12 @@ trait PersistsChapterAnalysis
                 continue;
             }
 
+            $type = PlotPointType::tryFrom($point['type'] ?? '') ?? PlotPointType::Worldbuilding;
+
             $book->plotPoints()->create([
                 'title' => $point['title'] ?? $point['description'],
                 'description' => $point['description'],
-                'type' => $point['type'] ?? 'worldbuilding',
+                'type' => $type,
                 'status' => 'fulfilled',
                 'actual_chapter_id' => $chapter->id,
                 'sort_order' => $chapter->reader_order,

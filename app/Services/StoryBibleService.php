@@ -15,7 +15,13 @@ class StoryBibleService
      */
     public function build(Book $book): array
     {
-        AiSetting::activeProvider()?->injectConfig();
+        $setting = AiSetting::activeProvider();
+
+        if (! $setting || ! $setting->isConfigured()) {
+            throw new \RuntimeException('No AI provider configured.');
+        }
+
+        $setting->injectConfig();
 
         $context = $this->assembleContext($book);
 

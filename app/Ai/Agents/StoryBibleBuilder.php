@@ -43,6 +43,7 @@ class StoryBibleBuilder implements Agent, BelongsToBook, HasMiddleware, HasStruc
         4. Timeline — key events in chronological order with approximate chapter references
 
         Verify key facts against the manuscript text using the search tool.
+        The book ID is {$this->book->id}. Use this when calling the search tool.
 
         Be concise. This will be used as supplementary context for other AI agents.
         INSTRUCTIONS;
