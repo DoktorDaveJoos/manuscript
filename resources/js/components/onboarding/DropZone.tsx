@@ -1,7 +1,9 @@
 import { UploadSimple } from '@phosphor-icons/react';
 import { useCallback, useRef, useState, type DragEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function DropZone({ onFiles }: { onFiles: (files: File[]) => void }) {
+    const { t } = useTranslation('onboarding');
     const [dragging, setDragging] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -32,9 +34,9 @@ export default function DropZone({ onFiles }: { onFiles: (files: File[]) => void
         >
             <UploadSimple size={32} className="text-[#B5B0A6]" />
             <div className="flex flex-col items-center gap-1">
-                <span className="text-sm font-medium leading-[18px] text-ink">Drop .docx files here</span>
+                <span className="text-sm font-medium leading-[18px] text-ink">{t('dropZone.title')}</span>
                 <span className="text-[13px] leading-4 text-ink-muted">
-                    or click to browse — add as many as you need
+                    {t('dropZone.subtitle')}
                 </span>
             </div>
             <input

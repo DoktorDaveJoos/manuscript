@@ -9,6 +9,7 @@ import type { Book, Storyline, StorylineType } from '@/types/models';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 function normalizeFilenameToStorylineName(filename: string): string {
     return filename
@@ -46,6 +47,7 @@ function UploadPhase({
     book: Book & { storylines: Pick<Storyline, 'id' | 'book_id' | 'name'>[] };
     onStartParsing: (files: FileEntry[]) => void;
 }) {
+    const { t } = useTranslation('onboarding');
     const [files, setFiles] = useState<FileEntry[]>([]);
 
     function handleFiles(newFiles: File[]) {
@@ -63,7 +65,7 @@ function UploadPhase({
             <div className="flex flex-col items-center gap-2">
                 <h1 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">{book.title}</h1>
                 <p className="text-sm leading-[18px] text-ink-muted">
-                    Import your manuscript files — one per storyline
+                    {t('uploadPhase.subtitle')}
                 </p>
             </div>
 
@@ -89,7 +91,7 @@ function UploadPhase({
                     onClick={() => router.post(skipImport.url(book))}
                     className="rounded-md border border-border px-6 py-2.5 text-sm font-medium leading-[18px] text-ink-muted"
                 >
-                    Skip — start blank
+                    {t('uploadPhase.skip')}
                 </button>
                 {files.length > 0 && (
                     <button
@@ -97,7 +99,7 @@ function UploadPhase({
                         onClick={() => onStartParsing(files)}
                         className="rounded-md bg-ink px-7 py-2.5 text-sm font-medium leading-[18px] text-surface"
                     >
-                        Import {files.length} file{files.length === 1 ? '' : 's'}
+                        {t('uploadPhase.importFiles', { count: files.length })}
                     </button>
                 )}
             </div>
@@ -114,6 +116,7 @@ function ParsingPhase({
     chapters: ChapterItem[];
     onComplete: () => void;
 }) {
+    const { t } = useTranslation('onboarding');
     const [doneCount, setDoneCount] = useState(0);
     const total = chapters.length;
 
@@ -136,7 +139,7 @@ function ParsingPhase({
         <div className="flex flex-1 flex-col items-center px-10 pt-20 gap-10">
             <div className="flex flex-col items-center gap-2">
                 <h1 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">{book.title}</h1>
-                <p className="text-sm leading-[18px] text-ink-muted">Reading your manuscript...</p>
+                <p className="text-sm leading-[18px] text-ink-muted">{t('parsingPhase.subtitle')}</p>
             </div>
 
             <div className="flex w-[400px] flex-col">
@@ -146,7 +149,7 @@ function ParsingPhase({
             </div>
 
             <span className="text-[13px] leading-4 text-ink-faint">
-                {doneCount} of {total} chapters imported
+                {t('parsingPhase.progress', { done: doneCount, total })}
             </span>
         </div>
     );
@@ -157,6 +160,7 @@ export default function BooksImport({
 }: {
     book: Book & { storylines: Pick<Storyline, 'id' | 'book_id' | 'name'>[] };
 }) {
+    const { t } = useTranslation('onboarding');
     const [phase, setPhase] = useState<'upload' | 'parsing' | 'review'>('upload');
     const [reviewData, setReviewData] = useState<ReviewStoryline[]>([]);
     const [parsingChapters, setParsingChapters] = useState<ChapterItem[]>([]);
@@ -180,7 +184,7 @@ export default function BooksImport({
 
                 s.chapters.forEach((ch) => {
                     allChapters.push({
-                        title: `Chapter ${ch.number} — ${ch.title}`,
+                        title: t('import.chapterLabel', { number: ch.number, title: ch.title }),
                         wordCount: ch.word_count,
                         done: false,
                     });
@@ -198,7 +202,7 @@ export default function BooksImport({
                         included: ch.content.trim().length > 0,
                     })),
                     notice: !hasMultipleChapters
-                        ? 'No chapter headings detected — importing as single chapter'
+                        ? t('import.noHeadingsNotice')
                         : undefined,
                 };
             });

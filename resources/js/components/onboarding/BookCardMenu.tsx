@@ -1,5 +1,6 @@
 import { Copy, DotsThreeVertical, PencilSimple, Trash } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function BookCardMenu({
     onRename,
@@ -10,6 +11,7 @@ export default function BookCardMenu({
     onDuplicate: () => void;
     onDelete: () => void;
 }) {
+    const { t } = useTranslation('onboarding');
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -54,7 +56,7 @@ export default function BookCardMenu({
                             className="flex items-center gap-2.5 px-3 py-2 text-left text-[13px] text-ink transition-colors hover:bg-neutral-bg"
                         >
                             <PencilSimple size={14} className="text-ink-muted" />
-                            Rename
+                            {t('bookCardMenu.rename')}
                         </button>
 
                         <button
@@ -67,7 +69,7 @@ export default function BookCardMenu({
                             className="flex items-center gap-2.5 px-3 py-2 text-left text-[13px] text-ink transition-colors hover:bg-neutral-bg"
                         >
                             <Copy size={14} className="text-ink-muted" />
-                            Duplicate
+                            {t('bookCardMenu.duplicate')}
                         </button>
 
                         <div className="mx-2 my-1 border-t border-border" />
@@ -82,7 +84,7 @@ export default function BookCardMenu({
                             className="flex items-center gap-2.5 px-3 py-2 text-left text-[13px] text-red-600 transition-colors hover:bg-neutral-bg"
                         >
                             <Trash size={14} />
-                            Delete book...
+                            {t('bookCardMenu.delete')}
                         </button>
                     </div>
                 </div>

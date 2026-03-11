@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import ReviewChapterRow, { type ReviewChapter } from '@/components/onboarding/ReviewChapterRow';
 import type { Book, StorylineType } from '@/types/models';
 
@@ -30,6 +31,7 @@ export default function ReviewPhase({
     onUpdate: (storylines: ReviewStoryline[]) => void;
     submitting?: boolean;
 }) {
+    const { t, i18n } = useTranslation('onboarding');
     const includedChapters = storylines.flatMap((s) => s.chapters.filter((c) => c.included));
     const totalWords = includedChapters.reduce((sum, c) => sum + c.wordCount, 0);
 
@@ -48,7 +50,7 @@ export default function ReviewPhase({
         <div className="flex min-h-0 flex-1 flex-col items-center px-10 pt-10 pb-16 gap-8">
             <div className="flex flex-col items-center gap-2">
                 <h1 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">{book.title}</h1>
-                <p className="text-sm leading-[18px] text-ink-muted">Review your import</p>
+                <p className="text-sm leading-[18px] text-ink-muted">{t('reviewPhase.subtitle')}</p>
             </div>
 
             <div className="flex w-[560px] flex-col gap-7">
@@ -61,7 +63,7 @@ export default function ReviewPhase({
                             />
                             <span className="text-sm font-medium leading-[18px] text-ink">{storyline.name}</span>
                             <span className="text-[11px] font-medium uppercase leading-[14px] tracking-[0.05em] text-ink-muted">
-                                {storyline.type}
+                                {t(`reviewPhase.storylineType.${storyline.type}`)}
                             </span>
                             <div className="flex-1" />
                             <span className="text-[13px] leading-4 text-ink-faint">{storyline.filename}</span>
@@ -86,8 +88,7 @@ export default function ReviewPhase({
             </div>
 
             <span className="text-[13px] leading-4 text-ink-faint">
-                {includedChapters.length} chapter{includedChapters.length === 1 ? '' : 's'} &middot;{' '}
-                {totalWords.toLocaleString('en-US')} words
+                {t('reviewPhase.chapterSummary', { count: includedChapters.length, chapterCount: includedChapters.length, wordCount: totalWords.toLocaleString(i18n.language) })}
             </span>
 
             <div className="flex items-center gap-4">
@@ -96,7 +97,7 @@ export default function ReviewPhase({
                     onClick={onBack}
                     className="rounded-md border border-border px-6 py-2.5 text-sm font-medium leading-[18px] text-ink-muted"
                 >
-                    Back
+                    {t('reviewPhase.back')}
                 </button>
                 <button
                     type="button"
@@ -104,7 +105,7 @@ export default function ReviewPhase({
                     disabled={includedChapters.length === 0 || submitting}
                     className="rounded-md bg-ink px-7 py-2.5 text-sm font-medium leading-[18px] text-surface disabled:opacity-50"
                 >
-                    {submitting ? 'Importing…' : 'Confirm import'}
+                    {submitting ? t('reviewPhase.importing') : t('reviewPhase.confirmImport')}
                 </button>
             </div>
         </div>

@@ -5,6 +5,7 @@ import NewBookCard from '@/components/onboarding/NewBookCard';
 import RenameBookDialog from '@/components/onboarding/RenameBookDialog';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { duplicate } from '@/actions/App/Http/Controllers/BookController';
 import { router } from '@inertiajs/react';
 
@@ -15,12 +16,14 @@ type DialogState =
     | null;
 
 function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
+    const { t } = useTranslation('onboarding');
+
     return (
         <div className="flex flex-1 flex-col items-center justify-center pb-20">
             <div className="flex flex-col items-center gap-4">
-                <h1 className="font-serif text-5xl leading-[58px] tracking-[-0.02em] text-ink">Begin your story</h1>
+                <h1 className="font-serif text-5xl leading-[58px] tracking-[-0.02em] text-ink">{t('emptyState.title')}</h1>
                 <p className="text-[15px] leading-6 text-ink-muted">
-                    Create a book to start writing. Everything stays on your device.
+                    {t('emptyState.description')}
                 </p>
             </div>
             <button
@@ -28,7 +31,7 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
                 onClick={onCreateClick}
                 className="mt-10 rounded-md bg-ink px-7 py-3 text-sm font-medium leading-[18px] text-surface"
             >
-                Create your first book
+                {t('emptyState.createButton')}
             </button>
         </div>
     );
@@ -47,9 +50,11 @@ function BookLibrary({
     onDuplicate: (book: BookWithCounts) => void;
     onDelete: (book: BookWithCounts) => void;
 }) {
+    const { t } = useTranslation('onboarding');
+
     return (
         <div className="flex flex-1 flex-col items-center px-10 py-20 gap-12">
-            <h1 className="font-serif text-4xl leading-[44px] tracking-[-0.01em] text-ink">Your books</h1>
+            <h1 className="font-serif text-4xl leading-[44px] tracking-[-0.01em] text-ink">{t('bookLibrary.title')}</h1>
             <div className="flex flex-wrap justify-center gap-6">
                 {books.map((book) => (
                     <BookCard

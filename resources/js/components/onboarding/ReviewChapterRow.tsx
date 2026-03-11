@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export type ReviewChapter = {
     number: number;
@@ -17,6 +18,7 @@ export default function ReviewChapterRow({
     onToggle: () => void;
     onTitleChange: (title: string) => void;
 }) {
+    const { i18n } = useTranslation('onboarding');
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState(chapter.title);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -94,7 +96,7 @@ export default function ReviewChapterRow({
             )}
 
             <span className="shrink-0 text-xs leading-4 text-ink-faint">
-                {chapter.wordCount.toLocaleString('en-US')}
+                {chapter.wordCount.toLocaleString(i18n.language)}
             </span>
         </div>
     );

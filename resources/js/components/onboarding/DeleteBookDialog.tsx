@@ -2,8 +2,10 @@ import { destroy } from '@/actions/App/Http/Controllers/BookController';
 import type { Book } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 export default function DeleteBookDialog({ book, onClose }: { book: Book; onClose: () => void }) {
+    const { t } = useTranslation('onboarding');
     const [confirmation, setConfirmation] = useState('');
     const [processing, setProcessing] = useState(false);
 
@@ -29,16 +31,20 @@ export default function DeleteBookDialog({ book, onClose }: { book: Book; onClos
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                         </svg>
                     </div>
-                    <h2 className="font-serif text-2xl leading-8 tracking-[-0.01em] text-ink">Delete book</h2>
+                    <h2 className="font-serif text-2xl leading-8 tracking-[-0.01em] text-ink">{t('deleteBook.title')}</h2>
                     <p className="text-sm leading-[22px] text-ink-muted">
-                        This will permanently delete <span className="font-medium text-ink">{book.title}</span> and all
-                        its chapters, characters, storylines, and analysis data. This action cannot be undone.
+                        <Trans
+                            i18nKey="deleteBook.description"
+                            ns="onboarding"
+                            values={{ title: book.title }}
+                            components={{ strong: <span className="font-medium text-ink" /> }}
+                        />
                     </p>
                 </div>
 
                 <fieldset className="flex flex-col gap-1.5">
                     <label className="text-xs font-medium uppercase leading-4 tracking-[0.06em] text-ink-muted">
-                        Type the book title to confirm
+                        {t('deleteBook.confirmLabel')}
                     </label>
                     <input
                         type="text"
@@ -56,7 +62,7 @@ export default function DeleteBookDialog({ book, onClose }: { book: Book; onClos
                         onClick={onClose}
                         className="rounded-md px-5 py-2.5 text-sm font-medium leading-[18px] text-ink-muted"
                     >
-                        Cancel
+                        {t('deleteBook.cancel')}
                     </button>
                     <button
                         type="button"
@@ -64,7 +70,7 @@ export default function DeleteBookDialog({ book, onClose }: { book: Book; onClos
                         onClick={handleDelete}
                         className="rounded-md bg-red-600 px-6 py-2.5 text-sm font-medium leading-[18px] text-white transition-opacity disabled:opacity-40"
                     >
-                        Delete permanently
+                        {t('deleteBook.confirm')}
                     </button>
                 </div>
             </div>

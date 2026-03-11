@@ -1,6 +1,7 @@
 import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 import type { Book } from '@/types/models';
 import { router } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 import BookCardMenu from './BookCardMenu';
 import ProgressBar from './ProgressBar';
 
@@ -13,22 +14,6 @@ type BookWithCounts = Book & {
     storylines?: { id: number; book_id: number; name: string }[];
 };
 
-function formatWords(count: number | null): string {
-    if (!count) return '0 words';
-    return `${count.toLocaleString('en-US')} words`;
-}
-
-function timeAgo(date: string): string {
-    const diff = Date.now() - new Date(date).getTime();
-    const hours = Math.floor(diff / 3600000);
-    if (hours < 1) return 'Edited just now';
-    if (hours < 24) return `Edited ${hours} hour${hours === 1 ? '' : 's'} ago`;
-    const days = Math.floor(hours / 24);
-    if (days < 30) return `Edited ${days} day${days === 1 ? '' : 's'} ago`;
-    const months = Math.floor(days / 30);
-    return `Edited ${months} month${months === 1 ? '' : 's'} ago`;
-}
-
 export default function BookCard({
     book,
     onRename,
@@ -40,11 +25,29 @@ export default function BookCard({
     onDuplicate: () => void;
     onDelete: () => void;
 }) {
+    const { t, i18n } = useTranslation('onboarding');
+
+    function formatWords(count: number | null): string {
+        if (!count) return t('bookCard.words', { count: 0, formatted: '0' });
+        return t('bookCard.words', { count, formatted: count.toLocaleString(i18n.language) });
+    }
+
+    function timeAgo(date: string): string {
+        const diff = Date.now() - new Date(date).getTime();
+        const hours = Math.floor(diff / 3600000);
+        if (hours < 1) return t('bookCard.editedJustNow');
+        if (hours < 24) return t('bookCard.editedHoursAgo', { count: hours });
+        const days = Math.floor(hours / 24);
+        if (days < 30) return t('bookCard.editedDaysAgo', { count: days });
+        const months = Math.floor(days / 30);
+        return t('bookCard.editedMonthsAgo', { count: months });
+    }
+
     const storylineCount = book.storylines?.length ?? 0;
     const meta = [
-        `${book.chapters_count} chapter${book.chapters_count === 1 ? '' : 's'}`,
+        t('bookCard.chapters', { count: book.chapters_count }),
         formatWords(book.chapters_sum_word_count),
-        `${storylineCount} storyline${storylineCount === 1 ? '' : 's'}`,
+        t('bookCard.storylines', { count: storylineCount }),
     ].join(' \u00B7 ');
 
     return (

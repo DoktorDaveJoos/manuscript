@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 type ChapterItem = {
     title: string;
     wordCount: number | null;
@@ -5,6 +7,7 @@ type ChapterItem = {
 };
 
 export default function ImportChapterRow({ chapter }: { chapter: ChapterItem }) {
+    const { t, i18n } = useTranslation('onboarding');
     return (
         <div className="flex items-center gap-3 border-b border-border-light py-3.5">
             {chapter.done ? (
@@ -28,7 +31,7 @@ export default function ImportChapterRow({ chapter }: { chapter: ChapterItem }) 
             </span>
 
             <span className="ml-auto text-xs leading-4 text-ink-faint">
-                {chapter.wordCount !== null ? `${chapter.wordCount.toLocaleString('en-US')} words` : '...'}
+                {chapter.wordCount !== null ? t('importChapterRow.words', { count: chapter.wordCount, formatted: chapter.wordCount.toLocaleString(i18n.language) }) : '...'}
             </span>
         </div>
     );

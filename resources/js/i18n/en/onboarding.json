@@ -1,2 +1,79 @@
 {
+    "emptyState.title": "Begin your story",
+    "emptyState.description": "Create a book to start writing. Everything stays on your device.",
+    "emptyState.createButton": "Create your first book",
+
+    "bookLibrary.title": "Your books",
+
+    "createBook.title": "New book",
+    "createBook.description": "Give your book a working title. You can change it later.",
+    "createBook.labelTitle": "Title",
+    "createBook.placeholderTitle": "The Weight of Silence",
+    "createBook.labelAuthor": "Author",
+    "createBook.placeholderAuthor": "Your name (optional)",
+    "createBook.labelLanguage": "Language",
+    "createBook.cancel": "Cancel",
+    "createBook.continue": "Continue",
+
+    "renameBook.title": "Rename book",
+    "renameBook.description": "Give your book a new title.",
+    "renameBook.labelTitle": "Title",
+    "renameBook.placeholderTitle": "The Weight of Silence",
+    "renameBook.cancel": "Cancel",
+    "renameBook.save": "Save",
+
+    "deleteBook.title": "Delete book",
+    "deleteBook.description": "This will permanently delete <strong>{{title}}</strong> and all its chapters, characters, storylines, and analysis data. This action cannot be undone.",
+    "deleteBook.confirmLabel": "Type the book title to confirm",
+    "deleteBook.cancel": "Cancel",
+    "deleteBook.confirm": "Delete permanently",
+
+    "bookCard.chapters_one": "{{count}} chapter",
+    "bookCard.chapters_other": "{{count}} chapters",
+    "bookCard.words": "{{formatted}} words",
+    "bookCard.storylines_one": "{{count}} storyline",
+    "bookCard.storylines_other": "{{count}} storylines",
+    "bookCard.editedJustNow": "Edited just now",
+    "bookCard.editedHoursAgo_one": "Edited {{count}} hour ago",
+    "bookCard.editedHoursAgo_other": "Edited {{count}} hours ago",
+    "bookCard.editedDaysAgo_one": "Edited {{count}} day ago",
+    "bookCard.editedDaysAgo_other": "Edited {{count}} days ago",
+    "bookCard.editedMonthsAgo_one": "Edited {{count}} month ago",
+    "bookCard.editedMonthsAgo_other": "Edited {{count}} months ago",
+
+    "bookCardMenu.rename": "Rename",
+    "bookCardMenu.duplicate": "Duplicate",
+    "bookCardMenu.delete": "Delete book...",
+
+    "newBookCard.create": "Create new book",
+
+    "dropZone.title": "Drop .docx files here",
+    "dropZone.subtitle": "or click to browse — add as many as you need",
+
+    "importChapterRow.words": "{{formatted}} words",
+
+    "progressBar.final": "final",
+    "progressBar.revised": "revised",
+    "progressBar.draft": "draft",
+
+    "uploadPhase.subtitle": "Import your manuscript files — one per storyline",
+    "uploadPhase.skip": "Skip — start blank",
+    "uploadPhase.importFiles_one": "Import {{count}} file",
+    "uploadPhase.importFiles_other": "Import {{count}} files",
+
+    "parsingPhase.subtitle": "Reading your manuscript...",
+    "parsingPhase.progress": "{{done}} of {{total}} chapters imported",
+
+    "import.chapterLabel": "Chapter {{number}} — {{title}}",
+    "import.noHeadingsNotice": "No chapter headings detected — importing as single chapter",
+
+    "reviewPhase.subtitle": "Review your import",
+    "reviewPhase.storylineType.main": "main",
+    "reviewPhase.storylineType.backstory": "backstory",
+    "reviewPhase.storylineType.parallel": "parallel",
+    "reviewPhase.chapterSummary_one": "{{chapterCount}} chapter · {{wordCount}} words",
+    "reviewPhase.chapterSummary_other": "{{chapterCount}} chapters · {{wordCount}} words",
+    "reviewPhase.back": "Back",
+    "reviewPhase.importing": "Importing…",
+    "reviewPhase.confirmImport": "Confirm import"
 }

@@ -1,2 +1,79 @@
 {
+    "emptyState.title": "Beginne deine Geschichte",
+    "emptyState.description": "Erstelle ein Buch, um mit dem Schreiben zu beginnen. Alles bleibt auf deinem Gerät.",
+    "emptyState.createButton": "Erstes Buch erstellen",
+
+    "bookLibrary.title": "Deine Bücher",
+
+    "createBook.title": "Neues Buch",
+    "createBook.description": "Gib deinem Buch einen Arbeitstitel. Du kannst ihn später ändern.",
+    "createBook.labelTitle": "Titel",
+    "createBook.placeholderTitle": "Das Gewicht der Stille",
+    "createBook.labelAuthor": "Autor",
+    "createBook.placeholderAuthor": "Dein Name (optional)",
+    "createBook.labelLanguage": "Sprache",
+    "createBook.cancel": "Abbrechen",
+    "createBook.continue": "Weiter",
+
+    "renameBook.title": "Buch umbenennen",
+    "renameBook.description": "Gib deinem Buch einen neuen Titel.",
+    "renameBook.labelTitle": "Titel",
+    "renameBook.placeholderTitle": "Das Gewicht der Stille",
+    "renameBook.cancel": "Abbrechen",
+    "renameBook.save": "Speichern",
+
+    "deleteBook.title": "Buch löschen",
+    "deleteBook.description": "Dadurch werden <strong>{{title}}</strong> und alle zugehörigen Kapitel, Figuren, Handlungsstränge und Analysedaten unwiderruflich gelöscht.",
+    "deleteBook.confirmLabel": "Buchtitel zur Bestätigung eingeben",
+    "deleteBook.cancel": "Abbrechen",
+    "deleteBook.confirm": "Endgültig löschen",
+
+    "bookCard.chapters_one": "{{count}} Kapitel",
+    "bookCard.chapters_other": "{{count}} Kapitel",
+    "bookCard.words": "{{formatted}} Wörter",
+    "bookCard.storylines_one": "{{count}} Handlungsstrang",
+    "bookCard.storylines_other": "{{count}} Handlungsstränge",
+    "bookCard.editedJustNow": "Gerade bearbeitet",
+    "bookCard.editedHoursAgo_one": "Vor {{count}} Stunde bearbeitet",
+    "bookCard.editedHoursAgo_other": "Vor {{count}} Stunden bearbeitet",
+    "bookCard.editedDaysAgo_one": "Vor {{count}} Tag bearbeitet",
+    "bookCard.editedDaysAgo_other": "Vor {{count}} Tagen bearbeitet",
+    "bookCard.editedMonthsAgo_one": "Vor {{count}} Monat bearbeitet",
+    "bookCard.editedMonthsAgo_other": "Vor {{count}} Monaten bearbeitet",
+
+    "bookCardMenu.rename": "Umbenennen",
+    "bookCardMenu.duplicate": "Duplizieren",
+    "bookCardMenu.delete": "Buch löschen …",
+
+    "newBookCard.create": "Neues Buch erstellen",
+
+    "dropZone.title": ".docx-Dateien hierher ziehen",
+    "dropZone.subtitle": "oder klicken zum Durchsuchen — beliebig viele Dateien",
+
+    "importChapterRow.words": "{{formatted}} Wörter",
+
+    "progressBar.final": "Final",
+    "progressBar.revised": "Überarbeitet",
+    "progressBar.draft": "Entwurf",
+
+    "uploadPhase.subtitle": "Importiere deine Manuskriptdateien — eine pro Handlungsstrang",
+    "uploadPhase.skip": "Überspringen — leer starten",
+    "uploadPhase.importFiles_one": "{{count}} Datei importieren",
+    "uploadPhase.importFiles_other": "{{count}} Dateien importieren",
+
+    "parsingPhase.subtitle": "Manuskript wird gelesen …",
+    "parsingPhase.progress": "{{done}} von {{total}} Kapiteln importiert",
+
+    "import.chapterLabel": "Kapitel {{number}} — {{title}}",
+    "import.noHeadingsNotice": "Keine Kapitelüberschriften erkannt — wird als einzelnes Kapitel importiert",
+
+    "reviewPhase.subtitle": "Import überprüfen",
+    "reviewPhase.storylineType.main": "Hauptstrang",
+    "reviewPhase.storylineType.backstory": "Vorgeschichte",
+    "reviewPhase.storylineType.parallel": "Parallelstrang",
+    "reviewPhase.chapterSummary_one": "{{chapterCount}} Kapitel · {{wordCount}} Wörter",
+    "reviewPhase.chapterSummary_other": "{{chapterCount}} Kapitel · {{wordCount}} Wörter",
+    "reviewPhase.back": "Zurück",
+    "reviewPhase.importing": "Wird importiert …",
+    "reviewPhase.confirmImport": "Import bestätigen"
 }

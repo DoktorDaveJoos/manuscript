@@ -1,6 +1,8 @@
 import { Plus } from '@phosphor-icons/react';
+import { useTranslation } from 'react-i18next';
 
 export default function NewBookCard({ onClick }: { onClick: () => void }) {
+    const { t } = useTranslation('onboarding');
     return (
         <button
             type="button"
@@ -10,7 +12,7 @@ export default function NewBookCard({ onClick }: { onClick: () => void }) {
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-bg">
                 <Plus size={18} className="text-[#8A8578]" />
             </div>
-            <span className="text-sm leading-[18px] text-ink-muted">Create new book</span>
+            <span className="text-sm leading-[18px] text-ink-muted">{t('newBookCard.create')}</span>
         </button>
     );
 }
