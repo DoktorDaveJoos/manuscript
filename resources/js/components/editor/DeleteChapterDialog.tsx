@@ -2,6 +2,7 @@ import { destroy } from '@/actions/App/Http/Controllers/ChapterController';
 import type { Chapter } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 export default function DeleteChapterDialog({
     bookId,
@@ -12,6 +13,7 @@ export default function DeleteChapterDialog({
     chapter: Chapter;
     onClose: () => void;
 }) {
+    const { t } = useTranslation('editor');
     const [processing, setProcessing] = useState(false);
 
     function handleDelete() {
@@ -36,16 +38,17 @@ export default function DeleteChapterDialog({
                             />
                         </svg>
                     </div>
-                    <h2 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">Move to trash</h2>
+                    <h2 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">{t('deleteChapter.title')}</h2>
                     <p className="text-sm leading-[22px] text-ink-muted">
-                        This will move <span className="font-medium text-ink">{chapter.title}</span> and its scenes to the trash. You can restore it later
-                        from the sidebar.
+                        <Trans i18nKey="deleteChapter.description" ns="editor" values={{ title: chapter.title }}>
+                            This will move <span className="font-medium text-ink">{'{{title}}'}</span> and its scenes to the trash. You can restore it later from the sidebar.
+                        </Trans>
                     </p>
                 </div>
 
                 <div className="flex items-center justify-end gap-3">
                     <button type="button" onClick={onClose} className="rounded-md px-5 py-2.5 text-sm font-medium leading-[18px] text-ink-faint">
-                        Cancel
+                        {t('deleteChapter.cancel')}
                     </button>
                     <button
                         type="button"
@@ -53,7 +56,7 @@ export default function DeleteChapterDialog({
                         onClick={handleDelete}
                         className="rounded-md bg-delete px-6 py-2.5 text-sm font-medium leading-[18px] text-white transition-opacity disabled:opacity-40"
                     >
-                        Move to trash
+                        {t('deleteChapter.confirm')}
                     </button>
                 </div>
             </div>

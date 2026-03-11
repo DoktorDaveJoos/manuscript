@@ -16,6 +16,7 @@ import {
 } from '@phosphor-icons/react';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type PaletteItem = {
     id: string;
@@ -56,6 +57,7 @@ export default function CommandPalette({
     onToggleNotes?: () => void;
     licensed?: boolean;
 }) {
+    const { t } = useTranslation('editor');
     const [query, setQuery] = useState('');
     const [activeIndex, setActiveIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -71,9 +73,9 @@ export default function CommandPalette({
         return [
             {
                 id: 'focus-mode',
-                label: isFocusMode ? 'Leave Focus Mode' : 'Enter Focus Mode',
+                label: isFocusMode ? t('palette.leaveFocusMode') : t('palette.enterFocusMode'),
                 shortcut: isFocusMode ? 'Esc' : undefined,
-                section: 'Focus',
+                section: t('palette.section.focus'),
                 icon: <CornersIn size={14} weight="regular" />,
                 action: () => {
                     onClose();
@@ -82,8 +84,8 @@ export default function CommandPalette({
             },
             {
                 id: 'typewriter-mode',
-                label: isTypewriterMode ? 'Leave Typewriter Mode' : 'Enter Typewriter Mode',
-                section: 'Focus',
+                label: isTypewriterMode ? t('palette.leaveTypewriterMode') : t('palette.enterTypewriterMode'),
+                section: t('palette.section.focus'),
                 icon: <Keyboard size={14} weight="regular" />,
                 action: () => {
                     onClose();
@@ -92,25 +94,25 @@ export default function CommandPalette({
             },
             {
                 id: 'bold',
-                label: 'Bold',
+                label: t('palette.bold'),
                 shortcut: '⌘B',
-                section: 'Text Style',
+                section: t('palette.section.textStyle'),
                 icon: <TextB size={14} weight="bold" />,
                 action: run(() => editor!.chain().focus().toggleBold().run()),
             },
             {
                 id: 'italic',
-                label: 'Italic',
+                label: t('palette.italic'),
                 shortcut: '⌘I',
-                section: 'Text Style',
+                section: t('palette.section.textStyle'),
                 icon: <TextItalic size={14} weight="regular" />,
                 action: run(() => editor!.chain().focus().toggleItalic().run()),
             },
             {
                 id: 'ai-generate',
-                label: 'Generate next paragraph',
+                label: t('palette.generateNextParagraph'),
                 shortcut: '⌘↵',
-                section: 'AI Generate',
+                section: t('palette.section.aiGenerate'),
                 iconColorClass: 'text-status-revised',
                 highlighted: true,
                 disabled: !licensed,
@@ -119,9 +121,9 @@ export default function CommandPalette({
             },
             {
                 id: 'ai-continue',
-                label: 'Continue from here',
+                label: t('palette.continueFromHere'),
                 shortcut: '⌘⇧↵',
-                section: 'AI Generate',
+                section: t('palette.section.aiGenerate'),
                 iconColorClass: 'text-status-revised',
                 disabled: !licensed,
                 icon: <ArrowRight size={14} weight="regular" />,
@@ -129,8 +131,8 @@ export default function CommandPalette({
             },
             {
                 id: 'new-chapter',
-                label: 'New chapter',
-                section: 'Chapter',
+                label: t('palette.newChapter'),
+                section: t('palette.section.chapter'),
                 icon: <Plus size={14} weight="regular" />,
                 action: run(() => {
                     onNewChapter();
@@ -138,8 +140,8 @@ export default function CommandPalette({
             },
             {
                 id: 'new-scene',
-                label: 'New scene',
-                section: 'Chapter',
+                label: t('palette.newScene'),
+                section: t('palette.section.chapter'),
                 icon: <Minus size={14} weight="regular" />,
                 disabled: !onAddScene,
                 action: () => {
@@ -149,8 +151,8 @@ export default function CommandPalette({
             },
             {
                 id: 'split-chapter',
-                label: 'Make selection own scene',
-                section: 'Chapter',
+                label: t('palette.makeSelectionOwnScene'),
+                section: t('palette.section.chapter'),
                 icon: <ArrowsOutLineVertical size={14} weight="regular" />,
                 action: run(() => {
                     onSplitScene();
@@ -158,8 +160,8 @@ export default function CommandPalette({
             },
             {
                 id: 'toggle-notes',
-                label: 'Toggle Chapter Notes',
-                section: 'Chapter',
+                label: t('palette.toggleChapterNotes'),
+                section: t('palette.section.chapter'),
                 icon: <NotePencil size={14} weight="regular" />,
                 action: () => {
                     onToggleNotes?.();
@@ -167,7 +169,7 @@ export default function CommandPalette({
                 },
             },
         ];
-    }, [editor, onClose, onSplitScene, onNewChapter, onAddScene, onEnterFocusMode, isFocusMode, onToggleTypewriterMode, isTypewriterMode, onToggleNotes, licensed]);
+    }, [editor, onClose, onSplitScene, onNewChapter, onAddScene, onEnterFocusMode, isFocusMode, onToggleTypewriterMode, isTypewriterMode, onToggleNotes, licensed, t]);
 
     const filtered = useMemo(() => {
         if (!query.trim()) return items;
@@ -252,7 +254,7 @@ export default function CommandPalette({
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder={"Search actions\u2026"}
+                        placeholder={t('palette.searchActions')}
                         className="min-w-0 flex-1 bg-transparent text-[13px] text-ink placeholder:text-ink-faint focus:outline-none"
                     />
                     <Kbd keys="⇧/" />
@@ -261,7 +263,7 @@ export default function CommandPalette({
                 {/* Items list */}
                 <div ref={listRef}>
                     {filtered.length === 0 && (
-                        <div className="px-3 py-4 text-center text-[13px] text-ink-faint">No matching actions</div>
+                        <div className="px-3 py-4 text-center text-[13px] text-ink-faint">{t('palette.noMatchingActions')}</div>
                     )}
                     {Array.from(sections.entries()).map(([section, sectionItems], index) => {
                         const isFirst = index === 0;

@@ -1,6 +1,7 @@
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { DotsThreeVertical, Lock } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function TextActionsDropdown({
     onNormalizeClick,
@@ -12,6 +13,7 @@ export default function TextActionsDropdown({
     isBeautifying?: boolean;
 }) {
     const { visible, usable, licensed } = useAiFeatures();
+    const { t } = useTranslation('editor');
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -34,7 +36,7 @@ export default function TextActionsDropdown({
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                title="More actions"
+                title={t('textActions.moreActions')}
                 className="flex h-7 w-7 items-center justify-center rounded text-xs text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
             >
                 <DotsThreeVertical size={14} weight="bold" />
@@ -51,9 +53,9 @@ export default function TextActionsDropdown({
                             }}
                             className="px-3 py-2 text-left transition-colors hover:bg-neutral-bg"
                         >
-                            <span className="block text-xs font-medium text-ink">Normalize</span>
+                            <span className="block text-xs font-medium text-ink">{t('textActions.normalize')}</span>
                             <span className="block text-[11px] text-ink-faint">
-                                Fix whitespace, quotes, and dashes
+                                {t('textActions.normalizeDescription')}
                             </span>
                         </button>
 
@@ -68,7 +70,7 @@ export default function TextActionsDropdown({
                                 className="px-3 py-2 text-left transition-colors hover:bg-neutral-bg disabled:opacity-50"
                             >
                                 <span className="flex items-center gap-1.5 text-xs font-medium text-ink">
-                                    Beautify
+                                    {t('textActions.beautify')}
                                     <span className="rounded bg-status-revised/15 px-1 py-0.5 text-[10px] font-medium text-status-revised">
                                         AI
                                     </span>
@@ -80,7 +82,7 @@ export default function TextActionsDropdown({
                                     )}
                                 </span>
                                 <span className="block text-[11px] text-ink-faint">
-                                    {isBeautifying ? 'Processing...' : 'Restructure paragraphs and dialogue'}
+                                    {isBeautifying ? t('textActions.processing') : t('textActions.beautifyDescription')}
                                 </span>
                             </button>
                         )}

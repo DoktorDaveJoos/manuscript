@@ -4,6 +4,7 @@ import { jsonFetchHeaders } from '@/lib/utils';
 import Kbd from '@/components/ui/Kbd';
 import { Notepad, X } from '@phosphor-icons/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type SaveStatus = 'idle' | 'saving' | 'saved';
 
@@ -22,6 +23,7 @@ export default function NotesPanel({
     toggleTick?: number;
     onClose?: () => void;
 }) {
+    const { t } = useTranslation('editor');
     const [isOpen, setIsOpen] = useState(false);
     const [notes, setNotes] = useState(initialNotes ?? '');
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
@@ -151,7 +153,7 @@ export default function NotesPanel({
                 style={{ animation: 'notes-enter 200ms ease-out' }}
             >
                 <Notepad size={12} weight="fill" />
-                <span className="text-[11px] font-medium leading-3.5">Notes</span>
+                <span className="text-[11px] font-medium leading-3.5">{t('notes.title')}</span>
                 {hasNotes && <span className="h-[5px] w-[5px] rounded-full bg-ink-muted" />}
             </button>
         );
@@ -166,11 +168,11 @@ export default function NotesPanel({
             }}
         >
             <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
-                <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-muted">Notes</span>
+                <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-muted">{t('notes.title')}</span>
                 <div className="flex items-center gap-2">
                     {saveStatus !== 'idle' && (
                         <span className="text-[10px] text-ink-faint">
-                            {saveStatus === 'saving' ? 'Saving\u2026' : 'Saved'}
+                            {saveStatus === 'saving' ? t('notes.saving') : t('notes.saved')}
                         </span>
                     )}
                     <Kbd keys="Esc" />
@@ -192,7 +194,7 @@ export default function NotesPanel({
                     ref={textareaRef}
                     value={notes}
                     onChange={handleChange}
-                    placeholder="Add notes for this chapter..."
+                    placeholder={t('notes.placeholder')}
                     className="min-h-[148px] w-full resize-y rounded border-0 bg-transparent p-0 font-sans text-[13px] leading-5 text-ink placeholder:text-ink-faint focus:outline-none focus:ring-0"
                 />
             </div>

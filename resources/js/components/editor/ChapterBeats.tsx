@@ -3,6 +3,7 @@ import { NEXT_STATUS, STATUS_COLORS, TYPE_LABELS_SHORT, TYPE_STYLES } from '@/li
 import type { PlotPoint } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { Plus } from '@phosphor-icons/react';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
     plotPoints: PlotPoint[];
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export default function ChapterBeats({ plotPoints, bookId, chapterId }: Props) {
+    const { t } = useTranslation('editor');
     const handleCycleStatus = (plotPoint: PlotPoint) => {
         const nextStatus = NEXT_STATUS[plotPoint.status];
         router.patch(
@@ -24,7 +26,7 @@ export default function ChapterBeats({ plotPoints, bookId, chapterId }: Props) {
         router.post(
             store.url({ book: bookId }),
             {
-                title: 'New beat',
+                title: t('beats.newBeat'),
                 type: 'setup',
                 intended_chapter_id: chapterId,
             },
@@ -35,18 +37,18 @@ export default function ChapterBeats({ plotPoints, bookId, chapterId }: Props) {
     return (
         <div className="px-2.5 py-3">
             <div className="mb-2 flex items-center justify-between px-1.5">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-muted">Beats</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-muted">{t('beats.title')}</span>
                 <button
                     onClick={handleAdd}
                     className="flex items-center gap-0.5 text-[11px] text-ink-muted transition-colors hover:text-ink"
                 >
                     <Plus size={10} weight="bold" />
-                    Add
+                    {t('beats.add')}
                 </button>
             </div>
 
             {plotPoints.length === 0 ? (
-                <p className="px-1.5 text-[11px] text-ink-faint">No beats for this chapter.</p>
+                <p className="px-1.5 text-[11px] text-ink-faint">{t('beats.empty')}</p>
             ) : (
                 <ul className="flex flex-col gap-0.5">
                     {plotPoints.map((pp) => (
@@ -57,7 +59,7 @@ export default function ChapterBeats({ plotPoints, bookId, chapterId }: Props) {
                             <button
                                 onClick={() => handleCycleStatus(pp)}
                                 className="shrink-0"
-                                title={`Status: ${pp.status} (click to cycle)`}
+                                title={t('beats.statusTooltip', { status: pp.status })}
                             >
                                 <span
                                     className="block h-2 w-2 rounded-full"

@@ -9,15 +9,7 @@ import type { ChapterVersion, VersionSource } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { Trash } from '@phosphor-icons/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-const sourceLabel: Record<VersionSource, string> = {
-    original: 'Original',
-    ai_revision: 'AI',
-    manual_edit: 'Edit',
-    normalization: 'Normalize',
-    beautify: 'Beautify',
-    snapshot: 'Snapshot',
-};
+import { useTranslation } from 'react-i18next';
 
 const sourceBadgeClass: Record<VersionSource, string> = {
     original: 'bg-neutral-bg text-ink-muted',
@@ -27,16 +19,6 @@ const sourceBadgeClass: Record<VersionSource, string> = {
     beautify: 'bg-status-revised/15 text-status-revised',
     snapshot: 'bg-status-final/15 text-status-final',
 };
-
-function formatDate(dateStr: string): string {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-    });
-}
 
 export default function VersionHistoryOverlay({
     bookId,
@@ -53,8 +35,21 @@ export default function VersionHistoryOverlay({
     const [showForm, setShowForm] = useState(false);
     const [summary, setSummary] = useState('');
     const [creating, setCreating] = useState(false);
+    const { t, i18n } = useTranslation('editor');
     const ref = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    const sourceLabel = (source: VersionSource) => t(`versionHistory.sourceLabel.${source}`);
+
+    const formatDate = (dateStr: string): string => {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString(i18n.language, {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        });
+    };
 
     const fetchVersions = useCallback(() => {
         fetch(versions.url({ book: bookId, chapter: chapterId }), {
@@ -146,13 +141,13 @@ export default function VersionHistoryOverlay({
             className="absolute right-0 top-full z-50 mt-1 w-[360px] rounded-lg border border-border bg-surface-card shadow-lg"
         >
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <span className="text-sm font-medium text-ink">Version History</span>
+                <span className="text-sm font-medium text-ink">{t('versionHistory.title')}</span>
                 <button
                     type="button"
                     onClick={() => setShowForm((v) => !v)}
                     className="rounded-md bg-neutral-bg px-2 py-1 text-[11px] font-medium text-ink-muted transition-colors hover:bg-border hover:text-ink"
                 >
-                    + New Version
+                    {t('versionHistory.newVersion')}
                 </button>
             </div>
 
@@ -160,16 +155,16 @@ export default function VersionHistoryOverlay({
                 <form onSubmit={handleCreate} className="border-b border-border px-4 py-3">
                     <div className="mb-2 flex items-center gap-2">
                         <span className="rounded-full bg-status-final/15 px-1.5 py-0.5 text-[10px] font-medium text-status-final">
-                            Snapshot
+                            {t('versionHistory.snapshot')}
                         </span>
-                        <span className="text-xs text-ink-muted">New version snapshot</span>
+                        <span className="text-xs text-ink-muted">{t('versionHistory.newVersionSnapshot')}</span>
                     </div>
                     <input
                         ref={inputRef}
                         type="text"
                         value={summary}
                         onChange={(e) => setSummary(e.target.value)}
-                        placeholder="e.g., A/B test: shorter opening"
+                        placeholder={t('versionHistory.summaryPlaceholder')}
                         maxLength={255}
                         className="mb-2 w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
                     />
@@ -182,14 +177,14 @@ export default function VersionHistoryOverlay({
                             }}
                             className="rounded-md px-2.5 py-1 text-[11px] text-ink-muted hover:text-ink"
                         >
-                            Cancel
+                            {t('versionHistory.cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={creating}
                             className="rounded-md bg-accent px-2.5 py-1 text-[11px] font-medium text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
                         >
-                            {creating ? 'Creating...' : 'Create'}
+                            {creating ? t('versionHistory.creating') : t('versionHistory.create')}
                         </button>
                     </div>
                 </form>
@@ -197,9 +192,9 @@ export default function VersionHistoryOverlay({
 
             <div className="max-h-[340px] overflow-y-auto">
                 {versionList === null ? (
-                    <div className="px-4 py-6 text-center text-xs text-ink-faint">Loading...</div>
+                    <div className="px-4 py-6 text-center text-xs text-ink-faint">{t('versionHistory.loading')}</div>
                 ) : versionList.length === 0 ? (
-                    <div className="px-4 py-6 text-center text-xs text-ink-faint">No versions yet</div>
+                    <div className="px-4 py-6 text-center text-xs text-ink-faint">{t('versionHistory.empty')}</div>
                 ) : (
                     <div className="flex flex-col">
                         {versionList.map((version) => (
@@ -215,13 +210,13 @@ export default function VersionHistoryOverlay({
                                         <span
                                             className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${sourceBadgeClass[version.source]}`}
                                         >
-                                            {sourceLabel[version.source]}
+                                            {sourceLabel(version.source)}
                                         </span>
                                         {version.is_current && (
-                                            <span className="text-[10px] font-medium text-status-final">Current</span>
+                                            <span className="text-[10px] font-medium text-status-final">{t('versionHistory.current')}</span>
                                         )}
                                         {version.status === 'pending' && (
-                                            <span className="text-[10px] font-medium text-accent">Pending review</span>
+                                            <span className="text-[10px] font-medium text-accent">{t('versionHistory.pendingReview')}</span>
                                         )}
                                     </div>
                                     {version.change_summary && (
@@ -242,14 +237,14 @@ export default function VersionHistoryOverlay({
                                             disabled={restoring !== null}
                                             className="rounded-md border border-border px-2 py-1 text-[11px] text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink disabled:opacity-50"
                                         >
-                                            {restoring === version.id ? 'Restoring...' : 'Restore'}
+                                            {restoring === version.id ? t('versionHistory.restoring') : t('versionHistory.restore')}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleDelete(version)}
                                             disabled={deleting !== null}
                                             className="rounded-md border border-border p-1 text-ink-faint transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
-                                            title="Delete version"
+                                            title={t('versionHistory.deleteVersion')}
                                         >
                                             <Trash size={14} />
                                         </button>

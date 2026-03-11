@@ -2,6 +2,7 @@ import { destroy } from '@/actions/App/Http/Controllers/StorylineController';
 import type { Storyline } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 export default function DeleteStorylineDialog({
     bookId,
@@ -12,6 +13,7 @@ export default function DeleteStorylineDialog({
     storyline: Storyline;
     onClose: () => void;
 }) {
+    const { t } = useTranslation('editor');
     const [confirmation, setConfirmation] = useState('');
     const [processing, setProcessing] = useState(false);
 
@@ -43,19 +45,26 @@ export default function DeleteStorylineDialog({
                             />
                         </svg>
                     </div>
-                    <h2 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">Move to trash</h2>
+                    <h2 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">{t('deleteStoryline.title')}</h2>
                     <p className="text-sm leading-[22px] text-ink-muted">
-                        This will move <span className="font-medium text-ink">{storyline.name}</span> and all{' '}
-                        <span className="font-medium text-ink">
-                            {chapterCount} {chapterCount === 1 ? 'chapter' : 'chapters'}
-                        </span>{' '}
-                        within it to the trash. You can restore them later from the sidebar.
+                        <Trans
+                            i18nKey="deleteStoryline.description"
+                            ns="editor"
+                            values={{
+                                name: storyline.name,
+                                chapterText: t('deleteStoryline.chapterCount', { count: chapterCount }),
+                            }}
+                        >
+                            This will move <span className="font-medium text-ink">{'{{name}}'}</span> and all{' '}
+                            <span className="font-medium text-ink">{'{{chapterText}}'}</span>{' '}
+                            within it to the trash. You can restore them later from the sidebar.
+                        </Trans>
                     </p>
                 </div>
 
                 <fieldset className="flex flex-col gap-1.5">
                     <label className="text-xs font-medium uppercase leading-4 tracking-[0.06em] text-ink-muted">
-                        Type the storyline name to confirm
+                        {t('deleteStoryline.confirmLabel')}
                     </label>
                     <input
                         type="text"
@@ -69,7 +78,7 @@ export default function DeleteStorylineDialog({
 
                 <div className="flex items-center justify-end gap-3">
                     <button type="button" onClick={onClose} className="rounded-md px-5 py-2.5 text-sm font-medium leading-[18px] text-ink-muted">
-                        Cancel
+                        {t('deleteStoryline.cancel')}
                     </button>
                     <button
                         type="button"
@@ -77,7 +86,7 @@ export default function DeleteStorylineDialog({
                         onClick={handleDelete}
                         className="rounded-md bg-delete px-6 py-2.5 text-sm font-medium leading-[18px] text-white transition-opacity disabled:opacity-40"
                     >
-                        Move to trash
+                        {t('deleteStoryline.confirm')}
                     </button>
                 </div>
             </div>

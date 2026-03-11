@@ -4,6 +4,7 @@ import type { TrashItem } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { CaretRight, Circle, File, TextAlignLeft, Trash } from '@phosphor-icons/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const typeIcon: Record<TrashItem['type'], React.ReactNode> = {
     storyline: <Circle size={8} weight="regular" className="shrink-0" />,
@@ -12,6 +13,7 @@ const typeIcon: Record<TrashItem['type'], React.ReactNode> = {
 };
 
 export default function TrashBin({ bookId }: { bookId: number }) {
+    const { t } = useTranslation('editor');
     const [isOpen, setIsOpen] = useState(false);
     const [items, setItems] = useState<TrashItem[]>([]);
     const [loading, setLoading] = useState(false);
@@ -51,7 +53,7 @@ export default function TrashBin({ bookId }: { bookId: number }) {
     };
 
     const handleEmpty = async () => {
-        if (!confirm('Permanently delete all trashed items? This cannot be undone.')) return;
+        if (!confirm(t('trash.confirmEmpty'))) return;
         const res = await fetch(trashEmpty.url(bookId), {
             method: 'DELETE',
             headers: jsonFetchHeaders(),
@@ -72,7 +74,7 @@ export default function TrashBin({ bookId }: { bookId: number }) {
                     <CaretRight size={8} weight="bold" />
                 </span>
                 <Trash size={14} weight="regular" className="shrink-0" />
-                Trash
+                {t('trash.title')}
                 {items.length > 0 && (
                     <span className="ml-auto rounded-full bg-ink/[0.06] px-1.5 py-px text-[10px] font-medium tabular-nums text-ink-faint">
                         {items.length}
@@ -83,10 +85,10 @@ export default function TrashBin({ bookId }: { bookId: number }) {
             {isOpen && (
                 <div className="flex flex-col pb-2">
                     {loading && items.length === 0 && (
-                        <div className="px-5 py-2 text-[11px] text-ink-faint">Loading…</div>
+                        <div className="px-5 py-2 text-[11px] text-ink-faint">{t('trash.loading')}</div>
                     )}
                     {!loading && items.length === 0 && (
-                        <div className="px-5 py-2 text-[11px] text-ink-faint">Trash is empty</div>
+                        <div className="px-5 py-2 text-[11px] text-ink-faint">{t('trash.empty')}</div>
                     )}
                     {items.map((item) => (
                         <div
@@ -100,7 +102,7 @@ export default function TrashBin({ bookId }: { bookId: number }) {
                                 onClick={() => handleRestore(item)}
                                 className="shrink-0 text-[11px] text-ink-faint opacity-0 transition-opacity hover:text-ink group-hover:opacity-100"
                             >
-                                Restore
+                                {t('trash.restore')}
                             </button>
                         </div>
                     ))}
@@ -110,7 +112,7 @@ export default function TrashBin({ bookId }: { bookId: number }) {
                             onClick={handleEmpty}
                             className="mx-5 mt-1 text-left text-[11px] text-ink-faint hover:text-delete"
                         >
-                            Empty trash
+                            {t('trash.emptyTrash')}
                         </button>
                     )}
                 </div>

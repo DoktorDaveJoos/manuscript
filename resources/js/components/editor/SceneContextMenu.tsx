@@ -1,6 +1,7 @@
 import type { Scene } from '@/types/models';
 import { PencilSimple, Trash } from '@phosphor-icons/react';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const menuShadow = 'shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]';
 
@@ -18,6 +19,7 @@ export default function SceneContextMenu({
     onRename: () => void;
     onDelete: () => void;
 }) {
+    const { t } = useTranslation('editor');
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -46,7 +48,7 @@ export default function SceneContextMenu({
                     className={itemClass}
                 >
                     <PencilSimple size={15} className="shrink-0 text-ink-muted" />
-                    Rename
+                    {t('contextMenu.rename')}
                 </button>
 
                 {canDelete && (
@@ -62,7 +64,7 @@ export default function SceneContextMenu({
                             className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] font-medium leading-[18px] text-delete transition-colors hover:bg-neutral-bg"
                         >
                             <Trash size={15} className="shrink-0" />
-                            Delete
+                            {t('contextMenu.delete')}
                         </button>
                     </>
                 )}

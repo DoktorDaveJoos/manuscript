@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { CaretDown, Check } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const FONTS = [
     { id: 'eb-garamond', label: 'EB Garamond', family: "'EB Garamond', ui-serif, Georgia, serif", favorite: true },
@@ -19,6 +20,7 @@ export default function FontSelector({
     value: string;
     onChange: (fontId: string) => void;
 }) {
+    const { t } = useTranslation('editor');
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -55,7 +57,7 @@ export default function FontSelector({
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                title="Font"
+                title={t('font.title')}
                 className="flex h-7 items-center gap-1 rounded px-2 text-xs text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
             >
                 <span style={{ fontFamily: selected.family }} className="text-[13px] leading-none">
@@ -68,7 +70,7 @@ export default function FontSelector({
                 <div className="absolute left-0 top-full z-50 mt-1 w-[200px] overflow-hidden rounded-lg border border-border bg-surface-card shadow-[0_4px_6px_#1A1A1A0F,0_12px_32px_#1A1A1A1A]">
                     <div className="px-1 pt-2 pb-1">
                         <div className="px-2 py-1 text-[10px] font-medium uppercase leading-3 tracking-[0.08em] text-section-header">
-                            Favorites
+                            {t('font.favorites')}
                         </div>
                         {favorites.map((font) => (
                             <FontItem
@@ -84,7 +86,7 @@ export default function FontSelector({
                     </div>
                     <div className="border-t border-border-subtle px-1 py-1 pb-2">
                         <div className="px-2 py-1 text-[10px] font-medium uppercase leading-3 tracking-[0.08em] text-section-header">
-                            More
+                            {t('font.more')}
                         </div>
                         {more.map((font) => (
                             <FontItem

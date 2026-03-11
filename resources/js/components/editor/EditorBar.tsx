@@ -1,16 +1,10 @@
 import Kbd from '@/components/ui/Kbd';
 import type { Chapter } from '@/types/models';
 import { ClockCounterClockwise } from '@phosphor-icons/react';
+import { useTranslation } from 'react-i18next';
 import StatusBadge from './StatusBadge';
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
-
-const saveStatusLabel: Record<SaveStatus, string> = {
-    saved: 'Saved',
-    saving: 'Saving...',
-    unsaved: 'Unsaved',
-    error: 'Save error',
-};
 
 export default function EditorBar({
     chapter,
@@ -29,6 +23,8 @@ export default function EditorBar({
     saveStatus: SaveStatus;
     onVersionClick: () => void;
 }) {
+    const { t, i18n } = useTranslation('editor');
+
     return (
         <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-6">
             <div className="flex items-center gap-3">
@@ -44,9 +40,9 @@ export default function EditorBar({
                 <span
                     className={`text-xs ${saveStatus === 'error' ? 'text-red-600' : saveStatus === 'saving' ? 'text-ink-faint' : 'text-ink-muted'}`}
                 >
-                    {saveStatusLabel[saveStatus]}
+                    {t(`saveStatus.${saveStatus}`)}
                 </span>
-                <span className="text-xs text-ink-faint">{wordCount.toLocaleString('en-US')} words</span>
+                <span className="text-xs text-ink-faint">{t('wordCount', { count: wordCount, formatted: wordCount.toLocaleString(i18n.language) })}</span>
                 <button
                     type="button"
                     onClick={onVersionClick}

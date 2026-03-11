@@ -4,6 +4,7 @@ import type { Storyline } from '@/types/models';
 import { CaretRight } from '@phosphor-icons/react';
 import { router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import ColorPicker from './ColorPicker';
 
 const menuShadow = 'shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]';
@@ -25,6 +26,7 @@ export default function StorylineContextMenu({
     onRename: () => void;
     onDelete: () => void;
 }) {
+    const { t } = useTranslation('editor');
     const ref = useRef<HTMLDivElement>(null);
     const [colorOpen, setColorOpen] = useState(false);
 
@@ -63,7 +65,7 @@ export default function StorylineContextMenu({
                     }}
                     className={itemClass}
                 >
-                    Rename
+                    {t('contextMenu.rename')}
                 </button>
 
                 <div
@@ -74,7 +76,7 @@ export default function StorylineContextMenu({
                     <button type="button" className={`${itemClass} justify-between`}>
                         <span className="flex items-center gap-2.5">
                             {storyline.color && <span className="inline-block size-[7px] rounded-full" style={{ backgroundColor: storyline.color }} />}
-                            Color
+                            {t('contextMenu.color')}
                         </span>
                         <CaretRight size={10} weight="bold" className="text-ink-faint" />
                     </button>
@@ -98,7 +100,7 @@ export default function StorylineContextMenu({
                         isLastStoryline ? 'cursor-not-allowed text-ink-faint' : 'text-delete hover:bg-neutral-bg'
                     }`}
                 >
-                    Delete storyline
+                    {t('contextMenu.deleteStoryline')}
                 </button>
             </div>
         </div>

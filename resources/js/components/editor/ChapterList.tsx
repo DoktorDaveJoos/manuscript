@@ -23,6 +23,7 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import ChapterContextMenu from './ChapterContextMenu';
 import ChapterListItem, { statusDot } from './ChapterListItem';
 import DeleteChapterDialog from './DeleteChapterDialog';
@@ -350,6 +351,7 @@ export default function ChapterList({
     scenesVisible: boolean;
     onScenesVisibleChange: (v: boolean) => void;
 }) {
+    const { t } = useTranslation('editor');
     const [storylines, setStorylines] = useState(initialStorylines);
     const [activeItem, setActiveItem] = useState<{ type: 'chapter'; chapter: Chapter } | { type: 'storyline'; storyline: Storyline } | null>(null);
     const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
@@ -616,7 +618,7 @@ export default function ChapterList({
                 method: 'POST',
                 headers: jsonFetchHeaders(),
                 body: JSON.stringify({
-                    title: `Scene ${sceneCount + 1}`,
+                    title: t('chapterList.sceneDefault', { number: sceneCount + 1 }),
                     position: sceneCount,
                 }),
             });
@@ -796,7 +798,7 @@ export default function ChapterList({
                                                                     }}
                                                                     className="w-full rounded-[5px] py-1 pl-[42px] pr-2.5 text-left text-[12px] text-ink-faint transition-colors hover:bg-ink/5"
                                                                 >
-                                                                    + Add scene
+                                                                    {t('chapterList.addScene')}
                                                                 </button>
                                                             )}
                                                         </div>
@@ -828,7 +830,7 @@ export default function ChapterList({
                                         className="flex w-full items-center gap-1.5 rounded-[5px] px-2.5 py-1.5 text-ink-faint hover:bg-ink/5"
                                     >
                                         <span className="text-[12px]">+</span>
-                                        <span className="text-[13px]">Add chapter</span>
+                                        <span className="text-[13px]">{t('chapterList.addChapter')}</span>
                                     </button>
                                 )}
                             </SortableStorylineGroup>
@@ -841,7 +843,7 @@ export default function ChapterList({
                             className="flex w-full items-center gap-1.5 px-2.5 pt-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint transition-colors hover:text-ink"
                         >
                             <span>+</span>
-                            <span>Add storyline</span>
+                            <span>{t('chapterList.addStoryline')}</span>
                         </button>
                     )}
                 </div>

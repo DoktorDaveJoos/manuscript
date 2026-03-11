@@ -10,15 +10,7 @@ import { CaretDown, CaretRight, Check, Warning } from '@phosphor-icons/react';
 import { router } from '@inertiajs/react';
 import { diffArrays, diffWords } from 'diff';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-
-const sourceLabel: Record<VersionSource, string> = {
-    original: 'original',
-    ai_revision: 'ai prose pass',
-    manual_edit: 'manual edit',
-    normalization: 'normalize',
-    beautify: 'beautify',
-    snapshot: 'snapshot',
-};
+import { useTranslation } from 'react-i18next';
 
 function splitParagraphs(html: string | null): string[] {
     if (!html) return [];
@@ -218,6 +210,7 @@ export default function DiffView({
     pendingVersion: ChapterVersion;
     prosePassRules?: ProsePassRule[];
 }) {
+    const { t, i18n } = useTranslation('editor');
     const [isAccepting, setIsAccepting] = useState(false);
     const [isRejecting, setIsRejecting] = useState(false);
     const [rulesExpanded, setRulesExpanded] = useState(false);
@@ -371,9 +364,11 @@ export default function DiffView({
         }
     }, [bookId, chapterId, pendingVersion.id]);
 
+    const sourceLabel = (source: VersionSource) => t(`diff.sourceLabel.${source}`);
+
     const acceptLabel = isPartial
-        ? `Accept ${selectedCount} of ${totalChanged} changes`
-        : 'Accept all';
+        ? t('diff.acceptPartial', { selected: selectedCount, total: totalChanged })
+        : t('diff.acceptAll');
 
     return (
         <div className="flex flex-1 flex-col overflow-hidden">
@@ -383,10 +378,10 @@ export default function DiffView({
                     <span className="text-ink-faint">{chapterTitle}</span>
                     <span className="text-ink-faint">/</span>
                     <span className="font-medium text-accent">
-                        Reviewing {sourceLabel[pendingVersion.source] ?? pendingVersion.source}
+                        {t('diff.reviewing', { source: sourceLabel(pendingVersion.source) })}
                     </span>
                     <span className="text-ink-faint">
-                        {diff.changeCount} {diff.changeCount === 1 ? 'change' : 'changes'}
+                        {t('diff.changeCount', { count: diff.changeCount })}
                     </span>
                     {totalChanged > 0 && (
                         <button
@@ -394,7 +389,7 @@ export default function DiffView({
                             onClick={toggleAll}
                             className="ml-2 text-xs font-medium text-accent transition-colors hover:text-accent/80"
                         >
-                            {selectedCount === totalChanged ? 'Deselect all' : 'Select all'}
+                            {selectedCount === totalChanged ? t('diff.deselectAll') : t('diff.selectAll')}
                         </button>
                     )}
                 </div>
@@ -405,7 +400,7 @@ export default function DiffView({
                         disabled={isRejecting || isAccepting}
                         className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink disabled:opacity-50"
                     >
-                        {isRejecting ? 'Rejecting...' : 'Reject all'}
+                        {isRejecting ? t('diff.rejecting') : t('diff.rejectAll')}
                     </button>
                     <button
                         type="button"
@@ -413,7 +408,7 @@ export default function DiffView({
                         disabled={isAccepting || isRejecting || selectedCount === 0}
                         className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-surface transition-colors hover:bg-ink/90 disabled:opacity-50"
                     >
-                        {isAccepting ? 'Accepting...' : acceptLabel}
+                        {isAccepting ? t('diff.accepting') : acceptLabel}
                     </button>
                 </div>
             </div>
@@ -423,10 +418,10 @@ export default function DiffView({
                 <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-6 py-2.5">
                     <Warning size={16} weight="fill" className="shrink-0 text-amber-600" />
                     <p className="text-xs leading-relaxed text-amber-800">
-                        The revised text is significantly shorter than the original (
-                        {truncationWarning.revWords.toLocaleString()} words vs{' '}
-                        {truncationWarning.origWords.toLocaleString()} words). The AI response may
-                        have been truncated. Consider rejecting and re-running on a shorter chapter.
+                        {t('diff.truncationWarning', {
+                            revWords: truncationWarning.revWords.toLocaleString(i18n.language),
+                            origWords: truncationWarning.origWords.toLocaleString(i18n.language),
+                        })}
                     </p>
                 </div>
             )}
@@ -437,11 +432,11 @@ export default function DiffView({
                 <div className="flex-1 overflow-y-auto border-r border-border px-12 py-8">
                     <div className="mb-6 flex items-center gap-2">
                         <span className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
-                            Original
+                            {t('diff.original')}
                         </span>
                         <span className="text-xs text-ink-faint">
                             v{currentVersion.version_number} &middot;{' '}
-                            {sourceLabel[currentVersion.source] ?? currentVersion.source}
+                            {sourceLabel(currentVersion.source)}
                         </span>
                     </div>
                     <div className="max-w-prose space-y-4 font-serif text-base leading-relaxed text-ink">
@@ -476,11 +471,11 @@ export default function DiffView({
                 <div className="flex-1 overflow-y-auto px-12 py-8">
                     <div className="mb-6 flex items-center gap-2">
                         <span className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
-                            Revision
+                            {t('diff.revision')}
                         </span>
                         <span className="text-xs text-ink-faint">
                             v{pendingVersion.version_number} &middot;{' '}
-                            {sourceLabel[pendingVersion.source] ?? pendingVersion.source}
+                            {sourceLabel(pendingVersion.source)}
                         </span>
                     </div>
                     <div className="max-w-prose space-y-4 font-serif text-base leading-relaxed text-ink">
@@ -538,9 +533,9 @@ export default function DiffView({
                         className="flex w-full items-center gap-2 px-6 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-ink-faint transition-colors hover:text-ink-muted"
                     >
                         {rulesExpanded ? <CaretDown size={12} /> : <CaretRight size={12} />}
-                        Rule compliance
+                        {t('diff.ruleCompliance')}
                         <span className="font-normal normal-case tracking-normal">
-                            {ruleResults.filter((r) => r.pass).length}/{ruleResults.length} passing
+                            {t('diff.rulesPassing', { passing: ruleResults.filter((r) => r.pass).length, total: ruleResults.length })}
                         </span>
                     </button>
                     {rulesExpanded && (
@@ -555,7 +550,7 @@ export default function DiffView({
                                             {rule.label}
                                         </span>
                                         <span className="ml-1.5 text-xs text-ink-faint">
-                                            {rule.count} found
+                                            {t('diff.ruleFound', { count: rule.count })}
                                         </span>
                                         {!rule.pass && rule.examples.length > 0 && (
                                             <p className="truncate text-[11px] text-ink-faint">

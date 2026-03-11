@@ -2,12 +2,14 @@ import { importMethod } from '@/actions/App/Http/Controllers/BookController';
 import { store } from '@/actions/App/Http/Controllers/ChapterController';
 import type { Book, Storyline } from '@/types/models';
 import { Head, Link, router } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 
 export default function ChapterEmpty({
     book,
 }: {
     book: Book & { storylines: Pick<Storyline, 'id' | 'book_id' | 'name'>[] };
 }) {
+    const { t } = useTranslation('editor');
     const firstStorylineId = book.storylines[0]?.id;
 
     function handleCreateChapter() {
@@ -21,12 +23,12 @@ export default function ChapterEmpty({
 
     return (
         <>
-            <Head title={`${book.title} — No Chapters`} />
+            <Head title={`${book.title} — ${t('empty.noChapters')}`} />
             <div className="flex min-h-screen flex-col items-center justify-center bg-surface pb-20">
                 <div className="flex flex-col items-center gap-4">
-                    <h1 className="font-serif text-4xl leading-[44px] tracking-[-0.01em] text-ink">No chapters yet</h1>
+                    <h1 className="font-serif text-4xl leading-[44px] tracking-[-0.01em] text-ink">{t('empty.title')}</h1>
                     <p className="text-[15px] leading-6 text-ink-muted">
-                        Create your first chapter or import an existing manuscript.
+                        {t('empty.description')}
                     </p>
                 </div>
                 <div className="mt-10 flex items-center gap-4">
@@ -35,13 +37,13 @@ export default function ChapterEmpty({
                         onClick={handleCreateChapter}
                         className="rounded-md bg-ink px-7 py-3 text-sm font-medium leading-[18px] text-surface"
                     >
-                        Create first chapter
+                        {t('empty.createFirst')}
                     </button>
                     <Link
                         href={importMethod.url(book)}
                         className="rounded-md border border-border px-7 py-3 text-sm font-medium leading-[18px] text-ink-muted"
                     >
-                        Import manuscript
+                        {t('empty.importManuscript')}
                     </Link>
                 </div>
             </div>

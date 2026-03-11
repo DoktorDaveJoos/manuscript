@@ -4,12 +4,15 @@ import type { Chapter, ChapterStatus, Storyline } from '@/types/models';
 import { ArrowRight, CaretRight, Circle, PencilSimple, Trash } from '@phosphor-icons/react';
 import { router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
-const statusConfig: { value: ChapterStatus; label: string; dotClass: string }[] = [
-    { value: 'draft', label: 'Draft', dotClass: 'bg-status-draft' },
-    { value: 'revised', label: 'Revised', dotClass: 'bg-status-revised' },
-    { value: 'final', label: 'Final', dotClass: 'bg-status-final' },
-];
+const statusDotClass: Record<ChapterStatus, string> = {
+    draft: 'bg-status-draft',
+    revised: 'bg-status-revised',
+    final: 'bg-status-final',
+};
+
+const statusValues: ChapterStatus[] = ['draft', 'revised', 'final'];
 
 const menuShadow = 'shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]';
 
@@ -30,6 +33,7 @@ export default function ChapterContextMenu({
     onRename: () => void;
     onDelete: () => void;
 }) {
+    const { t } = useTranslation('editor');
     const ref = useRef<HTMLDivElement>(null);
     const [statusOpen, setStatusOpen] = useState(false);
     const [moveOpen, setMoveOpen] = useState(false);
@@ -88,7 +92,7 @@ export default function ChapterContextMenu({
                     className={itemClass}
                 >
                     <PencilSimple size={15} className="shrink-0 text-ink-muted" />
-                    Rename
+                    {t('contextMenu.rename')}
                 </button>
 
                 <div
@@ -99,22 +103,22 @@ export default function ChapterContextMenu({
                     <button type="button" className={`${itemClass} justify-between`}>
                         <span className="flex items-center gap-2.5">
                             <Circle size={15} weight="fill" className="shrink-0 text-ink-muted" />
-                            Status
+                            {t('contextMenu.status')}
                         </span>
                         <CaretRight size={10} weight="bold" className="text-ink-faint" />
                     </button>
                     {statusOpen && (
                         <div className={`absolute left-full top-0 ml-1 w-[160px] rounded-lg bg-surface-card ${menuShadow}`}>
                             <div className="flex flex-col p-1">
-                                {statusConfig.map((s) => (
+                                {statusValues.map((value) => (
                                     <button
-                                        key={s.value}
+                                        key={value}
                                         type="button"
-                                        onClick={() => handleStatusChange(s.value)}
-                                        className={`${itemClass} ${chapter.status === s.value ? 'font-medium' : ''}`}
+                                        onClick={() => handleStatusChange(value)}
+                                        className={`${itemClass} ${chapter.status === value ? 'font-medium' : ''}`}
                                     >
-                                        <span className={`inline-block size-[7px] rounded-full ${s.dotClass}`} />
-                                        {s.label}
+                                        <span className={`inline-block size-[7px] rounded-full ${statusDotClass[value]}`} />
+                                        {t(`status.${value}`)}
                                     </button>
                                 ))}
                             </div>
@@ -131,7 +135,7 @@ export default function ChapterContextMenu({
                         <button type="button" className={`${itemClass} justify-between`}>
                             <span className="flex items-center gap-2.5">
                                 <ArrowRight size={15} className="shrink-0 text-ink-muted" />
-                                Move to
+                                {t('contextMenu.moveTo')}
                             </span>
                             <CaretRight size={10} weight="bold" className="text-ink-faint" />
                         </button>
@@ -161,7 +165,7 @@ export default function ChapterContextMenu({
                     className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] font-medium leading-[18px] text-delete transition-colors hover:bg-neutral-bg"
                 >
                     <Trash size={15} className="shrink-0" />
-                    Delete
+                    {t('contextMenu.delete')}
                 </button>
             </div>
         </div>

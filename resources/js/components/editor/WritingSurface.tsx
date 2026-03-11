@@ -5,6 +5,7 @@ import {
 import type { Scene } from '@/types/models';
 import type { Editor } from '@tiptap/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DEFAULT_FONT_ID, FONTS } from './FontSelector';
 import SceneEditor from './SceneEditor';
 
@@ -53,6 +54,8 @@ export default function WritingSurface({
     onActiveSceneIdChange?: (sceneId: number) => void;
     scenesVisible?: boolean;
 }) {
+    const { t } = useTranslation('editor');
+
     const fontFamily = useMemo(() => {
         return FONTS.find((f) => f.id === editorFont)?.family ?? FONTS[0].family;
     }, [editorFont]);
@@ -208,8 +211,8 @@ export default function WritingSurface({
     }, [pendingFocusSceneId, onFocusHandled]);
 
     const metadataParts: string[] = [];
-    if (povCharacterName) metadataParts.push(`POV: ${povCharacterName}`);
-    if (timelineLabel) metadataParts.push(`Timeline: ${timelineLabel}`);
+    if (povCharacterName) metadataParts.push(t('writingSurface.pov', { name: povCharacterName }));
+    if (timelineLabel) metadataParts.push(t('writingSurface.timeline', { label: timelineLabel }));
 
     return (
         <div

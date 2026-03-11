@@ -21,6 +21,8 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { DOMSerializer } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 
 type ChapterWithRelations = Chapter & {
     characters?: (Character & { pivot: CharacterChapterPivot })[];
@@ -43,6 +45,7 @@ export default function ChapterShow({
     prosePassRules?: ProsePassRule[];
     chapterAnalyses?: Record<string, Analysis>;
 }) {
+    const { t } = useTranslation('editor');
     const pendingVersion = chapter.pending_version ?? null;
     const { visible: aiVisible, licensed: isLicensed } = useAiFeatures();
     const { app_settings } = usePage<{ app_settings: import('@/types/models').AppSettings }>().props;
@@ -434,7 +437,7 @@ export default function ChapterShow({
                             <EditorBar
                                 chapter={chapter}
                                 chapterTitle={displayTitle}
-                                storylineName={chapter.storyline?.name ?? 'Untitled storyline'}
+                                storylineName={chapter.storyline?.name ?? t('show.untitledStoryline')}
                                 wordCount={wordCount}
                                 versionCount={versionCount}
                                 saveStatus={saveStatus}
@@ -573,6 +576,7 @@ function WhisperChrome({
     chapterTitle: string;
     wordCount: number;
 }) {
+    const { t, i18n } = useTranslation('editor');
     const [visible, setVisible] = useState(true);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const visibleRef = useRef(true);
@@ -608,13 +612,13 @@ function WhisperChrome({
             className={`fixed inset-x-0 bottom-0 z-40 flex items-end justify-between px-12 pb-8 transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`}
         >
             <span className="text-[13px] leading-4 tracking-[0.02em] text-ink-whisper">
-                Chapter {chapterNumber} — {chapterTitle}
+                {t('focusMode.chapterLabel', { number: chapterNumber, title: chapterTitle })}
             </span>
             <span className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1.5 text-[13px] leading-4 tracking-[0.02em] text-ink-whisper">
-                <Kbd keys="Esc" /> to leave focus mode
+                <Kbd keys="Esc" /> {t('focusMode.leaveFocusMode')}
             </span>
             <span className="text-[13px] leading-4 tracking-[0.02em] text-ink-whisper">
-                {wordCount.toLocaleString()} words
+                {t('focusMode.wordCount', { count: wordCount, formatted: wordCount.toLocaleString(i18n.language) })}
             </span>
         </div>
     );

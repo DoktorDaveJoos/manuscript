@@ -12,6 +12,7 @@ import {
 } from '@phosphor-icons/react';
 import type { Editor } from '@tiptap/react';
 import { useEditorState } from '@tiptap/react';
+import { useTranslation } from 'react-i18next';
 import FontSelector from './FontSelector';
 import TextActionsDropdown from './TextActionsDropdown';
 
@@ -68,6 +69,7 @@ export default function FormattingToolbar({
     editorFont: string;
     onFontChange: (fontId: string) => void;
 }) {
+    const { t } = useTranslation('editor');
     const defaultState = {
         canUndo: false,
         canRedo: false,
@@ -116,14 +118,14 @@ export default function FormattingToolbar({
             <ToolbarButton
                 disabled={!editorState.canUndo}
                 onClick={() => run(() => editor!.chain().focus().undo().run())}
-                title="Undo"
+                title={t('toolbar.undo')}
             >
                 <ArrowArcLeft size={14} weight="regular" />
             </ToolbarButton>
             <ToolbarButton
                 disabled={!editorState.canRedo}
                 onClick={() => run(() => editor!.chain().focus().redo().run())}
-                title="Redo"
+                title={t('toolbar.redo')}
             >
                 <ArrowArcRight size={14} weight="regular" />
             </ToolbarButton>
@@ -138,28 +140,28 @@ export default function FormattingToolbar({
             <ToolbarButton
                 active={editorState.isBold}
                 onClick={() => run(() => editor!.chain().focus().toggleBold().run())}
-                title="Bold"
+                title={t('toolbar.bold')}
             >
                 <span className="font-bold">B</span>
             </ToolbarButton>
             <ToolbarButton
                 active={editorState.isItalic}
                 onClick={() => run(() => editor!.chain().focus().toggleItalic().run())}
-                title="Italic"
+                title={t('toolbar.italic')}
             >
                 <span className="italic">I</span>
             </ToolbarButton>
             <ToolbarButton
                 active={editorState.isUnderline}
                 onClick={() => run(() => editor!.chain().focus().toggleUnderline().run())}
-                title="Underline"
+                title={t('toolbar.underline')}
             >
                 <span className="underline">U</span>
             </ToolbarButton>
             <ToolbarButton
                 active={editorState.isStrike}
                 onClick={() => run(() => editor!.chain().focus().toggleStrike().run())}
-                title="Strikethrough"
+                title={t('toolbar.strikethrough')}
             >
                 <span className="line-through">S</span>
             </ToolbarButton>
@@ -170,35 +172,35 @@ export default function FormattingToolbar({
             <ToolbarButton
                 active={editorState.isAlignLeft}
                 onClick={() => run(() => editor!.chain().focus().setTextAlign('left').run())}
-                title="Align left"
+                title={t('toolbar.alignLeft')}
             >
                 <TextAlignLeft size={14} weight="regular" />
             </ToolbarButton>
             <ToolbarButton
                 active={editorState.isAlignCenter}
                 onClick={() => run(() => editor!.chain().focus().setTextAlign('center').run())}
-                title="Align center"
+                title={t('toolbar.alignCenter')}
             >
                 <TextAlignCenter size={14} weight="regular" />
             </ToolbarButton>
             <ToolbarButton
                 active={editorState.isBlockquote}
                 onClick={() => run(() => editor!.chain().focus().toggleBlockquote().run())}
-                title="Blockquote"
+                title={t('toolbar.blockquote')}
             >
                 <Quotes size={14} weight="regular" />
             </ToolbarButton>
             <ToolbarButton
                 active={editorState.isBulletList}
                 onClick={() => run(() => editor!.chain().focus().toggleBulletList().run())}
-                title="Bullet list"
+                title={t('toolbar.bulletList')}
             >
                 <ListBullets size={14} weight="regular" />
             </ToolbarButton>
             <ToolbarButton
                 active={editorState.isOrderedList}
                 onClick={() => run(() => editor!.chain().focus().toggleOrderedList().run())}
-                title="Ordered list"
+                title={t('toolbar.orderedList')}
             >
                 <ListNumbers size={14} weight="regular" />
             </ToolbarButton>
@@ -210,14 +212,14 @@ export default function FormattingToolbar({
             <ToolbarButton
                 disabled
                 onClick={() => {}}
-                title="Search (coming soon)"
+                title={t('toolbar.searchComingSoon')}
             >
                 <MagnifyingGlass size={14} weight="regular" />
             </ToolbarButton>
             <ToolbarButton
                 active={isTypewriterMode}
                 onClick={() => onTypewriterToggle?.()}
-                title="Typewriter mode"
+                title={t('toolbar.typewriterMode')}
             >
                 <Keyboard size={14} weight="regular" />
             </ToolbarButton>
