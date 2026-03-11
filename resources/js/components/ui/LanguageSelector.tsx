@@ -1,5 +1,5 @@
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
-import { router, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 
 const LOCALES = ['en', 'de'] as const;
@@ -7,9 +7,12 @@ const LOCALES = ['en', 'de'] as const;
 export default function LanguageSelector() {
     const { i18n } = useTranslation();
     const currentLocale = usePage<{ locale: string }>().props.locale ?? 'en';
+    const activeLocale = i18n.language || currentLocale;
 
     function switchLocale(locale: string) {
-        if (locale === currentLocale) return;
+        if (locale === activeLocale) return;
+
+        i18n.changeLanguage(locale);
 
         fetch(update.url(), {
             method: 'PUT',
@@ -23,9 +26,6 @@ export default function LanguageSelector() {
                 ),
             },
             body: JSON.stringify({ key: 'locale', value: locale }),
-        }).then(() => {
-            i18n.changeLanguage(locale);
-            router.reload();
         });
     }
 
@@ -36,7 +36,7 @@ export default function LanguageSelector() {
                     key={locale}
                     onClick={() => switchLocale(locale)}
                     className={`rounded px-1 py-0.5 uppercase transition-colors ${
-                        currentLocale === locale
+                        activeLocale === locale
                             ? 'text-ink'
                             : 'text-ink-faint hover:text-ink-muted'
                     }`}
