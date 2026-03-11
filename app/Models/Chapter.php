@@ -134,7 +134,7 @@ class Chapter extends Model
 
     public function refreshContentHash(): void
     {
-        $this->load('scenes');
+        $this->loadMissing('scenes');
         $content = $this->getFullContent();
         $this->updateQuietly([
             'content_hash' => $content !== '' ? hash('xxh128', $content) : null,

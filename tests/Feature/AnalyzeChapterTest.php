@@ -94,6 +94,7 @@ test('AnalyzeChapterJob runs chapter analysis and updates chapter', function () 
             'hook_type' => 'cliffhanger',
             'hook_reasoning' => 'Strong ending.',
             'entry_hook_score' => 7,
+            'exit_hook_score' => 8,
             'pacing_feel' => 'brisk',
             'sensory_grounding' => 4,
             'information_delivery' => 'organic',

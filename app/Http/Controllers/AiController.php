@@ -51,6 +51,17 @@ class AiController extends Controller
             'hook_score' => $chapter->hook_score,
             'hook_type' => $chapter->hook_type,
             'summary' => $chapter->summary,
+            'scene_purpose' => $chapter->scene_purpose,
+            'value_shift' => $chapter->value_shift,
+            'emotional_state_open' => $chapter->emotional_state_open,
+            'emotional_state_close' => $chapter->emotional_state_close,
+            'emotional_shift_magnitude' => $chapter->emotional_shift_magnitude,
+            'micro_tension_score' => $chapter->micro_tension_score,
+            'pacing_feel' => $chapter->pacing_feel,
+            'entry_hook_score' => $chapter->entry_hook_score,
+            'exit_hook_score' => $chapter->exit_hook_score,
+            'sensory_grounding' => $chapter->sensory_grounding,
+            'information_delivery' => $chapter->information_delivery,
             'analyses' => $analyses,
         ]);
     }

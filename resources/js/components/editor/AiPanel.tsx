@@ -29,18 +29,52 @@ function SectionDivider() {
     return <div className="h-px bg-border-subtle" />;
 }
 
-function scoreLabel(score: number | null): { text: string; color: string } {
-    if (score === null) return { text: '--', color: 'text-ink-faint' };
-    if (score >= 7) return { text: 'Good', color: 'text-ai-green' };
-    if (score >= 4) return { text: 'Fair', color: 'text-status-revised' };
-    return { text: 'Weak', color: 'text-red-600' };
+type ScoreLabel = { text: string; textColor: string; dotColor: string };
+
+const EMPTY_SCORE: ScoreLabel = { text: '--', textColor: 'text-ink-faint', dotColor: 'bg-ink-faint' };
+
+function makeScoreLabeler(good: string, fair: string, weak: string) {
+    return (score: number | null): ScoreLabel => {
+        if (score === null) return EMPTY_SCORE;
+        if (score >= 7) return { text: good, textColor: 'text-ai-green', dotColor: 'bg-ai-green' };
+        if (score >= 4) return { text: fair, textColor: 'text-status-revised', dotColor: 'bg-status-revised' };
+        return { text: weak, textColor: 'text-red-600', dotColor: 'bg-red-600' };
+    };
 }
 
-function MetricRow({ label, value, color }: { label: string; value: string; color?: string }) {
+const scoreLabel = makeScoreLabeler('Good', 'Fair', 'Weak');
+const densityScoreLabel = makeScoreLabeler('Rich', 'Thin', 'Sparse');
+const plotScoreLabel = makeScoreLabeler('On track', 'Drifting', 'Off course');
+
+function presenceLabel(value: unknown): ScoreLabel {
+    if (value != null) return { text: 'Strong', textColor: 'text-ai-green', dotColor: 'bg-ai-green' };
+    return EMPTY_SCORE;
+}
+
+function CraftMetricRow({ label, score, detail }: { label: string; score: ScoreLabel; detail?: string | null }) {
     return (
-        <div className="flex items-center justify-between">
-            <span className="text-[13px] text-ink-soft">{label}</span>
-            <span className={cn('text-xs font-medium', color ?? 'text-ink-faint')}>{value}</span>
+        <div className="flex flex-col gap-[3px]">
+            <div className="flex items-center justify-between">
+                <span className="text-[13px] text-ink">{label}</span>
+                <div className="flex items-center gap-1.5">
+                    <span className={cn('size-1.5 rounded-full', score.dotColor)} />
+                    <span className={cn('text-xs font-medium', score.textColor)}>{score.text}</span>
+                </div>
+            </div>
+            {detail && (
+                <span className="text-[11px] text-ink-faint">{detail}</span>
+            )}
+        </div>
+    );
+}
+
+function LevelGroup({ title, children }: { title: string; children: React.ReactNode }) {
+    return (
+        <div className="flex flex-col gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
+                {title}
+            </span>
+            {children}
         </div>
     );
 }
@@ -177,16 +211,36 @@ export default function AiPanel({
         }
     }, [book.id, chapter.id, chapter.word_count, chapter.analyzed_at, onError]);
 
-    const tensionLabel = scoreLabel(chapter.tension_score);
-    const hookLabel = scoreLabel(chapter.hook_score);
     const findings = useMemo(() => collectFindings(analyses), [analyses]);
     const nextSuggestion = useMemo(() => getNextChapterSuggestion(analyses), [analyses]);
 
-    // Derive pacing & density labels from analyses
+    // Chapter level
+    const tensionLabel = scoreLabel(chapter.tension_score);
+    const emotionalLabel = scoreLabel(chapter.emotional_shift_magnitude);
     const pacingAnalysis = analyses['pacing']?.result as { score?: number } | null;
-    const densityAnalysis = analyses['density']?.result as { score?: number } | null;
     const pacingLabel = scoreLabel(pacingAnalysis?.score ?? null);
-    const densityLabel = scoreLabel(densityAnalysis?.score ?? null);
+
+    // Prose level
+    const craftScore = chapter.sensory_grounding != null ? chapter.sensory_grounding * 2 : null;
+    const craftLabel = scoreLabel(craftScore);
+    const densityAnalysis = analyses['density']?.result as { score?: number; recommendations?: string[] } | null;
+    const densityLabel = densityScoreLabel(densityAnalysis?.score ?? null);
+    const densityDetail = densityAnalysis?.recommendations?.[0] ?? null;
+
+    // Scene level
+    const scenePurposeLabel = presenceLabel(chapter.scene_purpose);
+    const avgHookScore = chapter.entry_hook_score != null && chapter.exit_hook_score != null
+        ? Math.round((chapter.entry_hook_score + chapter.exit_hook_score) / 2)
+        : chapter.entry_hook_score ?? chapter.exit_hook_score ?? null;
+    const hookLabel = scoreLabel(avgHookScore);
+
+    // Manuscript level
+    const consistencyAnalysis = analyses['character_consistency']?.result as { score?: number; findings?: string[] } | null;
+    const consistencyLabel = scoreLabel(consistencyAnalysis?.score ?? null);
+    const consistencyDetail = consistencyAnalysis?.findings?.[0] ?? null;
+    const plotAnalysis = analyses['plot_deviation']?.result as { score?: number; findings?: string[] } | null;
+    const plotLabel = plotScoreLabel(plotAnalysis?.score ?? null);
+    const plotDetail = plotAnalysis?.findings?.[0] ?? null;
 
     return (
         <aside
@@ -286,20 +340,79 @@ export default function AiPanel({
 
                                 <SectionDivider />
 
-                                {/* Chapter Analysis */}
+                                {/* Craft Metrics */}
                                 <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>Chapter Analysis</SectionLabel>
-                                    <div className="flex flex-col gap-1.5">
-                                        <MetricRow label="Tension" value={tensionLabel.text} color={tensionLabel.color} />
-                                        <MetricRow label="Hook strength" value={hookLabel.text} color={hookLabel.color} />
-                                        <MetricRow label="Pacing" value={pacingLabel.text} color={pacingLabel.color} />
-                                        <MetricRow label="Density" value={densityLabel.text} color={densityLabel.color} />
+                                    <SectionLabel>Craft Metrics</SectionLabel>
+                                    <div className="flex flex-col gap-4">
+                                        <LevelGroup title="Chapter">
+                                            <CraftMetricRow
+                                                label="Tension Dynamics"
+                                                score={tensionLabel}
+                                                detail={chapter.tension_score != null
+                                                    ? `${chapter.tension_score}/10 · Micro-tension: ${chapter.micro_tension_score ?? '--'}`
+                                                    : null}
+                                            />
+                                            <CraftMetricRow
+                                                label="Emotional Arc"
+                                                score={emotionalLabel}
+                                                detail={chapter.emotional_shift_magnitude != null
+                                                    ? `${chapter.emotional_state_open ?? '?'} → ${chapter.emotional_state_close ?? '?'} · Shift: ${chapter.emotional_shift_magnitude}`
+                                                    : null}
+                                            />
+                                            <CraftMetricRow
+                                                label="Pacing"
+                                                score={pacingLabel}
+                                                detail={chapter.pacing_feel
+                                                    ? chapter.pacing_feel.charAt(0).toUpperCase() + chapter.pacing_feel.slice(1)
+                                                    : null}
+                                            />
+                                        </LevelGroup>
+
+                                        <LevelGroup title="Prose">
+                                            <CraftMetricRow
+                                                label="Craft Score"
+                                                score={craftLabel}
+                                                detail={chapter.sensory_grounding != null
+                                                    ? `${chapter.sensory_grounding} senses · ${chapter.information_delivery ?? '--'}`
+                                                    : null}
+                                            />
+                                            <CraftMetricRow
+                                                label="Narrative Density"
+                                                score={densityLabel}
+                                                detail={densityDetail}
+                                            />
+                                        </LevelGroup>
+
+                                        <LevelGroup title="Scene">
+                                            <CraftMetricRow
+                                                label="Scene Purpose"
+                                                score={scenePurposeLabel}
+                                                detail={chapter.scene_purpose
+                                                    ? `${chapter.scene_purpose} · Value shift ${chapter.value_shift ? 'present' : 'absent'}`
+                                                    : null}
+                                            />
+                                            <CraftMetricRow
+                                                label="Hooks"
+                                                score={hookLabel}
+                                                detail={avgHookScore != null
+                                                    ? `Entry: ${chapter.entry_hook_score ?? '--'} · Exit: ${chapter.exit_hook_score ?? '--'}${chapter.hook_type ? ` · ${chapter.hook_type.replace('_', ' ')}` : ''}`
+                                                    : null}
+                                            />
+                                        </LevelGroup>
+
+                                        <LevelGroup title="Manuscript">
+                                            <CraftMetricRow
+                                                label="Consistency"
+                                                score={consistencyLabel}
+                                                detail={consistencyDetail}
+                                            />
+                                            <CraftMetricRow
+                                                label="Plot Alignment"
+                                                score={plotLabel}
+                                                detail={plotDetail}
+                                            />
+                                        </LevelGroup>
                                     </div>
-                                    {chapter.hook_type && (
-                                        <span className="text-[11px] text-ink-faint">
-                                            Hook type: {chapter.hook_type.replace('_', ' ')}
-                                        </span>
-                                    )}
                                 </div>
 
                                 <SectionDivider />
@@ -385,11 +498,17 @@ export default function AiPanel({
                                 </div>
                                 <SectionDivider />
                                 <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>Chapter Analysis</SectionLabel>
-                                    <div className="flex flex-col gap-1.5">
-                                        <MetricRow label="Tension" value="--" />
-                                        <MetricRow label="Hook strength" value="--" />
-                                        <MetricRow label="Pacing" value="--" />
+                                    <SectionLabel>Craft Metrics</SectionLabel>
+                                    <div className="flex flex-col gap-4">
+                                        <LevelGroup title="Chapter">
+                                            <CraftMetricRow label="Tension Dynamics" score={EMPTY_SCORE} />
+                                            <CraftMetricRow label="Emotional Arc" score={EMPTY_SCORE} />
+                                            <CraftMetricRow label="Pacing" score={EMPTY_SCORE} />
+                                        </LevelGroup>
+                                        <LevelGroup title="Prose">
+                                            <CraftMetricRow label="Craft Score" score={EMPTY_SCORE} />
+                                            <CraftMetricRow label="Density" score={EMPTY_SCORE} />
+                                        </LevelGroup>
                                     </div>
                                 </div>
                             </div>

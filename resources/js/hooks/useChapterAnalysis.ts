@@ -12,6 +12,17 @@ type AnalysisStatusResponse = {
     hook_score: number | null;
     hook_type: string | null;
     summary: string | null;
+    scene_purpose: string | null;
+    value_shift: boolean | null;
+    emotional_state_open: string | null;
+    emotional_state_close: string | null;
+    emotional_shift_magnitude: number | null;
+    micro_tension_score: number | null;
+    pacing_feel: string | null;
+    entry_hook_score: number | null;
+    exit_hook_score: number | null;
+    sensory_grounding: number | null;
+    information_delivery: string | null;
     analyses: Record<string, Analysis>;
 };
 

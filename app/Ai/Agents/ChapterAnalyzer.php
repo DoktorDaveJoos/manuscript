@@ -93,7 +93,7 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
             'tension_score' => $schema->integer()->min(1)->max(10)->required(),
             'micro_tension_score' => $schema->integer()->min(1)->max(10)->required(),
             'scene_purpose' => $schema->string()->enum(['turning_point', 'revelation', 'deepening', 'setup', 'resolution', 'transition'])->required(),
-            'value_shift' => $schema->string()->nullable(),
+            'value_shift' => $schema->string()->nullable()->required(),
             'emotional_state_open' => $schema->string()->required(),
             'emotional_state_close' => $schema->string()->required(),
             'emotional_shift_magnitude' => $schema->integer()->min(1)->max(10)->required(),

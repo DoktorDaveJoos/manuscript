@@ -53,7 +53,6 @@ class AnalyzeChapterJob implements ShouldQueue
         $this->chapter->update([
             'analysis_status' => 'completed',
             'analysis_error' => null,
-            'analyzed_at' => now(),
         ]);
     }
 

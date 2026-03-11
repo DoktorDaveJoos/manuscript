@@ -25,9 +25,10 @@ trait PersistsChapterAnalysis
             'micro_tension_score' => $response['micro_tension_score'] ?? null,
             'pacing_feel' => $response['pacing_feel'] ?? null,
             'entry_hook_score' => $response['entry_hook_score'] ?? null,
-            'exit_hook_score' => $response['hook_score'] ?? null,
+            'exit_hook_score' => $response['exit_hook_score'] ?? null,
             'sensory_grounding' => $response['sensory_grounding'] ?? null,
             'information_delivery' => $response['information_delivery'] ?? null,
+            'analyzed_at' => now(),
         ]);
 
         $plotPoints = $response['plot_points'] ?? [];

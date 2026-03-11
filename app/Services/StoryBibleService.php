@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Ai\Agents\StoryBibleBuilder;
+use App\Models\AiSetting;
 use App\Models\Book;
 
 class StoryBibleService
@@ -14,6 +15,8 @@ class StoryBibleService
      */
     public function build(Book $book): array
     {
+        AiSetting::activeProvider()?->injectConfig();
+
         $context = $this->assembleContext($book);
 
         $agent = new StoryBibleBuilder($book);

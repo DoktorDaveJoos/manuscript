@@ -8,6 +8,7 @@ use App\Ai\Support\TextPrep;
 use App\Jobs\Concerns\PersistsChapterAnalysis;
 use App\Jobs\Concerns\PersistsExtractedEntities;
 use App\Models\AiPreparation;
+use App\Models\AiSetting;
 use App\Models\Book;
 use App\Models\Chapter;
 use Illuminate\Bus\Batchable;
@@ -37,6 +38,14 @@ class AnalyzeChapter implements ShouldQueue
         if ($this->batch()?->cancelled()) {
             return;
         }
+
+        $setting = AiSetting::activeProvider();
+        if (! $setting || ! $setting->isConfigured()) {
+            $this->preparation->appendPhaseError('chapter_analysis', "Chapter #{$this->chapterId}", 'No AI provider configured.');
+
+            return;
+        }
+        $setting->injectConfig();
 
         $chapter = $this->book->chapters()
             ->with('currentVersion')

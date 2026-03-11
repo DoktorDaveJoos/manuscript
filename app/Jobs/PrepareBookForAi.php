@@ -46,9 +46,16 @@ class PrepareBookForAi implements ShouldQueue
         $setting->injectConfig();
 
         $chapters = $this->book->chapters()
-            ->with('currentVersion')
+            ->with(['currentVersion', 'scenes'])
             ->orderBy('reader_order')
             ->get();
+
+        // Backfill content hashes for chapters that don't have one yet
+        foreach ($chapters as $chapter) {
+            if ($chapter->content_hash === null && $chapter->scenes->isNotEmpty()) {
+                $chapter->refreshContentHash();
+            }
+        }
 
         $this->preparation->update([
             'total_chapters' => $chapters->count(),
