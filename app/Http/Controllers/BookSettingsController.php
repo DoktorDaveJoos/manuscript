@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ExportBookRequest;
 use App\Models\Book;
-use App\Services\ExportService;
+use App\Services\Export\ExportService;
 use App\Services\WritingStyleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
