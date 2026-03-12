@@ -213,6 +213,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections, 
                                     acts={acts}
                                     storylines={filteredStorylines}
                                     plotPoints={filteredPlotPoints}
+                                    chapters={chapters}
                                     onSelectPlotPoint={(pp) => setSelectedPlotPointId(pp.id)}
                                     onCreatePlotPoint={handleCreatePlotPoint}
                                 />
