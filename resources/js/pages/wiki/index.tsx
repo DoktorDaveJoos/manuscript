@@ -6,9 +6,13 @@ import WikiEntryList from '@/components/wiki/WikiEntryList';
 import WikiTabBar, { type WikiTab } from '@/components/wiki/WikiTabBar';
 import type { Book, Character, Storyline, WikiEntry } from '@/types/models';
 import { Head } from '@inertiajs/react';
-import { Plus } from '@phosphor-icons/react';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+const STORAGE_KEY = 'wiki-sidebar-width';
+const MIN_WIDTH = 220;
+const MAX_WIDTH = 480;
+const DEFAULT_WIDTH = 280;
 
 const validTabs: WikiTab[] = ['characters', 'location', 'organization', 'item', 'lore'];
 
@@ -36,6 +40,57 @@ export default function WikiIndex({
     const initialTab = validTabs.includes(tab as WikiTab) ? (tab as WikiTab) : 'characters';
     const [activeTab, setActiveTab] = useState<WikiTab>(initialTab);
     const [selectedId, setSelectedId] = useState<number | null>(null);
+
+    const [width, setWidth] = useState(() => {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            const parsed = Number(stored);
+            if (parsed >= MIN_WIDTH && parsed <= MAX_WIDTH) return parsed;
+        }
+        return DEFAULT_WIDTH;
+    });
+    const widthRef = useRef(width);
+    widthRef.current = width;
+    const panelRef = useRef<HTMLDivElement>(null);
+    const dragCleanupRef = useRef<(() => void) | null>(null);
+
+    useEffect(() => {
+        return () => dragCleanupRef.current?.();
+    }, []);
+
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        const startX = e.clientX;
+        const startWidth = widthRef.current;
+
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        const cleanup = () => {
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            dragCleanupRef.current = null;
+        };
+
+        const handleMouseMove = (e: MouseEvent) => {
+            const delta = e.clientX - startX;
+            const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
+            widthRef.current = newWidth;
+            if (panelRef.current) panelRef.current.style.width = `${newWidth}px`;
+        };
+
+        const handleMouseUp = () => {
+            setWidth(widthRef.current);
+            localStorage.setItem(STORAGE_KEY, String(widthRef.current));
+            cleanup();
+        };
+
+        dragCleanupRef.current = cleanup;
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    }, []);
 
     const handleTabChange = (newTab: WikiTab) => {
         setSelectedId(null);
@@ -70,16 +125,13 @@ export default function WikiIndex({
                 <Sidebar book={book} storylines={storylines} scenesVisible={false} onScenesVisibleChange={() => {}} />
 
                 {/* List panel */}
-                <div className="flex w-[280px] shrink-0 flex-col border-r border-border-light bg-surface-card">
+                <div ref={panelRef} className="relative flex shrink-0 flex-col border-r border-border-light bg-surface-card" style={{ width }}>
                     {/* Header */}
                     <div className="flex items-center justify-between px-5 pb-0 pt-5">
                         <div className="flex items-center gap-2">
                             <h1 className="text-[18px] font-semibold text-ink">{t('heading')}</h1>
                             <span className="text-[13px] text-ink-faint">{count}</span>
                         </div>
-                        <button className="flex h-6 w-6 items-center justify-center rounded border border-border text-ink-muted transition-colors hover:bg-neutral-bg">
-                            <Plus size={12} weight="bold" />
-                        </button>
                     </div>
 
                     {/* Tabs */}
@@ -95,6 +147,14 @@ export default function WikiIndex({
                             selectedId={selectedId}
                             onSelect={setSelectedId}
                         />
+                    </div>
+
+                    {/* Resize handle */}
+                    <div
+                        onMouseDown={handleMouseDown}
+                        className="group absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize"
+                    >
+                        <div className="absolute inset-y-0 right-[3px] w-px bg-transparent transition-colors group-hover:bg-ink/20" />
                     </div>
                 </div>
 

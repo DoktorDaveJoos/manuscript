@@ -21,20 +21,24 @@ export default function WikiTabBar({
     const { t } = useTranslation('wiki');
 
     return (
-        <div className="flex gap-5 border-b border-border-light">
-            {tabs.map((tab) => (
-                <button
-                    key={tab.key}
-                    onClick={() => onTabChange(tab.key)}
-                    className={`pb-2.5 text-[13px] transition-colors ${
-                        activeTab === tab.key
-                            ? 'border-b-2 border-ink font-medium text-ink'
-                            : 'text-ink-muted hover:text-ink'
-                    }`}
-                >
-                    {t(tab.labelKey)}
-                </button>
-            ))}
+        <div className="relative border-b border-border-light">
+            <div className="flex gap-5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab.key}
+                        onClick={() => onTabChange(tab.key)}
+                        className={`shrink-0 pb-2.5 text-[13px] whitespace-nowrap transition-colors ${
+                            activeTab === tab.key
+                                ? 'border-b-2 border-ink font-medium text-ink'
+                                : 'text-ink-muted hover:text-ink'
+                        }`}
+                    >
+                        {t(tab.labelKey)}
+                    </button>
+                ))}
+            </div>
+            {/* Right fade hint for scrollable overflow */}
+            <div className="pointer-events-none absolute top-0 right-0 bottom-px h-full w-6 bg-gradient-to-l from-surface-card to-transparent" />
         </div>
     );
 }
