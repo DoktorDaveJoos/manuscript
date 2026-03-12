@@ -1,4 +1,4 @@
-import { CaretUp } from '@phosphor-icons/react';
+import { ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export type TensionData = {
@@ -76,7 +76,7 @@ export default function TensionArc({ data, chapterCount, labelWidth, columnWidth
                         className="flex size-4 items-center justify-center rounded text-[#B0A99F] transition-colors hover:text-[#5A574F]"
                         title={t('tensionArc.collapseTitle')}
                     >
-                        <CaretUp size={10} weight="bold" />
+                        <ChevronUp size={10} strokeWidth={2.5} />
                     </button>
                 </div>
                 <span className="text-[9px] text-[#B0A99F]">{t('tensionArc.aiGenerated')}</span>

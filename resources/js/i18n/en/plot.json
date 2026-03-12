@@ -58,5 +58,18 @@
     "page.tabs.list": "List",
     "page.allStorylines": "All storylines",
     "page.toggleAiSidebar": "Toggle AI sidebar",
-    "page.newPlotPointTitle": "New plot point"
+    "page.newPlotPointTitle": "New plot point",
+
+    "readingOrder.header": "Reading Order",
+    "readingOrder.chapterCount": "{{count}} ch",
+    "readingOrder.autoInterleave": "Auto-interleave",
+    "readingOrder.exportOrder": "Export order",
+    "readingOrder.backstoryDivider": "Backstory",
+    "readingOrder.emptyState": "No chapters yet. Create chapters to set their reading order.",
+    "readingOrder.unknownStoryline": "Unknown",
+    "readingOrder.storylineChapter": "{{storyline}} \u00B7 Ch {{index}}",
+    "readingOrder.confirmTitle": "Auto-interleave chapters?",
+    "readingOrder.confirmMessage": "This will reorder all {{count}} chapters based on act and storyline structure. Continue?",
+    "readingOrder.confirmCancel": "Cancel",
+    "readingOrder.confirmContinue": "Continue"
 }

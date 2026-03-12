@@ -1,5 +1,5 @@
 import type { Act, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
-import { X } from '@phosphor-icons/react';
+import { X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -53,7 +53,7 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
                     onClick={onClose}
                     className="flex size-6 items-center justify-center rounded text-[#8A857D] transition-colors hover:text-[#5A574F]"
                 >
-                    <X size={16} weight="bold" />
+                    <X size={16} strokeWidth={2.5} />
                 </button>
             </div>
 

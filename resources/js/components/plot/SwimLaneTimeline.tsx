@@ -34,20 +34,20 @@ export default function SwimLaneTimeline({
     onCreatePlotPoint,
 }: Props) {
     const { t } = useTranslation('plot');
-    const { grid, allChapters } = buildTimelineGrid(acts, storylines, plotPoints);
-    const COL_W = 160;
+    const { grid } = buildTimelineGrid(acts, storylines, plotPoints);
+    const ACT_COL_W = 240;
     const LABEL_W = 120;
 
     return (
         <div className="overflow-auto">
-            <div className="inline-flex flex-col" style={{ minWidth: LABEL_W + allChapters.length * COL_W }}>
+            <div className="inline-flex flex-col" style={{ minWidth: LABEL_W + acts.length * ACT_COL_W }}>
                 {/* Act headers */}
                 <div className="flex" style={{ paddingLeft: LABEL_W }}>
                     {acts.map((act, i) => (
                         <div
                             key={act.id}
                             className="flex items-center gap-2 border-b border-[#ECEAE4] px-3 py-2"
-                            style={{ width: act.chapters.length * COL_W }}
+                            style={{ width: ACT_COL_W }}
                         >
                             <div
                                 className="h-3.5 w-1 rounded-sm"
@@ -56,19 +56,6 @@ export default function SwimLaneTimeline({
                             <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A574F]">
                                 {t('actTitle', { number: act.number, title: act.title })}
                             </span>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Chapter sub-headers */}
-                <div className="flex border-b border-[#ECEAE4]" style={{ paddingLeft: LABEL_W }}>
-                    {allChapters.map((ch) => (
-                        <div
-                            key={ch.id}
-                            className="px-3 py-1.5 text-[11px] text-[#8A857D]"
-                            style={{ width: COL_W }}
-                        >
-                            {t('timeline.chapterAbbrev', { number: ch.reader_order + 1 })}
                         </div>
                     ))}
                 </div>
@@ -88,19 +75,36 @@ export default function SwimLaneTimeline({
                                 {storyline.name}
                             </span>
                         </div>
-                        {allChapters.map((ch) => {
-                            const cell = grid.get(cellKey(storyline.id, ch.id));
+                        {acts.map((act) => {
+                            const cell = grid.get(cellKey(storyline.id, act.id));
+                            const cellChapters = cell?.chapters ?? [];
+                            const firstChapter = cellChapters[0];
                             return (
                                 <div
-                                    key={ch.id}
+                                    key={act.id}
                                     className="min-h-[80px] cursor-pointer border-l border-[#F0EEEA] p-1.5 hover:bg-[#FAFAF7]"
-                                    style={{ width: COL_W }}
+                                    style={{ width: ACT_COL_W }}
                                     onClick={() => {
-                                        if (!cell?.plotPoints.length) {
-                                            onCreatePlotPoint(storyline.id, ch.id);
+                                        if (!cell?.plotPoints.length && firstChapter) {
+                                            onCreatePlotPoint(storyline.id, firstChapter.id);
                                         }
                                     }}
                                 >
+                                    {/* Chapter tags */}
+                                    {cellChapters.length > 0 && (
+                                        <div className="mb-1.5 flex flex-wrap gap-1">
+                                            {cellChapters.map((ch) => (
+                                                <span
+                                                    key={ch.id}
+                                                    className="rounded bg-[#F0EEEA] px-1.5 py-0.5 text-[11px] text-[#5A574F]"
+                                                >
+                                                    {t('timeline.chapterAbbrev', { number: ch.reader_order + 1 })} &middot; {ch.title}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Plot point cards */}
                                     <div className="flex flex-col gap-1">
                                         {cell?.plotPoints.map((pp) => (
                                             <PlotPointCard

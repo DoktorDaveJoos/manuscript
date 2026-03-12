@@ -3,7 +3,7 @@ import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { getXsrfToken } from '@/lib/csrf';
 import { cn } from '@/lib/utils';
 import type { Book } from '@/types/models';
-import { CaretLeft, CaretRight, Heartbeat, Lightning, MagnifyingGlass, Sparkle } from '@phosphor-icons/react';
+import { ChevronLeft, ChevronRight, HeartPulse, Search, Sparkle, Zap, type LucideIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
@@ -22,10 +22,10 @@ type ActionResult = {
 
 type ActionKey = 'tension' | 'health' | 'holes' | 'beats';
 
-const actionDefs: { key: ActionKey; icon: typeof Lightning; route: string }[] = [
-    { key: 'tension', icon: Lightning, route: 'plot/ai/tension' },
-    { key: 'health', icon: Heartbeat, route: 'plot/ai/health' },
-    { key: 'holes', icon: MagnifyingGlass, route: 'plot/ai/holes' },
+const actionDefs: { key: ActionKey; icon: LucideIcon; route: string }[] = [
+    { key: 'tension', icon: Zap, route: 'plot/ai/tension' },
+    { key: 'health', icon: HeartPulse, route: 'plot/ai/health' },
+    { key: 'holes', icon: Search, route: 'plot/ai/holes' },
     { key: 'beats', icon: Sparkle, route: 'plot/ai/beats' },
 ];
 
@@ -113,7 +113,7 @@ export default function AiActionSidebar({
                             onClick={onToggle}
                             className="flex size-6 items-center justify-center rounded text-[#8A857D] transition-colors hover:text-[#2D2A26]"
                         >
-                            <CaretRight size={14} weight="bold" />
+                            <ChevronRight size={14} strokeWidth={2.5} />
                         </button>
                     </div>
 
@@ -134,7 +134,7 @@ export default function AiActionSidebar({
                                                 disabled={isRunning || runningAction !== null}
                                                 className="flex items-center gap-3 rounded-lg border border-[#ECEAE4] px-3 py-2.5 text-left transition-colors hover:bg-[#FAFAF7] disabled:opacity-50"
                                             >
-                                                <Icon size={18} weight="regular" className="shrink-0 text-[#8A857D]" />
+                                                <Icon size={18} className="shrink-0 text-[#8A857D]" />
                                                 <div className="flex flex-col">
                                                     <span className="text-[13px] font-medium text-[#2D2A26]">
                                                         {isRunning
@@ -232,10 +232,10 @@ export default function AiActionSidebar({
                     className="flex h-full w-full flex-col items-center gap-3 pt-3 transition-colors hover:bg-[#FAFAF7]"
                 >
                     <span className="flex size-6 items-center justify-center text-[#8A857D]">
-                        <CaretLeft size={14} weight="bold" />
+                        <ChevronLeft size={14} strokeWidth={2.5} />
                     </span>
                     <span className="flex size-5 items-center justify-center text-[#8A857D]">
-                        <Lightning size={16} weight="fill" />
+                        <Zap size={16} fill="currentColor" />
                     </span>
                 </button>
             )}

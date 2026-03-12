@@ -20,12 +20,18 @@ class PlotController extends Controller
             'plotPointConnections.target',
         ]);
 
+        $chapters = $book->chapters()
+            ->orderBy('reader_order')
+            ->select('id', 'book_id', 'act_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count')
+            ->get();
+
         return Inertia::render('plot/index', [
             'book' => $book,
             'storylines' => $book->storylines,
             'acts' => $book->acts,
             'plotPoints' => $book->plotPoints,
             'connections' => $book->plotPointConnections,
+            'chapters' => $chapters,
         ]);
     }
 }

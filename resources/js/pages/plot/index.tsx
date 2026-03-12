@@ -1,15 +1,18 @@
+import { interleave as interleaveChapters, reorder as reorderChapters } from '@/actions/App/Http/Controllers/ChapterController';
 import { store as storePlotPoint, update as updatePlotPoint } from '@/actions/App/Http/Controllers/PlotPointController';
 import Sidebar from '@/components/editor/Sidebar';
 import AiActionSidebar from '@/components/plot/AiActionSidebar';
 import DetailPanel from '@/components/plot/DetailPanel';
 import PlotPointList from '@/components/plot/PlotPointList';
+import ReadingOrderPanel from '@/components/plot/ReadingOrderPanel';
 import SwimLaneTimeline from '@/components/plot/SwimLaneTimeline';
 import TensionArc, { type TensionData } from '@/components/plot/TensionArc';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
-import type { Act, Book, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
+import { getXsrfToken } from '@/lib/csrf';
+import type { Act, Book, Chapter, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
-import { Funnel, List, Rows, SidebarSimple } from '@phosphor-icons/react';
-import { useMemo, useState } from 'react';
+import { Filter, List, ListOrdered, PanelLeft, Rows3 } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type ChapterCol = {
@@ -27,17 +30,20 @@ type PlotPageProps = {
     acts: (Act & { chapters: ChapterCol[] })[];
     plotPoints: PlotPoint[];
     connections: PlotPointConnection[];
+    chapters: Chapter[];
 };
+
+type RightPanel = 'reading-order' | 'ai';
 
 type Tab = 'timeline' | 'list';
 
-export default function Plot({ book, storylines, acts, plotPoints, connections }: PlotPageProps) {
+export default function Plot({ book, storylines, acts, plotPoints, connections, chapters }: PlotPageProps) {
     const { t } = useTranslation('plot');
     const [activeTab, setActiveTab] = useState<Tab>('timeline');
     const [selectedPlotPointId, setSelectedPlotPointId] = useState<number | null>(null);
     const selectedPlotPoint = selectedPlotPointId ? plotPoints.find((pp) => pp.id === selectedPlotPointId) ?? null : null;
     const [storylineFilter, setStorylineFilter] = useState<number | null>(null);
-    const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
+    const [rightPanel, setRightPanel] = useState<RightPanel>('reading-order');
     const ai = useAiFeatures();
 
     const allChapterCount = acts.reduce((sum, act) => sum + act.chapters.length, 0);
@@ -83,6 +89,36 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
         });
     };
 
+    const handleReadingOrderReorder = useCallback(
+        (order: { id: number; storyline_id: number }[]) => {
+            fetch(reorderChapters.url(book.id), {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': getXsrfToken(),
+                },
+                body: JSON.stringify({ order }),
+            }).then(() => {
+                router.reload({ only: ['chapters', 'acts'] });
+            });
+        },
+        [book.id],
+    );
+
+    const handleInterleave = useCallback(() => {
+        fetch(interleaveChapters.url(book.id), {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-XSRF-TOKEN': getXsrfToken(),
+            },
+        }).then(() => {
+            router.reload({ only: ['chapters', 'acts'] });
+        });
+    }, [book.id]);
+
     return (
         <>
             <Head title={`Plot — ${book.title}`} />
@@ -101,7 +137,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                                         : 'text-[#8A857D] hover:text-[#5A574F]'
                                 }`}
                             >
-                                <Rows size={16} weight="regular" />
+                                <Rows3 size={16} />
                                 {t('page.tabs.timeline')}
                             </button>
                             <button
@@ -112,7 +148,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                                         : 'text-[#8A857D] hover:text-[#5A574F]'
                                 }`}
                             >
-                                <List size={16} weight="regular" />
+                                <List size={16} />
                                 {t('page.tabs.list')}
                             </button>
                         </div>
@@ -132,21 +168,29 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                                         </option>
                                     ))}
                                 </select>
-                                <Funnel
+                                <Filter
                                     size={14}
-                                    weight="regular"
                                     className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[#8A857D]"
                                 />
                             </div>
 
+                            {/* Reading Order toggle */}
+                            <button
+                                onClick={() => setRightPanel((prev) => (prev === 'reading-order' ? 'ai' : 'reading-order'))}
+                                className={`rounded p-1.5 transition-colors hover:bg-[#F0EEEA] hover:text-[#5A574F] ${rightPanel === 'reading-order' ? 'bg-[#F0EEEA] text-[#5A574F]' : 'text-[#8A857D]'}`}
+                                title={t('readingOrder.header')}
+                            >
+                                <ListOrdered size={18} />
+                            </button>
+
                             {/* AI sidebar toggle */}
                             {ai.visible && (
                                 <button
-                                    onClick={() => setAiSidebarOpen((prev) => !prev)}
-                                    className={`rounded p-1.5 transition-colors hover:bg-[#F0EEEA] hover:text-[#5A574F] ${aiSidebarOpen ? 'bg-[#F0EEEA] text-[#5A574F]' : 'text-[#8A857D]'}`}
+                                    onClick={() => setRightPanel((prev) => (prev === 'ai' ? 'reading-order' : 'ai'))}
+                                    className={`rounded p-1.5 transition-colors hover:bg-[#F0EEEA] hover:text-[#5A574F] ${rightPanel === 'ai' ? 'bg-[#F0EEEA] text-[#5A574F]' : 'text-[#8A857D]'}`}
                                     title={t('page.toggleAiSidebar')}
                                 >
-                                    <SidebarSimple size={18} weight="regular" />
+                                    <PanelLeft size={18} />
                                 </button>
                             )}
                         </div>
@@ -195,15 +239,27 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                     </div>
                 </main>
 
-                <AiActionSidebar
-                    book={book}
-                    isOpen={aiSidebarOpen}
-                    onToggle={() => setAiSidebarOpen((prev) => !prev)}
-                    onTensionArcGenerated={(data) => {
-                        setAiTensionData(data);
-                        setTensionArcVisible(true);
-                    }}
-                />
+                {rightPanel === 'reading-order' ? (
+                    <ReadingOrderPanel
+                        chapters={chapters}
+                        storylines={storylines}
+                        bookId={book.id}
+                        isOpen={true}
+                        onToggle={() => setRightPanel('ai')}
+                        onReorder={handleReadingOrderReorder}
+                        onInterleave={handleInterleave}
+                    />
+                ) : (
+                    <AiActionSidebar
+                        book={book}
+                        isOpen={true}
+                        onToggle={() => setRightPanel('reading-order')}
+                        onTensionArcGenerated={(data) => {
+                            setAiTensionData(data);
+                            setTensionArcVisible(true);
+                        }}
+                    />
+                )}
             </div>
         </>
     );

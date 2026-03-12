@@ -58,5 +58,18 @@
     "page.tabs.list": "Liste",
     "page.allStorylines": "Alle Erz\u00e4hlstr\u00e4nge",
     "page.toggleAiSidebar": "KI-Seitenleiste umschalten",
-    "page.newPlotPointTitle": "Neuer Handlungspunkt"
+    "page.newPlotPointTitle": "Neuer Handlungspunkt",
+
+    "readingOrder.header": "Lesereihenfolge",
+    "readingOrder.chapterCount": "{{count}} Kap.",
+    "readingOrder.autoInterleave": "Automatisch verschachteln",
+    "readingOrder.exportOrder": "Export-Reihenfolge",
+    "readingOrder.backstoryDivider": "Hintergrundgeschichte",
+    "readingOrder.emptyState": "Noch keine Kapitel. Erstellen Sie Kapitel, um die Lesereihenfolge festzulegen.",
+    "readingOrder.unknownStoryline": "Unbekannt",
+    "readingOrder.storylineChapter": "{{storyline}} \u00B7 Kap. {{index}}",
+    "readingOrder.confirmTitle": "Kapitel automatisch verschachteln?",
+    "readingOrder.confirmMessage": "Dies ordnet alle {{count}} Kapitel basierend auf Akt- und Erz\u00e4hlstrangstruktur neu. Fortfahren?",
+    "readingOrder.confirmCancel": "Abbrechen",
+    "readingOrder.confirmContinue": "Fortfahren"
 }

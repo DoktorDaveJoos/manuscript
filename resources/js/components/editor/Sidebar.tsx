@@ -1,20 +1,17 @@
 import { appearance as settingsAppearance } from '@/actions/App/Http/Controllers/AppSettingsController';
 import { index } from '@/actions/App/Http/Controllers/BookController';
-import { index as indexCanvas } from '@/actions/App/Http/Controllers/CanvasController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
 import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
 import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
 import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
 import LanguageSelector from '@/components/ui/LanguageSelector';
 import NavItem from '@/components/ui/NavItem';
-import { useLicense } from '@/hooks/useLicense';
 import { createChapter, formatCompactCount } from '@/lib/utils';
-import type { Book, PlotPoint, Scene, Storyline } from '@/types/models';
+import type { Book, Scene, Storyline } from '@/types/models';
 import { Link, router, usePage } from '@inertiajs/react';
-import { GearSix, Lock, Notebook, Rectangle, SquaresFour, Strategy } from '@phosphor-icons/react';
+import { BookOpen, LayoutGrid, Map, Settings } from 'lucide-react';
 import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import ChapterBeats from './ChapterBeats';
 import ChapterList from './ChapterList';
 import TrashBin from './TrashBin';
 
@@ -50,7 +47,6 @@ export default function Sidebar({
     onScenesVisibleChange: (v: boolean) => void;
 }) {
     const { t } = useTranslation();
-    const { isActive: isLicensed } = useLicense();
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     useLayoutEffect(() => {
@@ -65,13 +61,11 @@ export default function Sidebar({
         }
     }, []);
 
-    const page = usePage<{ chapterPlotPoints?: PlotPoint[] }>();
-    const chapterPlotPoints = page.props.chapterPlotPoints ?? [];
+    const page = usePage();
     const currentUrl = page.url;
     const isDashboard = currentUrl.endsWith('/dashboard');
     const isWiki = currentUrl.includes('/wiki');
     const isPlot = currentUrl.endsWith('/plot');
-    const isCanvas = currentUrl.endsWith('/canvas');
 
     const totalWords = storylines.reduce(
         (sum, s) => sum + (s.chapters?.reduce((c, ch) =>
@@ -100,7 +94,7 @@ export default function Sidebar({
                 <div className="flex items-center gap-2">
                     <LanguageSelector />
                     <Link href={settingsAppearance.url()} className="text-ink-muted hover:text-ink transition-colors">
-                        <GearSix size={16} weight="regular" />
+                        <Settings size={16} />
                     </Link>
                 </div>
             </div>
@@ -112,7 +106,7 @@ export default function Sidebar({
                     isActive={isDashboard}
                     href={showDashboard.url(book)}
                     icon={
-                        <SquaresFour size={16} weight="regular" className="shrink-0" />
+                        <LayoutGrid size={16} className="shrink-0" />
                     }
                 />
                 <NavItem
@@ -120,7 +114,7 @@ export default function Sidebar({
                     href={indexWiki.url(book)}
                     isActive={isWiki}
                     icon={
-                        <Notebook size={16} weight="regular" className="shrink-0" />
+                        <BookOpen size={16} className="shrink-0" />
                     }
                 />
                 <NavItem
@@ -128,21 +122,7 @@ export default function Sidebar({
                     href={indexPlot.url(book)}
                     isActive={isPlot}
                     icon={
-                        <Strategy size={16} weight="regular" className="shrink-0" />
-                    }
-                />
-                <NavItem
-                    label={t('nav.canvas')}
-                    href={isLicensed ? indexCanvas.url(book) : undefined}
-                    disabled={!isLicensed}
-                    isActive={isCanvas}
-                    icon={
-                        <Rectangle size={16} weight="regular" className="shrink-0" />
-                    }
-                    suffix={
-                        !isLicensed ? (
-                            <Lock size={12} weight="regular" className="ml-auto shrink-0 text-ink-faint" />
-                        ) : undefined
+                        <Map size={16} className="shrink-0" />
                     }
                 />
             </div>
@@ -171,18 +151,6 @@ export default function Sidebar({
                     onScenesVisibleChange={onScenesVisibleChange}
                 />
             </div>
-
-            {/* Chapter Beats */}
-            {activeChapterId && (
-                <>
-                    <div className="mx-5 h-px bg-border-subtle" />
-                    <ChapterBeats
-                        plotPoints={chapterPlotPoints}
-                        bookId={book.id}
-                        chapterId={activeChapterId}
-                    />
-                </>
-            )}
 
             {/* Trash */}
             <TrashBin bookId={book.id} />
