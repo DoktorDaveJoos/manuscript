@@ -6,7 +6,7 @@ import {
 import { getXsrfToken } from '@/lib/csrf';
 import { ruleCheckers, RULE_THRESHOLDS, stripTags } from '@/lib/ruleCheckers';
 import type { ChapterVersion, ProsePassRule, VersionSource } from '@/types/models';
-import { CaretDown, CaretRight, Check, Warning } from '@phosphor-icons/react';
+import { Check, ChevronDown, ChevronRight, TriangleAlert } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { diffArrays, diffWords } from 'diff';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -37,6 +37,37 @@ function htmlDecode(text: string): string {
     return el.value;
 }
 
+function normalizeForComparison(text: string): string {
+    return text.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function wordDiffParagraph(
+    origText: string,
+    revText: string,
+): { leftSegs: DiffSegment[]; rightSegs: DiffSegment[]; hasChanges: boolean; changeCount: number } {
+    const wordDiffs = diffWords(origText, revText);
+    const leftSegs: DiffSegment[] = [];
+    const rightSegs: DiffSegment[] = [];
+    let hasChanges = false;
+    let changeCount = 0;
+
+    for (const w of wordDiffs) {
+        if (w.added) {
+            rightSegs.push({ text: w.value, type: 'added' });
+            hasChanges = true;
+            changeCount++;
+        } else if (w.removed) {
+            leftSegs.push({ text: w.value, type: 'removed' });
+            hasChanges = true;
+        } else {
+            leftSegs.push({ text: w.value, type: 'equal' });
+            rightSegs.push({ text: w.value, type: 'equal' });
+        }
+    }
+
+    return { leftSegs, rightSegs, hasChanges, changeCount };
+}
+
 function computeDiff(
     originalHtml: string | null,
     revisedHtml: string | null,
@@ -51,8 +82,11 @@ function computeDiff(
     const origTexts = origParagraphs.map((p) => htmlDecode(stripTags(p)));
     const revTexts = revParagraphs.map((p) => htmlDecode(stripTags(p)));
 
-    // Use diffArrays to align paragraphs
-    const arrayDiff = diffArrays(origTexts, revTexts);
+    // Pre-compute normalized texts for paragraph alignment
+    const origNormalized = origTexts.map(normalizeForComparison);
+    const revNormalized = revTexts.map(normalizeForComparison);
+
+    const arrayDiff = diffArrays(origNormalized, revNormalized);
 
     const aligned: AlignedParagraph[] = [];
     let origIdx = 0;
@@ -60,67 +94,59 @@ function computeDiff(
     let changeCount = 0;
     const changedIndices: number[] = [];
 
-    for (const part of arrayDiff) {
+    function pushWordDiff(): void {
+        const result = wordDiffParagraph(origTexts[origIdx], revTexts[revIdx]);
+        changeCount += result.changeCount;
+        const idx = aligned.length;
+        if (result.hasChanges) changedIndices.push(idx);
+        aligned.push({
+            left: { segments: result.leftSegs },
+            right: { segments: result.rightSegs },
+            hasChanges: result.hasChanges,
+            index: idx,
+        });
+        origIdx++;
+        revIdx++;
+    }
+
+    function pushOneSided(side: 'left' | 'right'): void {
+        const idx = aligned.length;
+        changedIndices.push(idx);
+        changeCount++;
+        aligned.push({
+            left: side === 'left' ? { segments: [{ text: origTexts[origIdx], type: 'removed' }] } : null,
+            right: side === 'right' ? { segments: [{ text: revTexts[revIdx], type: 'added' }] } : null,
+            hasChanges: true,
+            index: idx,
+        });
+        if (side === 'left') origIdx++;
+        else revIdx++;
+    }
+
+    let i = 0;
+    while (i < arrayDiff.length) {
+        const part = arrayDiff[i];
+
         if (!part.added && !part.removed) {
             // Equal paragraphs — compute word-level diff within each pair
-            for (let i = 0; i < part.count!; i++) {
-                const wordDiffs = diffWords(origTexts[origIdx], revTexts[revIdx]);
-                const leftSegs: DiffSegment[] = [];
-                const rightSegs: DiffSegment[] = [];
-                let pairHasChanges = false;
+            for (let j = 0; j < part.count!; j++) pushWordDiff();
+            i++;
+        } else if (part.removed && i + 1 < arrayDiff.length && arrayDiff[i + 1].added) {
+            // Removed + Added: pair them for word-level diffs
+            const removedCount = part.count!;
+            const addedCount = arrayDiff[i + 1].count!;
+            const pairs = Math.min(removedCount, addedCount);
 
-                for (const w of wordDiffs) {
-                    if (w.added) {
-                        rightSegs.push({ text: w.value, type: 'added' });
-                        pairHasChanges = true;
-                        changeCount++;
-                    } else if (w.removed) {
-                        leftSegs.push({ text: w.value, type: 'removed' });
-                        pairHasChanges = true;
-                    } else {
-                        leftSegs.push({ text: w.value, type: 'equal' });
-                        rightSegs.push({ text: w.value, type: 'equal' });
-                    }
-                }
-
-                const idx = aligned.length;
-                if (pairHasChanges) changedIndices.push(idx);
-                aligned.push({
-                    left: { segments: leftSegs },
-                    right: { segments: rightSegs },
-                    hasChanges: pairHasChanges,
-                    index: idx,
-                });
-
-                origIdx++;
-                revIdx++;
-            }
-        } else if (part.removed && !part.added) {
-            for (let i = 0; i < part.count!; i++) {
-                const idx = aligned.length;
-                changedIndices.push(idx);
-                changeCount++;
-                aligned.push({
-                    left: { segments: [{ text: origTexts[origIdx], type: 'removed' }] },
-                    right: null,
-                    hasChanges: true,
-                    index: idx,
-                });
-                origIdx++;
-            }
-        } else if (part.added && !part.removed) {
-            for (let i = 0; i < part.count!; i++) {
-                const idx = aligned.length;
-                changedIndices.push(idx);
-                changeCount++;
-                aligned.push({
-                    left: null,
-                    right: { segments: [{ text: revTexts[revIdx], type: 'added' }] },
-                    hasChanges: true,
-                    index: idx,
-                });
-                revIdx++;
-            }
+            for (let j = 0; j < pairs; j++) pushWordDiff();
+            for (let j = pairs; j < removedCount; j++) pushOneSided('left');
+            for (let j = pairs; j < addedCount; j++) pushOneSided('right');
+            i += 2;
+        } else if (part.removed) {
+            for (let j = 0; j < part.count!; j++) pushOneSided('left');
+            i++;
+        } else if (part.added) {
+            for (let j = 0; j < part.count!; j++) pushOneSided('right');
+            i++;
         }
     }
 
@@ -416,7 +442,7 @@ export default function DiffView({
             {/* Truncation warning */}
             {truncationWarning && (
                 <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-6 py-2.5">
-                    <Warning size={16} weight="fill" className="shrink-0 text-amber-600" />
+                    <TriangleAlert size={16} fill="currentColor" className="shrink-0 text-amber-600" />
                     <p className="text-xs leading-relaxed text-amber-800">
                         {t('diff.truncationWarning', {
                             revWords: truncationWarning.revWords.toLocaleString(i18n.language),
@@ -491,7 +517,7 @@ export default function DiffView({
                                             {selectedParagraphs.has(para.index) && (
                                                 <Check
                                                     size={10}
-                                                    weight="bold"
+                                                    strokeWidth={2.5}
                                                     className="text-accent"
                                                 />
                                             )}
@@ -532,7 +558,7 @@ export default function DiffView({
                         onClick={() => setRulesExpanded(!rulesExpanded)}
                         className="flex w-full items-center gap-2 px-6 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-ink-faint transition-colors hover:text-ink-muted"
                     >
-                        {rulesExpanded ? <CaretDown size={12} /> : <CaretRight size={12} />}
+                        {rulesExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                         {t('diff.ruleCompliance')}
                         <span className="font-normal normal-case tracking-normal">
                             {t('diff.rulesPassing', { passing: ruleResults.filter((r) => r.pass).length, total: ruleResults.length })}
