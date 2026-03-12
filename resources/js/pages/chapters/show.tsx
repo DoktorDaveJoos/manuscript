@@ -14,6 +14,7 @@ import VersionHistoryOverlay from '@/components/editor/VersionHistoryOverlay';
 import WritingSurface from '@/components/editor/WritingSurface';
 import Kbd from '@/components/ui/Kbd';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
+import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import { getXsrfToken } from '@/lib/csrf';
 import { createChapter, jsonFetchHeaders } from '@/lib/utils';
 import type { Analysis, Book, Chapter, Character, CharacterChapterPivot, ProsePassRule, Scene } from '@/types/models';
@@ -47,6 +48,7 @@ export default function ChapterShow({
 }) {
     const { t } = useTranslation('editor');
     const pendingVersion = chapter.pending_version ?? null;
+    const sidebarStorylines = useSidebarStorylines();
     const { visible: aiVisible, licensed: isLicensed } = useAiFeatures();
     const { app_settings } = usePage<{ app_settings: import('@/types/models').AppSettings }>().props;
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
@@ -379,8 +381,8 @@ export default function ChapterShow({
 
     const handleNewChapter = useCallback(async () => {
         await handleBeforeNavigate();
-        createChapter(book.id, chapter.storyline_id, book.storylines ?? []);
-    }, [book, chapter.storyline_id, handleBeforeNavigate]);
+        createChapter(book.id, chapter.storyline_id, sidebarStorylines);
+    }, [book, chapter.storyline_id, handleBeforeNavigate, sidebarStorylines]);
 
     // Callbacks for sidebar-initiated scene mutations
     const handleSidebarSceneRename = useCallback((sceneId: number, newTitle: string) => {
@@ -414,7 +416,7 @@ export default function ChapterShow({
                 >
                     <Sidebar
                         book={book}
-                        storylines={book.storylines ?? []}
+                        storylines={sidebarStorylines}
                         activeChapterId={chapter.id}
                         activeChapterTitle={displayTitle}
                         activeChapterWordCount={wordCount}

@@ -4,7 +4,8 @@ import WikiEmptyState from '@/components/wiki/WikiEmptyState';
 import WikiEntryDetail from '@/components/wiki/WikiEntryDetail';
 import WikiEntryList from '@/components/wiki/WikiEntryList';
 import WikiTabBar, { type WikiTab } from '@/components/wiki/WikiTabBar';
-import type { Book, Character, Storyline, WikiEntry } from '@/types/models';
+import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
+import type { Book, Character, WikiEntry } from '@/types/models';
 import { Head } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,7 +18,7 @@ const DEFAULT_WIDTH = 280;
 const validTabs: WikiTab[] = ['characters', 'location', 'organization', 'item', 'lore'];
 
 type Props = {
-    book: Book & { storylines?: Storyline[] };
+    book: Book;
     characters: Character[];
     locations: WikiEntry[];
     organizations: WikiEntry[];
@@ -36,7 +37,7 @@ export default function WikiIndex({
     tab,
 }: Props) {
     const { t } = useTranslation('wiki');
-    const storylines = book.storylines ?? [];
+    const storylines = useSidebarStorylines();
     const initialTab = validTabs.includes(tab as WikiTab) ? (tab as WikiTab) : 'characters';
     const [activeTab, setActiveTab] = useState<WikiTab>(initialTab);
     const [selectedId, setSelectedId] = useState<number | null>(null);

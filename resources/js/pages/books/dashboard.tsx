@@ -11,6 +11,7 @@ import WritingGoal from '@/components/dashboard/WritingGoal';
 import WritingHeatmap from '@/components/dashboard/WritingHeatmap';
 import Sidebar from '@/components/editor/Sidebar';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
+import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type {
     AiPreparationStatus,
     AiUsage,
@@ -21,7 +22,6 @@ import type {
     HealthSnapshot,
     ManuscriptTarget,
     StatusCounts,
-    Storyline,
     SuggestedNext as SuggestedNextType,
     WritingGoalData,
 } from '@/types/models';
@@ -94,7 +94,7 @@ export default function Dashboard({
     manuscript_target,
     ai_usage,
 }: {
-    book: Book & { storylines?: Storyline[] };
+    book: Book;
     stats: DashboardStats;
     status_counts: StatusCounts;
     health_metrics: HealthMetrics | null;
@@ -107,7 +107,7 @@ export default function Dashboard({
     ai_usage: AiUsage;
 }) {
     const { t, i18n } = useTranslation('dashboard');
-    const storylines = book.storylines ?? [];
+    const storylines = useSidebarStorylines();
     const { visible: aiVisible } = useAiFeatures();
 
     return (

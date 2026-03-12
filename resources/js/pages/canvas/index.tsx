@@ -1,9 +1,10 @@
 import Sidebar from '@/components/editor/Sidebar';
-import type { Book, Storyline } from '@/types/models';
+import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
+import type { Book } from '@/types/models';
 import { Head } from '@inertiajs/react';
 
-export default function Canvas({ book }: { book: Book & { storylines?: Storyline[] } }) {
-    const storylines = book.storylines ?? [];
+export default function Canvas({ book }: { book: Book }) {
+    const storylines = useSidebarStorylines();
 
     return (
         <>

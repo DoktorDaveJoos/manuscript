@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { Storyline } from '@/types/models';
 
 declare module '@inertiajs/core' {
     export interface InertiaConfig {
@@ -7,6 +8,7 @@ declare module '@inertiajs/core' {
             auth: Auth;
             sidebarOpen: boolean;
             locale: string;
+            sidebar_storylines: Storyline[] | null;
             [key: string]: unknown;
         };
     }

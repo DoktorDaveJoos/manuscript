@@ -64,6 +64,30 @@ class HandleInertiaRequests extends Middleware
             ],
             'ai_configured' => fn () => AiSetting::activeProvider()?->isConfigured() ?? false,
             'locale' => fn () => app()->getLocale(),
+            'sidebar_storylines' => function () use ($request) {
+                $book = $request->route('book');
+                if (! $book instanceof Book) {
+                    return null;
+                }
+
+                // Reuse if the controller already loaded storylines.chapters
+                if ($book->relationLoaded('storylines')) {
+                    $storylines = $book->storylines;
+                    if ($storylines->isEmpty() || $storylines->first()->relationLoaded('chapters')) {
+                        return $storylines;
+                    }
+                }
+
+                // Otherwise load the minimal set the sidebar needs
+                $book->load([
+                    'storylines' => fn ($q) => $q->orderBy('sort_order'),
+                    'storylines.chapters' => fn ($q) => $q
+                        ->select('id', 'book_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count')
+                        ->orderBy('reader_order'),
+                ]);
+
+                return $book->storylines;
+            },
         ];
     }
 }
