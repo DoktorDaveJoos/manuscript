@@ -1,5 +1,5 @@
 import { useAiFeatures } from '@/hooks/useAiFeatures';
-import { useAiPreparation, TOTAL_PHASES, phaseLabels } from '@/hooks/useAiPreparation';
+import { useAiPreparation, TOTAL_PHASES } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
 import { Link } from '@inertiajs/react';
 import { Check, Lock, Sparkle } from '@phosphor-icons/react';
@@ -75,13 +75,13 @@ export default function AiPreparation({
     if (isRunning && status) {
         const completedCount = status.completed_phases?.length ?? 0;
         const currentPhase = status.current_phase;
-        const phaseLabel = currentPhase ? phaseLabels[currentPhase] : t('preparation.starting');
+        const phaseLabel = currentPhase ? t(`phase.${currentPhase}`) : t('preparation.starting');
         const overallProgress = Math.round((completedCount / TOTAL_PHASES) * 100);
 
         return (
             <div className="flex flex-col gap-4 rounded-lg bg-surface-card px-6 py-6">
                 <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
-                    AI Preparation
+                    {t('preparation.title')}
                 </span>
                 <div className="flex items-center gap-3">
                     <span className="inline-block size-4 animate-spin rounded-full border-2 border-ink-faint border-t-ink" />
@@ -131,7 +131,7 @@ export default function AiPreparation({
         <div className="flex items-center justify-between rounded-lg bg-surface-card p-5">
             <div className="flex flex-1 flex-col gap-2">
                 <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
-                    AI Preparation
+                    {t('preparation.title')}
                 </span>
                 <div className="flex items-center gap-1.5">
                     <Sparkle size={18} weight="fill" className="shrink-0 text-accent" />

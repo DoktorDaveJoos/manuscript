@@ -1,19 +1,9 @@
 import { start as startPreparation, status as preparationStatus } from '@/actions/App/Http/Controllers/AiPreparationController';
 import { jsonFetchHeaders } from '@/lib/utils';
-import type { AiPreparationStatus, PreparationPhase } from '@/types/models';
+import type { AiPreparationStatus } from '@/types/models';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const TOTAL_PHASES = 7;
-
-export const phaseLabels: Record<PreparationPhase, string> = {
-    chunking: 'Splitting chunks',
-    embedding: 'Generating embeddings',
-    writing_style: 'Extracting style',
-    chapter_analysis: 'Analyzing chapters',
-    entity_extraction: 'Extracting entities',
-    story_bible: 'Building story bible',
-    health_analysis: 'Computing health',
-};
 
 export function useAiPreparation(bookId: number, initialStatus: AiPreparationStatus | null) {
     const [status, setStatus] = useState<AiPreparationStatus | null>(initialStatus);

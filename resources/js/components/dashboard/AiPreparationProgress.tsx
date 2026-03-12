@@ -1,4 +1,4 @@
-import { useAiPreparation, TOTAL_PHASES, phaseLabels } from '@/hooks/useAiPreparation';
+import { useAiPreparation, TOTAL_PHASES } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
 import { Check, Lock } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
@@ -48,7 +48,7 @@ export default function AiPreparationProgress({
     if (isRunning && status) {
         const completedCount = status.completed_phases?.length ?? 0;
         const currentPhase = status.current_phase;
-        const phaseLabel = currentPhase ? phaseLabels[currentPhase] : t('preparation.starting');
+        const phaseLabel = currentPhase ? t(`phase.${currentPhase}`) : t('preparation.starting');
         const phaseProgress =
             status.current_phase_total > 0
                 ? Math.round((status.current_phase_progress / status.current_phase_total) * 100)
