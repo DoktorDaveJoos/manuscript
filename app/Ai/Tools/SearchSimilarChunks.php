@@ -40,7 +40,17 @@ class SearchSimilarChunks implements Tool
         $limit = $request['limit'] ?? 5;
         $searchMode = $request['search_mode'] ?? 'hybrid';
 
-        $chunks = $this->search($bookId, $query, $limit, $searchMode);
+        try {
+            $chunks = $this->search($bookId, $query, $limit, $searchMode);
+        } catch (\Throwable) {
+            // Semantic/hybrid search may fail if sqlite-vec isn't loaded or embeddings don't exist.
+            // Fall back to keyword search which uses FTS5 (built into SQLite).
+            try {
+                $chunks = Chunk::findByKeywordForBook($bookId, $query, $limit);
+            } catch (\Throwable) {
+                return 'No manuscript chunks available. The manuscript may need to be prepared first.';
+            }
+        }
 
         if ($chunks->isEmpty()) {
             return 'No similar chunks found.';
