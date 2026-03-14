@@ -9,7 +9,7 @@ import type { ChapterVersion, ProsePassRule, VersionSource } from '@/types/model
 import { Check, ChevronDown, ChevronRight, TriangleAlert } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { diffArrays, diffWords } from 'diff';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function splitParagraphs(html: string | null): string[] {
@@ -390,6 +390,34 @@ export default function DiffView({
         }
     }, [bookId, chapterId, pendingVersion.id]);
 
+    // Synchronized scrolling
+    const leftPanelRef = useRef<HTMLDivElement>(null);
+    const rightPanelRef = useRef<HTMLDivElement>(null);
+    const isSyncing = useRef(false);
+
+    const handleScroll = useCallback((source: 'left' | 'right') => {
+        if (isSyncing.current) return;
+        isSyncing.current = true;
+
+        const active = source === 'left' ? leftPanelRef.current : rightPanelRef.current;
+        const target = source === 'left' ? rightPanelRef.current : leftPanelRef.current;
+
+        if (active && target) {
+            const maxScroll = active.scrollHeight - active.clientHeight;
+            const ratio = maxScroll > 0 ? active.scrollTop / maxScroll : 0;
+            const newScrollTop = ratio * (target.scrollHeight - target.clientHeight);
+            if (Math.abs(target.scrollTop - newScrollTop) < 1) {
+                isSyncing.current = false;
+                return;
+            }
+            target.scrollTop = newScrollTop;
+        }
+
+        requestAnimationFrame(() => {
+            isSyncing.current = false;
+        });
+    }, []);
+
     const sourceLabel = (source: VersionSource) => t(`diff.sourceLabel.${source}`);
 
     const acceptLabel = isPartial
@@ -455,7 +483,7 @@ export default function DiffView({
             {/* Side-by-side diff */}
             <div className="flex flex-1 overflow-hidden">
                 {/* Left: Original */}
-                <div className="flex-1 overflow-y-auto border-r border-border px-12 py-8">
+                <div ref={leftPanelRef} onScroll={() => handleScroll('left')} className="flex-1 overflow-y-auto border-r border-border px-12 py-8">
                     <div className="mb-6 flex items-center gap-2">
                         <span className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
                             {t('diff.original')}
@@ -494,7 +522,7 @@ export default function DiffView({
                 </div>
 
                 {/* Right: Revision */}
-                <div className="flex-1 overflow-y-auto px-12 py-8">
+                <div ref={rightPanelRef} onScroll={() => handleScroll('right')} className="flex-1 overflow-y-auto px-12 py-8">
                     <div className="mb-6 flex items-center gap-2">
                         <span className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
                             {t('diff.revision')}
