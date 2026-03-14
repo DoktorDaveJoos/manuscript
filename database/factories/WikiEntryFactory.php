@@ -28,6 +28,13 @@ class WikiEntryFactory extends Factory
         ];
     }
 
+    public function aiExtracted(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_ai_extracted' => true,
+        ]);
+    }
+
     public function location(): static
     {
         return $this->state(fn (array $attributes) => [

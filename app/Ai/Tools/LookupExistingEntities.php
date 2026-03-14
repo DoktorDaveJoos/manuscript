@@ -29,7 +29,7 @@ class LookupExistingEntities implements Tool
     {
         $book = Book::query()->findOrFail($request['book_id']);
         $characters = $book->characters()->get(['id', 'name', 'aliases', 'description']);
-        $wikiEntries = $book->wikiEntries()->get(['id', 'name', 'kind', 'type', 'description']);
+        $wikiEntries = $book->wikiEntries()->get(['id', 'name', 'kind', 'type', 'description', 'metadata']);
 
         if ($characters->isEmpty() && $wikiEntries->isEmpty()) {
             return 'No existing characters or entities found for this book.';
@@ -50,7 +50,8 @@ class LookupExistingEntities implements Tool
             $results = [];
             foreach ($wikiEntries as $entry) {
                 $type = $entry->type ? " ({$entry->type})" : '';
-                $results[] = "- [{$entry->kind->value}] {$entry->name}{$type}: {$entry->description}";
+                $aliases = ! empty($entry->metadata['aliases']) ? ' (aliases: '.implode(', ', $entry->metadata['aliases']).')' : '';
+                $results[] = "- [{$entry->kind->value}] {$entry->name}{$aliases}{$type}: {$entry->description}";
             }
             $sections[] = "## Existing World Entities\n\n".implode("\n", $results);
         }

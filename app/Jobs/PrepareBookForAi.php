@@ -6,6 +6,7 @@ use App\Jobs\Preparation\AnalyzeChapter;
 use App\Jobs\Preparation\BuildStoryBible;
 use App\Jobs\Preparation\ChunkAndEmbedChapter;
 use App\Jobs\Preparation\CompletePreparation;
+use App\Jobs\Preparation\ConsolidateEntities;
 use App\Jobs\Preparation\ExtractWritingStyle;
 use App\Jobs\Preparation\PhaseTransition;
 use App\Models\AiPreparation;
@@ -129,7 +130,7 @@ class PrepareBookForAi implements ShouldQueue
         $jobs[] = new PhaseTransition(
             preparation: $this->preparation,
             startPhase: 'chapter_analysis',
-            phaseTotal: $dirtyWithContent->count(),
+            phaseTotal: $dirtyWithContent->count() + 1,
             completedPhases: ['writing_style'],
         );
 
@@ -138,6 +139,8 @@ class PrepareBookForAi implements ShouldQueue
                 $jobs[] = new AnalyzeChapter($this->book, $this->preparation, $chapter->id);
             }
         }
+
+        $jobs[] = new ConsolidateEntities($this->book, $this->preparation);
 
         // Phase 6: Story bible (always runs)
         $jobs[] = new PhaseTransition(

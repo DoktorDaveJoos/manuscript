@@ -76,6 +76,11 @@ class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructu
 
         When in doubt, EXCLUDE.
 
+        ## Naming Rules
+        - Always use the character's FULL canonical name (e.g., "Maja Paulsen" not "Paulsen"). Short forms, last names alone, nicknames, and abbreviations belong in the `aliases` array.
+        - For organizations, use the full official name. Abbreviations and acronyms (e.g., "GZP") go in the `aliases` array.
+        - When the lookup tool shows an existing character or entity, you MUST use the EXACT same `name` string. Do not create a new entry with a variant name.
+
         Before extracting, use the lookup tool to check existing characters and entities to avoid duplicates and match aliases.
 
         The book ID is {$this->book->id}. Use this when calling the lookup tool.

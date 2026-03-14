@@ -1,11 +1,18 @@
 <?php
 
 use App\Ai\Agents\ChapterAnalyzer;
+use App\Ai\Agents\EntityConsolidator;
 use App\Ai\Agents\EntityExtractor;
 use App\Ai\Agents\StoryBibleBuilder;
 use App\Jobs\PrepareBookForAi;
 use App\Models\AiPreparation;
 use App\Models\Book;
+
+beforeEach(function () {
+    EntityConsolidator::fake(function () {
+        return ['character_merges' => [], 'entity_merges' => []];
+    });
+});
 
 test('prepare book for ai runs full 7-phase pipeline', function () {
     ChapterAnalyzer::fake(function () {
