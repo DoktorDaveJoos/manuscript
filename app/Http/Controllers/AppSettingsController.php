@@ -19,6 +19,8 @@ class AppSettingsController extends Controller
         'reranking_enabled',
         'cohere_api_key',
         'locale',
+        'send_error_reports',
+        'crash_report_prompted',
     ];
 
     public function appearance(): Response

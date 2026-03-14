@@ -61,6 +61,8 @@ class HandleInertiaRequests extends Middleware
                 'hide_formatting_toolbar' => AppSetting::get('hide_formatting_toolbar', false),
                 'typewriter_mode' => AppSetting::get('typewriter_mode', false),
                 'show_scenes' => AppSetting::get('show_scenes', true),
+                'send_error_reports' => AppSetting::get('send_error_reports', false),
+                'crash_report_prompted' => AppSetting::get('crash_report_prompted', false),
             ],
             'ai_configured' => fn () => AiSetting::activeProvider()?->isConfigured() ?? false,
             'locale' => fn () => app()->getLocale(),

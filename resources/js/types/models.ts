@@ -34,6 +34,8 @@ export type AppSettings = {
     hide_formatting_toolbar: boolean;
     typewriter_mode: boolean;
     show_scenes: boolean;
+    send_error_reports: boolean;
+    crash_report_prompted: boolean;
 };
 
 export type Book = {

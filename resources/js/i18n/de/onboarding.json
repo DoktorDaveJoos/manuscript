@@ -75,5 +75,19 @@
     "reviewPhase.chapterSummary_other": "{{chapterCount}} Kapitel · {{wordCount}} Wörter",
     "reviewPhase.back": "Zurück",
     "reviewPhase.importing": "Wird importiert …",
-    "reviewPhase.confirmImport": "Import bestätigen"
+    "reviewPhase.confirmImport": "Import bestätigen",
+
+    "crashReport.title": "Manuscript verbessern",
+    "crashReport.description": "Falls die App abstürzt — möchtest du einen anonymen Bericht senden? Das hilft uns, Fehler schneller zu finden und zu beheben.",
+    "crashReport.whatWeSend": "WAS WIR SENDEN",
+    "crashReport.send1": "Fehlertyp und Stack-Trace",
+    "crashReport.send2": "App-Version und Betriebssystem",
+    "crashReport.send3": "Aktionen, die zum Absturz führten",
+    "crashReport.whatWeNeverSend": "WAS WIR NIE SENDEN",
+    "crashReport.never1": "Deine Manuskripttexte oder Notizen",
+    "crashReport.never2": "Buchtitel, Figurennamen oder Handlungsdetails",
+    "crashReport.never3": "Persönliche Informationen oder Dateipfade",
+    "crashReport.enable": "Absturzberichte aktivieren",
+    "crashReport.notNow": "Nicht jetzt",
+    "crashReport.settingsNote": "Du kannst dies jederzeit unter Einstellungen → Darstellung ändern."
 }

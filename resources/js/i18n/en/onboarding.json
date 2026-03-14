@@ -75,5 +75,19 @@
     "reviewPhase.chapterSummary_other": "{{chapterCount}} chapters · {{wordCount}} words",
     "reviewPhase.back": "Back",
     "reviewPhase.importing": "Importing…",
-    "reviewPhase.confirmImport": "Confirm import"
+    "reviewPhase.confirmImport": "Confirm import",
+
+    "crashReport.title": "Help Improve Manuscript",
+    "crashReport.description": "If the app ever crashes, would you like to send an anonymous report? This helps us find and fix bugs faster.",
+    "crashReport.whatWeSend": "WHAT WE SEND",
+    "crashReport.send1": "Error type and stack trace",
+    "crashReport.send2": "App version and OS info",
+    "crashReport.send3": "Actions that led to the crash",
+    "crashReport.whatWeNeverSend": "WHAT WE NEVER SEND",
+    "crashReport.never1": "Your manuscript text or notes",
+    "crashReport.never2": "Book titles, character names, or plot details",
+    "crashReport.never3": "Personal information or file paths",
+    "crashReport.enable": "Enable Crash Reports",
+    "crashReport.notNow": "Not Now",
+    "crashReport.settingsNote": "You can change this anytime in Settings → Appearance."
 }
