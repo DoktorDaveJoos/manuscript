@@ -4,6 +4,7 @@ namespace App\Jobs\Concerns;
 
 use App\Models\Book;
 use App\Models\Chapter;
+use Illuminate\Database\Eloquent\Model;
 
 trait PersistsExtractedEntities
 {
@@ -14,14 +15,34 @@ trait PersistsExtractedEntities
      */
     protected function persistExtractedEntities(Book $book, Chapter $chapter, array $response): void
     {
-        $readerOrderCache = [];
+        $this->persistCharacters($book, $chapter, $response['characters'] ?? []);
+        $this->persistWikiEntries($book, $chapter, $response['entities'] ?? []);
+    }
 
-        foreach ($response['characters'] ?? [] as $characterData) {
+    /**
+     * @param  array<int, array<string, mixed>>  $characters
+     */
+    private function persistCharacters(Book $book, Chapter $chapter, array $characters): void
+    {
+        if (empty($characters)) {
+            return;
+        }
+
+        // Pre-fetch all existing characters for this book in one query
+        $existingCharacters = $book->characters()->get()->keyBy('name');
+        $readerOrderCache = [$chapter->id => $chapter->reader_order];
+
+        foreach ($characters as $characterData) {
             if (! is_array($characterData) || empty($characterData['name'])) {
                 continue;
             }
 
-            $character = $book->characters()->firstOrNew(['name' => $characterData['name']]);
+            $name = $characterData['name'];
+            $character = $existingCharacters->get($name);
+
+            if (! $character) {
+                $character = $book->characters()->make(['name' => $name]);
+            }
 
             $character->aliases = array_values(array_unique(array_merge(
                 $character->aliases ?? [],
@@ -35,36 +56,44 @@ trait PersistsExtractedEntities
 
             $character->is_ai_extracted = true;
 
-            // Resolve first_appearance using reader_order
-            if ($character->first_appearance) {
-                $currentFirstOrder = $readerOrderCache[$character->first_appearance]
-                    ??= Chapter::where('id', $character->first_appearance)->value('reader_order');
-            } else {
-                $currentFirstOrder = null;
-            }
-
-            if (is_null($currentFirstOrder) || $chapter->reader_order < $currentFirstOrder) {
-                $character->first_appearance = $chapter->id;
-                $readerOrderCache[$chapter->id] = $chapter->reader_order;
-            }
+            $this->resolveFirstAppearance($character, $chapter, $readerOrderCache);
 
             $character->save();
+            $existingCharacters->put($name, $character);
 
-            // Populate character-chapter pivot with role
             $character->chapters()->syncWithoutDetaching([
                 $chapter->id => ['role' => $characterData['role'] ?? 'mentioned'],
             ]);
         }
+    }
 
-        foreach ($response['entities'] ?? [] as $entityData) {
+    /**
+     * @param  array<int, array<string, mixed>>  $entities
+     */
+    private function persistWikiEntries(Book $book, Chapter $chapter, array $entities): void
+    {
+        if (empty($entities)) {
+            return;
+        }
+
+        // Pre-fetch all existing wiki entries for this book in one query
+        $existingEntries = $book->wikiEntries()->get()->keyBy(fn ($e) => $e->name.'|'.$e->kind->value);
+        $readerOrderCache = [$chapter->id => $chapter->reader_order];
+
+        foreach ($entities as $entityData) {
             if (! is_array($entityData) || empty($entityData['name']) || empty($entityData['kind'])) {
                 continue;
             }
 
-            $entry = $book->wikiEntries()->firstOrNew([
-                'name' => $entityData['name'],
-                'kind' => $entityData['kind'],
-            ]);
+            $key = $entityData['name'].'|'.$entityData['kind'];
+            $entry = $existingEntries->get($key);
+
+            if (! $entry) {
+                $entry = $book->wikiEntries()->make([
+                    'name' => $entityData['name'],
+                    'kind' => $entityData['kind'],
+                ]);
+            }
 
             $newDescription = $entityData['description'] ?? null;
             if (! $entry->description || mb_strlen($newDescription ?? '') > mb_strlen($entry->description)) {
@@ -74,25 +103,31 @@ trait PersistsExtractedEntities
             $entry->type = $entityData['type'] ?? null;
             $entry->is_ai_extracted = true;
 
-            // Resolve first_appearance using reader_order
-            if ($entry->first_appearance) {
-                $currentFirstOrder = $readerOrderCache[$entry->first_appearance]
-                    ??= Chapter::where('id', $entry->first_appearance)->value('reader_order');
-            } else {
-                $currentFirstOrder = null;
-            }
-
-            if (is_null($currentFirstOrder) || $chapter->reader_order < $currentFirstOrder) {
-                $entry->first_appearance = $chapter->id;
-                $readerOrderCache[$chapter->id] = $chapter->reader_order;
-            }
+            $this->resolveFirstAppearance($entry, $chapter, $readerOrderCache);
 
             $entry->save();
+            $existingEntries->put($key, $entry);
 
-            // Populate wiki entry-chapter pivot
-            $entry->chapters()->syncWithoutDetaching([
-                $chapter->id => [],
-            ]);
+            $entry->chapters()->syncWithoutDetaching([$chapter->id => []]);
+        }
+    }
+
+    /**
+     * Set first_appearance to the earliest chapter by reader_order.
+     *
+     * @param  array<int, int>  $readerOrderCache
+     */
+    private function resolveFirstAppearance(Model $entity, Chapter $chapter, array &$readerOrderCache): void
+    {
+        if ($entity->first_appearance) {
+            $currentFirstOrder = $readerOrderCache[$entity->first_appearance]
+                ??= Chapter::where('id', $entity->first_appearance)->value('reader_order');
+        } else {
+            $currentFirstOrder = null;
+        }
+
+        if (is_null($currentFirstOrder) || $chapter->reader_order < $currentFirstOrder) {
+            $entity->first_appearance = $chapter->id;
         }
     }
 }

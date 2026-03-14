@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Preparation;
 
+use App\Jobs\Concerns\DetectsTransientErrors;
 use App\Models\AiPreparation;
 use App\Models\Book;
 use App\Services\StoryBibleService;
@@ -15,9 +16,12 @@ use Throwable;
 
 class BuildStoryBible implements ShouldQueue
 {
-    use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Batchable, DetectsTransientErrors, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 1;
+    public int $tries = 2;
+
+    /** @var list<int> */
+    public array $backoff = [15];
 
     public int $timeout = 180;
 
@@ -36,7 +40,18 @@ class BuildStoryBible implements ShouldQueue
             $storyBibleService->build($this->book);
             $this->preparation->increment('current_phase_progress');
         } catch (Throwable $e) {
+            if ($this->isTransient($e)) {
+                throw $e;
+            }
+
             $this->preparation->appendPhaseError('story_bible', null, $e->getMessage());
+            $this->preparation->increment('current_phase_progress');
         }
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        $this->preparation->appendPhaseError('story_bible', null, $exception->getMessage());
+        $this->preparation->increment('current_phase_progress');
     }
 }

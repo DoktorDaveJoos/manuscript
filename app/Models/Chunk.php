@@ -62,6 +62,21 @@ class Chunk extends Model
     }
 
     /**
+     * Bulk-delete embeddings for multiple chunks in a single query.
+     *
+     * @param  array<int, int>  $chunkIds
+     */
+    public static function deleteEmbeddingsForChunks(array $chunkIds): void
+    {
+        if (empty($chunkIds)) {
+            return;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($chunkIds), '?'));
+        DB::delete("DELETE FROM chunk_embeddings WHERE chunk_id IN ({$placeholders})", $chunkIds);
+    }
+
+    /**
      * Check if this chunk has an embedding stored.
      */
     public function hasEmbedding(): bool

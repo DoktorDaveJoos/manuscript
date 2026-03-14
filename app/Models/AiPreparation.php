@@ -11,6 +11,8 @@ class AiPreparation extends Model
 {
     use HasFactory;
 
+    public const CIRCUIT_BREAKER_THRESHOLD = 3;
+
     protected $guarded = [];
 
     /**
@@ -26,6 +28,7 @@ class AiPreparation extends Model
             'current_phase_progress' => 'integer',
             'completed_phases' => 'array',
             'phase_errors' => 'array',
+            'consecutive_failures' => 'integer',
         ];
     }
 
@@ -53,16 +56,54 @@ class AiPreparation extends Model
     }
 
     /**
-     * Merge phases into completed_phases (refreshes from DB to avoid stale overwrites).
+     * Atomically merge phases into completed_phases using a transaction to avoid race conditions.
      *
      * @param  list<string>  $phases
      */
     public function markPhasesCompleted(array $phases): void
     {
+        DB::transaction(function () use ($phases) {
+            $record = self::query()->lockForUpdate()->find($this->id);
+            $existing = $record->completed_phases ?? [];
+            $record->update([
+                'completed_phases' => array_values(array_unique(array_merge($existing, $phases))),
+            ]);
+        });
+
         $this->refresh();
-        $existing = $this->completed_phases ?? [];
-        $this->update([
-            'completed_phases' => array_values(array_unique(array_merge($existing, $phases))),
-        ]);
+    }
+
+    /**
+     * Check if the circuit breaker has tripped (3+ consecutive failures).
+     */
+    public function shouldCircuitBreak(): bool
+    {
+        return $this->consecutive_failures >= self::CIRCUIT_BREAKER_THRESHOLD;
+    }
+
+    /**
+     * Atomically record a consecutive failure. Returns the new count.
+     */
+    public function recordConsecutiveFailure(): int
+    {
+        $newCount = DB::transaction(function () {
+            $record = self::query()->lockForUpdate()->find($this->id);
+            $newCount = ($record->consecutive_failures ?? 0) + 1;
+            $record->update(['consecutive_failures' => $newCount]);
+
+            return $newCount;
+        });
+
+        $this->refresh();
+
+        return $newCount;
+    }
+
+    /**
+     * Reset the consecutive failure counter on success.
+     */
+    public function resetConsecutiveFailures(): void
+    {
+        $this->update(['consecutive_failures' => 0]);
     }
 }
