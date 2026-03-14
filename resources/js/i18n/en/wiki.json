@@ -32,5 +32,9 @@
     "empty.item.title": "No items yet",
     "empty.item.description": "Track meaningful objects in your story — letters, keys, artifacts, or anything that carries narrative weight.",
     "empty.lore.title": "No lore yet",
-    "empty.lore.description": "Track legends, histories, prophecies, or any world-building detail that enriches your story."
+    "empty.lore.description": "Track legends, histories, prophecies, or any world-building detail that enriches your story.",
+    "search.placeholder": "Search wiki...",
+    "search.results_one": "{{count}} result",
+    "search.results_other": "{{count}} results",
+    "search.noResults": "No results found"
 }

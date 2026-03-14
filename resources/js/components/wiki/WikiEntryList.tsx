@@ -46,16 +46,18 @@ export default function WikiEntryList({
     );
 }
 
-function WikiEntryListItem({
+export function WikiEntryListItem({
     item,
     tab,
     selectedId,
     onSelect,
+    showSubtitle = true,
 }: {
     item: ListItem;
     tab: WikiTab;
     selectedId: number | null;
     onSelect: (id: number) => void;
+    showSubtitle?: boolean;
 }) {
     const subtitle = useSubtitle(item, tab);
 
@@ -73,9 +75,11 @@ function WikiEntryListItem({
                 <div className="truncate text-[13px] font-medium text-ink">
                     {item.name}
                 </div>
-                <div className="truncate text-[11px] text-ink-muted">
-                    {subtitle}
-                </div>
+                {showSubtitle && (
+                    <div className="truncate text-[11px] text-ink-muted">
+                        {subtitle}
+                    </div>
+                )}
             </div>
         </button>
     );

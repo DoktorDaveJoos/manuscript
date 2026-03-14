@@ -32,5 +32,9 @@
     "empty.item.title": "Noch keine Gegenstände",
     "empty.item.description": "Erfasse bedeutsame Objekte deiner Geschichte — Briefe, Schlüssel, Artefakte oder alles, was die Handlung vorantreibt.",
     "empty.lore.title": "Noch kein Hintergrund",
-    "empty.lore.description": "Erfasse Legenden, Historien, Prophezeiungen oder andere Details, die deine Welt bereichern."
+    "empty.lore.description": "Erfasse Legenden, Historien, Prophezeiungen oder andere Details, die deine Welt bereichern.",
+    "search.placeholder": "Wiki durchsuchen...",
+    "search.results_one": "{{count}} Ergebnis",
+    "search.results_other": "{{count}} Ergebnisse",
+    "search.noResults": "Keine Ergebnisse gefunden"
 }

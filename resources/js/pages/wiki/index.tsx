@@ -3,11 +3,13 @@ import CharacterDetail from '@/components/wiki/CharacterDetail';
 import WikiEmptyState from '@/components/wiki/WikiEmptyState';
 import WikiEntryDetail from '@/components/wiki/WikiEntryDetail';
 import WikiEntryList from '@/components/wiki/WikiEntryList';
+import WikiSearchInput from '@/components/wiki/WikiSearchInput';
+import WikiSearchResults from '@/components/wiki/WikiSearchResults';
 import WikiTabBar, { type WikiTab } from '@/components/wiki/WikiTabBar';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { Book, Character, WikiEntry } from '@/types/models';
 import { Head } from '@inertiajs/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const STORAGE_KEY = 'wiki-sidebar-width';
@@ -41,6 +43,36 @@ export default function WikiIndex({
     const initialTab = validTabs.includes(tab as WikiTab) ? (tab as WikiTab) : 'characters';
     const [activeTab, setActiveTab] = useState<WikiTab>(initialTab);
     const [selectedId, setSelectedId] = useState<number | null>(null);
+    const [query, setQuery] = useState('');
+    const isSearching = query.trim().length > 0;
+
+    const entriesByTab: Record<WikiTab, (Character | WikiEntry)[]> = {
+        characters,
+        location: locations,
+        organization: organizations,
+        item: items,
+        lore,
+    };
+
+    const searchResults = useMemo(() => {
+        if (!query.trim()) return [];
+        const q = query.toLowerCase().trim();
+        const groups: { tab: WikiTab; items: (Character | WikiEntry)[] }[] = [];
+
+        for (const tab of validTabs) {
+            const matched = entriesByTab[tab].filter((entry) => entry.name.toLowerCase().includes(q));
+            if (matched.length > 0) groups.push({ tab, items: matched });
+        }
+        return groups;
+    }, [query, characters, locations, organizations, items, lore]);
+
+    const totalResults = searchResults.reduce((sum, g) => sum + g.items.length, 0);
+
+    const handleSearchSelect = (id: number, tab: WikiTab) => {
+        setActiveTab(tab);
+        setSelectedId(id);
+        setQuery('');
+    };
 
     const [width, setWidth] = useState(() => {
         const stored = localStorage.getItem(STORAGE_KEY);
@@ -98,14 +130,6 @@ export default function WikiIndex({
         setActiveTab(newTab);
     };
 
-    const entriesByTab: Record<WikiTab, (Character | WikiEntry)[]> = {
-        characters,
-        location: locations,
-        organization: organizations,
-        item: items,
-        lore,
-    };
-
     const currentItems = entriesByTab[activeTab] ?? [];
     const count = currentItems.length;
 
@@ -131,23 +155,40 @@ export default function WikiIndex({
                     <div className="flex items-center justify-between px-5 pb-0 pt-5">
                         <div className="flex items-center gap-2">
                             <h1 className="text-[18px] font-semibold text-ink">{t('heading')}</h1>
-                            <span className="text-[13px] text-ink-faint">{count}</span>
+                            <span className="text-[13px] text-ink-faint">
+                                {isSearching ? t('search.results', { count: totalResults }) : count}
+                            </span>
                         </div>
                     </div>
 
-                    {/* Tabs */}
-                    <div className="px-5 pt-4">
-                        <WikiTabBar activeTab={activeTab} onTabChange={handleTabChange} />
+                    {/* Search */}
+                    <div className="px-3 pt-3 pb-1">
+                        <WikiSearchInput query={query} onChange={setQuery} />
                     </div>
 
-                    {/* List */}
+                    {/* Tabs — hidden during search */}
+                    {!isSearching && (
+                        <div className="px-5 pt-4">
+                            <WikiTabBar activeTab={activeTab} onTabChange={handleTabChange} />
+                        </div>
+                    )}
+
+                    {/* List or Search Results */}
                     <div className="flex-1 overflow-y-auto px-2 py-3">
-                        <WikiEntryList
-                            items={currentItems}
-                            tab={activeTab}
-                            selectedId={selectedId}
-                            onSelect={setSelectedId}
-                        />
+                        {isSearching ? (
+                            <WikiSearchResults
+                                results={searchResults}
+                                selectedId={selectedId}
+                                onSelect={handleSearchSelect}
+                            />
+                        ) : (
+                            <WikiEntryList
+                                items={currentItems}
+                                tab={activeTab}
+                                selectedId={selectedId}
+                                onSelect={setSelectedId}
+                            />
+                        )}
                     </div>
 
                     {/* Resize handle */}
