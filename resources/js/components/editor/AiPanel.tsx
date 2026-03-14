@@ -5,7 +5,7 @@ import { useChapterAnalysis } from '@/hooks/useChapterAnalysis';
 import { getXsrfToken } from '@/lib/csrf';
 import { cn } from '@/lib/utils';
 import type { Analysis, Book, Chapter, Character, CharacterChapterPivot, CharacterRole } from '@/types/models';
-import { CaretLeft, CaretRight, ChatCircle, Lock, Sparkle, Table } from '@phosphor-icons/react';
+import { ChevronLeft, ChevronRight, Lock, MessageCircle, Sparkle, Table } from 'lucide-react';
 import { Link, router } from '@inertiajs/react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +33,31 @@ function makeScoreLabeler(good: string, fair: string, weak: string) {
         if (score >= 4) return { text: fair, textColor: 'text-status-revised', dotColor: 'bg-status-revised' };
         return { text: weak, textColor: 'text-red-600', dotColor: 'bg-red-600' };
     };
+}
+
+function makeFivePointLabeler(good: string, fair: string, weak: string) {
+    return (score: number | null, empty: ScoreLabel): ScoreLabel => {
+        if (score === null) return empty;
+        if (score >= 4) return { text: good, textColor: 'text-ai-green', dotColor: 'bg-ai-green' };
+        if (score >= 3) return { text: fair, textColor: 'text-status-revised', dotColor: 'bg-status-revised' };
+        return { text: weak, textColor: 'text-red-600', dotColor: 'bg-red-600' };
+    };
+}
+
+function infoLabel(text: string): ScoreLabel {
+    return { text, textColor: 'text-ink-muted', dotColor: 'bg-ink-muted' };
+}
+
+function deliveryLabel(value: string | null, t: (key: string) => string, empty: ScoreLabel): ScoreLabel {
+    if (!value) return empty;
+    const label = t(`delivery.${value}`);
+    if (value === 'organic' || value === 'mostly_organic') {
+        return { text: label, textColor: 'text-ai-green', dotColor: 'bg-ai-green' };
+    }
+    if (value === 'mixed') {
+        return { text: label, textColor: 'text-status-revised', dotColor: 'bg-status-revised' };
+    }
+    return { text: label, textColor: 'text-red-600', dotColor: 'bg-red-600' };
 }
 
 function CraftMetricRow({ label, score, detail }: { label: string; score: ScoreLabel; detail?: string | null }) {
@@ -91,15 +116,15 @@ function CharacterRow({ character, roleText }: { character: ChapterCharacter; ro
 }
 
 function CollapseIcon() {
-    return <CaretRight size={14} weight="bold" />;
+    return <ChevronRight size={14} strokeWidth={2.5} />;
 }
 
 function ExpandIcon() {
-    return <CaretLeft size={14} weight="bold" />;
+    return <ChevronLeft size={14} strokeWidth={2.5} />;
 }
 
 function SparkleIcon() {
-    return <Sparkle size={16} weight="fill" />;
+    return <Sparkle size={16} fill="currentColor" />;
 }
 
 function collectFindings(analyses: Record<string, Analysis>): { text: string; variant: 'warning' | 'info' }[] {
@@ -158,13 +183,9 @@ export default function AiPanel({
 
     const EMPTY_SCORE: ScoreLabel = { text: t('score.empty'), textColor: 'text-ink-faint', dotColor: 'bg-ink-faint' };
     const scoreLabel = makeScoreLabeler(t('score.good'), t('score.fair'), t('score.weak'));
+    const sensoryScoreLabel = makeFivePointLabeler(t('score.good'), t('score.fair'), t('score.weak'));
     const densityScoreLabel = makeScoreLabeler(t('score.rich'), t('score.thin'), t('score.sparse'));
     const plotScoreLabel = makeScoreLabeler(t('score.onTrack'), t('score.drifting'), t('score.offCourse'));
-
-    const presenceLabel = (value: unknown): ScoreLabel => {
-        if (value != null) return { text: t('score.strong'), textColor: 'text-ai-green', dotColor: 'bg-ai-green' };
-        return EMPTY_SCORE;
-    };
 
     const handleRunProse = useCallback(async () => {
         if (
@@ -208,18 +229,21 @@ export default function AiPanel({
     // Chapter level
     const tensionLabel = scoreLabel(chapter.tension_score, EMPTY_SCORE);
     const emotionalLabel = scoreLabel(chapter.emotional_shift_magnitude, EMPTY_SCORE);
-    const pacingAnalysis = analyses['pacing']?.result as { score?: number } | null;
-    const pacingLabel = scoreLabel(pacingAnalysis?.score ?? null, EMPTY_SCORE);
+    const pacingLabel = chapter.pacing_feel
+        ? infoLabel(t(`pacing.${chapter.pacing_feel}`))
+        : EMPTY_SCORE;
 
     // Prose level
-    const craftScore = chapter.sensory_grounding != null ? chapter.sensory_grounding * 2 : null;
-    const craftLabel = scoreLabel(craftScore, EMPTY_SCORE);
+    const sensoryLabel = sensoryScoreLabel(chapter.sensory_grounding, EMPTY_SCORE);
+    const infoDeliveryLabel = deliveryLabel(chapter.information_delivery, t, EMPTY_SCORE);
     const densityAnalysis = analyses['density']?.result as { score?: number; recommendations?: string[] } | null;
     const densityLabel = densityScoreLabel(densityAnalysis?.score ?? null, EMPTY_SCORE);
     const densityDetail = densityAnalysis?.recommendations?.[0] ?? null;
 
     // Scene level
-    const scenePurposeLabel = presenceLabel(chapter.scene_purpose);
+    const scenePurposeLabel = chapter.scene_purpose
+        ? infoLabel(t(`purpose.${chapter.scene_purpose}`))
+        : EMPTY_SCORE;
     const avgHookScore = chapter.entry_hook_score != null && chapter.exit_hook_score != null
         ? Math.round((chapter.entry_hook_score + chapter.exit_hook_score) / 2)
         : chapter.entry_hook_score ?? chapter.exit_hook_score ?? null;
@@ -283,7 +307,7 @@ export default function AiPanel({
                                                 disabled={isAnalyzing}
                                                 className={actionButtonClass}
                                             >
-                                                <Table size={14} weight="bold" />
+                                                <Table size={14} strokeWidth={2.5} />
                                                 {isAnalyzing ? t('actions.analyzing') : t('actions.analyze')}
                                             </button>
                                             <p className="text-xs leading-relaxed text-ink-muted">
@@ -319,7 +343,7 @@ export default function AiPanel({
                                                 disabled={isRunningProse}
                                                 className={actionButtonClass}
                                             >
-                                                <Sparkle size={14} weight="fill" />
+                                                <Sparkle size={14} fill="currentColor" />
                                                 {isRunningProse ? t('prose.running') : t('prose.runProsePass')}
                                             </button>
                                             <p className="text-xs leading-relaxed text-ink-muted">
@@ -353,19 +377,20 @@ export default function AiPanel({
                                             <CraftMetricRow
                                                 label={t('metric.pacing')}
                                                 score={pacingLabel}
-                                                detail={chapter.pacing_feel
-                                                    ? chapter.pacing_feel.charAt(0).toUpperCase() + chapter.pacing_feel.slice(1)
-                                                    : null}
                                             />
                                         </LevelGroup>
 
                                         <LevelGroup title={t('level.prose')}>
                                             <CraftMetricRow
-                                                label={t('metric.craftScore')}
-                                                score={craftLabel}
+                                                label={t('metric.sensoryDetail')}
+                                                score={sensoryLabel}
                                                 detail={chapter.sensory_grounding != null
-                                                    ? t('metric.craftDetail', { senses: chapter.sensory_grounding, delivery: chapter.information_delivery ?? '--' })
+                                                    ? t('metric.sensoryDetailCount', { senses: chapter.sensory_grounding })
                                                     : null}
+                                            />
+                                            <CraftMetricRow
+                                                label={t('metric.informationDelivery')}
+                                                score={infoDeliveryLabel}
                                             />
                                             <CraftMetricRow
                                                 label={t('metric.narrativeDensity')}
@@ -379,7 +404,7 @@ export default function AiPanel({
                                                 label={t('metric.scenePurpose')}
                                                 score={scenePurposeLabel}
                                                 detail={chapter.scene_purpose
-                                                    ? t('metric.scenePurposeDetail', { purpose: chapter.scene_purpose, valueShift: chapter.value_shift ? t('metric.valueShiftPresent') : t('metric.valueShiftAbsent') })
+                                                    ? chapter.value_shift ?? t('metric.noValueShift')
                                                     : null}
                                             />
                                             <CraftMetricRow
@@ -476,7 +501,7 @@ export default function AiPanel({
                                     onClick={onOpenChat}
                                     className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:bg-surface hover:text-ink"
                                 >
-                                    <ChatCircle size={14} weight="regular" />
+                                    <MessageCircle size={14} />
                                     {t('askAi')}
                                 </button>
                                 <span className="text-[11px] text-ink-faint">{t('tokensEstimate')}</span>
@@ -499,7 +524,7 @@ export default function AiPanel({
                                             <CraftMetricRow label={t('metric.pacing')} score={EMPTY_SCORE} />
                                         </LevelGroup>
                                         <LevelGroup title={t('level.prose')}>
-                                            <CraftMetricRow label={t('metric.craftScore')} score={EMPTY_SCORE} />
+                                            <CraftMetricRow label={t('metric.sensoryDetail')} score={EMPTY_SCORE} />
                                             <CraftMetricRow label={t('metric.density')} score={EMPTY_SCORE} />
                                         </LevelGroup>
                                     </div>
