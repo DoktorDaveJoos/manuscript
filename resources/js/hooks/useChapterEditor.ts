@@ -1,3 +1,4 @@
+import { ParagraphEnterExtension } from '@/extensions/ParagraphEnterExtension';
 import { SceneBridgeExtension } from '@/extensions/SceneBridgeExtension';
 import { TypewriterScrollExtension } from '@/extensions/TypewriterScrollExtension';
 import CharacterCount from '@tiptap/extension-character-count';
@@ -35,6 +36,7 @@ export default function useChapterEditor({
                 CharacterCount,
                 Typography,
                 TextAlign.configure({ types: ['heading', 'paragraph'] }),
+                ParagraphEnterExtension,
                 TypewriterScrollExtension.configure({
                     scrollContainerRef,
                     enabledRef: typewriterEnabledRef,
