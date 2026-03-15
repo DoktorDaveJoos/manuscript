@@ -50,8 +50,8 @@ class HandleInertiaRequests extends Middleware
 
                 return [
                     'active' => $license !== null,
-                    'masked_key' => $license?->key
-                        ? 'MANU.'.substr(explode('.', $license->key, 3)[1] ?? '', 0, 4).'••••.••••••'.substr($license->key, -2)
+                    'masked_key' => $license?->license_key
+                        ? substr($license->license_key, 0, 8).'••••••••'
                         : null,
                 ];
             },

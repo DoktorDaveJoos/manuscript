@@ -11,8 +11,9 @@ export default function DropZone({ onFiles }: { onFiles: (files: File[]) => void
         (e: DragEvent) => {
             e.preventDefault();
             setDragging(false);
+            const supportedExtensions = ['.docx', '.odt', '.txt', '.md', '.markdown'];
             const files = Array.from(e.dataTransfer.files).filter((f) =>
-                f.name.endsWith('.docx'),
+                supportedExtensions.some((ext) => f.name.toLowerCase().endsWith(ext)),
             );
             if (files.length > 0) onFiles(files);
         },
@@ -42,7 +43,7 @@ export default function DropZone({ onFiles }: { onFiles: (files: File[]) => void
             <input
                 ref={inputRef}
                 type="file"
-                accept=".docx"
+                accept=".docx,.odt,.txt,.md,.markdown"
                 multiple
                 className="hidden"
                 onChange={(e) => {

@@ -31,6 +31,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
-        <env name="LICENSE_PUBLIC_KEY" value="ZqUtRSmPFzqF5TPm6Bq2qlpN9SjeMLyluD1zhUU6msU="/>
+        <env name="LEMONSQUEEZY_STORE_ID" value="12345"/>
+        <env name="LEMONSQUEEZY_PRODUCT_ID" value="67890"/>
     </php>
 </phpunit>

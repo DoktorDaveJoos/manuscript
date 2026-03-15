@@ -36,11 +36,12 @@
     "license.formTitle": "Manuscript License",
     "license.formDescription": "Enter your license key to unlock AI features, Canvas, and more.",
     "license.keyLabel": "License Key",
-    "license.keyPlaceholder": "MANU.XXXXXXXX.…",
+    "license.keyPlaceholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "license.activating": "Activating...",
     "license.activate": "Activate",
     "license.error.invalid": "Invalid license key.",
     "license.error.failed": "Failed to activate license.",
+    "license.error.network": "Could not reach the license server. Please check your internet connection.",
 
     "aiProviders.title": "AI Providers",
     "aiProviders.description": "Choose your AI provider and configure its API key.",

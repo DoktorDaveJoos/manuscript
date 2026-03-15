@@ -2,14 +2,18 @@
 
 namespace App\Services;
 
+use App\Contracts\DocumentParserInterface;
+use App\Services\Parsers\Concerns\DetectsChapters;
 use DOMDocument;
 use DOMNode;
 use DOMXPath;
 use Illuminate\Http\UploadedFile;
 use ZipArchive;
 
-class DocxParserService
+class DocxParserService implements DocumentParserInterface
 {
+    use DetectsChapters;
+
     /**
      * Parse a .docx file and extract chapters by heading detection.
      *
@@ -20,14 +24,14 @@ class DocxParserService
         $xml = $this->extractDocumentXml($file);
 
         if ($xml === null) {
-            return $this->fallbackResult($file);
+            return $this->fallbackSingleChapter([]);
         }
 
         $paragraphs = $this->extractParagraphs($xml);
         $chapters = $this->splitIntoChapters($paragraphs);
 
         if (count($chapters) === 0) {
-            return $this->fallbackResult($file);
+            return $this->fallbackSingleChapter($paragraphs);
         }
 
         return ['chapters' => $chapters];
@@ -96,7 +100,7 @@ class DocxParserService
                 $paragraphs[] = [
                     'style' => $style,
                     'text' => $rawText,
-                    'html' => $this->wrapParagraph($inlineHtml, $style, $rawText, $alignment),
+                    'html' => $this->wrapParagraph($inlineHtml, $style, $isScene),
                 ];
             }
         }
@@ -173,27 +177,6 @@ class DocxParserService
     }
 
     /**
-     * Detect if a paragraph is a scene break.
-     */
-    private function isSceneBreak(?string $style, string $text, ?string $alignment): bool
-    {
-        if ($style !== null && preg_match('/^(Separator|SceneBreak|Divider)$/i', $style)) {
-            return true;
-        }
-
-        $trimmed = trim($text);
-        if ($trimmed !== '' && preg_match('/^[\*\#\~\-\x{2014}\x{2013}\s]{1,20}$/u', $trimmed) && preg_match('/[\*\#\~\-\x{2014}\x{2013}]/u', $trimmed)) {
-            return true;
-        }
-
-        if ($alignment === 'center' && mb_strlen($trimmed) <= 10 && $trimmed !== '' && preg_match('/^[\p{P}\p{S}\s]+$/u', $trimmed)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
      * Detect if a paragraph is a blockquote.
      */
     private function isBlockquote(?string $style): bool
@@ -208,9 +191,9 @@ class DocxParserService
     /**
      * Wrap inline HTML in the appropriate block element.
      */
-    private function wrapParagraph(string $inlineHtml, ?string $style, string $rawText, ?string $alignment): string
+    private function wrapParagraph(string $inlineHtml, ?string $style, bool $isScene): string
     {
-        if ($this->isSceneBreak($style, $rawText, $alignment)) {
+        if ($isScene) {
             return '<hr>';
         }
 
@@ -219,127 +202,5 @@ class DocxParserService
         }
 
         return '<p>'.$inlineHtml.'</p>';
-    }
-
-    /**
-     * Determine whether a paragraph is a chapter heading.
-     */
-    private function isChapterHeading(?string $style = null, string $text = ''): bool
-    {
-        if ($style !== null && preg_match('/^(Heading1|Heading2|heading\s*[12])$/i', $style)) {
-            return true;
-        }
-
-        return (bool) preg_match('/^(chapter|kapitel|teil)\s+\w+/i', trim($text));
-    }
-
-    /**
-     * Extract a clean chapter title from heading text.
-     */
-    private function extractTitle(string $text): string
-    {
-        $text = trim($text);
-
-        if (preg_match('/^(?:chapter|kapitel|teil)\s+\w+\s*[:\-—–.]\s*(.+)$/i', $text, $matches)) {
-            return trim($matches[1]);
-        }
-
-        return $text;
-    }
-
-    /**
-     * Split paragraphs into chapters based on heading detection.
-     *
-     * @param  list<array{style: string|null, text: string, html: string}>  $paragraphs
-     * @return list<array{number: int, title: string, word_count: int, content: string}>
-     */
-    private function splitIntoChapters(array $paragraphs): array
-    {
-        $chapters = [];
-        $currentTitle = null;
-        $currentContent = [];
-
-        foreach ($paragraphs as $para) {
-            if ($this->isChapterHeading($para['style'], $para['text'])) {
-                if ($currentTitle !== null) {
-                    $chapters[] = $this->buildChapter(count($chapters) + 1, $currentTitle, $currentContent);
-                }
-                $currentTitle = $this->extractTitle($para['text']);
-                $currentContent = [];
-            } else {
-                $currentContent[] = $para['html'];
-            }
-        }
-
-        if ($currentTitle !== null) {
-            $chapters[] = $this->buildChapter(count($chapters) + 1, $currentTitle, $currentContent);
-        }
-
-        return $this->filterAndRenumber($chapters);
-    }
-
-    /**
-     * Remove chapters with empty/whitespace-only content and renumber sequentially.
-     *
-     * @param  list<array{number: int, title: string, word_count: int, content: string}>  $chapters
-     * @return list<array{number: int, title: string, word_count: int, content: string}>
-     */
-    private function filterAndRenumber(array $chapters): array
-    {
-        $filtered = array_values(array_filter(
-            $chapters,
-            fn (array $chapter): bool => trim(strip_tags($chapter['content'])) !== '',
-        ));
-
-        foreach ($filtered as $i => &$chapter) {
-            $chapter['number'] = $i + 1;
-        }
-
-        return $filtered;
-    }
-
-    /**
-     * Build a chapter array from collected content.
-     *
-     * @param  list<string>  $contentParagraphs
-     * @return array{number: int, title: string, word_count: int, content: string}
-     */
-    private function buildChapter(int $number, string $title, array $contentParagraphs): array
-    {
-        $content = implode('', $contentParagraphs);
-
-        return [
-            'number' => $number,
-            'title' => $title,
-            'word_count' => str_word_count(strip_tags($content)),
-            'content' => $content,
-        ];
-    }
-
-    /**
-     * Fallback when no chapters are detected — return the entire document as one chapter.
-     *
-     * @return array{chapters: list<array{number: int, title: string, word_count: int, content: string}>}
-     */
-    private function fallbackResult(UploadedFile $file): array
-    {
-        $xml = $this->extractDocumentXml($file);
-
-        $content = '';
-        if ($xml !== null) {
-            $paragraphs = $this->extractParagraphs($xml);
-            $content = implode('', array_column($paragraphs, 'html'));
-        }
-
-        return [
-            'chapters' => [
-                [
-                    'number' => 1,
-                    'title' => 'Full Document',
-                    'word_count' => str_word_count(strip_tags($content)),
-                    'content' => $content,
-                ],
-            ],
-        ];
     }
 }

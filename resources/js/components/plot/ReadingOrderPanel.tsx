@@ -12,16 +12,21 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, ListOrdered } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { downloadExport } from '@/lib/export-download';
+import { Download, GripVertical, ListOrdered } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } };
+const STORAGE_KEY = 'manuscript:reading-order-width';
+const MIN_WIDTH = 220;
+const MAX_WIDTH = 480;
+const DEFAULT_WIDTH = 280;
 
 type ReadingOrderPanelProps = {
     chapters: Chapter[];
     storylines: Storyline[];
-    bookId: number;
+    book: { id: number; title: string };
     onReorder: (order: { id: number; storyline_id: number }[]) => void;
     onInterleave: () => void;
 };
@@ -115,7 +120,7 @@ function SortableChapterRow({
 export default function ReadingOrderPanel({
     chapters,
     storylines,
-    bookId: _bookId,
+    book,
     onReorder,
     onInterleave,
 }: ReadingOrderPanelProps) {
@@ -123,6 +128,58 @@ export default function ReadingOrderPanel({
     const [orderedChapters, setOrderedChapters] = useState<Chapter[]>([]);
     const [activeChapter, setActiveChapter] = useState<Chapter | null>(null);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [exporting, setExporting] = useState(false);
+
+    const [width, setWidth] = useState(() => {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            const parsed = Number(stored);
+            if (parsed >= MIN_WIDTH && parsed <= MAX_WIDTH) return parsed;
+        }
+        return DEFAULT_WIDTH;
+    });
+    const widthRef = useRef(width);
+    widthRef.current = width;
+    const asideRef = useRef<HTMLElement>(null);
+    const dragCleanupRef = useRef<(() => void) | null>(null);
+
+    useEffect(() => {
+        return () => dragCleanupRef.current?.();
+    }, []);
+
+    const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        const startX = e.clientX;
+        const startWidth = widthRef.current;
+
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        const cleanup = () => {
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            dragCleanupRef.current = null;
+        };
+
+        const handleMouseMove = (ev: MouseEvent) => {
+            const delta = startX - ev.clientX;
+            const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
+            widthRef.current = newWidth;
+            if (asideRef.current) asideRef.current.style.width = `${newWidth}px`;
+        };
+
+        const handleMouseUp = () => {
+            setWidth(widthRef.current);
+            localStorage.setItem(STORAGE_KEY, String(widthRef.current));
+            cleanup();
+        };
+
+        dragCleanupRef.current = cleanup;
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    }, []);
 
     const sensors = useSensors(useSensor(PointerSensor, POINTER_SENSOR_OPTIONS));
 
@@ -222,10 +279,25 @@ export default function ReadingOrderPanel({
         onInterleave();
     }, [onInterleave]);
 
+    const handleExport = useCallback(() => {
+        setExporting(true);
+        downloadExport(book, { format: 'docx', scope: 'full', include_chapter_titles: true })
+            .catch(() => {})
+            .finally(() => setExporting(false));
+    }, [book]);
+
     const activeChapterStoryline = activeChapter ? storylineMap.get(activeChapter.storyline_id) : undefined;
 
     return (
-        <aside className="flex h-full w-[280px] shrink-0 flex-col border-l border-border-light bg-surface-card">
+        <aside ref={asideRef} className="relative flex h-full shrink-0 flex-col border-l border-border-light bg-surface-card" style={{ width }}>
+            {/* Resize handle */}
+            <div
+                onMouseDown={handleResizeMouseDown}
+                className="group absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize"
+            >
+                <div className="absolute inset-y-0 left-[3px] w-px bg-transparent transition-colors group-hover:bg-ink/20" />
+            </div>
+
             {/* Header */}
             <div className="flex h-12 items-center border-b border-border-light px-4">
                 <div className="flex items-center gap-2">
@@ -252,7 +324,15 @@ export default function ReadingOrderPanel({
                                 <ShuffleIcon />
                                 {t('readingOrder.autoInterleave')}
                             </button>
-                            <span className="text-[11px] text-ink-muted">{t('readingOrder.exportOrder')}</span>
+                            <button
+                                type="button"
+                                onClick={handleExport}
+                                disabled={exporting}
+                                className="flex items-center gap-1.5 rounded border border-border-light px-2 py-1 text-[12px] font-medium text-ink-soft transition-colors hover:bg-neutral-bg disabled:opacity-50"
+                            >
+                                <Download className="h-3 w-3" />
+                                {exporting ? t('readingOrder.exporting') : t('readingOrder.export')}
+                            </button>
                         </div>
                     )}
 

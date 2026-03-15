@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { doExport } from '@/actions/App/Http/Controllers/BookSettingsController';
 import SettingsLayout from '@/layouts/SettingsLayout';
-import { getXsrfToken } from '@/lib/csrf';
+import { downloadExport } from '@/lib/export-download';
 import { useState, useCallback } from 'react';
 
 type BookData = { id: number; title: string };
@@ -71,25 +70,7 @@ export default function Export({ book, storylines }: Props) {
         };
         if (scope === 'storyline' && storylineId) data.storyline_id = storylineId;
 
-        fetch(doExport.url(book), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-XSRF-TOKEN': getXsrfToken(),
-                Accept: 'application/octet-stream',
-            },
-            body: JSON.stringify(data),
-        })
-            .then(async (res) => {
-                if (!res.ok) throw new Error('Export failed');
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${book.title}.${format}`;
-                a.click();
-                URL.revokeObjectURL(url);
-            })
+        downloadExport(book, data)
             .catch(() => {})
             .finally(() => setExporting(false));
     }, [book, format, scope, storylineId, includeChapterTitles, includeActBreaks]);

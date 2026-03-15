@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\ChapterStatus;
 use App\Enums\VersionSource;
 use App\Enums\VersionStatus;
+use App\Http\Requests\AssignChapterActRequest;
 use App\Http\Requests\CreateSnapshotRequest;
 use App\Http\Requests\ReorderChaptersRequest;
 use App\Http\Requests\SplitChapterRequest;
@@ -349,6 +350,13 @@ class ChapterController extends Controller
         return response()->json([
             'status' => $chapter->status->value,
         ]);
+    }
+
+    public function assignAct(AssignChapterActRequest $request, Book $book, Chapter $chapter): JsonResponse
+    {
+        $chapter->update(['act_id' => $request->validated('act_id')]);
+
+        return response()->json(['success' => true]);
     }
 
     public function reorder(ReorderChaptersRequest $request, Book $book): JsonResponse

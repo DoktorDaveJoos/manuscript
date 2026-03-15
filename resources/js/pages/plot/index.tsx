@@ -1,4 +1,4 @@
-import { interleave as interleaveChapters, reorder as reorderChapters } from '@/actions/App/Http/Controllers/ChapterController';
+import { assignAct, interleave as interleaveChapters, reorder as reorderChapters } from '@/actions/App/Http/Controllers/ChapterController';
 import { store as storePlotPoint, update as updatePlotPoint } from '@/actions/App/Http/Controllers/PlotPointController';
 import Sidebar from '@/components/editor/Sidebar';
 import DetailPanel from '@/components/plot/DetailPanel';
@@ -8,6 +8,7 @@ import PlotWizardModal from '@/components/plot/PlotWizardModal';
 import ReadingOrderPanel from '@/components/plot/ReadingOrderPanel';
 import SwimLaneTimeline from '@/components/plot/SwimLaneTimeline';
 import { getXsrfToken } from '@/lib/csrf';
+import { downloadExport } from '@/lib/export-download';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { PlotTemplate } from '@/lib/plot-templates';
 import type { Act, Book, Chapter, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
@@ -137,6 +138,30 @@ export default function Plot({ book, storylines, acts, plotPoints, connections, 
         });
     }, [book.id]);
 
+    const handleAssignChapterAct = useCallback(
+        (chapterId: number, actId: number | null) => {
+            fetch(assignAct.url({ book: book.id, chapter: chapterId }), {
+                method: 'PATCH',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': getXsrfToken(),
+                },
+                body: JSON.stringify({ act_id: actId }),
+            }).then(() => {
+                router.reload({ only: ['chapters', 'acts'] });
+            });
+        },
+        [book.id],
+    );
+
+    const handleExportChapter = useCallback(
+        (chapterId: number) => {
+            downloadExport(book, { format: 'docx', scope: 'chapter', chapter_id: chapterId, include_chapter_titles: true });
+        },
+        [book],
+    );
+
     return (
         <>
             <Head title={`Plot — ${book.title}`} />
@@ -245,6 +270,8 @@ export default function Plot({ book, storylines, acts, plotPoints, connections, 
                                             chapters={chapters}
                                             onSelectPlotPoint={(pp) => setSelectedPlotPointId(pp.id)}
                                             onCreatePlotPoint={handleCreatePlotPoint}
+                                            onAssignChapterAct={handleAssignChapterAct}
+                                            onExportChapter={handleExportChapter}
                                         />
                                     ) : (
                                         <PlotPointList
@@ -291,7 +318,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections, 
                     <ReadingOrderPanel
                         chapters={chapters}
                         storylines={storylines}
-                        bookId={book.id}
+                        book={book}
                         onReorder={handleReadingOrderReorder}
                         onInterleave={handleInterleave}
                     />

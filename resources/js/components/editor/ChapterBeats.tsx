@@ -1,5 +1,5 @@
 import { store, updateStatus } from '@/actions/App/Http/Controllers/PlotPointController';
-import { NEXT_STATUS, STATUS_COLORS, TYPE_LABELS_SHORT, TYPE_STYLES } from '@/lib/plot-constants';
+import { NEXT_STATUS, STATUS_COLORS, TYPE_STYLES } from '@/lib/plot-constants';
 import type { PlotPoint } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
@@ -13,6 +13,7 @@ type Props = {
 
 export default function ChapterBeats({ plotPoints, bookId, chapterId }: Props) {
     const { t } = useTranslation('editor');
+    const { t: tPlot } = useTranslation('plot');
     const handleCycleStatus = (plotPoint: PlotPoint) => {
         const nextStatus = NEXT_STATUS[plotPoint.status];
         router.patch(
@@ -72,7 +73,7 @@ export default function ChapterBeats({ plotPoints, bookId, chapterId }: Props) {
                             <span
                                 className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-medium leading-none ${TYPE_STYLES[pp.type] ?? ''}`}
                             >
-                                {TYPE_LABELS_SHORT[pp.type] ?? pp.type}
+                                {tPlot(`typeShort.${pp.type}`)}
                             </span>
                         </li>
                     ))}

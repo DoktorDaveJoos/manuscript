@@ -10,8 +10,8 @@ use App\Http\Requests\StoreBookRequest;
 use App\Http\Requests\UpdateBookRequest;
 use App\Models\Book;
 use App\Models\Chunk;
-use App\Services\DocxParserService;
 use App\Services\Normalization\NormalizationService;
+use App\Services\Parsers\DocumentParserFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -66,17 +66,39 @@ class BookController extends Controller
         ]);
     }
 
-    public function parse(ParseImportRequest $request, Book $book, DocxParserService $parser): JsonResponse
+    public function parse(ParseImportRequest $request, Book $book, DocumentParserFactory $factory): JsonResponse
     {
         $results = [];
 
         foreach ($request->validated('files') as $fileEntry) {
+            $ext = $fileEntry['file']->getClientOriginalExtension();
+            $parser = $factory->forExtension($ext);
             $parsed = $parser->parse($fileEntry['file']);
 
             $results[] = [
                 'storyline_name' => $fileEntry['storyline_name'],
                 'storyline_type' => $fileEntry['storyline_type'],
                 'chapters' => $parsed['chapters'],
+            ];
+        }
+
+        if ($request->boolean('merge_into_single_storyline') && count($results) > 1) {
+            $mergedChapters = [];
+            $number = 1;
+
+            foreach ($results as $storyline) {
+                foreach ($storyline['chapters'] as $chapter) {
+                    $chapter['number'] = $number++;
+                    $mergedChapters[] = $chapter;
+                }
+            }
+
+            $results = [
+                [
+                    'storyline_name' => $results[0]['storyline_name'],
+                    'storyline_type' => $results[0]['storyline_type'],
+                    'chapters' => $mergedChapters,
+                ],
             ];
         }
 

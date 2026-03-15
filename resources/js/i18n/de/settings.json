@@ -36,11 +36,12 @@
     "license.formTitle": "Manuscript-Lizenz",
     "license.formDescription": "Gib deinen Lizenzschlüssel ein, um KI-Funktionen, Canvas und mehr freizuschalten.",
     "license.keyLabel": "Lizenzschlüssel",
-    "license.keyPlaceholder": "MANU.XXXXXXXX.…",
+    "license.keyPlaceholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "license.activating": "Wird aktiviert...",
     "license.activate": "Aktivieren",
     "license.error.invalid": "Ungültiger Lizenzschlüssel.",
     "license.error.failed": "Lizenz konnte nicht aktiviert werden.",
+    "license.error.network": "Der Lizenzserver ist nicht erreichbar. Bitte überprüfe deine Internetverbindung.",
 
     "aiProviders.title": "KI-Anbieter",
     "aiProviders.description": "Wähle deinen KI-Anbieter und konfiguriere den API-Schlüssel.",

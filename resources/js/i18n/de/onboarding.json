@@ -47,8 +47,8 @@
 
     "newBookCard.create": "Neues Buch erstellen",
 
-    "dropZone.title": ".docx-Dateien hierher ziehen",
-    "dropZone.subtitle": "oder klicken zum Durchsuchen — beliebig viele Dateien",
+    "dropZone.title": "Manuskriptdateien hierher ziehen",
+    "dropZone.subtitle": "Unterstützt .docx, .odt, .txt und .md — beliebig viele Dateien",
 
     "importChapterRow.words": "{{formatted}} Wörter",
 
@@ -60,12 +60,13 @@
     "uploadPhase.skip": "Überspringen — leer starten",
     "uploadPhase.importFiles_one": "{{count}} Datei importieren",
     "uploadPhase.importFiles_other": "{{count}} Dateien importieren",
+    "uploadPhase.mergeFiles": "Alle Dateien in einen Handlungsstrang zusammenführen",
 
     "importGuide.label": "So funktioniert der Import",
     "importGuide.step1.title": "Eine Datei pro Handlungsstrang",
-    "importGuide.step1.description": "Jede .docx-Datei wird zu einem eigenen Handlungsstrang. Haupthandlung und Vorgeschichte? Verwende zwei separate Dateien.",
-    "importGuide.step2.title": "Kapitel entstehen aus Überschriften-Formatvorlagen",
-    "importGuide.step2.description": "Wir teilen Kapitel überall dort, wo dein Dokument Überschrift 1 oder Überschrift 2 verwendet. Fetter Text allein wird nicht erkannt — nutze Words eingebaute Formatvorlagen.",
+    "importGuide.step1.description": "Jede Datei wird zu einem eigenen Handlungsstrang. Haupthandlung und Vorgeschichte? Verwende zwei separate Dateien. Oder führe mehrere Dateien zusammen.",
+    "importGuide.step2.title": "Kapitel werden automatisch erkannt",
+    "importGuide.step2.description": "Bei .docx- und .odt-Dateien nutzen wir Überschriften-Formatvorlagen. Bei .md-Dateien #-Überschriften. Bei .txt-Dateien \u201EKapitel X\u201C-Muster. Jedes Format wird nativ verarbeitet.",
     "importGuide.step3.title": "Keine Überschriften? Kein Problem.",
     "importGuide.step3.description": "Wenn wir keine Überschriften finden, wird die Datei als einzelnes Kapitel importiert. Du kannst sie später im Editor aufteilen.",
 

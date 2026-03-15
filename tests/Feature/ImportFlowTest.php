@@ -69,7 +69,7 @@ test('parse endpoint validates files are required', function () {
         ->assertJsonValidationErrors('files');
 });
 
-test('parse endpoint validates file type is docx', function () {
+test('parse endpoint validates file type is a supported format', function () {
     $book = Book::factory()->create();
 
     $this->postJson(route('books.import.parse', $book), [
@@ -324,4 +324,112 @@ test('confirm import creates multiple storylines', function () {
         ->and($storylines[0]->sort_order)->toBe(0)
         ->and($storylines[1]->name)->toBe('Parallel')
         ->and($storylines[1]->sort_order)->toBe(1);
+});
+
+test('parse endpoint accepts odt files', function () {
+    $book = Book::factory()->create();
+
+    $response = $this->postJson(route('books.import.parse', $book), [
+        'files' => [
+            [
+                'file' => new UploadedFile(
+                    path: __DIR__.'/fixtures/chapters.odt',
+                    originalName: 'chapters.odt',
+                    mimeType: 'application/vnd.oasis.opendocument.text',
+                    test: true,
+                ),
+                'storyline_name' => 'Main',
+                'storyline_type' => 'main',
+            ],
+        ],
+    ]);
+
+    $response->assertSuccessful()
+        ->assertJsonCount(1, 'storylines')
+        ->assertJsonPath('storylines.0.chapters.0.number', 1);
+});
+
+test('parse endpoint accepts txt files', function () {
+    $book = Book::factory()->create();
+
+    $response = $this->postJson(route('books.import.parse', $book), [
+        'files' => [
+            [
+                'file' => new UploadedFile(
+                    path: __DIR__.'/fixtures/chapters.txt',
+                    originalName: 'chapters.txt',
+                    mimeType: 'text/plain',
+                    test: true,
+                ),
+                'storyline_name' => 'Main',
+                'storyline_type' => 'main',
+            ],
+        ],
+    ]);
+
+    $response->assertSuccessful()
+        ->assertJsonCount(1, 'storylines')
+        ->assertJsonPath('storylines.0.chapters.0.number', 1);
+});
+
+test('parse endpoint accepts md files', function () {
+    $book = Book::factory()->create();
+
+    $response = $this->postJson(route('books.import.parse', $book), [
+        'files' => [
+            [
+                'file' => new UploadedFile(
+                    path: __DIR__.'/fixtures/chapters.md',
+                    originalName: 'chapters.md',
+                    mimeType: 'text/markdown',
+                    test: true,
+                ),
+                'storyline_name' => 'Main',
+                'storyline_type' => 'main',
+            ],
+        ],
+    ]);
+
+    $response->assertSuccessful()
+        ->assertJsonCount(1, 'storylines')
+        ->assertJsonPath('storylines.0.chapters.0.number', 1);
+});
+
+test('merge mode combines multiple files into single storyline', function () {
+    $book = Book::factory()->create();
+
+    $response = $this->postJson(route('books.import.parse', $book), [
+        'merge_into_single_storyline' => true,
+        'files' => [
+            [
+                'file' => new UploadedFile(
+                    path: __DIR__.'/fixtures/chapters.txt',
+                    originalName: 'part-one.txt',
+                    mimeType: 'text/plain',
+                    test: true,
+                ),
+                'storyline_name' => 'Part One',
+                'storyline_type' => 'main',
+            ],
+            [
+                'file' => new UploadedFile(
+                    path: __DIR__.'/fixtures/chapters.md',
+                    originalName: 'part-two.md',
+                    mimeType: 'text/markdown',
+                    test: true,
+                ),
+                'storyline_name' => 'Part Two',
+                'storyline_type' => 'main',
+            ],
+        ],
+    ]);
+
+    $response->assertSuccessful()
+        ->assertJsonCount(1, 'storylines')
+        ->assertJsonPath('storylines.0.storyline_name', 'Part One');
+
+    $chapters = $response->json('storylines.0.chapters');
+    // Chapters should be sequentially numbered across both files
+    $numbers = array_column($chapters, 'number');
+    expect($numbers)->toBe(range(1, count($chapters)));
 });

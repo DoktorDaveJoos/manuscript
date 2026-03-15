@@ -71,6 +71,7 @@ Route::patch('/books/{book}/chapters/{chapter}/notes', [ChapterController::class
 Route::post('/books/{book}/chapters/{chapter}/split', [ChapterController::class, 'split'])->name('chapters.split');
 Route::delete('/books/{book}/chapters/{chapter}', [ChapterController::class, 'destroy'])->name('chapters.destroy');
 Route::patch('/books/{book}/chapters/{chapter}/status', [ChapterController::class, 'updateStatus'])->name('chapters.updateStatus');
+Route::patch('/books/{book}/chapters/{chapter}/act', [ChapterController::class, 'assignAct'])->name('chapters.assignAct');
 Route::post('/books/{book}/chapters/reorder', [ChapterController::class, 'reorder'])->name('chapters.reorder');
 Route::post('/books/{book}/chapters/interleave', [ChapterController::class, 'interleave'])->name('chapters.interleave');
 
@@ -106,6 +107,7 @@ Route::get('/settings/ai', [AiSettingsController::class, 'index'])->name('ai-set
 Route::get('/settings/license', [LicenseController::class, 'index'])->name('settings.license');
 Route::post('/license/activate', [LicenseController::class, 'activate'])->name('license.activate');
 Route::post('/license/deactivate', [LicenseController::class, 'deactivate'])->name('license.deactivate');
+Route::post('/license/revalidate', [LicenseController::class, 'revalidate'])->name('license.revalidate');
 
 // Pro features — require active licence
 Route::middleware('license')->group(function () {

@@ -2,44 +2,89 @@
 
 use App\Models\License;
 
-uses(Tests\TestCase::class);
+uses(Tests\TestCase::class, Illuminate\Foundation\Testing\RefreshDatabase::class);
 
-test('validate accepts a factory-generated license key', function () {
-    $license = License::factory()->make();
+test('active returns the activated license', function () {
+    expect(License::active())->toBeNull();
 
-    expect(License::validate($license->key))->toBeTrue();
+    $license = License::factory()->create();
+
+    expect(License::active())->not->toBeNull();
+    expect(License::active()->id)->toBe($license->id);
 });
 
-test('validate rejects a tampered signature', function () {
-    $license = License::factory()->make();
-    $parts = explode('.', $license->key, 3);
+test('active returns null when license is deactivated', function () {
+    License::factory()->deactivated()->create();
 
-    // Flip the first character of the signature
-    $tampered = $parts[0].'.'.$parts[1].'.X'.substr($parts[2], 1);
-
-    expect(License::validate($tampered))->toBeFalse();
+    expect(License::active())->toBeNull();
 });
 
-test('validate rejects old HMAC format', function () {
-    expect(License::validate('MANU-AB12-XXXX-YYYY'))->toBeFalse();
+test('isActive returns correct state', function () {
+    expect(License::isActive())->toBeFalse();
+
+    License::factory()->create();
+    expect(License::isActive())->toBeTrue();
 });
 
-test('validate rejects key signed with wrong keypair', function () {
-    $wrongKeypair = sodium_crypto_sign_keypair();
-    $wrongSecret = sodium_crypto_sign_secretkey($wrongKeypair);
+test('verifyMeta accepts matching store and product ids', function () {
+    config([
+        'app.lemonsqueezy.store_id' => 12345,
+        'app.lemonsqueezy.product_id' => 67890,
+    ]);
 
-    $id = strtoupper(bin2hex(random_bytes(4)));
-    $signature = sodium_crypto_sign_detached($id, $wrongSecret);
-    $signatureB64 = rtrim(strtr(base64_encode($signature), '+/', '-_'), '=');
-    $key = 'MANU.'.$id.'.'.$signatureB64;
-
-    expect(License::validate($key))->toBeFalse();
+    expect(License::verifyMeta([
+        'store_id' => 12345,
+        'product_id' => 67890,
+    ]))->toBeTrue();
 });
 
-test('validate rejects malformed formats', function () {
-    expect(License::validate(''))->toBeFalse();
-    expect(License::validate('INVALID-KEY'))->toBeFalse();
-    expect(License::validate('MANU.AB12.short'))->toBeFalse();
-    expect(License::validate('NOPE.A3F29B01.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaA'))->toBeFalse();
-    expect(License::validate('MANU.lowercase.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaA'))->toBeFalse();
+test('verifyMeta rejects wrong store id', function () {
+    config([
+        'app.lemonsqueezy.store_id' => 12345,
+        'app.lemonsqueezy.product_id' => 67890,
+    ]);
+
+    expect(License::verifyMeta([
+        'store_id' => 99999,
+        'product_id' => 67890,
+    ]))->toBeFalse();
+});
+
+test('verifyMeta rejects wrong product id', function () {
+    config([
+        'app.lemonsqueezy.store_id' => 12345,
+        'app.lemonsqueezy.product_id' => 67890,
+    ]);
+
+    expect(License::verifyMeta([
+        'store_id' => 12345,
+        'product_id' => 11111,
+    ]))->toBeFalse();
+});
+
+test('verifyMeta rejects missing keys', function () {
+    config([
+        'app.lemonsqueezy.store_id' => 12345,
+        'app.lemonsqueezy.product_id' => 67890,
+    ]);
+
+    expect(License::verifyMeta([]))->toBeFalse();
+});
+
+test('needsRevalidation returns true when never validated', function () {
+    $license = License::factory()->make(['last_validated_at' => null]);
+
+    expect($license->needsRevalidation())->toBeTrue();
+});
+
+test('needsRevalidation returns true when older than 7 days', function () {
+    $license = License::factory()->stale()->make();
+
+    expect($license->needsRevalidation())->toBeTrue();
+});
+
+test('needsRevalidation returns false when recently validated', function () {
+    $license = License::factory()->make(['last_validated_at' => now()]);
+
+    expect($license->needsRevalidation())->toBeFalse();
 });

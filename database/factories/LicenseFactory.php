@@ -4,25 +4,28 @@ namespace Database\Factories;
 
 use App\Models\License;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 class LicenseFactory extends Factory
 {
     protected $model = License::class;
 
-    public const TEST_SECRET_KEY = '8JYOFnEzMIumHktSSE4j4Qm1QJaQ/CyNY2zu9B9J2lxmpS1FKY8XOoXlM+boGraqWk31KN4wvKW4PXOFRTqaxQ==';
-
-    public const TEST_PUBLIC_KEY = 'ZqUtRSmPFzqF5TPm6Bq2qlpN9SjeMLyluD1zhUU6msU=';
-
     public function definition(): array
     {
-        $id = strtoupper(bin2hex(random_bytes(4)));
-        $secretKey = base64_decode(self::TEST_SECRET_KEY);
-        $signature = sodium_crypto_sign_detached($id, $secretKey);
-        $signatureB64 = rtrim(strtr(base64_encode($signature), '+/', '-_'), '=');
-
         return [
-            'key' => 'MANU.'.$id.'.'.$signatureB64,
+            'license_key' => (string) Str::uuid(),
             'activated' => true,
+            'instance_id' => (string) Str::uuid(),
+            'instance_name' => fake()->domainWord(),
+            'license_key_id' => fake()->randomNumber(6),
+            'status' => 'active',
+            'customer_name' => fake()->name(),
+            'customer_email' => fake()->safeEmail(),
+            'product_name' => 'Manuscript Pro',
+            'activation_limit' => 5,
+            'activation_usage' => 1,
+            'expires_at' => null,
+            'last_validated_at' => now(),
         ];
     }
 
@@ -30,6 +33,21 @@ class LicenseFactory extends Factory
     {
         return $this->state(fn () => [
             'activated' => false,
+        ]);
+    }
+
+    public function expired(): static
+    {
+        return $this->state(fn () => [
+            'status' => 'expired',
+            'expires_at' => now()->subDay(),
+        ]);
+    }
+
+    public function stale(): static
+    {
+        return $this->state(fn () => [
+            'last_validated_at' => now()->subDays(8),
         ]);
     }
 }

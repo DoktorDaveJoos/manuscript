@@ -15,6 +15,11 @@ class License extends Model
     {
         return [
             'activated' => 'boolean',
+            'license_key_id' => 'integer',
+            'activation_limit' => 'integer',
+            'activation_usage' => 'integer',
+            'expires_at' => 'datetime',
+            'last_validated_at' => 'datetime',
         ];
     }
 
@@ -35,43 +40,28 @@ class License extends Model
     }
 
     /**
-     * Validate a license key using Ed25519 signature verification.
+     * Verify that the license belongs to our store and product.
      *
-     * Format: MANU.{ID:8hex}.{SIGNATURE:base64url}
+     * @param  array<string, mixed>  $meta
      */
-    public static function validate(string $key): bool
+    public static function verifyMeta(array $meta): bool
     {
-        if (! function_exists('sodium_crypto_sign_verify_detached')) {
-            return false;
+        $storeId = config('app.lemonsqueezy.store_id');
+        $productId = config('app.lemonsqueezy.product_id');
+
+        return ($meta['store_id'] ?? null) === $storeId
+            && ($meta['product_id'] ?? null) === $productId;
+    }
+
+    /**
+     * Check if the license should be silently re-validated (older than 7 days).
+     */
+    public function needsRevalidation(): bool
+    {
+        if ($this->last_validated_at === null) {
+            return true;
         }
 
-        $parts = explode('.', $key, 3);
-
-        if (count($parts) !== 3 || $parts[0] !== 'MANU') {
-            return false;
-        }
-
-        $id = $parts[1];
-        $signatureB64 = $parts[2];
-
-        if (! preg_match('/^[A-F0-9]{8}$/', $id)) {
-            return false;
-        }
-
-        $signature = base64_decode(strtr($signatureB64, '-_', '+/'), strict: true);
-
-        if ($signature === false || strlen($signature) !== SODIUM_CRYPTO_SIGN_BYTES) {
-            return false;
-        }
-
-        /** @var string $publicKeyB64 */
-        $publicKeyB64 = config('app.license_public_key');
-        $publicKey = base64_decode($publicKeyB64, strict: true);
-
-        if ($publicKey === false) {
-            return false;
-        }
-
-        return sodium_crypto_sign_verify_detached($signature, $id, $publicKey);
+        return $this->last_validated_at->diffInDays(now()) >= 7;
     }
 }

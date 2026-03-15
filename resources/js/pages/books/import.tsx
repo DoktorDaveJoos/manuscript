@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 function normalizeFilenameToStorylineName(filename: string): string {
     return filename
-        .replace(/\.docx$/i, '')
+        .replace(/\.(docx|odt|txt|md|markdown)$/i, '')
         .replace(/[_-]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim()
@@ -45,10 +45,11 @@ function UploadPhase({
     onStartParsing,
 }: {
     book: Book & { storylines: Pick<Storyline, 'id' | 'book_id' | 'name'>[] };
-    onStartParsing: (files: FileEntry[]) => void;
+    onStartParsing: (files: FileEntry[], mergeMode: boolean) => void;
 }) {
     const { t } = useTranslation('onboarding');
     const [files, setFiles] = useState<FileEntry[]>([]);
+    const [mergeMode, setMergeMode] = useState(false);
 
     function handleFiles(newFiles: File[]) {
         setFiles((prev) => [
@@ -82,6 +83,20 @@ function UploadPhase({
                             />
                         ))}
                     </div>
+                )}
+
+                {files.length >= 2 && (
+                    <label className="flex items-center gap-3 px-4 py-3 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={mergeMode}
+                            onChange={(e) => setMergeMode(e.target.checked)}
+                            className="h-4 w-4 rounded border-border text-ink accent-ink"
+                        />
+                        <span className="text-[13px] leading-4 text-ink-soft">
+                            {t('uploadPhase.mergeFiles')}
+                        </span>
+                    </label>
                 )}
             </div>
 
@@ -122,7 +137,7 @@ function UploadPhase({
                 {files.length > 0 && (
                     <button
                         type="button"
-                        onClick={() => onStartParsing(files)}
+                        onClick={() => onStartParsing(files, mergeMode)}
                         className="rounded-md bg-ink px-5 py-2.5 text-sm font-medium leading-[18px] text-surface"
                     >
                         {t('uploadPhase.importFiles', { count: files.length })}
@@ -192,13 +207,17 @@ export default function BooksImport({
     const [parsingChapters, setParsingChapters] = useState<ChapterItem[]>([]);
     const [submitting, setSubmitting] = useState(false);
 
-    async function handleStartParsing(files: FileEntry[]) {
+    async function handleStartParsing(files: FileEntry[], mergeMode: boolean) {
         const formData = new FormData();
         files.forEach((entry, i) => {
             formData.append(`files[${i}][file]`, entry.file);
             formData.append(`files[${i}][storyline_name]`, entry.storylineName);
             formData.append(`files[${i}][storyline_type]`, 'main');
         });
+
+        if (mergeMode) {
+            formData.append('merge_into_single_storyline', '1');
+        }
 
         const allChapters: ChapterItem[] = [];
 

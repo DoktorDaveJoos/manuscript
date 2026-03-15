@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import { activate, deactivate } from '@/actions/App/Http/Controllers/LicenseController';
+import { activate, deactivate, revalidate } from '@/actions/App/Http/Controllers/LicenseController';
 import SettingsLayout from '@/layouts/SettingsLayout';
-import { getXsrfToken } from '@/lib/csrf';
+import { jsonFetchHeaders } from '@/lib/utils';
 import type { License } from '@/types/models';
 import { router, usePage } from '@inertiajs/react';
-import { useState, useCallback, type FormEvent } from 'react';
+import { useState, useCallback, useEffect, type FormEvent } from 'react';
 
 interface Props {
     book?: { id: number; title: string } | null;
@@ -17,6 +17,22 @@ export default function LicensePage({ book }: Props) {
     const [activating, setActivating] = useState(false);
     const [error, setError] = useState('');
 
+    useEffect(() => {
+        if (!license.active) return;
+
+        const controller = new AbortController();
+
+        fetch(revalidate.url(), {
+            method: 'POST',
+            headers: jsonFetchHeaders(),
+            signal: controller.signal,
+        }).catch(() => {
+            // Silently ignore — revalidation is best-effort
+        });
+
+        return () => controller.abort();
+    }, [license.active]);
+
     const handleActivate = useCallback(
         (e: FormEvent) => {
             e.preventDefault();
@@ -25,37 +41,44 @@ export default function LicensePage({ book }: Props) {
 
             fetch(activate.url(), {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
-                    Accept: 'application/json',
-                },
+                headers: jsonFetchHeaders(),
                 body: JSON.stringify({ license_key: key }),
             })
                 .then(async (res) => {
                     const json = await res.json();
                     if (!res.ok) {
-                        setError(json.message || t('license.error.invalid'));
+                        if (res.status === 503) {
+                            setError(t('license.error.network'));
+                        } else {
+                            setError(json.message || t('license.error.invalid'));
+                        }
                         return;
                     }
                     setKey('');
                     router.reload();
                 })
-                .catch(() => setError(t('license.error.failed')))
+                .catch(() => setError(t('license.error.network')))
                 .finally(() => setActivating(false));
         },
         [key],
     );
 
     const handleDeactivate = useCallback(() => {
+        setError('');
+
         fetch(deactivate.url(), {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-XSRF-TOKEN': getXsrfToken(),
-                Accept: 'application/json',
-            },
-        }).then(() => router.reload());
+            headers: jsonFetchHeaders(),
+        })
+            .then(async (res) => {
+                if (!res.ok) {
+                    const json = await res.json();
+                    setError(res.status === 503 ? t('license.error.network') : json.message || t('license.error.failed'));
+                    return;
+                }
+                router.reload();
+            })
+            .catch(() => setError(t('license.error.network')));
     }, []);
 
     return (
@@ -82,6 +105,7 @@ export default function LicensePage({ book }: Props) {
                                 {t('license.deactivate')}
                             </button>
                         </div>
+                        {error && <span className="mt-2 block text-[12px] text-danger">{error}</span>}
                     </div>
                 ) : (
                     <div className="rounded-lg border border-border bg-surface-card p-6">

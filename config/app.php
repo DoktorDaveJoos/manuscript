@@ -118,7 +118,10 @@ return [
     |
     */
 
-    'license_public_key' => env('LICENSE_PUBLIC_KEY', 'XZFjyCwZgI85kdblxetUumt6P07qbvkgiRJjg0yz4Jw='),
+    'lemonsqueezy' => [
+        'store_id' => (int) env('LEMONSQUEEZY_STORE_ID', 0),
+        'product_id' => (int) env('LEMONSQUEEZY_PRODUCT_ID', 0),
+    ],
 
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
