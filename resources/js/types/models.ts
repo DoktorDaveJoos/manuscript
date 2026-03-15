@@ -237,7 +237,18 @@ export type StatusCounts = {
 };
 
 export type HealthMetric = { label: string; score: number };
-export type AttentionItem = { type: string; title: string; description: string; severity: 'low' | 'medium' | 'high' };
+export type AttentionItem = {
+    severity: 'low' | 'medium' | 'high';
+    /** Legacy format (AI-generated text) */
+    type?: string;
+    title?: string;
+    description?: string;
+    /** New translatable format */
+    chapter_order?: number;
+    chapter_title?: string;
+    description_key?: string;
+    description_params?: Record<string, string | number>;
+};
 export type HealthMetrics = {
     composite_score: number;
     metrics: HealthMetric[];
@@ -272,11 +283,26 @@ export type HealthSnapshot = {
     craft: number | null;
 };
 
+export type AiUsageFeatureBreakdown = {
+    feature: string;
+    tokens: number;
+    cost_micro: number;
+};
+
+export type AiUsageMonthly = {
+    month: string;
+    tokens: number;
+};
+
 export type AiUsage = {
     input_tokens: number;
     output_tokens: number;
     cost_display: string;
     reset_at: string | null;
+    request_count: number;
+    avg_cost_display: string;
+    features_breakdown: AiUsageFeatureBreakdown[];
+    monthly_usage: AiUsageMonthly[];
 };
 
 export type ManuscriptTarget = {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AnalysisType;
 use App\Enums\ChapterStatus;
+use App\Models\AiUsageLog;
 use App\Models\Book;
 use App\Models\WritingSession;
 use App\Services\HealthScoreCalculator;
@@ -74,6 +75,10 @@ class DashboardController extends Controller
                 'output_tokens' => $book->ai_output_tokens,
                 'cost_display' => $book->ai_cost_display,
                 'reset_at' => $book->ai_usage_reset_at?->toISOString(),
+                'request_count' => $book->ai_request_count,
+                'avg_cost_display' => $book->ai_avg_cost_display,
+                'features_breakdown' => AiUsageLog::featureBreakdown($book->id, $book->ai_usage_reset_at),
+                'monthly_usage' => AiUsageLog::monthlyUsage($book->id, $book->ai_usage_reset_at),
             ],
         ]);
     }
@@ -89,7 +94,7 @@ class DashboardController extends Controller
      * Build health metrics from per-chapter analysis data.
      *
      * @param  \Illuminate\Support\Collection<int, \App\Models\Chapter>  $chapters
-     * @return array{composite_score: int, metrics: list<array{label: string, score: int}>, last_analyzed_at: string, attention_items: list<array{type: string, title: string, description: string, severity: string}>}|null
+     * @return array{composite_score: int, metrics: list<array{label: string, score: int}>, last_analyzed_at: string, attention_items: list<array>}|null
      */
     private function buildHealthMetrics(Book $book, $chapters): ?array
     {
@@ -102,12 +107,12 @@ class DashboardController extends Controller
         $scores = (new HealthScoreCalculator($analyzed))->calculate();
 
         $metrics = [
-            ['label' => 'Scene Purpose', 'score' => $scores['scene_purpose']],
-            ['label' => 'Pacing', 'score' => $scores['pacing']],
-            ['label' => 'Tension Dynamics', 'score' => $scores['tension_dynamics']],
-            ['label' => 'Hooks', 'score' => $scores['hooks']],
-            ['label' => 'Emotional Arc', 'score' => $scores['emotional_arc']],
-            ['label' => 'Craft', 'score' => $scores['craft']],
+            ['label' => 'scene_purpose', 'score' => $scores['scene_purpose']],
+            ['label' => 'pacing', 'score' => $scores['pacing']],
+            ['label' => 'tension_dynamics', 'score' => $scores['tension_dynamics']],
+            ['label' => 'hooks', 'score' => $scores['hooks']],
+            ['label' => 'emotional_arc', 'score' => $scores['emotional_arc']],
+            ['label' => 'craft', 'score' => $scores['craft']],
         ];
 
         $attentionItems = [];
@@ -115,18 +120,19 @@ class DashboardController extends Controller
         foreach ($analyzed as $chapter) {
             if ($chapter->scene_purpose === 'transition' && $chapter->value_shift === null) {
                 $attentionItems[] = [
-                    'type' => 'Scene Purpose',
-                    'title' => "Ch{$chapter->reader_order}: {$chapter->title}",
-                    'description' => 'Transition chapter with no value shift — consider adding purpose',
+                    'chapter_order' => $chapter->reader_order,
+                    'chapter_title' => $chapter->title,
+                    'description_key' => 'transitionNoValueShift',
                     'severity' => 'medium',
                 ];
             }
 
             if (in_array($chapter->information_delivery, ['info_dump', 'exposition_heavy'])) {
                 $attentionItems[] = [
-                    'type' => 'Craft',
-                    'title' => "Ch{$chapter->reader_order}: {$chapter->title}",
-                    'description' => "Information delivery: {$chapter->information_delivery}",
+                    'chapter_order' => $chapter->reader_order,
+                    'chapter_title' => $chapter->title,
+                    'description_key' => 'informationDelivery',
+                    'description_params' => ['type' => $chapter->information_delivery],
                     'severity' => $chapter->information_delivery === 'info_dump' ? 'high' : 'medium',
                 ];
             }
@@ -134,18 +140,19 @@ class DashboardController extends Controller
             if ($chapter->tension_score !== null && $chapter->tension_score <= 3
                 && $chapter->micro_tension_score !== null && $chapter->micro_tension_score <= 3) {
                 $attentionItems[] = [
-                    'type' => 'Tension Dynamics',
-                    'title' => "Ch{$chapter->reader_order}: {$chapter->title}",
-                    'description' => 'Low conflict and low micro-tension — chapter may feel flat',
+                    'chapter_order' => $chapter->reader_order,
+                    'chapter_title' => $chapter->title,
+                    'description_key' => 'lowTension',
                     'severity' => 'high',
                 ];
             }
 
             if ($chapter->sensory_grounding !== null && $chapter->sensory_grounding <= 1) {
                 $attentionItems[] = [
-                    'type' => 'Craft',
-                    'title' => "Ch{$chapter->reader_order}: {$chapter->title}",
-                    'description' => "Only {$chapter->sensory_grounding} sense engaged — consider grounding the reader",
+                    'chapter_order' => $chapter->reader_order,
+                    'chapter_title' => $chapter->title,
+                    'description_key' => 'lowSensory',
+                    'description_params' => ['count' => $chapter->sensory_grounding],
                     'severity' => 'medium',
                 ];
             }
@@ -153,12 +160,13 @@ class DashboardController extends Controller
 
         $weakestHooks = $analyzed->sortBy('hook_score')->take(3);
         foreach ($weakestHooks as $chapter) {
-            if ($chapter->hook_score <= 5) {
+            if ($chapter->hook_score <= 7) {
                 $attentionItems[] = [
-                    'type' => 'Hooks',
-                    'title' => "Ch{$chapter->reader_order}: {$chapter->title}",
-                    'description' => "Hook score {$chapter->hook_score}/10 ({$chapter->hook_type})",
-                    'severity' => $chapter->hook_score <= 3 ? 'high' : 'medium',
+                    'chapter_order' => $chapter->reader_order,
+                    'chapter_title' => $chapter->title,
+                    'description_key' => 'weakHook',
+                    'description_params' => ['score' => $chapter->hook_score, 'type' => $chapter->hook_type],
+                    'severity' => $chapter->hook_score <= 3 ? 'high' : ($chapter->hook_score <= 5 ? 'medium' : 'low'),
                 ];
             }
         }
@@ -176,15 +184,15 @@ class DashboardController extends Controller
     /**
      * Fallback to legacy analysis-based health metrics.
      *
-     * @return array{composite_score: int, metrics: list<array{label: string, score: int}>, last_analyzed_at: string, attention_items: list<array{type: string, title: string, description: string, severity: string}>}|null
+     * @return array{composite_score: int, metrics: list<array{label: string, score: int}>, last_analyzed_at: string, attention_items: list<array>}|null
      */
     private function buildLegacyHealthMetrics(Book $book): ?array
     {
         $healthTypes = [
-            AnalysisType::Pacing->value => 'Pacing',
-            AnalysisType::Plothole->value => 'Hooks',
-            AnalysisType::Density->value => 'Tension',
-            AnalysisType::CharacterConsistency->value => 'Weave',
+            AnalysisType::Pacing->value => 'pacing',
+            AnalysisType::Plothole->value => 'hooks',
+            AnalysisType::Density->value => 'tension',
+            AnalysisType::CharacterConsistency->value => 'weave',
         ];
 
         $enumTypes = [
@@ -294,6 +302,7 @@ class DashboardController extends Controller
         return [
             'title' => $suggestion->result['title'] ?? 'Next Chapter',
             'description' => $suggestion->result['description'] ?? '',
+            'chapter_id' => $suggestion->result['chapter_id'] ?? $suggestion->chapter_id,
         ];
     }
 

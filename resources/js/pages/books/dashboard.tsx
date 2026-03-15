@@ -38,12 +38,14 @@ function StatCard({
     locale: string;
 }) {
     return (
-        <div className="flex flex-1 flex-col gap-1 rounded-lg bg-surface-card px-5 py-4">
-            <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">{label}</span>
-            <span className="font-serif text-[26px] leading-[30px] font-medium text-ink">
-                {typeof value === 'number' ? value.toLocaleString(locale) : value}
-                {suffix && <span className="ml-1 font-sans text-[12px] font-normal text-ink-muted">{suffix}</span>}
-            </span>
+        <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-5 text-center">
+            <span className="text-[10px] font-medium uppercase tracking-[1.5px] text-ink-muted">{label}</span>
+            <div className="flex items-end gap-1">
+                <span className="font-serif text-[32px] font-bold leading-[1] text-ink">
+                    {typeof value === 'number' ? value.toLocaleString(locale) : value}
+                </span>
+                {suffix && <span className="pb-1 font-sans text-[13px] font-normal text-ink-muted">{suffix}</span>}
+            </div>
         </div>
     );
 }
@@ -59,21 +61,24 @@ function ChapterStatusBar({ counts }: { counts: StatusCounts }) {
     if (counts.draft > 0) segments.push({ count: counts.draft, label: t('statusBar.draft'), color: 'bg-status-draft' });
 
     return (
-        <div className="flex flex-col gap-2">
-            <div className="flex items-center overflow-hidden rounded-[4px]">
+        <div className="flex flex-col gap-2.5">
+            <div className="flex items-center overflow-hidden rounded-[2px]">
                 {segments.map((s) => (
                     <div
                         key={s.label}
-                        className={`h-2 ${s.color}`}
+                        className={`h-[3px] ${s.color}`}
                         style={{ flexGrow: s.count, flexShrink: 1, flexBasis: '0%' }}
                     />
                 ))}
             </div>
             <div className="flex items-center gap-4">
-                {segments.map((s) => (
-                    <span key={s.label} className="flex items-center gap-1.5 text-[12px] text-ink-muted">
-                        <span className={`size-2 rounded-[2px] ${s.color}`} />
-                        {s.count} {s.label}
+                {segments.map((s, i) => (
+                    <span key={s.label} className="contents">
+                        {i > 0 && <span className="text-[12px] font-medium text-ink-faint">&middot;</span>}
+                        <span className="flex items-center gap-1.5 text-[12px] text-ink-soft">
+                            <span className={`size-2 rounded-full ${s.color}`} />
+                            {s.count} {s.label}
+                        </span>
                     </span>
                 ))}
             </div>
@@ -116,35 +121,39 @@ export default function Dashboard({
             <div className="flex h-screen overflow-hidden bg-surface">
                 <Sidebar book={book} storylines={storylines} />
 
-                <main className="flex min-w-0 flex-1 flex-col items-center overflow-y-auto px-10 py-12">
-                    <div className="flex w-[720px] flex-col gap-10">
+                <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-10 py-8">
+                    <div className="flex w-full flex-col gap-7">
                         {/* Milestone Celebration */}
                         {manuscript_target.milestone_reached && !manuscript_target.milestone_dismissed && (
                             <MilestoneCelebration bookId={book.id} target={manuscript_target} />
                         )}
 
                         {/* Book Header */}
-                        <div className="flex flex-col gap-[6px]">
-                            <h1 className="font-serif text-[34px] leading-[40px] tracking-[-0.01em] text-ink">
+                        <div className="flex flex-col gap-1">
+                            <h1 className="font-serif text-[26px] font-bold leading-[1.2] text-ink">
                                 {book.title}
                             </h1>
                             {book.author && (
-                                <p className="text-[14px] text-ink-muted">{t('header.by', { author: book.author })}</p>
+                                <p className="text-[13px] text-ink-muted">{t('header.by', { author: book.author })}</p>
                             )}
                         </div>
 
-                        {/* Today's Writing */}
-                        <WritingGoal
-                            bookId={book.id}
-                            writingGoal={writing_goal}
-                            targetWordCount={manuscript_target.target_word_count}
-                        />
-
-                        {/* Writing Heatmap */}
-                        <WritingHeatmap
-                            heatmap={writing_heatmap}
-                            dailyGoal={writing_goal.daily_word_count_goal}
-                        />
+                        {/* Today's Writing + Heatmap */}
+                        <div className="flex gap-6">
+                            <div className="w-[360px] shrink-0">
+                                <WritingGoal
+                                    bookId={book.id}
+                                    writingGoal={writing_goal}
+                                    targetWordCount={manuscript_target.target_word_count}
+                                />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <WritingHeatmap
+                                    heatmap={writing_heatmap}
+                                    dailyGoal={writing_goal.daily_word_count_goal}
+                                />
+                            </div>
+                        </div>
 
                         {/* Manuscript Progress */}
                         <ManuscriptProgress target={manuscript_target} />
@@ -155,28 +164,61 @@ export default function Dashboard({
                             initialStatus={ai_preparation ?? null}
                         />
 
-                        {/* Chapter Status Bar */}
-                        {stats.chapter_count > 0 && <ChapterStatusBar counts={status_counts} />}
+                        {/* Chapter Status */}
+                        {stats.chapter_count > 0 && (
+                            <div className="flex flex-col gap-3">
+                                <span className="text-[11px] font-medium uppercase tracking-[1.5px] text-ink-muted">
+                                    {t('sections.chapterStatus', 'Chapter Status')}
+                                </span>
+                                <ChapterStatusBar counts={status_counts} />
+                            </div>
+                        )}
 
                         {/* AI Insights */}
-                        {aiVisible && health_metrics && <AiInsights healthMetrics={health_metrics} />}
+                        {aiVisible && health_metrics && (
+                            <div className="flex flex-col gap-3">
+                                <span className="text-[11px] font-medium uppercase tracking-[1.5px] text-ink-muted">
+                                    {t('sections.aiInsights', 'AI Insights')}
+                                </span>
+                                <AiInsights healthMetrics={health_metrics} />
+                            </div>
+                        )}
 
                         {/* Health Timeline */}
-                        <HealthTimeline history={health_history} />
-
-                        {/* AI Usage Stats */}
-                        {aiVisible && <AiUsageStats bookId={book.id} usage={ai_usage} />}
+                        {aiVisible && (
+                            <div className="flex flex-col gap-3">
+                                <span className="text-[11px] font-medium uppercase tracking-[1.5px] text-ink-muted">
+                                    {t('sections.healthTimeline', 'Health Timeline')}
+                                </span>
+                                <HealthTimeline history={health_history} />
+                            </div>
+                        )}
 
                         {/* Suggested Next */}
                         {aiVisible && suggested_next && <SuggestedNext suggestion={suggested_next} bookId={book.id} />}
 
-                        {/* Stats Grid */}
-                        <div className="flex gap-4">
-                            <StatCard label={t('stats.words')} value={stats.total_words} locale={i18n.language} />
-                            <StatCard label={t('stats.pages')} value={stats.estimated_pages} suffix={t('stats.pagesEst')} locale={i18n.language} />
-                            <StatCard label={t('stats.readingTime')} value={stats.reading_time_minutes} suffix={t('stats.readingTimeMin')} locale={i18n.language} />
-                            <StatCard label={t('stats.chapters')} value={stats.chapter_count} locale={i18n.language} />
+                        {/* Stats */}
+                        <div className="flex flex-col gap-3">
+                            <span className="text-[11px] font-medium uppercase tracking-[1.5px] text-ink-muted">
+                                {t('sections.stats', 'Stats')}
+                            </span>
+                            <div className="flex gap-4">
+                                <StatCard label={t('stats.words')} value={stats.total_words} locale={i18n.language} />
+                                <StatCard label={t('stats.pages')} value={stats.estimated_pages} suffix={t('stats.pagesEst')} locale={i18n.language} />
+                                <StatCard label={t('stats.readingTime')} value={stats.reading_time_minutes} suffix={t('stats.readingTimeMin')} locale={i18n.language} />
+                                <StatCard label={t('stats.chapters')} value={stats.chapter_count} locale={i18n.language} />
+                            </div>
                         </div>
+
+                        {/* AI Usage Stats */}
+                        {aiVisible && (
+                            <div className="flex flex-col gap-3">
+                                <span className="text-[11px] font-medium uppercase tracking-[1.5px] text-ink-muted">
+                                    {t('sections.aiUsage', 'AI Usage & Costs')}
+                                </span>
+                                <AiUsageStats bookId={book.id} usage={ai_usage} />
+                            </div>
+                        )}
                     </div>
                 </main>
             </div>

@@ -38,12 +38,12 @@ test('dashboard shows health metrics from chapter analysis data', function () {
     $response->assertInertia(fn ($page) => $page
         ->component('books/dashboard')
         ->has('health_metrics')
-        ->where('health_metrics.metrics.0.label', 'Scene Purpose')
-        ->where('health_metrics.metrics.1.label', 'Pacing')
-        ->where('health_metrics.metrics.2.label', 'Tension Dynamics')
-        ->where('health_metrics.metrics.3.label', 'Hooks')
-        ->where('health_metrics.metrics.4.label', 'Emotional Arc')
-        ->where('health_metrics.metrics.5.label', 'Craft')
+        ->where('health_metrics.metrics.0.label', 'scene_purpose')
+        ->where('health_metrics.metrics.1.label', 'pacing')
+        ->where('health_metrics.metrics.2.label', 'tension_dynamics')
+        ->where('health_metrics.metrics.3.label', 'hooks')
+        ->where('health_metrics.metrics.4.label', 'emotional_arc')
+        ->where('health_metrics.metrics.5.label', 'craft')
         ->has('health_metrics.attention_items')
     );
 });
