@@ -22,10 +22,10 @@ createInertiaApp({
         i18n.changeLanguage(locale);
 
         const settings = props.initialPage.props.app_settings as AppSettings | undefined;
-        if (import.meta.env.VITE_SENTRY_DSN && settings?.send_error_reports) {
-            import('@sentry/react').then((Sentry) => {
+        if (import.meta.env.VITE_SENTRY_ELECTRON_DSN && settings?.send_error_reports) {
+            import('@sentry/electron/renderer').then((Sentry) => {
                 Sentry.init({
-                    dsn: import.meta.env.VITE_SENTRY_DSN,
+                    dsn: import.meta.env.VITE_SENTRY_ELECTRON_DSN,
                     tracesSampleRate: 0,
                 });
             });

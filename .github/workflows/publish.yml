@@ -39,10 +39,17 @@ jobs:
       - name: Generate application key
         run: php artisan key:generate
 
-      - name: Set version from release tag
+      - name: Set version and Sentry DSN
+        env:
+          SENTRY_LARAVEL_DSN: ${{ secrets.SENTRY_LARAVEL_DSN }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_SENTRY_ELECTRON_DSN: ${{ secrets.VITE_SENTRY_ELECTRON_DSN }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           sed -i '' "s/NATIVEPHP_APP_VERSION=.*/NATIVEPHP_APP_VERSION=${VERSION}/" .env
+          sed -i '' "s|SENTRY_LARAVEL_DSN=.*|SENTRY_LARAVEL_DSN=${SENTRY_LARAVEL_DSN}|" .env
+          sed -i '' "s|VITE_SENTRY_DSN=.*|VITE_SENTRY_DSN=${VITE_SENTRY_DSN}|" .env
+          sed -i '' "s|VITE_SENTRY_ELECTRON_DSN=.*|VITE_SENTRY_ELECTRON_DSN=${VITE_SENTRY_ELECTRON_DSN}|" .env
 
       - name: Install Apple signing certificate
         env:
@@ -74,6 +81,8 @@ jobs:
           NATIVEPHP_APPLE_ID: ${{ secrets.NATIVEPHP_APPLE_ID }}
           NATIVEPHP_APPLE_ID_PASS: ${{ secrets.NATIVEPHP_APPLE_ID_PASS }}
           NATIVEPHP_APPLE_TEAM_ID: ${{ secrets.NATIVEPHP_APPLE_TEAM_ID }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_SENTRY_ELECTRON_DSN: ${{ secrets.VITE_SENTRY_ELECTRON_DSN }}
         run: php artisan native:publish mac --no-interaction
 
       - name: Publish release

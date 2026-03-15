@@ -37,6 +37,7 @@
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
         "@inertiajs/react": "^2.3.7",
+        "@sentry/electron": "^7.10.0",
         "@sentry/react": "^10.43.0",
         "@tailwindcss/vite": "^4.1.11",
         "@tiptap/extension-character-count": "^3.20.0",
