@@ -19,6 +19,7 @@ use App\Http\Controllers\PlotSetupController;
 use App\Http\Controllers\SceneController;
 use App\Http\Controllers\StorylineController;
 use App\Http\Controllers\TrashController;
+use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\WikiController;
 use App\Http\Controllers\WritingGoalController;
 use Illuminate\Support\Facades\Route;
@@ -94,6 +95,10 @@ Route::post('/books/{book}/normalize/preview', [NormalizationController::class, 
 Route::post('/books/{book}/normalize/apply', [NormalizationController::class, 'applyBook'])->name('books.normalize.apply');
 Route::post('/books/{book}/chapters/{chapter}/normalize/preview', [NormalizationController::class, 'previewChapter'])->name('chapters.normalize.preview');
 Route::post('/books/{book}/chapters/{chapter}/normalize/apply', [NormalizationController::class, 'applyChapter'])->name('chapters.normalize.apply');
+
+// Updates
+Route::post('/update/check', [UpdateController::class, 'check'])->name('update.check');
+Route::post('/update/install', [UpdateController::class, 'install'])->name('update.install');
 
 // App settings
 Route::get('/settings', fn () => redirect('/settings/appearance'));

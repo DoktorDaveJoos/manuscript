@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
+import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
 import SettingsLayout from '@/layouts/SettingsLayout';
 import { jsonFetchHeaders } from '@/lib/utils';
@@ -67,6 +68,7 @@ function SettingRow({
 export default function Appearance({ settings, book, version }: Props) {
     const { t } = useTranslation('settings');
     const { theme, setTheme } = useTheme();
+    const { state: updateState, checkForUpdates, installUpdate } = useAutoUpdater();
     const [showAi, setShowAi] = useState(settings.show_ai_features);
     const [hideToolbar, setHideToolbar] = useState(settings.hide_formatting_toolbar);
     const [sendErrorReports, setSendErrorReports] = useState(settings.send_error_reports);
@@ -175,9 +177,47 @@ export default function Appearance({ settings, book, version }: Props) {
 
                 {/* Version info */}
                 <div className="rounded-lg border border-border bg-surface-card p-6">
-                    <div className="flex flex-col gap-2">
-                        <span className="text-[13px] font-medium text-ink-muted">{t('appearance.version')}</span>
-                        <p className="text-[15px] text-ink">{version}</p>
+                    <div className="flex items-start justify-between">
+                        <div className="flex flex-col gap-2">
+                            <span className="text-[13px] font-medium text-ink-muted">{t('appearance.version')}</span>
+                            <p className="text-[15px] text-ink">{version}</p>
+                            {updateState.status === 'checking' && (
+                                <p className="text-[13px] text-ink-muted">{t('appearance.update.checking')}</p>
+                            )}
+                            {updateState.status === 'downloading' && (
+                                <p className="text-[13px] text-ink-muted">
+                                    {t('appearance.update.downloading', { progress: updateState.progress })}
+                                </p>
+                            )}
+                            {updateState.status === 'ready' && (
+                                <p className="text-[13px] font-medium text-accent">
+                                    {t('appearance.update.readyToInstall', { version: updateState.version })}
+                                </p>
+                            )}
+                            {updateState.status === 'error' && (
+                                <p className="text-[13px] text-red-500">{updateState.error}</p>
+                            )}
+                        </div>
+                        <div>
+                            {updateState.status === 'ready' ? (
+                                <button
+                                    type="button"
+                                    onClick={installUpdate}
+                                    className="rounded-md bg-accent px-3.5 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-accent/90"
+                                >
+                                    {t('appearance.update.restart')}
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={checkForUpdates}
+                                    disabled={updateState.status === 'checking' || updateState.status === 'downloading'}
+                                    className="rounded-md border border-border px-3.5 py-1.5 text-[13px] font-medium text-ink transition-colors hover:bg-surface disabled:opacity-50"
+                                >
+                                    {t('appearance.update.checkForUpdates')}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

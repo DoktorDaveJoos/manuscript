@@ -2,6 +2,7 @@ import { index as booksIndex } from '@/actions/App/Http/Controllers/BookControll
 import BookSwitcher from '@/components/settings/BookSwitcher';
 import LanguageSelector from '@/components/ui/LanguageSelector';
 import NavItem from '@/components/ui/NavItem';
+import UpdateBanner from '@/components/ui/UpdateBanner';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +24,9 @@ export default function SettingsLayout({ children, activeSection, book, title }:
     return (
         <>
             <Head title={title ?? t('title')} />
-            <div className="flex h-screen overflow-hidden bg-surface">
+            <div className="flex h-screen flex-col overflow-hidden bg-surface">
+                <UpdateBanner />
+                <div className="flex min-h-0 flex-1">
                 {/* Sidebar */}
                 <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border bg-surface">
                     {/* Header — Back link + Language selector */}
@@ -99,6 +102,7 @@ export default function SettingsLayout({ children, activeSection, book, title }:
                 <main className="flex flex-1 flex-col items-center overflow-y-auto px-10 py-12">
                     <div className="w-full max-w-[640px]">{children}</div>
                 </main>
+                </div>
             </div>
         </>
     );

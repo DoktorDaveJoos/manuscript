@@ -28,6 +28,12 @@
     "appearance.sendErrorReports.label": "Fehlerberichte senden",
     "appearance.sendErrorReports.description": "Hilf, Manuscript zu verbessern, indem du anonyme Absturzberichte automatisch sendest. Es werden niemals persönliche Daten oder Manuskriptinhalte übertragen.",
     "appearance.version": "Version",
+    "appearance.update.checkForUpdates": "Nach Updates suchen",
+    "appearance.update.checking": "Suche nach Updates…",
+    "appearance.update.downloading": "Update wird heruntergeladen… {{progress}} %",
+    "appearance.update.readyToInstall": "Version {{version}} ist bereit zur Installation",
+    "appearance.update.restart": "Neu starten und aktualisieren",
+    "appearance.update.bannerMessage": "Version {{version}} ist bereit — neu starten, um zu aktualisieren",
 
     "license.title": "Lizenz",
     "license.description": "Verwalte deine Manuscript-Lizenz.",

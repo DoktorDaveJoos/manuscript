@@ -28,6 +28,12 @@
     "appearance.sendErrorReports.label": "Send error reports",
     "appearance.sendErrorReports.description": "Help improve Manuscript by automatically sending anonymous crash reports. No personal data or manuscript content is ever included.",
     "appearance.version": "Version",
+    "appearance.update.checkForUpdates": "Check for Updates",
+    "appearance.update.checking": "Checking for updates…",
+    "appearance.update.downloading": "Downloading update… {{progress}}%",
+    "appearance.update.readyToInstall": "Version {{version}} is ready to install",
+    "appearance.update.restart": "Restart to Update",
+    "appearance.update.bannerMessage": "Version {{version}} is ready — restart to update",
 
     "license.title": "License",
     "license.description": "Manage your Manuscript license.",
