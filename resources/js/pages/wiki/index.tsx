@@ -1,5 +1,8 @@
 import Sidebar from '@/components/editor/Sidebar';
+import AddEntryDropdown from '@/components/wiki/AddEntryDropdown';
 import CharacterDetail from '@/components/wiki/CharacterDetail';
+import WikiCreateForm from '@/components/wiki/WikiCreateForm';
+import WikiEditForm from '@/components/wiki/WikiEditForm';
 import WikiEmptyState from '@/components/wiki/WikiEmptyState';
 import WikiEntryDetail from '@/components/wiki/WikiEntryDetail';
 import WikiEntryList from '@/components/wiki/WikiEntryList';
@@ -44,6 +47,8 @@ export default function WikiIndex({
     const [activeTab, setActiveTab] = useState<WikiTab>(initialTab);
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [query, setQuery] = useState('');
+    const [creatingType, setCreatingType] = useState<WikiTab | null>(null);
+    const [editingId, setEditingId] = useState<number | null>(null);
     const isSearching = query.trim().length > 0;
 
     const entriesByTab: Record<WikiTab, (Character | WikiEntry)[]> = {
@@ -72,6 +77,8 @@ export default function WikiIndex({
         setActiveTab(tab);
         setSelectedId(id);
         setQuery('');
+        setCreatingType(null);
+        setEditingId(null);
     };
 
     const [width, setWidth] = useState(() => {
@@ -128,6 +135,20 @@ export default function WikiIndex({
     const handleTabChange = (newTab: WikiTab) => {
         setSelectedId(null);
         setActiveTab(newTab);
+        setCreatingType(null);
+        setEditingId(null);
+    };
+
+    const handleAddEntry = (type: WikiTab) => {
+        setActiveTab(type);
+        setSelectedId(null);
+        setEditingId(null);
+        setCreatingType(type);
+    };
+
+    const handleEdit = (id: number) => {
+        setEditingId(id);
+        setCreatingType(null);
     };
 
     const currentItems = entriesByTab[activeTab] ?? [];
@@ -142,6 +163,48 @@ export default function WikiIndex({
         activeTab !== 'characters'
             ? ((currentItems as WikiEntry[]).find((e) => e.id === selectedId) ?? null)
             : null;
+
+    const editingItem = editingId
+        ? (currentItems.find((item) => item.id === editingId) ?? null)
+        : null;
+
+    // Determine what to render in the detail panel
+    const renderDetailPanel = () => {
+        if (creatingType) {
+            return (
+                <WikiCreateForm
+                    type={creatingType}
+                    book={book}
+                    storylines={book.storylines ?? []}
+                    onCancel={() => setCreatingType(null)}
+                    onSuccess={() => setCreatingType(null)}
+                />
+            );
+        }
+
+        if (editingItem) {
+            return (
+                <WikiEditForm
+                    item={editingItem}
+                    tab={activeTab}
+                    book={book}
+                    storylines={book.storylines ?? []}
+                    onCancel={() => setEditingId(null)}
+                    onSuccess={() => setEditingId(null)}
+                />
+            );
+        }
+
+        if (selectedCharacter) {
+            return <CharacterDetail character={selectedCharacter} onEdit={() => handleEdit(selectedCharacter.id)} />;
+        }
+
+        if (selectedEntry) {
+            return <WikiEntryDetail entry={selectedEntry} tab={activeTab} onEdit={() => handleEdit(selectedEntry.id)} />;
+        }
+
+        return <WikiEmptyState />;
+    };
 
     return (
         <>
@@ -159,6 +222,7 @@ export default function WikiIndex({
                                 {isSearching ? t('search.results', { count: totalResults }) : count}
                             </span>
                         </div>
+                        <AddEntryDropdown onSelect={handleAddEntry} />
                     </div>
 
                     {/* Search */}
@@ -202,13 +266,7 @@ export default function WikiIndex({
 
                 {/* Detail panel */}
                 <main className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-surface px-12 py-10">
-                    {selectedCharacter ? (
-                        <CharacterDetail character={selectedCharacter} />
-                    ) : selectedEntry ? (
-                        <WikiEntryDetail entry={selectedEntry} tab={activeTab} />
-                    ) : (
-                        <WikiEmptyState />
-                    )}
+                    {renderDetailPanel()}
                 </main>
             </div>
         </>

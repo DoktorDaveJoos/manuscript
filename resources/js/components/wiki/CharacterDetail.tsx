@@ -1,8 +1,9 @@
 import type { Character } from '@/types/models';
+import { Pencil } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import WikiAvatar from './WikiAvatar';
 
-export default function CharacterDetail({ character }: { character: Character }) {
+export default function CharacterDetail({ character, onEdit }: { character: Character; onEdit?: () => void }) {
     const { t } = useTranslation('wiki');
 
     const storylineLabels = character.storylines?.length
@@ -12,12 +13,13 @@ export default function CharacterDetail({ character }: { character: Character })
     return (
         <div className="flex flex-col gap-8">
             {/* Header */}
-            <div className="flex items-start gap-4">
-                <WikiAvatar name={character.name} tab="characters" size="lg" />
-                <div>
-                    <h2 className="font-serif text-[28px] leading-tight tracking-[-0.01em] text-ink">
-                        {character.name}
-                    </h2>
+            <div className="flex items-start justify-between">
+                <div className="flex items-start gap-4">
+                    <WikiAvatar name={character.name} tab="characters" size="lg" />
+                    <div>
+                        <h2 className="font-serif text-[28px] leading-tight tracking-[-0.01em] text-ink">
+                            {character.name}
+                        </h2>
                     {character.aliases && character.aliases.length > 0 && (
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                             <span className="text-[12px] text-ink-muted">{t('alsoKnownAs')}</span>
@@ -31,7 +33,17 @@ export default function CharacterDetail({ character }: { character: Character })
                             ))}
                         </div>
                     )}
+                    </div>
                 </div>
+                {onEdit && (
+                    <button
+                        onClick={onEdit}
+                        className="flex items-center gap-1.5 rounded border border-[#E8E6E0] px-3 py-1.5 text-[12px] font-medium text-[#5A574F] transition-colors hover:bg-[#F5F4F1]"
+                    >
+                        <Pencil size={12} />
+                        {t('edit.editButton')}
+                    </button>
+                )}
             </div>
 
             {/* Description */}

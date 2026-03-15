@@ -61,6 +61,14 @@
     "uploadPhase.importFiles_one": "Import {{count}} file",
     "uploadPhase.importFiles_other": "Import {{count}} files",
 
+    "importGuide.label": "How import works",
+    "importGuide.step1.title": "One file per storyline",
+    "importGuide.step1.description": "Each .docx you upload becomes its own storyline. Got a main plot and a backstory? Use two separate files.",
+    "importGuide.step2.title": "Chapters come from Heading styles",
+    "importGuide.step2.description": "We split chapters wherever your document uses Heading 1 or Heading 2 styles. Plain bold text won't be detected — use Word's built-in heading styles.",
+    "importGuide.step3.title": "No headings? No problem.",
+    "importGuide.step3.description": "If we can't find any headings, your file imports as a single chapter. You can always split it into chapters later inside the editor.",
+
     "parsingPhase.subtitle": "Reading your manuscript...",
     "parsingPhase.progress": "{{done}} of {{total}} chapters imported",
 

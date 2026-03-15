@@ -3,7 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enums\WikiEntryKind;
+use App\Http\Requests\StoreCharacterRequest;
+use App\Http\Requests\StoreWikiEntryRequest;
+use App\Http\Requests\UpdateCharacterRequest;
+use App\Http\Requests\UpdateWikiEntryRequest;
 use App\Models\Book;
+use App\Models\Character;
+use App\Models\WikiEntry;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -49,5 +56,57 @@ class WikiController extends Controller
             'lore' => $wikiEntries->where('kind', WikiEntryKind::Lore)->values(),
             'tab' => $tab,
         ]);
+    }
+
+    public function storeCharacter(StoreCharacterRequest $request, Book $book): RedirectResponse
+    {
+        $book->characters()->create([
+            ...$request->safe()->except('role'),
+            'is_ai_extracted' => false,
+        ]);
+
+        return redirect()->route('books.wiki', ['book' => $book, 'tab' => 'characters']);
+    }
+
+    public function updateCharacter(UpdateCharacterRequest $request, Book $book, Character $character): RedirectResponse
+    {
+        $character->update($request->safe()->except('role'));
+
+        return redirect()->route('books.wiki', ['book' => $book, 'tab' => 'characters']);
+    }
+
+    public function destroyCharacter(Book $book, Character $character): RedirectResponse
+    {
+        $character->delete();
+
+        return redirect()->route('books.wiki', ['book' => $book, 'tab' => 'characters']);
+    }
+
+    public function storeEntry(StoreWikiEntryRequest $request, Book $book): RedirectResponse
+    {
+        $data = $request->validated();
+        $tab = $data['kind'];
+
+        $book->wikiEntries()->create([
+            ...$data,
+            'is_ai_extracted' => false,
+        ]);
+
+        return redirect()->route('books.wiki', ['book' => $book, 'tab' => $tab]);
+    }
+
+    public function updateEntry(UpdateWikiEntryRequest $request, Book $book, WikiEntry $wikiEntry): RedirectResponse
+    {
+        $wikiEntry->update($request->validated());
+
+        return redirect()->route('books.wiki', ['book' => $book, 'tab' => $wikiEntry->kind->value]);
+    }
+
+    public function destroyEntry(Book $book, WikiEntry $wikiEntry): RedirectResponse
+    {
+        $tab = $wikiEntry->kind->value;
+        $wikiEntry->delete();
+
+        return redirect()->route('books.wiki', ['book' => $book, 'tab' => $tab]);
     }
 }

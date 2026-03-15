@@ -61,7 +61,7 @@ function UploadPhase({
     }
 
     return (
-        <div className="flex flex-1 flex-col items-center px-10 pt-20 gap-8">
+        <div className="flex flex-1 flex-col items-center px-10 pt-20 pb-16 gap-8">
             <div className="flex flex-col items-center gap-2">
                 <h1 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">{book.title}</h1>
                 <p className="text-sm leading-[18px] text-ink-muted">
@@ -83,6 +83,32 @@ function UploadPhase({
                         ))}
                     </div>
                 )}
+            </div>
+
+            <div className="w-[480px] pt-6">
+                <p className="text-[11px] font-medium uppercase leading-[14px] tracking-[0.08em] text-ink-faint">
+                    {t('importGuide.label')}
+                </p>
+                <div className="mt-5 flex flex-col">
+                    {([1, 2, 3] as const).map((step, i) => (
+                        <div
+                            key={step}
+                            className={`flex items-start gap-4 py-4 ${i < 2 ? 'border-b border-border-light' : ''}`}
+                        >
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-[11px] font-medium text-ink-muted">
+                                {step}
+                            </span>
+                            <div className="flex flex-col gap-1">
+                                <p className="text-sm font-medium leading-[18px] text-ink">
+                                    {t(`importGuide.step${step}.title`)}
+                                </p>
+                                <p className="text-[13px] leading-5 text-ink-soft">
+                                    {t(`importGuide.step${step}.description`)}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
 
             <div className="flex items-center gap-4 pt-4">
@@ -136,7 +162,7 @@ function ParsingPhase({
     }));
 
     return (
-        <div className="flex flex-1 flex-col items-center px-10 pt-20 gap-10">
+        <div className="flex flex-1 flex-col items-center px-10 pt-20 pb-16 gap-10">
             <div className="flex flex-col items-center gap-2">
                 <h1 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">{book.title}</h1>
                 <p className="text-sm leading-[18px] text-ink-muted">{t('parsingPhase.subtitle')}</p>

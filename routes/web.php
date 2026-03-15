@@ -36,6 +36,12 @@ Route::get('/books/{book}/dashboard', [DashboardController::class, 'show'])->nam
 Route::put('/books/{book}/writing-goal', [WritingGoalController::class, 'update'])->name('books.writing-goal.update');
 Route::patch('/books/{book}/milestone/dismiss', [DashboardController::class, 'dismissMilestone'])->name('books.milestone.dismiss');
 Route::get('/books/{book}/wiki', [WikiController::class, 'index'])->name('books.wiki');
+Route::post('/books/{book}/characters', [WikiController::class, 'storeCharacter'])->name('characters.store');
+Route::patch('/books/{book}/characters/{character}', [WikiController::class, 'updateCharacter'])->name('characters.update');
+Route::delete('/books/{book}/characters/{character}', [WikiController::class, 'destroyCharacter'])->name('characters.destroy');
+Route::post('/books/{book}/wiki-entries', [WikiController::class, 'storeEntry'])->name('wikiEntries.store');
+Route::patch('/books/{book}/wiki-entries/{wikiEntry}', [WikiController::class, 'updateEntry'])->name('wikiEntries.update');
+Route::delete('/books/{book}/wiki-entries/{wikiEntry}', [WikiController::class, 'destroyEntry'])->name('wikiEntries.destroy');
 Route::get('/books/{book}/plot', [PlotController::class, 'index'])->name('books.plot');
 
 Route::post('/books/{book}/plot-points', [PlotPointController::class, 'store'])->name('plotPoints.store');

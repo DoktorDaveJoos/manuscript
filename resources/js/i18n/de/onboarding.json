@@ -61,6 +61,14 @@
     "uploadPhase.importFiles_one": "{{count}} Datei importieren",
     "uploadPhase.importFiles_other": "{{count}} Dateien importieren",
 
+    "importGuide.label": "So funktioniert der Import",
+    "importGuide.step1.title": "Eine Datei pro Handlungsstrang",
+    "importGuide.step1.description": "Jede .docx-Datei wird zu einem eigenen Handlungsstrang. Haupthandlung und Vorgeschichte? Verwende zwei separate Dateien.",
+    "importGuide.step2.title": "Kapitel entstehen aus Überschriften-Formatvorlagen",
+    "importGuide.step2.description": "Wir teilen Kapitel überall dort, wo dein Dokument Überschrift 1 oder Überschrift 2 verwendet. Fetter Text allein wird nicht erkannt — nutze Words eingebaute Formatvorlagen.",
+    "importGuide.step3.title": "Keine Überschriften? Kein Problem.",
+    "importGuide.step3.description": "Wenn wir keine Überschriften finden, wird die Datei als einzelnes Kapitel importiert. Du kannst sie später im Editor aufteilen.",
+
     "parsingPhase.subtitle": "Manuskript wird gelesen …",
     "parsingPhase.progress": "{{done}} von {{total}} Kapiteln importiert",
 
