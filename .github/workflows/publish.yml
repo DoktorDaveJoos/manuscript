@@ -40,8 +40,12 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           sed -i '' "s/NATIVEPHP_APP_VERSION=.*/NATIVEPHP_APP_VERSION=${VERSION}/" .env
 
+      - name: Configure git remote
+        run: git remote set-url origin https://github.com/DoktorDaveJoos/manuscript.git
+
       - name: Build and publish
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NATIVEPHP_UPDATER_PROVIDER: github
           GITHUB_REPO: manuscript
           GITHUB_OWNER: DoktorDaveJoos
