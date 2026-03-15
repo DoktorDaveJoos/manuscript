@@ -71,5 +71,36 @@
     "readingOrder.confirmTitle": "Kapitel automatisch verschachteln?",
     "readingOrder.confirmMessage": "Dies ordnet alle {{count}} Kapitel basierend auf Akt- und Erz\u00e4hlstrangstruktur neu. Fortfahren?",
     "readingOrder.confirmCancel": "Abbrechen",
-    "readingOrder.confirmContinue": "Fortfahren"
+    "readingOrder.confirmContinue": "Fortfahren",
+
+    "emptyState.title": "Gib deiner Geschichte Struktur",
+    "emptyState.subtitle": "Teile deine Geschichte in bedeutungsvolle Bögen — ein Anfang, der fesselt, eine Mitte, die Spannung aufbaut, und ein Ende, das nachklingt. Wähle eine Struktur, die zu deiner Geschichte passt.",
+    "emptyState.hint": "Du kannst die Struktur nach dem Erstellen jederzeit anpassen.",
+    "emptyState.templateMeta": "{{acts}} Akte · {{beats}} Beats",
+    "emptyState.template.three_act.name": "Drei-Akt-Struktur",
+    "emptyState.template.three_act.description": "Einführung → Konfrontation → Auflösung. Das universellste Erzählgerüst.",
+    "emptyState.template.five_act.name": "Fünf-Akt-Struktur",
+    "emptyState.template.five_act.description": "Die klassische dramatische Struktur: Exposition, steigende Handlung, Klimax, fallende Handlung, Auflösung.",
+    "emptyState.template.heros_journey.name": "Heldenreise",
+    "emptyState.template.heros_journey.description": "Die mythische Quest in 12 Stationen. Perfekt für Fantasy, Abenteuer und Coming-of-Age.",
+
+    "wizard.stepLabel": "Schritt {{current}} von {{total}}",
+    "wizard.back": "Zurück",
+    "wizard.next": "Weiter",
+    "wizard.createStructure": "Struktur erstellen",
+
+    "wizard.customize.title": "Passe deine Akte an",
+    "wizard.customize.actNamePlaceholder": "Aktname…",
+    "wizard.customize.beatCount": "{{count}} Beats",
+    "wizard.customize.beatNamePlaceholder": "Beatname…",
+    "wizard.customize.addBeat": "Beat hinzufügen",
+
+    "wizard.map-chapters.title": "Kapitel den Akten zuordnen",
+    "wizard.mapChapters.description": "Ziehe deine bestehenden Kapitel in die Akte, um sie in deine neue Erzählstruktur einzuordnen.",
+    "wizard.mapChapters.unassigned": "Nicht zugeordnete Kapitel",
+    "wizard.mapChapters.dropHere": "Kapitel hierher ziehen",
+
+    "wizard.review.title": "Bereit, deinen Plot aufzubauen",
+    "wizard.review.summary": "Wir erstellen {{acts}} Akte mit {{beats}} Story-Beats. Jeder Beat ist ein Handlungspunkt, den du nach und nach ausarbeiten kannst.",
+    "wizard.review.chaptersAssigned": "{{count}} Kap."
 }

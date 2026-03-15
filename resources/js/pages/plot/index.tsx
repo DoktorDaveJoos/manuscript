@@ -2,11 +2,14 @@ import { interleave as interleaveChapters, reorder as reorderChapters } from '@/
 import { store as storePlotPoint, update as updatePlotPoint } from '@/actions/App/Http/Controllers/PlotPointController';
 import Sidebar from '@/components/editor/Sidebar';
 import DetailPanel from '@/components/plot/DetailPanel';
+import PlotEmptyState from '@/components/plot/PlotEmptyState';
 import PlotPointList from '@/components/plot/PlotPointList';
+import PlotWizardModal from '@/components/plot/PlotWizardModal';
 import ReadingOrderPanel from '@/components/plot/ReadingOrderPanel';
 import SwimLaneTimeline from '@/components/plot/SwimLaneTimeline';
 import { getXsrfToken } from '@/lib/csrf';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
+import type { PlotTemplate } from '@/lib/plot-templates';
 import type { Act, Book, Chapter, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
@@ -40,9 +43,11 @@ export default function Plot({ book, storylines, acts, plotPoints, connections, 
     const [activeTab, setActiveTab] = useState<Tab>('timeline');
     const [selectedPlotPointId, setSelectedPlotPointId] = useState<number | null>(null);
     const selectedPlotPoint = selectedPlotPointId ? plotPoints.find((pp) => pp.id === selectedPlotPointId) ?? null : null;
+    const [selectedTemplate, setSelectedTemplate] = useState<PlotTemplate | null>(null);
     const [storylineFilter, setStorylineFilter] = useState<Set<number>>(new Set());
     const [filterOpen, setFilterOpen] = useState(false);
     const filterRef = useRef<HTMLDivElement>(null);
+    const hasActs = acts.length > 0;
 
     useEffect(() => {
         if (!filterOpen) return;
@@ -139,136 +144,169 @@ export default function Plot({ book, storylines, acts, plotPoints, connections, 
                 <Sidebar book={book} storylines={sidebarStorylines} scenesVisible={false} onScenesVisibleChange={() => {}} />
 
                 <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-                    {/* Header bar */}
-                    <div className="flex h-12 items-center justify-between border-b border-border px-5">
-                        <div className="flex h-full items-stretch gap-4">
-                            <button
-                                onClick={() => setActiveTab('timeline')}
-                                className={`flex items-center border-b-2 px-1 text-[13px] font-medium transition-colors ${
-                                    activeTab === 'timeline'
-                                        ? 'border-ink text-ink'
-                                        : 'border-transparent text-ink-muted hover:text-ink-soft'
-                                }`}
-                            >
-                                {t('page.tabs.timeline')}
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('list')}
-                                className={`flex items-center border-b-2 px-1 text-[13px] font-medium transition-colors ${
-                                    activeTab === 'list'
-                                        ? 'border-ink text-ink'
-                                        : 'border-transparent text-ink-muted hover:text-ink-soft'
-                                }`}
-                            >
-                                {t('page.tabs.list')}
-                            </button>
-                        </div>
+                    {hasActs ? (
+                        <>
+                            {/* Header bar */}
+                            <div className="flex h-12 items-center justify-between border-b border-border px-5">
+                                <div className="flex h-full items-stretch gap-4">
+                                    <button
+                                        onClick={() => setActiveTab('timeline')}
+                                        className={`flex items-center border-b-2 px-1 text-[13px] font-medium transition-colors ${
+                                            activeTab === 'timeline'
+                                                ? 'border-ink text-ink'
+                                                : 'border-transparent text-ink-muted hover:text-ink-soft'
+                                        }`}
+                                    >
+                                        {t('page.tabs.timeline')}
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveTab('list')}
+                                        className={`flex items-center border-b-2 px-1 text-[13px] font-medium transition-colors ${
+                                            activeTab === 'list'
+                                                ? 'border-ink text-ink'
+                                                : 'border-transparent text-ink-muted hover:text-ink-soft'
+                                        }`}
+                                    >
+                                        {t('page.tabs.list')}
+                                    </button>
+                                </div>
 
-                        <div className="flex items-center gap-2">
-                            {/* Storyline filter */}
-                            <div className="relative" ref={filterRef}>
-                                <button
-                                    onClick={() => setFilterOpen((o) => !o)}
-                                    className={cn(
-                                        'flex items-center gap-1.5 rounded border py-1.5 pl-7 pr-3 text-[13px] text-ink-soft focus:outline-none focus:ring-1 focus:ring-accent',
-                                        storylineFilter.size > 0
-                                            ? 'border-accent bg-accent/10'
-                                            : 'border-border bg-surface-card',
-                                    )}
-                                >
-                                    <Filter size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-ink-muted" />
-                                    {filterLabel}
-                                </button>
-
-                                {filterOpen && (
-                                    <div className="absolute right-0 z-50 mt-1 min-w-[200px] rounded-lg border border-border bg-surface-card py-1 shadow-lg">
+                                <div className="flex items-center gap-2">
+                                    {/* Storyline filter */}
+                                    <div className="relative" ref={filterRef}>
                                         <button
-                                            onClick={() => setStorylineFilter((prev) => (prev.size === 0 ? prev : new Set()))}
-                                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-ink-soft hover:bg-neutral-bg"
+                                            onClick={() => setFilterOpen((o) => !o)}
+                                            className={cn(
+                                                'flex items-center gap-1.5 rounded border py-1.5 pl-7 pr-3 text-[13px] text-ink-soft focus:outline-none focus:ring-1 focus:ring-accent',
+                                                storylineFilter.size > 0
+                                                    ? 'border-accent bg-accent/10'
+                                                    : 'border-border bg-surface-card',
+                                            )}
                                         >
-                                            <Check
-                                                size={14}
-                                                className={cn(
-                                                    'shrink-0',
-                                                    storylineFilter.size === 0 ? 'text-ink' : 'text-transparent',
-                                                )}
-                                            />
-                                            {t('page.allStorylines')}
+                                            <Filter size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-ink-muted" />
+                                            {filterLabel}
                                         </button>
-                                        <div className="my-1 border-t border-border" />
-                                        {storylines.map((s) => (
-                                            <button
-                                                key={s.id}
-                                                onClick={() => toggleStorylineFilter(s.id)}
-                                                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-ink-soft hover:bg-neutral-bg"
-                                            >
-                                                <Check
-                                                    size={14}
-                                                    className={cn(
-                                                        'shrink-0',
-                                                        storylineFilter.has(s.id) ? 'text-ink' : 'text-transparent',
-                                                    )}
-                                                />
-                                                <span
-                                                    className="mr-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                                                    style={{ backgroundColor: s.color }}
-                                                />
-                                                {s.name}
-                                            </button>
-                                        ))}
+
+                                        {filterOpen && (
+                                            <div className="absolute right-0 z-50 mt-1 min-w-[200px] rounded-lg border border-border bg-surface-card py-1 shadow-lg">
+                                                <button
+                                                    onClick={() => setStorylineFilter((prev) => (prev.size === 0 ? prev : new Set()))}
+                                                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-ink-soft hover:bg-neutral-bg"
+                                                >
+                                                    <Check
+                                                        size={14}
+                                                        className={cn(
+                                                            'shrink-0',
+                                                            storylineFilter.size === 0 ? 'text-ink' : 'text-transparent',
+                                                        )}
+                                                    />
+                                                    {t('page.allStorylines')}
+                                                </button>
+                                                <div className="my-1 border-t border-border" />
+                                                {storylines.map((s) => (
+                                                    <button
+                                                        key={s.id}
+                                                        onClick={() => toggleStorylineFilter(s.id)}
+                                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-ink-soft hover:bg-neutral-bg"
+                                                    >
+                                                        <Check
+                                                            size={14}
+                                                            className={cn(
+                                                                'shrink-0',
+                                                                storylineFilter.has(s.id) ? 'text-ink' : 'text-transparent',
+                                                            )}
+                                                        />
+                                                        <span
+                                                            className="mr-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                                                            style={{ backgroundColor: s.color }}
+                                                        />
+                                                        {s.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+
+                                    {/* Plot point count badge */}
+                                    <span className="rounded-full bg-neutral-bg px-2 py-0.5 text-[12px] font-medium tabular-nums text-ink-soft">
+                                        {t('page.plotPointCount', { count: plotPoints.length })}
+                                    </span>
+                                </div>
                             </div>
 
-                            {/* Plot point count badge */}
-                            <span className="rounded-full bg-neutral-bg px-2 py-0.5 text-[12px] font-medium tabular-nums text-ink-soft">
-                                {t('page.plotPointCount', { count: plotPoints.length })}
-                            </span>
-                        </div>
-                    </div>
+                            {/* Content + Detail Panel */}
+                            <div className="flex min-h-0 flex-1">
+                                <div className="flex-1 overflow-auto p-5">
+                                    {activeTab === 'timeline' ? (
+                                        <SwimLaneTimeline
+                                            acts={acts}
+                                            storylines={filteredStorylines}
+                                            plotPoints={filteredPlotPoints}
+                                            chapters={chapters}
+                                            onSelectPlotPoint={(pp) => setSelectedPlotPointId(pp.id)}
+                                            onCreatePlotPoint={handleCreatePlotPoint}
+                                        />
+                                    ) : (
+                                        <PlotPointList
+                                            acts={acts}
+                                            plotPoints={filteredPlotPoints}
+                                            storylines={storylines}
+                                            onSelectPlotPoint={(pp) => setSelectedPlotPointId(pp.id)}
+                                        />
+                                    )}
+                                </div>
 
-                    {/* Content + Detail Panel */}
-                    <div className="flex min-h-0 flex-1">
-                        <div className="flex-1 overflow-auto p-5">
-                            {activeTab === 'timeline' ? (
-                                <SwimLaneTimeline
-                                    acts={acts}
-                                    storylines={filteredStorylines}
-                                    plotPoints={filteredPlotPoints}
-                                    chapters={chapters}
-                                    onSelectPlotPoint={(pp) => setSelectedPlotPointId(pp.id)}
-                                    onCreatePlotPoint={handleCreatePlotPoint}
-                                />
-                            ) : (
-                                <PlotPointList
-                                    acts={acts}
-                                    plotPoints={filteredPlotPoints}
-                                    storylines={storylines}
-                                    onSelectPlotPoint={(pp) => setSelectedPlotPointId(pp.id)}
-                                />
-                            )}
-                        </div>
+                                {selectedPlotPoint && (
+                                    <DetailPanel
+                                        plotPoint={selectedPlotPoint}
+                                        storylines={storylines}
+                                        acts={acts}
+                                        connections={connections}
+                                        onClose={() => setSelectedPlotPointId(null)}
+                                        onUpdate={(data) => handleUpdatePlotPoint(selectedPlotPoint.id, data)}
+                                    />
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {/* Header bar — minimal for empty state */}
+                            <div className="flex h-12 items-center border-b border-border px-5">
+                                <div className="flex h-full items-stretch gap-4">
+                                    <span className="flex items-center border-b-2 border-ink px-1 text-[13px] font-medium text-ink">
+                                        {t('page.tabs.timeline')}
+                                    </span>
+                                    <span className="flex items-center border-b-2 border-transparent px-1 text-[13px] font-medium text-ink-faint">
+                                        {t('page.tabs.list')}
+                                    </span>
+                                </div>
+                            </div>
 
-                        {selectedPlotPoint && (
-                            <DetailPanel
-                                plotPoint={selectedPlotPoint}
-                                storylines={storylines}
-                                acts={acts}
-                                connections={connections}
-                                onClose={() => setSelectedPlotPointId(null)}
-                                onUpdate={(data) => handleUpdatePlotPoint(selectedPlotPoint.id, data)}
-                            />
-                        )}
-                    </div>
+                            <PlotEmptyState onSelectTemplate={setSelectedTemplate} />
+                        </>
+                    )}
                 </main>
 
-                <ReadingOrderPanel
-                    chapters={chapters}
-                    storylines={storylines}
-                    bookId={book.id}
-                    onReorder={handleReadingOrderReorder}
-                    onInterleave={handleInterleave}
-                />
+                {hasActs && (
+                    <ReadingOrderPanel
+                        chapters={chapters}
+                        storylines={storylines}
+                        bookId={book.id}
+                        onReorder={handleReadingOrderReorder}
+                        onInterleave={handleInterleave}
+                    />
+                )}
+
+                {selectedTemplate && (
+                    <PlotWizardModal
+                        book={book}
+                        template={selectedTemplate}
+                        storylines={storylines}
+                        chapters={chapters}
+                        isOpen={true}
+                        onClose={() => setSelectedTemplate(null)}
+                    />
+                )}
             </div>
         </>
     );
