@@ -15,6 +15,7 @@ use App\Http\Controllers\PlotAiController;
 use App\Http\Controllers\PlotController;
 use App\Http\Controllers\PlotPointConnectionController;
 use App\Http\Controllers\PlotPointController;
+use App\Http\Controllers\PlotSetupController;
 use App\Http\Controllers\SceneController;
 use App\Http\Controllers\StorylineController;
 use App\Http\Controllers\TrashController;
@@ -43,6 +44,7 @@ Route::post('/books/{book}/wiki-entries', [WikiController::class, 'storeEntry'])
 Route::patch('/books/{book}/wiki-entries/{wikiEntry}', [WikiController::class, 'updateEntry'])->name('wikiEntries.update');
 Route::delete('/books/{book}/wiki-entries/{wikiEntry}', [WikiController::class, 'destroyEntry'])->name('wikiEntries.destroy');
 Route::get('/books/{book}/plot', [PlotController::class, 'index'])->name('books.plot');
+Route::post('/books/{book}/plot/setup-structure', [PlotSetupController::class, 'store'])->name('books.plot.setupStructure');
 
 Route::post('/books/{book}/plot-points', [PlotPointController::class, 'store'])->name('plotPoints.store');
 Route::patch('/books/{book}/plot-points/{plotPoint}', [PlotPointController::class, 'update'])->name('plotPoints.update');

@@ -73,5 +73,36 @@
     "readingOrder.confirmTitle": "Auto-interleave chapters?",
     "readingOrder.confirmMessage": "This will reorder all {{count}} chapters based on act and storyline structure. Continue?",
     "readingOrder.confirmCancel": "Cancel",
-    "readingOrder.confirmContinue": "Continue"
+    "readingOrder.confirmContinue": "Continue",
+
+    "emptyState.title": "Give your story structure",
+    "emptyState.subtitle": "Divide your story into meaningful arcs — a beginning that hooks, a middle that builds tension, and an ending that resonates. Choose a structure that fits your story.",
+    "emptyState.hint": "You can always customize the structure after creating it.",
+    "emptyState.templateMeta": "{{acts}} acts · {{beats}} beats",
+    "emptyState.template.three_act.name": "Three-Act Structure",
+    "emptyState.template.three_act.description": "Setup → Confrontation → Resolution. The most universal storytelling framework.",
+    "emptyState.template.five_act.name": "Five-Act Structure",
+    "emptyState.template.five_act.description": "The classic dramatic structure: exposition, rising action, climax, falling action, resolution.",
+    "emptyState.template.heros_journey.name": "Hero's Journey",
+    "emptyState.template.heros_journey.description": "The mythic quest in 12 stages. Perfect for fantasy, adventure, and coming-of-age.",
+
+    "wizard.stepLabel": "Step {{current}} of {{total}}",
+    "wizard.back": "Back",
+    "wizard.next": "Next",
+    "wizard.createStructure": "Create Structure",
+
+    "wizard.customize.title": "Customize your acts",
+    "wizard.customize.actNamePlaceholder": "Act name...",
+    "wizard.customize.beatCount": "{{count}} beats",
+    "wizard.customize.beatNamePlaceholder": "Beat name...",
+    "wizard.customize.addBeat": "Add beat",
+
+    "wizard.map-chapters.title": "Map chapters to acts",
+    "wizard.mapChapters.description": "Drag your existing chapters into acts to organize them within your new story structure.",
+    "wizard.mapChapters.unassigned": "Unassigned chapters",
+    "wizard.mapChapters.dropHere": "Drop chapters here",
+
+    "wizard.review.title": "Ready to build your plot",
+    "wizard.review.summary": "We'll create {{acts}} acts with {{beats}} story beats. Each beat is a plot point you can fill in as your story develops.",
+    "wizard.review.chaptersAssigned": "{{count}} ch"
 }
