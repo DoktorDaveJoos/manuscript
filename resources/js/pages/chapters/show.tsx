@@ -411,25 +411,22 @@ export default function ChapterShow({
         <>
             <Head title={`${displayTitle} — ${book.title}`} />
             <div className="flex h-screen overflow-hidden bg-surface">
-                <div
-                    className={`overflow-hidden transition-[width,opacity] duration-300 ${isFocusMode ? 'w-0 opacity-0' : 'w-60'}`}
-                >
-                    <Sidebar
-                        book={book}
-                        storylines={sidebarStorylines}
-                        activeChapterId={chapter.id}
-                        activeChapterTitle={displayTitle}
-                        activeChapterWordCount={wordCount}
-                        onBeforeNavigate={handleBeforeNavigate}
-                        activeScenes={scenes}
-                        onSceneRename={handleSidebarSceneRename}
-                        onSceneDelete={handleSidebarSceneDelete}
-                        onSceneReorder={handleSidebarSceneReorder}
-                        onSceneAdd={handleAddScene}
-                        scenesVisible={scenesVisible}
-                        onScenesVisibleChange={handleScenesVisibleChange}
-                    />
-                </div>
+                <Sidebar
+                    book={book}
+                    storylines={sidebarStorylines}
+                    activeChapterId={chapter.id}
+                    activeChapterTitle={displayTitle}
+                    activeChapterWordCount={wordCount}
+                    onBeforeNavigate={handleBeforeNavigate}
+                    activeScenes={scenes}
+                    onSceneRename={handleSidebarSceneRename}
+                    onSceneDelete={handleSidebarSceneDelete}
+                    onSceneReorder={handleSidebarSceneReorder}
+                    onSceneAdd={handleAddScene}
+                    scenesVisible={scenesVisible}
+                    onScenesVisibleChange={handleScenesVisibleChange}
+                    isFocusMode={isFocusMode}
+                />
 
                 <div className="relative flex min-w-0 flex-1 flex-col">
                     <div className="relative">

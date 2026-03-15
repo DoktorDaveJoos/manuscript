@@ -35,7 +35,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 function pillClass(active: boolean): string {
     return `rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
         active
-            ? 'bg-ink text-white'
+            ? 'bg-ink text-surface'
             : 'border border-border bg-surface-card text-ink-muted hover:border-ink hover:text-ink'
     }`;
 }
@@ -180,7 +180,7 @@ export default function Export({ book, storylines }: Props) {
                         type="button"
                         onClick={handleExport}
                         disabled={exporting}
-                        className="h-10 rounded-md bg-ink px-6 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                        className="h-10 rounded-md bg-ink px-6 text-[14px] font-medium text-surface transition-opacity hover:opacity-90 disabled:opacity-50"
                     >
                         {exporting ? t('export.exporting') : t('export.exportManuscript')}
                     </button>

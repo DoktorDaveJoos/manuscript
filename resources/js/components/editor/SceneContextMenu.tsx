@@ -1,5 +1,5 @@
 import type { Scene } from '@/types/models';
-import { PencilSimple, Trash } from '@phosphor-icons/react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -47,7 +47,7 @@ export default function SceneContextMenu({
                     }}
                     className={itemClass}
                 >
-                    <PencilSimple size={15} className="shrink-0 text-ink-muted" />
+                    <Pencil size={14} className="shrink-0 text-ink-muted" />
                     {t('contextMenu.rename')}
                 </button>
 
@@ -63,7 +63,7 @@ export default function SceneContextMenu({
                             }}
                             className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] font-medium leading-[18px] text-delete transition-colors hover:bg-neutral-bg"
                         >
-                            <Trash size={15} className="shrink-0" />
+                            <Trash2 size={14} className="shrink-0" />
                             {t('contextMenu.delete')}
                         </button>
                     </>

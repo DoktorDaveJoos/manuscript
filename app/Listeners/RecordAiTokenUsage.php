@@ -32,6 +32,21 @@ class RecordAiTokenUsage
             $event->response->meta->provider,
         );
 
-        $agent->book()->recordAiUsage($inputTokens, $outputTokens, $cost);
+        $feature = $this->resolveFeature($agent);
+
+        $agent->book()->recordAiUsage($inputTokens, $outputTokens, $cost, $feature, $model);
+    }
+
+    private function resolveFeature(BelongsToBook $agent): string
+    {
+        return match (class_basename($agent)) {
+            'BookChatAgent' => 'chat',
+            'ChapterAnalyzer', 'ManuscriptAnalyzer' => 'analysis',
+            'ProseReviser', 'NextChapterAdvisor' => 'suggestions',
+            'TextBeautifier' => 'beautify',
+            'StoryBibleBuilder' => 'story_bible',
+            'EntityExtractor', 'EntityConsolidator' => 'entity_extraction',
+            default => 'other',
+        };
     }
 }

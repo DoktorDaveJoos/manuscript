@@ -1,15 +1,15 @@
 import { cn } from '@/lib/utils';
 import {
-    ArrowArcLeft,
-    ArrowArcRight,
+    AlignCenter,
+    AlignLeft,
     Keyboard,
-    ListBullets,
-    ListNumbers,
-    MagnifyingGlass,
-    Quotes,
-    TextAlignCenter,
-    TextAlignLeft,
-} from '@phosphor-icons/react';
+    List,
+    ListOrdered,
+    Quote,
+    Redo2,
+    Search,
+    Undo2,
+} from 'lucide-react';
 import type { Editor } from '@tiptap/react';
 import { useEditorState } from '@tiptap/react';
 import { useTranslation } from 'react-i18next';
@@ -120,14 +120,14 @@ export default function FormattingToolbar({
                 onClick={() => run(() => editor!.chain().focus().undo().run())}
                 title={t('toolbar.undo')}
             >
-                <ArrowArcLeft size={14} weight="regular" />
+                <Undo2 size={14} />
             </ToolbarButton>
             <ToolbarButton
                 disabled={!editorState.canRedo}
                 onClick={() => run(() => editor!.chain().focus().redo().run())}
                 title={t('toolbar.redo')}
             >
-                <ArrowArcRight size={14} weight="regular" />
+                <Redo2 size={14} />
             </ToolbarButton>
 
             <ToolbarDivider />
@@ -174,35 +174,35 @@ export default function FormattingToolbar({
                 onClick={() => run(() => editor!.chain().focus().setTextAlign('left').run())}
                 title={t('toolbar.alignLeft')}
             >
-                <TextAlignLeft size={14} weight="regular" />
+                <AlignLeft size={14} />
             </ToolbarButton>
             <ToolbarButton
                 active={editorState.isAlignCenter}
                 onClick={() => run(() => editor!.chain().focus().setTextAlign('center').run())}
                 title={t('toolbar.alignCenter')}
             >
-                <TextAlignCenter size={14} weight="regular" />
+                <AlignCenter size={14} />
             </ToolbarButton>
             <ToolbarButton
                 active={editorState.isBlockquote}
                 onClick={() => run(() => editor!.chain().focus().toggleBlockquote().run())}
                 title={t('toolbar.blockquote')}
             >
-                <Quotes size={14} weight="regular" />
+                <Quote size={14} />
             </ToolbarButton>
             <ToolbarButton
                 active={editorState.isBulletList}
                 onClick={() => run(() => editor!.chain().focus().toggleBulletList().run())}
                 title={t('toolbar.bulletList')}
             >
-                <ListBullets size={14} weight="regular" />
+                <List size={14} />
             </ToolbarButton>
             <ToolbarButton
                 active={editorState.isOrderedList}
                 onClick={() => run(() => editor!.chain().focus().toggleOrderedList().run())}
                 title={t('toolbar.orderedList')}
             >
-                <ListNumbers size={14} weight="regular" />
+                <ListOrdered size={14} />
             </ToolbarButton>
 
             {/* Spacer */}
@@ -214,14 +214,14 @@ export default function FormattingToolbar({
                 onClick={() => {}}
                 title={t('toolbar.searchComingSoon')}
             >
-                <MagnifyingGlass size={14} weight="regular" />
+                <Search size={14} />
             </ToolbarButton>
             <ToolbarButton
                 active={isTypewriterMode}
                 onClick={() => onTypewriterToggle?.()}
                 title={t('toolbar.typewriterMode')}
             >
-                <Keyboard size={14} weight="regular" />
+                <Keyboard size={14} />
             </ToolbarButton>
 
             <TextActionsDropdown

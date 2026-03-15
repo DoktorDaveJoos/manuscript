@@ -91,6 +91,6 @@ class EmbeddingService
         $model = $response->meta->model ?? 'unknown';
         $cost = $this->usageService->calculateEmbeddingCost($response->tokens, $model);
 
-        $book->recordAiUsage($response->tokens, 0, $cost);
+        $book->recordAiUsage($response->tokens, 0, $cost, 'embedding', $response->meta->model ?? null);
     }
 }

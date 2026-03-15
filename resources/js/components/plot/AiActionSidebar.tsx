@@ -105,7 +105,7 @@ export default function AiActionSidebar({
                 <>
                     {/* Header */}
                     <div className="flex h-12 items-center justify-between border-b border-border px-4">
-                        <span className="text-xs font-semibold uppercase tracking-[0.06em] text-ink">
+                        <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink">
                             {t('aiActions.header')}
                         </span>
                         <button

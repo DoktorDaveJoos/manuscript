@@ -298,6 +298,10 @@ Wayfinder generates TypeScript functions for Laravel routes. Import from `@/acti
 ## Cortex
 - Cortex folder for this project: `MANUSCRIPT`
 
+## Mockups & Visual Design
+
+- Always use Pencil (.pen files) for mockups and visual design work. Never use browser-based visual companions.
+
 ## Workflow Preferences
 
 - When the user asks for implementation, prioritize code changes over planning documents. Only produce a plan if explicitly asked for one.

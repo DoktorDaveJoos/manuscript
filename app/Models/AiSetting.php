@@ -49,7 +49,11 @@ class AiSetting extends Model
      */
     public function isConfigured(): bool
     {
-        return $this->hasApiKey() || ! $this->provider->requiresApiKey();
+        if ($this->provider->requiresApiKey()) {
+            return $this->hasApiKey();
+        }
+
+        return filled($this->base_url);
     }
 
     /**

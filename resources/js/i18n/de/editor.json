@@ -88,7 +88,7 @@
     "diff.rulesPassing": "{{passing}}/{{total}} bestanden",
     "diff.ruleFound": "{{count}} gefunden",
     "diff.sourceLabel.original": "Original",
-    "diff.sourceLabel.ai_revision": "KI-Stilprüfung",
+    "diff.sourceLabel.ai_revision": "KI-Überarbeitung",
     "diff.sourceLabel.manual_edit": "Manuelle Bearbeitung",
     "diff.sourceLabel.normalization": "Normalisierung",
     "diff.sourceLabel.beautify": "Verschönerung",

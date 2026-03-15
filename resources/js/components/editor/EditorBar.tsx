@@ -1,6 +1,6 @@
 import Kbd from '@/components/ui/Kbd';
 import type { Chapter } from '@/types/models';
-import { ClockCounterClockwise } from '@phosphor-icons/react';
+import { History } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import StatusBadge from './StatusBadge';
 
@@ -48,7 +48,7 @@ export default function EditorBar({
                     onClick={onVersionClick}
                     className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
                 >
-                    <ClockCounterClockwise size={12} />
+                    <History size={12} />
                     v{versionCount}
                 </button>
                 <Kbd keys="⇧Tab" />

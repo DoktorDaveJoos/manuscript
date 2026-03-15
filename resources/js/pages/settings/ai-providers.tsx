@@ -99,7 +99,7 @@ function ProviderCard({
             });
     }, [setting.provider]);
 
-    const configured = setting.has_api_key || !setting.requires_api_key;
+    const configured = setting.requires_api_key ? setting.has_api_key : !!setting.base_url;
 
     return (
         <div className={`rounded-lg border border-border bg-surface-card ${locked ? 'opacity-50' : ''}`}>
@@ -225,7 +225,7 @@ function ProviderCard({
                             <button
                                 type="submit"
                                 disabled={saving}
-                                className="h-8 rounded-md bg-ink px-3.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                                className="h-8 rounded-md bg-ink px-3.5 text-[13px] font-medium text-surface transition-opacity hover:opacity-90 disabled:opacity-50"
                             >
                                 {saving ? t('aiProviders.saving') : t('aiProviders.save')}
                             </button>

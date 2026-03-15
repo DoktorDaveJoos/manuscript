@@ -1,6 +1,6 @@
 import { chat } from '@/actions/App/Http/Controllers/AiController';
 import { jsonFetchHeaders } from '@/lib/utils';
-import { ChatCircle, PaperPlaneTilt, X } from '@phosphor-icons/react';
+import { MessageCircle, Send, X } from 'lucide-react';
 import MarkdownIt from 'markdown-it';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -225,15 +225,15 @@ export default function AiChatDrawer({
             {/* Header */}
             <div className="flex h-12 items-center justify-between border-b border-border-subtle px-5">
                 <div className="flex items-center gap-2">
-                    <ChatCircle size={14} weight="fill" className="text-ink" />
-                    <span className="text-xs font-semibold uppercase tracking-[0.06em] text-ink">{t('askAi')}</span>
+                    <MessageCircle size={14} fill="currentColor" className="text-ink" />
+                    <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink">{t('askAi')}</span>
                 </div>
                 <button
                     type="button"
                     onClick={onClose}
                     className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:text-ink"
                 >
-                    <X size={14} weight="bold" />
+                    <X size={14} strokeWidth={2.5} />
                 </button>
             </div>
 
@@ -283,9 +283,9 @@ export default function AiChatDrawer({
                     type="button"
                     onClick={handleSend}
                     disabled={!input.trim() || isStreaming}
-                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ink text-white transition-colors hover:bg-ink/90 disabled:opacity-40"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ink text-surface transition-colors hover:bg-ink/90 disabled:opacity-50"
                 >
-                    <PaperPlaneTilt size={14} weight="fill" />
+                    <Send size={14} fill="currentColor" />
                 </button>
             </div>
         </aside>

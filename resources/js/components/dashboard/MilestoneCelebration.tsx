@@ -45,55 +45,54 @@ export default function MilestoneCelebration({
 
     return (
         <div
-            className={`rounded-xl border border-accent/20 bg-accent/5 px-8 py-8 transition-all duration-700 ${
+            className={`rounded-xl border border-border-light bg-surface-card px-9 py-8 transition-all duration-700 ${
                 visible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
             }`}
         >
-            <div className="flex items-start justify-between">
+            <div className="flex items-end justify-between">
                 <div>
-                    <p className="font-serif text-[32px] leading-[40px] text-ink">
+                    <p className="font-serif text-[44px] font-extrabold leading-[1] text-ink">
                         {t('milestone.words', { value: target.total_words.toLocaleString(i18n.language) })}
                     </p>
-                    <p className="mt-0.5 font-serif text-[32px] leading-[40px] text-ink-muted">
+                    <p className="mt-1 font-serif text-[44px] font-light leading-[1] text-ink-faint">
                         {t('milestone.days', { count: target.days_writing })}
                     </p>
                 </div>
+
+                <div className="flex items-end gap-8">
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">{t('milestone.totalWords')}</span>
+                        <span className="font-serif text-[22px] font-semibold leading-[1] text-ink">
+                            {target.target_word_count?.toLocaleString(i18n.language) ?? '—'}
+                        </span>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">{t('milestone.wordCount')}</span>
+                        <span className="font-serif text-[22px] font-semibold leading-[1] text-ink">
+                            {target.total_words.toLocaleString(i18n.language)}
+                        </span>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">{t('milestone.dailyAvg')}</span>
+                        <span className="font-serif text-[22px] font-semibold leading-[1] text-ink">
+                            {target.days_writing > 0 ? Math.round(target.total_words / target.days_writing).toLocaleString(i18n.language) : '—'}
+                        </span>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">{t('milestone.lastEdit')}</span>
+                        <span className="font-serif text-[22px] font-semibold leading-[1] text-ink">
+                            {reachedDate ?? '—'}
+                        </span>
+                    </div>
+                </div>
+
                 <button
                     type="button"
                     onClick={handleDismiss}
-                    className="mt-1 text-xs text-ink-faint transition-colors hover:text-ink"
+                    className="mb-1 shrink-0 text-xs text-ink-faint transition-colors hover:text-ink"
                 >
                     {t('milestone.dismiss')}
                 </button>
-            </div>
-
-            <div className="mt-6 flex gap-8">
-                <div className="flex flex-col gap-0.5">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">{t('milestone.target')}</span>
-                    <span className="font-serif text-[18px] leading-[22px] text-ink">
-                        {target.target_word_count?.toLocaleString(i18n.language)}
-                    </span>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">{t('milestone.written')}</span>
-                    <span className="font-serif text-[18px] leading-[22px] text-ink">
-                        {target.total_words.toLocaleString(i18n.language)}
-                    </span>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">
-                        {t('milestone.daysWriting')}
-                    </span>
-                    <span className="font-serif text-[18px] leading-[22px] text-ink">{target.days_writing}</span>
-                </div>
-                {reachedDate && (
-                    <div className="flex flex-col gap-0.5">
-                        <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">
-                            {t('milestone.reached')}
-                        </span>
-                        <span className="font-serif text-[18px] leading-[22px] text-ink">{reachedDate}</span>
-                    </div>
-                )}
             </div>
         </div>
     );

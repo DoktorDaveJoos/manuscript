@@ -1,5 +1,5 @@
 import { writingStyle } from '@/actions/App/Http/Controllers/BookSettingsController';
-import { CaretUpDown, Check } from '@phosphor-icons/react';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { useState, useRef, useEffect } from 'react';
 
@@ -39,7 +39,7 @@ export default function BookSwitcher({
                 className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-faint transition-colors hover:bg-neutral-bg"
             >
                 <span className="truncate">{currentBook.title}</span>
-                <CaretUpDown size={12} weight="bold" className="shrink-0" />
+                <ChevronsUpDown size={12} strokeWidth={2.5} className="shrink-0" />
             </button>
 
             {open && books.length > 1 && (
@@ -53,7 +53,7 @@ export default function BookSwitcher({
                         >
                             <Check
                                 size={12}
-                                weight="bold"
+                                strokeWidth={2.5}
                                 className={`shrink-0 ${book.id === currentBook.id ? 'opacity-100' : 'opacity-0'}`}
                             />
                             <span className="truncate">{book.title}</span>

@@ -88,7 +88,7 @@
     "diff.rulesPassing": "{{passing}}/{{total}} passing",
     "diff.ruleFound": "{{count}} found",
     "diff.sourceLabel.original": "original",
-    "diff.sourceLabel.ai_revision": "ai prose pass",
+    "diff.sourceLabel.ai_revision": "ai revision",
     "diff.sourceLabel.manual_edit": "manual edit",
     "diff.sourceLabel.normalization": "normalize",
     "diff.sourceLabel.beautify": "beautify",

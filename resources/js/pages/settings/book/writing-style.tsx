@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import {
     updateWritingStyle,
-    regenerateWritingStyle,
 } from '@/actions/App/Http/Controllers/BookSettingsController';
 import SettingsLayout from '@/layouts/SettingsLayout';
 import { getXsrfToken } from '@/lib/csrf';
@@ -22,7 +21,6 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
     const { t } = useTranslation('settings');
     const [text, setText] = useState(book.writing_style_text ?? writing_style_display);
     const [saving, setSaving] = useState(false);
-    const [regenerating, setRegenerating] = useState(false);
     const [message, setMessage] = useState('');
 
     const handleSave = useCallback(() => {
@@ -48,32 +46,6 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
             .finally(() => setSaving(false));
     }, [book, text]);
 
-    const handleRegenerate = useCallback(() => {
-        setRegenerating(true);
-        setMessage('');
-
-        fetch(regenerateWritingStyle.url(book), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-XSRF-TOKEN': getXsrfToken(),
-                Accept: 'application/json',
-            },
-        })
-            .then(async (res) => {
-                const json = await res.json();
-                if (!res.ok) {
-                    setMessage(json.message || t('writingStyle.regenerateFailed'));
-                    return;
-                }
-                setText(json.writing_style_text);
-                setMessage(json.message);
-                setTimeout(() => setMessage(''), 3000);
-            })
-            .catch(() => setMessage(t('writingStyle.regenerateFailed')))
-            .finally(() => setRegenerating(false));
-    }, [book]);
-
     return (
         <SettingsLayout activeSection="writing-style" book={book} title={t('writingStyle.pageTitle', { bookTitle: book.title })}>
             <div className="flex flex-col gap-4">
@@ -84,14 +56,6 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
                             {t('writingStyle.description')}
                         </p>
                     </div>
-                    <button
-                        type="button"
-                        onClick={handleRegenerate}
-                        disabled={regenerating}
-                        className="h-8 rounded-md border border-border px-3.5 text-[13px] font-medium text-ink transition-colors hover:bg-neutral-bg disabled:opacity-50"
-                    >
-                        {regenerating ? t('writingStyle.regenerating') : t('writingStyle.regenerate')}
-                    </button>
                 </div>
 
                 <div>

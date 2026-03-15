@@ -107,7 +107,7 @@ export default function LicensePage({ book }: Props) {
                                 <button
                                     type="submit"
                                     disabled={activating || !key}
-                                    className="h-9 rounded-md bg-accent px-4 text-[13px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                                    className="h-9 rounded-md bg-accent px-4 text-[13px] font-medium text-surface transition-opacity hover:opacity-90 disabled:opacity-50"
                                 >
                                     {activating ? t('license.activating') : t('license.activate')}
                                 </button>

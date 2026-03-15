@@ -1,4 +1,4 @@
-import { Copy, DotsThreeVertical, PencilSimple, Trash } from '@phosphor-icons/react';
+import { Copy, EllipsisVertical, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -38,14 +38,14 @@ export default function BookCardMenu({
                     e.stopPropagation();
                     setOpen(!open);
                 }}
-                className="flex h-7 w-7 items-center justify-center rounded text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
             >
-                <DotsThreeVertical size={16} weight="bold" />
+                <EllipsisVertical size={14} strokeWidth={2.5} />
             </button>
 
             {open && (
-                <div className="absolute right-0 top-full z-50 mt-1 w-[180px] rounded-lg border border-border bg-surface-card shadow-lg">
-                    <div className="flex flex-col py-1">
+                <div className="absolute right-0 top-full z-50 mt-1 w-[180px] rounded-lg bg-surface-card shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]">
+                    <div className="flex flex-col p-1">
                         <button
                             type="button"
                             onClick={(e) => {
@@ -53,9 +53,9 @@ export default function BookCardMenu({
                                 setOpen(false);
                                 onRename();
                             }}
-                            className="flex items-center gap-2.5 px-3 py-2 text-left text-[13px] text-ink transition-colors hover:bg-neutral-bg"
+                            className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] text-ink-soft transition-colors hover:bg-neutral-bg"
                         >
-                            <PencilSimple size={14} className="text-ink-muted" />
+                            <Pencil size={14} className="shrink-0 text-ink-muted" />
                             {t('bookCardMenu.rename')}
                         </button>
 
@@ -66,13 +66,13 @@ export default function BookCardMenu({
                                 setOpen(false);
                                 onDuplicate();
                             }}
-                            className="flex items-center gap-2.5 px-3 py-2 text-left text-[13px] text-ink transition-colors hover:bg-neutral-bg"
+                            className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] text-ink-soft transition-colors hover:bg-neutral-bg"
                         >
-                            <Copy size={14} className="text-ink-muted" />
+                            <Copy size={14} className="shrink-0 text-ink-muted" />
                             {t('bookCardMenu.duplicate')}
                         </button>
 
-                        <div className="mx-2 my-1 border-t border-border" />
+                        <div className="mx-2 my-1 h-px bg-border" />
 
                         <button
                             type="button"
@@ -81,9 +81,9 @@ export default function BookCardMenu({
                                 setOpen(false);
                                 onDelete();
                             }}
-                            className="flex items-center gap-2.5 px-3 py-2 text-left text-[13px] text-red-600 transition-colors hover:bg-neutral-bg"
+                            className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] font-medium text-delete transition-colors hover:bg-neutral-bg"
                         >
-                            <Trash size={14} />
+                            <Trash2 size={14} />
                             {t('bookCardMenu.delete')}
                         </button>
                     </div>

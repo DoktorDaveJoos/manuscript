@@ -19,7 +19,7 @@ export default function SuggestedNext({
                 <Check size={18} className="mt-0.5 shrink-0 text-accent" />
 
                 <div className="flex flex-col gap-1.5">
-                <span className="text-[11px] font-medium uppercase tracking-[1.5px] text-accent">
+                <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-accent">
                     {t('suggestedNext.label')}
                 </span>
                 <h3 className="font-serif text-[18px] font-semibold text-ink">

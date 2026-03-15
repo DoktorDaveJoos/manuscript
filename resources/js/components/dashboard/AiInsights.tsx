@@ -83,7 +83,7 @@ export default function AiInsights({ healthMetrics }: { healthMetrics: HealthMet
         <div className="flex gap-8">
             {/* Left — Manuscript Health */}
             <div className="flex flex-1 flex-col gap-4">
-                <span className="text-[11px] font-medium uppercase tracking-[1.5px] text-ink-muted">
+                <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                     {t('aiInsights.manuscriptHealth')}
                 </span>
 
@@ -105,7 +105,7 @@ export default function AiInsights({ healthMetrics }: { healthMetrics: HealthMet
 
             {/* Right — Attention Needed */}
             <div className="flex flex-1 flex-col gap-3">
-                <span className="text-[11px] font-medium uppercase tracking-[1.5px] text-ink-muted">
+                <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                     {t('aiInsights.attentionItems', 'Attention Items')}
                 </span>
 

@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use Native\Desktop\Facades\Window;
 use Native\Desktop\Contracts\ProvidesPhpIni;
+use Native\Desktop\Facades\Window;
 
 class NativeAppServiceProvider implements ProvidesPhpIni
 {
@@ -14,7 +14,7 @@ class NativeAppServiceProvider implements ProvidesPhpIni
     public function boot(): void
     {
         Window::open()
-            ->title('Manuscript AI')
+            ->title('Manuscript')
             ->width(1440)
             ->height(900)
             ->minWidth(1024)

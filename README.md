@@ -22,33 +22,48 @@ Most writing tools either ignore craft entirely or try to write for you. Manuscr
 
 ### Without AI (always free)
 
-- **Multi-book management** — work on as many books as you want
+- **Multi-book management** — work on as many books as you want, duplicate entire books with one click
 - **DOCX import** — automatic chapter splitting on Heading 1
 - **Chapter editor** with full version history (restore any version with one click)
-- **Character database** — name, aliases, role, first appearance
+- **Scenes** — break chapters into scenes, reorder with drag-and-drop
+- **Multi-storyline support** — Main, Subplot, Romance, and more — interleave storylines across chapters
+- **Story Bible (Wiki)** — Characters, Locations, Organizations, Items, and Lore — searchable with avatars and relationship notes
 - **Plot point tracking** — plan, track, and mark plot points as fulfilled or abandoned
 - **Story Canvas** — visual overview of your novel's structure
+- **Dashboard** — manuscript health at a glance: word count, page count, reading time, chapter stats, and progress tracking
+- **Writing Goals & Heatmap** — set daily word count goals, track streaks, and see your 365-day writing heatmap
+- **Focus Mode** — distraction-free fullscreen writing
+- **Typewriter Mode** — keeps your cursor centered on screen while you write
+- **Notes Panel** — attach notes to any chapter, visible alongside the editor
+- **Chapter splitting** — split a chapter at cursor position into two
+- **Trash & Recovery** — soft-delete chapters, scenes, and storylines with full restore
 - **Normalization** — clean up formatting inconsistencies across chapters
-- **Export** to DOCX and TXT
+- **Export** to DOCX and TXT — export a full book, single chapter, or entire storyline
+- **Internationalization** — English and German UI
 
 ### With AI (bring your own key)
 
+- **AI Chat** — context-aware conversation about your manuscript, powered by RAG over your entire novel
 - **AI Prose Pass** — refines your writing while preserving dialogue, emotional structure, and your voice. Results shown as a diff you accept or reject.
+- **Prose Pass Rules** — configurable checks for show-don't-tell, filter words, passive voice, dialogue tags, and more
+- **Text Beautification** — grammar, clarity, and flow improvements separate from prose pass
 - **Writing Style extraction** — automatically derives your style patterns from the manuscript, editable by you
+- **AI Preparation Pipeline** — multi-phase batch indexing: chunking, embedding, analysis, entity extraction, and story bible population
 - **Story Heartbeat Canvas** — four analysis lanes visualizing your novel at a glance:
   - **Tension Arc** — chapter-by-chapter tension curve with act blocks and plot point markers
   - **Chapter Hook Score** — instantly see where readers might stop turning pages
   - **Pacing Rhythm** — word count variation revealing tempo patterns
   - **Storyline Weave** — POV distribution and storyline balance
 - **Thriller Health Dashboard** — weighted health score (hooks, pacing, tension, weave) with actionable next steps
+- **Plot AI** — plot hole detection, beat suggestions, and tension arc generation from the plot view
 - **Scene Audit** — flags scenes without clear plot or character function
-- **Plothole Detection** — catches contradictions across chapters and timelines
 - **Character Consistency** — flags behavior that contradicts established traits
 - **Character Extraction** — automatically identifies characters from your chapters
 - **Pacing Coach** — warns about flat stretches and suggests structural fixes
 - **Chapter Ending Analysis** — classifies every chapter ending (cliffhanger, soft hook, closed, dead end)
 - **First Chapter Audit** — specialized analysis: when does conflict appear? Are stakes clear?
 - **Next Chapter Suggestion** — based on open plot threads, pacing needs, and character absence
+- **AI Usage Dashboard** — track token usage per feature, monthly cost breakdown, and per-book statistics
 - **Embeddings & Semantic Search** — RAG-powered context retrieval across your entire novel
 
 ### Supported AI Providers
@@ -133,11 +148,12 @@ This is a gift to the authors out there doing great creative work. Build it your
 | | Open Source (self-built) | Pro (pre-built app) |
 |---|---|---|
 | Multi-book management | Yes | Yes |
-| Chapter editor & versioning | Yes | Yes |
+| Chapter editor, scenes & versioning | Yes | Yes |
+| Storylines, story bible, plot canvas | Yes | Yes |
+| Dashboard, writing goals & heatmap | Yes | Yes |
 | DOCX import & export | Yes | Yes |
-| Characters, plot, canvas | Yes | Yes |
-| AI Prose Pass | Yes | Yes (with license) |
-| All AI analysis features | Yes | Yes (with license) |
+| AI Prose Pass, Chat & analysis | Yes | Yes (with license) |
+| AI Preparation Pipeline | Yes | Yes (with license) |
 | Pre-built native app | - | Yes |
 | **Price** | **Free** | **One-time purchase** |
 

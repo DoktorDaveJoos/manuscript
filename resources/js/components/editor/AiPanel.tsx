@@ -14,7 +14,7 @@ type ChapterCharacter = Character & { pivot: CharacterChapterPivot };
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
     return (
-        <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">
+        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
             {children}
         </span>
     );
@@ -150,7 +150,7 @@ function getNextChapterSuggestion(analyses: Record<string, Analysis>): string | 
 }
 
 const actionButtonClass =
-    'flex items-center justify-center gap-2 rounded-md bg-ink px-3 py-[9px] text-[13px] font-medium text-white transition-colors hover:bg-ink/90 disabled:opacity-50';
+    'flex items-center justify-center gap-2 rounded-md bg-ink px-3 py-[9px] text-[13px] font-medium text-surface transition-colors hover:bg-ink/90 disabled:opacity-50';
 
 export default function AiPanel({
     characters,
@@ -269,7 +269,7 @@ export default function AiPanel({
                     {/* Header */}
                     <div className="flex h-12 items-center justify-between border-b border-border-subtle px-5">
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-ink">
+                            <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink">
                                 {t('header')}
                             </span>
                             {licensed ? (
@@ -280,7 +280,7 @@ export default function AiPanel({
                                     )}
                                 />
                             ) : (
-                                <Lock size={12} className="text-ink-faint" />
+                                <Lock size={14} className="text-ink-faint" />
                             )}
                         </div>
                         <button
@@ -469,7 +469,7 @@ export default function AiPanel({
                                     <button
                                         type="button"
                                         disabled={!nextSuggestion}
-                                        className="self-start text-xs font-medium text-accent transition-colors hover:text-accent/80 disabled:opacity-40"
+                                        className="self-start text-xs font-medium text-accent transition-colors hover:text-accent/80 disabled:opacity-50"
                                     >
                                         {t('nextChapter.generateOutline')}
                                     </button>

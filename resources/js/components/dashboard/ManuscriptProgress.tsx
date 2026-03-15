@@ -7,13 +7,13 @@ export default function ManuscriptProgress({ target }: { target: ManuscriptTarge
 
     return (
         <div>
-            <div className="h-[3px] overflow-hidden rounded-full bg-neutral-bg">
+            <div className="h-[3px] overflow-hidden rounded-[2px] bg-neutral-bg">
                 <div
-                    className="h-full rounded-full bg-accent transition-all duration-700"
+                    className="h-full rounded-[2px] bg-gradient-to-r from-accent to-accent-dark transition-all duration-700"
                     style={{ width: `${target.progress_percent}%` }}
                 />
             </div>
-            <p className="mt-2 font-serif text-[15px] text-ink-muted">
+            <p className="mt-2 text-[12px] text-ink-muted">
                 {target.total_words.toLocaleString(i18n.language)} / {target.target_word_count.toLocaleString(i18n.language)}{' '}
                 <span className="text-ink-faint">{t('manuscriptProgress.towardFirstDraft')}</span>
             </p>

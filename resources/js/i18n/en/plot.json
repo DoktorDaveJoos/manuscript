@@ -59,6 +59,8 @@
     "page.allStorylines": "All storylines",
     "page.toggleAiSidebar": "Toggle AI sidebar",
     "page.newPlotPointTitle": "New plot point",
+    "page.storylineFilterCount": "{{count}} storylines",
+    "page.plotPointCount": "{{count}} points",
 
     "readingOrder.header": "Reading Order",
     "readingOrder.chapterCount": "{{count}} ch",

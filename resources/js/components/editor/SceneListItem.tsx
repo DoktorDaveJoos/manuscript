@@ -1,6 +1,6 @@
 import { formatCompactCount } from '@/lib/utils';
 import type { Scene } from '@/types/models';
-import { DotsSixVertical } from '@phosphor-icons/react';
+import { GripVertical } from 'lucide-react';
 import type { DraggableSyntheticListeners } from '@dnd-kit/core';
 
 export default function SceneListItem({
@@ -25,7 +25,7 @@ export default function SceneListItem({
                 {...dragListeners}
                 className="flex shrink-0 cursor-grab items-center text-ink-faint opacity-0 transition-opacity active:cursor-grabbing group-hover:opacity-100"
             >
-                <DotsSixVertical size={12} />
+                <GripVertical size={12} />
             </span>
             <span className="min-w-0 flex-1 truncate">{scene.title}</span>
             <span className="shrink-0 text-[11px]">{formatCompactCount(scene.word_count)}</span>

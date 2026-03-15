@@ -1,7 +1,7 @@
 import { update } from '@/actions/App/Http/Controllers/StorylineController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Storyline } from '@/types/models';
-import { CaretRight } from '@phosphor-icons/react';
+import { ChevronRight } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -78,7 +78,7 @@ export default function StorylineContextMenu({
                             {storyline.color && <span className="inline-block size-[7px] rounded-full" style={{ backgroundColor: storyline.color }} />}
                             {t('contextMenu.color')}
                         </span>
-                        <CaretRight size={10} weight="bold" className="text-ink-faint" />
+                        <ChevronRight size={10} strokeWidth={2.5} className="text-ink-faint" />
                     </button>
                     {colorOpen && (
                         <div className={`absolute left-full top-0 ml-1 w-[170px] rounded-lg bg-surface-card ${menuShadow}`}>

@@ -1,4 +1,4 @@
-# Manuscript AI — Product Requirements Document
+# Manuscript — Product Requirements Document
 
 **Version:** 1.0  
 **Status:** Draft — Intern  
@@ -10,9 +10,9 @@
 
 ## 1. Produktvision
 
-Manuscript AI ist ein Desktop-Tool für ernstzunehmende Autoren — insbesondere Self-Publisher — das ihnen ermöglicht, ihre eigene Geschichte zu besitzen, zu kontrollieren und zu verbessern, ohne auf Cloud-Dienste angewiesen zu sein.
+Manuscript ist ein Desktop-Tool für ernstzunehmende Autoren — insbesondere Self-Publisher — das ihnen ermöglicht, ihre eigene Geschichte zu besitzen, zu kontrollieren und zu verbessern, ohne auf Cloud-Dienste angewiesen zu sein.
 
-Der Kern-Insight: Gute Autoren haben Instinkt für Story, Struktur und Dialoge. Was ihnen fehlt, ist Prosa-Konsistenz, Pacing-Kontrolle und ein Werkzeug, das den Überblick über einen komplexen Roman behält. Manuscript AI löst genau das — mit AI als optionalem Assistenten, nicht als Voraussetzung.
+Der Kern-Insight: Gute Autoren haben Instinkt für Story, Struktur und Dialoge. Was ihnen fehlt, ist Prosa-Konsistenz, Pacing-Kontrolle und ein Werkzeug, das den Überblick über einen komplexen Roman behält. Manuscript löst genau das — mit AI als optionalem Assistenten, nicht als Voraussetzung.
 
 Das Tool läuft vollständig lokal. Der Autor ist Owner seiner Geschichte. Keine Daten verlassen das Gerät. AI-Features sind opt-in über einen selbst verwalteten API Key.
 
@@ -689,4 +689,4 @@ Der Autor trägt seine eigenen API-Kosten direkt. Die €99 sind die Lizenz für
 
 ---
 
-*Manuscript AI · Allgäu Digitalwerk · Internes Dokument*
+*Manuscript · Allgäu Digitalwerk · Internes Dokument*

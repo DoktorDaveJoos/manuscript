@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { HeatmapDay } from '@/types/models';
 
-const CELL = 12;
+const CELL = 10;
 const GAP = 2;
 const COLS = 53;
 const ROWS = 7;
@@ -74,18 +74,31 @@ export default function WritingHeatmap({
         return { grid: cells, monthMarkers: months };
     }, [heatmap, t]);
 
-    const leftPad = 28;
+    const leftPad = 30;
     const topPad = 16;
     const svgWidth = leftPad + COLS * (CELL + GAP);
     const svgHeight = topPad + ROWS * (CELL + GAP);
 
     return (
-        <div className="relative">
+        <div className="rounded-xl border border-border-light bg-surface-card p-6">
+            <div className="mb-3 flex items-center justify-between">
+                <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                    {t('heatmap.title', 'Writing Activity')}
+                </span>
+                <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-ink-faint">{t('heatmap.legendLess', 'Less')}</span>
+                    <svg width="10" height="10"><rect width="10" height="10" rx="2" className="fill-neutral-bg" /></svg>
+                    <svg width="10" height="10"><rect width="10" height="10" rx="2" className="fill-accent/25" /></svg>
+                    <svg width="10" height="10"><rect width="10" height="10" rx="2" className="fill-accent/50" /></svg>
+                    <svg width="10" height="10"><rect width="10" height="10" rx="2" className="fill-accent" /></svg>
+                    <span className="text-[10px] text-ink-faint">{t('heatmap.legendMore', 'More')}</span>
+                </div>
+            </div>
             <svg
                 width={svgWidth}
                 height={svgHeight}
                 viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                className="overflow-visible"
+                className="w-full overflow-visible"
             >
                 {/* Month labels */}
                 {monthMarkers.map((m, i) => (

@@ -45,7 +45,7 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
         <aside className="flex h-full w-[320px] shrink-0 flex-col border-l border-border bg-surface-card">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <span className="text-xs font-medium uppercase tracking-[0.06em] text-ink-muted">
+                <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-muted">
                     {t('detailPanel.header')}
                 </span>
                 <button
@@ -53,7 +53,7 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
                     onClick={onClose}
                     className="flex size-6 items-center justify-center rounded text-ink-muted transition-colors hover:text-ink-soft"
                 >
-                    <X size={16} strokeWidth={2.5} />
+                    <X size={14} strokeWidth={2.5} />
                 </button>
             </div>
 
@@ -61,7 +61,7 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
                 {/* Title */}
                 <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
+                    <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                         {t('detailPanel.title')}
                     </label>
                     <input
@@ -75,7 +75,7 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
 
                 {/* Description */}
                 <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
+                    <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                         {t('detailPanel.description')}
                     </label>
                     <textarea
@@ -90,7 +90,7 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
 
                 {/* Type */}
                 <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
+                    <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                         {t('detailPanel.type')}
                     </label>
                     <select
@@ -108,7 +108,7 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
 
                 {/* Status */}
                 <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
+                    <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                         {t('detailPanel.status')}
                     </label>
                     <select
@@ -127,7 +127,7 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
                 {/* Connections */}
                 {(incomingConnections.length > 0 || outgoingConnections.length > 0) && (
                     <div className="flex flex-col gap-2">
-                        <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
+                        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                             {t('detailPanel.connections')}
                         </span>
 

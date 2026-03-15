@@ -59,6 +59,8 @@
     "page.allStorylines": "Alle Erz\u00e4hlstr\u00e4nge",
     "page.toggleAiSidebar": "KI-Seitenleiste umschalten",
     "page.newPlotPointTitle": "Neuer Handlungspunkt",
+    "page.storylineFilterCount": "{{count}} Erzählstränge",
+    "page.plotPointCount": "{{count}} Punkte",
 
     "readingOrder.header": "Lesereihenfolge",
     "readingOrder.chapterCount": "{{count}} Kap.",

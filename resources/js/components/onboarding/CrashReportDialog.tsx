@@ -84,7 +84,7 @@ export default function CrashReportDialog() {
                             type="button"
                             disabled={submitting}
                             onClick={() => dismiss(true)}
-                            className="flex h-11 w-full items-center justify-center rounded-[10px] bg-ink text-[14px] font-semibold text-white shadow-[0_1px_3px_rgba(0,0,0,0.1)] disabled:opacity-50"
+                            className="flex h-11 w-full items-center justify-center rounded-[10px] bg-ink text-[14px] font-semibold text-surface shadow-[0_1px_3px_rgba(0,0,0,0.1)] disabled:opacity-50"
                         >
                             {t('crashReport.enable')}
                         </button>

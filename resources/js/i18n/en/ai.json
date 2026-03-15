@@ -4,7 +4,7 @@
     "tokensEstimate": "~2k tokens/query",
 
     "section.actions": "Actions",
-    "section.prose": "Prose Pass",
+    "section.prose": "Revise Prose",
     "section.craftMetrics": "Craft Metrics",
     "section.findings": "Findings",
     "section.nextChapter": "Next Chapter",
@@ -17,7 +17,7 @@
     "actions.configureSettings": "Configure settings",
 
     "prose.running": "Running…",
-    "prose.runProsePass": "Run Prose Pass",
+    "prose.runProsePass": "Revise Prose",
     "prose.description": "AI will revise the chapter text for clarity, rhythm, and style while preserving your voice.",
 
     "score.empty": "—",
@@ -56,10 +56,10 @@
     "metric.consistency": "Consistency",
     "metric.plotAlignment": "Plot Alignment",
 
-    "confirm.notAnalyzed": "This chapter hasn't been analyzed yet. The prose pass works best after analysis. Continue anyway?",
-    "confirm.longChapter": "This chapter has {{wordCount}} words. Prose passes on long chapters may take a while. Continue?",
+    "confirm.notAnalyzed": "This chapter hasn't been analyzed yet. Revision works best after analysis. Continue anyway?",
+    "confirm.longChapter": "This chapter has {{wordCount}} words. Revising long chapters may take a while. Continue?",
 
-    "error.prosePassFailed": "Prose pass failed. Please try again.",
+    "error.prosePassFailed": "Revision failed. Please try again.",
 
     "findings.none": "No findings — looking good.",
     "findings.noAnalysis": "Run an analysis to see findings.",
@@ -89,11 +89,23 @@
     "preparation.starting": "Starting…",
     "preparation.phaseProgress": "Phase {{current}} of {{total}} · {{percent}}% complete",
     "preparation.aiReady": "AI Ready",
+    "preparation.complete": "AI Preparation Complete",
+    "preparation.lastAnalyzed": "Last analyzed",
+    "preparation.chaptersAnalyzed": "chapters analyzed",
+    "preparation.findings": "findings",
     "preparation.reRun": "Re-run",
-    "preparation.unlockInsights": "Unlock AI Insights",
-    "preparation.unlockDescription": "Prepare your manuscript for AI analysis to get craft metrics, character tracking, and story insights.",
+    "preparation.reRunBook": "Re-run for whole book",
+    "preparation.timeAgo.justNow": "just now",
+    "preparation.timeAgo.minutes_one": "{{count}}m ago",
+    "preparation.timeAgo.minutes_other": "{{count}}m ago",
+    "preparation.timeAgo.hours_one": "{{count}}h ago",
+    "preparation.timeAgo.hours_other": "{{count}}h ago",
+    "preparation.timeAgo.days_one": "{{count}}d ago",
+    "preparation.timeAgo.days_other": "{{count}}d ago",
+    "preparation.unlockInsights": "Unlock AI-powered insights",
+    "preparation.unlockDescription": "Analyze your manuscript's pacing, tension, craft and more — resulting in AI features.",
     "preparation.failed": "Preparation failed. Please try again.",
-    "preparation.prepareManuscript": "Prepare Manuscript",
+    "preparation.prepareManuscript": "Prepare this book",
     "preparation.setupTime": "Takes a few minutes",
 
     "preparationProgress.requiresProTitle": "AI preparation requires a Pro license",

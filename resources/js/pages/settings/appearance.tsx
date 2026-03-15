@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import { useTheme } from '@/hooks/useTheme';
 import SettingsLayout from '@/layouts/SettingsLayout';
-import { getXsrfToken } from '@/lib/csrf';
+import { jsonFetchHeaders } from '@/lib/utils';
 import type { Theme } from '@/lib/theme';
 import type { AppSettings } from '@/types/models';
 import { router } from '@inertiajs/react';
@@ -69,15 +69,12 @@ export default function Appearance({ settings, book, version }: Props) {
     const { theme, setTheme } = useTheme();
     const [showAi, setShowAi] = useState(settings.show_ai_features);
     const [hideToolbar, setHideToolbar] = useState(settings.hide_formatting_toolbar);
+    const [sendErrorReports, setSendErrorReports] = useState(settings.send_error_reports);
 
     const saveSetting = useCallback((key: string, value: boolean) => {
         fetch(update.url(), {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-XSRF-TOKEN': getXsrfToken(),
-                Accept: 'application/json',
-            },
+            headers: jsonFetchHeaders(),
             body: JSON.stringify({ key, value }),
         }).then(() => {
             router.reload({ only: ['app_settings'] });
@@ -150,6 +147,26 @@ export default function Appearance({ settings, book, version }: Props) {
                                 const next = !hideToolbar;
                                 setHideToolbar(next);
                                 saveSetting('hide_formatting_toolbar', next);
+                            }}
+                            border={false}
+                        />
+                    </div>
+                </div>
+
+                {/* Privacy */}
+                <div>
+                    <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                        {t('appearance.privacy')}
+                    </span>
+                    <div className="mt-3 rounded-lg border border-border bg-surface-card px-6">
+                        <SettingRow
+                            label={t('appearance.sendErrorReports.label')}
+                            description={t('appearance.sendErrorReports.description')}
+                            checked={sendErrorReports}
+                            onChange={() => {
+                                const next = !sendErrorReports;
+                                setSendErrorReports(next);
+                                saveSetting('send_error_reports', next);
                             }}
                             border={false}
                         />

@@ -1,7 +1,7 @@
 import { reorder, updateStatus } from '@/actions/App/Http/Controllers/ChapterController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Chapter, ChapterStatus, Storyline } from '@/types/models';
-import { ArrowRight, CaretRight, Circle, PencilSimple, Trash } from '@phosphor-icons/react';
+import { ArrowRight, ChevronRight, Circle, Pencil, Trash2 } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -91,7 +91,7 @@ export default function ChapterContextMenu({
                     }}
                     className={itemClass}
                 >
-                    <PencilSimple size={15} className="shrink-0 text-ink-muted" />
+                    <Pencil size={14} className="shrink-0 text-ink-muted" />
                     {t('contextMenu.rename')}
                 </button>
 
@@ -102,10 +102,10 @@ export default function ChapterContextMenu({
                 >
                     <button type="button" className={`${itemClass} justify-between`}>
                         <span className="flex items-center gap-2.5">
-                            <Circle size={15} weight="fill" className="shrink-0 text-ink-muted" />
+                            <Circle size={14} fill="currentColor" className="shrink-0 text-ink-muted" />
                             {t('contextMenu.status')}
                         </span>
-                        <CaretRight size={10} weight="bold" className="text-ink-faint" />
+                        <ChevronRight size={10} strokeWidth={2.5} className="text-ink-faint" />
                     </button>
                     {statusOpen && (
                         <div className={`absolute left-full top-0 ml-1 w-[160px] rounded-lg bg-surface-card ${menuShadow}`}>
@@ -134,10 +134,10 @@ export default function ChapterContextMenu({
                     >
                         <button type="button" className={`${itemClass} justify-between`}>
                             <span className="flex items-center gap-2.5">
-                                <ArrowRight size={15} className="shrink-0 text-ink-muted" />
+                                <ArrowRight size={14} className="shrink-0 text-ink-muted" />
                                 {t('contextMenu.moveTo')}
                             </span>
-                            <CaretRight size={10} weight="bold" className="text-ink-faint" />
+                            <ChevronRight size={10} strokeWidth={2.5} className="text-ink-faint" />
                         </button>
                         {moveOpen && (
                             <div className={`absolute left-full top-0 ml-1 w-[180px] rounded-lg bg-surface-card ${menuShadow}`}>
@@ -164,7 +164,7 @@ export default function ChapterContextMenu({
                     }}
                     className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] font-medium leading-[18px] text-delete transition-colors hover:bg-neutral-bg"
                 >
-                    <Trash size={15} className="shrink-0" />
+                    <Trash2 size={14} className="shrink-0" />
                     {t('contextMenu.delete')}
                 </button>
             </div>

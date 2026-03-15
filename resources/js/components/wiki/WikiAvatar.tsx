@@ -1,4 +1,4 @@
-import { Buildings, MapPin, Scroll, Sword } from '@phosphor-icons/react';
+import { Building2, MapPin, ScrollText, Swords } from 'lucide-react';
 import type { WikiTab } from './WikiTabBar';
 
 export default function WikiAvatar({
@@ -30,9 +30,9 @@ export default function WikiAvatar({
 
     const iconMap = {
         location: MapPin,
-        organization: Buildings,
-        item: Sword,
-        lore: Scroll,
+        organization: Building2,
+        item: Swords,
+        lore: ScrollText,
     };
 
     const Icon = iconMap[tab];
@@ -41,7 +41,7 @@ export default function WikiAvatar({
         <div
             className={`${sizeClasses[size]} flex shrink-0 items-center justify-center rounded-lg bg-neutral-bg text-ink-muted`}
         >
-            <Icon size={iconSize[size]} weight="regular" />
+            <Icon size={iconSize[size]} />
         </div>
     );
 }

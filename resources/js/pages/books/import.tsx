@@ -115,7 +115,7 @@ function UploadPhase({
                 <button
                     type="button"
                     onClick={() => router.post(skipImport.url(book))}
-                    className="rounded-md border border-border px-6 py-2.5 text-sm font-medium leading-[18px] text-ink-muted"
+                    className="rounded-md border border-border px-5 py-2.5 text-sm font-medium leading-[18px] text-ink-muted"
                 >
                     {t('uploadPhase.skip')}
                 </button>
@@ -123,7 +123,7 @@ function UploadPhase({
                     <button
                         type="button"
                         onClick={() => onStartParsing(files)}
-                        className="rounded-md bg-ink px-7 py-2.5 text-sm font-medium leading-[18px] text-surface"
+                        className="rounded-md bg-ink px-5 py-2.5 text-sm font-medium leading-[18px] text-surface"
                     >
                         {t('uploadPhase.importFiles', { count: files.length })}
                     </button>

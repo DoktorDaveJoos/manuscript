@@ -2,7 +2,7 @@ import { updateNotes } from '@/actions/App/Http/Controllers/ChapterController';
 import { getXsrfToken } from '@/lib/csrf';
 import { jsonFetchHeaders } from '@/lib/utils';
 import Kbd from '@/components/ui/Kbd';
-import { Notepad, X } from '@phosphor-icons/react';
+import { NotebookPen, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -152,7 +152,7 @@ export default function NotesPanel({
                 }`}
                 style={{ animation: 'notes-enter 200ms ease-out' }}
             >
-                <Notepad size={12} weight="fill" />
+                <NotebookPen size={12} fill="currentColor" />
                 <span className="text-[11px] font-medium leading-3.5">{t('notes.title')}</span>
                 {hasNotes && <span className="h-[5px] w-[5px] rounded-full bg-ink-muted" />}
             </button>
@@ -185,7 +185,7 @@ export default function NotesPanel({
                         }}
                         className="flex h-5 w-5 items-center justify-center rounded text-ink-faint transition-colors hover:text-ink"
                     >
-                        <X size={12} weight="bold" />
+                        <X size={12} strokeWidth={2.5} />
                     </button>
                 </div>
             </div>

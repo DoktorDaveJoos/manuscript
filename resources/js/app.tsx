@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import '../css/app.css';
 import i18n from './i18n';
 import { initTheme } from './lib/theme';
+import type { AppSettings } from './types/models';
 
 initTheme();
 
@@ -19,6 +20,16 @@ createInertiaApp({
     setup({ el, App, props }) {
         const locale = (props.initialPage.props.locale as string) ?? 'en';
         i18n.changeLanguage(locale);
+
+        const settings = props.initialPage.props.app_settings as AppSettings | undefined;
+        if (import.meta.env.VITE_SENTRY_DSN && settings?.send_error_reports) {
+            import('@sentry/react').then((Sentry) => {
+                Sentry.init({
+                    dsn: import.meta.env.VITE_SENTRY_DSN,
+                    tracesSampleRate: 0,
+                });
+            });
+        }
 
         const root = createRoot(el);
 

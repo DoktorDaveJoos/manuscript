@@ -54,7 +54,7 @@ export default function DeleteChapterDialog({
                         type="button"
                         disabled={processing}
                         onClick={handleDelete}
-                        className="rounded-md bg-delete px-6 py-2.5 text-sm font-medium leading-[18px] text-white transition-opacity disabled:opacity-40"
+                        className="rounded-md bg-delete px-6 py-2.5 text-sm font-medium leading-[18px] text-surface transition-opacity disabled:opacity-50"
                     >
                         {t('deleteChapter.confirm')}
                     </button>

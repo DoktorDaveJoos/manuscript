@@ -80,7 +80,7 @@ class WritingStyleService
             $usage->cacheWriteInputTokens,
             $response->meta->provider,
         );
-        $book->recordAiUsage($usage->promptTokens, $usage->completionTokens, $cost);
+        $book->recordAiUsage($usage->promptTokens, $usage->completionTokens, $cost, 'writing_style', $model);
 
         return $response->toArray();
     }

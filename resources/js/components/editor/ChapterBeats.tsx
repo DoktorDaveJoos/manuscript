@@ -2,7 +2,7 @@ import { store, updateStatus } from '@/actions/App/Http/Controllers/PlotPointCon
 import { NEXT_STATUS, STATUS_COLORS, TYPE_LABELS_SHORT, TYPE_STYLES } from '@/lib/plot-constants';
 import type { PlotPoint } from '@/types/models';
 import { router } from '@inertiajs/react';
-import { Plus } from '@phosphor-icons/react';
+import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 type Props = {
@@ -42,7 +42,7 @@ export default function ChapterBeats({ plotPoints, bookId, chapterId }: Props) {
                     onClick={handleAdd}
                     className="flex items-center gap-0.5 text-[11px] text-ink-muted transition-colors hover:text-ink"
                 >
-                    <Plus size={10} weight="bold" />
+                    <Plus size={10} strokeWidth={2.5} />
                     {t('beats.add')}
                 </button>
             </div>

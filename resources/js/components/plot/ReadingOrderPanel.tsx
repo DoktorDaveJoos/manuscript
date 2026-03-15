@@ -232,7 +232,7 @@ export default function ReadingOrderPanel({
                     <span className="flex items-center text-ink-muted">
                         <ListOrdered className="h-3.5 w-3.5" />
                     </span>
-                    <span className="text-xs font-semibold uppercase tracking-[0.06em] text-ink">
+                    <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink">
                         {t('readingOrder.header')}
                     </span>
                     <span className="rounded-full bg-neutral-bg px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-ink-soft">
@@ -356,7 +356,7 @@ export default function ReadingOrderPanel({
                             <button
                                 type="button"
                                 onClick={handleInterleaveConfirm}
-                                className="rounded bg-accent px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-accent/90"
+                                className="rounded-md bg-accent px-3 py-1.5 text-[13px] font-medium text-surface transition-colors hover:bg-accent/90"
                             >
                                 {t('readingOrder.confirmContinue')}
                             </button>

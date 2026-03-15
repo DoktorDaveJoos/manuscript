@@ -1,4 +1,4 @@
-import { Lock } from '@phosphor-icons/react';
+import { Lock } from 'lucide-react';
 
 export default function ProFeatureLock({ children }: { children: React.ReactNode }) {
     return (
@@ -6,7 +6,7 @@ export default function ProFeatureLock({ children }: { children: React.ReactNode
             {children}
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-md bg-surface/80 backdrop-blur-[2px]">
                 <Lock size={20} className="mb-2 text-ink-faint" />
-                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">
+                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-muted">
                     Manuscript Pro
                 </span>
                 <a

@@ -63,7 +63,7 @@ export default function DeleteStorylineDialog({
                 </div>
 
                 <fieldset className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium uppercase leading-4 tracking-[0.06em] text-ink-muted">
+                    <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
                         {t('deleteStoryline.confirmLabel')}
                     </label>
                     <input
@@ -71,7 +71,7 @@ export default function DeleteStorylineDialog({
                         value={confirmation}
                         onChange={(e) => setConfirmation(e.target.value)}
                         placeholder={storyline.name}
-                        className="rounded-md border border-border bg-surface px-4 py-3 text-sm leading-[18px] text-ink outline-none placeholder:text-ink-faint"
+                        className="rounded-md border border-border bg-surface px-4 py-3 text-sm leading-[18px] text-ink placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-border"
                         autoFocus
                     />
                 </fieldset>
@@ -84,7 +84,7 @@ export default function DeleteStorylineDialog({
                         type="button"
                         disabled={!isConfirmed || processing}
                         onClick={handleDelete}
-                        className="rounded-md bg-delete px-6 py-2.5 text-sm font-medium leading-[18px] text-white transition-opacity disabled:opacity-40"
+                        className="rounded-md bg-delete px-6 py-2.5 text-sm font-medium leading-[18px] text-surface transition-opacity disabled:opacity-50"
                     >
                         {t('deleteStoryline.confirm')}
                     </button>

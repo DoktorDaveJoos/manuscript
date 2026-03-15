@@ -40,7 +40,7 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
 
                 <div className="flex flex-col gap-6">
                     <fieldset className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium uppercase leading-4 tracking-[0.06em] text-ink-muted">
+                        <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
                             {t('createBook.labelTitle')}
                         </label>
                         <input
@@ -57,7 +57,7 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                     </fieldset>
 
                     <fieldset className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium uppercase leading-4 tracking-[0.06em] text-ink-muted">
+                        <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
                             {t('createBook.labelAuthor')}
                         </label>
                         <input
@@ -70,7 +70,7 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                     </fieldset>
 
                     <fieldset className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium uppercase leading-4 tracking-[0.06em] text-ink-muted">
+                        <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
                             {t('createBook.labelLanguage')}
                         </label>
                         <select

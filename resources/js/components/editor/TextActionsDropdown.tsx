@@ -1,5 +1,5 @@
 import { useAiFeatures } from '@/hooks/useAiFeatures';
-import { DotsThreeVertical, Lock } from '@phosphor-icons/react';
+import { EllipsisVertical, Lock } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -37,21 +37,21 @@ export default function TextActionsDropdown({
                 type="button"
                 onClick={() => setOpen(!open)}
                 title={t('textActions.moreActions')}
-                className="flex h-7 w-7 items-center justify-center rounded text-xs text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-xs text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
             >
-                <DotsThreeVertical size={14} weight="bold" />
+                <EllipsisVertical size={14} strokeWidth={2.5} />
             </button>
 
             {open && (
-                <div className="absolute right-0 top-full z-50 mt-1 w-[220px] rounded-lg border border-border bg-surface-card shadow-lg">
-                    <div className="flex flex-col py-1">
+                <div className="absolute right-0 top-full z-50 mt-1 w-[220px] rounded-lg bg-surface-card shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]">
+                    <div className="flex flex-col p-1">
                         <button
                             type="button"
                             onClick={() => {
                                 setOpen(false);
                                 onNormalizeClick();
                             }}
-                            className="px-3 py-2 text-left transition-colors hover:bg-neutral-bg"
+                            className="w-full rounded-[5px] px-3 py-2 text-left transition-colors hover:bg-neutral-bg"
                         >
                             <span className="block text-xs font-medium text-ink">{t('textActions.normalize')}</span>
                             <span className="block text-[11px] text-ink-faint">
@@ -67,7 +67,7 @@ export default function TextActionsDropdown({
                                     setOpen(false);
                                     onBeautifyClick();
                                 }}
-                                className="px-3 py-2 text-left transition-colors hover:bg-neutral-bg disabled:opacity-50"
+                                className="w-full rounded-[5px] px-3 py-2 text-left transition-colors hover:bg-neutral-bg disabled:opacity-50"
                             >
                                 <span className="flex items-center gap-1.5 text-xs font-medium text-ink">
                                     {t('textActions.beautify')}

@@ -35,3 +35,21 @@ export function jsonFetchHeaders(): Record<string, string> {
         'X-XSRF-TOKEN': getXsrfToken(),
     };
 }
+
+export function formatTimeAgo(
+    dateString: string,
+    t: (key: string, options?: Record<string, unknown>) => string,
+    prefix: string,
+): string {
+    const now = new Date();
+    const date = new Date(dateString);
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 60) return t(`${prefix}.justNow`);
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return t(`${prefix}.minutes`, { count: minutes });
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return t(`${prefix}.hours`, { count: hours });
+    const days = Math.floor(hours / 24);
+    return t(`${prefix}.days`, { count: days });
+}

@@ -39,7 +39,7 @@ function StatCard({
 }) {
     return (
         <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-5 text-center">
-            <span className="text-[10px] font-medium uppercase tracking-[1.5px] text-ink-muted">{label}</span>
+            <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-muted">{label}</span>
             <div className="flex items-end gap-1">
                 <span className="font-serif text-[32px] font-bold leading-[1] text-ink">
                     {typeof value === 'number' ? value.toLocaleString(locale) : value}
@@ -167,7 +167,7 @@ export default function Dashboard({
                         {/* Chapter Status */}
                         {stats.chapter_count > 0 && (
                             <div className="flex flex-col gap-3">
-                                <span className="text-[11px] font-medium uppercase tracking-[1.5px] text-ink-muted">
+                                <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                                     {t('sections.chapterStatus', 'Chapter Status')}
                                 </span>
                                 <ChapterStatusBar counts={status_counts} />
@@ -177,7 +177,7 @@ export default function Dashboard({
                         {/* AI Insights */}
                         {aiVisible && health_metrics && (
                             <div className="flex flex-col gap-3">
-                                <span className="text-[11px] font-medium uppercase tracking-[1.5px] text-ink-muted">
+                                <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                                     {t('sections.aiInsights', 'AI Insights')}
                                 </span>
                                 <AiInsights healthMetrics={health_metrics} />
@@ -187,7 +187,7 @@ export default function Dashboard({
                         {/* Health Timeline */}
                         {aiVisible && (
                             <div className="flex flex-col gap-3">
-                                <span className="text-[11px] font-medium uppercase tracking-[1.5px] text-ink-muted">
+                                <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                                     {t('sections.healthTimeline', 'Health Timeline')}
                                 </span>
                                 <HealthTimeline history={health_history} />
@@ -199,7 +199,7 @@ export default function Dashboard({
 
                         {/* Stats */}
                         <div className="flex flex-col gap-3">
-                            <span className="text-[11px] font-medium uppercase tracking-[1.5px] text-ink-muted">
+                            <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                                 {t('sections.stats', 'Stats')}
                             </span>
                             <div className="flex gap-4">
@@ -213,7 +213,7 @@ export default function Dashboard({
                         {/* AI Usage Stats */}
                         {aiVisible && (
                             <div className="flex flex-col gap-3">
-                                <span className="text-[11px] font-medium uppercase tracking-[1.5px] text-ink-muted">
+                                <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                                     {t('sections.aiUsage', 'AI Usage & Costs')}
                                 </span>
                                 <AiUsageStats bookId={book.id} usage={ai_usage} />

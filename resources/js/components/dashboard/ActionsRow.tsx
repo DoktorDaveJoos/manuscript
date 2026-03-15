@@ -1,4 +1,4 @@
-import { Export, FunnelSimple, Plus } from '@phosphor-icons/react';
+import { ArrowUpFromLine, Filter, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { createChapter } from '@/lib/utils';
 import type { AiPreparationStatus, Storyline } from '@/types/models';
@@ -35,25 +35,25 @@ export default function ActionsRow({
                 <button
                     type="button"
                     onClick={onNormalize}
-                    className="flex items-center gap-2 px-[18px] py-[11px] text-[13px] font-medium text-ink transition-colors hover:bg-neutral-bg/50"
+                    className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-medium text-ink transition-colors hover:bg-neutral-bg/50"
                 >
-                    <FunnelSimple size={14} className="shrink-0" />
+                    <Filter size={14} className="shrink-0" />
                     {t('actions.normalize')}
                 </button>
 
                 <button
                     type="button"
                     disabled
-                    className="flex items-center gap-2 px-[18px] py-[11px] text-[13px] font-medium text-ink-faint"
+                    className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-medium text-ink-faint"
                 >
-                    <Export size={14} className="shrink-0" />
+                    <ArrowUpFromLine size={14} className="shrink-0" />
                     {t('actions.export')}
                 </button>
 
                 <button
                     type="button"
                     onClick={handleAddChapter}
-                    className="flex items-center gap-2 px-[18px] py-[11px] text-[13px] font-medium text-ink transition-colors hover:bg-neutral-bg/50"
+                    className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-medium text-ink transition-colors hover:bg-neutral-bg/50"
                 >
                     <Plus size={14} className="shrink-0" />
                     {t('actions.addChapter')}

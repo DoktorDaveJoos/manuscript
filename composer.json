@@ -18,7 +18,8 @@
         "mpdf/mpdf": "*",
         "nativephp/desktop": "^2.1",
         "paragonie/sodium_compat": "*",
-        "phpoffice/phpword": "*"
+        "phpoffice/phpword": "*",
+        "sentry/sentry-laravel": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

@@ -1,13 +1,8 @@
-import { Flame } from '@phosphor-icons/react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { WritingGoalData } from '@/types/models';
 import { update as updateWritingGoal } from '@/actions/App/Http/Controllers/WritingGoalController';
-
-function FlameIcon({ className }: { className?: string }) {
-    return <Flame size={16} weight="fill" className={className} />;
-}
 
 export default function WritingGoal({
     bookId,
@@ -72,12 +67,12 @@ export default function WritingGoal({
     // No goal set: show setup card
     if (!goal && !isEditing) {
         return (
-            <div className="rounded-lg bg-surface-card px-6 py-6">
+            <div className="rounded-xl border border-border-light bg-surface-card p-6">
                 <p className="text-sm text-ink-muted">{t('writingGoal.setupPrompt')}</p>
                 <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="mt-3 rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-surface transition-colors hover:bg-ink/90"
+                    className="mt-3 rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-surface transition-colors hover:bg-ink/90"
                 >
                     {t('writingGoal.setGoal')}
                 </button>
@@ -88,11 +83,11 @@ export default function WritingGoal({
     // Editing mode
     if (isEditing) {
         return (
-            <div className="rounded-lg bg-surface-card px-6 py-6">
-                <label className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint">
+            <div className="rounded-xl border border-border-light bg-surface-card p-6">
+                <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                     {t('writingGoal.dailyWordGoal')}
                 </label>
-                <div className="mt-2 flex flex-col gap-3">
+                <div className="mt-2 flex flex-col gap-4">
                     <div className="flex items-center gap-2">
                         <input
                             type="number"
@@ -101,7 +96,7 @@ export default function WritingGoal({
                             value={inputValue}
                             onChange={(e) => { setInputValue(e.target.value); setSaveError(false); }}
                             onKeyDown={handleKeyDown}
-                            className="w-28 rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-ink focus:border-ink focus:ring-0 focus:outline-none"
+                            className="w-28 rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-border"
                             autoFocus
                         />
                         <span className="text-xs text-ink-faint">{t('writingGoal.wordsPerDay')}</span>
@@ -115,7 +110,7 @@ export default function WritingGoal({
                             onChange={(e) => { setTargetValue(e.target.value); setSaveError(false); }}
                             onKeyDown={handleKeyDown}
                             placeholder={t('writingGoal.optional')}
-                            className="w-28 rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint/50 focus:border-ink focus:ring-0 focus:outline-none"
+                            className="w-28 rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint/50 focus:outline-none focus:ring-1 focus:ring-border"
                         />
                         <span className="text-xs text-ink-faint">{t('writingGoal.manuscriptTarget')}</span>
                     </div>
@@ -128,14 +123,14 @@ export default function WritingGoal({
                                 setInputValue(String(goal ?? 500));
                                 setSaveError(false);
                             }}
-                            className="rounded-md px-3 py-1.5 text-xs text-ink-muted transition-colors hover:bg-neutral-bg"
+                            className="rounded-md px-3 py-1.5 text-[12px] text-ink-muted transition-colors hover:bg-neutral-bg"
                         >
                             {t('writingGoal.cancel')}
                         </button>
                         <button
                             type="button"
                             onClick={handleSave}
-                            className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-surface transition-colors hover:bg-ink/90"
+                            className="rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-surface transition-colors hover:bg-ink/90"
                         >
                             {t('writingGoal.save')}
                         </button>
@@ -154,51 +149,50 @@ export default function WritingGoal({
     const wordsToGo = Math.max(0, effectiveGoal - writingGoal.today_words);
 
     return (
-        <div className="flex flex-col gap-3 rounded-lg bg-surface-card px-6 py-6">
+        <div className="flex flex-col gap-4 rounded-xl border border-border-light bg-surface-card p-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-muted">
+                <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                     {t('writingGoal.todaysWriting')}
                 </span>
                 <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="text-[12px] text-ink-faint transition-colors hover:text-ink"
+                    className="text-[12px] font-medium text-accent transition-colors hover:text-accent/80"
                 >
                     {t('writingGoal.editGoal')}
                 </button>
             </div>
 
             {/* Large number display */}
-            <div>
-                <span className="font-serif text-[48px] leading-[1] font-medium text-ink">
+            <div className="flex items-end gap-1.5">
+                <span className="font-serif text-[48px] leading-[0.95] font-extrabold text-ink">
                     {writingGoal.today_words.toLocaleString(i18n.language)}
                 </span>
-                <span className="ml-1 font-serif text-[24px] text-ink-faint">
+                <span className="font-serif text-[24px] leading-[0.95] font-light text-ink-faint">
                     / {effectiveGoal.toLocaleString(i18n.language)}
                 </span>
             </div>
-            <span className="mt-[-6px] text-[13px] text-ink-muted">{t('writingGoal.wordsToday')}</span>
 
             {/* Progress bar */}
             <div className="h-1.5 overflow-hidden rounded-[3px] bg-neutral-bg">
                 <div
-                    className="h-full rounded-[3px] bg-status-final transition-all duration-500"
+                    className="h-full rounded-[3px] bg-gradient-to-r from-accent to-accent-dark transition-all duration-500"
                     style={{ width: `${progress}%` }}
                 />
             </div>
 
             {/* Bottom row */}
             <div className="flex items-center justify-between">
-                <span className="text-[13px] text-ink-muted">
+                <span className="text-[12px] text-ink-muted">
                     {wordsToGo > 0
                         ? t('writingGoal.wordsToGo', { value: wordsToGo.toLocaleString(i18n.language) })
                         : t('writingGoal.goalReached')}
                 </span>
 
                 {writingGoal.streak > 0 && (
-                    <span className="flex items-center gap-1 text-[13px] font-medium text-accent">
-                        <FlameIcon className="text-accent" />
+                    <span className="flex items-center gap-1 text-[12px] font-semibold text-accent">
+                        🔥
                         {t('writingGoal.streak', { count: writingGoal.streak })}
                     </span>
                 )}

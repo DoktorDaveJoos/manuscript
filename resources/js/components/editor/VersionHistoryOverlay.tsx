@@ -7,7 +7,7 @@ import {
 import { getXsrfToken } from '@/lib/csrf';
 import type { ChapterVersion, VersionSource } from '@/types/models';
 import { router } from '@inertiajs/react';
-import { Trash } from '@phosphor-icons/react';
+import { Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -182,7 +182,7 @@ export default function VersionHistoryOverlay({
                         <button
                             type="submit"
                             disabled={creating}
-                            className="rounded-md bg-accent px-2.5 py-1 text-[11px] font-medium text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
+                            className="rounded-md bg-accent px-2.5 py-1 text-[11px] font-medium text-surface transition-colors hover:bg-accent/90 disabled:opacity-50"
                         >
                             {creating ? t('versionHistory.creating') : t('versionHistory.create')}
                         </button>
@@ -243,10 +243,10 @@ export default function VersionHistoryOverlay({
                                             type="button"
                                             onClick={() => handleDelete(version)}
                                             disabled={deleting !== null}
-                                            className="rounded-md border border-border p-1 text-ink-faint transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                                            className="rounded-md border border-border p-1 text-ink-faint transition-colors hover:bg-delete-bg hover:text-delete disabled:opacity-50"
                                             title={t('versionHistory.deleteVersion')}
                                         >
-                                            <Trash size={14} />
+                                            <Trash2 size={14} />
                                         </button>
                                     </div>
                                 )}

@@ -26,8 +26,8 @@ export default function DeleteBookDialog({ book, onClose }: { book: Book; onClos
             <div className="absolute inset-0 bg-black/20" onClick={onClose} />
             <div className="relative z-10 flex w-[480px] flex-col gap-6 rounded-xl bg-surface-card p-10 shadow-[0_8px_40px_rgba(0,0,0,0.08)]">
                 <div className="flex flex-col gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50">
-                        <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-delete-bg">
+                        <svg className="h-5 w-5 text-delete" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                         </svg>
                     </div>
@@ -43,7 +43,7 @@ export default function DeleteBookDialog({ book, onClose }: { book: Book; onClos
                 </div>
 
                 <fieldset className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium uppercase leading-4 tracking-[0.06em] text-ink-muted">
+                    <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
                         {t('deleteBook.confirmLabel')}
                     </label>
                     <input
@@ -68,7 +68,7 @@ export default function DeleteBookDialog({ book, onClose }: { book: Book; onClos
                         type="button"
                         disabled={!isConfirmed || processing}
                         onClick={handleDelete}
-                        className="rounded-md bg-red-600 px-6 py-2.5 text-sm font-medium leading-[18px] text-white transition-opacity disabled:opacity-40"
+                        className="rounded-md bg-delete px-6 py-2.5 text-sm font-medium leading-[18px] text-surface transition-opacity disabled:opacity-50"
                     >
                         {t('deleteBook.confirm')}
                     </button>

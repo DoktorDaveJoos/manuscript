@@ -34,6 +34,8 @@ import StorylineContextMenu from './StorylineContextMenu';
 
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } };
 
+let savedCollapsedStorylineIds = new Set<number>();
+
 type ContextMenuState =
     | { type: 'chapter'; chapter: Chapter; position: { x: number; y: number } }
     | { type: 'storyline'; storyline: Storyline; position: { x: number; y: number } }
@@ -357,20 +359,40 @@ export default function ChapterList({
     const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
     const [dialog, setDialog] = useState<DialogState>(null);
     const [expandedChapterIds, setExpandedChapterIds] = useState<Set<number>>(new Set());
-    const [collapsedStorylineIds, setCollapsedStorylineIds] = useState<Set<number>>(new Set());
+    const [collapsedStorylineIds, setCollapsedStorylineIds] = useState<Set<number>>(() => new Set(savedCollapsedStorylineIds));
     const [renamingChapterId, setRenamingChapterId] = useState<number | null>(null);
     const [renamingStorylineId, setRenamingStorylineId] = useState<number | null>(null);
     const [renamingSceneId, setRenamingSceneId] = useState<number | null>(null);
     const chapterRenameRef = useRef<HTMLInputElement>(null);
     const storylineRenameRef = useRef<HTMLInputElement>(null);
     const sceneRenameRef = useRef<HTMLInputElement>(null);
+    const storylinesRef = useRef(initialStorylines);
+    storylinesRef.current = initialStorylines;
 
     useEffect(() => {
         setStorylines(initialStorylines);
     }, [initialStorylines]);
 
     useEffect(() => {
+        savedCollapsedStorylineIds = new Set(collapsedStorylineIds);
+    }, [collapsedStorylineIds]);
+
+    useEffect(() => {
         setExpandedChapterIds(activeChapterId ? new Set([activeChapterId]) : new Set());
+
+        if (activeChapterId) {
+            const parentStoryline = storylinesRef.current.find((s) =>
+                s.chapters?.some((ch) => ch.id === activeChapterId),
+            );
+            if (parentStoryline) {
+                setCollapsedStorylineIds((prev) => {
+                    if (!prev.has(parentStoryline.id)) return prev;
+                    const next = new Set(prev);
+                    next.delete(parentStoryline.id);
+                    return next;
+                });
+            }
+        }
     }, [activeChapterId]);
 
     const toggleChapterExpand = useCallback((chapterId: number) => {

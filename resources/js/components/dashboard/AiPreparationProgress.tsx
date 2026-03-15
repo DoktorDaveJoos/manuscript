@@ -1,6 +1,6 @@
 import { useAiPreparation, TOTAL_PHASES } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
-import { Check, Lock } from '@phosphor-icons/react';
+import { Check, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export default function AiPreparationProgress({
@@ -83,7 +83,7 @@ export default function AiPreparationProgress({
 
         return (
             <div className="flex items-center gap-2 rounded-md border border-border bg-surface-card px-4 py-2">
-                <Check size={14} weight="bold" className="text-status-final" />
+                <Check size={14} strokeWidth={2.5} className="text-status-final" />
                 <span className="text-sm text-ink-muted">{t('preparation.aiReady')}</span>
                 {hasErrors && (
                     <span className="text-xs text-amber-600">{t('preparationProgress.warningParens', { count: status.phase_errors!.length })}</span>

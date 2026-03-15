@@ -2,14 +2,14 @@ import { index as trashIndex, restore as trashRestore, empty as trashEmpty } fro
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { TrashItem } from '@/types/models';
 import { router } from '@inertiajs/react';
-import { CaretRight, Circle, File, TextAlignLeft, Trash } from '@phosphor-icons/react';
+import { AlignLeft, ChevronRight, Circle, File, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const typeIcon: Record<TrashItem['type'], React.ReactNode> = {
-    storyline: <Circle size={8} weight="regular" className="shrink-0" />,
-    chapter: <File size={10} weight="regular" className="shrink-0" />,
-    scene: <TextAlignLeft size={10} weight="regular" className="shrink-0" />,
+    storyline: <Circle size={8} className="shrink-0" />,
+    chapter: <File size={10} className="shrink-0" />,
+    scene: <AlignLeft size={10} className="shrink-0" />,
 };
 
 export default function TrashBin({ bookId }: { bookId: number }) {
@@ -71,9 +71,9 @@ export default function TrashBin({ bookId }: { bookId: number }) {
                 className="flex w-full items-center gap-2 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint transition-colors hover:text-ink-muted"
             >
                 <span className={`flex shrink-0 items-center transition-transform ${isOpen ? 'rotate-90' : ''}`}>
-                    <CaretRight size={8} weight="bold" />
+                    <ChevronRight size={8} strokeWidth={2.5} />
                 </span>
-                <Trash size={14} weight="regular" className="shrink-0" />
+                <Trash2 size={14} className="shrink-0" />
                 {t('trash.title')}
                 {items.length > 0 && (
                     <span className="ml-auto rounded-full bg-ink/[0.06] px-1.5 py-px text-[10px] font-medium tabular-nums text-ink-faint">

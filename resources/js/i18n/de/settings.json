@@ -6,7 +6,7 @@
     "section.license": "Lizenz",
     "section.aiProviders": "KI-Anbieter",
     "section.writingStyle": "Schreibstil",
-    "section.prosePassRules": "Stilregeln",
+    "section.prosePassRules": "Überarbeitungsregeln",
     "section.export": "Export",
 
     "appearance.title": "Erscheinungsbild",
@@ -24,6 +24,9 @@
     "appearance.editor": "Editor",
     "appearance.hideToolbar.label": "Formatierungsleiste ausblenden",
     "appearance.hideToolbar.description": "Die Symbolleiste oben im Editor ausblenden.",
+    "appearance.privacy": "Datenschutz",
+    "appearance.sendErrorReports.label": "Fehlerberichte senden",
+    "appearance.sendErrorReports.description": "Hilf, Manuscript zu verbessern, indem du anonyme Absturzberichte automatisch sendest. Es werden niemals persönliche Daten oder Manuskriptinhalte übertragen.",
     "appearance.version": "Version",
 
     "license.title": "Lizenz",
@@ -71,8 +74,8 @@
     "writingStyle.saveFailed": "Speichern fehlgeschlagen.",
     "writingStyle.regenerateFailed": "Schreibstil konnte nicht neu generiert werden.",
 
-    "prosePassRules.title": "Stilregeln",
-    "prosePassRules.pageTitle": "Stilregeln — {{bookTitle}}",
+    "prosePassRules.title": "Überarbeitungsregeln",
+    "prosePassRules.pageTitle": "Überarbeitungsregeln — {{bookTitle}}",
     "prosePassRules.description": "Lege fest, welche Überarbeitungsregeln die KI beim Bearbeiten von Prosa anwendet.",
 
     "export.title": "Export",

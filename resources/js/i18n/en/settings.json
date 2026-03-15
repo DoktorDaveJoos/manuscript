@@ -6,7 +6,7 @@
     "section.license": "License",
     "section.aiProviders": "AI Providers",
     "section.writingStyle": "Writing Style",
-    "section.prosePassRules": "Prose Pass Rules",
+    "section.prosePassRules": "Revision Rules",
     "section.export": "Export",
 
     "appearance.title": "Appearance",
@@ -24,6 +24,9 @@
     "appearance.editor": "Editor",
     "appearance.hideToolbar.label": "Hide formatting toolbar",
     "appearance.hideToolbar.description": "Hide the toolbar at the top of the editor.",
+    "appearance.privacy": "Privacy",
+    "appearance.sendErrorReports.label": "Send error reports",
+    "appearance.sendErrorReports.description": "Help improve Manuscript by automatically sending anonymous crash reports. No personal data or manuscript content is ever included.",
     "appearance.version": "Version",
 
     "license.title": "License",
@@ -71,8 +74,8 @@
     "writingStyle.saveFailed": "Failed to save.",
     "writingStyle.regenerateFailed": "Failed to regenerate writing style.",
 
-    "prosePassRules.title": "Prose Pass Rules",
-    "prosePassRules.pageTitle": "Prose Pass Rules — {{bookTitle}}",
+    "prosePassRules.title": "Revision Rules",
+    "prosePassRules.pageTitle": "Revision Rules — {{bookTitle}}",
     "prosePassRules.description": "Control which revision rules AI applies when editing prose.",
 
     "export.title": "Export",

@@ -29,17 +29,33 @@ class Book extends Model
             'ai_input_tokens' => 'integer',
             'ai_output_tokens' => 'integer',
             'ai_cost_microdollars' => 'integer',
+            'ai_request_count' => 'integer',
             'ai_usage_reset_at' => 'datetime',
         ];
     }
 
-    public function recordAiUsage(int $inputTokens, int $outputTokens, int $costMicrodollars): void
+    public function recordAiUsage(int $inputTokens, int $outputTokens, int $costMicrodollars, ?string $feature = null, ?string $model = null): void
     {
-        static::query()->where('id', $this->id)->update([
-            'ai_input_tokens' => DB::raw("ai_input_tokens + {$inputTokens}"),
-            'ai_output_tokens' => DB::raw("ai_output_tokens + {$outputTokens}"),
-            'ai_cost_microdollars' => DB::raw("ai_cost_microdollars + {$costMicrodollars}"),
-        ]);
+        DB::transaction(function () use ($inputTokens, $outputTokens, $costMicrodollars, $feature, $model) {
+            static::query()->where('id', $this->id)->update([
+                'ai_input_tokens' => DB::raw("ai_input_tokens + {$inputTokens}"),
+                'ai_output_tokens' => DB::raw("ai_output_tokens + {$outputTokens}"),
+                'ai_cost_microdollars' => DB::raw("ai_cost_microdollars + {$costMicrodollars}"),
+                'ai_request_count' => DB::raw('ai_request_count + 1'),
+            ]);
+
+            if ($feature) {
+                AiUsageLog::create([
+                    'book_id' => $this->id,
+                    'feature' => $feature,
+                    'input_tokens' => $inputTokens,
+                    'output_tokens' => $outputTokens,
+                    'cost_microdollars' => $costMicrodollars,
+                    'model' => $model,
+                    'created_at' => now(),
+                ]);
+            }
+        });
     }
 
     public function resetAiUsage(): void
@@ -48,6 +64,7 @@ class Book extends Model
             'ai_input_tokens' => 0,
             'ai_output_tokens' => 0,
             'ai_cost_microdollars' => 0,
+            'ai_request_count' => 0,
             'ai_usage_reset_at' => now(),
         ]);
     }
@@ -55,6 +72,15 @@ class Book extends Model
     public function getAiCostDisplayAttribute(): string
     {
         return '$'.number_format($this->ai_cost_microdollars / 1_000_000, 4);
+    }
+
+    public function getAiAvgCostDisplayAttribute(): string
+    {
+        if ($this->ai_request_count === 0) {
+            return '$0.0000';
+        }
+
+        return '$'.number_format($this->ai_cost_microdollars / $this->ai_request_count / 1_000_000, 4);
     }
 
     /**
@@ -191,5 +217,13 @@ class Book extends Model
     public function wikiEntries(): HasMany
     {
         return $this->hasMany(WikiEntry::class);
+    }
+
+    /**
+     * @return HasMany<AiUsageLog, $this>
+     */
+    public function aiUsageLogs(): HasMany
+    {
+        return $this->hasMany(AiUsageLog::class);
     }
 }

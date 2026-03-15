@@ -115,7 +115,7 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
                     autoFocus
                 />
                 {(isCharacter ? characterForm.errors.name : entryForm.errors.name) && (
-                    <p className="mt-1 text-[12px] text-red-500">
+                    <p className="mt-1 text-[12px] text-red-600">
                         {isCharacter ? characterForm.errors.name : entryForm.errors.name}
                     </p>
                 )}
@@ -221,7 +221,7 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
                                     onClick={() => toggleStoryline(s.id)}
                                     className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
                                         selected
-                                            ? 'bg-ink text-white'
+                                            ? 'bg-ink text-surface'
                                             : 'bg-neutral-bg text-ink-soft hover:bg-border'
                                     }`}
                                 >
@@ -239,7 +239,7 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
                 <button
                     type="submit"
                     disabled={isCharacter ? characterForm.processing : entryForm.processing}
-                    className="rounded-md bg-ink px-5 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-ink/90 disabled:opacity-50"
+                    className="rounded-md bg-ink px-5 py-2.5 text-[13px] font-medium text-surface transition-colors hover:bg-ink/90 disabled:opacity-50"
                 >
                     {isCharacter ? t('create.submit') : t('create.submitEntry')}
                 </button>

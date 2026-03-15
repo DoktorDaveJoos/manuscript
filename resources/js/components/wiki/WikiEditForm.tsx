@@ -128,14 +128,14 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="rounded border border-border px-3 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:bg-neutral-bg"
+                        className="rounded-md border border-border px-3 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:bg-neutral-bg"
                     >
                         {t('create.cancel')}
                     </button>
                     <button
                         type="submit"
                         disabled={isChar ? characterForm.processing : entryForm.processing}
-                        className="rounded bg-ink px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-ink/90 disabled:opacity-50"
+                        className="rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-surface transition-colors hover:bg-ink/90 disabled:opacity-50"
                     >
                         {t('edit.save')}
                     </button>
@@ -245,7 +245,7 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                                         onClick={() => toggleStoryline(s.id)}
                                         className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
                                             selected
-                                                ? 'bg-ink text-white'
+                                                ? 'bg-ink text-surface'
                                                 : 'bg-neutral-bg text-ink-soft hover:bg-border'
                                         }`}
                                     >
@@ -301,7 +301,7 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                 <button
                     type="button"
                     onClick={handleDelete}
-                    className="text-[12px] font-medium text-red-500 transition-colors hover:text-red-600"
+                    className="text-[12px] font-medium text-delete transition-colors hover:text-delete/80"
                 >
                     {t('edit.delete')}
                 </button>

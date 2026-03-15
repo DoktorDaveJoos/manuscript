@@ -39,7 +39,7 @@ export default function WikiSearchResults({
         <div className="flex flex-col gap-4">
             {results.map(({ tab, items }) => (
                 <div key={tab}>
-                    <div className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
+                    <div className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-faint">
                         {t(`tabs.${tabLabelKey[tab]}`)}
                     </div>
                     <div className="flex flex-col gap-0.5">

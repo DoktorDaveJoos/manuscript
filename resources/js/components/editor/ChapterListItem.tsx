@@ -3,7 +3,7 @@ import { formatCompactCount } from '@/lib/utils';
 import type { Chapter, ChapterStatus } from '@/types/models';
 import type { DraggableSyntheticListeners } from '@dnd-kit/core';
 import { router } from '@inertiajs/react';
-import { CaretRight, Circle, DotsSixVertical } from '@phosphor-icons/react';
+import { ChevronRight, Circle, GripVertical } from 'lucide-react';
 import { forwardRef } from 'react';
 
 export const statusDot: Record<ChapterStatus, string> = {
@@ -73,17 +73,17 @@ const ChapterListItem = forwardRef<HTMLButtonElement, ChapterListItemProps>(func
                             }}
                             className={`flex items-center transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''} ${isActive ? 'text-white/70' : 'text-ink-faint'}`}
                         >
-                            <CaretRight size={8} weight="bold" />
+                            <ChevronRight size={8} strokeWidth={2.5} />
                         </span>
                     )}
-                    <Circle size={6} weight="fill" className={`shrink-0 ${statusDotColor[chapter.status]}`} />
+                    <Circle size={6} fill="currentColor" className={`shrink-0 ${statusDotColor[chapter.status]}`} />
                 </span>
                 <span
                     className={`pointer-events-none absolute inset-0 flex cursor-grab items-center justify-center opacity-0 transition-opacity active:cursor-grabbing group-hover:opacity-100 ${
                         isActive ? 'text-white/40' : 'text-ink-faint'
                     }`}
                 >
-                    <DotsSixVertical size={12} weight="regular" />
+                    <GripVertical size={12} />
                 </span>
             </span>
             <span className="min-w-0 flex-1 truncate">
