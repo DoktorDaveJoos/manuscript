@@ -7,8 +7,8 @@ export default function FileRow({ file, onRemove }: { file: File; onRemove: () =
     return (
         <div className="flex items-center gap-3.5 border-b border-border-light py-3.5">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="shrink-0">
-                <rect x="3" y="2" width="12" height="14" rx="1.5" stroke="#B5B0A6" strokeWidth="1.2" />
-                <path d="M6 6h6M6 9h6M6 12h3" stroke="#B5B0A6" strokeWidth="1.2" strokeLinecap="round" />
+                <rect x="3" y="2" width="12" height="14" rx="1.5" stroke="#A3A3A3" strokeWidth="1.2" />
+                <path d="M6 6h6M6 9h6M6 12h3" stroke="#A3A3A3" strokeWidth="1.2" strokeLinecap="round" />
             </svg>
 
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">

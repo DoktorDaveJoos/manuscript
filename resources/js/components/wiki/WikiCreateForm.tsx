@@ -81,8 +81,8 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <h2 className="font-serif text-[30px] leading-[1.2] text-[#1A1A1A]">{t(titleKey)}</h2>
-                <button type="button" onClick={onCancel} className="text-[13px] font-medium text-[#8A8578]">
+                <h2 className="font-serif text-[30px] leading-[1.2] text-ink">{t(titleKey)}</h2>
+                <button type="button" onClick={onCancel} className="text-[13px] font-medium text-ink-muted">
                     {t('create.cancel')}
                 </button>
             </div>
@@ -90,16 +90,16 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
             {/* Avatar placeholder — characters only */}
             {isCharacter && (
                 <div className="flex items-center gap-3">
-                    <div className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#F0EEEA]">
-                        <Camera size={20} className="text-[#B5B0A6]" />
+                    <div className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-neutral-bg">
+                        <Camera size={20} className="text-ink-faint" />
                     </div>
-                    <span className="text-[13px] text-[#B5B0A6]">{t('create.uploadPhoto')}</span>
+                    <span className="text-[13px] text-ink-faint">{t('create.uploadPhoto')}</span>
                 </div>
             )}
 
             {/* Name */}
             <div>
-                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-[#B5B0A6]">
+                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                     {t('field.name')}
                 </label>
                 <input
@@ -111,7 +111,7 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
                             : entryForm.setData('name', e.target.value)
                     }
                     placeholder={t('field.namePlaceholder')}
-                    className="w-full rounded-md bg-[#F5F4F1] px-3 py-2.5 text-[14px] text-[#1A1A1A] placeholder:text-[#B5B0A6] focus:outline-none focus:ring-1 focus:ring-[#C9C4B8]"
+                    className="w-full rounded-md bg-neutral-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-border"
                     autoFocus
                 />
                 {(isCharacter ? characterForm.errors.name : entryForm.errors.name) && (
@@ -124,18 +124,18 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
             {/* Aliases — characters only */}
             {isCharacter && (
                 <div>
-                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-[#B5B0A6]">
+                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                         {t('field.aliases')}
                     </label>
-                    <div className="flex flex-wrap items-center gap-1.5 rounded-md bg-[#F5F4F1] px-3 py-2">
+                    <div className="flex flex-wrap items-center gap-1.5 rounded-md bg-neutral-bg px-3 py-2">
                         {characterForm.data.aliases.map((alias) => (
                             <span
                                 key={alias}
-                                className="flex items-center gap-1 rounded bg-[#E8E6E0] px-2.5 py-1 text-[12px] text-[#5A574F]"
+                                className="flex items-center gap-1 rounded bg-border px-2.5 py-1 text-[12px] text-ink-soft"
                             >
                                 {alias}
                                 <button type="button" onClick={() => removeAlias(alias)}>
-                                    <X size={10} className="text-[#B5B0A6]" />
+                                    <X size={10} className="text-ink-faint" />
                                 </button>
                             </span>
                         ))}
@@ -145,7 +145,7 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
                             onChange={(e) => setAliasInput(e.target.value)}
                             onKeyDown={handleAliasKeyDown}
                             placeholder={characterForm.data.aliases.length === 0 ? t('field.aliasPlaceholder') : ''}
-                            className="min-w-[80px] flex-1 bg-transparent text-[14px] text-[#1A1A1A] placeholder:text-[#B5B0A6] focus:outline-none"
+                            className="min-w-[80px] flex-1 bg-transparent text-[14px] text-ink placeholder:text-ink-faint focus:outline-none"
                         />
                     </div>
                 </div>
@@ -154,13 +154,13 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
             {/* Role — characters only */}
             {isCharacter && (
                 <div>
-                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-[#B5B0A6]">
+                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                         {t('field.role')}
                     </label>
                     <select
                         value={characterForm.data.role}
                         onChange={(e) => characterForm.setData('role', e.target.value)}
-                        className="w-full appearance-none rounded-md bg-[#F5F4F1] px-3 py-2.5 text-[14px] text-[#1A1A1A] focus:outline-none focus:ring-1 focus:ring-[#C9C4B8]"
+                        className="w-full appearance-none rounded-md bg-neutral-bg px-3 py-2.5 text-[14px] text-ink focus:outline-none focus:ring-1 focus:ring-border"
                     >
                         <option value="protagonist">{t('role.mainCharacter')}</option>
                         <option value="supporting">{t('role.supporting')}</option>
@@ -172,7 +172,7 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
             {/* Type — wiki entries only */}
             {!isCharacter && (
                 <div>
-                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-[#B5B0A6]">
+                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                         {t('field.type')}
                     </label>
                     <input
@@ -180,14 +180,14 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
                         value={entryForm.data.type}
                         onChange={(e) => entryForm.setData('type', e.target.value)}
                         placeholder={t('field.typePlaceholder')}
-                        className="w-full rounded-md bg-[#F5F4F1] px-3 py-2.5 text-[14px] text-[#1A1A1A] placeholder:text-[#B5B0A6] focus:outline-none focus:ring-1 focus:ring-[#C9C4B8]"
+                        className="w-full rounded-md bg-neutral-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-border"
                     />
                 </div>
             )}
 
             {/* Description */}
             <div>
-                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-[#B5B0A6]">
+                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                     {t('field.description')}
                 </label>
                 <textarea
@@ -201,14 +201,14 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
                         isCharacter ? t('field.descriptionPlaceholder') : t('field.entryDescriptionPlaceholder')
                     }
                     rows={4}
-                    className="w-full resize-none rounded-md bg-[#F5F4F1] px-3 py-2.5 text-[14px] text-[#1A1A1A] placeholder:text-[#B5B0A6] focus:outline-none focus:ring-1 focus:ring-[#C9C4B8]"
+                    className="w-full resize-none rounded-md bg-neutral-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-border"
                 />
             </div>
 
             {/* Storylines — characters only */}
             {isCharacter && storylines.length > 0 && (
                 <div>
-                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-[#B5B0A6]">
+                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                         {t('field.storylines')}
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -221,8 +221,8 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
                                     onClick={() => toggleStoryline(s.id)}
                                     className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
                                         selected
-                                            ? 'bg-[#2D2A26] text-white'
-                                            : 'bg-[#F0EEEA] text-[#5A574F] hover:bg-[#E8E6E0]'
+                                            ? 'bg-ink text-white'
+                                            : 'bg-neutral-bg text-ink-soft hover:bg-border'
                                     }`}
                                 >
                                     {s.name}
@@ -239,7 +239,7 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
                 <button
                     type="submit"
                     disabled={isCharacter ? characterForm.processing : entryForm.processing}
-                    className="rounded-md bg-[#2D2A26] px-5 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-[#3D3A36] disabled:opacity-50"
+                    className="rounded-md bg-ink px-5 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-ink/90 disabled:opacity-50"
                 >
                     {isCharacter ? t('create.submit') : t('create.submitEntry')}
                 </button>

@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { CheckCircle } from '@phosphor-icons/react';
+import { Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { SuggestedNext as SuggestedNextType } from '@/types/models';
 import { show as showChapter } from '@/actions/App/Http/Controllers/ChapterController';
@@ -14,17 +14,18 @@ export default function SuggestedNext({
     const { t } = useTranslation('dashboard');
 
     return (
-        <div className="flex items-start gap-4">
-            <CheckCircle size={20} weight="fill" className="mt-0.5 shrink-0 text-accent" />
+        <div className="rounded-xl border border-border-light bg-surface-card p-6">
+            <div className="flex items-start gap-4">
+                <Check size={18} className="mt-0.5 shrink-0 text-accent" />
 
-            <div className="flex flex-col gap-1">
-                <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-accent">
+                <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-medium uppercase tracking-[1.5px] text-accent">
                     {t('suggestedNext.label')}
                 </span>
-                <h3 className="font-serif text-[20px] font-medium leading-[26px] text-ink">
+                <h3 className="font-serif text-[18px] font-semibold text-ink">
                     {suggestion.title}
                 </h3>
-                <p className="text-[13px] leading-[20px] text-ink-muted">{suggestion.description}</p>
+                <p className="text-[13px] leading-[1.4] text-ink-soft">{suggestion.description}</p>
                 {suggestion.chapter_id && (
                     <Link
                         href={showChapter.url({ book: bookId, chapter: suggestion.chapter_id })}
@@ -33,6 +34,7 @@ export default function SuggestedNext({
                         {t('suggestedNext.openInEditor')} &rarr;
                     </Link>
                 )}
+                </div>
             </div>
         </div>
     );

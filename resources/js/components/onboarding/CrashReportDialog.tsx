@@ -40,8 +40,8 @@ export default function CrashReportDialog() {
             <div className="relative z-10 flex w-[440px] flex-col overflow-hidden rounded-2xl bg-surface-card shadow-[0_16px_48px_-4px_rgba(0,0,0,0.15),0_4px_12px_rgba(0,0,0,0.05)]">
                 {/* Header */}
                 <div className="flex flex-col items-center gap-4 px-10 pt-8">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-[14px] bg-gradient-to-b from-[#FDF6ED] to-[#F5EDE0]">
-                        <ShieldCheck className="h-7 w-7 text-[#C4956A]" />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-[14px] bg-gradient-to-b from-accent-light to-surface-warm">
+                        <ShieldCheck className="h-7 w-7 text-accent" />
                     </div>
                     <h2 className="text-[22px] font-semibold tracking-[-0.3px] text-ink">
                         {t('crashReport.title')}
@@ -84,7 +84,7 @@ export default function CrashReportDialog() {
                             type="button"
                             disabled={submitting}
                             onClick={() => dismiss(true)}
-                            className="flex h-11 w-full items-center justify-center rounded-[10px] bg-gradient-to-b from-[#3A3530] to-[#2D2926] text-[14px] font-semibold text-white shadow-[0_1px_3px_rgba(0,0,0,0.1)] disabled:opacity-50"
+                            className="flex h-11 w-full items-center justify-center rounded-[10px] bg-ink text-[14px] font-semibold text-white shadow-[0_1px_3px_rgba(0,0,0,0.1)] disabled:opacity-50"
                         >
                             {t('crashReport.enable')}
                         </button>
@@ -92,7 +92,7 @@ export default function CrashReportDialog() {
                             type="button"
                             disabled={submitting}
                             onClick={() => dismiss(false)}
-                            className="flex h-11 w-full items-center justify-center rounded-[10px] border border-[#E0DCD6] bg-surface-card text-[14px] font-medium text-ink-muted disabled:opacity-50"
+                            className="flex h-11 w-full items-center justify-center rounded-[10px] border border-border bg-surface-card text-[14px] font-medium text-ink-muted disabled:opacity-50"
                         >
                             {t('crashReport.notNow')}
                         </button>
@@ -110,11 +110,11 @@ function InfoRow({ icon, text }: { icon: 'check' | 'x'; text: string }) {
     return (
         <div className="flex items-center gap-2.5">
             {icon === 'check' ? (
-                <Check className="h-4 w-4 shrink-0 text-[#7BAE6F]" />
+                <Check className="h-4 w-4 shrink-0 text-status-final" />
             ) : (
-                <X className="h-4 w-4 shrink-0 text-[#C4736A]" />
+                <X className="h-4 w-4 shrink-0 text-danger" />
             )}
-            <span className="text-[13px] text-[#4A4540]">{text}</span>
+            <span className="text-[13px] text-ink-soft">{text}</span>
         </div>
     );
 }

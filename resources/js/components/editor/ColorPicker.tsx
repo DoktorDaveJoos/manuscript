@@ -1,16 +1,16 @@
-import { Check } from '@phosphor-icons/react';
+import { Check } from 'lucide-react';
 
 const PRESET_COLORS = [
-    '#C44D3C',
-    '#D97A35',
-    '#CBA135',
-    '#5A9E5F',
-    '#3D8B8B',
-    '#4A7AB5',
-    '#7B5EA7',
-    '#C25D7E',
-    '#8B7355',
-    '#6B7B8D',
+    '#B8433A',
+    '#C97030',
+    '#B87333',
+    '#4D8B52',
+    '#3A7F7F',
+    '#4270A8',
+    '#6F5298',
+    '#B05472',
+    '#7D6A4E',
+    '#5F7080',
 ];
 
 export default function ColorPicker({
@@ -34,7 +34,7 @@ export default function ColorPicker({
                     style={{ backgroundColor: color }}
                 >
                     {value === color && (
-                        <Check size={12} weight="bold" className="text-white" />
+                        <Check size={12} strokeWidth={2.5} className="text-white" />
                     )}
                 </button>
             ))}

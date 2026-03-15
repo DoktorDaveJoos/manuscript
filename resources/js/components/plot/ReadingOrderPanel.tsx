@@ -12,6 +12,7 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { GripVertical, ListOrdered } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -21,46 +22,9 @@ type ReadingOrderPanelProps = {
     chapters: Chapter[];
     storylines: Storyline[];
     bookId: number;
-    isOpen: boolean;
-    onToggle: () => void;
     onReorder: (order: { id: number; storyline_id: number }[]) => void;
     onInterleave: () => void;
 };
-
-function GripIcon() {
-    return (
-        <svg width="6" height="10" viewBox="0 0 6 10" fill="currentColor">
-            <circle cx="1" cy="1" r="1" />
-            <circle cx="5" cy="1" r="1" />
-            <circle cx="1" cy="5" r="1" />
-            <circle cx="5" cy="5" r="1" />
-            <circle cx="1" cy="9" r="1" />
-            <circle cx="5" cy="9" r="1" />
-        </svg>
-    );
-}
-
-function ListOrderedIcon() {
-    return (
-        <svg
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M6 3h6" />
-            <path d="M6 7h6" />
-            <path d="M6 11h6" />
-            <text x="1" y="4" fontSize="4" fontWeight="600" fill="currentColor" stroke="none" fontFamily="system-ui">1</text>
-            <text x="1" y="8" fontSize="4" fontWeight="600" fill="currentColor" stroke="none" fontFamily="system-ui">2</text>
-            <text x="1" y="12" fontSize="4" fontWeight="600" fill="currentColor" stroke="none" fontFamily="system-ui">3</text>
-        </svg>
-    );
-}
 
 function ShuffleIcon() {
     return (
@@ -106,7 +70,7 @@ function SortableChapterRow({
         transition,
     };
 
-    const color = storyline?.color ?? '#8A857D';
+    const color = storyline?.color ?? '#737373';
 
     return (
         <div
@@ -114,15 +78,15 @@ function SortableChapterRow({
             style={style}
             {...attributes}
             className={cn(
-                'flex items-center gap-2 rounded px-2 py-1.5 transition-colors hover:bg-[#F0EEEA]',
+                'flex items-center gap-2 rounded px-2 py-1.5 transition-colors hover:bg-neutral-bg',
                 isDragging && 'opacity-50',
             )}
         >
             <span
                 {...listeners}
-                className="flex shrink-0 cursor-grab items-center text-[#8A857D] active:cursor-grabbing"
+                className="flex shrink-0 cursor-grab items-center text-ink-muted active:cursor-grabbing"
             >
-                <GripIcon />
+                <GripVertical className="h-3 w-3" />
             </span>
 
             <span
@@ -130,15 +94,15 @@ function SortableChapterRow({
                 style={{ width: 3, height: 20, backgroundColor: color }}
             />
 
-            <span className="shrink-0 text-[13px] font-semibold tabular-nums text-[#2D2A26]">
+            <span className="shrink-0 text-[13px] font-semibold tabular-nums text-ink">
                 {position}
             </span>
 
-            <span className="min-w-0 flex-1 truncate text-[13px] text-[#2D2A26]">
+            <span className="min-w-0 flex-1 truncate text-[13px] text-ink">
                 {chapter.title}
             </span>
 
-            <span className="shrink-0 truncate text-[11px] text-[#8A857D]">
+            <span className="shrink-0 truncate text-[11px] text-ink-muted">
                 {t('readingOrder.storylineChapter', {
                     storyline: storyline?.name ?? t('readingOrder.unknownStoryline'),
                     index: storylineChapterIndex,
@@ -152,8 +116,6 @@ export default function ReadingOrderPanel({
     chapters,
     storylines,
     bookId: _bookId,
-    isOpen,
-    onToggle,
     onReorder,
     onInterleave,
 }: ReadingOrderPanelProps) {
@@ -263,59 +225,34 @@ export default function ReadingOrderPanel({
     const activeChapterStoryline = activeChapter ? storylineMap.get(activeChapter.storyline_id) : undefined;
 
     return (
-        <aside
-            className={cn(
-                'flex h-full shrink-0 flex-col border-l border-[#ECEAE4] bg-white transition-[width] duration-200 ease-in-out',
-                isOpen ? 'w-[280px]' : 'w-10',
-            )}
-        >
-            {isOpen ? (
-                <>
-                    {/* Header */}
-                    <div className="flex h-12 items-center justify-between border-b border-[#ECEAE4] px-4">
-                        <div className="flex items-center gap-2">
-                            <span className="flex items-center text-[#8A857D]">
-                                <ListOrderedIcon />
-                            </span>
-                            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-[#2D2A26]">
-                                {t('readingOrder.header')}
-                            </span>
-                            <span className="rounded-full bg-[#F0EEEA] px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-[#5A574F]">
-                                {t('readingOrder.chapterCount', { count: orderedChapters.length })}
-                            </span>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={onToggle}
-                            className="flex size-6 items-center justify-center rounded text-[#8A857D] transition-colors hover:text-[#2D2A26]"
-                        >
-                            <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 14 14"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            >
-                                <path d="M6 4l3 3-3 3" />
-                            </svg>
-                        </button>
-                    </div>
+        <aside className="flex h-full w-[280px] shrink-0 flex-col border-l border-border-light bg-surface-card">
+            {/* Header */}
+            <div className="flex h-12 items-center border-b border-border-light px-4">
+                <div className="flex items-center gap-2">
+                    <span className="flex items-center text-ink-muted">
+                        <ListOrdered className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.06em] text-ink">
+                        {t('readingOrder.header')}
+                    </span>
+                    <span className="rounded-full bg-neutral-bg px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-ink-soft">
+                        {t('readingOrder.chapterCount', { count: orderedChapters.length })}
+                    </span>
+                </div>
+            </div>
 
                     {/* Action bar */}
                     {hasMultipleStorylines && (
-                        <div className="flex items-center justify-between border-b border-[#ECEAE4] px-4 py-2">
+                        <div className="flex items-center justify-between border-b border-border-light px-4 py-2">
                             <button
                                 type="button"
                                 onClick={() => setShowConfirmDialog(true)}
-                                className="flex items-center gap-1.5 rounded border border-[#ECEAE4] px-2 py-1 text-[12px] font-medium text-[#5A574F] transition-colors hover:bg-[#F0EEEA]"
+                                className="flex items-center gap-1.5 rounded border border-border-light px-2 py-1 text-[12px] font-medium text-ink-soft transition-colors hover:bg-neutral-bg"
                             >
                                 <ShuffleIcon />
                                 {t('readingOrder.autoInterleave')}
                             </button>
-                            <span className="text-[11px] text-[#8A857D]">{t('readingOrder.exportOrder')}</span>
+                            <span className="text-[11px] text-ink-muted">{t('readingOrder.exportOrder')}</span>
                         </div>
                     )}
 
@@ -323,10 +260,10 @@ export default function ReadingOrderPanel({
                     <div className="flex-1 overflow-y-auto p-2">
                         {orderedChapters.length === 0 ? (
                             <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                                <span className="text-[#8A857D]">
-                                    <ListOrderedIcon />
+                                <span className="text-ink-muted">
+                                    <ListOrdered className="h-3.5 w-3.5" />
                                 </span>
-                                <p className="text-[13px] text-[#8A857D]">
+                                <p className="text-[13px] text-ink-muted">
                                     {t('readingOrder.emptyState')}
                                 </p>
                             </div>
@@ -356,11 +293,11 @@ export default function ReadingOrderPanel({
                                         {backstoryChapters.length > 0 && (
                                             <>
                                                 <div className="flex items-center gap-2 px-2 pb-1 pt-3">
-                                                    <span className="h-px flex-1 bg-[#ECEAE4]" />
-                                                    <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8A857D]">
+                                                    <span className="h-px flex-1 bg-border-light" />
+                                                    <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
                                                         {t('readingOrder.backstoryDivider')}
                                                     </span>
-                                                    <span className="h-px flex-1 bg-[#ECEAE4]" />
+                                                    <span className="h-px flex-1 bg-border-light" />
                                                 </div>
                                                 {backstoryChapters.map((chapter) => (
                                                     <SortableChapterRow
@@ -379,19 +316,19 @@ export default function ReadingOrderPanel({
 
                                 <DragOverlay>
                                     {activeChapter && (
-                                        <div className="flex items-center gap-2 rounded bg-white px-2 py-1.5 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
-                                            <span className="flex shrink-0 items-center text-[#8A857D]">
-                                                <GripIcon />
+                                        <div className="flex items-center gap-2 rounded bg-surface-card px-2 py-1.5 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
+                                            <span className="flex shrink-0 items-center text-ink-muted">
+                                                <GripVertical className="h-3 w-3" />
                                             </span>
                                             <span
                                                 className="shrink-0 rounded-sm"
                                                 style={{
                                                     width: 3,
                                                     height: 20,
-                                                    backgroundColor: activeChapterStoryline?.color ?? '#8A857D',
+                                                    backgroundColor: activeChapterStoryline?.color ?? '#737373',
                                                 }}
                                             />
-                                            <span className="min-w-0 flex-1 truncate text-[13px] text-[#2D2A26]">
+                                            <span className="min-w-0 flex-1 truncate text-[13px] text-ink">
                                                 {activeChapter.title}
                                             </span>
                                         </div>
@@ -400,54 +337,26 @@ export default function ReadingOrderPanel({
                             </DndContext>
                         )}
                     </div>
-                </>
-            ) : (
-                /* Collapsed state */
-                <button
-                    type="button"
-                    onClick={onToggle}
-                    className="flex h-full w-full flex-col items-center gap-3 pt-3 transition-colors hover:bg-[#FAFAF7]"
-                >
-                    <span className="flex size-6 items-center justify-center text-[#8A857D]">
-                        <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 14 14"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <path d="M8 4l-3 3 3 3" />
-                        </svg>
-                    </span>
-                    <span className="flex size-5 items-center justify-center text-[#8A857D]">
-                        <ListOrderedIcon />
-                    </span>
-                </button>
-            )}
-
             {/* Confirmation dialog */}
             {showConfirmDialog && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-                    <div className="mx-4 w-full max-w-sm rounded-lg bg-white p-5 shadow-lg">
-                        <h3 className="text-[14px] font-semibold text-[#2D2A26]">{t('readingOrder.confirmTitle')}</h3>
-                        <p className="mt-2 text-[13px] leading-relaxed text-[#5A574F]">
+                    <div className="mx-4 w-full max-w-sm rounded-lg bg-surface-card p-5 shadow-lg">
+                        <h3 className="text-[14px] font-semibold text-ink">{t('readingOrder.confirmTitle')}</h3>
+                        <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
                             {t('readingOrder.confirmMessage', { count: orderedChapters.length })}
                         </p>
                         <div className="mt-4 flex justify-end gap-2">
                             <button
                                 type="button"
                                 onClick={() => setShowConfirmDialog(false)}
-                                className="rounded border border-[#ECEAE4] px-3 py-1.5 text-[13px] font-medium text-[#5A574F] transition-colors hover:bg-[#F0EEEA]"
+                                className="rounded border border-border-light px-3 py-1.5 text-[13px] font-medium text-ink-soft transition-colors hover:bg-neutral-bg"
                             >
                                 {t('readingOrder.confirmCancel')}
                             </button>
                             <button
                                 type="button"
                                 onClick={handleInterleaveConfirm}
-                                className="rounded bg-[#C8B88A] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[#b8a87a]"
+                                className="rounded bg-accent px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-accent/90"
                             >
                                 {t('readingOrder.confirmContinue')}
                             </button>

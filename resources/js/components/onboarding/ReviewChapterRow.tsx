@@ -44,15 +44,15 @@ export default function ReviewChapterRow({
                 onClick={onToggle}
                 className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border-[1.5px] transition-colors"
                 style={{
-                    borderColor: chapter.included ? '#1A1A1A' : '#C5C1B8',
-                    backgroundColor: chapter.included ? '#1A1A1A' : 'transparent',
+                    borderColor: chapter.included ? '#141414' : '#C5C1B8',
+                    backgroundColor: chapter.included ? '#141414' : 'transparent',
                 }}
             >
                 {chapter.included && (
                     <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
                         <path
                             d="M1 4L3.5 6.5L9 1"
-                            stroke="#FAFAF7"
+                            stroke="#FCFAF7"
                             strokeWidth="1.5"
                             strokeLinecap="round"
                             strokeLinejoin="round"

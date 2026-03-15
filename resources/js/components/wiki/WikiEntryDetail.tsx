@@ -35,7 +35,7 @@ export default function WikiEntryDetail({
                 {onEdit && (
                     <button
                         onClick={onEdit}
-                        className="flex items-center gap-1.5 rounded border border-[#E8E6E0] px-3 py-1.5 text-[12px] font-medium text-[#5A574F] transition-colors hover:bg-[#F5F4F1]"
+                        className="flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:bg-neutral-bg"
                     >
                         <Pencil size={12} />
                         {t('edit.editButton')}

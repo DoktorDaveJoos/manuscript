@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { CaretDown, Check } from '@phosphor-icons/react';
+import { Check, ChevronDown } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -63,11 +63,11 @@ export default function FontSelector({
                 <span style={{ fontFamily: selected.family }} className="text-[13px] leading-none">
                     {selected.label}
                 </span>
-                <CaretDown size={10} weight="bold" className="shrink-0" />
+                <ChevronDown size={10} strokeWidth={2.5} className="shrink-0" />
             </button>
 
             {open && (
-                <div className="absolute left-0 top-full z-50 mt-1 w-[200px] overflow-hidden rounded-lg border border-border bg-surface-card shadow-[0_4px_6px_#1A1A1A0F,0_12px_32px_#1A1A1A1A]">
+                <div className="absolute left-0 top-full z-50 mt-1 w-[200px] overflow-hidden rounded-lg border border-border bg-surface-card shadow-[0_4px_6px_#1414140F,0_12px_32px_#1414141A]">
                     <div className="px-1 pt-2 pb-1">
                         <div className="px-2 py-1 text-[10px] font-medium uppercase leading-3 tracking-[0.08em] text-section-header">
                             {t('font.favorites')}
@@ -124,7 +124,7 @@ function FontItem({
             )}
         >
             <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center text-ink-muted">
-                {isSelected && <Check size={14} weight="bold" />}
+                {isSelected && <Check size={14} strokeWidth={2.5} />}
             </span>
             <span className="flex-1 text-ink" style={{ fontFamily: font.family }}>
                 {font.label}

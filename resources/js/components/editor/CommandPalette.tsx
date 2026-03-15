@@ -2,18 +2,18 @@ import Kbd from '@/components/ui/Kbd';
 import { cn } from '@/lib/utils';
 import {
     ArrowRight,
-    ArrowsOutLineVertical,
-    CornersIn,
+    Bold,
+    ChevronsUpDown,
+    FilePen,
+    Italic,
     Keyboard,
     Lock,
-    MagnifyingGlass,
+    Minimize2,
     Minus,
-    NotePencil,
     Plus,
+    Search,
     Sparkle,
-    TextB,
-    TextItalic,
-} from '@phosphor-icons/react';
+} from 'lucide-react';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -76,7 +76,7 @@ export default function CommandPalette({
                 label: isFocusMode ? t('palette.leaveFocusMode') : t('palette.enterFocusMode'),
                 shortcut: isFocusMode ? 'Esc' : undefined,
                 section: t('palette.section.focus'),
-                icon: <CornersIn size={14} weight="regular" />,
+                icon: <Minimize2 size={14} />,
                 action: () => {
                     onClose();
                     onEnterFocusMode?.();
@@ -86,7 +86,7 @@ export default function CommandPalette({
                 id: 'typewriter-mode',
                 label: isTypewriterMode ? t('palette.leaveTypewriterMode') : t('palette.enterTypewriterMode'),
                 section: t('palette.section.focus'),
-                icon: <Keyboard size={14} weight="regular" />,
+                icon: <Keyboard size={14} />,
                 action: () => {
                     onClose();
                     onToggleTypewriterMode?.();
@@ -97,7 +97,7 @@ export default function CommandPalette({
                 label: t('palette.bold'),
                 shortcut: '⌘B',
                 section: t('palette.section.textStyle'),
-                icon: <TextB size={14} weight="bold" />,
+                icon: <Bold size={14} strokeWidth={2.5} />,
                 action: run(() => editor!.chain().focus().toggleBold().run()),
             },
             {
@@ -105,7 +105,7 @@ export default function CommandPalette({
                 label: t('palette.italic'),
                 shortcut: '⌘I',
                 section: t('palette.section.textStyle'),
-                icon: <TextItalic size={14} weight="regular" />,
+                icon: <Italic size={14} />,
                 action: run(() => editor!.chain().focus().toggleItalic().run()),
             },
             {
@@ -116,7 +116,7 @@ export default function CommandPalette({
                 iconColorClass: 'text-status-revised',
                 highlighted: true,
                 disabled: !licensed,
-                icon: <Sparkle size={14} weight="fill" />,
+                icon: <Sparkle size={14} fill="currentColor" />,
                 action: () => {},
             },
             {
@@ -126,14 +126,14 @@ export default function CommandPalette({
                 section: t('palette.section.aiGenerate'),
                 iconColorClass: 'text-status-revised',
                 disabled: !licensed,
-                icon: <ArrowRight size={14} weight="regular" />,
+                icon: <ArrowRight size={14} />,
                 action: () => {},
             },
             {
                 id: 'new-chapter',
                 label: t('palette.newChapter'),
                 section: t('palette.section.chapter'),
-                icon: <Plus size={14} weight="regular" />,
+                icon: <Plus size={14} />,
                 action: run(() => {
                     onNewChapter();
                 }),
@@ -142,7 +142,7 @@ export default function CommandPalette({
                 id: 'new-scene',
                 label: t('palette.newScene'),
                 section: t('palette.section.chapter'),
-                icon: <Minus size={14} weight="regular" />,
+                icon: <Minus size={14} />,
                 disabled: !onAddScene,
                 action: () => {
                     onAddScene?.();
@@ -153,7 +153,7 @@ export default function CommandPalette({
                 id: 'split-chapter',
                 label: t('palette.makeSelectionOwnScene'),
                 section: t('palette.section.chapter'),
-                icon: <ArrowsOutLineVertical size={14} weight="regular" />,
+                icon: <ChevronsUpDown size={14} />,
                 action: run(() => {
                     onSplitScene();
                 }),
@@ -162,7 +162,7 @@ export default function CommandPalette({
                 id: 'toggle-notes',
                 label: t('palette.toggleChapterNotes'),
                 section: t('palette.section.chapter'),
-                icon: <NotePencil size={14} weight="regular" />,
+                icon: <FilePen size={14} />,
                 action: () => {
                     onToggleNotes?.();
                     onClose();
@@ -242,13 +242,13 @@ export default function CommandPalette({
     return (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-surface/40 pt-[20vh]" onClick={onClose}>
             <div
-                className="w-[480px] overflow-hidden rounded-[12px] border border-border bg-surface-card shadow-[0_4px_6px_#1A1A1A0F,0_12px_32px_#1A1A1A1A]"
+                className="w-[480px] overflow-hidden rounded-[12px] border border-border bg-surface-card shadow-[0_4px_6px_#1414140F,0_12px_32px_#1414141A]"
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={handleKeyDown}
             >
                 {/* Search input */}
                 <div className="flex items-center gap-2 border-b border-border-subtle px-3 py-2.5">
-                    <MagnifyingGlass size={14} weight="regular" className="shrink-0 text-ink-faint" />
+                    <Search size={14} className="shrink-0 text-ink-faint" />
                     <input
                         ref={inputRef}
                         type="text"

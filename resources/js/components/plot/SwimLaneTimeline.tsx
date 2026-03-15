@@ -22,8 +22,8 @@ type Props = {
 };
 
 const ACT_COLORS: Record<number, string> = {
-    0: '#C8B88A',
-    1: '#8AB0C8',
+    0: 'var(--color-accent)',
+    1: 'var(--color-status-revised)',
     2: '#A3C4A0',
 };
 
@@ -50,14 +50,14 @@ export default function SwimLaneTimeline({
                         {acts.map((act, i) => (
                             <div
                                 key={act.id}
-                                className="flex items-center gap-2 border-b border-[#ECEAE4] px-3 py-2"
+                                className="flex items-center gap-2 border-b border-border px-3 py-2"
                                 style={{ width: ACT_COL_W }}
                             >
                                 <div
                                     className="h-3.5 w-1 rounded-sm"
-                                    style={{ backgroundColor: ACT_COLORS[i] ?? '#C8B88A' }}
+                                    style={{ backgroundColor: ACT_COLORS[i] ?? 'var(--color-accent)' }}
                                 />
-                                <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A574F]">
+                                <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
                                     {t('actTitle', { number: act.number, title: act.title })}
                                 </span>
                             </div>
@@ -67,16 +67,16 @@ export default function SwimLaneTimeline({
 
                 {/* Storyline rows */}
                 {storylines.map((storyline) => (
-                    <div key={storyline.id} className="flex border-b border-[#F0EEEA]">
+                    <div key={storyline.id} className="flex border-b border-border-light">
                         <div
                             className="flex items-start gap-2 px-3 py-3"
                             style={{ width: LABEL_W, flexShrink: 0 }}
                         >
                             <div
                                 className="mt-0.5 h-2 w-2 rounded-full"
-                                style={{ backgroundColor: storyline.color ?? '#8A857D' }}
+                                style={{ backgroundColor: storyline.color ?? '#737373' }}
                             />
-                            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A574F]">
+                            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
                                 {storyline.name}
                             </span>
                         </div>
@@ -88,7 +88,7 @@ export default function SwimLaneTimeline({
                                 return (
                                     <div
                                         key={act.id}
-                                        className="min-h-[80px] cursor-pointer border-l border-[#F0EEEA] p-1.5 hover:bg-[#FAFAF7]"
+                                        className="min-h-[80px] cursor-pointer border-l border-border-light p-1.5 hover:bg-surface"
                                         style={{ width: ACT_COL_W }}
                                         onClick={() => {
                                             if (!cell?.plotPoints.length && firstChapter) {
@@ -101,7 +101,7 @@ export default function SwimLaneTimeline({
                                                 {cellChapters.map((ch) => (
                                                     <span
                                                         key={ch.id}
-                                                        className="rounded bg-[#F0EEEA] px-1.5 py-0.5 text-[11px] text-[#5A574F]"
+                                                        className="rounded bg-neutral-bg px-1.5 py-0.5 text-[11px] text-ink-soft"
                                                     >
                                                         {t('timeline.chapterAbbrev', { number: ch.reader_order + 1 })} &middot; {ch.title}
                                                     </span>
@@ -123,7 +123,7 @@ export default function SwimLaneTimeline({
                         ) : (
                             /* No acts — single column with all chapters for this storyline */
                             <div
-                                className="min-h-[80px] flex-1 border-l border-[#F0EEEA] p-1.5"
+                                className="min-h-[80px] flex-1 border-l border-border-light p-1.5"
                                 style={{ minWidth: ACT_COL_W }}
                             >
                                 {(() => {
@@ -133,7 +133,7 @@ export default function SwimLaneTimeline({
                                             {slChapters.map((ch) => (
                                                 <span
                                                     key={ch.id}
-                                                    className="rounded bg-[#F0EEEA] px-1.5 py-0.5 text-[11px] text-[#5A574F]"
+                                                    className="rounded bg-neutral-bg px-1.5 py-0.5 text-[11px] text-ink-soft"
                                                 >
                                                     {t('timeline.chapterAbbrev', { number: ch.reader_order + 1 })} &middot; {ch.title}
                                                 </span>

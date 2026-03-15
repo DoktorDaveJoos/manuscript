@@ -16,14 +16,14 @@ export default function PlotPointCard({ plotPoint, onClick }: Props) {
                 e.stopPropagation();
                 onClick();
             }}
-            className="w-full rounded border border-[#ECEAE4] bg-white px-2.5 py-2 text-left shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-[0_2px_4px_rgba(0,0,0,0.08)]"
+            className="w-full rounded border border-border bg-surface-card px-2.5 py-2 text-left shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-[0_2px_4px_rgba(0,0,0,0.08)]"
         >
             <div className="flex items-start gap-1.5">
                 <div
                     className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full"
                     style={{ backgroundColor: STATUS_COLORS[plotPoint.status] ?? '#B0A99F' }}
                 />
-                <span className="text-xs font-medium leading-tight text-[#2D2A26]">{plotPoint.title}</span>
+                <span className="text-xs font-medium leading-tight text-ink">{plotPoint.title}</span>
             </div>
             <div className="mt-1.5">
                 <span

@@ -140,14 +140,14 @@ export default function Plot({ book, storylines, acts, plotPoints, connections, 
 
                 <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
                     {/* Header bar */}
-                    <div className="flex h-12 items-center justify-between border-b border-[#ECEAE4] px-5">
+                    <div className="flex h-12 items-center justify-between border-b border-border px-5">
                         <div className="flex h-full items-stretch gap-4">
                             <button
                                 onClick={() => setActiveTab('timeline')}
                                 className={`flex items-center border-b-2 px-1 text-[13px] font-medium transition-colors ${
                                     activeTab === 'timeline'
-                                        ? 'border-[#2D2A26] text-[#2D2A26]'
-                                        : 'border-transparent text-[#8A857D] hover:text-[#5A574F]'
+                                        ? 'border-ink text-ink'
+                                        : 'border-transparent text-ink-muted hover:text-ink-soft'
                                 }`}
                             >
                                 {t('page.tabs.timeline')}
@@ -156,8 +156,8 @@ export default function Plot({ book, storylines, acts, plotPoints, connections, 
                                 onClick={() => setActiveTab('list')}
                                 className={`flex items-center border-b-2 px-1 text-[13px] font-medium transition-colors ${
                                     activeTab === 'list'
-                                        ? 'border-[#2D2A26] text-[#2D2A26]'
-                                        : 'border-transparent text-[#8A857D] hover:text-[#5A574F]'
+                                        ? 'border-ink text-ink'
+                                        : 'border-transparent text-ink-muted hover:text-ink-soft'
                                 }`}
                             >
                                 {t('page.tabs.list')}
@@ -170,43 +170,43 @@ export default function Plot({ book, storylines, acts, plotPoints, connections, 
                                 <button
                                     onClick={() => setFilterOpen((o) => !o)}
                                     className={cn(
-                                        'flex items-center gap-1.5 rounded border py-1.5 pl-7 pr-3 text-[13px] text-[#5A574F] focus:outline-none focus:ring-1 focus:ring-[#C8B88A]',
+                                        'flex items-center gap-1.5 rounded border py-1.5 pl-7 pr-3 text-[13px] text-ink-soft focus:outline-none focus:ring-1 focus:ring-accent',
                                         storylineFilter.size > 0
-                                            ? 'border-[#C8B88A] bg-[#C8B88A]/10'
-                                            : 'border-[#ECEAE4] bg-white',
+                                            ? 'border-accent bg-accent/10'
+                                            : 'border-border bg-surface-card',
                                     )}
                                 >
-                                    <Filter size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#8A857D]" />
+                                    <Filter size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-ink-muted" />
                                     {filterLabel}
                                 </button>
 
                                 {filterOpen && (
-                                    <div className="absolute right-0 z-50 mt-1 min-w-[200px] rounded-lg border border-[#ECEAE4] bg-white py-1 shadow-lg">
+                                    <div className="absolute right-0 z-50 mt-1 min-w-[200px] rounded-lg border border-border bg-surface-card py-1 shadow-lg">
                                         <button
                                             onClick={() => setStorylineFilter((prev) => (prev.size === 0 ? prev : new Set()))}
-                                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-[#5A574F] hover:bg-[#F5F3EF]"
+                                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-ink-soft hover:bg-neutral-bg"
                                         >
                                             <Check
                                                 size={14}
                                                 className={cn(
                                                     'shrink-0',
-                                                    storylineFilter.size === 0 ? 'text-[#2D2A26]' : 'text-transparent',
+                                                    storylineFilter.size === 0 ? 'text-ink' : 'text-transparent',
                                                 )}
                                             />
                                             {t('page.allStorylines')}
                                         </button>
-                                        <div className="my-1 border-t border-[#ECEAE4]" />
+                                        <div className="my-1 border-t border-border" />
                                         {storylines.map((s) => (
                                             <button
                                                 key={s.id}
                                                 onClick={() => toggleStorylineFilter(s.id)}
-                                                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-[#5A574F] hover:bg-[#F5F3EF]"
+                                                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-ink-soft hover:bg-neutral-bg"
                                             >
                                                 <Check
                                                     size={14}
                                                     className={cn(
                                                         'shrink-0',
-                                                        storylineFilter.has(s.id) ? 'text-[#2D2A26]' : 'text-transparent',
+                                                        storylineFilter.has(s.id) ? 'text-ink' : 'text-transparent',
                                                     )}
                                                 />
                                                 <span
@@ -221,7 +221,7 @@ export default function Plot({ book, storylines, acts, plotPoints, connections, 
                             </div>
 
                             {/* Plot point count badge */}
-                            <span className="rounded-full bg-[#F0EEEA] px-2 py-0.5 text-[12px] font-medium tabular-nums text-[#5A574F]">
+                            <span className="rounded-full bg-neutral-bg px-2 py-0.5 text-[12px] font-medium tabular-nums text-ink-soft">
                                 {t('page.plotPointCount', { count: plotPoints.length })}
                             </span>
                         </div>

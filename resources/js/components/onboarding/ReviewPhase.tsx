@@ -11,8 +11,8 @@ export type ReviewStoryline = {
 };
 
 const STORYLINE_COLORS: Record<StorylineType, string> = {
-    main: '#5B8C5A',
-    backstory: '#9B7E5E',
+    main: '#4A7C59',
+    backstory: '#B87333',
     parallel: '#7B8EA8',
 };
 

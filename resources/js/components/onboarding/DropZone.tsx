@@ -1,4 +1,4 @@
-import { UploadSimple } from '@phosphor-icons/react';
+import { Upload } from 'lucide-react';
 import { useCallback, useRef, useState, type DragEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -32,7 +32,7 @@ export default function DropZone({ onFiles }: { onFiles: (files: File[]) => void
                 dragging ? 'border-ink-muted bg-neutral-bg/50' : 'border-border-drop'
             }`}
         >
-            <UploadSimple size={32} className="text-[#B5B0A6]" />
+            <Upload size={32} className="text-ink-faint" />
             <div className="flex flex-col items-center gap-1">
                 <span className="text-sm font-medium leading-[18px] text-ink">{t('dropZone.title')}</span>
                 <span className="text-[13px] leading-4 text-ink-muted">

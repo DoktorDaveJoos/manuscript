@@ -67,19 +67,19 @@ export default function TensionArc({ data, chapterCount, labelWidth, columnWidth
                 style={{ width: labelWidth }}
             >
                 <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-[#5A574F]">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-soft">
                         {t('tensionArc.label')}
                     </span>
                     <button
                         type="button"
                         onClick={onCollapse}
-                        className="flex size-4 items-center justify-center rounded text-[#B0A99F] transition-colors hover:text-[#5A574F]"
+                        className="flex size-4 items-center justify-center rounded text-ink-faint transition-colors hover:text-ink-soft"
                         title={t('tensionArc.collapseTitle')}
                     >
                         <ChevronUp size={10} strokeWidth={2.5} />
                     </button>
                 </div>
-                <span className="text-[9px] text-[#B0A99F]">{t('tensionArc.aiGenerated')}</span>
+                <span className="text-[9px] text-ink-faint">{t('tensionArc.aiGenerated')}</span>
             </div>
 
             {/* SVG chart */}
@@ -91,8 +91,8 @@ export default function TensionArc({ data, chapterCount, labelWidth, columnWidth
             >
                 <defs>
                     <linearGradient id="tension-fill-gradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#C8B88A" stopOpacity={0.2} />
-                        <stop offset="100%" stopColor="#C8B88A" stopOpacity={0} />
+                        <stop offset="0%" style={{ stopColor: 'var(--color-accent)' }} stopOpacity={0.2} />
+                        <stop offset="100%" style={{ stopColor: 'var(--color-accent)' }} stopOpacity={0} />
                     </linearGradient>
                 </defs>
 
@@ -103,13 +103,13 @@ export default function TensionArc({ data, chapterCount, labelWidth, columnWidth
 
                 {/* Line */}
                 {linePath && (
-                    <path d={linePath} fill="none" stroke="#C8B88A" strokeWidth={2} />
+                    <path d={linePath} fill="none" stroke="var(--color-accent)" strokeWidth={2} />
                 )}
 
                 {/* Data points and labels */}
                 {points.map((p, i) => (
                     <g key={sortedData[i].chapter_id}>
-                        <circle cx={p.x} cy={p.y} r={3} fill="#C8B88A" />
+                        <circle cx={p.x} cy={p.y} r={3} fill="var(--color-accent)" />
                         <text
                             x={p.x}
                             y={H - 2}

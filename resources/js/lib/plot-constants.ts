@@ -1,11 +1,11 @@
 import type { ConnectionType, PlotPointStatus, PlotPointType } from '@/types/models';
 
 export const TYPE_STYLES: Record<PlotPointType, string> = {
-    setup: 'bg-[#EDE8F5] text-[#6B5A8E]',
-    conflict: 'bg-[#F5E8E8] text-[#8E5A5A]',
-    turning_point: 'bg-[#F5EDE0] text-[#8A7A5A]',
-    resolution: 'bg-[#E8F0E8] text-[#5A8E5A]',
-    worldbuilding: 'bg-[#E8EDF5] text-[#5A6B8E]',
+    setup: 'bg-[#EBEAF2] text-[#655882]',
+    conflict: 'bg-[#F2E8E8] text-[#82585A]',
+    turning_point: 'bg-[#F2ECE2] text-[#7D7058]',
+    resolution: 'bg-[#E8EDE8] text-[#588258]',
+    worldbuilding: 'bg-[#E8ECF2] text-[#586582]',
 };
 
 export const TYPE_LABELS: Record<PlotPointType, string> = {
@@ -25,9 +25,9 @@ export const TYPE_LABELS_SHORT: Record<PlotPointType, string> = {
 };
 
 export const STATUS_COLORS: Record<PlotPointStatus, string> = {
-    planned: '#D4A843',
-    fulfilled: '#6DBB7B',
-    abandoned: '#B0A99F',
+    planned: 'var(--color-accent)',
+    fulfilled: 'var(--color-status-final)',
+    abandoned: 'var(--color-ink-faint)',
 };
 
 export const NEXT_STATUS: Record<PlotPointStatus, PlotPointStatus> = {

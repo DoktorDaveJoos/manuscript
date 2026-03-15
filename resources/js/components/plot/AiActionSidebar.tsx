@@ -97,21 +97,21 @@ export default function AiActionSidebar({
     return (
         <aside
             className={cn(
-                'flex h-full shrink-0 flex-col border-l border-[#ECEAE4] bg-white transition-[width] duration-200 ease-in-out',
+                'flex h-full shrink-0 flex-col border-l border-border bg-surface-card transition-[width] duration-200 ease-in-out',
                 isOpen ? 'w-[280px]' : 'w-10',
             )}
         >
             {isOpen ? (
                 <>
                     {/* Header */}
-                    <div className="flex h-12 items-center justify-between border-b border-[#ECEAE4] px-4">
-                        <span className="text-xs font-semibold uppercase tracking-[0.06em] text-[#2D2A26]">
+                    <div className="flex h-12 items-center justify-between border-b border-border px-4">
+                        <span className="text-xs font-semibold uppercase tracking-[0.06em] text-ink">
                             {t('aiActions.header')}
                         </span>
                         <button
                             type="button"
                             onClick={onToggle}
-                            className="flex size-6 items-center justify-center rounded text-[#8A857D] transition-colors hover:text-[#2D2A26]"
+                            className="flex size-6 items-center justify-center rounded text-ink-muted transition-colors hover:text-ink"
                         >
                             <ChevronRight size={14} strokeWidth={2.5} />
                         </button>
@@ -132,16 +132,16 @@ export default function AiActionSidebar({
                                                 type="button"
                                                 onClick={() => handleAction(action)}
                                                 disabled={isRunning || runningAction !== null}
-                                                className="flex items-center gap-3 rounded-lg border border-[#ECEAE4] px-3 py-2.5 text-left transition-colors hover:bg-[#FAFAF7] disabled:opacity-50"
+                                                className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5 text-left transition-colors hover:bg-surface disabled:opacity-50"
                                             >
-                                                <Icon size={18} className="shrink-0 text-[#8A857D]" />
+                                                <Icon size={18} className="shrink-0 text-ink-muted" />
                                                 <div className="flex flex-col">
-                                                    <span className="text-[13px] font-medium text-[#2D2A26]">
+                                                    <span className="text-[13px] font-medium text-ink">
                                                         {isRunning
                                                             ? t('aiActions.running')
                                                             : t(`aiActions.${action.key}.label`)}
                                                     </span>
-                                                    <span className="text-[11px] text-[#8A857D]">
+                                                    <span className="text-[11px] text-ink-muted">
                                                         {t(`aiActions.${action.key}.description`)}
                                                     </span>
                                                 </div>
@@ -154,7 +154,7 @@ export default function AiActionSidebar({
                                             )}
 
                                             {result && !error && (
-                                                <div className="rounded bg-[#FAFAF7] px-3 py-2 text-xs text-[#5A574F]">
+                                                <div className="rounded bg-surface px-3 py-2 text-xs text-ink-soft">
                                                     {result.message && <p>{result.message}</p>}
                                                     {result.tension_arc && (
                                                         <div className="flex flex-col gap-1">
@@ -182,7 +182,7 @@ export default function AiActionSidebar({
                                     );
                                 })
                             ) : (
-                                <p className="text-xs leading-relaxed text-[#8A857D]">
+                                <p className="text-xs leading-relaxed text-ink-muted">
                                     <Trans
                                         i18nKey="aiActions.notConfigured"
                                         ns="plot"
@@ -190,7 +190,7 @@ export default function AiActionSidebar({
                                             1: (
                                                 <a
                                                     href="/settings/ai"
-                                                    className="font-medium text-[#5A574F] underline decoration-[#5A574F]/30 hover:decoration-[#5A574F]"
+                                                    className="font-medium text-ink-soft underline decoration-ink-soft/30 hover:decoration-ink-soft"
                                                 />
                                             ),
                                         }}
@@ -206,14 +206,14 @@ export default function AiActionSidebar({
                                     return (
                                         <div
                                             key={action.key}
-                                            className="flex items-center gap-3 rounded-lg border border-[#ECEAE4] px-3 py-2.5"
+                                            className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5"
                                         >
-                                            <Icon size={18} className="shrink-0 text-[#8A857D]" />
+                                            <Icon size={18} className="shrink-0 text-ink-muted" />
                                             <div className="flex flex-col">
-                                                <span className="text-[13px] font-medium text-[#2D2A26]">
+                                                <span className="text-[13px] font-medium text-ink">
                                                     {t(`aiActions.${action.key}.label`)}
                                                 </span>
-                                                <span className="text-[11px] text-[#8A857D]">
+                                                <span className="text-[11px] text-ink-muted">
                                                     {t(`aiActions.${action.key}.description`)}
                                                 </span>
                                             </div>
@@ -229,12 +229,12 @@ export default function AiActionSidebar({
                 <button
                     type="button"
                     onClick={onToggle}
-                    className="flex h-full w-full flex-col items-center gap-3 pt-3 transition-colors hover:bg-[#FAFAF7]"
+                    className="flex h-full w-full flex-col items-center gap-3 pt-3 transition-colors hover:bg-surface"
                 >
-                    <span className="flex size-6 items-center justify-center text-[#8A857D]">
+                    <span className="flex size-6 items-center justify-center text-ink-muted">
                         <ChevronLeft size={14} strokeWidth={2.5} />
                     </span>
-                    <span className="flex size-5 items-center justify-center text-[#8A857D]">
+                    <span className="flex size-5 items-center justify-center text-ink-muted">
                         <Zap size={16} fill="currentColor" />
                     </span>
                 </button>

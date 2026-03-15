@@ -115,10 +115,10 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                                 ? characterForm.setData('name', e.target.value)
                                 : entryForm.setData('name', e.target.value);
                         }}
-                        className="rounded-md border border-[#C9C4B8] bg-[#F5F4F1] px-3 py-2 font-serif text-[28px] text-[#1A1A1A] focus:outline-none focus:ring-1 focus:ring-[#C9C4B8]"
+                        className="rounded-md border border-border bg-neutral-bg px-3 py-2 font-serif text-[28px] text-ink focus:outline-none focus:ring-1 focus:ring-border"
                     />
                     {isDirty && (
-                        <span className="flex items-center gap-1.5 text-[12px] text-[#8A8578]">
+                        <span className="flex items-center gap-1.5 text-[12px] text-ink-muted">
                             <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#C9D4C5]" />
                             {t('edit.editing')} · {t('edit.unsavedChanges')}
                         </span>
@@ -128,14 +128,14 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="rounded border border-[#E8E6E0] px-3 py-1.5 text-[12px] font-medium text-[#5A574F] transition-colors hover:bg-[#F5F4F1]"
+                        className="rounded border border-border px-3 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:bg-neutral-bg"
                     >
                         {t('create.cancel')}
                     </button>
                     <button
                         type="submit"
                         disabled={isChar ? characterForm.processing : entryForm.processing}
-                        className="rounded bg-[#2D2A26] px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-[#3D3A36] disabled:opacity-50"
+                        className="rounded bg-ink px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-ink/90 disabled:opacity-50"
                     >
                         {t('edit.save')}
                     </button>
@@ -145,18 +145,18 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
             {/* Aliases — characters only */}
             {isChar && (
                 <div>
-                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-[#B5B0A6]">
+                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                         {t('field.aliases')}
                     </label>
                     <div className="flex flex-wrap items-center gap-1.5">
                         {characterForm.data.aliases.map((alias) => (
                             <span
                                 key={alias}
-                                className="flex items-center gap-1.5 rounded bg-[#F0EEEA] px-2.5 py-1 text-[12px] text-[#5A574F]"
+                                className="flex items-center gap-1.5 rounded bg-neutral-bg px-2.5 py-1 text-[12px] text-ink-soft"
                             >
                                 {alias}
                                 <button type="button" onClick={() => removeAlias(alias)}>
-                                    <X size={10} className="text-[#B5B0A6]" />
+                                    <X size={10} className="text-ink-faint" />
                                 </button>
                             </span>
                         ))}
@@ -166,7 +166,7 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                             onChange={(e) => setAliasInput(e.target.value)}
                             onKeyDown={handleAliasKeyDown}
                             placeholder={t('edit.addAlias')}
-                            className="min-w-[80px] bg-transparent text-[12px] text-[#5A574F] placeholder:text-[#B5B0A6] focus:outline-none"
+                            className="min-w-[80px] bg-transparent text-[12px] text-ink-soft placeholder:text-ink-faint focus:outline-none"
                         />
                     </div>
                 </div>
@@ -175,7 +175,7 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
             {/* Type — wiki entries only */}
             {!isChar && (
                 <div>
-                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-[#B5B0A6]">
+                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                         {t('field.type')}
                     </label>
                     <input
@@ -185,14 +185,14 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                             entryForm.setData('type', e.target.value);
                         }}
                         placeholder={t('field.typePlaceholder')}
-                        className="w-full rounded-md bg-[#F5F4F1] px-3 py-2.5 text-[14px] text-[#1A1A1A] placeholder:text-[#B5B0A6] focus:outline-none focus:ring-1 focus:ring-[#C9C4B8]"
+                        className="w-full rounded-md bg-neutral-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-border"
                     />
                 </div>
             )}
 
             {/* Description */}
             <div>
-                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-[#B5B0A6]">
+                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                     {t('field.description')}
                 </label>
                 <textarea
@@ -203,7 +203,7 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                             : entryForm.setData('description', e.target.value)
                     }
                     rows={4}
-                    className="w-full resize-none rounded-md border border-[#E8E6E0] bg-white px-3 py-2.5 text-[14px] text-[#1A1A1A] focus:outline-none focus:ring-1 focus:ring-[#C9C4B8]"
+                    className="w-full resize-none rounded-md border border-border bg-surface-card px-3 py-2.5 text-[14px] text-ink focus:outline-none focus:ring-1 focus:ring-border"
                 />
             </div>
 
@@ -214,13 +214,13 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                 {/* Role — characters only */}
                 {isChar && (
                     <div>
-                        <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-[#B5B0A6]">
+                        <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                             {t('field.role')}
                         </label>
                         <select
                             value={characterForm.data.role}
                             onChange={(e) => characterForm.setData('role', e.target.value)}
-                            className="appearance-none rounded-md bg-[#F5F4F1] px-3 py-2 text-[13px] text-[#1A1A1A] focus:outline-none focus:ring-1 focus:ring-[#C9C4B8]"
+                            className="appearance-none rounded-md bg-neutral-bg px-3 py-2 text-[13px] text-ink focus:outline-none focus:ring-1 focus:ring-border"
                         >
                             <option value="protagonist">{t('role.mainCharacter')}</option>
                             <option value="supporting">{t('role.supporting')}</option>
@@ -232,7 +232,7 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                 {/* Storylines — characters only */}
                 {isChar && storylines.length > 0 && (
                     <div>
-                        <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-[#B5B0A6]">
+                        <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                             {t('field.storylines')}
                         </label>
                         <div className="flex flex-wrap gap-1.5">
@@ -245,12 +245,12 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                                         onClick={() => toggleStoryline(s.id)}
                                         className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
                                             selected
-                                                ? 'bg-[#2D2A26] text-white'
-                                                : 'bg-[#F0EEEA] text-[#5A574F] hover:bg-[#E8E6E0]'
+                                                ? 'bg-ink text-white'
+                                                : 'bg-neutral-bg text-ink-soft hover:bg-border'
                                         }`}
                                     >
                                         {s.name}
-                                        {selected && <X size={12} className="text-[#8A8578]" />}
+                                        {selected && <X size={12} className="text-ink-muted" />}
                                     </button>
                                 );
                             })}
@@ -260,10 +260,10 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
 
                 {/* Source */}
                 <div>
-                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-[#B5B0A6]">
+                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                         {t('source')}
                     </label>
-                    <span className="flex items-center gap-1.5 text-[13px] text-[#8A8578]">
+                    <span className="flex items-center gap-1.5 text-[13px] text-ink-muted">
                         <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#C9D4C5]" />
                         {item.is_ai_extracted ? t('aiExtracted') : t('edit.manualEntry')}
                     </span>
@@ -274,7 +274,7 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
 
             {/* Appears In — empty state */}
             <div>
-                <h3 className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#B5B0A6]">
+                <h3 className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                     {t('appearsIn')}
                 </h3>
                 {item.chapters && item.chapters.length > 0 ? (
@@ -289,9 +289,9 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                     </div>
                 ) : (
                     <div className="flex flex-col items-center gap-2 py-8 text-center">
-                        <BookOpen size={20} className="text-[#B5B0A6]" />
-                        <p className="text-[13px] text-[#8A8578]">{t('edit.noAppearances')}</p>
-                        <p className="text-[12px] text-[#B5B0A6]">{t('edit.appearancesHint')}</p>
+                        <BookOpen size={20} className="text-ink-faint" />
+                        <p className="text-[13px] text-ink-muted">{t('edit.noAppearances')}</p>
+                        <p className="text-[12px] text-ink-faint">{t('edit.appearancesHint')}</p>
                     </div>
                 )}
             </div>
