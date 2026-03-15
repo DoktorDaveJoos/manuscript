@@ -28,7 +28,7 @@ class SetupPlotStructureRequest extends FormRequest
             'acts.*.beats.*.type' => ['required', Rule::enum(PlotPointType::class)],
             'chapter_assignments' => ['nullable', 'array'],
             'chapter_assignments.*' => ['array'],
-            'chapter_assignments.*.*' => ['integer', 'exists:chapters,id'],
+            'chapter_assignments.*.*' => ['integer', Rule::exists('chapters', 'id')->where('book_id', $this->route('book')->id)],
         ];
     }
 }

@@ -6,6 +6,7 @@ import {
     DragOverlay,
     PointerSensor,
     closestCenter,
+    useDroppable,
     useSensor,
     useSensors,
     type DragEndEvent,
@@ -15,7 +16,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import { router } from '@inertiajs/react';
 import { ChevronDown, ChevronUp, GripVertical, Plus, Sparkles, Trash2, X } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type WizardAct = {
@@ -32,13 +33,12 @@ type PlotWizardModalProps = {
     template: PlotTemplate;
     storylines: Storyline[];
     chapters: Chapter[];
-    isOpen: boolean;
     onClose: () => void;
 };
 
 type Step = 'customize' | 'map-chapters' | 'review';
 
-export default function PlotWizardModal({ book, template, storylines, chapters, isOpen, onClose }: PlotWizardModalProps) {
+export default function PlotWizardModal({ book, template, storylines, chapters, onClose }: PlotWizardModalProps) {
     const { t } = useTranslation('plot');
     const hasChapters = chapters.length > 0;
     const steps: Step[] = hasChapters ? ['customize', 'map-chapters', 'review'] : ['customize', 'review'];
@@ -51,7 +51,14 @@ export default function PlotWizardModal({ book, template, storylines, chapters, 
     const [submitting, setSubmitting] = useState(false);
 
     const currentStepIndex = steps.indexOf(currentStep);
-    const totalBeats = acts.reduce((sum, a) => sum + a.beats.length, 0);
+
+    useEffect(() => {
+        function handleEscape(e: KeyboardEvent) {
+            if (e.key === 'Escape') onClose();
+        }
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+    }, [onClose]);
 
     const handleNext = () => {
         const nextIndex = currentStepIndex + 1;
@@ -118,8 +125,6 @@ export default function PlotWizardModal({ book, template, storylines, chapters, 
             ),
         );
     };
-
-    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -380,6 +385,12 @@ function MapChaptersStep({
         return map;
     }, [storylines]);
 
+    const chapterMap = useMemo(() => {
+        const map = new Map<number, Chapter>();
+        chapters.forEach((ch) => map.set(ch.id, ch));
+        return map;
+    }, [chapters]);
+
     const handleDragStart = useCallback((event: DragStartEvent) => {
         const ch = event.active.data.current?.chapter as Chapter | undefined;
         if (ch) setActiveChapter(ch);
@@ -451,7 +462,7 @@ function MapChaptersStep({
                     const actKey = `act_index_${index}`;
                     const assignedIds = assignments[actKey] || [];
                     const assignedChapters = assignedIds
-                        .map((id) => chapters.find((ch) => ch.id === id))
+                        .map((id) => chapterMap.get(id))
                         .filter(Boolean) as Chapter[];
 
                     return (
@@ -493,7 +504,7 @@ function ActDropZone({
     onRemove: (chapterId: number) => void;
 }) {
     const { t } = useTranslation('plot');
-    const { setNodeRef, isOver } = useSortable({
+    const { setNodeRef, isOver } = useDroppable({
         id: actKey,
         data: { type: 'act-drop-zone' },
     });

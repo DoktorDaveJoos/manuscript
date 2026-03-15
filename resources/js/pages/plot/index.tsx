@@ -303,7 +303,6 @@ export default function Plot({ book, storylines, acts, plotPoints, connections, 
                         template={selectedTemplate}
                         storylines={storylines}
                         chapters={chapters}
-                        isOpen={true}
                         onClose={() => setSelectedTemplate(null)}
                     />
                 )}
