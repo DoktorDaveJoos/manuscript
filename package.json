@@ -1,6 +1,10 @@
 {
     "$schema": "https://www.schemastore.org/package.json",
     "private": true,
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DoktorDaveJoos/manuscript.git"
+    },
     "type": "module",
     "scripts": {
         "build": "vite build",
