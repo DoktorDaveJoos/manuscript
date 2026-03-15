@@ -42,12 +42,16 @@
     "metric.emotionalArc": "Emotionaler Bogen",
     "metric.emotionalDetail": "{{open}} → {{close}} (Δ{{magnitude}})",
     "metric.pacing": "Erzähltempo",
+    "metric.sensoryDetail": "Sinnliche Details",
+    "metric.sensoryDetailCount": "{{senses}} von 5 Sinnen",
+    "metric.informationDelivery": "Informationsvermittlung",
     "metric.craftScore": "Handwerkswert",
     "metric.craftDetail": "Sinne {{senses}} · Vermittlung {{delivery}}",
     "metric.narrativeDensity": "Erzählerische Dichte",
     "metric.density": "Dichte",
     "metric.scenePurpose": "Szenenzweck",
     "metric.scenePurposeDetail": "{{purpose}} · Wertverschiebung {{valueShift}}",
+    "metric.noValueShift": "Keine Wertverschiebung",
     "metric.valueShiftPresent": "vorhanden",
     "metric.valueShiftAbsent": "nicht vorhanden",
     "metric.hooks": "Hooks",
@@ -111,5 +115,24 @@
     "phase.chapter_analysis": "Kapitel analysieren",
     "phase.entity_extraction": "Entitäten extrahieren",
     "phase.story_bible": "Story-Bibel erstellen",
-    "phase.health_analysis": "Zustand berechnen"
+    "phase.health_analysis": "Zustand berechnen",
+
+    "delivery.organic": "Organisch",
+    "delivery.mostly_organic": "Überwiegend organisch",
+    "delivery.mixed": "Gemischt",
+    "delivery.exposition_heavy": "Expositionslastig",
+    "delivery.info_dump": "Infodump",
+
+    "purpose.turning_point": "Wendepunkt",
+    "purpose.revelation": "Enthüllung",
+    "purpose.deepening": "Vertiefung",
+    "purpose.setup": "Einführung",
+    "purpose.resolution": "Auflösung",
+    "purpose.transition": "Übergang",
+
+    "pacing.breakneck": "Rasant",
+    "pacing.brisk": "Zügig",
+    "pacing.measured": "Bedächtig",
+    "pacing.languid": "Gemächlich",
+    "pacing.static": "Statisch"
 }
