@@ -39,17 +39,21 @@ jobs:
       - name: Generate application key
         run: php artisan key:generate
 
-      - name: Set version and Sentry DSN
+      - name: Set version and secrets in .env
         env:
           SENTRY_LARAVEL_DSN: ${{ secrets.SENTRY_LARAVEL_DSN }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           VITE_SENTRY_ELECTRON_DSN: ${{ secrets.VITE_SENTRY_ELECTRON_DSN }}
+          LEMONSQUEEZY_STORE_ID: ${{ secrets.LEMONSQUEEZY_STORE_ID }}
+          LEMONSQUEEZY_PRODUCT_ID: ${{ secrets.LEMONSQUEEZY_PRODUCT_ID }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           sed -i '' "s/NATIVEPHP_APP_VERSION=.*/NATIVEPHP_APP_VERSION=${VERSION}/" .env
           sed -i '' "s|SENTRY_LARAVEL_DSN=.*|SENTRY_LARAVEL_DSN=${SENTRY_LARAVEL_DSN}|" .env
           sed -i '' "s|VITE_SENTRY_DSN=.*|VITE_SENTRY_DSN=${VITE_SENTRY_DSN}|" .env
           sed -i '' "s|VITE_SENTRY_ELECTRON_DSN=.*|VITE_SENTRY_ELECTRON_DSN=${VITE_SENTRY_ELECTRON_DSN}|" .env
+          sed -i '' "s|LEMONSQUEEZY_STORE_ID=.*|LEMONSQUEEZY_STORE_ID=${LEMONSQUEEZY_STORE_ID}|" .env
+          sed -i '' "s|LEMONSQUEEZY_PRODUCT_ID=.*|LEMONSQUEEZY_PRODUCT_ID=${LEMONSQUEEZY_PRODUCT_ID}|" .env
 
       - name: Install Apple signing certificate
         env:

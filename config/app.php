@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'version' => env('NATIVEPHP_APP_VERSION', '0.0.0'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

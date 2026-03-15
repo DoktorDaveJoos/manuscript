@@ -35,7 +35,7 @@ class AppSettingsController extends Controller
         return Inertia::render('settings/appearance', [
             'settings' => $settings,
             'book' => $book?->only('id', 'title'),
-            'version' => config('app.version', '1.0.0'),
+            'version' => config('app.version', '0.0.0'),
         ]);
     }
 
