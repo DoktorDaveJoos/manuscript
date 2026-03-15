@@ -44,6 +44,22 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           sed -i '' "s/NATIVEPHP_APP_VERSION=.*/NATIVEPHP_APP_VERSION=${VERSION}/" .env
 
+      - name: Install Apple signing certificate
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/signing.keychain-db
+          echo -n "$APPLE_CERTIFICATE" | base64 --decode -o $CERTIFICATE_PATH
+          security create-keychain -p "" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "" $KEYCHAIN_PATH
+          security import $CERTIFICATE_PATH -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "" $KEYCHAIN_PATH
+          security list-keychains -d user -s $KEYCHAIN_PATH login.keychain-db
+          security find-identity -v -p codesigning $KEYCHAIN_PATH
+
       - name: Fix electron-builder repo detection
         run: node -e "const p=JSON.parse(require('fs').readFileSync('vendor/nativephp/desktop/resources/electron/package.json','utf8')); p.repository={type:'git',url:'https://github.com/DoktorDaveJoos/manuscript.git'}; require('fs').writeFileSync('vendor/nativephp/desktop/resources/electron/package.json', JSON.stringify(p, null, 4))"
 
