@@ -17,7 +17,7 @@ export default function NavItem({
     onClick?: () => void;
     suffix?: React.ReactNode;
 }) {
-    const classes = `flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[14px] leading-[18px] transition-colors ${
+    const classes = `flex items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] transition-colors ${
         isActive
             ? 'bg-neutral-bg font-medium text-ink'
             : disabled

@@ -63,12 +63,27 @@ export default function TrashBin({ bookId }: { bookId: number }) {
         }
     };
 
+    const handleRestoreAll = async () => {
+        const results = await Promise.all(
+            items.map((item) =>
+                fetch(trashRestore.url(bookId), {
+                    method: 'POST',
+                    headers: jsonFetchHeaders(),
+                    body: JSON.stringify({ type: item.type, id: item.id }),
+                }).then((res) => ({ item, ok: res.ok })),
+            ),
+        );
+        const failed = results.filter((r) => !r.ok).map((r) => r.item);
+        setItems(failed);
+        router.reload({ only: ['book'] });
+    };
+
     return (
-        <div className="border-t border-border-subtle">
+        <div className="border-t border-border-subtle px-3 py-2">
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex w-full items-center gap-2 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint transition-colors hover:text-ink-muted"
+                className="flex w-full items-center gap-2 px-2.5 pt-2.5 pb-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint transition-colors hover:text-ink-muted"
             >
                 <span className={`flex shrink-0 items-center transition-transform ${isOpen ? 'rotate-90' : ''}`}>
                     <ChevronRight size={8} strokeWidth={2.5} />
@@ -85,15 +100,15 @@ export default function TrashBin({ bookId }: { bookId: number }) {
             {isOpen && (
                 <div className="flex flex-col pb-2">
                     {loading && items.length === 0 && (
-                        <div className="px-5 py-2 text-[11px] text-ink-faint">{t('trash.loading')}</div>
+                        <div className="px-2.5 py-1.5 text-[11px] text-ink-faint">{t('trash.loading')}</div>
                     )}
                     {!loading && items.length === 0 && (
-                        <div className="px-5 py-2 text-[11px] text-ink-faint">{t('trash.empty')}</div>
+                        <div className="px-2.5 py-1.5 text-[11px] text-ink-faint">{t('trash.empty')}</div>
                     )}
                     {items.map((item) => (
                         <div
                             key={`${item.type}-${item.id}`}
-                            className="group flex items-center gap-2 px-5 py-1.5 text-[13px] text-ink-muted"
+                            className="group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px] text-ink-muted"
                         >
                             <span className="text-ink-faint">{typeIcon[item.type]}</span>
                             <span className="min-w-0 flex-1 truncate">{item.name}</span>
@@ -107,13 +122,22 @@ export default function TrashBin({ bookId }: { bookId: number }) {
                         </div>
                     ))}
                     {!loading && items.length > 0 && (
-                        <button
-                            type="button"
-                            onClick={handleEmpty}
-                            className="mx-5 mt-1 text-left text-[11px] text-ink-faint hover:text-delete"
-                        >
-                            {t('trash.emptyTrash')}
-                        </button>
+                        <div className="flex items-center justify-between px-2.5 pt-2.5 pb-1">
+                            <button
+                                type="button"
+                                onClick={handleRestoreAll}
+                                className="text-[10px] text-ink-faint hover:text-ink"
+                            >
+                                {t('trash.restoreAll')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleEmpty}
+                                className="text-[10px] text-ink-faint hover:text-delete"
+                            >
+                                {t('trash.emptyTrash')}
+                            </button>
+                        </div>
                     )}
                 </div>
             )}

@@ -22,10 +22,11 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Book, ChevronDown, GripVertical, Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ChapterContextMenu from './ChapterContextMenu';
-import ChapterListItem, { statusDot } from './ChapterListItem';
+import ChapterListItem from './ChapterListItem';
 import DeleteChapterDialog from './DeleteChapterDialog';
 import DeleteStorylineDialog from './DeleteStorylineDialog';
 import SceneContextMenu from './SceneContextMenu';
@@ -56,9 +57,6 @@ function SortableChapterItem({
     wordCount,
     onBeforeNavigate,
     onContextMenu,
-    isExpanded,
-    onToggleExpand,
-    scenesVisible,
 }: {
     chapter: Chapter;
     bookId: number;
@@ -68,9 +66,6 @@ function SortableChapterItem({
     wordCount?: number;
     onBeforeNavigate?: () => Promise<void>;
     onContextMenu: (e: React.MouseEvent) => void;
-    isExpanded?: boolean;
-    onToggleExpand?: () => void;
-    scenesVisible?: boolean;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
         id: `chapter-${chapter.id}`,
@@ -96,9 +91,6 @@ function SortableChapterItem({
                 onContextMenu={onContextMenu}
                 dragListeners={listeners}
                 isDragging={isDragging}
-                isExpanded={isExpanded}
-                onToggleExpand={onToggleExpand}
-                scenesVisible={scenesVisible}
             />
         </div>
     );
@@ -136,8 +128,12 @@ function SortableStorylineGroup({
             {showHeader && (
                 <span
                     onContextMenu={onContextMenu}
-                    className={`flex items-center gap-1.5 px-2.5 pb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint ${isFirst ? '' : 'pt-3'}`}
+                    className={`flex items-center justify-between px-2.5 pb-1 text-[10px] font-medium uppercase tracking-[0.08em] text-[#B5B5B5] ${isFirst ? 'pt-2.5' : 'pt-3.5'}`}
                 >
+                    <span {...listeners} className="flex cursor-grab items-center gap-1.5 active:cursor-grabbing">
+                        {storyline.color && <span className="inline-block size-[6px] rounded-full" style={{ backgroundColor: storyline.color }} />}
+                        {storyline.name}
+                    </span>
                     <span
                         role="button"
                         tabIndex={-1}
@@ -145,15 +141,9 @@ function SortableStorylineGroup({
                             e.stopPropagation();
                             onToggleCollapse?.();
                         }}
-                        className={`flex items-center transition-transform duration-150 ${isCollapsed ? '' : 'rotate-90'}`}
+                        className={`flex items-center transition-transform duration-150 ${isCollapsed ? '-rotate-90' : ''}`}
                     >
-                        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M2.5 1L5.5 4L2.5 7" />
-                        </svg>
-                    </span>
-                    <span {...listeners} className="flex cursor-grab items-center gap-1.5 active:cursor-grabbing">
-                        {storyline.color && <span className="inline-block size-[6px] rounded-full" style={{ backgroundColor: storyline.color }} />}
-                        {storyline.name}
+                        <ChevronDown size={10} />
                     </span>
                 </span>
             )}
@@ -655,23 +645,10 @@ export default function ChapterList({
         <>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
                 <div className="flex flex-col">
-                    <div className="flex items-center justify-between px-2.5 pb-2">
-                        <div className="flex items-center gap-1.5">
-                            <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 14 14"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="shrink-0 text-ink-faint"
-                            >
-                                <path d="M2 2.5C2 2.5 3 1.5 5 1.5C7 1.5 7 2.5 7 2.5V11.5C7 11.5 6.5 11 5 11C3.5 11 2 11.5 2 11.5V2.5Z" />
-                                <path d="M12 2.5C12 2.5 11 1.5 9 1.5C7 1.5 7 2.5 7 2.5V11.5C7 11.5 7.5 11 9 11C10.5 11 12 11.5 12 11.5V2.5Z" />
-                            </svg>
-                            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-faint">
+                    <div className="flex items-center justify-between px-2.5 py-2">
+                        <div className="flex items-center gap-2">
+                            <Book size={13} className="shrink-0 text-[#B0B0B0]" />
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8A8A8A]">
                                 {bookTitle}
                             </span>
                         </div>
@@ -783,9 +760,6 @@ export default function ChapterList({
                                                     wordCount={liveWordCount}
                                                     onBeforeNavigate={onBeforeNavigate}
                                                     onContextMenu={(e) => handleChapterContextMenu(e, chapter)}
-                                                    isExpanded={isExpanded}
-                                                    onToggleExpand={() => toggleChapterExpand(chapter.id)}
-                                                    scenesVisible={scenesVisible}
                                                 />
                                                 {scenesVisible && hasScenes && (
                                                     <div
@@ -849,10 +823,10 @@ export default function ChapterList({
                                     <button
                                         type="button"
                                         onClick={() => onAddChapter(storyline.id)}
-                                        className="flex w-full items-center gap-1.5 rounded-[5px] px-2.5 py-1.5 text-ink-faint hover:bg-ink/5"
+                                        className="flex w-full items-center gap-1.5 rounded-[5px] px-2.5 py-[7px] text-ink-faint hover:bg-ink/5"
                                     >
-                                        <span className="text-[12px]">+</span>
-                                        <span className="text-[13px]">{t('chapterList.addChapter')}</span>
+                                        <Plus size={12} className="text-[#C5C5C5]" />
+                                        <span className="text-[13px] text-[#B5B5B5]">{t('chapterList.addChapter')}</span>
                                     </button>
                                 )}
                             </SortableStorylineGroup>
@@ -862,9 +836,9 @@ export default function ChapterList({
                         <button
                             type="button"
                             onClick={onAddStoryline}
-                            className="flex w-full items-center gap-1.5 px-2.5 pt-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint transition-colors hover:text-ink"
+                            className="flex w-full items-center gap-1.5 px-2.5 pt-3.5 pb-1 text-[10px] font-medium uppercase tracking-[0.08em] text-ink-faint transition-colors hover:text-ink"
                         >
-                            <span>+</span>
+                            <Plus size={10} className="text-[#C5C5C5]" />
                             <span>{t('chapterList.addStoryline')}</span>
                         </button>
                     )}
@@ -872,18 +846,10 @@ export default function ChapterList({
 
                 <DragOverlay>
                     {activeItem?.type === 'chapter' && (
-                        <div className="flex items-center gap-1.5 rounded-[5px] bg-surface-card px-2 py-1.5 text-[13px] leading-4 text-ink opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
-                            <span className="flex shrink-0 items-center text-ink-faint">
-                                <svg width="6" height="10" viewBox="0 0 6 10" fill="currentColor">
-                                    <circle cx="1" cy="1" r="1" />
-                                    <circle cx="5" cy="1" r="1" />
-                                    <circle cx="1" cy="5" r="1" />
-                                    <circle cx="5" cy="5" r="1" />
-                                    <circle cx="1" cy="9" r="1" />
-                                    <circle cx="5" cy="9" r="1" />
-                                </svg>
+                        <div className="flex items-center gap-2 rounded-lg bg-surface-card px-2.5 py-[7px] text-[13px] leading-4 text-ink opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
+                            <span className="flex shrink-0 items-center text-[#D0D0D0]">
+                                <GripVertical size={12} />
                             </span>
-                            <span className={`inline-block size-[5px] shrink-0 rounded-full ${statusDot[activeItem.chapter.status]}`} />
                             <span className="min-w-0 flex-1 truncate">{activeItem.chapter.title}</span>
                             <span className="shrink-0 text-[11px] text-ink-faint">
                                 {formatCompactCount(activeItem.chapter.word_count)}

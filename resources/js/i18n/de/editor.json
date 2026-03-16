@@ -58,6 +58,7 @@
     "trash.loading": "Laden\u2026",
     "trash.empty": "Papierkorb ist leer",
     "trash.restore": "Wiederherstellen",
+    "trash.restoreAll": "Alle wiederherstellen",
     "trash.emptyTrash": "Papierkorb leeren",
     "trash.confirmEmpty": "Alle gelöschten Elemente endgültig entfernen? Dies kann nicht rückgängig gemacht werden.",
     "deleteChapter.title": "In den Papierkorb",

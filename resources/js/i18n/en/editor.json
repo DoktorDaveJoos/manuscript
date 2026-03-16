@@ -58,6 +58,7 @@
     "trash.loading": "Loading\u2026",
     "trash.empty": "Trash is empty",
     "trash.restore": "Restore",
+    "trash.restoreAll": "Restore all",
     "trash.emptyTrash": "Empty trash",
     "trash.confirmEmpty": "Permanently delete all trashed items? This cannot be undone.",
     "deleteChapter.title": "Move to trash",
@@ -138,5 +139,10 @@
     "empty.description": "Create your first chapter or import an existing manuscript.",
     "empty.createFirst": "Create first chapter",
     "empty.importManuscript": "Import manuscript",
-    "empty.noChapters": "No Chapters"
+    "empty.noChapters": "No Chapters",
+    "toolbar.heading1": "Heading 1",
+    "toolbar.heading2": "Heading 2",
+    "toolbar.focus": "Focus",
+    "toolbar.notes": "Notes",
+    "toolbar.fontSize": "Font size"
 }

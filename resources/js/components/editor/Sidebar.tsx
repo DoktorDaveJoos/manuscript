@@ -18,7 +18,7 @@ import TrashBin from './TrashBin';
 const STORAGE_KEY = 'manuscript:sidebar-width';
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 400;
-const DEFAULT_WIDTH = 240;
+const DEFAULT_WIDTH = 232;
 
 let savedScrollTop = 0;
 
@@ -149,20 +149,20 @@ export default function Sidebar({
             style={{ width: isFocusMode ? 0 : width }}
         >
             {/* Header */}
-            <div className="flex h-12 items-center justify-between border-b border-border-subtle px-5">
-                <Link href={index.url()} className="text-[13px] font-semibold uppercase tracking-[0.05em] text-ink">
+            <div className="flex items-center justify-between px-5 py-[18px]">
+                <Link href={index.url()} className="text-[13px] font-semibold uppercase tracking-[0.06em] text-ink">
                     Manuscript
                 </Link>
                 <div className="flex items-center gap-2">
                     <LanguageSelector />
                     <Link href={settingsAppearance.url()} className="text-ink-muted hover:text-ink transition-colors">
-                        <Settings size={16} />
+                        <Settings size={18} />
                     </Link>
                 </div>
             </div>
 
             {/* Nav */}
-            <div className="flex flex-col gap-px px-2.5 py-3">
+            <div className="flex flex-col gap-0.5 p-3">
                 <NavItem
                     label={t('nav.dashboard')}
                     isActive={isDashboard}
@@ -189,11 +189,8 @@ export default function Sidebar({
                 />
             </div>
 
-            {/* Separator */}
-            <div className="mx-5 my-1 h-px bg-border-subtle" />
-
             {/* Chapter list */}
-            <div ref={scrollContainerRef} onScroll={handleSidebarScroll} className="flex-1 overflow-y-auto px-2.5 py-3">
+            <div ref={scrollContainerRef} onScroll={handleSidebarScroll} className="flex-1 overflow-y-auto px-3 py-2">
                 <ChapterList
                     bookTitle={book.title}
                     storylines={storylines}
@@ -218,9 +215,10 @@ export default function Sidebar({
             <TrashBin bookId={book.id} />
 
             {/* Footer */}
-            <div className="flex items-center justify-between border-t border-border-subtle px-5 py-3.5">
-                <span className="text-[11px] text-ink-faint">{t('wordsCompact', { formatted: formatCompactCount(totalWords) })}</span>
-                <span className="text-[11px] text-ink-faint">{t('chapters', { count: totalChapters })}</span>
+            <div className="flex items-center justify-center gap-3 px-5 py-3.5">
+                <span className="text-[11px] text-[#B5B5B5]">{t('wordsCompact', { formatted: formatCompactCount(totalWords) })}</span>
+                <span className="text-[11px] text-[#B5B5B5]">·</span>
+                <span className="text-[11px] text-[#B5B5B5]">{t('chapters', { count: totalChapters })}</span>
             </div>
 
             {/* Resize handle */}
