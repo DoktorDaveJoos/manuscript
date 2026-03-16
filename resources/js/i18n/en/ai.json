@@ -1,5 +1,6 @@
 {
     "header": "AI",
+    "headerTitle": "AI Assistant",
     "askAi": "Ask AI",
     "tokensEstimate": "~2k tokens/query",
 
@@ -13,12 +14,15 @@
     "actions.analyzing": "Analyzing…",
     "actions.analyze": "Analyze Chapter",
     "actions.analyzeDescription": "Run a deep analysis on this chapter to surface craft metrics, findings, and suggestions.",
+    "actions.normalize": "Normalize",
+    "actions.normalizeDescription": "Restructure paragraphs and dialogues for cleaner formatting. Text stays unchanged.",
     "actions.notConfigured": "AI is not configured.",
     "actions.configureSettings": "Configure settings",
 
     "prose.running": "Running…",
     "prose.runProsePass": "Revise Prose",
     "prose.description": "AI will revise the chapter text for clarity, rhythm, and style while preserving your voice.",
+    "prose.settingsLink": "Adjust rules in settings →",
 
     "score.empty": "—",
     "score.good": "Good",

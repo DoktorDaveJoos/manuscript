@@ -19,6 +19,8 @@ class SplitChapterRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'initial_content' => ['nullable', 'string'],
+            'scene_ids' => ['nullable', 'array'],
+            'scene_ids.*' => ['integer', 'exists:scenes,id'],
         ];
     }
 }

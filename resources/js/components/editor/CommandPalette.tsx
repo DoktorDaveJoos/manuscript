@@ -1,27 +1,30 @@
 import Kbd from '@/components/ui/Kbd';
 import { cn } from '@/lib/utils';
 import {
-    ArrowRight,
     Bold,
-    ChevronsUpDown,
-    FilePen,
+    BookOpen,
+    GitBranch,
     Italic,
-    Keyboard,
     Lock,
-    Minimize2,
+    Maximize,
+    Menu,
     Minus,
     Plus,
+    Radio,
     Search,
-    Sparkle,
+    StickyNote,
 } from 'lucide-react';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+type SectionId = 'focus' | 'textStyle' | 'aiGenerate' | 'chapter';
+
 type PaletteItem = {
     id: string;
     label: string;
     shortcut?: string;
+    sectionId: SectionId;
     section: string;
     icon: React.ReactNode;
     iconColorClass?: string;
@@ -35,12 +38,11 @@ export default function CommandPalette({
     isOpen,
     onClose,
     onSplitScene,
+    onSplitChapter,
     onNewChapter,
     onAddScene,
     onEnterFocusMode,
     isFocusMode,
-    onToggleTypewriterMode,
-    isTypewriterMode,
     onToggleNotes,
     licensed,
 }: {
@@ -48,12 +50,11 @@ export default function CommandPalette({
     isOpen: boolean;
     onClose: () => void;
     onSplitScene: () => Promise<void>;
+    onSplitChapter: () => Promise<void>;
     onNewChapter: () => void;
     onAddScene?: () => void;
     onEnterFocusMode?: () => void;
     isFocusMode?: boolean;
-    onToggleTypewriterMode?: () => void;
-    isTypewriterMode?: boolean;
     onToggleNotes?: () => void;
     licensed?: boolean;
 }) {
@@ -75,27 +76,30 @@ export default function CommandPalette({
                 id: 'focus-mode',
                 label: isFocusMode ? t('palette.leaveFocusMode') : t('palette.enterFocusMode'),
                 shortcut: isFocusMode ? 'Esc' : undefined,
+                sectionId: 'focus',
                 section: t('palette.section.focus'),
-                icon: <Minimize2 size={14} />,
+                icon: <Maximize size={14} />,
                 action: () => {
                     onClose();
                     onEnterFocusMode?.();
                 },
             },
             {
-                id: 'typewriter-mode',
-                label: isTypewriterMode ? t('palette.leaveTypewriterMode') : t('palette.enterTypewriterMode'),
+                id: 'open-notes',
+                label: t('palette.openNotes'),
+                sectionId: 'focus',
                 section: t('palette.section.focus'),
-                icon: <Keyboard size={14} />,
+                icon: <StickyNote size={14} />,
                 action: () => {
+                    onToggleNotes?.();
                     onClose();
-                    onToggleTypewriterMode?.();
                 },
             },
             {
                 id: 'bold',
                 label: t('palette.bold'),
                 shortcut: '⌘B',
+                sectionId: 'textStyle',
                 section: t('palette.section.textStyle'),
                 icon: <Bold size={14} strokeWidth={2.5} />,
                 action: run(() => editor!.chain().focus().toggleBold().run()),
@@ -104,6 +108,7 @@ export default function CommandPalette({
                 id: 'italic',
                 label: t('palette.italic'),
                 shortcut: '⌘I',
+                sectionId: 'textStyle',
                 section: t('palette.section.textStyle'),
                 icon: <Italic size={14} />,
                 action: run(() => editor!.chain().focus().toggleItalic().run()),
@@ -112,26 +117,29 @@ export default function CommandPalette({
                 id: 'ai-generate',
                 label: t('palette.generateNextParagraph'),
                 shortcut: '⌘↵',
+                sectionId: 'aiGenerate',
                 section: t('palette.section.aiGenerate'),
                 iconColorClass: 'text-status-revised',
                 highlighted: true,
                 disabled: !licensed,
-                icon: <Sparkle size={14} fill="currentColor" />,
+                icon: <Menu size={14} />,
                 action: () => {},
             },
             {
                 id: 'ai-continue',
                 label: t('palette.continueFromHere'),
                 shortcut: '⌘⇧↵',
+                sectionId: 'aiGenerate',
                 section: t('palette.section.aiGenerate'),
                 iconColorClass: 'text-status-revised',
                 disabled: !licensed,
-                icon: <ArrowRight size={14} />,
+                icon: <Radio size={14} />,
                 action: () => {},
             },
             {
                 id: 'new-chapter',
                 label: t('palette.newChapter'),
+                sectionId: 'chapter',
                 section: t('palette.section.chapter'),
                 icon: <Plus size={14} />,
                 action: run(() => {
@@ -141,6 +149,7 @@ export default function CommandPalette({
             {
                 id: 'new-scene',
                 label: t('palette.newScene'),
+                sectionId: 'chapter',
                 section: t('palette.section.chapter'),
                 icon: <Minus size={14} />,
                 disabled: !onAddScene,
@@ -150,26 +159,27 @@ export default function CommandPalette({
                 },
             },
             {
-                id: 'split-chapter',
+                id: 'split-scene',
                 label: t('palette.makeSelectionOwnScene'),
+                sectionId: 'chapter',
                 section: t('palette.section.chapter'),
-                icon: <ChevronsUpDown size={14} />,
+                icon: <GitBranch size={14} />,
                 action: run(() => {
                     onSplitScene();
                 }),
             },
             {
-                id: 'toggle-notes',
-                label: t('palette.toggleChapterNotes'),
+                id: 'split-chapter',
+                label: t('palette.makeSelectionOwnChapter'),
+                sectionId: 'chapter',
                 section: t('palette.section.chapter'),
-                icon: <FilePen size={14} />,
-                action: () => {
-                    onToggleNotes?.();
-                    onClose();
-                },
+                icon: <BookOpen size={14} />,
+                action: run(() => {
+                    onSplitChapter();
+                }),
             },
         ];
-    }, [editor, onClose, onSplitScene, onNewChapter, onAddScene, onEnterFocusMode, isFocusMode, onToggleTypewriterMode, isTypewriterMode, onToggleNotes, licensed, t]);
+    }, [editor, onClose, onSplitScene, onSplitChapter, onNewChapter, onAddScene, onEnterFocusMode, isFocusMode, onToggleNotes, licensed, t]);
 
     const filtered = useMemo(() => {
         if (!query.trim()) return items;
@@ -267,7 +277,8 @@ export default function CommandPalette({
                     )}
                     {Array.from(sections.entries()).map(([section, sectionItems], index) => {
                         const isFirst = index === 0;
-                        const isAiOrChapter = section === 'AI Generate' || section === 'Chapter';
+                        const sid = sectionItems[0]?.sectionId;
+                        const isAiOrChapter = sid === 'aiGenerate' || sid === 'chapter';
 
                         return (
                             <div
@@ -280,10 +291,10 @@ export default function CommandPalette({
                                 <div
                                     className={cn(
                                         'flex items-center px-2 pt-1 pb-1.5 text-[10px] font-medium uppercase leading-3 tracking-[0.08em] text-section-header',
-                                        section === 'AI Generate' && 'gap-1.5',
+                                        sid === 'aiGenerate' && 'gap-1.5',
                                     )}
                                 >
-                                    {section === 'AI Generate' && (
+                                    {sid === 'aiGenerate' && (
                                         <span className="h-[5px] w-[5px] rounded-full bg-status-revised" />
                                     )}
                                     {section}

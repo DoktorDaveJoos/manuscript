@@ -1,5 +1,5 @@
 import { beautify } from '@/actions/App/Http/Controllers/AiController';
-import { updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
+import { split, updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
 import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
 import AiChatDrawer from '@/components/editor/AiChatDrawer';
@@ -33,6 +33,28 @@ function firstLine(text: string): string {
     return text.split('\n')[0];
 }
 
+/** Cuts content from cursor to end of document, flushes the scene save, and returns the HTML + scene index. */
+async function splitAtCursor(editor: Editor, sceneId: number, scenes: Scene[]): Promise<{ belowHtml: string; currentIndex: number }> {
+    const { from } = editor.state.selection;
+    const endPos = editor.state.doc.content.size;
+
+    const afterSlice = editor.state.doc.slice(from, endPos);
+    const serializer = DOMSerializer.fromSchema(editor.schema);
+    const container = document.createElement('div');
+    container.appendChild(serializer.serializeFragment(afterSlice.content));
+    const belowHtml = container.innerHTML;
+
+    editor.chain().deleteRange({ from, to: endPos }).run();
+
+    // Flush the current scene's save
+    const sceneEl = document.getElementById(`scene-${sceneId}`);
+    const flush = (sceneEl as unknown as Record<string, () => Promise<void>>)?.__flush;
+    if (typeof flush === 'function') await flush();
+
+    const currentIndex = scenes.findIndex((s) => s.id === sceneId);
+    return { belowHtml, currentIndex };
+}
+
 export default function ChapterShow({
     book,
     chapter,
@@ -61,7 +83,32 @@ export default function ChapterShow({
     const [showNormalize, setShowNormalize] = useState(false);
     const [isBeautifying, setIsBeautifying] = useState(false);
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-    const [notesToggleTick, setNotesToggleTick] = useState(0);
+    const [isNotesOpen, setIsNotesOpen] = useState(() => {
+        try {
+            return localStorage.getItem('manuscript:notes-open') === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    const toggleNotes = useCallback(() => {
+        setIsNotesOpen((prev) => {
+            const next = !prev;
+            try {
+                localStorage.setItem('manuscript:notes-open', String(next));
+            } catch {}
+            return next;
+        });
+    }, []);
+
+    const closeNotes = useCallback(() => {
+        setIsNotesOpen(false);
+        try {
+            localStorage.setItem('manuscript:notes-open', 'false');
+        } catch {}
+        activeEditor?.commands.focus();
+    }, [activeEditor]);
+
     const [scenesVisible, setScenesVisible] = useState(app_settings.show_scenes);
 
     const handleScenesVisibleChange = useCallback((v: boolean) => {
@@ -360,23 +407,7 @@ export default function ChapterShow({
     const handleSplitScene = useCallback(async () => {
         if (!activeEditor || !activeSceneId) return;
 
-        const { from } = activeEditor.state.selection;
-        const endPos = activeEditor.state.doc.content.size;
-
-        const afterSlice = activeEditor.state.doc.slice(from, endPos);
-        const serializer = DOMSerializer.fromSchema(activeEditor.schema);
-        const container = document.createElement('div');
-        container.appendChild(serializer.serializeFragment(afterSlice.content));
-        const belowHtml = container.innerHTML;
-
-        activeEditor.chain().deleteRange({ from, to: endPos }).run();
-
-        // Flush the current scene's save
-        const sceneEl = document.getElementById(`scene-${activeSceneId}`);
-        const flush = (sceneEl as unknown as Record<string, () => Promise<void>>)?.__flush;
-        if (typeof flush === 'function') await flush();
-
-        const currentIndex = scenes.findIndex((s) => s.id === activeSceneId);
+        const { belowHtml, currentIndex } = await splitAtCursor(activeEditor, activeSceneId, scenes);
         const insertPosition = currentIndex + 1;
 
         const response = await fetch(storeScene.url({ book: book.id, chapter: chapter.id }), {
@@ -399,6 +430,28 @@ export default function ChapterShow({
         });
         setPendingFocusSceneId(newScene.id);
     }, [activeEditor, activeSceneId, book.id, chapter.id, scenes]);
+
+    const handleSplitChapter = useCallback(async () => {
+        if (!activeEditor || !activeSceneId) return;
+
+        const { belowHtml, currentIndex } = await splitAtCursor(activeEditor, activeSceneId, scenes);
+        const subsequentSceneIds = scenes.slice(currentIndex + 1).map((s) => s.id);
+
+        const response = await fetch(split.url({ book: book.id, chapter: chapter.id }), {
+            method: 'POST',
+            headers: jsonFetchHeaders(),
+            body: JSON.stringify({
+                title: t('palette.newChapter'),
+                initial_content: belowHtml,
+                scene_ids: subsequentSceneIds,
+            }),
+        });
+
+        if (!response.ok) return;
+
+        const data: { url: string } = await response.json();
+        router.visit(data.url);
+    }, [activeEditor, activeSceneId, book.id, chapter.id, scenes, t]);
 
     const handleNewChapter = useCallback(async () => {
         await handleBeforeNavigate();
@@ -493,7 +546,7 @@ export default function ChapterShow({
                                     editorFontSize={editorFontSize}
                                     onFontSizeChange={handleFontSizeChange}
                                     onToggleFocusMode={toggleFocusMode}
-                                    onToggleNotes={() => setNotesToggleTick((t) => t + 1)}
+                                    onToggleNotes={toggleNotes}
                                 />
                             </div>
 
@@ -517,34 +570,31 @@ export default function ChapterShow({
                                 scenesVisible={scenesVisible}
                             />
 
-                            <NotesPanel
-                                bookId={book.id}
-                                chapterId={chapter.id}
-                                initialNotes={chapter.notes}
-                                isFocusMode={isFocusMode}
-                                toggleTick={notesToggleTick}
-                                onClose={() => {
-                                    activeEditor?.commands.focus();
-                                }}
-                            />
-
                             <CommandPalette
                                 editor={activeEditor}
                                 isOpen={isPaletteOpen}
                                 onClose={closePalette}
                                 onSplitScene={handleSplitScene}
+                                onSplitChapter={handleSplitChapter}
                                 onNewChapter={handleNewChapter}
                                 onAddScene={handlePaletteAddScene}
                                 onEnterFocusMode={toggleFocusMode}
                                 isFocusMode={isFocusMode}
-                                onToggleTypewriterMode={toggleTypewriterMode}
-                                isTypewriterMode={isTypewriterMode}
-                                onToggleNotes={() => setNotesToggleTick((t) => t + 1)}
+                                onToggleNotes={toggleNotes}
                                 licensed={isLicensed}
                             />
                         </>
                     )}
                 </div>
+
+                {isNotesOpen && !isFocusMode && !pendingVersion && (
+                    <NotesPanel
+                        bookId={book.id}
+                        chapterId={chapter.id}
+                        initialNotes={chapter.notes}
+                        onClose={closeNotes}
+                    />
+                )}
 
                 {!pendingVersion && aiVisible && (
                     <div

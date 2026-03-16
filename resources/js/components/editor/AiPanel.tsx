@@ -5,7 +5,9 @@ import { useChapterAnalysis } from '@/hooks/useChapterAnalysis';
 import { getXsrfToken } from '@/lib/csrf';
 import { cn } from '@/lib/utils';
 import type { Analysis, Book, Chapter, Character, CharacterChapterPivot, CharacterRole } from '@/types/models';
-import { ChevronLeft, ChevronRight, Lock, MessageCircle, Sparkle, Table } from 'lucide-react';
+import { writingStyle } from '@/actions/App/Http/Controllers/BookSettingsController';
+import { applyChapter } from '@/actions/App/Http/Controllers/NormalizationController';
+import { ChevronLeft, Lock, MessageCircle, PenTool, Pilcrow, Sparkles } from 'lucide-react';
 import { Link, router } from '@inertiajs/react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +16,7 @@ type ChapterCharacter = Character & { pivot: CharacterChapterPivot };
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
     return (
-        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8A8A8A]">
             {children}
         </span>
     );
@@ -93,7 +95,7 @@ function FindingDot({ variant }: { variant: 'warning' | 'info' }) {
         <span
             className={cn(
                 'mt-1.5 size-[5px] shrink-0 rounded-full',
-                variant === 'warning' ? 'bg-status-revised' : 'bg-ink-faint',
+                variant === 'warning' ? 'bg-[#C4845C]' : 'bg-[#8A8A8A]',
             )}
         />
     );
@@ -103,28 +105,14 @@ function CharacterRow({ character, roleText }: { character: ChapterCharacter; ro
     const initial = character.name.charAt(0).toUpperCase();
 
     return (
-        <div className="flex items-center gap-2.5">
-            <div className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-border">
+        <div className="flex items-center gap-2">
+            <div className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-[#EEEDEB]">
                 <span className="text-[10px] font-semibold text-ink-muted">{initial}</span>
             </div>
-            <div className="flex flex-col">
-                <span className="text-[13px] font-medium text-ink">{character.name}</span>
-                <span className="text-[11px] text-ink-faint">{roleText}</span>
-            </div>
+            <span className="text-[13px] font-medium text-[#4A4A4A]">{character.name}</span>
+            <span className="text-[11px] text-[#A0A0A0]">{roleText}</span>
         </div>
     );
-}
-
-function CollapseIcon() {
-    return <ChevronRight size={14} strokeWidth={2.5} />;
-}
-
-function ExpandIcon() {
-    return <ChevronLeft size={14} strokeWidth={2.5} />;
-}
-
-function SparkleIcon() {
-    return <Sparkle size={16} fill="currentColor" />;
 }
 
 function collectFindings(analyses: Record<string, Analysis>): { text: string; variant: 'warning' | 'info' }[] {
@@ -260,42 +248,33 @@ export default function AiPanel({
     return (
         <aside
             className={cn(
-                'flex h-full shrink-0 flex-col border-l border-border bg-surface-card transition-[width] duration-200 ease-in-out',
-                isOpen ? 'w-[280px]' : 'w-10',
+                'flex h-full shrink-0 flex-col border-l border-[#F0EFED] bg-white transition-[width] duration-200 ease-in-out',
+                isOpen ? 'w-[272px]' : 'w-10',
             )}
         >
             {isOpen ? (
                 <>
                     {/* Header */}
-                    <div className="flex h-12 items-center justify-between border-b border-border-subtle px-5">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink">
-                                {t('header')}
-                            </span>
-                            {licensed ? (
-                                <span
-                                    className={cn(
-                                        'size-1.5 rounded-full',
-                                        aiEnabled ? 'bg-ai-green' : 'bg-status-revised',
-                                    )}
-                                />
-                            ) : (
-                                <Lock size={14} className="text-ink-faint" />
-                            )}
-                        </div>
-                        <button
-                            type="button"
-                            onClick={onToggle}
-                            className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:text-ink"
-                        >
-                            <CollapseIcon />
-                        </button>
+                    <div className="flex items-center gap-2 px-5 py-3">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#1A1A1A]">
+                            {t('headerTitle')}
+                        </span>
+                        {licensed ? (
+                            <span
+                                className={cn(
+                                    'size-1.5 rounded-full',
+                                    aiEnabled ? 'bg-ai-green' : 'bg-status-revised',
+                                )}
+                            />
+                        ) : (
+                            <Lock size={14} className="text-ink-faint" />
+                        )}
                     </div>
 
                     {licensed ? (
                         <>
                             {/* Scrollable content */}
-                            <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-4">
+                            <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-5">
                                 {/* Actions section */}
                                 <div className="flex flex-col gap-2.5">
                                     <SectionLabel>{t('section.actions')}</SectionLabel>
@@ -307,7 +286,7 @@ export default function AiPanel({
                                                 disabled={isAnalyzing}
                                                 className={actionButtonClass}
                                             >
-                                                <Table size={14} strokeWidth={2.5} />
+                                                <Sparkles size={14} strokeWidth={2.5} />
                                                 {isAnalyzing ? t('actions.analyzing') : t('actions.analyze')}
                                             </button>
                                             <p className="text-xs leading-relaxed text-ink-muted">
@@ -316,6 +295,19 @@ export default function AiPanel({
                                             {analysisError && (
                                                 <p className="text-xs leading-relaxed text-red-600">{analysisError}</p>
                                             )}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    router.post(applyChapter.url({ book: book.id, chapter: chapter.id }));
+                                                }}
+                                                className={actionButtonClass}
+                                            >
+                                                <Pilcrow size={14} strokeWidth={2.5} />
+                                                {t('actions.normalize')}
+                                            </button>
+                                            <p className="text-xs leading-relaxed text-ink-muted">
+                                                {t('actions.normalizeDescription')}
+                                            </p>
                                         </>
                                     ) : (
                                         <p className="text-xs leading-relaxed text-ink-muted">
@@ -343,12 +335,18 @@ export default function AiPanel({
                                                 disabled={isRunningProse}
                                                 className={actionButtonClass}
                                             >
-                                                <Sparkle size={14} fill="currentColor" />
+                                                <PenTool size={14} strokeWidth={2.5} />
                                                 {isRunningProse ? t('prose.running') : t('prose.runProsePass')}
                                             </button>
                                             <p className="text-xs leading-relaxed text-ink-muted">
                                                 {t('prose.description')}
                                             </p>
+                                            <Link
+                                                href={writingStyle.url(book)}
+                                                className="text-xs font-medium text-[#C4845C] transition-colors hover:text-[#B0734D]"
+                                            >
+                                                {t('prose.settingsLink')}
+                                            </Link>
                                         </>
                                     ) : null}
                                 </div>
@@ -443,7 +441,7 @@ export default function AiPanel({
                                             {findings.map((f, i) => (
                                                 <div key={i} className="flex gap-2">
                                                     <FindingDot variant={f.variant} />
-                                                    <span className="text-xs leading-relaxed text-ink-soft">{f.text}</span>
+                                                    <span className="text-xs leading-relaxed text-[#4A4A4A]">{f.text}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -495,16 +493,16 @@ export default function AiPanel({
                             </div>
 
                             {/* Bottom bar */}
-                            <div className="flex items-center justify-between border-t border-border-subtle px-4 py-3">
+                            <div className="flex flex-col gap-2 border-t border-border-subtle px-4 py-3">
                                 <button
                                     type="button"
                                     onClick={onOpenChat}
-                                    className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:bg-surface hover:text-ink"
+                                    className="flex items-center justify-center gap-1.5 rounded-lg border border-[#E8E8E8] px-3 py-[9px] text-[13px] text-[#4A4A4A] transition-colors hover:bg-surface hover:text-ink"
                                 >
-                                    <MessageCircle size={14} />
+                                    <MessageCircle size={13} className="text-[#8A8A8A]" />
                                     {t('askAi')}
                                 </button>
-                                <span className="text-[11px] text-ink-faint">{t('tokensEstimate')}</span>
+                                <span className="text-center text-[11px] text-[#B5B5B5]">{t('tokensEstimate')}</span>
                             </div>
                         </>
                     ) : (
@@ -538,26 +536,10 @@ export default function AiPanel({
                 <button
                     type="button"
                     onClick={onToggle}
-                    className="flex h-full w-full flex-col items-center gap-3 pt-3 transition-colors hover:bg-surface"
+                    className="flex h-full w-full flex-col items-center gap-3 pt-4 transition-colors hover:bg-surface"
                 >
-                    <span className="flex size-6 items-center justify-center text-ink-faint">
-                        <ExpandIcon />
-                    </span>
-                    {licensed ? (
-                        <>
-                            <span className="flex size-5 items-center justify-center text-ink-faint">
-                                <SparkleIcon />
-                            </span>
-                            <span
-                                className={cn(
-                                    'size-1.5 rounded-full',
-                                    aiEnabled ? 'bg-ai-green' : 'bg-status-revised',
-                                )}
-                            />
-                        </>
-                    ) : (
-                        <Lock size={14} className="text-ink-faint" />
-                    )}
+                    <span className="text-[11px] font-normal tracking-[0.06em] text-ink">AI</span>
+                    <ChevronLeft size={14} className="text-[#B5B5B5]" />
                 </button>
             )}
         </aside>

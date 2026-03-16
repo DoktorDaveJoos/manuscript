@@ -213,7 +213,7 @@ export default function AiChatDrawer({
     );
 
     return (
-        <aside ref={asideRef} className="relative flex h-full shrink-0 flex-col border-l border-border bg-surface-card" style={{ width }}>
+        <aside ref={asideRef} className="relative flex h-full shrink-0 flex-col border-l border-[#F0EFED] bg-white" style={{ width }}>
             {/* Resize handle */}
             <div
                 onMouseDown={handleMouseDown}

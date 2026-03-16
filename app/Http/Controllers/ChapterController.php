@@ -213,6 +213,56 @@ class ChapterController extends Controller
                 'word_count' => $wordCount,
             ]);
 
+            // Move specified scenes from the original chapter to the new one
+            $sceneIds = $request->validated('scene_ids') ?? [];
+            if (! empty($sceneIds)) {
+                $scenesToMove = $chapter->scenes()
+                    ->whereIn('id', $sceneIds)
+                    ->orderBy('sort_order')
+                    ->get();
+
+                if ($scenesToMove->isNotEmpty()) {
+                    // Bulk move scenes to new chapter with correct sort_order
+                    $sortOrderCase = '';
+                    $moveIds = [];
+                    $sortOrder = 1; // First scene (from content) is 0
+                    foreach ($scenesToMove as $scene) {
+                        $id = (int) $scene->id;
+                        $moveIds[] = $id;
+                        $sortOrderCase .= "WHEN {$id} THEN {$sortOrder} ";
+                        $sortOrder++;
+                    }
+                    $moveIdList = implode(',', $moveIds);
+                    DB::statement(
+                        "UPDATE scenes SET chapter_id = {$newChapter->id}, sort_order = CASE id {$sortOrderCase}END WHERE id IN ({$moveIdList})"
+                    );
+
+                    $wordCount += $scenesToMove->sum('word_count');
+                    $newChapter->update(['word_count' => $wordCount]);
+
+                    // Bulk recompact sort_order for remaining scenes in original chapter
+                    $remaining = $chapter->scenes()->orderBy('sort_order')->pluck('id');
+                    if ($remaining->isNotEmpty()) {
+                        $reorderCase = '';
+                        $reorderIds = [];
+                        foreach ($remaining->values() as $index => $id) {
+                            $id = (int) $id;
+                            $reorderIds[] = $id;
+                            $reorderCase .= "WHEN {$id} THEN {$index} ";
+                        }
+                        $reorderIdList = implode(',', $reorderIds);
+                        DB::statement(
+                            "UPDATE scenes SET sort_order = CASE id {$reorderCase}END WHERE id IN ({$reorderIdList})"
+                        );
+                    }
+
+                    // Recalculate original chapter word count
+                    $chapter->update([
+                        'word_count' => $chapter->scenes()->sum('word_count'),
+                    ]);
+                }
+            }
+
             return $newChapter;
         });
 

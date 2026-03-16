@@ -23,8 +23,7 @@
     "toolbar.typewriterMode": "Schreibmaschinenmodus",
     "palette.enterFocusMode": "Fokusmodus aktivieren",
     "palette.leaveFocusMode": "Fokusmodus verlassen",
-    "palette.enterTypewriterMode": "Schreibmaschinenmodus aktivieren",
-    "palette.leaveTypewriterMode": "Schreibmaschinenmodus verlassen",
+    "palette.openNotes": "Notizen öffnen",
     "palette.bold": "Fett",
     "palette.italic": "Kursiv",
     "palette.generateNextParagraph": "Nächsten Absatz generieren",
@@ -32,7 +31,7 @@
     "palette.newChapter": "Neues Kapitel",
     "palette.newScene": "Neue Szene",
     "palette.makeSelectionOwnScene": "Auswahl als eigene Szene",
-    "palette.toggleChapterNotes": "Kapitelnotizen ein-/ausblenden",
+    "palette.makeSelectionOwnChapter": "Auswahl als eigenes Kapitel",
     "palette.searchActions": "Aktionen suchen\u2026",
     "palette.noMatchingActions": "Keine passenden Aktionen",
     "palette.section.focus": "Fokus",
@@ -139,5 +138,10 @@
     "empty.description": "Erstellen Sie Ihr erstes Kapitel oder importieren Sie ein bestehendes Manuskript.",
     "empty.createFirst": "Erstes Kapitel erstellen",
     "empty.importManuscript": "Manuskript importieren",
-    "empty.noChapters": "Keine Kapitel"
+    "empty.noChapters": "Keine Kapitel",
+    "toolbar.heading1": "Überschrift 1",
+    "toolbar.heading2": "Überschrift 2",
+    "toolbar.focus": "Fokus",
+    "toolbar.notes": "Notizen",
+    "toolbar.fontSize": "Schriftgröße"
 }

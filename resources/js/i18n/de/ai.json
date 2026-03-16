@@ -1,5 +1,6 @@
 {
     "header": "KI",
+    "headerTitle": "KI-Assistent",
     "askAi": "KI fragen",
     "tokensEstimate": "~2k Tokens/Anfrage",
 
@@ -13,12 +14,15 @@
     "actions.analyzing": "Analysiere…",
     "actions.analyze": "Kapitel analysieren",
     "actions.analyzeDescription": "Führe eine tiefgehende Analyse dieses Kapitels durch, um Handwerksmetriken, Erkenntnisse und Vorschläge zu erhalten.",
+    "actions.normalize": "Normalisieren",
+    "actions.normalizeDescription": "Absätze und Dialoge für sauberere Formatierung umstrukturieren. Der Text bleibt unverändert.",
     "actions.notConfigured": "KI ist nicht konfiguriert.",
     "actions.configureSettings": "Einstellungen konfigurieren",
 
     "prose.running": "Läuft…",
     "prose.runProsePass": "Textüberarbeitung starten",
     "prose.description": "Die KI überarbeitet den Kapiteltext für Klarheit, Rhythmus und Stil und bewahrt dabei deine Stimme.",
+    "prose.settingsLink": "Regeln in Einstellungen anpassen →",
 
     "score.empty": "—",
     "score.good": "Gut",
