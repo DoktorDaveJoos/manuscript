@@ -1,0 +1,100 @@
+import { useAutoUpdater } from '@/hooks/useAutoUpdater';
+import { Download, Package } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+
+interface Props {
+    currentVersion: string;
+}
+
+export default function UpdateDialog({ currentVersion }: Props) {
+    const { t } = useTranslation('settings');
+    const { state, downloadUpdate, installUpdate, dismissUpdate } = useAutoUpdater();
+
+    if (state.status !== 'available' && state.status !== 'downloading' && state.status !== 'ready') {
+        return null;
+    }
+
+    const isDownloading = state.status === 'downloading';
+    const isReady = state.status === 'ready';
+
+    const handleUpdateNow = () => {
+        if (state.status === 'available') {
+            downloadUpdate();
+        } else if (isReady) {
+            installUpdate();
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/20" />
+
+            {/* Dialog card */}
+            <div className="relative z-10 flex w-[440px] flex-col rounded-2xl bg-surface-card p-10 shadow-[0_16px_48px_-4px_rgba(0,0,0,0.15),0_4px_12px_rgba(0,0,0,0.05)]">
+                {/* Icon */}
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-light">
+                    <Download className="h-6 w-6 text-accent" />
+                </div>
+
+                {/* Text */}
+                <div className="mt-5 flex flex-col gap-2">
+                    <h2 className="text-[20px] font-semibold tracking-[-0.3px] text-ink">
+                        {t('appearance.update.dialogTitle')}
+                    </h2>
+                    <p className="text-[14px] leading-[1.5] text-ink-muted">
+                        {t('appearance.update.dialogDescription')}
+                    </p>
+                </div>
+
+                {/* Version info card */}
+                <div className="mt-6 flex items-center gap-3 rounded-[10px] bg-surface-warm px-5 py-4">
+                    <Package className="h-[18px] w-[18px] shrink-0 text-accent" />
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-[14px] font-medium text-ink">
+                            {t('appearance.update.newVersion', { version: state.version ?? '—' })}
+                        </span>
+                        <span className="text-[12px] text-ink-faint">
+                            {t('appearance.update.currentVersion', { version: currentVersion })}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Progress bar */}
+                {isDownloading && (
+                    <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-border-light">
+                        <div
+                            className="h-full rounded-full bg-accent transition-all duration-300"
+                            style={{ width: `${state.progress}%` }}
+                        />
+                    </div>
+                )}
+
+                {/* Buttons */}
+                <div className="mt-7 flex justify-end gap-3">
+                    {!isDownloading && (
+                        <button
+                            type="button"
+                            onClick={dismissUpdate}
+                            className="rounded-md border border-border px-6 py-2.5 text-[14px] font-medium text-ink-muted transition-colors hover:bg-surface-warm"
+                        >
+                            {t('appearance.update.later')}
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={handleUpdateNow}
+                        disabled={isDownloading}
+                        className="rounded-md bg-ink px-6 py-2.5 text-[14px] font-medium text-surface shadow-sm transition-colors disabled:opacity-50"
+                    >
+                        {isDownloading
+                            ? t('appearance.update.downloading', { progress: state.progress })
+                            : isReady
+                              ? t('appearance.update.restart')
+                              : t('appearance.update.updateNow')}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}

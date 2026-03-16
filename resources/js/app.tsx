@@ -1,3 +1,4 @@
+import UpdateDialog from '@/components/ui/UpdateDialog';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
@@ -31,9 +32,15 @@ createInertiaApp({
             });
         }
 
+        const appVersion = (props.initialPage.props.app_version as string) ?? '0.0.0';
         const root = createRoot(el);
 
-        root.render(<App {...props} />);
+        root.render(
+            <>
+                <App {...props} />
+                <UpdateDialog currentVersion={appVersion} />
+            </>,
+        );
     },
     progress: {
         color: '#4B5563',

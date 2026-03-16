@@ -34,6 +34,12 @@
     "appearance.update.readyToInstall": "Version {{version}} ist bereit zur Installation",
     "appearance.update.restart": "Neu starten und aktualisieren",
     "appearance.update.bannerMessage": "Version {{version}} ist bereit — neu starten, um zu aktualisieren",
+    "appearance.update.dialogTitle": "Update verfügbar",
+    "appearance.update.dialogDescription": "Eine neue Version von Manuscript steht zur Installation bereit.",
+    "appearance.update.newVersion": "Version {{version}}",
+    "appearance.update.currentVersion": "Aktuell: {{version}}",
+    "appearance.update.updateNow": "Jetzt aktualisieren",
+    "appearance.update.later": "Später",
 
     "license.title": "Lizenz",
     "license.description": "Verwalte deine Manuscript-Lizenz.",

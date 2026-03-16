@@ -98,6 +98,7 @@ Route::post('/books/{book}/chapters/{chapter}/normalize/apply', [NormalizationCo
 
 // Updates
 Route::post('/update/check', [UpdateController::class, 'check'])->name('update.check');
+Route::post('/update/download', [UpdateController::class, 'download'])->name('update.download');
 Route::post('/update/install', [UpdateController::class, 'install'])->name('update.install');
 
 // App settings

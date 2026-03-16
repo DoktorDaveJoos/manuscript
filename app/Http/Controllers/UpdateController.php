@@ -14,6 +14,13 @@ class UpdateController extends Controller
         return response()->json(['status' => 'checking']);
     }
 
+    public function download(): JsonResponse
+    {
+        AutoUpdater::downloadUpdate();
+
+        return response()->json(['status' => 'downloading']);
+    }
+
     public function install(): JsonResponse
     {
         AutoUpdater::quitAndInstall();

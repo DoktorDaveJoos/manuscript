@@ -1,4 +1,4 @@
-import { check, install } from '@/actions/App/Http/Controllers/UpdateController';
+import { check, download, install } from '@/actions/App/Http/Controllers/UpdateController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import { useSyncExternalStore } from 'react';
 
@@ -117,25 +117,34 @@ function ensureNativeListeners() {
 // ---------------------------------------------------------------------------
 // Actions
 // ---------------------------------------------------------------------------
+function postAction(url: string, errorMsg: string) {
+    fetch(url, { method: 'POST', headers: jsonFetchHeaders() }).catch(() => {
+        setState((prev) => ({ ...prev, status: 'error', error: errorMsg }));
+    });
+}
+
 function checkForUpdates() {
     setState((prev) =>
         prev.status === 'checking' ? prev : { ...prev, status: 'checking', error: null },
     );
-    fetch(check.url(), {
-        method: 'POST',
-        headers: jsonFetchHeaders(),
-    }).catch(() => {
-        setState((prev) => ({ ...prev, status: 'error', error: 'Failed to check for updates' }));
-    });
+    postAction(check.url(), 'Failed to check for updates');
+}
+
+function downloadUpdate() {
+    setState((prev) =>
+        prev.status === 'downloading' ? prev : { ...prev, status: 'downloading', progress: 0, error: null },
+    );
+    postAction(download.url(), 'Failed to download update');
 }
 
 function installUpdate() {
-    fetch(install.url(), {
-        method: 'POST',
-        headers: jsonFetchHeaders(),
-    }).catch(() => {
-        setState((prev) => ({ ...prev, status: 'error', error: 'Failed to install update' }));
-    });
+    postAction(install.url(), 'Failed to install update');
+}
+
+const IDLE_STATE: UpdateState = { status: 'idle', version: null, progress: 0, error: null, releaseNotes: null };
+
+function dismissUpdate() {
+    setState(() => IDLE_STATE);
 }
 
 // ---------------------------------------------------------------------------
@@ -144,5 +153,5 @@ function installUpdate() {
 export function useAutoUpdater() {
     ensureNativeListeners();
     const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-    return { state: snapshot, checkForUpdates, installUpdate };
+    return { state: snapshot, checkForUpdates, downloadUpdate, installUpdate, dismissUpdate };
 }

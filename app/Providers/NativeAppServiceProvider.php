@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Native\Desktop\Contracts\ProvidesPhpIni;
+use Native\Desktop\Facades\AutoUpdater;
 use Native\Desktop\Facades\Window;
 
 class NativeAppServiceProvider implements ProvidesPhpIni
@@ -19,6 +20,8 @@ class NativeAppServiceProvider implements ProvidesPhpIni
             ->height(900)
             ->minWidth(1024)
             ->minHeight(680);
+
+        AutoUpdater::checkForUpdates();
     }
 
     /**
