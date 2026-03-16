@@ -135,6 +135,24 @@ export default function ChapterShow({
         }
     }, []);
 
+    const [editorFontSize, setEditorFontSize] = useState(() => {
+        try {
+            const stored = localStorage.getItem('manuscript:editor-font-size');
+            return stored ? Number(stored) : 18;
+        } catch {
+            return 18;
+        }
+    });
+
+    const handleFontSizeChange = useCallback((size: number) => {
+        setEditorFontSize(size);
+        try {
+            localStorage.setItem('manuscript:editor-font-size', String(size));
+        } catch {
+            // Ignore storage errors
+        }
+    }, []);
+
     const [isChatOpen, setIsChatOpen] = useState(false);
 
     const [isAiPanelOpen, setIsAiPanelOpen] = useState(() => {
@@ -314,6 +332,9 @@ export default function ChapterShow({
             } else if (e.key === 'Tab' && e.shiftKey) {
                 e.preventDefault();
                 setIsPaletteOpen((prev) => !prev);
+            } else if (e.key === 'p' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                setIsPaletteOpen((prev) => !prev);
             } else if (e.key === 'Escape' && isFocusMode && !isPaletteOpen) {
                 e.preventDefault();
                 exitFocusMode();
@@ -431,7 +452,7 @@ export default function ChapterShow({
                 <div className="relative flex min-w-0 flex-1 flex-col">
                     <div className="relative">
                         <div
-                            className={`overflow-hidden transition-[height,opacity] duration-300 ${isFocusMode ? 'h-0 opacity-0' : 'h-12'}`}
+                            className={`overflow-hidden transition-[height,opacity] duration-300 ${isFocusMode ? 'h-0 opacity-0' : 'h-[38px]'}`}
                         >
                             <EditorBar
                                 chapter={chapter}
@@ -439,7 +460,6 @@ export default function ChapterShow({
                                 storylineName={chapter.storyline?.name ?? t('show.untitledStoryline')}
                                 wordCount={wordCount}
                                 versionCount={versionCount}
-                                saveStatus={saveStatus}
                                 onVersionClick={() => setShowVersions(!showVersions)}
                             />
                         </div>
@@ -464,17 +484,16 @@ export default function ChapterShow({
                     ) : (
                         <>
                             <div
-                                className={`transition-[height,opacity] duration-300 ${isFocusMode || app_settings.hide_formatting_toolbar ? 'h-0 overflow-hidden opacity-0' : 'h-9'}`}
+                                className={`transition-[height,opacity] duration-300 ${isFocusMode || app_settings.hide_formatting_toolbar ? 'h-0 overflow-hidden opacity-0' : 'h-[38px]'}`}
                             >
                                 <FormattingToolbar
                                     editor={activeEditor}
-                                    onNormalizeClick={() => setShowNormalize(true)}
-                                    onBeautifyClick={handleBeautify}
-                                    isBeautifying={isBeautifying}
-                                    isTypewriterMode={isTypewriterMode}
-                                    onTypewriterToggle={toggleTypewriterMode}
                                     editorFont={editorFont}
                                     onFontChange={handleFontChange}
+                                    editorFontSize={editorFontSize}
+                                    onFontSizeChange={handleFontSizeChange}
+                                    onToggleFocusMode={toggleFocusMode}
+                                    onToggleNotes={() => setNotesToggleTick((t) => t + 1)}
                                 />
                             </div>
 
@@ -491,6 +510,7 @@ export default function ChapterShow({
                                 onWordCountChange={handleSceneWordCountChange}
                                 isTypewriterMode={isTypewriterMode}
                                 editorFont={editorFont}
+                                editorFontSize={editorFontSize}
                                 pendingFocusSceneId={pendingFocusSceneId}
                                 onFocusHandled={() => setPendingFocusSceneId(null)}
                                 onActiveSceneIdChange={setActiveSceneId}

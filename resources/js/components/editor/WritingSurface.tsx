@@ -7,6 +7,7 @@ import type { Editor } from '@tiptap/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_FONT_ID, FONTS } from './FontSelector';
+import { DEFAULT_FONT_SIZE } from './FontSizeSelector';
 import SceneEditor from './SceneEditor';
 
 const NORMAL_PADDING_TOP = 48; // Tailwind pt-12
@@ -32,6 +33,7 @@ export default function WritingSurface({
     onWordCountChange,
     isTypewriterMode = false,
     editorFont = DEFAULT_FONT_ID,
+    editorFontSize = DEFAULT_FONT_SIZE,
     pendingFocusSceneId,
     onFocusHandled,
     onActiveSceneIdChange,
@@ -49,6 +51,7 @@ export default function WritingSurface({
     onWordCountChange: (sceneId: number, count: number) => void;
     isTypewriterMode?: boolean;
     editorFont?: string;
+    editorFontSize?: number;
     pendingFocusSceneId?: number | null;
     onFocusHandled?: () => void;
     onActiveSceneIdChange?: (sceneId: number) => void;
@@ -218,7 +221,7 @@ export default function WritingSurface({
         <div
             ref={scrollContainerRef}
             className="flex flex-1 items-start justify-center overflow-y-auto"
-            style={{ '--font-serif': fontFamily } as React.CSSProperties}
+            style={{ '--font-serif': fontFamily, '--editor-font-size': `${editorFontSize}px` } as React.CSSProperties}
         >
             <div
                 className="w-full max-w-[660px] px-[30px]"

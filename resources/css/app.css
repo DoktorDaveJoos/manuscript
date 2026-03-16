@@ -74,6 +74,30 @@ html.dark {
     [role="button"]:not(:disabled) {
         cursor: pointer;
     }
+
+    /* Minimalist scrollbars */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-border) transparent;
+    }
+
+    *::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    *::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background: var(--color-border);
+        border-radius: 3px;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+        background: var(--color-ink-faint);
+    }
 }
 
 /* Notes panel entry animation */
@@ -91,7 +115,7 @@ html.dark {
 /* Tiptap editor prose styles — book-like typography */
 .editor-prose {
     font-family: var(--font-serif);
-    font-size: 18px;
+    font-size: var(--editor-font-size, 18px);
     line-height: 1.45;
     color: var(--color-ink);
     outline: none;
