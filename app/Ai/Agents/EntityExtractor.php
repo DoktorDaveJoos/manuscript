@@ -2,14 +2,17 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\LookupExistingEntities;
+use App\Enums\AiTaskCategory;
 use App\Enums\WikiEntryKind;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
+use Laravel\Ai\Attributes\UseCheapestModel;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasStructuredOutput;
@@ -19,9 +22,15 @@ use Stringable;
 
 #[Temperature(0.2)]
 #[Timeout(120)]
+#[UseCheapestModel]
 class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput, HasTools
 {
-    use Promptable;
+    use Promptable, UsesTaskCategoryModel;
+
+    public static function taskCategory(): AiTaskCategory
+    {
+        return AiTaskCategory::Extraction;
+    }
 
     public function __construct(protected Book $book) {}
 

@@ -2,8 +2,10 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
+use App\Enums\AiTaskCategory;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Services\StoryBibleService;
@@ -11,6 +13,7 @@ use Illuminate\Support\Str;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
+use Laravel\Ai\Attributes\UseSmartestModel;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Promptable;
@@ -19,9 +22,15 @@ use Stringable;
 #[MaxTokens(16384)]
 #[Temperature(0.4)]
 #[Timeout(180)]
+#[UseSmartestModel]
 class ProseReviser implements Agent, BelongsToBook, HasMiddleware
 {
-    use Promptable;
+    use Promptable, UsesTaskCategoryModel;
+
+    public static function taskCategory(): AiTaskCategory
+    {
+        return AiTaskCategory::Writing;
+    }
 
     public function __construct(
         protected Book $book,
@@ -37,7 +46,7 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
     {
         $writingStyle = $this->book->writingStyleSnippet();
 
-        $rules = $this->book->prose_pass_rules ?? Book::defaultProsePassRules();
+        $rules = Book::globalProsePassRules();
         $enabledRules = collect($rules)->filter(fn ($rule) => $rule['enabled']);
         $rulesSection = $enabledRules->isNotEmpty()
             ? "\n\nApply these prose revision rules:\n".$enabledRules->map(fn ($rule) => "- {$rule['label']}: {$rule['description']}")->implode("\n")

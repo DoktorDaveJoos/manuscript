@@ -2,10 +2,12 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Ai\Tools\SearchSimilarChunks;
+use App\Enums\AiTaskCategory;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
@@ -21,7 +23,12 @@ use Stringable;
 #[Timeout(120)]
 class NextChapterAdvisor implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput, HasTools
 {
-    use Promptable;
+    use Promptable, UsesTaskCategoryModel;
+
+    public static function taskCategory(): AiTaskCategory
+    {
+        return AiTaskCategory::Analysis;
+    }
 
     public function __construct(protected Book $book) {}
 

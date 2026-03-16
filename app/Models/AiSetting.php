@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AiProvider;
+use App\Enums\AiTaskCategory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -117,5 +118,13 @@ class AiSetting extends Model
     public static function activeProvider(): ?self
     {
         return self::query()->where('enabled', true)->first();
+    }
+
+    /**
+     * Get the user-configured model for a task category, or null to use SDK defaults.
+     */
+    public function modelForCategory(AiTaskCategory $category): ?string
+    {
+        return $this->{$category->column()};
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AiTaskCategory;
 use App\Models\AiSetting;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -27,6 +28,7 @@ class WritingStyleService
 
         $langName = $book->language === 'de' ? 'German' : 'English';
         $provider = $setting->provider->toLab()->value;
+        $model = $setting->modelForCategory(AiTaskCategory::Extraction);
 
         /** @var AgentResponse $response */
         $response = agent(
@@ -68,6 +70,7 @@ class WritingStyleService
         )->prompt(
             "Study this {$langName} manuscript excerpt and extract the prose style. For each field, describe the pattern concretely enough that another writer could reproduce it.\n\n{$sampleText}",
             provider: $provider,
+            model: $model,
         );
 
         $usage = $response->usage;
