@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Genre;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreBookRequest extends FormRequest
 {
@@ -12,7 +14,7 @@ class StoreBookRequest extends FormRequest
     }
 
     /**
-     * @return array<string, array<int, string>>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
@@ -20,6 +22,9 @@ class StoreBookRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'author' => ['nullable', 'string', 'max:255'],
             'language' => ['required', 'string', 'max:5'],
+            'genre' => ['nullable', Rule::enum(Genre::class)],
+            'secondary_genres' => ['nullable', 'array'],
+            'secondary_genres.*' => [Rule::enum(Genre::class)],
         ];
     }
 }

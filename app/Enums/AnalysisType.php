@@ -12,5 +12,5 @@ enum AnalysisType: string
     case NextChapterSuggestion = 'next_chapter_suggestion';
     case ChapterHook = 'chapter_hook';
     case SceneAudit = 'scene_audit';
-    case ThrillerHealth = 'thriller_health';
+    case GenreHealth = 'thriller_health';
 }

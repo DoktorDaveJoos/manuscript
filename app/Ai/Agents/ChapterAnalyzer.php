@@ -37,6 +37,11 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
     {
         $context = "You are a literary analyst performing a combined chapter analysis for '{$this->book->title}' by {$this->book->author}. The manuscript is written in {$this->book->language}.";
 
+        $genreSnippet = $this->book->genreSnippet();
+        if ($genreSnippet) {
+            $context .= ' '.$genreSnippet;
+        }
+
         if ($this->precedingContext) {
             $context .= "\n\nContext from preceding chapters:\n{$this->precedingContext}";
         }

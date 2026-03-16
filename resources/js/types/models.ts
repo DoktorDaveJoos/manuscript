@@ -43,6 +43,8 @@ export type Book = {
     title: string;
     author: string;
     language: string;
+    genre: string | null;
+    secondary_genres: string[] | null;
     prose_pass_rules: ProsePassRule[] | null;
     writing_style_text: string | null;
     story_bible?: StoryBible | null;

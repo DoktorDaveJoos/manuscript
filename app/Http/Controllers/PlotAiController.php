@@ -14,7 +14,7 @@ class PlotAiController extends Controller
     {
         $this->ensureAiConfigured();
 
-        RunAnalysisJob::dispatch($book, AnalysisType::ThrillerHealth);
+        RunAnalysisJob::dispatch($book, AnalysisType::GenreHealth);
 
         return response()->json(['message' => __('Plot health analysis started.')]);
     }

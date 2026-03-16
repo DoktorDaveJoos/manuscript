@@ -38,6 +38,11 @@ class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStru
     {
         $bookContext = "You are analyzing the manuscript '{$this->book->title}' by {$this->book->author}. The manuscript is written in {$this->book->language}.";
 
+        $genreSnippet = $this->book->genreSnippet();
+        if ($genreSnippet) {
+            $bookContext .= ' '.$genreSnippet;
+        }
+
         return match ($this->analysisType) {
             AnalysisType::Pacing => "{$bookContext} Analyze the pacing of the manuscript. Evaluate chapter lengths, scene transitions, tension arcs, and narrative momentum. Identify sections that feel rushed or drag.",
             AnalysisType::Plothole => "{$bookContext} Identify plot holes and inconsistencies in the manuscript. Look for contradictions, unresolved threads, timeline issues, and logical gaps in the story.",
@@ -47,7 +52,9 @@ class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStru
             AnalysisType::NextChapterSuggestion => "{$bookContext} Based on the current state of the manuscript, suggest what should happen in the next chapter. Consider open plot threads, character arcs, and pacing.",
             AnalysisType::ChapterHook => "{$bookContext} Analyze the chapter endings (hooks) across the manuscript. Evaluate how effectively each chapter ending compels the reader to continue. Score the overall hook quality.",
             AnalysisType::SceneAudit => "{$bookContext} Audit individual scenes for purpose, conflict, and contribution to the overall narrative. Identify scenes that lack tension or purpose.",
-            AnalysisType::ThrillerHealth => "{$bookContext} Evaluate the overall health of the manuscript as a thriller. Assess suspense, stakes, antagonist presence, and reader tension throughout.",
+            AnalysisType::GenreHealth => $this->book->genre
+                ? "{$bookContext} Evaluate the overall health of the manuscript as a {$this->book->genre->label()}. Assess how well it fulfills genre expectations, conventions, and reader satisfaction."
+                : "{$bookContext} Evaluate the overall narrative health of the manuscript. Assess suspense, stakes, antagonist presence, and reader tension throughout.",
         };
     }
 

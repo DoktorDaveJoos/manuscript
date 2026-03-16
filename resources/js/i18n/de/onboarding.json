@@ -12,6 +12,10 @@
     "createBook.labelAuthor": "Autor",
     "createBook.placeholderAuthor": "Dein Name (optional)",
     "createBook.labelLanguage": "Sprache",
+    "createBook.labelGenre": "Genre",
+    "createBook.placeholderGenre": "Genre auswählen (optional)",
+    "createBook.labelSecondaryGenres": "Weitere Genres",
+    "createBook.placeholderSecondaryGenres": "Genre hinzufügen…",
     "createBook.cancel": "Abbrechen",
     "createBook.continue": "Weiter",
 

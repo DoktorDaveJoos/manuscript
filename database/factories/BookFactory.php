@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\AiProvider;
+use App\Enums\Genre;
 use App\Models\AiSetting;
 use App\Models\Book;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -24,6 +25,17 @@ class BookFactory extends Factory
             'author' => fake()->name(),
             'language' => 'de',
         ];
+    }
+
+    /**
+     * @param  array<int, Genre>  $secondary
+     */
+    public function withGenre(Genre $genre, array $secondary = []): static
+    {
+        return $this->state([
+            'genre' => $genre,
+            'secondary_genres' => array_map(fn (Genre $g) => $g->value, $secondary),
+        ]);
     }
 
     public function withAi(?AiProvider $provider = null): static

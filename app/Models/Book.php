@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Genre;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -31,6 +32,8 @@ class Book extends Model
             'ai_cost_microdollars' => 'integer',
             'ai_request_count' => 'integer',
             'ai_usage_reset_at' => 'datetime',
+            'genre' => Genre::class,
+            'secondary_genres' => 'array',
         ];
     }
 
@@ -119,6 +122,28 @@ class Book extends Model
         }
 
         return self::formatWritingStyle($this->writing_style);
+    }
+
+    /**
+     * Return a genre context snippet ready to append to agent instructions.
+     */
+    public function genreSnippet(): string
+    {
+        if (! $this->genre) {
+            return '';
+        }
+
+        $primary = $this->genre->label();
+        $snippet = "Genre context: This is a {$primary} manuscript.";
+
+        if (! empty($this->secondary_genres)) {
+            $labels = collect($this->secondary_genres)
+                ->map(fn (string $v) => Genre::tryFrom($v)?->label() ?? $v)
+                ->implode(', ');
+            $snippet .= " It also draws from: {$labels}.";
+        }
+
+        return $snippet;
     }
 
     /**
