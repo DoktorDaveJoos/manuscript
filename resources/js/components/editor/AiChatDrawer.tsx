@@ -1,9 +1,10 @@
-import { chat } from '@/actions/App/Http/Controllers/AiController';
-import { jsonFetchHeaders } from '@/lib/utils';
-import { MessageCircle, Send, X } from 'lucide-react';
+import { ArrowUp, BookOpen, Sparkles, X } from 'lucide-react';
 import MarkdownIt from 'markdown-it';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { chat } from '@/actions/App/Http/Controllers/AiController';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type { Book, Chapter, Character, CharacterChapterPivot } from '@/types/models';
 
 const md = new MarkdownIt({ linkify: true, breaks: true });
 
@@ -22,13 +23,17 @@ const AssistantMessage = memo(function AssistantMessage({ content }: { content: 
     return <div className="ai-chat-markdown" dangerouslySetInnerHTML={{ __html: html }} />;
 });
 
+type ChapterWithCharacters = Chapter & {
+    characters?: (Character & { pivot: CharacterChapterPivot })[];
+};
+
 export default function AiChatDrawer({
-    bookId,
-    chapterId,
+    book,
+    chapter,
     onClose,
 }: {
-    bookId: number;
-    chapterId: number;
+    book: Book;
+    chapter: ChapterWithCharacters;
     onClose: () => void;
 }) {
     const { t } = useTranslation('ai');
@@ -97,11 +102,9 @@ export default function AiChatDrawer({
         document.addEventListener('mouseup', handleMouseUp);
     }, []);
 
-    // Use ref for input so handleSend doesn't recreate on every keystroke
     const inputValueRef = useRef(input);
     inputValueRef.current = input;
 
-    // Snapshot messages for history without adding to useCallback deps
     const messagesRef = useRef(messages);
     messagesRef.current = messages;
 
@@ -109,18 +112,16 @@ export default function AiChatDrawer({
         const trimmed = inputValueRef.current.trim();
         if (!trimmed || isStreaming) return;
 
-        // Capture completed messages as history before adding new ones
         const history = messagesRef.current.filter((m) => m.content.length > 0);
 
         setInput('');
         setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);
         setIsStreaming(true);
 
-        // Add empty assistant message to stream into
         setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
         try {
-            const response = await fetch(chat.url(bookId), {
+            const response = await fetch(chat.url(book.id), {
                 method: 'POST',
                 headers: {
                     ...jsonFetchHeaders(),
@@ -128,7 +129,7 @@ export default function AiChatDrawer({
                 },
                 body: JSON.stringify({
                     message: trimmed,
-                    chapter_id: chapterId,
+                    chapter_id: chapter.id,
                     history: history.length > 0 ? history : undefined,
                 }),
             });
@@ -159,7 +160,6 @@ export default function AiChatDrawer({
 
                 buffer += decoder.decode(value, { stream: true });
 
-                // Parse SSE events
                 const lines = buffer.split('\n');
                 buffer = lines.pop() ?? '';
 
@@ -200,7 +200,7 @@ export default function AiChatDrawer({
         } finally {
             setIsStreaming(false);
         }
-    }, [bookId, chapterId, isStreaming]);
+    }, [book.id, chapter.id, isStreaming]);
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
@@ -211,6 +211,9 @@ export default function AiChatDrawer({
         },
         [handleSend],
     );
+
+    const characterNames = (chapter.characters ?? []).map((c) => c.name).slice(0, 3);
+    const wordCount = chapter.word_count ?? 0;
 
     return (
         <aside ref={asideRef} className="relative flex h-full shrink-0 flex-col border-l border-[#F0EFED] bg-white" style={{ width }}>
@@ -223,18 +226,45 @@ export default function AiChatDrawer({
             </div>
 
             {/* Header */}
-            <div className="flex h-12 items-center justify-between border-b border-border-subtle px-5">
+            <div className="flex h-11 items-center justify-between border-b border-[#F0EFED] px-5">
                 <div className="flex items-center gap-2">
-                    <MessageCircle size={14} fill="currentColor" className="text-ink" />
-                    <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink">{t('askAi')}</span>
+                    <Sparkles size={14} className="text-accent" />
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink">{t('askAi')}</span>
                 </div>
                 <button
                     type="button"
                     onClick={onClose}
-                    className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:text-ink"
+                    className="flex size-6 items-center justify-center rounded text-[#B5B5B5] transition-colors hover:text-ink"
                 >
-                    <X size={14} strokeWidth={2.5} />
+                    <X size={14} />
                 </button>
+            </div>
+
+            {/* Chapter Context */}
+            <div className="flex flex-col gap-1 border-b border-[#F0EFED] px-5 py-2.5">
+                <div className="flex items-center gap-2">
+                    <span className="size-[5px] shrink-0 rounded-full bg-ai-green" />
+                    <BookOpen size={13} className="shrink-0 text-accent" />
+                    <span className="truncate text-xs font-medium text-ink">{chapter.title || 'Untitled'}</span>
+                    <span className="shrink-0 rounded-[3px] bg-[#F0EFED] px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
+                        {t('chat.chapter', { number: chapter.reader_order + 1 })}
+                    </span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <span className="truncate text-[11px] text-[#B5B5B5]">
+                        {t('chat.fullContext')}{characterNames.length > 0 && ` · ${characterNames.join(', ')}`}{wordCount > 0 && ` · ${t('chat.words', { count: wordCount.toLocaleString() })}`}
+                    </span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                        <span className="size-1 rounded-full bg-ai-green" />
+                        <span className="text-[10px] text-ink-muted">{t('chat.chapterLoaded')}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <span className="size-1 rounded-full bg-ai-green" />
+                        <span className="text-[10px] text-ink-muted">{t('chat.bookContext')}</span>
+                    </div>
+                </div>
             </div>
 
             {/* Messages */}
@@ -245,30 +275,37 @@ export default function AiChatDrawer({
                     </p>
                 )}
                 {messages.map((msg, i) => (
-                    <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                        <span className="mb-1 text-[11px] text-ink-faint">{msg.role === 'user' ? t('chat.senderYou') : t('chat.senderAi')}</span>
-                        <div
-                            className={`max-w-[85%] px-3.5 py-2.5 text-[13px] leading-relaxed text-ink ${
-                                msg.role === 'user'
-                                    ? 'rounded-t-xl rounded-bl-xl rounded-br-sm bg-border'
-                                    : 'rounded-t-xl rounded-bl-sm rounded-br-xl border border-border-subtle bg-surface'
-                            }`}
-                        >
-                            {msg.content
-                                ? msg.role === 'assistant'
-                                    ? <AssistantMessage content={msg.content} />
-                                    : msg.content
-                                : isStreaming && i === messages.length - 1
-                                    ? <span className="inline-block h-4 w-1 animate-pulse bg-ink-faint" />
-                                    : null}
+                    msg.role === 'user' ? (
+                        <div key={i} className="flex flex-col items-end gap-1">
+                            <div className="max-w-[85%] rounded-2xl bg-[#F5F4F2] px-4 py-3 text-sm leading-relaxed text-ink">
+                                {msg.content}
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div key={i} className="flex flex-col gap-1.5">
+                            <Sparkles size={14} className="text-accent" />
+                            <div className="max-w-[85%] rounded-2xl border border-[#F0EFED] bg-white px-4 py-3 text-sm leading-relaxed text-ink">
+                                {msg.content
+                                    ? <AssistantMessage content={msg.content} />
+                                    : isStreaming && i === messages.length - 1
+                                        ? (
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="size-1.5 animate-pulse rounded-full bg-accent opacity-90" />
+                                                <span className="size-1.5 animate-pulse rounded-full bg-accent opacity-55 [animation-delay:150ms]" />
+                                                <span className="size-1.5 animate-pulse rounded-full bg-accent opacity-30 [animation-delay:300ms]" />
+                                                <span className="ml-1 text-xs text-ink-muted">{t('chat.thinking')}</span>
+                                            </div>
+                                        )
+                                        : null}
+                            </div>
+                        </div>
+                    )
                 ))}
                 <div ref={messagesEndRef} />
             </div>
 
             {/* Input */}
-            <div className="flex items-center gap-2 border-t border-border-subtle px-4 py-3">
+            <div className="flex items-center gap-2 border-t border-[#F0EFED] px-5 py-3">
                 <input
                     ref={inputRef}
                     type="text"
@@ -277,15 +314,15 @@ export default function AiChatDrawer({
                     onKeyDown={handleKeyDown}
                     placeholder={t('chat.placeholder')}
                     disabled={isStreaming}
-                    className="h-10 flex-1 rounded-lg border border-border bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint disabled:opacity-60"
+                    className="h-10 flex-1 rounded-lg border border-[#E8E8E8] bg-[#FAFAF8] px-3 text-[13px] text-ink placeholder:text-[#B5B5B5] focus:outline-none disabled:opacity-60"
                 />
                 <button
                     type="button"
                     onClick={handleSend}
                     disabled={!input.trim() || isStreaming}
-                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ink text-surface transition-colors hover:bg-ink/90 disabled:opacity-50"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ink text-white transition-colors hover:bg-ink/90 disabled:opacity-50"
                 >
-                    <Send size={14} fill="currentColor" />
+                    <ArrowUp size={14} />
                 </button>
             </div>
         </aside>

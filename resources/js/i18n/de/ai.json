@@ -14,8 +14,9 @@
     "actions.analyzing": "Analysiere…",
     "actions.analyze": "Kapitel analysieren",
     "actions.analyzeDescription": "Führe eine tiefgehende Analyse dieses Kapitels durch, um Handwerksmetriken, Erkenntnisse und Vorschläge zu erhalten.",
-    "actions.normalize": "Normalisieren",
-    "actions.normalizeDescription": "Absätze und Dialoge für sauberere Formatierung umstrukturieren. Der Text bleibt unverändert.",
+    "actions.beautify": "Verschönern",
+    "actions.beautifying": "Verschönere…",
+    "actions.beautifyDescription": "Absätze und Dialoge für sauberere Formatierung umstrukturieren. Der Text bleibt unverändert.",
     "actions.notConfigured": "KI ist nicht konfiguriert.",
     "actions.configureSettings": "Einstellungen konfigurieren",
 
@@ -68,6 +69,7 @@
     "confirm.longChapter": "Dieses Kapitel hat {{wordCount}} Wörter. Textüberarbeitungen bei langen Kapiteln können eine Weile dauern. Fortfahren?",
 
     "error.prosePassFailed": "Textüberarbeitung fehlgeschlagen. Bitte erneut versuchen.",
+    "error.beautifyFailed": "Verschönern fehlgeschlagen. Bitte erneut versuchen.",
 
     "findings.none": "Keine Auffälligkeiten — sieht gut aus.",
     "findings.noAnalysis": "Führe eine Analyse durch, um Erkenntnisse zu sehen.",
@@ -86,6 +88,12 @@
     "chat.senderYou": "Du",
     "chat.senderAi": "KI",
     "chat.placeholder": "Frage zu diesem Kapitel…",
+    "chat.fullContext": "Vollständiger Manuskriptkontext",
+    "chat.words": "{{count}} Wörter",
+    "chat.chapterLoaded": "Kapitel geladen",
+    "chat.bookContext": "Buchkontext",
+    "chat.thinking": "Denke nach…",
+    "chat.chapter": "Kap. {{number}}",
 
     "preparation.title": "KI-Vorbereitung",
     "preparation.requiresPro": "Erfordert Pro",

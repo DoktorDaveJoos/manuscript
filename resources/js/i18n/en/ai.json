@@ -14,8 +14,9 @@
     "actions.analyzing": "Analyzing…",
     "actions.analyze": "Analyze Chapter",
     "actions.analyzeDescription": "Run a deep analysis on this chapter to surface craft metrics, findings, and suggestions.",
-    "actions.normalize": "Normalize",
-    "actions.normalizeDescription": "Restructure paragraphs and dialogues for cleaner formatting. Text stays unchanged.",
+    "actions.beautify": "Beautify",
+    "actions.beautifying": "Beautifying…",
+    "actions.beautifyDescription": "Restructure paragraphs and dialogues for cleaner formatting. Text stays unchanged.",
     "actions.notConfigured": "AI is not configured.",
     "actions.configureSettings": "Configure settings",
 
@@ -64,6 +65,7 @@
     "confirm.longChapter": "This chapter has {{wordCount}} words. Revising long chapters may take a while. Continue?",
 
     "error.prosePassFailed": "Revision failed. Please try again.",
+    "error.beautifyFailed": "Beautify failed. Please try again.",
 
     "findings.none": "No findings — looking good.",
     "findings.noAnalysis": "Run an analysis to see findings.",
@@ -82,6 +84,12 @@
     "chat.senderYou": "You",
     "chat.senderAi": "AI",
     "chat.placeholder": "Ask about this chapter…",
+    "chat.fullContext": "Full manuscript context",
+    "chat.words": "{{count}} words",
+    "chat.chapterLoaded": "Chapter loaded",
+    "chat.bookContext": "Book context",
+    "chat.thinking": "Thinking…",
+    "chat.chapter": "Ch. {{number}}",
 
     "preparation.title": "AI Preparation",
     "preparation.requiresPro": "Requires Pro",
