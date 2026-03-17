@@ -4,21 +4,18 @@ use App\Enums\AiProvider;
 use App\Models\AiSetting;
 use App\Models\License;
 
-test('ai settings index returns all providers', function () {
-    $this->get(route('ai-settings.index'))
+test('unified settings returns all ai providers', function () {
+    $this->get(route('settings.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('settings/ai-providers')
-            ->has('settings', count(AiProvider::cases()))
+            ->component('settings/index')
+            ->has('ai_providers', count(AiProvider::cases()))
         );
 });
 
-test('ai settings index creates default settings for unconfigured providers', function () {
-    expect(AiSetting::query()->count())->toBe(0);
-
-    $this->get(route('ai-settings.index'))->assertOk();
-
-    expect(AiSetting::query()->count())->toBe(count(AiProvider::cases()));
+test('ai settings index redirects to unified settings', function () {
+    $this->get(route('ai-settings.index'))
+        ->assertRedirect('/settings');
 });
 
 test('update ai setting saves api key and options', function () {
@@ -75,19 +72,19 @@ test('update ai setting validates base_url must be valid url', function () {
         ->assertJsonValidationErrors('base_url');
 });
 
-test('ai settings never expose api key to frontend', function () {
+test('unified settings never expose api key to frontend', function () {
     AiSetting::factory()->create([
         'provider' => AiProvider::Anthropic,
         'api_key' => 'sk-secret-key',
     ]);
 
-    $response = $this->get(route('ai-settings.index'));
+    $response = $this->get(route('settings.index'));
 
     $response->assertOk();
     $page = $response->original->getData()['page'];
-    $settings = $page['props']['settings'];
+    $providers = $page['props']['ai_providers'];
 
-    $anthropicSetting = collect($settings)->firstWhere('provider', 'anthropic');
+    $anthropicSetting = collect($providers)->firstWhere('provider', 'anthropic');
     expect($anthropicSetting)->toHaveKey('has_api_key', true)
         ->not->toHaveKey('api_key');
 });
@@ -132,28 +129,85 @@ test('update openrouter setting saves successfully', function () {
         ->assertJsonPath('setting.text_model', 'anthropic/claude-sonnet-4-20250514');
 });
 
-test('ai settings index includes requires_api_key and requires_base_url', function () {
-    $response = $this->get(route('ai-settings.index'));
+test('unified settings includes requires_api_key and requires_base_url', function () {
+    $response = $this->get(route('settings.index'));
 
     $response->assertOk();
     $page = $response->original->getData()['page'];
-    $settings = collect($page['props']['settings']);
+    $providers = collect($page['props']['ai_providers']);
 
-    $ollama = $settings->firstWhere('provider', 'ollama');
+    $ollama = $providers->firstWhere('provider', 'ollama');
     expect($ollama)
         ->toHaveKey('requires_api_key', false)
         ->toHaveKey('requires_base_url', true);
 
-    $anthropic = $settings->firstWhere('provider', 'anthropic');
+    $anthropic = $providers->firstWhere('provider', 'anthropic');
     expect($anthropic)
         ->toHaveKey('requires_api_key', true)
         ->toHaveKey('requires_base_url', false);
 
-    $azure = $settings->firstWhere('provider', 'azure');
+    $azure = $providers->firstWhere('provider', 'azure');
     expect($azure)
         ->toHaveKey('requires_api_key', true)
         ->toHaveKey('requires_base_url', true)
         ->toHaveKey('api_version');
+});
+
+test('update ai setting saves per-task model overrides', function () {
+    License::factory()->create();
+    $setting = AiSetting::factory()->create(['provider' => AiProvider::Anthropic]);
+
+    $this->putJson(route('ai-settings.update', 'anthropic'), [
+        'enabled' => true,
+        'writing_model' => 'claude-opus-4-20250514',
+        'analysis_model' => 'claude-sonnet-4-20250514',
+        'extraction_model' => 'claude-haiku-3-5-20241022',
+    ])->assertOk()
+        ->assertJsonPath('setting.writing_model', 'claude-opus-4-20250514')
+        ->assertJsonPath('setting.analysis_model', 'claude-sonnet-4-20250514')
+        ->assertJsonPath('setting.extraction_model', 'claude-haiku-3-5-20241022');
+
+    $setting->refresh();
+    expect($setting->writing_model)->toBe('claude-opus-4-20250514')
+        ->and($setting->analysis_model)->toBe('claude-sonnet-4-20250514')
+        ->and($setting->extraction_model)->toBe('claude-haiku-3-5-20241022');
+});
+
+test('unified settings includes per-task model fields', function () {
+    AiSetting::factory()->create([
+        'provider' => AiProvider::Anthropic,
+        'writing_model' => 'claude-opus-4-20250514',
+        'analysis_model' => null,
+        'extraction_model' => null,
+    ]);
+
+    $response = $this->get(route('settings.index'));
+    $response->assertOk();
+
+    $page = $response->original->getData()['page'];
+    $providers = collect($page['props']['ai_providers']);
+    $anthropic = $providers->firstWhere('provider', 'anthropic');
+
+    expect($anthropic)
+        ->toHaveKey('writing_model', 'claude-opus-4-20250514')
+        ->toHaveKey('analysis_model', null)
+        ->toHaveKey('extraction_model', null);
+});
+
+test('delete key removes api key from provider', function () {
+    License::factory()->create();
+    $setting = AiSetting::factory()->create([
+        'provider' => AiProvider::Anthropic,
+        'api_key' => 'sk-secret-key',
+    ]);
+
+    $this->deleteJson(route('ai-settings.delete-key', 'anthropic'))
+        ->assertOk()
+        ->assertJsonPath('setting.has_api_key', false)
+        ->assertJsonPath('setting.masked_api_key', null);
+
+    $setting->refresh();
+    expect($setting->api_key)->toBeNull();
 });
 
 test('selecting a provider disables all others', function () {

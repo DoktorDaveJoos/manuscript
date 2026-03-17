@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
-import { update as updateAiProvider, test as testConnection } from '@/actions/App/Http/Controllers/AiSettingsController';
+import { update as updateAiProvider, deleteKey, test as testConnection } from '@/actions/App/Http/Controllers/AiSettingsController';
 import { updateWritingStyle, updateProsePassRules } from '@/actions/App/Http/Controllers/SettingsController';
 import { activate, deactivate, revalidate } from '@/actions/App/Http/Controllers/LicenseController';
 import { index as booksIndex } from '@/actions/App/Http/Controllers/BookController';
@@ -14,6 +14,7 @@ import { jsonFetchHeaders } from '@/lib/utils';
 import type { Theme } from '@/lib/theme';
 import type { AppSettings, AiSetting, License, ProsePassRule } from '@/types/models';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Trash2 } from 'lucide-react';
 import { useState, useCallback, useRef, useEffect, type FormEvent } from 'react';
 
 type ProviderSetting = AiSetting & { label: string; supports_embeddings: boolean };
@@ -373,15 +374,40 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
         <form onSubmit={handleSave} className="border-t border-border-light px-5 pb-5 pt-4">
             <div className="flex flex-col gap-5 pl-[30px]">
                 {setting.requires_api_key && (
-                    <label className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2">
                         <span className={fieldLabelClasses}>{t('aiProviders.apiKey')}</span>
-                        <Input
-                            type="password"
-                            value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                            placeholder={setting.has_api_key ? t('aiProviders.apiKeyMask') : t('aiProviders.apiKeyPlaceholder')}
-                        />
-                    </label>
+                        {setting.has_api_key && !apiKey ? (
+                            <div className="flex items-center justify-between gap-3 rounded-md border border-border px-4 py-2.5">
+                                <span className="font-mono text-[13px] leading-[1.43] text-ink-muted">
+                                    {setting.masked_api_key}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        fetch(deleteKey.url(setting.provider), {
+                                            method: 'DELETE',
+                                            headers: jsonFetchHeaders(),
+                                        })
+                                            .then((res) => {
+                                                if (!res.ok) throw new Error();
+                                                router.reload({ only: ['ai_providers'] });
+                                            })
+                                            .catch(() => setSaveMessage(t('aiProviders.saveFailed')));
+                                    }}
+                                    className="text-ink-muted transition-colors hover:text-danger"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+                        ) : (
+                            <Input
+                                type="password"
+                                value={apiKey}
+                                onChange={(e) => setApiKey(e.target.value)}
+                                placeholder={t('aiProviders.apiKeyPlaceholder')}
+                            />
+                        )}
+                    </div>
                 )}
 
                 {hasAdvanced && !showAdvanced && (

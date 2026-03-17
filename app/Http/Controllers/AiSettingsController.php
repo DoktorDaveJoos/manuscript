@@ -5,37 +5,12 @@ namespace App\Http\Controllers;
 use App\Enums\AiProvider;
 use App\Http\Requests\UpdateAiSettingRequest;
 use App\Models\AiSetting;
-use App\Models\Book;
 use Illuminate\Http\JsonResponse;
-use Inertia\Inertia;
-use Inertia\Response;
 
 use function Laravel\Ai\agent;
 
 class AiSettingsController extends Controller
 {
-    public function index(): Response
-    {
-        $existing = AiSetting::query()->get()->keyBy(fn ($s) => $s->provider->value);
-
-        $settings = collect(AiProvider::cases())->map(function (AiProvider $provider) use ($existing) {
-            $setting = $existing->get($provider->value) ?? AiSetting::forProvider($provider);
-
-            return [
-                ...$this->serializeSetting($setting),
-                'label' => $provider->label(),
-                'supports_embeddings' => $provider->supportsEmbeddings(),
-            ];
-        });
-
-        $book = Book::query()->select('id', 'title')->first();
-
-        return Inertia::render('settings/ai-providers', [
-            'settings' => $settings,
-            'book' => $book?->only('id', 'title'),
-        ]);
-    }
-
     public function update(UpdateAiSettingRequest $request, AiProvider $provider): JsonResponse
     {
         $data = $request->validated();
@@ -56,7 +31,23 @@ class AiSettingsController extends Controller
 
         return response()->json([
             'message' => __(':provider settings updated.', ['provider' => $provider->label()]),
-            'setting' => $this->serializeSetting($setting),
+            'setting' => $setting->toFrontendArray(),
+        ]);
+    }
+
+    public function deleteKey(AiProvider $provider): JsonResponse
+    {
+        $setting = AiSetting::query()->where('provider', $provider)->first();
+
+        if (! $setting?->hasApiKey()) {
+            return response()->json(['message' => __('No API key to remove.')]);
+        }
+
+        $setting->update(['api_key' => null]);
+
+        return response()->json([
+            'message' => __(':provider API key removed.', ['provider' => $provider->label()]),
+            'setting' => $setting->toFrontendArray(),
         ]);
     }
 
@@ -85,25 +76,5 @@ class AiSettingsController extends Controller
                 'message' => __('Connection failed: :error', ['error' => $e->getMessage()]),
             ], 422);
         }
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function serializeSetting(AiSetting $setting): array
-    {
-        return [
-            'id' => $setting->id,
-            'provider' => $setting->provider->value,
-            'has_api_key' => $setting->hasApiKey(),
-            'base_url' => $setting->base_url,
-            'api_version' => $setting->api_version,
-            'text_model' => $setting->text_model,
-            'embedding_model' => $setting->embedding_model,
-            'embedding_dimensions' => $setting->embedding_dimensions,
-            'enabled' => $setting->enabled,
-            'requires_api_key' => $setting->provider->requiresApiKey(),
-            'requires_base_url' => $setting->provider->requiresBaseUrl(),
-        ];
     }
 }

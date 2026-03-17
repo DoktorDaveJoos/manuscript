@@ -46,6 +46,33 @@ class AiSetting extends Model
     }
 
     /**
+     * Get a partially masked version of the API key for display.
+     */
+    public function maskedApiKey(): ?string
+    {
+        if (! $this->hasApiKey()) {
+            return null;
+        }
+
+        $key = $this->api_key;
+        $length = strlen($key);
+
+        if ($length <= 8) {
+            return str_repeat('•', $length);
+        }
+
+        $visibleEnd = substr($key, -4);
+        $prefix = '';
+
+        // Preserve common prefixes like "sk-" so the user recognizes the key
+        if (preg_match('/^([a-z]{2,4}[-_])/', $key, $matches)) {
+            $prefix = $matches[1];
+        }
+
+        return $prefix.'••••••'.$visibleEnd;
+    }
+
+    /**
      * Whether this setting has the credentials needed to make API calls.
      */
     public function isConfigured(): bool
@@ -126,5 +153,31 @@ class AiSetting extends Model
     public function modelForCategory(AiTaskCategory $category): ?string
     {
         return $this->{$category->column()};
+    }
+
+    /**
+     * Serialize this setting for frontend consumption (never exposes the raw API key).
+     *
+     * @return array<string, mixed>
+     */
+    public function toFrontendArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'provider' => $this->provider->value,
+            'has_api_key' => $this->hasApiKey(),
+            'masked_api_key' => $this->maskedApiKey(),
+            'base_url' => $this->base_url,
+            'api_version' => $this->api_version,
+            'text_model' => $this->text_model,
+            'writing_model' => $this->writing_model,
+            'analysis_model' => $this->analysis_model,
+            'extraction_model' => $this->extraction_model,
+            'embedding_model' => $this->embedding_model,
+            'embedding_dimensions' => $this->embedding_dimensions,
+            'enabled' => $this->enabled,
+            'requires_api_key' => $this->provider->requiresApiKey(),
+            'requires_base_url' => $this->provider->requiresBaseUrl(),
+        ];
     }
 }

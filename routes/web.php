@@ -17,6 +17,7 @@ use App\Http\Controllers\PlotPointConnectionController;
 use App\Http\Controllers\PlotPointController;
 use App\Http\Controllers\PlotSetupController;
 use App\Http\Controllers\SceneController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StorylineController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\UpdateController;
@@ -101,16 +102,16 @@ Route::post('/update/check', [UpdateController::class, 'check'])->name('update.c
 Route::post('/update/download', [UpdateController::class, 'download'])->name('update.download');
 Route::post('/update/install', [UpdateController::class, 'install'])->name('update.install');
 
-// App settings
-Route::get('/settings', fn () => redirect('/settings/appearance'));
-Route::get('/settings/appearance', [AppSettingsController::class, 'appearance'])->name('settings.appearance');
+// Unified settings page
+Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::put('/settings', [AppSettingsController::class, 'update'])->name('settings.update');
+Route::put('/settings/writing-style', [SettingsController::class, 'updateWritingStyle'])->name('settings.writing-style.update');
+Route::put('/settings/prose-pass-rules', [SettingsController::class, 'updateProsePassRules'])->name('settings.prose-pass-rules.update');
 
-// AI settings index (free — licence activation form lives here)
-Route::get('/settings/ai', [AiSettingsController::class, 'index'])->name('ai-settings.index');
-
-// License
-Route::get('/settings/license', [LicenseController::class, 'index'])->name('settings.license');
+// Legacy routes — redirect to unified settings
+Route::get('/settings/appearance', fn () => redirect('/settings'))->name('settings.appearance');
+Route::get('/settings/ai', fn () => redirect('/settings'))->name('ai-settings.index');
+Route::get('/settings/license', fn () => redirect('/settings'))->name('settings.license');
 Route::post('/license/activate', [LicenseController::class, 'activate'])->name('license.activate');
 Route::post('/license/deactivate', [LicenseController::class, 'deactivate'])->name('license.deactivate');
 Route::post('/license/revalidate', [LicenseController::class, 'revalidate'])->name('license.revalidate');
@@ -123,6 +124,7 @@ Route::middleware('license')->group(function () {
     Route::get('/books/{book}/ai/prepare/status', [AiPreparationController::class, 'status'])->name('books.ai.prepare.status');
 
     Route::put('/settings/ai/{provider}', [AiSettingsController::class, 'update'])->name('ai-settings.update');
+    Route::delete('/settings/ai/{provider}/key', [AiSettingsController::class, 'deleteKey'])->name('ai-settings.delete-key');
     Route::post('/settings/ai/{provider}/test', [AiSettingsController::class, 'test'])->name('ai-settings.test');
 
     Route::post('/books/{book}/ai/analyze', [AiController::class, 'analyze'])->name('books.ai.analyze');
@@ -145,10 +147,8 @@ Route::middleware('license')->group(function () {
     Route::get('/books/{book}/plot/ai/status', [PlotAiController::class, 'analysisStatus'])->name('books.plot.ai.status');
 });
 
-// Book-level settings
-Route::get('/books/{book}/settings/writing-style', [BookSettingsController::class, 'writingStyle'])->name('books.settings.writing-style');
-Route::put('/books/{book}/settings/writing-style', [BookSettingsController::class, 'updateWritingStyle'])->name('books.settings.writing-style.update');
-Route::get('/books/{book}/settings/prose-pass-rules', [BookSettingsController::class, 'prosePassRules'])->name('books.settings.prose-pass-rules');
-Route::put('/books/{book}/settings/prose-pass-rules', [BookSettingsController::class, 'updateProsePassRules'])->name('books.settings.prose-pass-rules.update');
+// Book-level settings — legacy GET routes redirect to unified settings
+Route::get('/books/{book}/settings/writing-style', fn () => redirect('/settings'))->name('books.settings.writing-style');
+Route::get('/books/{book}/settings/prose-pass-rules', fn () => redirect('/settings'))->name('books.settings.prose-pass-rules');
 Route::get('/books/{book}/settings/export', [BookSettingsController::class, 'export'])->name('books.settings.export');
 Route::post('/books/{book}/settings/export', [BookSettingsController::class, 'doExport'])->name('books.settings.export.run');
