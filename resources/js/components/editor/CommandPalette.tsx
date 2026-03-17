@@ -1,10 +1,10 @@
-import Kbd from '@/components/ui/Kbd';
 import { cn } from '@/lib/utils';
 import {
-    Bold,
+    ArrowBigUp,
     BookOpen,
+    Command,
+    CornerDownLeft,
     GitBranch,
-    Italic,
     Lock,
     Maximize,
     Menu,
@@ -27,11 +27,42 @@ type PaletteItem = {
     sectionId: SectionId;
     section: string;
     icon: React.ReactNode;
-    iconColorClass?: string;
-    highlighted?: boolean;
     disabled?: boolean;
     action: () => void;
 };
+
+const SECTION_CLASSES: Record<SectionId, string> = {
+    focus: 'px-1.5 pt-2.5 pb-1',
+    textStyle: 'border-t border-border px-1.5 pt-3 pb-1',
+    aiGenerate: 'border-t border-border px-1.5 pt-3 pb-1.5',
+    chapter: 'border-t border-border px-1.5 pt-3 pb-2.5',
+};
+
+function ShortcutDisplay({ shortcut }: { shortcut: string }) {
+    if (shortcut === 'Esc') {
+        return <span className="text-xs font-medium text-ink-faint">Esc</span>;
+    }
+
+    const elements: React.ReactNode[] = [];
+    for (let i = 0; i < shortcut.length; i++) {
+        const ch = shortcut[i];
+        if (ch === '\u2318') {
+            elements.push(<Command key={i} size={12} />);
+        } else if (ch === '\u21E7') {
+            elements.push(<ArrowBigUp key={i} size={12} />);
+        } else if (ch === '\u21B5') {
+            elements.push(<CornerDownLeft key={i} size={12} />);
+        } else {
+            elements.push(
+                <span key={i} className="text-xs font-medium leading-none">
+                    {ch}
+                </span>,
+            );
+        }
+    }
+
+    return <span className="flex items-center gap-[3px] text-ink-faint">{elements}</span>;
+}
 
 export default function CommandPalette({
     editor,
@@ -78,7 +109,7 @@ export default function CommandPalette({
                 shortcut: isFocusMode ? 'Esc' : undefined,
                 sectionId: 'focus',
                 section: t('palette.section.focus'),
-                icon: <Maximize size={14} />,
+                icon: <Maximize size={16} />,
                 action: () => {
                     onClose();
                     onEnterFocusMode?.();
@@ -89,7 +120,7 @@ export default function CommandPalette({
                 label: t('palette.openNotes'),
                 sectionId: 'focus',
                 section: t('palette.section.focus'),
-                icon: <StickyNote size={14} />,
+                icon: <StickyNote size={16} />,
                 action: () => {
                     onToggleNotes?.();
                     onClose();
@@ -98,42 +129,39 @@ export default function CommandPalette({
             {
                 id: 'bold',
                 label: t('palette.bold'),
-                shortcut: '⌘B',
+                shortcut: '\u2318B',
                 sectionId: 'textStyle',
                 section: t('palette.section.textStyle'),
-                icon: <Bold size={14} strokeWidth={2.5} />,
+                icon: <span className="text-[15px] font-bold leading-none">B</span>,
                 action: run(() => editor!.chain().focus().toggleBold().run()),
             },
             {
                 id: 'italic',
                 label: t('palette.italic'),
-                shortcut: '⌘I',
+                shortcut: '\u2318I',
                 sectionId: 'textStyle',
                 section: t('palette.section.textStyle'),
-                icon: <Italic size={14} />,
+                icon: <span className="text-[15px] leading-none">I</span>,
                 action: run(() => editor!.chain().focus().toggleItalic().run()),
             },
             {
                 id: 'ai-generate',
                 label: t('palette.generateNextParagraph'),
-                shortcut: '⌘↵',
+                shortcut: '\u2318\u21B5',
                 sectionId: 'aiGenerate',
                 section: t('palette.section.aiGenerate'),
-                iconColorClass: 'text-status-revised',
-                highlighted: true,
                 disabled: !licensed,
-                icon: <Menu size={14} />,
+                icon: <Menu size={16} />,
                 action: () => {},
             },
             {
                 id: 'ai-continue',
                 label: t('palette.continueFromHere'),
-                shortcut: '⌘⇧↵',
+                shortcut: '\u2318\u21E7\u21B5',
                 sectionId: 'aiGenerate',
                 section: t('palette.section.aiGenerate'),
-                iconColorClass: 'text-status-revised',
                 disabled: !licensed,
-                icon: <Radio size={14} />,
+                icon: <Radio size={16} />,
                 action: () => {},
             },
             {
@@ -141,7 +169,7 @@ export default function CommandPalette({
                 label: t('palette.newChapter'),
                 sectionId: 'chapter',
                 section: t('palette.section.chapter'),
-                icon: <Plus size={14} />,
+                icon: <Plus size={16} />,
                 action: run(() => {
                     onNewChapter();
                 }),
@@ -151,7 +179,7 @@ export default function CommandPalette({
                 label: t('palette.newScene'),
                 sectionId: 'chapter',
                 section: t('palette.section.chapter'),
-                icon: <Minus size={14} />,
+                icon: <Minus size={16} />,
                 disabled: !onAddScene,
                 action: () => {
                     onAddScene?.();
@@ -163,7 +191,7 @@ export default function CommandPalette({
                 label: t('palette.makeSelectionOwnScene'),
                 sectionId: 'chapter',
                 section: t('palette.section.chapter'),
-                icon: <GitBranch size={14} />,
+                icon: <GitBranch size={16} />,
                 action: run(() => {
                     onSplitScene();
                 }),
@@ -173,7 +201,7 @@ export default function CommandPalette({
                 label: t('palette.makeSelectionOwnChapter'),
                 sectionId: 'chapter',
                 section: t('palette.section.chapter'),
-                icon: <BookOpen size={14} />,
+                icon: <BookOpen size={16} />,
                 action: run(() => {
                     onSplitChapter();
                 }),
@@ -252,51 +280,48 @@ export default function CommandPalette({
     return (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-surface/40 pt-[20vh]" onClick={onClose}>
             <div
-                className="w-[480px] overflow-hidden rounded-[12px] border border-border bg-surface-card shadow-[0_4px_6px_#1414140F,0_12px_32px_#1414141A]"
+                className="w-[420px] overflow-hidden rounded-[12px] bg-white shadow-[0_8px_32px_#1A1A1A18,0_2px_8px_#1A1A1A0A] dark:bg-surface-card"
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={handleKeyDown}
             >
                 {/* Search input */}
-                <div className="flex items-center gap-2 border-b border-border-subtle px-3 py-2.5">
-                    <Search size={14} className="shrink-0 text-ink-faint" />
+                <div className="flex items-center gap-2.5 border-b border-border px-4 py-3.5">
+                    <Search size={18} className="shrink-0 text-ink-faint" />
                     <input
                         ref={inputRef}
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder={t('palette.searchActions')}
-                        className="min-w-0 flex-1 bg-transparent text-[13px] text-ink placeholder:text-ink-faint focus:outline-none"
+                        className="min-w-0 flex-1 bg-transparent text-sm text-ink placeholder:text-ink-faint focus:outline-none"
                     />
-                    <Kbd keys="⇧/" />
+                    <span className="flex items-center gap-1">
+                        <span className="inline-flex items-center justify-center rounded-[5px] border border-border bg-surface-card px-[5px] py-[3px]">
+                            <Command size={12} className="text-ink-muted" />
+                        </span>
+                        <span className="inline-flex items-center justify-center rounded-[5px] border border-border bg-surface-card px-[7px] py-[3px] text-[11px] font-medium text-ink-muted">
+                            P
+                        </span>
+                    </span>
                 </div>
 
                 {/* Items list */}
                 <div ref={listRef}>
                     {filtered.length === 0 && (
-                        <div className="px-3 py-4 text-center text-[13px] text-ink-faint">{t('palette.noMatchingActions')}</div>
+                        <div className="px-4 py-4 text-center text-sm text-ink-faint">{t('palette.noMatchingActions')}</div>
                     )}
-                    {Array.from(sections.entries()).map(([section, sectionItems], index) => {
-                        const isFirst = index === 0;
+                    {Array.from(sections.entries()).map(([section, sectionItems]) => {
                         const sid = sectionItems[0]?.sectionId;
-                        const isAiOrChapter = sid === 'aiGenerate' || sid === 'chapter';
 
                         return (
-                            <div
-                                key={section}
-                                className={cn(
-                                    isFirst ? 'px-1 pt-2 pb-1' : 'border-t border-border-subtle px-1 py-1',
-                                    !isFirst && isAiOrChapter && 'pb-2',
-                                )}
-                            >
+                            <div key={section} className={cn('flex flex-col gap-1', sid && SECTION_CLASSES[sid])}>
                                 <div
                                     className={cn(
-                                        'flex items-center px-2 pt-1 pb-1.5 text-[10px] font-medium uppercase leading-3 tracking-[0.08em] text-section-header',
-                                        sid === 'aiGenerate' && 'gap-1.5',
+                                        'flex items-center px-2.5 text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint',
+                                        sid === 'aiGenerate' && 'gap-1.5 text-accent',
                                     )}
                                 >
-                                    {sid === 'aiGenerate' && (
-                                        <span className="h-[5px] w-[5px] rounded-full bg-status-revised" />
-                                    )}
+                                    {sid === 'aiGenerate' && <span className="size-1.5 rounded-full bg-accent" />}
                                     {section}
                                 </div>
                                 {sectionItems.map((item) => {
@@ -313,13 +338,12 @@ export default function CommandPalette({
                                             onClick={() => executeItem(globalIndex)}
                                             onMouseEnter={() => setActiveIndex(globalIndex)}
                                             className={cn(
-                                                'flex w-full items-center gap-2 rounded-[5px] px-2 py-2 text-left text-[13px] leading-4',
+                                                'flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-sm leading-4',
                                                 isActive && !isDisabled && 'bg-neutral-bg',
-                                                !isActive && item.highlighted && 'bg-surface',
                                                 isDisabled && 'pointer-events-none opacity-40',
                                             )}
                                         >
-                                            <span className={cn('h-3.5 w-3.5 shrink-0', item.iconColorClass ?? 'text-ink-muted')}>
+                                            <span className="flex size-4 shrink-0 items-center justify-center text-ink-soft">
                                                 {item.icon}
                                             </span>
                                             <span className="flex-1 text-ink">{item.label}</span>
@@ -329,7 +353,7 @@ export default function CommandPalette({
                                                     PRO
                                                 </span>
                                             )}
-                                            {item.shortcut && <Kbd keys={item.shortcut} />}
+                                            {item.shortcut && <ShortcutDisplay shortcut={item.shortcut} />}
                                         </button>
                                     );
                                 })}

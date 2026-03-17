@@ -351,13 +351,7 @@ export default function ChapterShow({
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
-            if (e.code === 'Slash' && e.shiftKey) {
-                e.preventDefault();
-                setIsPaletteOpen((prev) => !prev);
-            } else if (e.key === 'Tab' && e.shiftKey) {
-                e.preventDefault();
-                setIsPaletteOpen((prev) => !prev);
-            } else if (e.key === 'p' && (e.metaKey || e.ctrlKey)) {
+            if (e.key === 'p' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
                 setIsPaletteOpen((prev) => !prev);
             } else if (e.key === 'Escape' && isFocusMode && !isPaletteOpen) {
@@ -589,7 +583,7 @@ export default function ChapterShow({
                             chapterAnalyses={chapterAnalyses}
                         />
                         {isChatOpen && (
-                            <AiChatDrawer bookId={book.id} chapterId={chapter.id} onClose={() => setIsChatOpen(false)} />
+                            <AiChatDrawer book={book} chapter={chapter} onClose={() => setIsChatOpen(false)} />
                         )}
                     </div>
                 )}
