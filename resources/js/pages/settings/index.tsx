@@ -272,7 +272,7 @@ function LanguageSection() {
                                 onClick={() => switchLocale(locale)}
                                 className={`rounded-md px-5 py-2 text-[13px] font-medium transition-colors ${
                                     activeLocale === locale
-                                        ? 'bg-ink text-white'
+                                        ? 'bg-ink text-surface'
                                         : 'border border-border text-ink-muted hover:border-ink hover:text-ink'
                                 }`}
                             >
@@ -1250,7 +1250,7 @@ function SettingsSidebar({
     const { t } = useTranslation('settings');
 
     return (
-        <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border bg-white">
+        <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border bg-surface-card">
             <div className="px-5 py-4">
                 <Link
                     href={booksIndex.url()}

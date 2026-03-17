@@ -11,12 +11,12 @@ export default function AppLayout({
     return (
         <>
             <Head title={title} />
-            <div className="flex h-screen flex-col bg-gray-50">
+            <div className="flex h-screen flex-col bg-surface">
                 <UpdateBanner />
                 <div className="flex min-h-0 flex-1">
-                    <aside className="flex w-64 shrink-0 flex-col border-r border-gray-200 bg-surface">
-                        <div className="flex h-14 items-center border-b border-gray-200 px-5">
-                            <span className="text-sm font-semibold tracking-tight text-gray-900">
+                    <aside className="flex w-64 shrink-0 flex-col border-r border-border-light bg-surface-card">
+                        <div className="flex h-14 items-center border-b border-border-light px-5">
+                            <span className="text-sm font-semibold tracking-tight text-ink">
                                 {name}
                             </span>
                         </div>

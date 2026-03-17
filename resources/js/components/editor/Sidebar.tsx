@@ -169,7 +169,7 @@ export default function Sidebar({
     return (
         <aside
             ref={sidebarRef}
-            className={`relative flex h-full shrink-0 flex-col overflow-hidden border-r border-[#F0EFED] bg-white transition-[width,opacity] duration-300 ${isFocusMode ? 'opacity-0' : ''}`}
+            className={`relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border-light bg-surface-card transition-[width,opacity] duration-300 ${isFocusMode ? 'opacity-0' : ''}`}
             style={{ width: isFocusMode ? 0 : width }}
         >
             {/* Header */}
@@ -182,7 +182,7 @@ export default function Sidebar({
                 </Link>
                 <Link
                     href={settingsIndex.url()}
-                    className="text-[#9CA3AF] transition-colors hover:text-ink"
+                    className="text-ink-faint transition-colors hover:text-ink"
                 >
                     <Settings size={18} />
                 </Link>
@@ -197,7 +197,7 @@ export default function Sidebar({
                     icon={
                         <LayoutGrid
                             size={16}
-                            className="shrink-0 text-[#B0B0B0]"
+                            className="shrink-0 text-ink-faint"
                         />
                     }
                 />
@@ -208,7 +208,7 @@ export default function Sidebar({
                     icon={
                         <BookOpen
                             size={16}
-                            className="shrink-0 text-[#B0B0B0]"
+                            className="shrink-0 text-ink-faint"
                         />
                     }
                 />
@@ -219,7 +219,7 @@ export default function Sidebar({
                     icon={
                         <Waypoints
                             size={16}
-                            className="shrink-0 text-[#B0B0B0]"
+                            className="shrink-0 text-ink-faint"
                         />
                     }
                 />
@@ -256,13 +256,13 @@ export default function Sidebar({
 
             {/* Footer */}
             <div className="flex items-center gap-3 px-5 py-3.5">
-                <span className="text-[11px] text-[#B5B5B5]">
+                <span className="text-[11px] text-ink-faint">
                     {t('wordsCompact', {
                         formatted: formatCompactCount(totalWords),
                     })}
                 </span>
-                <span className="text-[11px] text-[#B5B5B5]">·</span>
-                <span className="text-[11px] text-[#B5B5B5]">
+                <span className="text-[11px] text-ink-faint">·</span>
+                <span className="text-[11px] text-ink-faint">
                     {t('chapters', { count: totalChapters })}
                 </span>
             </div>

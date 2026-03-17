@@ -53,11 +53,11 @@ const ChapterListItem = forwardRef<HTMLButtonElement, ChapterListItemProps>(
                 onContextMenu={onContextMenu}
                 className={`relative flex w-full items-center gap-2 px-2.5 py-[7px] text-left text-[13px] leading-4 transition-colors ${
                     isDragging ? 'opacity-50' : ''
-                } ${isActive ? 'rounded-lg bg-ink font-medium text-surface' : 'rounded-md text-[#6B6B6B] hover:bg-ink/5 hover:text-ink'}`}
+                } ${isActive ? 'rounded-lg bg-ink font-medium text-surface' : 'rounded-md text-ink-muted hover:bg-ink/5 hover:text-ink'}`}
             >
                 {/* Drag handle */}
                 <span
-                    className={`flex shrink-0 cursor-grab items-center active:cursor-grabbing ${isActive ? 'text-white/[0.38]' : 'text-[#D0D0D0]'}`}
+                    className={`flex shrink-0 cursor-grab items-center active:cursor-grabbing ${isActive ? 'text-surface/[0.38]' : 'text-ink-faint'}`}
                     {...dragListeners}
                 >
                     <GripVertical size={12} />
@@ -66,7 +66,7 @@ const ChapterListItem = forwardRef<HTMLButtonElement, ChapterListItemProps>(
                     {index}. {displayTitle ?? chapter.title}
                 </span>
                 <span
-                    className={`shrink-0 text-[11px] ${isActive ? 'text-white/50' : 'text-[#B5B5B5]'}`}
+                    className={`shrink-0 text-[11px] ${isActive ? 'text-surface/50' : 'text-ink-faint'}`}
                 >
                     {formatCompactCount(wordCount ?? chapter.word_count)}
                 </span>

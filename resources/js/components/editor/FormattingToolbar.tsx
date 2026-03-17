@@ -94,7 +94,7 @@ export default function FormattingToolbar({
     };
 
     return (
-        <div className="flex h-[38px] shrink-0 items-center justify-between border-b border-[#EEEDEB] px-8">
+        <div className="flex h-[38px] shrink-0 items-center justify-between border-b border-border-subtle px-8">
             <div className="flex items-center gap-1">
                 <FontSelector value={editorFont} onChange={onFontChange} />
 

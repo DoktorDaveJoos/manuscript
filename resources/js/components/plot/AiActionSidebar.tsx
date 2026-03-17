@@ -296,7 +296,7 @@ export default function AiActionSidebar({
                                                                                     }
                                                                                     className="flex gap-2"
                                                                                 >
-                                                                                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[#C4845C]" />
+                                                                                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent" />
                                                                                     <span className="text-[11px] leading-[1.4] text-ink-soft">
                                                                                         {
                                                                                             f

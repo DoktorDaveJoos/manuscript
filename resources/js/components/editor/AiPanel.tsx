@@ -35,7 +35,7 @@ type AnalysisWithSummary = {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
     return (
-        <span className="text-[10px] font-semibold tracking-[0.08em] text-[#8A8A8A] uppercase">
+        <span className="text-[10px] font-semibold tracking-[0.08em] text-ink-muted uppercase">
             {children}
         </span>
     );
@@ -43,7 +43,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function DescriptionText({ children }: { children: React.ReactNode }) {
     return (
-        <p className="text-[11px] leading-[1.4] text-[#A0A0A0]">{children}</p>
+        <p className="text-[11px] leading-[1.4] text-ink-muted">{children}</p>
     );
 }
 
@@ -135,7 +135,7 @@ function CraftMetricRow({
     return (
         <div className="flex flex-col gap-[3px]">
             <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-                <span className="text-[13px] font-medium text-[#1A1A1A]">
+                <span className="text-[13px] font-medium text-ink">
                     {label}
                 </span>
                 <div className="flex items-center gap-1.5">
@@ -153,7 +153,7 @@ function CraftMetricRow({
                 </div>
             </div>
             {detail && (
-                <span className="text-[11px] leading-[1.4] text-[#B5B5B5]">
+                <span className="text-[11px] leading-[1.4] text-ink-faint">
                     {detail}
                 </span>
             )}
@@ -170,7 +170,7 @@ function LevelGroup({
 }) {
     return (
         <div className="flex flex-col gap-3">
-            <span className="text-[10px] font-semibold tracking-[0.08em] text-[#8A8A8A] uppercase">
+            <span className="text-[10px] font-semibold tracking-[0.08em] text-ink-muted uppercase">
                 {title}
             </span>
             {children}
@@ -183,7 +183,7 @@ function FindingDot({ variant }: { variant: 'warning' | 'info' }) {
         <span
             className={cn(
                 'mt-1.5 size-1.5 shrink-0 rounded-full',
-                variant === 'warning' ? 'bg-[#C4845C]' : 'bg-[#8A8A8A]',
+                variant === 'warning' ? 'bg-accent' : 'bg-ink-muted',
             )}
         />
     );
@@ -200,15 +200,15 @@ function CharacterRow({
 
     return (
         <div className="flex items-center gap-2">
-            <div className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-[#EEEDEB]">
+            <div className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-neutral-bg">
                 <span className="text-[10px] font-semibold text-ink-muted">
                     {initial}
                 </span>
             </div>
-            <span className="text-[13px] font-medium text-[#4A4A4A]">
+            <span className="text-[13px] font-medium text-ink-soft">
                 {character.name}
             </span>
-            <span className="text-[11px] text-[#A0A0A0]">{roleText}</span>
+            <span className="text-[11px] text-ink-muted">{roleText}</span>
         </div>
     );
 }
@@ -460,7 +460,7 @@ export default function AiPanel({
     return (
         <aside
             className={cn(
-                'flex h-full shrink-0 flex-col border-l border-[#F0EFED] bg-white transition-[width] duration-200 ease-in-out',
+                'flex h-full shrink-0 flex-col border-l border-border-light bg-surface-card transition-[width] duration-200 ease-in-out',
                 isOpen ? 'w-[272px]' : 'w-10',
             )}
         >
@@ -473,7 +473,7 @@ export default function AiPanel({
                         className="flex items-center justify-between px-5 py-3"
                     >
                         <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-semibold tracking-[0.06em] text-[#1A1A1A] uppercase">
+                            <span className="text-[11px] font-semibold tracking-[0.06em] text-ink uppercase">
                                 {t('headerTitle')}
                             </span>
                             {licensed ? (
@@ -489,7 +489,7 @@ export default function AiPanel({
                                 <Lock size={14} className="text-ink-faint" />
                             )}
                         </div>
-                        <ChevronRight size={14} className="text-[#B5B5B5]" />
+                        <ChevronRight size={14} className="text-ink-faint" />
                     </button>
 
                     {licensed ? (
@@ -585,7 +585,7 @@ export default function AiPanel({
                                         </DescriptionText>
                                         <Link
                                             href={settingsIndex.url()}
-                                            className="text-[11px] font-medium text-[#C4845C] transition-colors hover:text-[#B0734D]"
+                                            className="text-[11px] font-medium text-accent transition-colors hover:text-accent-dark"
                                         >
                                             {t('prose.settingsLink')}
                                         </Link>
@@ -594,7 +594,7 @@ export default function AiPanel({
 
                                 {/* Craft Metrics */}
                                 <div className="flex flex-col gap-4">
-                                    <span className="text-[11px] font-semibold tracking-[0.08em] text-[#1A1A1A] uppercase">
+                                    <span className="text-[11px] font-semibold tracking-[0.08em] text-ink uppercase">
                                         {t('section.craftMetrics')}
                                     </span>
                                     <LevelGroup title={t('level.chapter')}>
@@ -750,7 +750,7 @@ export default function AiPanel({
                                                     <FindingDot
                                                         variant={f.variant}
                                                     />
-                                                    <span className="text-[11px] leading-[1.4] text-[#4A4A4A]">
+                                                    <span className="text-[11px] leading-[1.4] text-ink-soft">
                                                         {f.text}
                                                     </span>
                                                 </div>
@@ -771,18 +771,18 @@ export default function AiPanel({
                                         {t('section.nextChapter')}
                                     </SectionLabel>
                                     {nextSuggestion ? (
-                                        <p className="text-[11px] leading-[1.4] text-[#4A4A4A]">
+                                        <p className="text-[11px] leading-[1.4] text-ink-soft">
                                             {nextSuggestion}
                                         </p>
                                     ) : (
-                                        <p className="text-[11px] leading-[1.4] text-[#4A4A4A]">
+                                        <p className="text-[11px] leading-[1.4] text-ink-soft">
                                             {t('nextChapter.noSuggestion')}
                                         </p>
                                     )}
                                     <button
                                         type="button"
                                         disabled={!nextSuggestion}
-                                        className="self-start text-xs font-medium text-[#C4845C] transition-colors hover:text-[#B0734D] disabled:opacity-50"
+                                        className="self-start text-xs font-medium text-accent transition-colors hover:text-accent-dark disabled:opacity-50"
                                     >
                                         {t('nextChapter.generateOutline')}
                                     </button>
@@ -814,19 +814,19 @@ export default function AiPanel({
                             </div>
 
                             {/* Bottom bar */}
-                            <div className="flex flex-col gap-2 border-t border-[#F0EFED] px-4 py-3">
+                            <div className="flex flex-col gap-2 border-t border-border-light px-4 py-3">
                                 <button
                                     type="button"
                                     onClick={onOpenChat}
-                                    className="flex items-center justify-center gap-1.5 rounded-lg border border-[#E8E8E8] px-3 py-[9px] text-[13px] text-[#4A4A4A] transition-colors hover:bg-surface hover:text-ink"
+                                    className="flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-[9px] text-[13px] text-ink-soft transition-colors hover:bg-surface hover:text-ink"
                                 >
                                     <MessageCircle
                                         size={13}
-                                        className="text-[#8A8A8A]"
+                                        className="text-ink-muted"
                                     />
                                     {t('askAi')}
                                 </button>
-                                <span className="text-center text-[11px] text-[#B5B5B5]">
+                                <span className="text-center text-[11px] text-ink-faint">
                                     {t('tokensEstimate')}
                                 </span>
                             </div>
@@ -889,7 +889,7 @@ export default function AiPanel({
                     <span className="text-[11px] font-normal tracking-[0.06em] text-ink">
                         AI
                     </span>
-                    <ChevronLeft size={14} className="text-[#B5B5B5]" />
+                    <ChevronLeft size={14} className="text-ink-faint" />
                 </button>
             )}
         </aside>

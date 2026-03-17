@@ -307,7 +307,7 @@ export default function CommandPalette({
             onClick={onClose}
         >
             <div
-                className="w-[420px] overflow-hidden rounded-[12px] bg-white shadow-[0_8px_32px_#1A1A1A18,0_2px_8px_#1A1A1A0A] dark:bg-surface-card"
+                className="w-[420px] overflow-hidden rounded-[12px] bg-surface-card shadow-[0_8px_32px_#1A1A1A18,0_2px_8px_#1A1A1A0A]"
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={handleKeyDown}
             >

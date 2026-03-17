@@ -28,7 +28,7 @@ export default function EditorBar({
         <div className="@container flex h-[38px] shrink-0 items-center justify-between px-8">
             <div className="flex min-w-0 items-center gap-1.5 text-[12px]">
                 <span className="shrink-0 text-ink-faint">{storylineName}</span>
-                <span className="shrink-0 text-[#D5D5D5]">/</span>
+                <span className="shrink-0 text-ink-faint">/</span>
                 <span className="min-w-0 truncate font-medium text-ink-soft">
                     {chapterTitle}
                 </span>

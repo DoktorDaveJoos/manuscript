@@ -177,7 +177,7 @@ function SortableStorylineGroup({
             {showHeader && (
                 <span
                     onContextMenu={onContextMenu}
-                    className={`flex items-center justify-between px-2.5 pb-1 text-[10px] font-medium tracking-[0.08em] text-[#B5B5B5] uppercase ${isFirst ? 'pt-2.5' : 'pt-3.5'}`}
+                    className={`flex items-center justify-between px-2.5 pb-1 text-[10px] font-medium tracking-[0.08em] text-ink-faint uppercase ${isFirst ? 'pt-2.5' : 'pt-3.5'}`}
                 >
                     <span
                         {...listeners}
@@ -198,7 +198,7 @@ function SortableStorylineGroup({
                             e.stopPropagation();
                             onToggleCollapse?.();
                         }}
-                        className={`flex items-center text-[#C5C5C5] transition-transform duration-150 ${isCollapsed ? '-rotate-90' : ''}`}
+                        className={`flex items-center text-ink-faint transition-transform duration-150 ${isCollapsed ? '-rotate-90' : ''}`}
                     >
                         <ChevronDown size={10} />
                     </span>
@@ -842,9 +842,9 @@ export default function ChapterList({
                         <div className="flex items-center gap-2">
                             <Book
                                 size={13}
-                                className="shrink-0 text-[#B0B0B0]"
+                                className="shrink-0 text-ink-faint"
                             />
-                            <span className="text-[10px] font-semibold tracking-[0.06em] text-[#8A8A8A] uppercase">
+                            <span className="text-[10px] font-semibold tracking-[0.06em] text-ink-muted uppercase">
                                 {bookTitle}
                             </span>
                         </div>
@@ -852,7 +852,7 @@ export default function ChapterList({
                             <button
                                 type="button"
                                 onClick={handleToggleCollapseAll}
-                                className="text-[#B5B5B5] transition-colors hover:text-ink"
+                                className="text-ink-faint transition-colors hover:text-ink"
                             >
                                 <svg
                                     width="12"
@@ -874,7 +874,7 @@ export default function ChapterList({
                                 onClick={() =>
                                     onScenesVisibleChange(!scenesVisible)
                                 }
-                                className="text-[#B5B5B5] transition-colors hover:text-ink"
+                                className="text-ink-faint transition-colors hover:text-ink"
                             >
                                 {scenesVisible ? (
                                     <svg
@@ -1141,9 +1141,9 @@ export default function ChapterList({
                                     >
                                         <Plus
                                             size={12}
-                                            className="text-[#C5C5C5]"
+                                            className="text-ink-faint"
                                         />
-                                        <span className="text-[13px] text-[#B5B5B5]">
+                                        <span className="text-[13px] text-ink-faint">
                                             {t('chapterList.addChapter')}
                                         </span>
                                     </button>
@@ -1155,9 +1155,9 @@ export default function ChapterList({
                         <button
                             type="button"
                             onClick={onAddStoryline}
-                            className="flex w-full items-center gap-1.5 px-2.5 pt-3.5 pb-1 text-[10px] font-medium tracking-[0.08em] text-[#B5B5B5] uppercase transition-colors hover:text-ink"
+                            className="flex w-full items-center gap-1.5 px-2.5 pt-3.5 pb-1 text-[10px] font-medium tracking-[0.08em] text-ink-faint uppercase transition-colors hover:text-ink"
                         >
-                            <Plus size={10} className="text-[#C5C5C5]" />
+                            <Plus size={10} className="text-ink-faint" />
                             <span>{t('chapterList.addStoryline')}</span>
                         </button>
                     )}
@@ -1166,7 +1166,7 @@ export default function ChapterList({
                 <DragOverlay>
                     {activeItem?.type === 'chapter' && (
                         <div className="flex items-center gap-2 rounded-lg bg-surface-card px-2.5 py-[7px] text-[13px] leading-4 text-ink opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
-                            <span className="flex shrink-0 items-center text-[#D0D0D0]">
+                            <span className="flex shrink-0 items-center text-ink-faint">
                                 <GripVertical size={12} />
                             </span>
                             <span className="min-w-0 flex-1 truncate">

@@ -1,11 +1,11 @@
 import type { PlotPointStatus, PlotPointType } from '@/types/models';
 
 export const TYPE_STYLES: Record<PlotPointType, string> = {
-    setup: 'bg-[#EBEAF2] text-[#655882]',
-    conflict: 'bg-[#F2E8E8] text-[#82585A]',
-    turning_point: 'bg-[#F2ECE2] text-[#7D7058]',
-    resolution: 'bg-[#E8EDE8] text-[#588258]',
-    worldbuilding: 'bg-[#E8ECF2] text-[#586582]',
+    setup: 'bg-plot-setup-bg text-plot-setup-text',
+    conflict: 'bg-plot-conflict-bg text-plot-conflict-text',
+    turning_point: 'bg-plot-turning-bg text-plot-turning-text',
+    resolution: 'bg-plot-resolution-bg text-plot-resolution-text',
+    worldbuilding: 'bg-plot-worldbuilding-bg text-plot-worldbuilding-text',
 };
 
 export const STATUS_COLORS: Record<PlotPointStatus, string> = {

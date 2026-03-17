@@ -562,7 +562,7 @@ export default function NotesPanel({
     return (
         <div
             data-notes-panel
-            className="relative flex w-[260px] shrink-0 flex-col border-l border-border bg-white"
+            className="relative flex w-[260px] shrink-0 flex-col border-l border-border bg-surface-card"
         >
             <header className="flex h-[44px] shrink-0 items-center justify-between border-b border-border px-4">
                 <span className="text-[13px] font-semibold text-ink">

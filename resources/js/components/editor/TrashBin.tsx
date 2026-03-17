@@ -85,26 +85,26 @@ export default function TrashBin({ bookId }: { bookId: number }) {
     };
 
     return (
-        <div className="border-t border-[#F0EFED] px-3 py-1">
+        <div className="border-t border-border-light px-3 py-1">
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex w-full items-center justify-between px-2.5 pt-2.5 pb-1.5 transition-colors hover:text-ink-muted"
             >
                 <span className="flex items-center gap-1.5">
-                    <Trash2 size={11} className="shrink-0 text-[#B5B5B5]" />
-                    <span className="text-[10px] font-medium tracking-[0.08em] text-[#B5B5B5] uppercase">
+                    <Trash2 size={11} className="shrink-0 text-ink-faint" />
+                    <span className="text-[10px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                         {t('trash.title')}
                     </span>
                 </span>
                 <span className="flex items-center gap-1.5">
                     {items.length > 0 && (
-                        <span className="text-[10px] text-[#C5C5C5] tabular-nums">
+                        <span className="text-[10px] text-ink-faint tabular-nums">
                             {items.length}
                         </span>
                     )}
                     <span
-                        className={`flex shrink-0 items-center text-[#C5C5C5] transition-transform ${isOpen ? 'rotate-90' : ''}`}
+                        className={`flex shrink-0 items-center text-ink-faint transition-transform ${isOpen ? 'rotate-90' : ''}`}
                     >
                         <ChevronRight size={10} />
                     </span>

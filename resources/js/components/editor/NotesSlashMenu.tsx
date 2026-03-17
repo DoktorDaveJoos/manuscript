@@ -148,7 +148,7 @@ export default function NotesSlashMenu({
     return (
         <div
             ref={menuRef}
-            className="absolute z-[9999] w-[220px] rounded-lg border border-border bg-white p-1 shadow-lg"
+            className="absolute z-[9999] w-[220px] rounded-lg border border-border bg-surface-card p-1 shadow-lg"
             style={{
                 left: position.left,
                 ...(position.flip

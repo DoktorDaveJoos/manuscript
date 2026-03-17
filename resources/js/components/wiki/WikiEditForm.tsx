@@ -148,7 +148,7 @@ export default function WikiEditForm({
                     />
                     {isDirty && (
                         <span className="flex items-center gap-1.5 text-[12px] text-ink-muted">
-                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#C9D4C5]" />
+                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-ai-green" />
                             {t('edit.editing')} · {t('edit.unsavedChanges')}
                         </span>
                     )}
@@ -323,7 +323,7 @@ export default function WikiEditForm({
                         {t('source')}
                     </label>
                     <span className="flex items-center gap-1.5 text-[13px] text-ink-muted">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#C9D4C5]" />
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-ai-green" />
                         {item.is_ai_extracted
                             ? t('aiExtracted')
                             : t('edit.manualEntry')}

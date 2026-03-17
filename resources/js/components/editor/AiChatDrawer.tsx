@@ -1,4 +1,4 @@
-import { ArrowUp, BookOpen, Sparkles, X } from 'lucide-react';
+import { ArrowUp, BookOpen, Loader, Sparkles, X } from 'lucide-react';
 import MarkdownIt from 'markdown-it';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -255,7 +255,7 @@ export default function AiChatDrawer({
     return (
         <aside
             ref={asideRef}
-            className="relative flex h-full shrink-0 flex-col border-l border-[#F0EFED] bg-white"
+            className="relative flex h-full shrink-0 flex-col border-l border-border-light bg-surface-card"
             style={{ width }}
         >
             {/* Resize handle */}
@@ -267,7 +267,7 @@ export default function AiChatDrawer({
             </div>
 
             {/* Header */}
-            <div className="flex h-11 items-center justify-between border-b border-[#F0EFED] px-5">
+            <div className="flex h-11 items-center justify-between border-b border-border-light px-5">
                 <div className="flex items-center gap-2">
                     <Sparkles size={14} className="text-accent" />
                     <span className="text-[11px] font-semibold tracking-[0.06em] text-ink uppercase">
@@ -277,28 +277,28 @@ export default function AiChatDrawer({
                 <button
                     type="button"
                     onClick={onClose}
-                    className="flex size-6 items-center justify-center rounded text-[#B5B5B5] transition-colors hover:text-ink"
+                    className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:text-ink"
                 >
                     <X size={14} />
                 </button>
             </div>
 
             {/* Chapter Context */}
-            <div className="flex flex-col gap-1 border-b border-[#F0EFED] px-5 py-2.5">
+            <div className="flex flex-col gap-1 border-b border-border-light px-5 py-2.5">
                 <div className="flex items-center gap-2">
                     <span className="size-[5px] shrink-0 rounded-full bg-ai-green" />
                     <BookOpen size={13} className="shrink-0 text-accent" />
                     <span className="truncate text-xs font-medium text-ink">
                         {chapter.title || 'Untitled'}
                     </span>
-                    <span className="shrink-0 rounded-[3px] bg-[#F0EFED] px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
+                    <span className="shrink-0 rounded-[3px] bg-neutral-bg px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
                         {t('chat.chapter', {
                             number: chapter.reader_order + 1,
                         })}
                     </span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <span className="truncate text-[11px] text-[#B5B5B5]">
+                    <span className="truncate text-[11px] text-ink-faint">
                         {t('chat.fullContext')}
                         {characterNames.length > 0 &&
                             ` · ${characterNames.join(', ')}`}
@@ -332,22 +332,20 @@ export default function AiChatDrawer({
                 {messages.map((msg, i) =>
                     msg.role === 'user' ? (
                         <div key={i} className="flex flex-col items-end gap-1">
-                            <div className="max-w-[85%] rounded-2xl bg-[#F5F4F2] px-4 py-3 text-sm leading-relaxed text-ink">
+                            <div className="max-w-[85%] rounded-2xl bg-neutral-bg px-4 py-3 text-sm leading-relaxed text-ink">
                                 {msg.content}
                             </div>
                         </div>
                     ) : (
                         <div key={i} className="flex flex-col gap-1.5">
                             <Sparkles size={14} className="text-accent" />
-                            <div className="max-w-[85%] rounded-2xl border border-[#F0EFED] bg-white px-4 py-3 text-sm leading-relaxed text-ink">
+                            <div className="max-w-[85%] rounded-2xl border border-border-light bg-surface-card px-4 py-3 text-sm leading-relaxed text-ink">
                                 {msg.content ? (
                                     <AssistantMessage content={msg.content} />
                                 ) : isStreaming && i === messages.length - 1 ? (
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="size-1.5 animate-pulse rounded-full bg-accent opacity-90" />
-                                        <span className="size-1.5 animate-pulse rounded-full bg-accent opacity-55 [animation-delay:150ms]" />
-                                        <span className="size-1.5 animate-pulse rounded-full bg-accent opacity-30 [animation-delay:300ms]" />
-                                        <span className="ml-1 text-xs text-ink-muted">
+                                    <div className="flex items-center gap-[5px]">
+                                        <Loader size={14} className="animate-spin text-accent" />
+                                        <span className="text-xs tracking-[0.01em] text-ink-muted">
                                             {t('chat.thinking')}
                                         </span>
                                     </div>
@@ -360,7 +358,7 @@ export default function AiChatDrawer({
             </div>
 
             {/* Input */}
-            <div className="flex items-center gap-2 border-t border-[#F0EFED] px-5 py-3">
+            <div className="flex items-center gap-2 border-t border-border-light px-5 py-3">
                 <input
                     ref={inputRef}
                     type="text"
@@ -369,13 +367,13 @@ export default function AiChatDrawer({
                     onKeyDown={handleKeyDown}
                     placeholder={t('chat.placeholder')}
                     disabled={isStreaming}
-                    className="h-10 flex-1 rounded-lg border border-[#E8E8E8] bg-[#FAFAF8] px-3 text-[13px] text-ink placeholder:text-[#B5B5B5] focus:outline-none disabled:opacity-60"
+                    className="h-10 flex-1 rounded-lg border border-border bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint focus:outline-none disabled:opacity-60"
                 />
                 <button
                     type="button"
                     onClick={handleSend}
                     disabled={!input.trim() || isStreaming}
-                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ink text-white transition-colors hover:bg-ink/90 disabled:opacity-50"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ink text-surface transition-colors hover:bg-ink/90 disabled:opacity-50"
                 >
                     <ArrowUp size={14} />
                 </button>

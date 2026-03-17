@@ -39,37 +39,57 @@
     --color-ink-whisper: #1414144d;
     --color-surface-warm: #f5ede3;
     --color-ink-warm: #6b6358;
+    --color-plot-setup-bg: #ebeaf2;
+    --color-plot-setup-text: #655882;
+    --color-plot-conflict-bg: #f2e8e8;
+    --color-plot-conflict-text: #82585a;
+    --color-plot-turning-bg: #f2ece2;
+    --color-plot-turning-text: #7d7058;
+    --color-plot-resolution-bg: #e8ede8;
+    --color-plot-resolution-text: #588258;
+    --color-plot-worldbuilding-bg: #e8ecf2;
+    --color-plot-worldbuilding-text: #586582;
 }
 
 html.dark {
-    --color-surface: #0f0f0f;
-    --color-surface-card: #1a1a1a;
-    --color-ink: #ebe7e0;
-    --color-ink-muted: #8c8c8c;
-    --color-ink-faint: #6b6b6b;
-    --color-ink-soft: #c4c0b8;
-    --color-border: #2e2e2e;
-    --color-border-light: #242424;
-    --color-border-subtle: #1f1f1f;
-    --color-border-dashed: #3a3a3a;
-    --color-border-drop: #3a3a3a;
-    --color-neutral-bg: #1a1a1a;
+    --color-surface: #161514;
+    --color-surface-card: #1c1b1a;
+    --color-ink: #e8e5df;
+    --color-ink-muted: #9a958e;
+    --color-ink-faint: #6b665e;
+    --color-ink-soft: #c8c3ba;
+    --color-border: #2e2d2b;
+    --color-border-light: #2a2722;
+    --color-border-subtle: #242220;
+    --color-border-dashed: #3d3a35;
+    --color-border-drop: #3d3a35;
+    --color-neutral-bg: #242322;
     --color-accent: #d4956a;
     --color-accent-dark: #b87333;
-    --color-accent-light: #2a2015;
+    --color-accent-light: #2a2620;
     --color-danger: #d34545;
     --color-status-final: #6dbb7b;
     --color-status-revised: #d4956a;
-    --color-status-draft: #6b6b6b;
+    --color-status-draft: #6b665e;
     --color-ai-green: #6dbb7b;
     --color-delete: #d34545;
-    --color-delete-bg: #3a2020;
+    --color-delete-bg: #3a2520;
     --color-drop: #5a8f5c;
-    --color-section-header: #3a3a3a;
-    --color-kbd-bg: #1f1f1f;
-    --color-ink-whisper: #ebe7e04d;
-    --color-surface-warm: #2a2015;
-    --color-ink-warm: #a89e92;
+    --color-section-header: #3d3a35;
+    --color-kbd-bg: #242220;
+    --color-ink-whisper: #e8e5df4d;
+    --color-surface-warm: #2a2620;
+    --color-ink-warm: #6b6560;
+    --color-plot-setup-bg: #2a2838;
+    --color-plot-setup-text: #a99bc0;
+    --color-plot-conflict-bg: #382828;
+    --color-plot-conflict-text: #c09a9b;
+    --color-plot-turning-bg: #38322a;
+    --color-plot-turning-text: #c0a888;
+    --color-plot-resolution-bg: #283828;
+    --color-plot-resolution-text: #8ebb8e;
+    --color-plot-worldbuilding-bg: #282e38;
+    --color-plot-worldbuilding-text: #8ea8c0;
 }
 
 @layer base {

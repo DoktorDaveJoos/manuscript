@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 
 const ACTIVE_STYLES = {
     default: 'bg-neutral-bg font-medium text-ink',
-    inverted: 'bg-ink font-medium text-white',
+    inverted: 'bg-ink font-medium text-surface',
 } as const;
 
 type ActiveVariant = keyof typeof ACTIVE_STYLES;
@@ -31,7 +31,7 @@ export default function NavItem({
             ? ACTIVE_STYLES[activeVariant]
             : disabled
               ? 'cursor-default text-ink-faint'
-              : 'text-[#8A8A8A] hover:bg-neutral-bg hover:text-ink'
+              : 'text-ink-muted hover:bg-neutral-bg hover:text-ink'
     }`;
 
     const content = (
