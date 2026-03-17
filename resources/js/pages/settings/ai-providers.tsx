@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { AiSetting, License } from '@/types/models';
-import { update, test as testConnection } from '@/actions/App/Http/Controllers/AiSettingsController';
+import { update, deleteKey, test as testConnection } from '@/actions/App/Http/Controllers/AiSettingsController';
 import SettingsLayout from '@/layouts/SettingsLayout';
 import { getXsrfToken } from '@/lib/csrf';
 import { router, usePage } from '@inertiajs/react';
@@ -35,12 +35,15 @@ function ProviderCard({
     const [apiKeyFocused, setApiKeyFocused] = useState(false);
     const [baseUrl, setBaseUrl] = useState(setting.base_url ?? '');
     const [apiVersion, setApiVersion] = useState(setting.api_version ?? '');
-    const [textModel, setTextModel] = useState(setting.text_model ?? '');
+    const [writingModel, setWritingModel] = useState(setting.writing_model ?? '');
+    const [analysisModel, setAnalysisModel] = useState(setting.analysis_model ?? '');
+    const [extractionModel, setExtractionModel] = useState(setting.extraction_model ?? '');
     const [embeddingModel, setEmbeddingModel] = useState(setting.embedding_model ?? '');
     const [embeddingDimensions, setEmbeddingDimensions] = useState(setting.embedding_dimensions?.toString() ?? '');
     const [saving, setSaving] = useState(false);
     const [testStatus, setTestStatus] = useState<TestStatus>({ type: 'idle' });
     const [saveMessage, setSaveMessage] = useState('');
+    const [advancedOpen, setAdvancedOpen] = useState(false);
 
     const isAzure = setting.provider === 'azure';
     const isOllama = setting.provider === 'ollama';
@@ -54,8 +57,10 @@ function ProviderCard({
             const data: Record<string, unknown> = { enabled: true };
             if (apiKey) data.api_key = apiKey;
             if (baseUrl) data.base_url = baseUrl;
-            if (textModel) data.text_model = textModel;
             if (apiVersion) data.api_version = apiVersion;
+            if (writingModel) data.writing_model = writingModel;
+            if (analysisModel) data.analysis_model = analysisModel;
+            if (extractionModel) data.extraction_model = extractionModel;
             if (embeddingModel) data.embedding_model = embeddingModel;
             if (embeddingDimensions) data.embedding_dimensions = parseInt(embeddingDimensions, 10);
 
@@ -79,7 +84,7 @@ function ProviderCard({
                 .catch(() => setSaveMessage(t('aiProviders.saveFailed')))
                 .finally(() => setSaving(false));
         },
-        [apiKey, baseUrl, apiVersion, textModel, embeddingModel, embeddingDimensions, setting.provider],
+        [apiKey, baseUrl, apiVersion, writingModel, analysisModel, extractionModel, embeddingModel, embeddingDimensions, setting.provider],
     );
 
     const handleTest = useCallback(() => {
@@ -108,7 +113,7 @@ function ProviderCard({
 
     return (
         <div className={locked ? 'opacity-50' : ''}>
-            {/* Header row — click to expand/collapse */}
+            {/* Header row */}
             <button
                 type="button"
                 onClick={onToggle}
@@ -122,17 +127,17 @@ function ProviderCard({
                     </svg>
                 ) : (
                     <span
-                        className={`flex size-[18px] items-center justify-center rounded-full border-2 transition-colors ${
-                            isSelected ? 'border-accent' : 'border-border'
+                        className={`flex size-[18px] items-center justify-center rounded-full ${
+                            isSelected ? 'bg-accent' : 'border-2 border-border'
                         }`}
                     >
-                        {isSelected && <span className="size-[10px] rounded-full bg-accent" />}
+                        {isSelected && <span className="size-2 rounded-full bg-white" />}
                     </span>
                 )}
-                <span className={`text-[15px] ${isSelected ? 'font-medium' : ''} text-ink`}>{setting.label}</span>
+                <span className={`text-[15px] leading-[1.33] ${isSelected ? 'font-medium' : ''} text-ink`}>{setting.label}</span>
                 {!locked && (
                     <span
-                        className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                        className={`rounded px-2.5 py-1 text-[11px] font-medium ${
                             configured ? 'bg-status-final/15 text-status-final' : 'bg-neutral-bg text-ink-muted'
                         }`}
                     >
@@ -155,88 +160,208 @@ function ProviderCard({
 
             {/* Expanded form */}
             {isExpanded && !locked && (
-                <form onSubmit={handleSave} className="border-t border-border-light px-5 pb-5 pt-4">
-                    <div className="flex flex-col gap-4">
+                <form onSubmit={handleSave} className="border-t border-border-light pb-5 pl-[50px] pr-5 pt-1">
+                    <div className="flex flex-col gap-5">
                         {setting.requires_api_key && (
-                            <label className="flex flex-col gap-1.5">
-                                <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.apiKey')}</span>
-                                <Input
-                                    type={apiKey || apiKeyFocused ? 'password' : 'text'}
-                                    value={apiKey}
-                                    onChange={(e) => setApiKey(e.target.value)}
-                                    onFocus={() => setApiKeyFocused(true)}
-                                    onBlur={() => setApiKeyFocused(false)}
-                                    placeholder={setting.masked_api_key ?? t('aiProviders.apiKeyPlaceholder')}
-                                />
-                            </label>
+                            <div className="flex flex-col gap-2">
+                                <span className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-muted">
+                                    {t('aiProviders.apiKey')}
+                                </span>
+                                {setting.has_api_key && !apiKey ? (
+                                    <div className="flex items-center gap-3 rounded-md border border-border px-4 py-3">
+                                        <span className="font-mono text-[13px] leading-[1.43] text-ink-muted">
+                                            {setting.masked_api_key}
+                                        </span>
+                                        <span className="flex-1" />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                fetch(deleteKey.url(setting.provider), {
+                                                    method: 'DELETE',
+                                                    headers: {
+                                                        'X-XSRF-TOKEN': getXsrfToken(),
+                                                        Accept: 'application/json',
+                                                    },
+                                                }).then(() => {
+                                                    router.reload({ only: ['settings'] });
+                                                });
+                                            }}
+                                            className="text-ink-muted transition-colors hover:text-danger"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M3 6h18" />
+                                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <Input
+                                        type={apiKey || apiKeyFocused ? 'password' : 'text'}
+                                        value={apiKey}
+                                        onChange={(e) => setApiKey(e.target.value)}
+                                        onFocus={() => setApiKeyFocused(true)}
+                                        onBlur={() => setApiKeyFocused(false)}
+                                        placeholder={t('aiProviders.apiKeyPlaceholder')}
+                                        className="px-4 py-3"
+                                    />
+                                )}
+                            </div>
                         )}
 
                         {setting.requires_base_url && (
-                            <label className="flex flex-col gap-1.5">
-                                <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.baseUrl')}</span>
+                            <label className="flex flex-col gap-2">
+                                <span className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-muted">
+                                    {t('aiProviders.baseUrl')}
+                                </span>
                                 <Input
                                     type="url"
                                     value={baseUrl}
                                     onChange={(e) => setBaseUrl(e.target.value)}
                                     placeholder={isOllama ? 'http://localhost:11434' : 'https://your-resource.openai.azure.com'}
+                                    className="px-4 py-3"
                                 />
                             </label>
                         )}
 
                         {isAzure && (
-                            <label className="flex flex-col gap-1.5">
-                                <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.apiVersion')}</span>
+                            <label className="flex flex-col gap-2">
+                                <span className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-muted">
+                                    {t('aiProviders.apiVersion')}
+                                </span>
                                 <Input
                                     type="text"
                                     value={apiVersion}
                                     onChange={(e) => setApiVersion(e.target.value)}
                                     placeholder="2024-10-21"
+                                    className="px-4 py-3"
                                 />
                             </label>
                         )}
 
-                        <label className="flex flex-col gap-1.5">
-                            <span className="text-[13px] font-medium text-ink-muted">
-                                {isAzure ? t('aiProviders.deploymentName') : t('aiProviders.textModel')}
-                            </span>
-                            <Input
-                                type="text"
-                                value={textModel}
-                                onChange={(e) => setTextModel(e.target.value)}
-                                placeholder={isAzure ? 'gpt-4o' : t('aiProviders.modelPlaceholder')}
-                            />
-                        </label>
+                        {/* Advanced Settings */}
+                        <div className="flex flex-col gap-4">
+                            <button
+                                type="button"
+                                onClick={() => setAdvancedOpen(!advancedOpen)}
+                                className="flex items-center gap-2"
+                            >
+                                <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 16 16"
+                                    fill="none"
+                                    className={`text-ink-muted transition-transform ${advancedOpen ? '' : '-rotate-90'}`}
+                                >
+                                    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                <span className="text-[13px] font-medium text-ink-muted">
+                                    {t('aiProviders.advancedSettings')}
+                                </span>
+                            </button>
 
-                        {setting.supports_embeddings && (
-                            <div className="flex gap-3">
-                                <label className="flex flex-1 flex-col gap-1.5">
-                                    <span className="text-[13px] font-medium text-ink-muted">
-                                        {isAzure ? t('aiProviders.embeddingDeployment') : t('aiProviders.embeddingModel')}
-                                    </span>
-                                    <Input
-                                        type="text"
-                                        value={embeddingModel}
-                                        onChange={(e) => setEmbeddingModel(e.target.value)}
-                                        placeholder={isAzure ? 'text-embedding-3-small' : t('aiProviders.modelPlaceholder')}
-                                    />
-                                </label>
-                                <label className="flex w-32 flex-col gap-1.5">
-                                    <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.dimensions')}</span>
-                                    <Input
-                                        type="number"
-                                        value={embeddingDimensions}
-                                        onChange={(e) => setEmbeddingDimensions(e.target.value)}
-                                        placeholder="1536"
-                                    />
-                                </label>
-                            </div>
-                        )}
+                            {advancedOpen && (
+                                <div className="flex flex-col gap-4">
+                                    <div className="h-px bg-border-light" />
 
+                                    {/* Info banner */}
+                                    <div className="flex gap-2.5 rounded-md bg-[#F5E6D3] px-3 py-2.5">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="mt-0.5 shrink-0 text-[#9A7B4F] opacity-80">
+                                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                                            <path d="M12 16v-4M12 8h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                        <p className="text-[12px] leading-[1.5] text-[#7A5C32]">
+                                            {t('aiProviders.advancedDescription')}
+                                        </p>
+                                    </div>
+
+                                    {/* Model category fields */}
+                                    <div className="flex flex-col gap-5">
+                                        {/* Writing */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.writingModel')}</span>
+                                                <span className="text-[11px] text-ink-faint">{t('aiProviders.writingModelDescription')}</span>
+                                            </div>
+                                            <Input
+                                                type="text"
+                                                value={writingModel}
+                                                onChange={(e) => setWritingModel(e.target.value)}
+                                                placeholder={t('aiProviders.modelPlaceholder')}
+                                                className="px-4 py-3"
+                                            />
+                                            <span className="text-[11px] italic text-accent">{t('aiProviders.writingModelHint')}</span>
+                                        </div>
+
+                                        {/* Analysis */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.analysisModel')}</span>
+                                                <span className="text-[11px] text-ink-faint">{t('aiProviders.analysisModelDescription')}</span>
+                                            </div>
+                                            <Input
+                                                type="text"
+                                                value={analysisModel}
+                                                onChange={(e) => setAnalysisModel(e.target.value)}
+                                                placeholder={t('aiProviders.modelPlaceholder')}
+                                                className="px-4 py-3"
+                                            />
+                                        </div>
+
+                                        {/* Extraction */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.extractionModel')}</span>
+                                                <span className="text-[11px] text-ink-faint">{t('aiProviders.extractionModelDescription')}</span>
+                                            </div>
+                                            <Input
+                                                type="text"
+                                                value={extractionModel}
+                                                onChange={(e) => setExtractionModel(e.target.value)}
+                                                placeholder={t('aiProviders.modelPlaceholder')}
+                                                className="px-4 py-3"
+                                            />
+                                            <span className="text-[11px] italic text-ink-faint">{t('aiProviders.extractionModelHint')}</span>
+                                        </div>
+
+                                        {/* Embedding model/dimensions (providers that support them) */}
+                                        {setting.supports_embeddings && (
+                                            <div className="flex gap-3">
+                                                <div className="flex flex-1 flex-col gap-1.5">
+                                                    <span className="text-[13px] font-medium text-ink-muted">
+                                                        {isAzure ? t('aiProviders.embeddingDeployment') : t('aiProviders.embeddingModel')}
+                                                    </span>
+                                                    <Input
+                                                        type="text"
+                                                        value={embeddingModel}
+                                                        onChange={(e) => setEmbeddingModel(e.target.value)}
+                                                        placeholder={isAzure ? 'text-embedding-3-small' : t('aiProviders.modelPlaceholder')}
+                                                        className="px-4 py-3"
+                                                    />
+                                                </div>
+                                                <div className="flex w-32 flex-col gap-1.5">
+                                                    <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.dimensions')}</span>
+                                                    <Input
+                                                        type="number"
+                                                        value={embeddingDimensions}
+                                                        onChange={(e) => setEmbeddingDimensions(e.target.value)}
+                                                        placeholder="1536"
+                                                        className="px-4 py-3"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Buttons */}
                         <div className="flex items-center gap-3 pt-1">
-                            <Button variant="primary" size="sm" type="submit" disabled={saving} className="h-8">
+                            <Button variant="primary" type="submit" disabled={saving} className="px-7 py-2.5 text-sm">
                                 {saving ? t('aiProviders.saving') : t('aiProviders.save')}
                             </Button>
-                            <Button variant="secondary" size="sm" type="button" onClick={handleTest} disabled={testStatus.type === 'loading' || !configured} className="h-8">
+                            <Button variant="secondary" type="button" onClick={handleTest} disabled={testStatus.type === 'loading' || !configured} className="px-6 py-2.5 text-sm">
                                 {testStatus.type === 'loading' ? t('aiProviders.testing') : t('aiProviders.testConnection')}
                             </Button>
 
