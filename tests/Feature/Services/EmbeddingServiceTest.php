@@ -24,7 +24,7 @@ test('embed chunks generates and stores embeddings', function () {
         Chunk::factory()->for($version)->create(['content' => 'Second chunk of text.', 'position' => 1]),
     ]);
 
-    $service = new EmbeddingService;
+    $service = app(EmbeddingService::class);
     $service->embedChunks($chunks, $book);
 
     Embeddings::assertGenerated(fn ($prompt) => true);
@@ -39,7 +39,7 @@ test('embed chunks handles empty collection', function () {
 
     $book = Book::factory()->withAi(AiProvider::Openai)->create();
 
-    $service = new EmbeddingService;
+    $service = app(EmbeddingService::class);
     $service->embedChunks(collect(), $book);
 
     Embeddings::assertNothingGenerated();
@@ -50,7 +50,7 @@ test('embed query returns vector for text', function () {
 
     $book = Book::factory()->withAi(AiProvider::Openai)->create();
 
-    $service = new EmbeddingService;
+    $service = app(EmbeddingService::class);
     $result = $service->embedQuery('test query', $book);
 
     expect($result)->toBeArray()->not->toBeEmpty();
