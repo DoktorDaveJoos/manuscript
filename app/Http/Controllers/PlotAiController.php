@@ -14,27 +14,21 @@ class PlotAiController extends Controller
     {
         $this->ensureAiConfigured();
 
-        RunAnalysisJob::dispatch($book, AnalysisType::GenreHealth);
-
-        return response()->json(['message' => __('Plot health analysis started.')]);
+        return $this->runAndReturn($book, AnalysisType::GenreHealth);
     }
 
     public function detectPlotHoles(Book $book): JsonResponse
     {
         $this->ensureAiConfigured();
 
-        RunAnalysisJob::dispatch($book, AnalysisType::Plothole);
-
-        return response()->json(['message' => __('Plot hole detection started.')]);
+        return $this->runAndReturn($book, AnalysisType::Plothole);
     }
 
     public function suggestBeats(Book $book): JsonResponse
     {
         $this->ensureAiConfigured();
 
-        RunAnalysisJob::dispatch($book, AnalysisType::NextChapterSuggestion);
-
-        return response()->json(['message' => __('Beat suggestion started.')]);
+        return $this->runAndReturn($book, AnalysisType::NextChapterSuggestion);
     }
 
     public function generateTensionArc(Book $book): JsonResponse
@@ -70,6 +64,21 @@ class PlotAiController extends Controller
             ->keyBy(fn ($a) => $a->type->value);
 
         return response()->json(['analyses' => $analyses]);
+    }
+
+    private function runAndReturn(Book $book, AnalysisType $type): JsonResponse
+    {
+        RunAnalysisJob::dispatchSync($book, $type);
+
+        $analysis = $book->analyses()
+            ->where('type', $type)
+            ->whereNull('chapter_id')
+            ->latest()
+            ->first();
+
+        return response()->json([
+            'analysis' => $analysis?->result,
+        ]);
     }
 
     private function ensureAiConfigured(): void

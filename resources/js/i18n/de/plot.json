@@ -43,6 +43,9 @@
     "aiActions.actionFailed": "Aktion fehlgeschlagen",
     "aiActions.networkError": "Netzwerkfehler. Bitte erneut versuchen.",
     "aiActions.tensionArc": "Spannungsbogen",
+    "aiActions.score": "Bewertung",
+    "aiActions.findings": "Erkenntnisse",
+    "aiActions.recommendations": "Empfehlungen",
     "aiActions.notConfigured": "KI ist nicht konfiguriert. Gehe zu <1>KI-Einstellungen</1>, um einen Anbieter einzurichten.",
 
     "aiActions.tension.label": "Spannungsbogen erzeugen",

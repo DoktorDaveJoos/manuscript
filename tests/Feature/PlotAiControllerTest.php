@@ -1,5 +1,6 @@
 <?php
 
+use App\Ai\Agents\ManuscriptAnalyzer;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\License;
@@ -44,4 +45,40 @@ it('requires an active license for plot ai routes', function () {
 
     $this->postJson(route('books.plot.ai.health', $book))
         ->assertForbidden();
+});
+
+it('runs plot health synchronously and returns analysis result', function () {
+    ManuscriptAnalyzer::fake();
+
+    $book = Book::factory()->withAi()->create();
+
+    $this->postJson(route('books.plot.ai.health', $book))
+        ->assertOk()
+        ->assertJsonStructure(['analysis' => ['score', 'findings', 'recommendations']]);
+
+    expect($book->analyses()->where('type', 'thriller_health')->count())->toBe(1);
+});
+
+it('runs plot hole detection synchronously and returns analysis result', function () {
+    ManuscriptAnalyzer::fake();
+
+    $book = Book::factory()->withAi()->create();
+
+    $this->postJson(route('books.plot.ai.holes', $book))
+        ->assertOk()
+        ->assertJsonStructure(['analysis' => ['score', 'findings', 'recommendations']]);
+
+    expect($book->analyses()->where('type', 'plothole')->count())->toBe(1);
+});
+
+it('runs beat suggestion synchronously and returns analysis result', function () {
+    ManuscriptAnalyzer::fake();
+
+    $book = Book::factory()->withAi()->create();
+
+    $this->postJson(route('books.plot.ai.beats', $book))
+        ->assertOk()
+        ->assertJsonStructure(['analysis' => ['score', 'findings', 'recommendations']]);
+
+    expect($book->analyses()->where('type', 'next_chapter_suggestion')->count())->toBe(1);
 });

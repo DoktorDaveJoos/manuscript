@@ -42,6 +42,21 @@ export function useChapterAnalysis(
 
     const isAnalyzing = status === 'pending' || status === 'running';
 
+    // Sync Inertia props into state — deferred props resolve after mount,
+    // and navigating back to an already-analyzed chapter needs fresh data.
+    useEffect(() => {
+        if (initialAnalyses !== undefined) {
+            setAnalyses(initialAnalyses);
+        }
+    }, [initialAnalyses]);
+
+    useEffect(() => {
+        // Don't let stale Inertia props overwrite active polling state
+        if (!pollRef.current) {
+            setStatus(initialStatus);
+        }
+    }, [initialStatus]);
+
     useEffect(() => {
         if (!isAnalyzing) {
             if (pollRef.current) {

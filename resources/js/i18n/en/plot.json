@@ -43,6 +43,9 @@
     "aiActions.actionFailed": "Action failed",
     "aiActions.networkError": "Network error. Please try again.",
     "aiActions.tensionArc": "Tension Arc",
+    "aiActions.score": "Score",
+    "aiActions.findings": "Findings",
+    "aiActions.recommendations": "Recommendations",
     "aiActions.notConfigured": "AI is not configured. Go to <1>AI Settings</1> to set up a provider.",
 
     "aiActions.tension.label": "Generate Tension Arc",
