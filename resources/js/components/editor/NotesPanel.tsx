@@ -124,18 +124,24 @@ export default function NotesPanel({
 
         setSaveStatus('saving');
         try {
-            await fetch(updateNotes.url({ book: bookId, chapter: chapterId }), {
+            const response = await fetch(updateNotes.url({ book: bookId, chapter: chapterId }), {
                 method: 'PATCH',
                 headers: jsonFetchHeaders(),
                 body: JSON.stringify({ notes: value || null }),
                 signal: controller.signal,
             });
-            onNotesChange?.(value || null);
-            setSaveStatus('saved');
-            if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-            savedTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
-        } catch {
-            // Ignore abort errors
+            if (response.ok) {
+                onNotesChange?.(value || null);
+                setSaveStatus('saved');
+                if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+                savedTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+            } else {
+                setSaveStatus('idle');
+            }
+        } catch (e) {
+            if ((e as Error).name !== 'AbortError') {
+                setSaveStatus('idle');
+            }
         }
     }, [bookId, chapterId, onNotesChange]);
 

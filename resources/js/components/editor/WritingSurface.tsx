@@ -2,6 +2,7 @@ import {
     cancelTypewriterAnimation,
     centerCursorInContainer,
 } from '@/extensions/TypewriterScrollExtension';
+import type { SaveStatus } from '@/components/editor/EditorBar';
 import type { Scene } from '@/types/models';
 import type { Editor } from '@tiptap/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -31,6 +32,7 @@ export default function WritingSurface({
     activeEditor,
     onActiveEditorChange,
     onWordCountChange,
+    onSaveStatusChange,
     isTypewriterMode = false,
     editorFont = DEFAULT_FONT_ID,
     editorFontSize = DEFAULT_FONT_SIZE,
@@ -49,6 +51,7 @@ export default function WritingSurface({
     activeEditor: Editor | null;
     onActiveEditorChange: (editor: Editor) => void;
     onWordCountChange: (sceneId: number, count: number) => void;
+    onSaveStatusChange?: (status: SaveStatus) => void;
     isTypewriterMode?: boolean;
     editorFont?: string;
     editorFontSize?: number;
@@ -288,6 +291,7 @@ export default function WritingSurface({
                                     : undefined
                             }
                             onWordCountChange={onWordCountChange}
+                            onSaveStatusChange={onSaveStatusChange}
                             scrollContainerRef={scrollContainerRef}
                             typewriterEnabledRef={typewriterEnabledRef}
                             scenesVisible={scenesVisible}

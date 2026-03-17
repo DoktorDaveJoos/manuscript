@@ -1,6 +1,7 @@
 import { updateContent } from '@/actions/App/Http/Controllers/SceneController';
 import useChapterEditor from '@/hooks/useChapterEditor';
 import { jsonFetchHeaders } from '@/lib/utils';
+import type { SaveStatus } from '@/components/editor/EditorBar';
 import type { Scene } from '@/types/models';
 import type { Editor } from '@tiptap/react';
 import { EditorContent } from '@tiptap/react';
@@ -17,6 +18,7 @@ export default function SceneEditor({
     onExitUp,
     onExitDown,
     onWordCountChange,
+    onSaveStatusChange,
     scrollContainerRef,
     typewriterEnabledRef,
     scenesVisible = true,
@@ -30,6 +32,7 @@ export default function SceneEditor({
     onExitUp?: () => void;
     onExitDown?: () => void;
     onWordCountChange: (sceneId: number, count: number) => void;
+    onSaveStatusChange?: (status: SaveStatus) => void;
     scrollContainerRef: RefObject<HTMLDivElement | null>;
     typewriterEnabledRef: RefObject<boolean>;
     scenesVisible?: boolean;
@@ -53,11 +56,12 @@ export default function SceneEditor({
 
         const content = pendingContentRef.current;
         if (content === null) return;
-        pendingContentRef.current = null;
 
         contentAbortRef.current?.abort();
         const controller = new AbortController();
         contentAbortRef.current = controller;
+
+        onSaveStatusChange?.('saving');
 
         try {
             const response = await fetch(
@@ -71,13 +75,22 @@ export default function SceneEditor({
             );
 
             if (response.ok) {
+                // Only clear if content hasn't changed during the in-flight save
+                if (pendingContentRef.current === content) {
+                    pendingContentRef.current = null;
+                    onSaveStatusChange?.('saved');
+                }
                 const data = await response.json();
                 onWordCountChange(scene.id, data.word_count);
+            } else {
+                onSaveStatusChange?.('error');
             }
-        } catch {
-            // Ignore abort errors
+        } catch (e) {
+            if ((e as Error).name !== 'AbortError') {
+                onSaveStatusChange?.('error');
+            }
         }
-    }, [bookId, chapterId, scene.id, onWordCountChange]);
+    }, [bookId, chapterId, scene.id, onWordCountChange, onSaveStatusChange]);
 
     // Expose flush for parent
     const flushRef = useRef({ flushContentSave });
@@ -102,6 +115,7 @@ export default function SceneEditor({
         (html: string, words: number) => {
             pendingContentRef.current = html;
             onWordCountChange(scene.id, words);
+            onSaveStatusChange?.('saving');
 
             if (contentTimerRef.current) {
                 clearTimeout(contentTimerRef.current);
@@ -110,7 +124,7 @@ export default function SceneEditor({
                 flushContentSave();
             }, 1500);
         },
-        [scene.id, onWordCountChange, flushContentSave],
+        [scene.id, onWordCountChange, onSaveStatusChange, flushContentSave],
     );
 
     const editor = useChapterEditor({

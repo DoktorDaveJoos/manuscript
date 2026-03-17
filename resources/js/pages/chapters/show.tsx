@@ -239,25 +239,10 @@ export default function ChapterShow({
     // Word count derived from scenes
     const wordCount = scenes.reduce((sum, s) => sum + s.word_count, 0);
 
-    // Save status timeout for scene edits
-    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
     const handleSceneWordCountChange = useCallback((sceneId: number, count: number) => {
         setScenes((prev) => prev.map((s) => (s.id === sceneId ? { ...s, word_count: count } : s)));
-        setSaveStatus('unsaved');
-
-        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = setTimeout(() => {
-            setSaveStatus('saved');
-        }, 2000);
     }, []);
 
-    // Clean up save status timeout on unmount
-    useEffect(() => {
-        return () => {
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-        };
-    }, []);
 
     // Chapter title auto-save
     const titleAbortRef = useRef<AbortController | null>(null);
@@ -314,6 +299,16 @@ export default function ChapterShow({
         },
         [flushTitleSave],
     );
+
+    // Flush pending title save on unmount
+    const flushTitleRef = useRef(flushTitleSave);
+    flushTitleRef.current = flushTitleSave;
+    useEffect(() => {
+        return () => {
+            if (titleTimerRef.current) clearTimeout(titleTimerRef.current);
+            flushTitleRef.current();
+        };
+    }, []);
 
     // Flush all pending saves (title + all scenes in parallel)
     const handleBeforeNavigate = useCallback(async () => {
@@ -489,6 +484,7 @@ export default function ChapterShow({
                                 chapterTitle={displayTitle}
                                 storylineName={chapter.storyline?.name ?? t('show.untitledStoryline')}
                                 wordCount={wordCount}
+                                saveStatus={saveStatus}
                                 versionCount={versionCount}
                                 onVersionClick={() => setShowVersions(!showVersions)}
                             />
@@ -538,6 +534,7 @@ export default function ChapterShow({
                                 activeEditor={activeEditor}
                                 onActiveEditorChange={setActiveEditor}
                                 onWordCountChange={handleSceneWordCountChange}
+                                onSaveStatusChange={setSaveStatus}
                                 isTypewriterMode={isTypewriterMode}
                                 editorFont={editorFont}
                                 editorFontSize={editorFontSize}

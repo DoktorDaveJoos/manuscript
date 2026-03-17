@@ -10,6 +10,7 @@ export default function EditorBar({
     chapterTitle,
     storylineName,
     wordCount,
+    saveStatus,
     versionCount,
     onVersionClick,
 }: {
@@ -17,6 +18,7 @@ export default function EditorBar({
     chapterTitle: string;
     storylineName: string;
     wordCount: number;
+    saveStatus: SaveStatus;
     versionCount: number;
     onVersionClick: () => void;
 }) {
@@ -28,6 +30,11 @@ export default function EditorBar({
                 <span className="shrink-0 text-ink-faint">{storylineName}</span>
                 <span className="shrink-0 text-[#D5D5D5]">/</span>
                 <span className="min-w-0 truncate font-medium text-ink-soft">{chapterTitle}</span>
+                {saveStatus !== 'saved' && (
+                    <span className={`shrink-0 text-[11px] ${saveStatus === 'error' ? 'text-red-500' : 'text-ink-faint'}`}>
+                        {t(`saveStatus.${saveStatus}`)}
+                    </span>
+                )}
             </div>
 
             <div className="flex shrink-0 items-center gap-3.5">
