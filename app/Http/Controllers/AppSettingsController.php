@@ -21,6 +21,7 @@ class AppSettingsController extends Controller
         'locale',
         'send_error_reports',
         'crash_report_prompted',
+        'auto_update',
     ];
 
     public function appearance(): Response

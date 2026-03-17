@@ -13,12 +13,12 @@ test('pro json routes return 403 without licence', function () {
         ->assertJsonPath('message', 'This feature requires an active Manuscript licence.');
 });
 
-test('canvas redirects to ai settings without licence', function () {
+test('canvas redirects to settings without licence', function () {
     $book = Book::factory()->create();
     Storyline::factory()->for($book)->create();
 
     $this->get(route('books.canvas', $book))
-        ->assertRedirect(route('ai-settings.index'));
+        ->assertRedirect(route('settings.index'));
 });
 
 test('ai settings update returns 403 without licence', function () {
@@ -42,8 +42,8 @@ test('pro routes succeed with active licence', function () {
         ->assertSuccessful();
 });
 
-test('ai settings index remains accessible without licence', function () {
-    $this->get(route('ai-settings.index'))
+test('unified settings remains accessible without licence', function () {
+    $this->get(route('settings.index'))
         ->assertOk();
 });
 
@@ -52,7 +52,7 @@ test('free routes remain accessible without licence', function () {
     Storyline::factory()->for($book)->create();
 
     $this->get(route('books.dashboard', $book))->assertOk();
-    $this->get(route('books.characters', $book))->assertOk();
+    $this->get(route('books.wiki', $book))->assertOk();
     $this->get(route('books.plot', $book))->assertOk();
 });
 
@@ -64,9 +64,7 @@ test('writing style regenerate requires licence', function () {
 });
 
 test('manual writing style update remains free', function () {
-    $book = Book::factory()->create();
-
-    $this->putJson(route('books.settings.writing-style.update', $book), [
+    $this->putJson(route('settings.writing-style.update'), [
         'writing_style_text' => 'Test style.',
     ])->assertOk();
 });

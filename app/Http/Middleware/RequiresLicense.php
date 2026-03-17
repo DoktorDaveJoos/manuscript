@@ -21,6 +21,6 @@ class RequiresLicense
             ], 403);
         }
 
-        return redirect()->route('ai-settings.index');
+        return redirect()->route('settings.index');
     }
 }

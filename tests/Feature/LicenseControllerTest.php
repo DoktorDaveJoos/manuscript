@@ -185,14 +185,14 @@ test('revalidate skips when recently validated', function () {
 });
 
 test('license status is shared in inertia props', function () {
-    $response = $this->get(route('ai-settings.index'));
+    $response = $this->get(route('settings.index'));
 
     $page = $response->original->getData()['page'];
     expect($page['props']['license']['active'])->toBeFalse();
 
     License::factory()->create();
 
-    $response = $this->get(route('ai-settings.index'));
+    $response = $this->get(route('settings.index'));
     $page = $response->original->getData()['page'];
     expect($page['props']['license']['active'])->toBeTrue();
     expect($page['props']['license']['masked_key'])->not->toBeNull();

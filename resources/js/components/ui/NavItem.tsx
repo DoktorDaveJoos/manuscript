@@ -1,5 +1,12 @@
 import { Link } from '@inertiajs/react';
 
+const ACTIVE_STYLES = {
+    default: 'bg-neutral-bg font-medium text-ink',
+    inverted: 'bg-ink font-medium text-white',
+} as const;
+
+type ActiveVariant = keyof typeof ACTIVE_STYLES;
+
 export default function NavItem({
     label,
     icon,
@@ -8,6 +15,7 @@ export default function NavItem({
     disabled,
     onClick,
     suffix,
+    activeVariant = 'default',
 }: {
     label: string;
     icon?: React.ReactNode;
@@ -16,13 +24,14 @@ export default function NavItem({
     disabled?: boolean;
     onClick?: () => void;
     suffix?: React.ReactNode;
+    activeVariant?: ActiveVariant;
 }) {
     const classes = `flex items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] transition-colors ${
         isActive
-            ? 'bg-neutral-bg font-medium text-ink'
+            ? ACTIVE_STYLES[activeVariant]
             : disabled
               ? 'cursor-default text-ink-faint'
-              : 'text-ink-muted hover:bg-neutral-bg hover:text-ink'
+              : 'text-[#8A8A8A] hover:bg-neutral-bg hover:text-ink'
     }`;
 
     const content = (

@@ -104,7 +104,7 @@ class ChapterController extends Controller
             'book' => $book,
             'chapter' => $chapter,
             'versionCount' => $chapter->versions()->count(),
-            'prosePassRules' => $book->prose_pass_rules ?? Book::defaultProsePassRules(),
+            'prosePassRules' => Book::globalProsePassRules(),
             'chapterPlotPoints' => $book->plotPoints()
                 ->where('intended_chapter_id', $chapter->id)
                 ->orderBy('sort_order')

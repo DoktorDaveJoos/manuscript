@@ -289,6 +289,18 @@ Wayfinder generates TypeScript functions for Laravel routes. Import from `@/acti
 
 </laravel-boost-guidelines>
 
+## Workflow
+
+- When asked to implement a feature, always create/update Pencil designs FIRST before writing code, unless explicitly told otherwise.
+
+## Design Implementation
+
+- When implementing design changes, match Pencil designs pixel-perfectly. Always compare the design screenshot against the code component — don't assume styling from Pencil designs maps 1:1 without verification.
+
+## Output Format
+
+- Always write plans and protocols as markdown files (e.g., `docs/plans/<feature>.md`), never inline in the conversation.
+
 ## NativePHP Database
 
 - This is a NativePHP app. At runtime, it uses a dynamically registered `nativephp` database connection pointing to `database/nativephp.sqlite`.

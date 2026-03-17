@@ -1,4 +1,4 @@
-import { writingStyle } from '@/actions/App/Http/Controllers/BookSettingsController';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { useState, useRef, useEffect } from 'react';
@@ -28,7 +28,7 @@ export default function BookSwitcher({
 
     const switchBook = (book: BookRef) => {
         setOpen(false);
-        router.visit(writingStyle.url(book));
+        router.visit(settingsIndex.url());
     };
 
     return (

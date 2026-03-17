@@ -1,10 +1,9 @@
-import { appearance as settingsAppearance } from '@/actions/App/Http/Controllers/AppSettingsController';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { index } from '@/actions/App/Http/Controllers/BookController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
 import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
 import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
 import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
-import LanguageSelector from '@/components/ui/LanguageSelector';
 import NavItem from '@/components/ui/NavItem';
 import { createChapter, formatCompactCount } from '@/lib/utils';
 import type { Book, Scene, Storyline } from '@/types/models';
@@ -145,7 +144,7 @@ export default function Sidebar({
     return (
         <aside
             ref={sidebarRef}
-            className={`relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border-light bg-surface-card transition-[width,opacity] duration-300 ${isFocusMode ? 'opacity-0' : ''}`}
+            className={`relative flex h-full shrink-0 flex-col overflow-hidden border-r border-[#F0EFED] bg-white transition-[width,opacity] duration-300 ${isFocusMode ? 'opacity-0' : ''}`}
             style={{ width: isFocusMode ? 0 : width }}
         >
             {/* Header */}
@@ -153,12 +152,9 @@ export default function Sidebar({
                 <Link href={index.url()} className="text-[13px] font-semibold uppercase tracking-[0.06em] text-ink">
                     Manuscript
                 </Link>
-                <div className="flex items-center gap-2">
-                    <LanguageSelector />
-                    <Link href={settingsAppearance.url()} className="text-ink-muted hover:text-ink transition-colors">
-                        <Settings size={18} />
-                    </Link>
-                </div>
+                <Link href={settingsIndex.url()} className="text-[#9CA3AF] hover:text-ink transition-colors">
+                    <Settings size={18} />
+                </Link>
             </div>
 
             {/* Nav */}
@@ -168,7 +164,7 @@ export default function Sidebar({
                     isActive={isDashboard}
                     href={showDashboard.url(book)}
                     icon={
-                        <LayoutGrid size={16} className="shrink-0" />
+                        <LayoutGrid size={16} className="shrink-0 text-[#B0B0B0]" />
                     }
                 />
                 <NavItem
@@ -176,7 +172,7 @@ export default function Sidebar({
                     href={indexWiki.url(book)}
                     isActive={isWiki}
                     icon={
-                        <BookOpen size={16} className="shrink-0" />
+                        <BookOpen size={16} className="shrink-0 text-[#B0B0B0]" />
                     }
                 />
                 <NavItem
@@ -184,7 +180,7 @@ export default function Sidebar({
                     href={indexPlot.url(book)}
                     isActive={isPlot}
                     icon={
-                        <Waypoints size={16} className="shrink-0" />
+                        <Waypoints size={16} className="shrink-0 text-[#B0B0B0]" />
                     }
                 />
             </div>
@@ -215,7 +211,7 @@ export default function Sidebar({
             <TrashBin bookId={book.id} />
 
             {/* Footer */}
-            <div className="flex items-center justify-center gap-3 px-5 py-3.5">
+            <div className="flex items-center gap-3 px-5 py-3.5">
                 <span className="text-[11px] text-[#B5B5B5]">{t('wordsCompact', { formatted: formatCompactCount(totalWords) })}</span>
                 <span className="text-[11px] text-[#B5B5B5]">·</span>
                 <span className="text-[11px] text-[#B5B5B5]">{t('chapters', { count: totalChapters })}</span>

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { updateProsePassRules } from '@/actions/App/Http/Controllers/BookSettingsController';
+import { updateProsePassRules } from '@/actions/App/Http/Controllers/SettingsController';
 import SettingsLayout from '@/layouts/SettingsLayout';
 import { getXsrfToken } from '@/lib/csrf';
 import type { ProsePassRule } from '@/types/models';
@@ -43,7 +43,7 @@ export default function ProsePassRules({ book, rules: initialRules }: Props) {
             );
             setRules(updated);
 
-            fetch(updateProsePassRules.url(book), {
+            fetch(updateProsePassRules.url(), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

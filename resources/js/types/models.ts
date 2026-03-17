@@ -363,9 +363,13 @@ export type AiSetting = {
     id: number;
     provider: AiProvider;
     has_api_key: boolean;
+    masked_api_key: string | null;
     base_url: string | null;
     api_version: string | null;
     text_model: string | null;
+    writing_model: string | null;
+    analysis_model: string | null;
+    extraction_model: string | null;
     embedding_model: string | null;
     embedding_dimensions: number | null;
     enabled: boolean;

@@ -1,10 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import {
-    updateWritingStyle,
-} from '@/actions/App/Http/Controllers/BookSettingsController';
+import { updateWritingStyle } from '@/actions/App/Http/Controllers/SettingsController';
 import SettingsLayout from '@/layouts/SettingsLayout';
 import { getXsrfToken } from '@/lib/csrf';
 import { useState, useCallback } from 'react';
+import Textarea from '@/components/ui/Textarea';
 
 type BookData = {
     id: number;
@@ -27,7 +26,7 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
         setSaving(true);
         setMessage('');
 
-        fetch(updateWritingStyle.url(book), {
+        fetch(updateWritingStyle.url(), {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -59,13 +58,13 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
                 </div>
 
                 <div>
-                    <textarea
+                    <Textarea
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         onBlur={handleSave}
                         placeholder={t('writingStyle.placeholder')}
                         rows={10}
-                        className="w-full resize-y rounded-md border border-border bg-surface px-3 py-2.5 text-[14px] leading-relaxed text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
+                        className="resize-y leading-relaxed"
                     />
                     {(message || saving) && (
                         <span className="mt-2 block text-[12px] font-medium text-status-final">

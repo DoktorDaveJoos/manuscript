@@ -79,22 +79,24 @@ export default function TrashBin({ bookId }: { bookId: number }) {
     };
 
     return (
-        <div className="border-t border-border-subtle px-3 py-2">
+        <div className="border-t border-[#F0EFED] px-3 py-1">
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex w-full items-center gap-2 px-2.5 pt-2.5 pb-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint transition-colors hover:text-ink-muted"
+                className="flex w-full items-center justify-between px-2.5 pt-2.5 pb-1.5 transition-colors hover:text-ink-muted"
             >
-                <span className={`flex shrink-0 items-center transition-transform ${isOpen ? 'rotate-90' : ''}`}>
-                    <ChevronRight size={8} strokeWidth={2.5} />
+                <span className="flex items-center gap-1.5">
+                    <Trash2 size={11} className="shrink-0 text-[#B5B5B5]" />
+                    <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-[#B5B5B5]">{t('trash.title')}</span>
                 </span>
-                <Trash2 size={14} className="shrink-0" />
-                {t('trash.title')}
-                {items.length > 0 && (
-                    <span className="ml-auto rounded-full bg-ink/[0.06] px-1.5 py-px text-[10px] font-medium tabular-nums text-ink-faint">
-                        {items.length}
+                <span className="flex items-center gap-1.5">
+                    {items.length > 0 && (
+                        <span className="text-[10px] tabular-nums text-[#C5C5C5]">{items.length}</span>
+                    )}
+                    <span className={`flex shrink-0 items-center text-[#C5C5C5] transition-transform ${isOpen ? 'rotate-90' : ''}`}>
+                        <ChevronRight size={10} />
                     </span>
-                )}
+                </span>
             </button>
 
             {isOpen && (

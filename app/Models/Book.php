@@ -113,6 +113,12 @@ class Book extends Model
 
     public function getWritingStyleDisplayAttribute(): string
     {
+        // Check global setting first, fall back to book's own column
+        $globalText = AppSetting::get('writing_style_text');
+        if ($globalText) {
+            return $globalText;
+        }
+
         if ($this->writing_style_text) {
             return $this->writing_style_text;
         }
@@ -122,6 +128,26 @@ class Book extends Model
         }
 
         return self::formatWritingStyle($this->writing_style);
+    }
+
+    /**
+     * Get global prose pass rules from AppSetting, or fall back to book/default.
+     *
+     * @return array<int, array{key: string, label: string, description: string, enabled: bool}>
+     */
+    public static function globalProsePassRules(): array
+    {
+        $json = AppSetting::get('prose_pass_rules');
+
+        if ($json) {
+            $decoded = is_string($json) ? json_decode($json, true) : $json;
+
+            if (is_array($decoded) && ! empty($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return self::defaultProsePassRules();
     }
 
     /**

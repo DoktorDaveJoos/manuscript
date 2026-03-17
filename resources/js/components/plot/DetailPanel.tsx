@@ -3,6 +3,10 @@ import { X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import Input from '@/components/ui/Input';
+import Textarea from '@/components/ui/Textarea';
+import Select from '@/components/ui/Select';
+
 const TYPE_OPTIONS = ['setup', 'conflict', 'turning_point', 'resolution', 'worldbuilding'] as const;
 
 const STATUS_OPTIONS = ['planned', 'fulfilled', 'abandoned'] as const;
@@ -64,12 +68,12 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
                     <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                         {t('detailPanel.title')}
                     </label>
-                    <input
+                    <Input
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         onBlur={handleTitleBlur}
-                        className="rounded border border-border px-2.5 py-1.5 text-[13px] font-semibold text-ink focus:outline-none focus:ring-1 focus:ring-accent"
+                        className="font-semibold"
                     />
                 </div>
 
@@ -78,13 +82,12 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
                     <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                         {t('detailPanel.description')}
                     </label>
-                    <textarea
+                    <Textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         onBlur={handleDescriptionBlur}
                         rows={4}
                         placeholder={t('detailPanel.descriptionPlaceholder')}
-                        className="resize-none rounded border border-border px-2.5 py-1.5 text-[13px] text-ink-soft placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-accent"
                     />
                 </div>
 
@@ -93,17 +96,16 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
                     <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                         {t('detailPanel.type')}
                     </label>
-                    <select
+                    <Select
                         value={plotPoint.type}
                         onChange={(e) => onUpdate({ type: e.target.value })}
-                        className="rounded border border-border px-2.5 py-1.5 text-[13px] text-ink-soft focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                         {TYPE_OPTIONS.map((value) => (
                             <option key={value} value={value}>
                                 {t(`type.${value}`)}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </div>
 
                 {/* Status */}
@@ -111,17 +113,16 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
                     <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
                         {t('detailPanel.status')}
                     </label>
-                    <select
+                    <Select
                         value={plotPoint.status}
                         onChange={(e) => onUpdate({ status: e.target.value })}
-                        className="rounded border border-border px-2.5 py-1.5 text-[13px] text-ink-soft focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                         {STATUS_OPTIONS.map((value) => (
                             <option key={value} value={value}>
                                 {t(`status.${value}`)}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </div>
 
                 {/* Connections */}

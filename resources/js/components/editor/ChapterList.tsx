@@ -141,7 +141,7 @@ function SortableStorylineGroup({
                             e.stopPropagation();
                             onToggleCollapse?.();
                         }}
-                        className={`flex items-center transition-transform duration-150 ${isCollapsed ? '-rotate-90' : ''}`}
+                        className={`flex items-center text-[#C5C5C5] transition-transform duration-150 ${isCollapsed ? '-rotate-90' : ''}`}
                     >
                         <ChevronDown size={10} />
                     </span>
@@ -652,15 +652,15 @@ export default function ChapterList({
                                 {bookTitle}
                             </span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                             <button
                                 type="button"
                                 onClick={handleToggleCollapseAll}
-                                className="text-ink-faint transition-colors hover:text-ink"
+                                className="text-[#B5B5B5] transition-colors hover:text-ink"
                             >
                                 <svg
-                                    width="14"
-                                    height="14"
+                                    width="12"
+                                    height="12"
                                     viewBox="0 0 14 14"
                                     fill="none"
                                     stroke="currentColor"
@@ -676,12 +676,12 @@ export default function ChapterList({
                             <button
                                 type="button"
                                 onClick={() => onScenesVisibleChange(!scenesVisible)}
-                                className="text-ink-faint transition-colors hover:text-ink"
+                                className="text-[#B5B5B5] transition-colors hover:text-ink"
                             >
                                 {scenesVisible ? (
                                     <svg
-                                        width="14"
-                                        height="14"
+                                        width="12"
+                                        height="12"
                                         viewBox="0 0 14 14"
                                         fill="none"
                                         stroke="currentColor"
@@ -694,8 +694,8 @@ export default function ChapterList({
                                     </svg>
                                 ) : (
                                     <svg
-                                        width="14"
-                                        height="14"
+                                        width="12"
+                                        height="12"
                                         viewBox="0 0 14 14"
                                         fill="none"
                                         stroke="currentColor"
@@ -836,7 +836,7 @@ export default function ChapterList({
                         <button
                             type="button"
                             onClick={onAddStoryline}
-                            className="flex w-full items-center gap-1.5 px-2.5 pt-3.5 pb-1 text-[10px] font-medium uppercase tracking-[0.08em] text-ink-faint transition-colors hover:text-ink"
+                            className="flex w-full items-center gap-1.5 px-2.5 pt-3.5 pb-1 text-[10px] font-medium uppercase tracking-[0.08em] text-[#B5B5B5] transition-colors hover:text-ink"
                         >
                             <Plus size={10} className="text-[#C5C5C5]" />
                             <span>{t('chapterList.addStoryline')}</span>

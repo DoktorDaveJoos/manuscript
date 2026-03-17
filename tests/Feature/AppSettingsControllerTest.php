@@ -2,12 +2,15 @@
 
 use App\Models\AppSetting;
 
-test('appearance page loads with default settings', function () {
-    $this->get(route('settings.appearance'))
+test('unified settings page loads', function () {
+    $this->get(route('settings.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('settings/appearance')
+            ->component('settings/index')
             ->has('settings')
+            ->has('ai_providers')
+            ->has('writing_style_text')
+            ->has('prose_pass_rules')
             ->has('version')
         );
 });
@@ -53,15 +56,39 @@ test('typewriter_mode setting saves correctly', function () {
     expect(AppSetting::get('typewriter_mode'))->toBeTrue();
 });
 
-test('settings redirect to appearance', function () {
-    $this->get('/settings')
-        ->assertRedirect('/settings/appearance');
+test('settings/appearance redirects to unified settings', function () {
+    $this->get('/settings/appearance')
+        ->assertRedirect('/settings');
 });
 
-test('license page loads', function () {
-    $this->get(route('settings.license'))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('settings/license')
-        );
+test('settings/license redirects to unified settings', function () {
+    $this->get('/settings/license')
+        ->assertRedirect('/settings');
+});
+
+test('settings/ai redirects to unified settings', function () {
+    $this->get('/settings/ai')
+        ->assertRedirect('/settings');
+});
+
+test('global writing style saves', function () {
+    $this->putJson(route('settings.writing-style.update'), [
+        'writing_style_text' => 'Dark, moody prose with short sentences.',
+    ])->assertOk();
+
+    AppSetting::clearCache();
+    expect(AppSetting::get('writing_style_text'))->toBe('Dark, moody prose with short sentences.');
+});
+
+test('global prose pass rules save', function () {
+    $rules = \App\Models\Book::defaultProsePassRules();
+    $rules[0]['enabled'] = false;
+
+    $this->putJson(route('settings.prose-pass-rules.update'), [
+        'rules' => $rules,
+    ])->assertOk();
+
+    AppSetting::clearCache();
+    $saved = json_decode(AppSetting::get('prose_pass_rules'), true);
+    expect($saved[0]['enabled'])->toBeFalse();
 });
