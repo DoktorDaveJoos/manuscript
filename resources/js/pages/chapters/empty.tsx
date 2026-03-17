@@ -27,18 +27,25 @@ export default function ChapterEmpty({
             <Head title={`${book.title} — ${t('empty.noChapters')}`} />
             <div className="flex min-h-screen flex-col items-center justify-center bg-surface pb-20">
                 <div className="flex flex-col items-center gap-4">
-                    <h1 className="font-serif text-4xl leading-[44px] tracking-[-0.01em] text-ink">{t('empty.title')}</h1>
+                    <h1 className="font-serif text-4xl leading-[44px] tracking-[-0.01em] text-ink">
+                        {t('empty.title')}
+                    </h1>
                     <p className="text-[15px] leading-6 text-ink-muted">
                         {t('empty.description')}
                     </p>
                 </div>
                 <div className="mt-10 flex items-center gap-4">
-                    <Button variant="primary" size="lg" type="button" onClick={handleCreateChapter}>
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        type="button"
+                        onClick={handleCreateChapter}
+                    >
                         {t('empty.createFirst')}
                     </Button>
                     <Link
                         href={importMethod.url(book)}
-                        className="rounded-md border border-border px-7 py-3 text-sm font-medium leading-[18px] text-ink-muted"
+                        className="rounded-md border border-border px-7 py-3 text-sm leading-[18px] font-medium text-ink-muted"
                     >
                         {t('empty.importManuscript')}
                     </Link>

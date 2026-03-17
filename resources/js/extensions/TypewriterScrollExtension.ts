@@ -38,7 +38,10 @@ export function centerCursorInContainer(
     if (Math.abs(delta) <= DEAD_ZONE) return;
 
     const maxScroll = container.scrollHeight - container.clientHeight;
-    const desired = Math.max(0, Math.min(container.scrollTop + delta, maxScroll));
+    const desired = Math.max(
+        0,
+        Math.min(container.scrollTop + delta, maxScroll),
+    );
 
     if (instant) {
         cancelTypewriterAnimation();
@@ -100,16 +103,25 @@ export const TypewriterScrollExtension = Extension.create<{
                 },
                 view(editorView) {
                     const onSelectionChange = () => {
-                        if (!enabledRef.current || !editorView.hasFocus()) return;
+                        if (!enabledRef.current || !editorView.hasFocus())
+                            return;
                         requestAnimationFrame(() => {
-                            if (!enabledRef.current || !editorView.hasFocus()) return;
+                            if (!enabledRef.current || !editorView.hasFocus())
+                                return;
                             const container = scrollContainerRef.current;
                             if (!container) return;
-                            centerCursorInContainer(editorView, container, false);
+                            centerCursorInContainer(
+                                editorView,
+                                container,
+                                false,
+                            );
                         });
                     };
 
-                    document.addEventListener('selectionchange', onSelectionChange);
+                    document.addEventListener(
+                        'selectionchange',
+                        onSelectionChange,
+                    );
 
                     return {
                         update(view, prevState) {
@@ -133,7 +145,10 @@ export const TypewriterScrollExtension = Extension.create<{
                             });
                         },
                         destroy() {
-                            document.removeEventListener('selectionchange', onSelectionChange);
+                            document.removeEventListener(
+                                'selectionchange',
+                                onSelectionChange,
+                            );
                             cancelTypewriterAnimation();
                         },
                     };

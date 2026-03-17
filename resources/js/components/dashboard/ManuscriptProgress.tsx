@@ -1,7 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import type { ManuscriptTarget } from '@/types/models';
 
-export default function ManuscriptProgress({ target }: { target: ManuscriptTarget }) {
+export default function ManuscriptProgress({
+    target,
+}: {
+    target: ManuscriptTarget;
+}) {
     const { t, i18n } = useTranslation('dashboard');
     if (!target.target_word_count || target.milestone_reached) return null;
 
@@ -14,8 +18,11 @@ export default function ManuscriptProgress({ target }: { target: ManuscriptTarge
                 />
             </div>
             <p className="mt-2 text-[12px] text-ink-muted">
-                {target.total_words.toLocaleString(i18n.language)} / {target.target_word_count.toLocaleString(i18n.language)}{' '}
-                <span className="text-ink-faint">{t('manuscriptProgress.towardFirstDraft')}</span>
+                {target.total_words.toLocaleString(i18n.language)} /{' '}
+                {target.target_word_count.toLocaleString(i18n.language)}{' '}
+                <span className="text-ink-faint">
+                    {t('manuscriptProgress.towardFirstDraft')}
+                </span>
             </p>
         </div>
     );

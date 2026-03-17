@@ -1,5 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import type {FormEvent} from 'react';
+import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -57,7 +57,9 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                 className="relative z-10 flex w-[480px] flex-col gap-8 rounded-xl bg-surface-card p-10 shadow-[0_8px_40px_rgba(0,0,0,0.08)]"
             >
                 <div className="flex flex-col gap-2">
-                    <h2 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">{t('createBook.title')}</h2>
+                    <h2 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">
+                        {t('createBook.title')}
+                    </h2>
                     <p className="text-sm leading-[22px] text-ink-muted">
                         {t('createBook.description')}
                     </p>
@@ -65,43 +67,51 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
 
                 <div className="flex flex-col gap-6">
                     <fieldset className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
+                        <label className="text-xs leading-4 font-medium tracking-[0.08em] text-ink-muted uppercase">
                             {t('createBook.labelTitle')}
                         </label>
                         <Input
                             variant="dialog"
                             type="text"
                             value={form.data.title}
-                            onChange={(e) => form.setData('title', e.target.value)}
+                            onChange={(e) =>
+                                form.setData('title', e.target.value)
+                            }
                             placeholder={t('createBook.placeholderTitle')}
                             autoFocus
                         />
                         {form.errors.title && (
-                            <span className="text-xs text-red-600">{form.errors.title}</span>
+                            <span className="text-xs text-red-600">
+                                {form.errors.title}
+                            </span>
                         )}
                     </fieldset>
 
                     <fieldset className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
+                        <label className="text-xs leading-4 font-medium tracking-[0.08em] text-ink-muted uppercase">
                             {t('createBook.labelAuthor')}
                         </label>
                         <Input
                             variant="dialog"
                             type="text"
                             value={form.data.author}
-                            onChange={(e) => form.setData('author', e.target.value)}
+                            onChange={(e) =>
+                                form.setData('author', e.target.value)
+                            }
                             placeholder={t('createBook.placeholderAuthor')}
                         />
                     </fieldset>
 
                     <fieldset className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
+                        <label className="text-xs leading-4 font-medium tracking-[0.08em] text-ink-muted uppercase">
                             {t('createBook.labelLanguage')}
                         </label>
                         <Select
                             variant="dialog"
                             value={form.data.language}
-                            onChange={(e) => form.setData('language', e.target.value)}
+                            onChange={(e) =>
+                                form.setData('language', e.target.value)
+                            }
                         >
                             {LANGUAGES.map((lang) => (
                                 <option key={lang.value} value={lang.value}>
@@ -112,7 +122,7 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                     </fieldset>
 
                     <fieldset className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
+                        <label className="text-xs leading-4 font-medium tracking-[0.08em] text-ink-muted uppercase">
                             {t('createBook.labelGenre')}
                         </label>
                         <Select
@@ -123,11 +133,16 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                                 form.setData((prev) => ({
                                     ...prev,
                                     genre: newGenre,
-                                    secondary_genres: prev.secondary_genres.filter((g) => g !== newGenre),
+                                    secondary_genres:
+                                        prev.secondary_genres.filter(
+                                            (g) => g !== newGenre,
+                                        ),
                                 }));
                             }}
                         >
-                            <option value="">{t('createBook.placeholderGenre')}</option>
+                            <option value="">
+                                {t('createBook.placeholderGenre')}
+                            </option>
                             {GENRES.map((g) => (
                                 <option key={g.value} value={g.value}>
                                     {g.label}
@@ -138,17 +153,19 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
 
                     {form.data.genre && (
                         <fieldset className="flex flex-col gap-1.5">
-                            <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
+                            <label className="text-xs leading-4 font-medium tracking-[0.08em] text-ink-muted uppercase">
                                 {t('createBook.labelSecondaryGenres')}
                             </label>
                             {form.data.secondary_genres.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5">
                                     {form.data.secondary_genres.map((g) => {
-                                        const genre = GENRES.find((x) => x.value === g);
+                                        const genre = GENRES.find(
+                                            (x) => x.value === g,
+                                        );
                                         return (
                                             <span
                                                 key={g}
-                                                className="inline-flex items-center gap-1 rounded-md bg-surface-raised px-2.5 py-1 text-xs font-medium text-ink"
+                                                className="bg-surface-raised inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-ink"
                                             >
                                                 {genre?.label ?? g}
                                                 <button
@@ -156,7 +173,9 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                                                     onClick={() =>
                                                         form.setData(
                                                             'secondary_genres',
-                                                            form.data.secondary_genres.filter((x) => x !== g),
+                                                            form.data.secondary_genres.filter(
+                                                                (x) => x !== g,
+                                                            ),
                                                         )
                                                     }
                                                     className="ml-0.5 text-ink-muted hover:text-ink"
@@ -180,11 +199,15 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                                     }
                                 }}
                             >
-                                <option value="">{t('createBook.placeholderSecondaryGenres')}</option>
+                                <option value="">
+                                    {t('createBook.placeholderSecondaryGenres')}
+                                </option>
                                 {GENRES.filter(
                                     (g) =>
                                         g.value !== form.data.genre &&
-                                        !form.data.secondary_genres.includes(g.value),
+                                        !form.data.secondary_genres.includes(
+                                            g.value,
+                                        ),
                                 ).map((g) => (
                                     <option key={g.value} value={g.value}>
                                         {g.label}
@@ -196,10 +219,20 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                 </div>
 
                 <div className="flex items-center justify-end gap-3">
-                    <Button variant="ghost" size="lg" type="button" onClick={onClose}>
+                    <Button
+                        variant="ghost"
+                        size="lg"
+                        type="button"
+                        onClick={onClose}
+                    >
                         {t('createBook.cancel')}
                     </Button>
-                    <Button variant="primary" size="lg" type="submit" disabled={form.processing}>
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        type="submit"
+                        disabled={form.processing}
+                    >
                         {t('createBook.continue')}
                     </Button>
                 </div>

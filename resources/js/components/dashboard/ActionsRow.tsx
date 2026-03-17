@@ -29,7 +29,12 @@ export default function ActionsRow({
 
     return (
         <div className="flex items-center justify-between">
-            <AiPreparationProgress bookId={bookId} aiEnabled={aiEnabled} initialStatus={aiPreparation} licensed={licensed} />
+            <AiPreparationProgress
+                bookId={bookId}
+                aiEnabled={aiEnabled}
+                initialStatus={aiPreparation}
+                licensed={licensed}
+            />
 
             <div className="flex items-center divide-x divide-border rounded-lg border border-border bg-surface-card">
                 <button

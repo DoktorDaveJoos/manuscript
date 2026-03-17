@@ -26,7 +26,9 @@ export default function useChapterEditor({
     onExitDownRef: RefObject<(() => void) | null>;
 }) {
     const onUpdateRef = useRef(onUpdate);
-    useEffect(() => { onUpdateRef.current = onUpdate; }, [onUpdate]);
+    useEffect(() => {
+        onUpdateRef.current = onUpdate;
+    }, [onUpdate]);
 
     const editor = useEditor(
         {

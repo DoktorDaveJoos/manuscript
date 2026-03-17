@@ -16,7 +16,8 @@ export default function AiPreparationProgress({
     licensed?: boolean;
 }) {
     const { t } = useTranslation('ai');
-    const { status, isRunning, starting, error, handleStart } = useAiPreparation(bookId, initialStatus);
+    const { status, isRunning, starting, error, handleStart } =
+        useAiPreparation(bookId, initialStatus);
 
     if (!licensed) {
         return (
@@ -28,7 +29,9 @@ export default function AiPreparationProgress({
             >
                 <Lock size={14} className="shrink-0" />
                 {t('preparationProgress.prepareForAi')}
-                <span className="rounded bg-ink-faint/10 px-1 py-0.5 text-[10px] font-medium">PRO</span>
+                <span className="rounded bg-ink-faint/10 px-1 py-0.5 text-[10px] font-medium">
+                    PRO
+                </span>
             </button>
         );
     }
@@ -49,12 +52,20 @@ export default function AiPreparationProgress({
     if (isRunning && status) {
         const completedCount = status.completed_phases?.length ?? 0;
         const currentPhase = status.current_phase;
-        const phaseLabel = currentPhase ? t(`phase.${currentPhase}`) : t('preparation.starting');
+        const phaseLabel = currentPhase
+            ? t(`phase.${currentPhase}`)
+            : t('preparation.starting');
         const phaseProgress =
             status.current_phase_total > 0
-                ? Math.round((status.current_phase_progress / status.current_phase_total) * 100)
+                ? Math.round(
+                      (status.current_phase_progress /
+                          status.current_phase_total) *
+                          100,
+                  )
                 : 0;
-        const overallProgress = Math.round((completedCount / TOTAL_PHASES) * 100);
+        const overallProgress = Math.round(
+            (completedCount / TOTAL_PHASES) * 100,
+        );
         const hasErrors = status.phase_errors && status.phase_errors.length > 0;
 
         return (
@@ -64,15 +75,35 @@ export default function AiPreparationProgress({
                     <span className="text-sm text-ink">{phaseLabel}...</span>
                     <div className="flex items-center gap-2">
                         <span className="text-xs text-ink-faint">
-                            {t('preparationProgress.phaseCounter', { current: completedCount + 1, total: TOTAL_PHASES })}
+                            {t('preparationProgress.phaseCounter', {
+                                current: completedCount + 1,
+                                total: TOTAL_PHASES,
+                            })}
                         </span>
                         {status.current_phase_total > 1 && (
                             <span className="text-xs text-ink-faint">
-                                &middot; {t('preparationProgress.phaseDetail', { progress: status.current_phase_progress, total: status.current_phase_total, percent: phaseProgress })}
+                                &middot;{' '}
+                                {t('preparationProgress.phaseDetail', {
+                                    progress: status.current_phase_progress,
+                                    total: status.current_phase_total,
+                                    percent: phaseProgress,
+                                })}
                             </span>
                         )}
-                        <span className="text-xs text-ink-faint">&middot; {t('preparationProgress.overallProgress', { percent: overallProgress })}</span>
-                        {hasErrors && <span className="text-xs text-amber-600">&middot; {t('preparationProgress.warning', { count: status.phase_errors!.length })}</span>}
+                        <span className="text-xs text-ink-faint">
+                            &middot;{' '}
+                            {t('preparationProgress.overallProgress', {
+                                percent: overallProgress,
+                            })}
+                        </span>
+                        {hasErrors && (
+                            <span className="text-xs text-amber-600">
+                                &middot;{' '}
+                                {t('preparationProgress.warning', {
+                                    count: status.phase_errors!.length,
+                                })}
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -84,10 +115,20 @@ export default function AiPreparationProgress({
 
         return (
             <div className="flex items-center gap-2 rounded-md border border-border bg-surface-card px-4 py-2">
-                <Check size={14} strokeWidth={2.5} className="text-status-final" />
-                <span className="text-sm text-ink-muted">{t('preparation.aiReady')}</span>
+                <Check
+                    size={14}
+                    strokeWidth={2.5}
+                    className="text-status-final"
+                />
+                <span className="text-sm text-ink-muted">
+                    {t('preparation.aiReady')}
+                </span>
                 {hasErrors && (
-                    <span className="text-xs text-amber-600">{t('preparationProgress.warningParens', { count: status.phase_errors!.length })}</span>
+                    <span className="text-xs text-amber-600">
+                        {t('preparationProgress.warningParens', {
+                            count: status.phase_errors!.length,
+                        })}
+                    </span>
                 )}
                 <button
                     type="button"
@@ -102,12 +143,21 @@ export default function AiPreparationProgress({
 
     return (
         <div className="flex flex-col gap-1">
-            <Button variant="secondary" type="button" onClick={handleStart} disabled={starting}>
-                {starting ? t('preparation.starting') : t('preparationProgress.prepareForAi')}
+            <Button
+                variant="secondary"
+                type="button"
+                onClick={handleStart}
+                disabled={starting}
+            >
+                {starting
+                    ? t('preparation.starting')
+                    : t('preparationProgress.prepareForAi')}
             </Button>
             {error && <span className="text-xs text-red-600">{error}</span>}
             {status?.status === 'failed' && (
-                <span className="text-xs text-red-600">{status.error_message ?? t('preparation.failed')}</span>
+                <span className="text-xs text-red-600">
+                    {status.error_message ?? t('preparation.failed')}
+                </span>
             )}
         </div>
     );

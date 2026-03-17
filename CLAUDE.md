@@ -123,6 +123,7 @@ This project has domain-specific skills available. You MUST activate the relevan
 - Use appropriate PHP type hints for method parameters.
 
 <!-- Explicit Return Types and Method Params -->
+
 ```php
 protected function isAccessible(User $user, ?string $path = null): bool
 {
@@ -308,6 +309,7 @@ Wayfinder generates TypeScript functions for Laravel routes. Import from `@/acti
 - The `nativephp` connection name is NOT available from the CLI — use the `DB_DATABASE` env override instead.
 
 ## Cortex
+
 - Cortex folder for this project: `MANUSCRIPT`
 
 ## Mockups & Visual Design

@@ -67,7 +67,11 @@ export default function SceneEditor({
 
         try {
             const response = await fetch(
-                updateContent.url({ book: bookId, chapter: chapterId, scene: scene.id }),
+                updateContent.url({
+                    book: bookId,
+                    chapter: chapterId,
+                    scene: scene.id,
+                }),
                 {
                     method: 'PUT',
                     headers: jsonFetchHeaders(),
@@ -96,14 +100,17 @@ export default function SceneEditor({
 
     // Expose flush for parent
     const flushRef = useRef({ flushContentSave });
-    useEffect(() => { flushRef.current = { flushContentSave }; }, [flushContentSave]);
+    useEffect(() => {
+        flushRef.current = { flushContentSave };
+    }, [flushContentSave]);
 
     // Attach flush to the DOM node so parent can call it
     const containerRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         const el = containerRef.current;
         if (el) {
-            (el as unknown as Record<string, unknown>).__flush = () => flushRef.current.flushContentSave();
+            (el as unknown as Record<string, unknown>).__flush = () =>
+                flushRef.current.flushContentSave();
         }
 
         // Flush pending saves on unmount
@@ -160,7 +167,9 @@ export default function SceneEditor({
             {/* Scene divider (except first) */}
             {!isFirst && scenesVisible && (
                 <div className="flex items-center justify-center py-2 select-none">
-                    <span className="tracking-[0.6em] text-[9px] text-ink-faint/40">•&nbsp;•&nbsp;•</span>
+                    <span className="text-[9px] tracking-[0.6em] text-ink-faint/40">
+                        •&nbsp;•&nbsp;•
+                    </span>
                 </div>
             )}
 

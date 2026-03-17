@@ -19,6 +19,7 @@
 ### Task 1: ConnectionType Enum
 
 **Files:**
+
 - Create: `app/Enums/ConnectionType.php`
 
 **Step 1: Create the enum**
@@ -47,6 +48,7 @@ git commit -m "feat(plot): add ConnectionType enum"
 ### Task 2: PlotPointConnection Migration
 
 **Files:**
+
 - Create: `database/migrations/YYYY_MM_DD_HHMMSS_create_plot_point_connections_table.php`
 
 **Step 1: Generate migration**
@@ -86,6 +88,7 @@ git commit -m "feat(plot): add plot_point_connections migration"
 ### Task 3: Add tension_score to plot_points
 
 **Files:**
+
 - Create: `database/migrations/YYYY_MM_DD_HHMMSS_add_tension_score_to_plot_points_table.php`
 
 **Step 1: Generate migration**
@@ -124,6 +127,7 @@ git commit -m "feat(plot): add tension_score column to plot_points"
 ### Task 4: PlotPointConnection Model + Factory
 
 **Files:**
+
 - Create: `app/Models/PlotPointConnection.php`
 - Create: `database/factories/PlotPointConnectionFactory.php`
 
@@ -230,16 +234,19 @@ git commit -m "feat(plot): add PlotPointConnection model and factory"
 ### Task 5: Update PlotPoint Model with Connection Relationships
 
 **Files:**
+
 - Modify: `app/Models/PlotPoint.php`
 
 **Step 1: Add relationships and tension_score cast**
 
 Add to `casts()`:
+
 ```php
 'tension_score' => 'integer',
 ```
 
 Add relationship methods:
+
 ```php
 public function outgoingConnections(): HasMany
 {
@@ -264,6 +271,7 @@ git commit -m "feat(plot): add connection relationships to PlotPoint"
 ### Task 6: Test Data Model
 
 **Files:**
+
 - Create: `tests/Feature/PlotPointConnectionTest.php`
 
 **Step 1: Create the test**
@@ -380,6 +388,7 @@ git commit -m "test(plot): add PlotPointConnection model tests"
 ### Task 7: PlotPoint Form Requests
 
 **Files:**
+
 - Create: `app/Http/Requests/StorePlotPointRequest.php`
 - Create: `app/Http/Requests/UpdatePlotPointRequest.php`
 
@@ -467,6 +476,7 @@ git commit -m "feat(plot): add plot point form requests"
 ### Task 8: PlotPointController
 
 **Files:**
+
 - Create: `app/Http/Controllers/PlotPointController.php`
 
 **Step 1: Create controller**
@@ -562,6 +572,7 @@ git commit -m "feat(plot): add PlotPointController with CRUD + reorder"
 ### Task 9: PlotPointConnectionController
 
 **Files:**
+
 - Create: `app/Http/Controllers/PlotPointConnectionController.php`
 - Create: `app/Http/Requests/StorePlotPointConnectionRequest.php`
 
@@ -634,6 +645,7 @@ class PlotPointConnectionController extends Controller
 **Step 4: Add `plotPointConnections` relationship to Book model**
 
 In `app/Models/Book.php`, add:
+
 ```php
 public function plotPointConnections(): HasMany
 {
@@ -651,6 +663,7 @@ git commit -m "feat(plot): add PlotPointConnectionController + Book relationship
 ### Task 10: Expand PlotController
 
 **Files:**
+
 - Modify: `app/Http/Controllers/PlotController.php`
 
 **Step 1: Update index to load all needed data**
@@ -701,6 +714,7 @@ git commit -m "feat(plot): expand PlotController with full data loading"
 ### Task 11: Register Routes
 
 **Files:**
+
 - Modify: `routes/web.php`
 
 **Step 1: Add plot point and connection routes**
@@ -719,6 +733,7 @@ Route::delete('/books/{book}/plot-connections/{plotPointConnection}', [PlotPoint
 ```
 
 Add the use statements at the top:
+
 ```php
 use App\Http\Controllers\PlotPointController;
 use App\Http\Controllers\PlotPointConnectionController;
@@ -738,6 +753,7 @@ git commit -m "feat(plot): register plot point and connection routes"
 ### Task 12: Test PlotPointController
 
 **Files:**
+
 - Create: `tests/Feature/PlotPointControllerTest.php`
 
 **Step 1: Create test file**
@@ -851,6 +867,7 @@ git commit -m "test(plot): add PlotPointController tests"
 ### Task 13: Test PlotPointConnectionController
 
 **Files:**
+
 - Create: `tests/Feature/PlotPointConnectionControllerTest.php`
 
 **Step 1: Create test file**
@@ -933,16 +950,19 @@ git commit -m "test(plot): add PlotPointConnectionController tests"
 ### Task 14: Update TypeScript Types
 
 **Files:**
+
 - Modify: `resources/js/types/models.ts`
 
 **Step 1: Add new types**
 
 Add after the existing `PlotPointStatus` type:
+
 ```typescript
 export type ConnectionType = 'causes' | 'sets_up' | 'resolves' | 'contradicts';
 ```
 
 Add after the `PlotPoint` type:
+
 ```typescript
 export type PlotPointConnection = {
     id: number;
@@ -959,11 +979,13 @@ export type PlotPointConnection = {
 ```
 
 Add `tension_score` to the `PlotPoint` type:
+
 ```typescript
 tension_score: number | null;
 ```
 
 Add connection relations to `PlotPoint`:
+
 ```typescript
 outgoing_connections?: PlotPointConnection[];
 incoming_connections?: PlotPointConnection[];
@@ -979,20 +1001,28 @@ git commit -m "feat(plot): add PlotPointConnection TypeScript types"
 ### Task 15: Plot Page Layout with Tabs
 
 **Files:**
+
 - Modify: `resources/js/pages/plot/index.tsx`
 
 **Step 1: Rewrite the plot page with tab layout**
 
 Reference the Paper design "8 — Plot (Timeline)" for the layout structure. The page should have:
+
 - Left sidebar (existing `Sidebar` component)
 - Main content area with:
-  - Header bar: "Timeline" | "List" tabs (left), "All storylines" filter + "+" button + AI sidebar toggle (right)
-  - Content area that renders either `SwimLaneTimeline` or `PlotPointList` based on active tab
+    - Header bar: "Timeline" | "List" tabs (left), "All storylines" filter + "+" button + AI sidebar toggle (right)
+    - Content area that renders either `SwimLaneTimeline` or `PlotPointList` based on active tab
 - Right AI sidebar (collapsed by default, hidden when AI disabled)
 
 ```tsx
 import Sidebar from '@/components/editor/Sidebar';
-import type { Act, Book, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
+import type {
+    Act,
+    Book,
+    PlotPoint,
+    PlotPointConnection,
+    Storyline,
+} from '@/types/models';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
@@ -1000,14 +1030,30 @@ import { useAiFeatures } from '@/hooks/useAiFeatures';
 type PlotPageProps = {
     book: Book & { storylines: Storyline[] };
     storylines: Storyline[];
-    acts: (Act & { chapters: { id: number; title: string; reader_order: number; act_id: number; storyline_id: number; tension_score: number | null }[] })[];
+    acts: (Act & {
+        chapters: {
+            id: number;
+            title: string;
+            reader_order: number;
+            act_id: number;
+            storyline_id: number;
+            tension_score: number | null;
+        }[];
+    })[];
     plotPoints: PlotPoint[];
     connections: PlotPointConnection[];
 };
 
-export default function Plot({ book, storylines, acts, plotPoints, connections }: PlotPageProps) {
+export default function Plot({
+    book,
+    storylines,
+    acts,
+    plotPoints,
+    connections,
+}: PlotPageProps) {
     const [activeTab, setActiveTab] = useState<'timeline' | 'list'>('timeline');
-    const [selectedPlotPoint, setSelectedPlotPoint] = useState<PlotPoint | null>(null);
+    const [selectedPlotPoint, setSelectedPlotPoint] =
+        useState<PlotPoint | null>(null);
     const [storylineFilter, setStorylineFilter] = useState<number | null>(null);
     const ai = useAiFeatures();
 
@@ -1027,13 +1073,13 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                         <div className="flex items-center gap-6">
                             <button
                                 onClick={() => setActiveTab('timeline')}
-                                className={`text-sm font-semibold pb-0.5 ${activeTab === 'timeline' ? 'text-[#1A1A1A] border-b-2 border-[#1A1A1A]' : 'text-[#8A857D]'}`}
+                                className={`pb-0.5 text-sm font-semibold ${activeTab === 'timeline' ? 'border-b-2 border-[#1A1A1A] text-[#1A1A1A]' : 'text-[#8A857D]'}`}
                             >
                                 Timeline
                             </button>
                             <button
                                 onClick={() => setActiveTab('list')}
-                                className={`text-sm font-semibold pb-0.5 ${activeTab === 'list' ? 'text-[#1A1A1A] border-b-2 border-[#1A1A1A]' : 'text-[#8A857D]'}`}
+                                className={`pb-0.5 text-sm font-semibold ${activeTab === 'list' ? 'border-b-2 border-[#1A1A1A] text-[#1A1A1A]' : 'text-[#8A857D]'}`}
                             >
                                 List
                             </button>
@@ -1042,19 +1088,50 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                         <div className="flex items-center gap-3">
                             <select
                                 value={storylineFilter ?? ''}
-                                onChange={(e) => setStorylineFilter(e.target.value ? Number(e.target.value) : null)}
+                                onChange={(e) =>
+                                    setStorylineFilter(
+                                        e.target.value
+                                            ? Number(e.target.value)
+                                            : null,
+                                    )
+                                }
                                 className="rounded border border-[#ECEAE4] bg-white px-3 py-1.5 text-xs text-[#5A574F]"
                             >
                                 <option value="">All storylines</option>
                                 {storylines.map((s) => (
-                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                    <option key={s.id} value={s.id}>
+                                        {s.name}
+                                    </option>
                                 ))}
                             </select>
                             {/* + button placeholder — will be wired in Task 18 */}
                             {ai.visible && (
                                 <button className="rounded p-1.5 text-[#8A857D] hover:bg-[#F0EEEA]">
                                     {/* AI sidebar toggle icon */}
-                                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="1" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.5"/><line x1="12" y1="1" x2="12" y2="17" stroke="currentColor" strokeWidth="1.5"/></svg>
+                                    <svg
+                                        width="18"
+                                        height="18"
+                                        viewBox="0 0 18 18"
+                                        fill="none"
+                                    >
+                                        <rect
+                                            x="1"
+                                            y="1"
+                                            width="16"
+                                            height="16"
+                                            rx="2"
+                                            stroke="currentColor"
+                                            strokeWidth="1.5"
+                                        />
+                                        <line
+                                            x1="12"
+                                            y1="1"
+                                            x2="12"
+                                            y2="17"
+                                            stroke="currentColor"
+                                            strokeWidth="1.5"
+                                        />
+                                    </svg>
                                 </button>
                             )}
                         </div>
@@ -1063,9 +1140,13 @@ export default function Plot({ book, storylines, acts, plotPoints, connections }
                     {/* Content area — placeholder for timeline/list */}
                     <div className="flex-1 overflow-auto">
                         {activeTab === 'timeline' ? (
-                            <div className="p-6 text-sm text-[#8A857D]">Timeline view — Task 17</div>
+                            <div className="p-6 text-sm text-[#8A857D]">
+                                Timeline view — Task 17
+                            </div>
                         ) : (
-                            <div className="p-6 text-sm text-[#8A857D]">List view — Task 22</div>
+                            <div className="p-6 text-sm text-[#8A857D]">
+                                List view — Task 22
+                            </div>
                         )}
                     </div>
                 </main>
@@ -1093,6 +1174,7 @@ git commit -m "feat(plot): scaffold Plot page layout with tab switching"
 ### Task 16: Build the Timeline Grid Data Structure
 
 **Files:**
+
 - Create: `resources/js/lib/plot-utils.ts`
 
 **Step 1: Create utility for building the grid**
@@ -1172,12 +1254,14 @@ git commit -m "feat(plot): add timeline grid utility"
 ### Task 17: SwimLaneTimeline Component
 
 **Files:**
+
 - Create: `resources/js/components/plot/SwimLaneTimeline.tsx`
 - Modify: `resources/js/pages/plot/index.tsx` — wire in the component
 
 **Step 1: Build the SwimLaneTimeline**
 
 Follow the Paper design "8 — Plot (Timeline)". Structure:
+
 - Act headers row with color bars (gold `#C8B88A`, blue `#8AB0C8`, green `#A3C4A0`)
 - Chapter sub-headers row
 - Storyline rows with cells containing plot point cards
@@ -1185,7 +1269,12 @@ Follow the Paper design "8 — Plot (Timeline)". Structure:
 
 ```tsx
 import { buildTimelineGrid, cellKey, type GridCell } from '@/lib/plot-utils';
-import type { Act, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
+import type {
+    Act,
+    PlotPoint,
+    PlotPointConnection,
+    Storyline,
+} from '@/types/models';
 import PlotPointCard from './PlotPointCard';
 
 type ChapterColumn = {
@@ -1212,14 +1301,28 @@ const ACT_COLORS: Record<number, string> = {
     2: '#A3C4A0',
 };
 
-export default function SwimLaneTimeline({ acts, storylines, plotPoints, connections, onSelectPlotPoint, onCreatePlotPoint }: Props) {
-    const { grid, allChapters } = buildTimelineGrid(acts, storylines, plotPoints);
+export default function SwimLaneTimeline({
+    acts,
+    storylines,
+    plotPoints,
+    connections,
+    onSelectPlotPoint,
+    onCreatePlotPoint,
+}: Props) {
+    const { grid, allChapters } = buildTimelineGrid(
+        acts,
+        storylines,
+        plotPoints,
+    );
     const COL_W = 160;
     const LABEL_W = 120;
 
     return (
         <div className="overflow-auto">
-            <div className="inline-flex flex-col" style={{ minWidth: LABEL_W + allChapters.length * COL_W }}>
+            <div
+                className="inline-flex flex-col"
+                style={{ minWidth: LABEL_W + allChapters.length * COL_W }}
+            >
                 {/* Act headers */}
                 <div className="flex" style={{ paddingLeft: LABEL_W }}>
                     {acts.map((act, i) => (
@@ -1228,8 +1331,13 @@ export default function SwimLaneTimeline({ acts, storylines, plotPoints, connect
                             className="flex items-center gap-2 border-b border-[#ECEAE4] px-3 py-2"
                             style={{ width: act.chapters.length * COL_W }}
                         >
-                            <div className="h-3.5 w-1 rounded-sm" style={{ backgroundColor: ACT_COLORS[i] ?? '#C8B88A' }} />
-                            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A574F]">
+                            <div
+                                className="h-3.5 w-1 rounded-sm"
+                                style={{
+                                    backgroundColor: ACT_COLORS[i] ?? '#C8B88A',
+                                }}
+                            />
+                            <span className="text-[11px] font-semibold tracking-wide text-[#5A574F] uppercase">
                                 Act {act.number} — {act.title}
                             </span>
                         </div>
@@ -1237,9 +1345,16 @@ export default function SwimLaneTimeline({ acts, storylines, plotPoints, connect
                 </div>
 
                 {/* Chapter sub-headers */}
-                <div className="flex border-b border-[#ECEAE4]" style={{ paddingLeft: LABEL_W }}>
+                <div
+                    className="flex border-b border-[#ECEAE4]"
+                    style={{ paddingLeft: LABEL_W }}
+                >
                     {allChapters.map((ch) => (
-                        <div key={ch.id} className="px-3 py-1.5 text-[11px] text-[#8A857D]" style={{ width: COL_W }}>
+                        <div
+                            key={ch.id}
+                            className="px-3 py-1.5 text-[11px] text-[#8A857D]"
+                            style={{ width: COL_W }}
+                        >
                             Ch. {ch.reader_order + 1}
                         </div>
                     ))}
@@ -1247,14 +1362,23 @@ export default function SwimLaneTimeline({ acts, storylines, plotPoints, connect
 
                 {/* Storyline rows */}
                 {storylines.map((storyline) => (
-                    <div key={storyline.id} className="flex border-b border-[#F0EEEA]">
+                    <div
+                        key={storyline.id}
+                        className="flex border-b border-[#F0EEEA]"
+                    >
                         {/* Storyline label */}
-                        <div className="flex items-start gap-2 px-3 py-3" style={{ width: LABEL_W, flexShrink: 0 }}>
+                        <div
+                            className="flex items-start gap-2 px-3 py-3"
+                            style={{ width: LABEL_W, flexShrink: 0 }}
+                        >
                             <div
                                 className="mt-0.5 h-2 w-2 rounded-full"
-                                style={{ backgroundColor: storyline.color ?? '#8A857D' }}
+                                style={{
+                                    backgroundColor:
+                                        storyline.color ?? '#8A857D',
+                                }}
                             />
-                            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A574F]">
+                            <span className="text-[11px] font-semibold tracking-wide text-[#5A574F] uppercase">
                                 {storyline.name}
                             </span>
                         </div>
@@ -1265,11 +1389,14 @@ export default function SwimLaneTimeline({ acts, storylines, plotPoints, connect
                             return (
                                 <div
                                     key={ch.id}
-                                    className="min-h-[80px] border-l border-[#F0EEEA] p-1.5 hover:bg-[#FAFAF7] cursor-pointer"
+                                    className="min-h-[80px] cursor-pointer border-l border-[#F0EEEA] p-1.5 hover:bg-[#FAFAF7]"
                                     style={{ width: COL_W }}
                                     onClick={() => {
                                         if (!cell?.plotPoints.length) {
-                                            onCreatePlotPoint(storyline.id, ch.id);
+                                            onCreatePlotPoint(
+                                                storyline.id,
+                                                ch.id,
+                                            );
                                         }
                                     }}
                                 >
@@ -1278,7 +1405,9 @@ export default function SwimLaneTimeline({ acts, storylines, plotPoints, connect
                                             <PlotPointCard
                                                 key={pp.id}
                                                 plotPoint={pp}
-                                                onClick={() => onSelectPlotPoint(pp)}
+                                                onClick={() =>
+                                                    onSelectPlotPoint(pp)
+                                                }
                                             />
                                         ))}
                                     </div>
@@ -1303,11 +1432,13 @@ git commit -m "feat(plot): add SwimLaneTimeline component"
 ### Task 18: PlotPointCard Component
 
 **Files:**
+
 - Create: `resources/js/components/plot/PlotPointCard.tsx`
 
 **Step 1: Build the card**
 
 Follow Paper design — compact card with title + type badge. Badge colors:
+
 - Setup: `bg-[#EDE8F5] text-[#6B5A8E]`
 - Conflict: `bg-[#F5E8E8] text-[#8E5A5A]`
 - Turning point: `bg-[#F5EDE0] text-[#8A7A5A]`
@@ -1349,20 +1480,28 @@ type Props = {
 export default function PlotPointCard({ plotPoint, onClick }: Props) {
     return (
         <button
-            onClick={(e) => { e.stopPropagation(); onClick(); }}
-            className="w-full rounded border border-[#ECEAE4] bg-white px-2.5 py-2 text-left shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.08)] transition-shadow"
+            onClick={(e) => {
+                e.stopPropagation();
+                onClick();
+            }}
+            className="w-full rounded border border-[#ECEAE4] bg-white px-2.5 py-2 text-left shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-[0_2px_4px_rgba(0,0,0,0.08)]"
         >
             <div className="flex items-start gap-1.5">
                 <div
                     className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full"
-                    style={{ backgroundColor: STATUS_COLORS[plotPoint.status] ?? '#B0A99F' }}
+                    style={{
+                        backgroundColor:
+                            STATUS_COLORS[plotPoint.status] ?? '#B0A99F',
+                    }}
                 />
-                <span className="text-xs font-medium leading-tight text-[#2D2A26]">
+                <span className="text-xs leading-tight font-medium text-[#2D2A26]">
                     {plotPoint.title}
                 </span>
             </div>
             <div className="mt-1.5">
-                <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${TYPE_STYLES[plotPoint.type] ?? ''}`}>
+                <span
+                    className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${TYPE_STYLES[plotPoint.type] ?? ''}`}
+                >
                     {TYPE_LABELS[plotPoint.type] ?? plotPoint.type}
                 </span>
             </div>
@@ -1381,16 +1520,19 @@ git commit -m "feat(plot): add PlotPointCard component"
 ### Task 19: Wire Timeline into Plot Page + Quick Create
 
 **Files:**
+
 - Modify: `resources/js/pages/plot/index.tsx`
 
 **Step 1: Import and render SwimLaneTimeline in the timeline tab**
 
 Replace the timeline placeholder with:
+
 ```tsx
 import SwimLaneTimeline from '@/components/plot/SwimLaneTimeline';
 ```
 
 Replace the timeline div with:
+
 ```tsx
 <SwimLaneTimeline
     acts={acts}
@@ -1403,19 +1545,25 @@ Replace the timeline div with:
 ```
 
 Add a `handleCreatePlotPoint` function that uses Wayfinder to POST to the store endpoint:
+
 ```tsx
 import { store as storePlotPoint } from '@/actions/App/Http/Controllers/PlotPointController';
 
 function handleCreatePlotPoint(storylineId: number, chapterId: number) {
-    router.post(storePlotPoint({ book: book.id }), {
-        title: 'New beat',
-        type: 'setup',
-        storyline_id: storylineId,
-        intended_chapter_id: chapterId,
-    }, {
-        preserveScroll: true,
-        onSuccess: () => router.reload({ only: ['plotPoints', 'connections'] }),
-    });
+    router.post(
+        storePlotPoint({ book: book.id }),
+        {
+            title: 'New beat',
+            type: 'setup',
+            storyline_id: storylineId,
+            intended_chapter_id: chapterId,
+        },
+        {
+            preserveScroll: true,
+            onSuccess: () =>
+                router.reload({ only: ['plotPoints', 'connections'] }),
+        },
+    );
 }
 ```
 
@@ -1439,11 +1587,13 @@ git commit -m "feat(plot): wire SwimLaneTimeline into Plot page"
 ### Task 20: DetailPanel Component
 
 **Files:**
+
 - Create: `resources/js/components/plot/DetailPanel.tsx`
 
 **Step 1: Build the panel**
 
 Follow Paper design "8b — Plot (Detail Panel)". A slide-out panel on the right (320px wide) showing:
+
 - Title (editable)
 - Description (editable textarea)
 - Type badge + Status badge
@@ -1452,7 +1602,12 @@ Follow Paper design "8b — Plot (Detail Panel)". A slide-out panel on the right
 - "Jump to chapter" button
 
 ```tsx
-import type { Act, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
+import type {
+    Act,
+    PlotPoint,
+    PlotPointConnection,
+    Storyline,
+} from '@/types/models';
 import { router } from '@inertiajs/react';
 import { X } from '@phosphor-icons/react';
 
@@ -1479,16 +1634,32 @@ const STATUS_OPTIONS = [
     { value: 'abandoned', label: 'Abandoned', color: '#B0A99F' },
 ];
 
-export default function DetailPanel({ plotPoint, storylines, acts, connections, onClose, onUpdate }: Props) {
-    const incoming = connections.filter((c) => c.target_plot_point_id === plotPoint.id);
-    const outgoing = connections.filter((c) => c.source_plot_point_id === plotPoint.id);
+export default function DetailPanel({
+    plotPoint,
+    storylines,
+    acts,
+    connections,
+    onClose,
+    onUpdate,
+}: Props) {
+    const incoming = connections.filter(
+        (c) => c.target_plot_point_id === plotPoint.id,
+    );
+    const outgoing = connections.filter(
+        (c) => c.source_plot_point_id === plotPoint.id,
+    );
 
     return (
         <div className="flex h-full w-[320px] flex-shrink-0 flex-col border-l border-[#ECEAE4] bg-white">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[#ECEAE4] px-4 py-3">
-                <span className="text-xs font-semibold uppercase tracking-wide text-[#8A857D]">Plot Point</span>
-                <button onClick={onClose} className="text-[#8A857D] hover:text-[#5A574F]">
+                <span className="text-xs font-semibold tracking-wide text-[#8A857D] uppercase">
+                    Plot Point
+                </span>
+                <button
+                    onClick={onClose}
+                    className="text-[#8A857D] hover:text-[#5A574F]"
+                >
                     <X size={16} />
                 </button>
             </div>
@@ -1514,20 +1685,32 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
                 <div className="mb-4 flex gap-2">
                     <select
                         value={plotPoint.type}
-                        onChange={(e) => onUpdate({ type: e.target.value as PlotPoint['type'] })}
+                        onChange={(e) =>
+                            onUpdate({
+                                type: e.target.value as PlotPoint['type'],
+                            })
+                        }
                         className="rounded border border-[#ECEAE4] px-2 py-1 text-xs text-[#5A574F]"
                     >
                         {TYPE_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
+                            <option key={o.value} value={o.value}>
+                                {o.label}
+                            </option>
                         ))}
                     </select>
                     <select
                         value={plotPoint.status}
-                        onChange={(e) => onUpdate({ status: e.target.value as PlotPoint['status'] })}
+                        onChange={(e) =>
+                            onUpdate({
+                                status: e.target.value as PlotPoint['status'],
+                            })
+                        }
                         className="rounded border border-[#ECEAE4] px-2 py-1 text-xs text-[#5A574F]"
                     >
                         {STATUS_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
+                            <option key={o.value} value={o.value}>
+                                {o.label}
+                            </option>
                         ))}
                     </select>
                 </div>
@@ -1535,16 +1718,34 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
                 {/* Connections */}
                 {(incoming.length > 0 || outgoing.length > 0) && (
                     <div className="mb-4 border-t border-[#F0EEEA] pt-3">
-                        <span className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-[#8A857D]">Connections</span>
+                        <span className="mb-2 block text-[10px] font-semibold tracking-wider text-[#8A857D] uppercase">
+                            Connections
+                        </span>
                         {incoming.map((c) => (
-                            <div key={c.id} className="mb-1 text-xs text-[#5A574F]">
-                                <span className="text-[#8A857D]">{c.type === 'sets_up' ? 'Set up by' : 'Caused by'}:</span>{' '}
+                            <div
+                                key={c.id}
+                                className="mb-1 text-xs text-[#5A574F]"
+                            >
+                                <span className="text-[#8A857D]">
+                                    {c.type === 'sets_up'
+                                        ? 'Set up by'
+                                        : 'Caused by'}
+                                    :
+                                </span>{' '}
                                 {c.source?.title}
                             </div>
                         ))}
                         {outgoing.map((c) => (
-                            <div key={c.id} className="mb-1 text-xs text-[#5A574F]">
-                                <span className="text-[#8A857D]">{c.type === 'resolves' ? 'Resolves' : 'Leads to'}:</span>{' '}
+                            <div
+                                key={c.id}
+                                className="mb-1 text-xs text-[#5A574F]"
+                            >
+                                <span className="text-[#8A857D]">
+                                    {c.type === 'resolves'
+                                        ? 'Resolves'
+                                        : 'Leads to'}
+                                    :
+                                </span>{' '}
                                 {c.target?.title}
                             </div>
                         ))}
@@ -1554,7 +1755,11 @@ export default function DetailPanel({ plotPoint, storylines, acts, connections, 
                 {/* Jump to chapter */}
                 {plotPoint.intended_chapter_id && (
                     <button
-                        onClick={() => router.visit(`/books/${plotPoint.book_id}/chapters/${plotPoint.intended_chapter_id}`)}
+                        onClick={() =>
+                            router.visit(
+                                `/books/${plotPoint.book_id}/chapters/${plotPoint.intended_chapter_id}`,
+                            )
+                        }
                         className="mt-2 w-full rounded border border-[#ECEAE4] px-3 py-2 text-xs font-medium text-[#5A574F] hover:bg-[#FAFAF7]"
                     >
                         Jump to chapter
@@ -1574,19 +1779,24 @@ In `resources/js/pages/plot/index.tsx`, import DetailPanel and render it conditi
 import DetailPanel from '@/components/plot/DetailPanel';
 
 // Inside the main flex container, after the content area:
-{selectedPlotPoint && (
-    <DetailPanel
-        plotPoint={selectedPlotPoint}
-        storylines={storylines}
-        acts={acts}
-        connections={connections}
-        onClose={() => setSelectedPlotPoint(null)}
-        onUpdate={(data) => handleUpdatePlotPoint(selectedPlotPoint.id, data)}
-    />
-)}
+{
+    selectedPlotPoint && (
+        <DetailPanel
+            plotPoint={selectedPlotPoint}
+            storylines={storylines}
+            acts={acts}
+            connections={connections}
+            onClose={() => setSelectedPlotPoint(null)}
+            onUpdate={(data) =>
+                handleUpdatePlotPoint(selectedPlotPoint.id, data)
+            }
+        />
+    );
+}
 ```
 
 Add `handleUpdatePlotPoint`:
+
 ```tsx
 function handleUpdatePlotPoint(id: number, data: Partial<PlotPoint>) {
     router.patch(route('plotPoints.update', [book.id, id]), data, {
@@ -1617,6 +1827,7 @@ git commit -m "feat(plot): add DetailPanel component"
 ### Task 21: PlotPointList Component
 
 **Files:**
+
 - Create: `resources/js/components/plot/PlotPointList.tsx`
 
 **Step 1: Build the list view**
@@ -1655,18 +1866,26 @@ type Props = {
     onSelectPlotPoint: (pp: PlotPoint) => void;
 };
 
-export default function PlotPointList({ acts, plotPoints, storylines, onSelectPlotPoint }: Props) {
-    const getStorylineName = (id: number | null) => storylines.find((s) => s.id === id)?.name ?? '—';
+export default function PlotPointList({
+    acts,
+    plotPoints,
+    storylines,
+    onSelectPlotPoint,
+}: Props) {
+    const getStorylineName = (id: number | null) =>
+        storylines.find((s) => s.id === id)?.name ?? '—';
 
     return (
-        <div className="mx-auto max-w-[720px] py-8 px-6">
+        <div className="mx-auto max-w-[720px] px-6 py-8">
             {acts.map((act) => {
-                const actPoints = plotPoints.filter((pp) => pp.act_id === act.id);
+                const actPoints = plotPoints.filter(
+                    (pp) => pp.act_id === act.id,
+                );
                 if (actPoints.length === 0) return null;
 
                 return (
                     <div key={act.id} className="mb-8">
-                        <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[#8A857D]">
+                        <h3 className="mb-3 text-[11px] font-semibold tracking-wide text-[#8A857D] uppercase">
                             Act {act.number} — {act.title}
                         </h3>
                         <div className="flex flex-col gap-2">
@@ -1674,24 +1893,37 @@ export default function PlotPointList({ acts, plotPoints, storylines, onSelectPl
                                 <button
                                     key={pp.id}
                                     onClick={() => onSelectPlotPoint(pp)}
-                                    className="flex items-start gap-3 rounded-lg border border-[#ECEAE4] bg-white px-4 py-3 text-left hover:shadow-sm transition-shadow"
+                                    className="flex items-start gap-3 rounded-lg border border-[#ECEAE4] bg-white px-4 py-3 text-left transition-shadow hover:shadow-sm"
                                 >
                                     <div
                                         className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full"
-                                        style={{ backgroundColor: STATUS_COLORS[pp.status] }}
+                                        style={{
+                                            backgroundColor:
+                                                STATUS_COLORS[pp.status],
+                                        }}
                                     />
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm font-medium text-[#1A1A1A]">{pp.title}</span>
-                                            <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${TYPE_STYLES[pp.type]}`}>
+                                            <span className="text-sm font-medium text-[#1A1A1A]">
+                                                {pp.title}
+                                            </span>
+                                            <span
+                                                className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${TYPE_STYLES[pp.type]}`}
+                                            >
                                                 {TYPE_LABELS[pp.type]}
                                             </span>
                                         </div>
                                         {pp.description && (
-                                            <p className="mt-1 text-xs text-[#8A857D] line-clamp-1">{pp.description}</p>
+                                            <p className="mt-1 line-clamp-1 text-xs text-[#8A857D]">
+                                                {pp.description}
+                                            </p>
                                         )}
                                         <div className="mt-1.5 flex gap-3 text-[10px] text-[#B0A99F]">
-                                            <span>{getStorylineName(pp.storyline_id)}</span>
+                                            <span>
+                                                {getStorylineName(
+                                                    pp.storyline_id,
+                                                )}
+                                            </span>
                                         </div>
                                     </div>
                                 </button>
@@ -1704,23 +1936,37 @@ export default function PlotPointList({ acts, plotPoints, storylines, onSelectPl
             {/* Unassigned plot points (no act) */}
             {plotPoints.filter((pp) => !pp.act_id).length > 0 && (
                 <div className="mb-8">
-                    <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[#8A857D]">Unassigned</h3>
+                    <h3 className="mb-3 text-[11px] font-semibold tracking-wide text-[#8A857D] uppercase">
+                        Unassigned
+                    </h3>
                     <div className="flex flex-col gap-2">
-                        {plotPoints.filter((pp) => !pp.act_id).map((pp) => (
-                            <button
-                                key={pp.id}
-                                onClick={() => onSelectPlotPoint(pp)}
-                                className="flex items-start gap-3 rounded-lg border border-[#ECEAE4] bg-white px-4 py-3 text-left hover:shadow-sm"
-                            >
-                                <div className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: STATUS_COLORS[pp.status] }} />
-                                <div className="min-w-0 flex-1">
-                                    <span className="text-sm font-medium text-[#1A1A1A]">{pp.title}</span>
-                                    <span className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-medium ${TYPE_STYLES[pp.type]}`}>
-                                        {TYPE_LABELS[pp.type]}
-                                    </span>
-                                </div>
-                            </button>
-                        ))}
+                        {plotPoints
+                            .filter((pp) => !pp.act_id)
+                            .map((pp) => (
+                                <button
+                                    key={pp.id}
+                                    onClick={() => onSelectPlotPoint(pp)}
+                                    className="flex items-start gap-3 rounded-lg border border-[#ECEAE4] bg-white px-4 py-3 text-left hover:shadow-sm"
+                                >
+                                    <div
+                                        className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full"
+                                        style={{
+                                            backgroundColor:
+                                                STATUS_COLORS[pp.status],
+                                        }}
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                        <span className="text-sm font-medium text-[#1A1A1A]">
+                                            {pp.title}
+                                        </span>
+                                        <span
+                                            className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-medium ${TYPE_STYLES[pp.type]}`}
+                                        >
+                                            {TYPE_LABELS[pp.type]}
+                                        </span>
+                                    </div>
+                                </button>
+                            ))}
                     </div>
                 </div>
             )}
@@ -1732,6 +1978,7 @@ export default function PlotPointList({ acts, plotPoints, storylines, onSelectPl
 **Step 2: Wire into plot page**
 
 Replace the list placeholder in `pages/plot/index.tsx`:
+
 ```tsx
 import PlotPointList from '@/components/plot/PlotPointList';
 
@@ -1741,7 +1988,7 @@ import PlotPointList from '@/components/plot/PlotPointList';
     plotPoints={filteredPlotPoints}
     storylines={storylines}
     onSelectPlotPoint={setSelectedPlotPoint}
-/>
+/>;
 ```
 
 **Step 3: Build**
@@ -1762,6 +2009,7 @@ git commit -m "feat(plot): add PlotPointList component"
 ### Task 22: PlotAiController (Backend)
 
 **Files:**
+
 - Create: `app/Http/Controllers/PlotAiController.php`
 
 **Step 1: Create controller**
@@ -1867,6 +2115,7 @@ Route::get('/books/{book}/plot/ai/status', [PlotAiController::class, 'analysisSt
 ```
 
 Add the use statement:
+
 ```php
 use App\Http\Controllers\PlotAiController;
 ```
@@ -1885,6 +2134,7 @@ git commit -m "feat(plot): add PlotAiController with 4 AI actions"
 ### Task 23: AiActionSidebar Component
 
 **Files:**
+
 - Create: `resources/js/components/plot/AiActionSidebar.tsx`
 
 **Step 1: Build the sidebar**
@@ -1894,7 +2144,12 @@ Follow Paper design "8a — Plot (AI Sidebar Open)". Collapsible (40px collapsed
 ```tsx
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { router } from '@inertiajs/react';
-import { Lightning, ArrowsClockwise, MagnifyingGlass, Sparkle } from '@phosphor-icons/react';
+import {
+    Lightning,
+    ArrowsClockwise,
+    MagnifyingGlass,
+    Sparkle,
+} from '@phosphor-icons/react';
 import { useState } from 'react';
 
 type AnalysisResult = {
@@ -1909,13 +2164,22 @@ type Props = {
     onToggle: () => void;
 };
 
-export default function AiActionSidebar({ bookId, collapsed, onToggle }: Props) {
+export default function AiActionSidebar({
+    bookId,
+    collapsed,
+    onToggle,
+}: Props) {
     const ai = useAiFeatures();
     const [loading, setLoading] = useState<string | null>(null);
-    const [healthResult, setHealthResult] = useState<AnalysisResult | null>(null);
+    const [healthResult, setHealthResult] = useState<AnalysisResult | null>(
+        null,
+    );
     const [holesResult, setHolesResult] = useState<AnalysisResult | null>(null);
     const [beatsResult, setBeatsResult] = useState<string[] | null>(null);
-    const [tensionArc, setTensionArc] = useState<{ chapter_id: number; tension_score: number; reader_order: number }[] | null>(null);
+    const [tensionArc, setTensionArc] = useState<
+        | { chapter_id: number; tension_score: number; reader_order: number }[]
+        | null
+    >(null);
 
     if (!ai.visible) return null;
 
@@ -1926,7 +2190,10 @@ export default function AiActionSidebar({ bookId, collapsed, onToggle }: Props) 
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '',
+                    'X-CSRF-TOKEN':
+                        document.querySelector<HTMLMetaElement>(
+                            'meta[name="csrf-token"]',
+                        )?.content ?? '',
                 },
             });
             const data = await response.json();
@@ -1948,10 +2215,14 @@ export default function AiActionSidebar({ bookId, collapsed, onToggle }: Props) 
         const data = await response.json();
         const analyses = data.analyses;
 
-        if (analyses.thriller_health?.result) setHealthResult(analyses.thriller_health.result as AnalysisResult);
-        if (analyses.plothole?.result) setHolesResult(analyses.plothole.result as AnalysisResult);
+        if (analyses.thriller_health?.result)
+            setHealthResult(analyses.thriller_health.result as AnalysisResult);
+        if (analyses.plothole?.result)
+            setHolesResult(analyses.plothole.result as AnalysisResult);
         if (analyses.next_chapter_suggestion?.result) {
-            const result = analyses.next_chapter_suggestion.result as { recommendations?: string[] };
+            const result = analyses.next_chapter_suggestion.result as {
+                recommendations?: string[];
+            };
             setBeatsResult(result.recommendations ?? []);
         }
     };
@@ -1970,15 +2241,23 @@ export default function AiActionSidebar({ bookId, collapsed, onToggle }: Props) 
     return (
         <div className="flex h-full w-[280px] flex-shrink-0 flex-col border-l border-[#ECEAE4] bg-white">
             <div className="flex items-center justify-between border-b border-[#ECEAE4] px-4 py-3">
-                <span className="text-xs font-semibold uppercase tracking-wide text-[#8A857D]">AI Actions</span>
-                <button onClick={onToggle} className="text-[#8A857D] hover:text-[#5A574F]">
+                <span className="text-xs font-semibold tracking-wide text-[#8A857D] uppercase">
+                    AI Actions
+                </span>
+                <button
+                    onClick={onToggle}
+                    className="text-[#8A857D] hover:text-[#5A574F]"
+                >
                     <ArrowsClockwise size={14} />
                 </button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-3">
                 {!ai.usable && (
-                    <p className="mb-4 text-xs text-[#B0A99F]">AI features require a PRO license and configured provider.</p>
+                    <p className="mb-4 text-xs text-[#B0A99F]">
+                        AI features require a PRO license and configured
+                        provider.
+                    </p>
                 )}
 
                 {/* Generate Tension Arc */}
@@ -2002,9 +2281,13 @@ export default function AiActionSidebar({ bookId, collapsed, onToggle }: Props) 
                 />
                 {healthResult && (
                     <div className="mb-3 rounded bg-[#FAFAF7] p-2.5 text-xs text-[#5A574F]">
-                        <div className="mb-1 font-semibold">Score: {healthResult.score}/10</div>
+                        <div className="mb-1 font-semibold">
+                            Score: {healthResult.score}/10
+                        </div>
                         {healthResult.findings?.slice(0, 3).map((f, i) => (
-                            <p key={i} className="mt-1 text-[#8A857D]">• {f.description}</p>
+                            <p key={i} className="mt-1 text-[#8A857D]">
+                                • {f.description}
+                            </p>
                         ))}
                     </div>
                 )}
@@ -2022,7 +2305,13 @@ export default function AiActionSidebar({ bookId, collapsed, onToggle }: Props) 
                     <div className="mb-3 rounded bg-[#FAFAF7] p-2.5 text-xs text-[#5A574F]">
                         {holesResult.findings?.map((f, i) => (
                             <p key={i} className="mt-1">
-                                <span className={f.severity === 'high' ? 'text-[#8E5A5A]' : 'text-[#8A857D]'}>
+                                <span
+                                    className={
+                                        f.severity === 'high'
+                                            ? 'text-[#8E5A5A]'
+                                            : 'text-[#8A857D]'
+                                    }
+                                >
                                     [{f.severity}]
                                 </span>{' '}
                                 {f.description}
@@ -2054,7 +2343,14 @@ export default function AiActionSidebar({ bookId, collapsed, onToggle }: Props) 
     );
 }
 
-function ActionButton({ icon, label, description, onClick, loading, disabled }: {
+function ActionButton({
+    icon,
+    label,
+    description,
+    onClick,
+    loading,
+    disabled,
+}: {
     icon: React.ReactNode;
     label: string;
     description: string;
@@ -2083,6 +2379,7 @@ function ActionButton({ icon, label, description, onClick, loading, disabled }: 
 **Step 2: Wire into plot page**
 
 In `resources/js/pages/plot/index.tsx`:
+
 - Add state: `const [aiSidebarOpen, setAiSidebarOpen] = useState(false);`
 - Render `AiActionSidebar` after the main content area
 - Update the AI toggle button in the header to call `setAiSidebarOpen`
@@ -2101,6 +2398,7 @@ git commit -m "feat(plot): add AiActionSidebar component"
 ### Task 24: Test PlotAiController
 
 **Files:**
+
 - Create: `tests/Feature/PlotAiControllerTest.php`
 
 **Step 1: Create test**
@@ -2173,6 +2471,7 @@ git commit -m "test(plot): add PlotAiController tests"
 ### Task 25: TensionArc Component
 
 **Files:**
+
 - Create: `resources/js/components/plot/TensionArc.tsx`
 
 **Step 1: Build the SVG tension curve**
@@ -2195,7 +2494,13 @@ type Props = {
     onCollapse: () => void;
 };
 
-export default function TensionArc({ data, chapterCount, labelWidth, columnWidth, onCollapse }: Props) {
+export default function TensionArc({
+    data,
+    chapterCount,
+    labelWidth,
+    columnWidth,
+    onCollapse,
+}: Props) {
     if (data.length === 0) return null;
 
     const W = chapterCount * columnWidth;
@@ -2220,24 +2525,53 @@ export default function TensionArc({ data, chapterCount, labelWidth, columnWidth
 
     return (
         <div className="flex border-b border-[#ECEAE4]">
-            <div className="flex flex-col justify-center px-3" style={{ width: labelWidth, flexShrink: 0 }}>
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-[#8A857D]">Tension</span>
+            <div
+                className="flex flex-col justify-center px-3"
+                style={{ width: labelWidth, flexShrink: 0 }}
+            >
+                <span className="text-[10px] font-semibold tracking-wide text-[#8A857D] uppercase">
+                    Tension
+                </span>
                 <span className="text-[9px] text-[#B0A99F]">AI generated</span>
             </div>
             <div className="relative" style={{ width: W }}>
                 <svg width={W} height={H} className="block">
                     <defs>
-                        <linearGradient id="tensionGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#C8B88A" stopOpacity="0.2" />
-                            <stop offset="100%" stopColor="#C8B88A" stopOpacity="0" />
+                        <linearGradient
+                            id="tensionGrad"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                        >
+                            <stop
+                                offset="0%"
+                                stopColor="#C8B88A"
+                                stopOpacity="0.2"
+                            />
+                            <stop
+                                offset="100%"
+                                stopColor="#C8B88A"
+                                stopOpacity="0"
+                            />
                         </linearGradient>
                     </defs>
                     <path d={areaD} fill="url(#tensionGrad)" />
-                    <path d={pathD} fill="none" stroke="#C8B88A" strokeWidth="2" />
+                    <path
+                        d={pathD}
+                        fill="none"
+                        stroke="#C8B88A"
+                        strokeWidth="2"
+                    />
                     {points.map((p, i) => (
                         <g key={i}>
                             <circle cx={p.x} cy={p.y} r="3" fill="#C8B88A" />
-                            <text x={p.x} y={H - 2} textAnchor="middle" className="fill-[#B0A99F] text-[9px]">
+                            <text
+                                x={p.x}
+                                y={H - 2}
+                                textAnchor="middle"
+                                className="fill-[#B0A99F] text-[9px]"
+                            >
                                 {p.score}
                             </text>
                         </g>
@@ -2254,8 +2588,11 @@ export default function TensionArc({ data, chapterCount, labelWidth, columnWidth
 In `resources/js/pages/plot/index.tsx`, render `TensionArc` above the `SwimLaneTimeline` when tension data is available (from AI sidebar action or from existing chapter tension scores).
 
 Add state:
+
 ```tsx
-const [tensionData, setTensionData] = useState<{ chapter_id: number; reader_order: number; tension_score: number }[] | null>(null);
+const [tensionData, setTensionData] = useState<
+    { chapter_id: number; reader_order: number; tension_score: number }[] | null
+>(null);
 const [tensionArcVisible, setTensionArcVisible] = useState(false);
 ```
 
@@ -2279,6 +2616,7 @@ git commit -m "feat(plot): add TensionArc SVG component"
 ### Task 26: ChapterBeats Component
 
 **Files:**
+
 - Create: `resources/js/components/editor/ChapterBeats.tsx`
 
 **Step 1: Build the beats panel**
@@ -2335,14 +2673,20 @@ export default function ChapterBeats({ plotPoints, bookId, chapterId }: Props) {
     return (
         <div className="px-3 py-2">
             <div className="mb-2 flex items-center justify-between">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8A857D]">Beats</span>
+                <span className="text-[10px] font-semibold tracking-wider text-[#8A857D] uppercase">
+                    Beats
+                </span>
                 <button
                     onClick={() => {
-                        router.post(route('plotPoints.store', bookId), {
-                            title: 'New beat',
-                            type: 'setup',
-                            intended_chapter_id: chapterId,
-                        }, { preserveScroll: true });
+                        router.post(
+                            route('plotPoints.store', bookId),
+                            {
+                                title: 'New beat',
+                                type: 'setup',
+                                intended_chapter_id: chapterId,
+                            },
+                            { preserveScroll: true },
+                        );
                     }}
                     className="text-[10px] text-[#8A857D] hover:text-[#5A574F]"
                 >
@@ -2351,7 +2695,9 @@ export default function ChapterBeats({ plotPoints, bookId, chapterId }: Props) {
             </div>
 
             {plotPoints.length === 0 && (
-                <p className="text-[11px] text-[#B0A99F]">No beats for this chapter.</p>
+                <p className="text-[11px] text-[#B0A99F]">
+                    No beats for this chapter.
+                </p>
             )}
 
             {plotPoints.map((pp) => (
@@ -2362,8 +2708,12 @@ export default function ChapterBeats({ plotPoints, bookId, chapterId }: Props) {
                         style={{ backgroundColor: STATUS_COLORS[pp.status] }}
                         title={`Status: ${pp.status} — click to cycle`}
                     />
-                    <span className="flex-1 truncate text-[11px] text-[#2D2A26]">{pp.title}</span>
-                    <span className={`rounded px-1 py-0.5 text-[8px] font-medium ${TYPE_STYLES[pp.type]}`}>
+                    <span className="flex-1 truncate text-[11px] text-[#2D2A26]">
+                        {pp.title}
+                    </span>
+                    <span
+                        className={`rounded px-1 py-0.5 text-[8px] font-medium ${TYPE_STYLES[pp.type]}`}
+                    >
                         {TYPE_LABELS[pp.type]}
                     </span>
                 </div>
@@ -2396,12 +2746,14 @@ git commit -m "feat(plot): add ChapterBeats component for editor sidebar"
 ### Task 27: Wire ChapterBeats into Editor
 
 **Files:**
+
 - Modify: `app/Http/Controllers/ChapterController.php` (add chapterPlotPoints to show response)
 - Modify: `resources/js/components/editor/Sidebar.tsx` (render ChapterBeats)
 
 **Step 1: Add plot points to chapter show**
 
 In `ChapterController::show`, add to the Inertia response:
+
 ```php
 'chapterPlotPoints' => $chapter->book->plotPoints()
     ->where('intended_chapter_id', $chapter->id)
@@ -2476,20 +2828,21 @@ git commit -m "feat(plot): complete Plot feature reimagining"
 
 ## Summary
 
-| Phase | Tasks | What it builds |
-|-------|-------|---------------|
-| 1 — Data Model | 1–6 | ConnectionType enum, migration, PlotPointConnection model, relationships |
-| 2 — Backend API | 7–13 | PlotPointController, PlotPointConnectionController, form requests, routes, tests |
-| 3 — Frontend Foundation | 14–15 | TypeScript types, Plot page layout with tabs |
-| 4 — Swimlane Timeline | 16–19 | Grid utility, SwimLaneTimeline, PlotPointCard, quick create |
-| 5 — Detail Panel | 20 | DetailPanel with edit, connections, jump-to-chapter |
-| 6 — List View | 21 | PlotPointList grouped by acts |
-| 7 — AI Sidebar | 22–24 | PlotAiController, AiActionSidebar, tests |
-| 8 — Tension Arc | 25 | TensionArc SVG component |
-| 9 — Editor Beats | 26–27 | ChapterBeats in editor sidebar |
-| 10 — Polish | 28–29 | Lint, tests, build verification |
+| Phase                   | Tasks | What it builds                                                                   |
+| ----------------------- | ----- | -------------------------------------------------------------------------------- |
+| 1 — Data Model          | 1–6   | ConnectionType enum, migration, PlotPointConnection model, relationships         |
+| 2 — Backend API         | 7–13  | PlotPointController, PlotPointConnectionController, form requests, routes, tests |
+| 3 — Frontend Foundation | 14–15 | TypeScript types, Plot page layout with tabs                                     |
+| 4 — Swimlane Timeline   | 16–19 | Grid utility, SwimLaneTimeline, PlotPointCard, quick create                      |
+| 5 — Detail Panel        | 20    | DetailPanel with edit, connections, jump-to-chapter                              |
+| 6 — List View           | 21    | PlotPointList grouped by acts                                                    |
+| 7 — AI Sidebar          | 22–24 | PlotAiController, AiActionSidebar, tests                                         |
+| 8 — Tension Arc         | 25    | TensionArc SVG component                                                         |
+| 9 — Editor Beats        | 26–27 | ChapterBeats in editor sidebar                                                   |
+| 10 — Polish             | 28–29 | Lint, tests, build verification                                                  |
 
 **Deferred to follow-up iterations:**
+
 - Drag-and-drop reordering (dnd-kit integration for card movement between cells)
 - Connection drag-to-create (SVG overlay with drag handles)
 - Connection SVG arrows on timeline (rendering curves between cards)

@@ -5,9 +5,20 @@ import { useTranslation } from 'react-i18next';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
-import type { Act, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
+import type {
+    Act,
+    PlotPoint,
+    PlotPointConnection,
+    Storyline,
+} from '@/types/models';
 
-const TYPE_OPTIONS = ['setup', 'conflict', 'turning_point', 'resolution', 'worldbuilding'] as const;
+const TYPE_OPTIONS = [
+    'setup',
+    'conflict',
+    'turning_point',
+    'resolution',
+    'worldbuilding',
+] as const;
 
 const STATUS_OPTIONS = ['planned', 'fulfilled', 'abandoned'] as const;
 
@@ -20,17 +31,32 @@ type Props = {
     onUpdate: (data: Record<string, unknown>) => void;
 };
 
-export default function DetailPanel({ plotPoint, acts, connections, onClose, onUpdate }: Props) {
+export default function DetailPanel({
+    plotPoint,
+    acts,
+    connections,
+    onClose,
+    onUpdate,
+}: Props) {
     const { t } = useTranslation('plot');
     const [title, setTitle] = useState(plotPoint.title);
     const [description, setDescription] = useState(plotPoint.description ?? '');
 
-    const incomingConnections = connections.filter((c) => c.target_plot_point_id === plotPoint.id);
-    const outgoingConnections = connections.filter((c) => c.source_plot_point_id === plotPoint.id);
+    const incomingConnections = connections.filter(
+        (c) => c.target_plot_point_id === plotPoint.id,
+    );
+    const outgoingConnections = connections.filter(
+        (c) => c.source_plot_point_id === plotPoint.id,
+    );
 
-    const chapterId = plotPoint.actual_chapter_id ?? plotPoint.intended_chapter_id;
+    const chapterId =
+        plotPoint.actual_chapter_id ?? plotPoint.intended_chapter_id;
     const chapter = chapterId
-        ? acts.flatMap((a) => (a.chapters ?? []) as { id: number; title: string }[]).find((ch) => ch.id === chapterId)
+        ? acts
+              .flatMap(
+                  (a) => (a.chapters ?? []) as { id: number; title: string }[],
+              )
+              .find((ch) => ch.id === chapterId)
         : null;
 
     const handleTitleBlur = () => {
@@ -49,7 +75,7 @@ export default function DetailPanel({ plotPoint, acts, connections, onClose, onU
         <aside className="flex h-full w-[320px] shrink-0 flex-col border-l border-border bg-surface-card">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-muted">
+                <span className="text-xs font-medium tracking-[0.08em] text-ink-muted uppercase">
                     {t('detailPanel.header')}
                 </span>
                 <button
@@ -65,7 +91,7 @@ export default function DetailPanel({ plotPoint, acts, connections, onClose, onU
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
                 {/* Title */}
                 <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                    <label className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('detailPanel.title')}
                     </label>
                     <Input
@@ -79,7 +105,7 @@ export default function DetailPanel({ plotPoint, acts, connections, onClose, onU
 
                 {/* Description */}
                 <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                    <label className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('detailPanel.description')}
                     </label>
                     <Textarea
@@ -93,7 +119,7 @@ export default function DetailPanel({ plotPoint, acts, connections, onClose, onU
 
                 {/* Type */}
                 <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                    <label className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('detailPanel.type')}
                     </label>
                     <Select
@@ -110,7 +136,7 @@ export default function DetailPanel({ plotPoint, acts, connections, onClose, onU
 
                 {/* Status */}
                 <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                    <label className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('detailPanel.status')}
                     </label>
                     <Select
@@ -126,32 +152,43 @@ export default function DetailPanel({ plotPoint, acts, connections, onClose, onU
                 </div>
 
                 {/* Connections */}
-                {(incomingConnections.length > 0 || outgoingConnections.length > 0) && (
+                {(incomingConnections.length > 0 ||
+                    outgoingConnections.length > 0) && (
                     <div className="flex flex-col gap-2">
-                        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                        <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                             {t('detailPanel.connections')}
                         </span>
 
                         {incomingConnections.map((conn) => (
-                            <div key={conn.id} className="flex flex-col gap-0.5">
+                            <div
+                                key={conn.id}
+                                className="flex flex-col gap-0.5"
+                            >
                                 <span className="text-[11px] text-ink-muted">
                                     {t(`connection.${conn.type}.incoming`)}
                                 </span>
                                 <span className="text-[13px] text-ink-soft">
                                     {conn.source?.title ??
-                                        t('detailPanel.plotPointFallback', { id: conn.source_plot_point_id })}
+                                        t('detailPanel.plotPointFallback', {
+                                            id: conn.source_plot_point_id,
+                                        })}
                                 </span>
                             </div>
                         ))}
 
                         {outgoingConnections.map((conn) => (
-                            <div key={conn.id} className="flex flex-col gap-0.5">
+                            <div
+                                key={conn.id}
+                                className="flex flex-col gap-0.5"
+                            >
                                 <span className="text-[11px] text-ink-muted">
                                     {t(`connection.${conn.type}.outgoing`)}
                                 </span>
                                 <span className="text-[13px] text-ink-soft">
                                     {conn.target?.title ??
-                                        t('detailPanel.plotPointFallback', { id: conn.target_plot_point_id })}
+                                        t('detailPanel.plotPointFallback', {
+                                            id: conn.target_plot_point_id,
+                                        })}
                                 </span>
                             </div>
                         ))}

@@ -5,15 +5,25 @@ import {
     closestCenter,
     useDroppable,
     useSensor,
-    useSensors
-    
-    
+    useSensors,
 } from '@dnd-kit/core';
-import type {DragEndEvent, DragStartEvent} from '@dnd-kit/core';
-import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import {
+    SortableContext,
+    useSortable,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { router } from '@inertiajs/react';
-import { ChevronDown, ChevronUp, GripVertical, Plus, Sparkles, Trash2, X } from 'lucide-react';
+import {
+    ChevronDown,
+    ChevronUp,
+    GripVertical,
+    Plus,
+    Sparkles,
+    Trash2,
+    X,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { store as setupStructure } from '@/actions/App/Http/Controllers/PlotSetupController';
@@ -40,16 +50,29 @@ type PlotWizardModalProps = {
 
 type Step = 'customize' | 'map-chapters' | 'review';
 
-export default function PlotWizardModal({ book, template, storylines, chapters, onClose }: PlotWizardModalProps) {
+export default function PlotWizardModal({
+    book,
+    template,
+    storylines,
+    chapters,
+    onClose,
+}: PlotWizardModalProps) {
     const { t } = useTranslation('plot');
     const hasChapters = chapters.length > 0;
-    const steps: Step[] = hasChapters ? ['customize', 'map-chapters', 'review'] : ['customize', 'review'];
+    const steps: Step[] = hasChapters
+        ? ['customize', 'map-chapters', 'review']
+        : ['customize', 'review'];
 
     const [currentStep, setCurrentStep] = useState<Step>('customize');
     const [acts, setActs] = useState<WizardAct[]>(() =>
-        template.acts.map((a) => ({ ...a, beats: [...a.beats], expanded: false })),
+        template.acts.map((a) => ({
+            ...a,
+            beats: [...a.beats],
+            expanded: false,
+        })),
     );
-    const [chapterAssignments, setChapterAssignments] = useState<ChapterAssignments>({});
+    const [chapterAssignments, setChapterAssignments] =
+        useState<ChapterAssignments>({});
     const [submitting, setSubmitting] = useState(false);
 
     const currentStepIndex = steps.indexOf(currentStep);
@@ -85,7 +108,10 @@ export default function PlotWizardModal({ book, template, storylines, chapters, 
                 acts: acts.map((a) => ({
                     title: a.title,
                     color: a.color,
-                    beats: a.beats.map((b) => ({ title: b.title, type: b.type })),
+                    beats: a.beats.map((b) => ({
+                        title: b.title,
+                        type: b.type,
+                    })),
                 })),
                 chapter_assignments: hasChapters ? chapterAssignments : null,
             },
@@ -97,14 +123,25 @@ export default function PlotWizardModal({ book, template, storylines, chapters, 
     };
 
     const updateAct = (index: number, patch: Partial<WizardAct>) => {
-        setActs((prev) => prev.map((a, i) => (i === index ? { ...a, ...patch } : a)));
+        setActs((prev) =>
+            prev.map((a, i) => (i === index ? { ...a, ...patch } : a)),
+        );
     };
 
-    const updateBeat = (actIndex: number, beatIndex: number, patch: Partial<TemplateBeat>) => {
+    const updateBeat = (
+        actIndex: number,
+        beatIndex: number,
+        patch: Partial<TemplateBeat>,
+    ) => {
         setActs((prev) =>
             prev.map((a, ai) =>
                 ai === actIndex
-                    ? { ...a, beats: a.beats.map((b, bi) => (bi === beatIndex ? { ...b, ...patch } : b)) }
+                    ? {
+                          ...a,
+                          beats: a.beats.map((b, bi) =>
+                              bi === beatIndex ? { ...b, ...patch } : b,
+                          ),
+                      }
                     : a,
             ),
         );
@@ -113,7 +150,12 @@ export default function PlotWizardModal({ book, template, storylines, chapters, 
     const removeBeat = (actIndex: number, beatIndex: number) => {
         setActs((prev) =>
             prev.map((a, ai) =>
-                ai === actIndex ? { ...a, beats: a.beats.filter((_, bi) => bi !== beatIndex) } : a,
+                ai === actIndex
+                    ? {
+                          ...a,
+                          beats: a.beats.filter((_, bi) => bi !== beatIndex),
+                      }
+                    : a,
             ),
         );
     };
@@ -122,7 +164,13 @@ export default function PlotWizardModal({ book, template, storylines, chapters, 
         setActs((prev) =>
             prev.map((a, ai) =>
                 ai === actIndex
-                    ? { ...a, beats: [...a.beats, { title: '', type: 'setup' as PlotPointType }] }
+                    ? {
+                          ...a,
+                          beats: [
+                              ...a.beats,
+                              { title: '', type: 'setup' as PlotPointType },
+                          ],
+                      }
                     : a,
             ),
         );
@@ -135,7 +183,7 @@ export default function PlotWizardModal({ book, template, storylines, chapters, 
                 {/* Header */}
                 <div className="flex items-center justify-between px-8 py-6">
                     <div className="flex flex-col gap-1">
-                        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                        <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                             {t('wizard.stepLabel', {
                                 current: currentStepIndex + 1,
                                 total: steps.length,
@@ -190,7 +238,12 @@ export default function PlotWizardModal({ book, template, storylines, chapters, 
                 {/* Footer */}
                 <div className="flex items-center justify-between px-8 py-5">
                     {currentStepIndex > 0 ? (
-                        <Button variant="secondary" size="lg" onClick={handleBack} className="rounded-lg">
+                        <Button
+                            variant="secondary"
+                            size="lg"
+                            onClick={handleBack}
+                            className="rounded-lg"
+                        >
                             {t('wizard.back')}
                         </Button>
                     ) : (
@@ -198,12 +251,23 @@ export default function PlotWizardModal({ book, template, storylines, chapters, 
                     )}
 
                     {currentStep === 'review' ? (
-                        <Button variant="primary" size="lg" onClick={handleCreate} disabled={submitting} className="gap-2 rounded-lg">
+                        <Button
+                            variant="primary"
+                            size="lg"
+                            onClick={handleCreate}
+                            disabled={submitting}
+                            className="gap-2 rounded-lg"
+                        >
                             <Sparkles size={14} />
                             {t('wizard.createStructure')}
                         </Button>
                     ) : (
-                        <Button variant="primary" size="lg" onClick={handleNext} className="rounded-lg">
+                        <Button
+                            variant="primary"
+                            size="lg"
+                            onClick={handleNext}
+                            className="rounded-lg"
+                        >
                             {t('wizard.next')}
                         </Button>
                     )}
@@ -224,7 +288,11 @@ function CustomizeStep({
 }: {
     acts: WizardAct[];
     onUpdateAct: (index: number, patch: Partial<WizardAct>) => void;
-    onUpdateBeat: (actIndex: number, beatIndex: number, patch: Partial<TemplateBeat>) => void;
+    onUpdateBeat: (
+        actIndex: number,
+        beatIndex: number,
+        patch: Partial<TemplateBeat>,
+    ) => void;
     onRemoveBeat: (actIndex: number, beatIndex: number) => void;
     onAddBeat: (actIndex: number) => void;
 }) {
@@ -233,12 +301,11 @@ function CustomizeStep({
     return (
         <div className="flex flex-col gap-5">
             {acts.map((act, actIndex) => (
-                <div
-                    key={actIndex}
-                    className="rounded-xl border border-border"
-                >
+                <div key={actIndex} className="rounded-xl border border-border">
                     <button
-                        onClick={() => onUpdateAct(actIndex, { expanded: !act.expanded })}
+                        onClick={() =>
+                            onUpdateAct(actIndex, { expanded: !act.expanded })
+                        }
                         className="flex w-full items-center gap-3 px-5 py-3.5"
                     >
                         <span
@@ -248,13 +315,19 @@ function CustomizeStep({
                         <input
                             type="text"
                             value={act.title}
-                            onChange={(e) => onUpdateAct(actIndex, { title: e.target.value })}
+                            onChange={(e) =>
+                                onUpdateAct(actIndex, { title: e.target.value })
+                            }
                             onClick={(e) => e.stopPropagation()}
                             className="flex-1 bg-transparent text-[14px] font-semibold text-ink outline-none placeholder:text-ink-faint"
-                            placeholder={t('wizard.customize.actNamePlaceholder')}
+                            placeholder={t(
+                                'wizard.customize.actNamePlaceholder',
+                            )}
                         />
                         <span className="text-[12px] text-ink-faint">
-                            {t('wizard.customize.beatCount', { count: act.beats.length })}
+                            {t('wizard.customize.beatCount', {
+                                count: act.beats.length,
+                            })}
                         </span>
                         {act.expanded ? (
                             <ChevronUp size={16} className="text-ink-muted" />
@@ -264,7 +337,7 @@ function CustomizeStep({
                     </button>
 
                     {act.expanded && (
-                        <div className="border-t border-border px-5 pb-4 pt-3">
+                        <div className="border-t border-border px-5 pt-3 pb-4">
                             <div className="flex flex-col gap-2">
                                 {act.beats.map((beat, beatIndex) => (
                                     <div
@@ -276,13 +349,24 @@ function CustomizeStep({
                                             type="text"
                                             value={beat.title}
                                             onChange={(e) =>
-                                                onUpdateBeat(actIndex, beatIndex, { title: e.target.value })
+                                                onUpdateBeat(
+                                                    actIndex,
+                                                    beatIndex,
+                                                    { title: e.target.value },
+                                                )
                                             }
                                             className="flex-1 rounded border border-transparent bg-transparent px-2 py-1 text-[13px] text-ink outline-none hover:border-border focus:border-accent"
-                                            placeholder={t('wizard.customize.beatNamePlaceholder')}
+                                            placeholder={t(
+                                                'wizard.customize.beatNamePlaceholder',
+                                            )}
                                         />
                                         <button
-                                            onClick={() => onRemoveBeat(actIndex, beatIndex)}
+                                            onClick={() =>
+                                                onRemoveBeat(
+                                                    actIndex,
+                                                    beatIndex,
+                                                )
+                                            }
                                             className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-ink-faint hover:bg-red-50 hover:text-red-500"
                                         >
                                             <Trash2 size={12} />
@@ -309,8 +393,21 @@ function CustomizeStep({
 
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } };
 
-function DraggableChapter({ chapter, storyline }: { chapter: Chapter; storyline?: Storyline }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+function DraggableChapter({
+    chapter,
+    storyline,
+}: {
+    chapter: Chapter;
+    storyline?: Storyline;
+}) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({
         id: `chapter-${chapter.id}`,
         data: { type: 'wizard-chapter', chapter },
     });
@@ -356,12 +453,16 @@ function MapChaptersStep({
     onAssign: (assignments: ChapterAssignments) => void;
 }) {
     const { t } = useTranslation('plot');
-    const sensors = useSensors(useSensor(PointerSensor, POINTER_SENSOR_OPTIONS));
+    const sensors = useSensors(
+        useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
+    );
     const [activeChapter, setActiveChapter] = useState<Chapter | null>(null);
 
     const assignedChapterIds = useMemo(() => {
         const ids = new Set<number>();
-        Object.values(assignments).forEach((arr) => arr.forEach((id) => ids.add(id)));
+        Object.values(assignments).forEach((arr) =>
+            arr.forEach((id) => ids.add(id)),
+        );
         return ids;
     }, [assignments]);
 
@@ -400,11 +501,15 @@ function MapChaptersStep({
             const newAssignments = { ...assignments };
             // Remove from any existing assignment
             for (const key of Object.keys(newAssignments)) {
-                newAssignments[key] = newAssignments[key].filter((id) => id !== chapterId);
-                if (newAssignments[key].length === 0) delete newAssignments[key];
+                newAssignments[key] = newAssignments[key].filter(
+                    (id) => id !== chapterId,
+                );
+                if (newAssignments[key].length === 0)
+                    delete newAssignments[key];
             }
             // Add to target
-            if (!newAssignments[targetActKey]) newAssignments[targetActKey] = [];
+            if (!newAssignments[targetActKey])
+                newAssignments[targetActKey] = [];
             newAssignments[targetActKey].push(chapterId);
             onAssign(newAssignments);
         },
@@ -413,13 +518,20 @@ function MapChaptersStep({
 
     const removeFromAct = (actKey: string, chapterId: number) => {
         const newAssignments = { ...assignments };
-        newAssignments[actKey] = (newAssignments[actKey] || []).filter((id) => id !== chapterId);
+        newAssignments[actKey] = (newAssignments[actKey] || []).filter(
+            (id) => id !== chapterId,
+        );
         if (newAssignments[actKey].length === 0) delete newAssignments[actKey];
         onAssign(newAssignments);
     };
 
     return (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+        >
             <div className="flex flex-col gap-5">
                 <p className="text-[13px] leading-[20px] text-ink-muted">
                     {t('wizard.mapChapters.description')}
@@ -428,11 +540,14 @@ function MapChaptersStep({
                 {/* Unassigned chapters */}
                 {unassignedChapters.length > 0 && (
                     <div>
-                        <h4 className="mb-2 text-[12px] font-medium uppercase tracking-[0.06em] text-ink-faint">
-                            {t('wizard.mapChapters.unassigned')} ({unassignedChapters.length})
+                        <h4 className="mb-2 text-[12px] font-medium tracking-[0.06em] text-ink-faint uppercase">
+                            {t('wizard.mapChapters.unassigned')} (
+                            {unassignedChapters.length})
                         </h4>
                         <SortableContext
-                            items={unassignedChapters.map((ch) => `chapter-${ch.id}`)}
+                            items={unassignedChapters.map(
+                                (ch) => `chapter-${ch.id}`,
+                            )}
                             strategy={verticalListSortingStrategy}
                         >
                             <div className="flex flex-col gap-1.5">
@@ -440,7 +555,9 @@ function MapChaptersStep({
                                     <DraggableChapter
                                         key={ch.id}
                                         chapter={ch}
-                                        storyline={storylineMap.get(ch.storyline_id)}
+                                        storyline={storylineMap.get(
+                                            ch.storyline_id,
+                                        )}
                                     />
                                 ))}
                             </div>
@@ -463,7 +580,9 @@ function MapChaptersStep({
                             actKey={actKey}
                             assignedChapters={assignedChapters}
                             storylineMap={storylineMap}
-                            onRemove={(chapterId) => removeFromAct(actKey, chapterId)}
+                            onRemove={(chapterId) =>
+                                removeFromAct(actKey, chapterId)
+                            }
                         />
                     );
                 })}
@@ -508,8 +627,13 @@ function ActDropZone({
             }`}
         >
             <div className="mb-2 flex items-center gap-2">
-                <span className="h-3 w-1 rounded-full" style={{ backgroundColor: act.color }} />
-                <h4 className="text-[13px] font-semibold text-ink">{act.title}</h4>
+                <span
+                    className="h-3 w-1 rounded-full"
+                    style={{ backgroundColor: act.color }}
+                />
+                <h4 className="text-[13px] font-semibold text-ink">
+                    {act.title}
+                </h4>
             </div>
 
             {assignedChapters.length > 0 ? (
@@ -522,10 +646,16 @@ function ActDropZone({
                             {storylineMap.get(ch.storyline_id) && (
                                 <span
                                     className="h-2 w-2 shrink-0 rounded-full"
-                                    style={{ backgroundColor: storylineMap.get(ch.storyline_id)!.color ?? '#999' }}
+                                    style={{
+                                        backgroundColor:
+                                            storylineMap.get(ch.storyline_id)!
+                                                .color ?? '#999',
+                                    }}
                                 />
                             )}
-                            <span className="flex-1 truncate text-ink">{ch.title}</span>
+                            <span className="flex-1 truncate text-ink">
+                                {ch.title}
+                            </span>
                             <button
                                 onClick={() => onRemove(ch.id)}
                                 className="flex h-5 w-5 items-center justify-center rounded text-ink-faint hover:text-red-500"
@@ -577,7 +707,8 @@ function ReviewStep({
             <div className="flex flex-col gap-3">
                 {acts.map((act, index) => {
                     const actKey = `act_index_${index}`;
-                    const assignedCount = (chapterAssignments[actKey] || []).length;
+                    const assignedCount = (chapterAssignments[actKey] || [])
+                        .length;
 
                     return (
                         <div
@@ -589,14 +720,22 @@ function ReviewStep({
                                 style={{ backgroundColor: act.color }}
                             />
                             <span className="flex-1 text-[14px] font-medium text-ink">
-                                {t('actTitle', { number: index + 1, title: act.title })}
+                                {t('actTitle', {
+                                    number: index + 1,
+                                    title: act.title,
+                                })}
                             </span>
                             <span className="text-[12px] text-ink-faint">
-                                {t('wizard.customize.beatCount', { count: act.beats.length })}
+                                {t('wizard.customize.beatCount', {
+                                    count: act.beats.length,
+                                })}
                             </span>
                             {hasChapters && assignedCount > 0 && (
                                 <span className="text-[12px] text-ink-faint">
-                                    · {t('wizard.review.chaptersAssigned', { count: assignedCount })}
+                                    ·{' '}
+                                    {t('wizard.review.chaptersAssigned', {
+                                        count: assignedCount,
+                                    })}
                                 </span>
                             )}
                         </div>

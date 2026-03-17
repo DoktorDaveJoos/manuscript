@@ -34,7 +34,11 @@ export default function ColorPicker({
                     style={{ backgroundColor: color }}
                 >
                     {value === color && (
-                        <Check size={12} strokeWidth={2.5} className="text-white" />
+                        <Check
+                            size={12}
+                            strokeWidth={2.5}
+                            className="text-white"
+                        />
                     )}
                 </button>
             ))}

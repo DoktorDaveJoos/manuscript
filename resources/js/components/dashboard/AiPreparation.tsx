@@ -15,7 +15,8 @@ export default function AiPreparation({
 }) {
     const { t } = useTranslation('ai');
     const { visible, usable, licensed, configured } = useAiFeatures();
-    const { status, isRunning, starting, error, handleStart } = useAiPreparation(bookId, initialStatus);
+    const { status, isRunning, starting, error, handleStart } =
+        useAiPreparation(bookId, initialStatus);
 
     function formatTimeAgo(dateString: string): string {
         const now = new Date();
@@ -23,11 +24,22 @@ export default function AiPreparation({
         const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
         if (seconds < 60) return t('preparation.timeAgo.justNow', 'just now');
         const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return t('preparation.timeAgo.minutes', { count: minutes, defaultValue: '{{count}}m ago' });
+        if (minutes < 60)
+            return t('preparation.timeAgo.minutes', {
+                count: minutes,
+                defaultValue: '{{count}}m ago',
+            });
         const hours = Math.floor(minutes / 60);
-        if (hours < 24) return t('preparation.timeAgo.hours', { count: hours, defaultValue: '{{count}}h ago' });
+        if (hours < 24)
+            return t('preparation.timeAgo.hours', {
+                count: hours,
+                defaultValue: '{{count}}h ago',
+            });
         const days = Math.floor(hours / 24);
-        return t('preparation.timeAgo.days', { count: days, defaultValue: '{{count}}d ago' });
+        return t('preparation.timeAgo.days', {
+            count: days,
+            defaultValue: '{{count}}d ago',
+        });
     }
 
     if (!visible) return null;
@@ -67,18 +79,20 @@ export default function AiPreparation({
         return (
             <div className="flex items-center justify-between rounded-xl border border-border-light bg-surface-card px-6 py-6">
                 <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('preparation.title')}
                     </span>
                     <div className="flex items-center gap-2">
-                        <Lock size={14} fill="currentColor" className="shrink-0 text-ink-faint" />
+                        <Lock
+                            size={14}
+                            fill="currentColor"
+                            className="shrink-0 text-ink-faint"
+                        />
                         <span className="font-serif text-[20px] font-medium text-ink-muted">
                             {heading}
                         </span>
                     </div>
-                    <p className="text-[13px] text-ink-muted">
-                        {description}
-                    </p>
+                    <p className="text-[13px] text-ink-muted">{description}</p>
                     {linkContent}
                 </div>
             </div>
@@ -89,20 +103,30 @@ export default function AiPreparation({
     if (isRunning && status) {
         const completedCount = status.completed_phases?.length ?? 0;
         const currentPhase = status.current_phase;
-        const phaseLabel = currentPhase ? t(`phase.${currentPhase}`) : t('preparation.starting');
-        const overallProgress = Math.round((completedCount / TOTAL_PHASES) * 100);
+        const phaseLabel = currentPhase
+            ? t(`phase.${currentPhase}`)
+            : t('preparation.starting');
+        const overallProgress = Math.round(
+            (completedCount / TOTAL_PHASES) * 100,
+        );
 
         return (
             <div className="flex flex-col gap-4 rounded-xl border border-border-light bg-surface-card px-6 py-6">
-                <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                     {t('preparation.title')}
                 </span>
                 <div className="flex items-center gap-3">
                     <span className="inline-block size-4 animate-spin rounded-full border-2 border-ink-faint border-t-ink" />
                     <div className="flex flex-col gap-0.5">
-                        <span className="text-[14px] font-medium text-ink">{phaseLabel}...</span>
+                        <span className="text-[14px] font-medium text-ink">
+                            {phaseLabel}...
+                        </span>
                         <span className="text-[12px] text-ink-faint">
-                            {t('preparation.phaseProgress', { current: completedCount + 1, total: TOTAL_PHASES, percent: overallProgress })}
+                            {t('preparation.phaseProgress', {
+                                current: completedCount + 1,
+                                total: TOTAL_PHASES,
+                                percent: overallProgress,
+                            })}
                         </span>
                     </div>
                 </div>
@@ -119,34 +143,56 @@ export default function AiPreparation({
     // Completed state
     if (status?.status === 'completed') {
         const chaptersAnalyzed = status.total_chapters;
-        const findingsCount = (status.phase_errors?.length ?? 0);
+        const findingsCount = status.phase_errors?.length ?? 0;
 
         return (
             <div className="flex items-center justify-between rounded-xl border border-border-light bg-surface-card px-6 py-6">
                 <div className="flex flex-col gap-3">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('preparation.title')}
                     </span>
                     <div className="flex items-center gap-2">
-                        <Sparkle size={16} fill="currentColor" className="text-accent" />
-                        <span className="font-serif text-[20px] font-medium text-ink">{t('preparation.complete', 'AI Preparation Complete')}</span>
+                        <Sparkle
+                            size={16}
+                            fill="currentColor"
+                            className="text-accent"
+                        />
+                        <span className="font-serif text-[20px] font-medium text-ink">
+                            {t(
+                                'preparation.complete',
+                                'AI Preparation Complete',
+                            )}
+                        </span>
                     </div>
                     <span className="text-[12px] text-ink-faint">
-                        {t('preparation.lastAnalyzed', 'Last analyzed')} {formatTimeAgo(status.updated_at)}
+                        {t('preparation.lastAnalyzed', 'Last analyzed')}{' '}
+                        {formatTimeAgo(status.updated_at)}
                     </span>
                     <div className="flex items-center gap-4">
                         <span className="text-[13px] text-ink">
-                            <span className="font-semibold">{chaptersAnalyzed}</span>{' '}
-                            {t('preparation.chaptersAnalyzed', 'chapters analyzed')}
+                            <span className="font-semibold">
+                                {chaptersAnalyzed}
+                            </span>{' '}
+                            {t(
+                                'preparation.chaptersAnalyzed',
+                                'chapters analyzed',
+                            )}
                         </span>
                         <span className="h-[28px] w-px bg-border-light" />
                         <span className="text-[13px] text-ink">
-                            <span className="font-semibold">{findingsCount}</span>{' '}
+                            <span className="font-semibold">
+                                {findingsCount}
+                            </span>{' '}
                             {t('preparation.findings', 'findings')}
                         </span>
                     </div>
                 </div>
-                <Button variant="secondary" type="button" onClick={handleStart} className="gap-1.5 rounded-lg">
+                <Button
+                    variant="secondary"
+                    type="button"
+                    onClick={handleStart}
+                    className="gap-1.5 rounded-lg"
+                >
                     <RefreshCw size={14} />
                     {t('preparation.reRunBook', 'Re-run for whole book')}
                 </Button>
@@ -159,7 +205,11 @@ export default function AiPreparation({
         <div className="flex items-center justify-between rounded-xl border border-border-light bg-surface-card px-7 py-5">
             <div className="flex flex-1 flex-col gap-2">
                 <div className="flex items-center gap-3">
-                    <Sparkle size={16} fill="currentColor" className="shrink-0 text-accent" />
+                    <Sparkle
+                        size={16}
+                        fill="currentColor"
+                        className="shrink-0 text-accent"
+                    />
                     <div className="flex flex-col gap-0.5">
                         <span className="text-[14px] font-semibold text-ink">
                             {t('preparation.unlockInsights')}
@@ -169,17 +219,36 @@ export default function AiPreparation({
                         </p>
                     </div>
                 </div>
-                {error && <span className="text-[12px] text-red-600">{error}</span>}
+                {error && (
+                    <span className="text-[12px] text-red-600">{error}</span>
+                )}
                 {status?.status === 'failed' && (
-                    <span className="text-[12px] text-red-600">{status.error_message ?? t('preparation.failed')}</span>
+                    <span className="text-[12px] text-red-600">
+                        {status.error_message ?? t('preparation.failed')}
+                    </span>
                 )}
             </div>
             <div className="flex w-[200px] shrink-0 flex-col items-center gap-2">
-                <Button variant="primary" size="lg" type="button" onClick={handleStart} disabled={starting} className="w-full gap-1.5 rounded-lg font-semibold">
-                    <Sparkle size={14} fill="currentColor" className="text-surface" />
-                    {starting ? t('preparation.starting') : t('preparation.prepareManuscript')}
+                <Button
+                    variant="primary"
+                    size="lg"
+                    type="button"
+                    onClick={handleStart}
+                    disabled={starting}
+                    className="w-full gap-1.5 rounded-lg font-semibold"
+                >
+                    <Sparkle
+                        size={14}
+                        fill="currentColor"
+                        className="text-surface"
+                    />
+                    {starting
+                        ? t('preparation.starting')
+                        : t('preparation.prepareManuscript')}
                 </Button>
-                <span className="text-[11px] text-ink-faint">{t('preparation.setupTime')}</span>
+                <span className="text-[11px] text-ink-faint">
+                    {t('preparation.setupTime')}
+                </span>
             </div>
         </div>
     );

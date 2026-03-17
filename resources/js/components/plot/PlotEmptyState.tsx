@@ -1,13 +1,15 @@
 import { Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { getPlotTemplates  } from '@/lib/plot-templates';
-import type {PlotTemplate} from '@/lib/plot-templates';
+import { getPlotTemplates } from '@/lib/plot-templates';
+import type { PlotTemplate } from '@/lib/plot-templates';
 
 type PlotEmptyStateProps = {
     onSelectTemplate: (template: PlotTemplate) => void;
 };
 
-export default function PlotEmptyState({ onSelectTemplate }: PlotEmptyStateProps) {
+export default function PlotEmptyState({
+    onSelectTemplate,
+}: PlotEmptyStateProps) {
     const { t } = useTranslation('plot');
     const templates = getPlotTemplates(t);
 
@@ -27,14 +29,17 @@ export default function PlotEmptyState({ onSelectTemplate }: PlotEmptyStateProps
 
             <div className="mt-5 flex gap-4">
                 {templates.map((template) => {
-                    const totalBeats = template.acts.reduce((sum, act) => sum + act.beats.length, 0);
+                    const totalBeats = template.acts.reduce(
+                        (sum, act) => sum + act.beats.length,
+                        0,
+                    );
                     return (
                         <button
                             key={template.key}
                             onClick={() => onSelectTemplate(template)}
                             className="group flex w-[220px] flex-col gap-3 rounded-xl border border-border bg-surface-card p-5 text-left transition-all hover:border-accent hover:shadow-sm"
                         >
-                            <h3 className="text-[15px] font-semibold leading-5 text-ink">
+                            <h3 className="text-[15px] leading-5 font-semibold text-ink">
                                 {template.name}
                             </h3>
                             <p className="text-[13px] leading-[18px] text-ink-muted">

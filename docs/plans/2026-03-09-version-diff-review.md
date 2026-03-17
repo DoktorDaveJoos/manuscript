@@ -13,6 +13,7 @@
 ### Task 1: Add VersionStatus Enum
 
 **Files:**
+
 - Create: `app/Enums/VersionStatus.php`
 
 **Step 1: Create the enum**
@@ -40,6 +41,7 @@ feat: add VersionStatus enum for version review workflow
 ### Task 2: Add `status` Column Migration
 
 **Files:**
+
 - Create: new migration via artisan
 - Modify: `app/Models/ChapterVersion.php:20-27` (add cast)
 
@@ -130,6 +132,7 @@ feat: add status column to chapter_versions table
 ### Task 3: Modify AI Controller to Create Pending Versions
 
 **Files:**
+
 - Modify: `app/Http/Controllers/AiController.php:92-137`
 - Test: `tests/Feature/ChapterControllerTest.php`
 
@@ -149,6 +152,7 @@ Actually, since `streamAgentRevision` is private and requires AI provider setup,
 **Step 2: Modify `streamAgentRevision` in `AiController.php`**
 
 Replace the `.then()` callback (lines 112-136). The key changes:
+
 1. Do NOT set `$currentVersion->is_current` to false
 2. Set new version `is_current` to false, `status` to `pending`
 3. Do NOT delete/recreate scenes (that happens on accept)
@@ -192,6 +196,7 @@ feat: AI actions create pending versions instead of immediately replacing curren
 ### Task 4: Add Accept/Reject Endpoints
 
 **Files:**
+
 - Modify: `app/Http/Controllers/ChapterController.php`
 - Modify: `routes/web.php`
 - Test: `tests/Feature/ChapterControllerTest.php`
@@ -382,6 +387,7 @@ feat: add accept/reject endpoints for pending versions
 ### Task 5: Pass Pending Version to Frontend
 
 **Files:**
+
 - Modify: `app/Http/Controllers/ChapterController.php:79-104` (show method)
 - Modify: `app/Models/Chapter.php` (add pendingVersion relationship)
 - Test: `tests/Feature/ChapterControllerTest.php`
@@ -488,6 +494,7 @@ feat: pass pending version data to chapter show page
 ### Task 6: Update TypeScript Types
 
 **Files:**
+
 - Modify: `resources/js/types/models.ts:3` (add VersionStatus type)
 - Modify: `resources/js/types/models.ts:137-148` (add status to ChapterVersion)
 
@@ -553,17 +560,22 @@ chore: add diff (jsdiff) package for paragraph-level diffing
 ### Task 8: Build DiffView Component
 
 **Files:**
+
 - Create: `resources/js/components/editor/DiffView.tsx`
 
 **Step 1: Create the component**
 
 This is the main visual component matching the Paper design. It renders:
+
 - Top bar with review status and Accept/Reject buttons
 - Two scrollable columns: ORIGINAL (left) and REVISION (right)
 - Paragraph-level diff: deleted text with red bg + strikethrough, added text with green bg
 
 ```tsx
-import { acceptVersion, rejectVersion } from '@/actions/App/Http/Controllers/ChapterController';
+import {
+    acceptVersion,
+    rejectVersion,
+} from '@/actions/App/Http/Controllers/ChapterController';
 import { getXsrfToken } from '@/lib/csrf';
 import type { ChapterVersion } from '@/types/models';
 import { router } from '@inertiajs/react';
@@ -598,7 +610,11 @@ type DiffSegment = { text: string; type: 'equal' | 'added' | 'removed' };
 function diffParagraphs(
     original: string[],
     revised: string[],
-): { left: { html: string; segments: DiffSegment[] }[]; right: { html: string; segments: DiffSegment[] }[]; changeCount: number } {
+): {
+    left: { html: string; segments: DiffSegment[] }[];
+    right: { html: string; segments: DiffSegment[] }[];
+    changeCount: number;
+} {
     // Use diffWords on the full text to identify changes, then map back to paragraphs
     const origText = original.map(stripTags).join('\n\n');
     const revText = revised.map(stripTags).join('\n\n');
@@ -623,7 +639,9 @@ function diffParagraphs(
     }
 
     // Re-split segments into paragraphs at double-newlines
-    function splitSegmentsIntoParagraphs(segments: DiffSegment[]): { html: string; segments: DiffSegment[] }[] {
+    function splitSegmentsIntoParagraphs(
+        segments: DiffSegment[],
+    ): { html: string; segments: DiffSegment[] }[] {
         const paragraphs: { html: string; segments: DiffSegment[] }[] = [];
         let current: DiffSegment[] = [];
 
@@ -679,7 +697,11 @@ export default function DiffView({
         setIsAccepting(true);
         try {
             const response = await fetch(
-                acceptVersion.url({ book: bookId, chapter: chapterId, version: pendingVersion.id }),
+                acceptVersion.url({
+                    book: bookId,
+                    chapter: chapterId,
+                    version: pendingVersion.id,
+                }),
                 {
                     method: 'POST',
                     headers: {
@@ -699,7 +721,11 @@ export default function DiffView({
         setIsRejecting(true);
         try {
             const response = await fetch(
-                rejectVersion.url({ book: bookId, chapter: chapterId, version: pendingVersion.id }),
+                rejectVersion.url({
+                    book: bookId,
+                    chapter: chapterId,
+                    version: pendingVersion.id,
+                }),
                 {
                     method: 'POST',
                     headers: {
@@ -725,10 +751,13 @@ export default function DiffView({
                     <span className="text-ink-faint">{chapterTitle}</span>
                     <span className="text-ink-faint">/</span>
                     <span className="font-medium text-accent">
-                        Reviewing {sourceLabel[pendingVersion.source] ?? pendingVersion.source}
+                        Reviewing{' '}
+                        {sourceLabel[pendingVersion.source] ??
+                            pendingVersion.source}
                     </span>
                     <span className="text-ink-faint">
-                        {diff.changeCount} {diff.changeCount === 1 ? 'change' : 'changes'}
+                        {diff.changeCount}{' '}
+                        {diff.changeCount === 1 ? 'change' : 'changes'}
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -756,9 +785,13 @@ export default function DiffView({
                 {/* Left: Original */}
                 <div className="flex-1 overflow-y-auto border-r border-border px-12 py-8">
                     <div className="mb-6 flex items-center gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Original</span>
+                        <span className="text-xs font-semibold tracking-wider text-ink-faint uppercase">
+                            Original
+                        </span>
                         <span className="text-xs text-ink-faint">
-                            v{currentVersion.version_number} &middot; {sourceLabel[currentVersion.source] ?? currentVersion.source}
+                            v{currentVersion.version_number} &middot;{' '}
+                            {sourceLabel[currentVersion.source] ??
+                                currentVersion.source}
                         </span>
                     </div>
                     <div className="max-w-prose space-y-4 font-serif text-base leading-relaxed text-ink">
@@ -766,7 +799,10 @@ export default function DiffView({
                             <p key={i}>
                                 {para.segments.map((seg, j) =>
                                     seg.type === 'removed' ? (
-                                        <span key={j} className="bg-delete-bg text-delete line-through">
+                                        <span
+                                            key={j}
+                                            className="bg-delete-bg text-delete line-through"
+                                        >
                                             {seg.text}
                                         </span>
                                     ) : (
@@ -781,9 +817,13 @@ export default function DiffView({
                 {/* Right: Revision */}
                 <div className="flex-1 overflow-y-auto px-12 py-8">
                     <div className="mb-6 flex items-center gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Revision</span>
+                        <span className="text-xs font-semibold tracking-wider text-ink-faint uppercase">
+                            Revision
+                        </span>
                         <span className="text-xs text-ink-faint">
-                            v{pendingVersion.version_number} &middot; {sourceLabel[pendingVersion.source] ?? pendingVersion.source}
+                            v{pendingVersion.version_number} &middot;{' '}
+                            {sourceLabel[pendingVersion.source] ??
+                                pendingVersion.source}
                         </span>
                     </div>
                     <div className="max-w-prose space-y-4 font-serif text-base leading-relaxed text-ink">
@@ -791,7 +831,10 @@ export default function DiffView({
                             <p key={i}>
                                 {para.segments.map((seg, j) =>
                                     seg.type === 'added' ? (
-                                        <span key={j} className="bg-ai-green/15 text-ai-green">
+                                        <span
+                                            key={j}
+                                            className="bg-ai-green/15 text-ai-green"
+                                        >
                                             {seg.text}
                                         </span>
                                     ) : (
@@ -819,6 +862,7 @@ feat: add DiffView component for side-by-side version comparison
 ### Task 9: Integrate DiffView into Chapter Show Page
 
 **Files:**
+
 - Modify: `resources/js/pages/chapters/show.tsx`
 
 **Step 1: Update page props and conditional rendering**
@@ -827,7 +871,14 @@ Add `pendingVersion` to the props interface and import DiffView:
 
 ```typescript
 import DiffView from '@/components/editor/DiffView';
-import type { Book, Chapter, ChapterVersion, Character, CharacterChapterPivot, Scene } from '@/types/models';
+import type {
+    Book,
+    Chapter,
+    ChapterVersion,
+    Character,
+    CharacterChapterPivot,
+    Scene,
+} from '@/types/models';
 ```
 
 Update the component signature:
@@ -849,22 +900,23 @@ export default function ChapterShow({
 In the JSX, replace the main content area. Inside the second child `<div>` (the `relative flex min-w-0 flex-1 flex-col` div), wrap the editor content in a conditional:
 
 ```tsx
-{pendingVersion && chapter.current_version ? (
-    <DiffView
-        bookId={book.id}
-        chapterId={chapter.id}
-        chapterTitle={displayTitle}
-        currentVersion={chapter.current_version}
-        pendingVersion={pendingVersion}
-    />
-) : (
-    <>
-        {/* existing FormattingToolbar + WritingSurface + NotesPanel */}
-    </>
-)}
+{
+    pendingVersion && chapter.current_version ? (
+        <DiffView
+            bookId={book.id}
+            chapterId={chapter.id}
+            chapterTitle={displayTitle}
+            currentVersion={chapter.current_version}
+            pendingVersion={pendingVersion}
+        />
+    ) : (
+        <>{/* existing FormattingToolbar + WritingSurface + NotesPanel */}</>
+    );
+}
 ```
 
 When `pendingVersion` exists:
+
 - The EditorBar still shows (breadcrumb context)
 - FormattingToolbar, WritingSurface, NotesPanel, and AiPanel are hidden
 - DiffView takes over the content area
@@ -886,6 +938,7 @@ feat: show diff view when chapter has pending AI revision
 ### Task 10: Update Frontend After AI Streaming Completes
 
 **Files:**
+
 - Modify: `resources/js/pages/chapters/show.tsx:282-302` (handleBeautify)
 - Modify: `resources/js/components/editor/AiPanel.tsx` (handleRunProse)
 
@@ -934,6 +987,7 @@ chore: regenerate Wayfinder routes for accept/reject endpoints
 ### Task 12: Update Version List Endpoint to Include Status
 
 **Files:**
+
 - Modify: `app/Http/Controllers/ChapterController.php:162-170` (versions method)
 - Modify: `resources/js/components/editor/VersionHistoryOverlay.tsx`
 
@@ -950,9 +1004,13 @@ In `ChapterController::versions()`, add `status` to the select:
 In `VersionHistoryOverlay.tsx`, after the "Current" label (around line 229-231), add:
 
 ```tsx
-{version.status === 'pending' && (
-    <span className="text-[10px] font-medium text-accent">Pending review</span>
-)}
+{
+    version.status === 'pending' && (
+        <span className="text-[10px] font-medium text-accent">
+            Pending review
+        </span>
+    );
+}
 ```
 
 **Step 3: Remove the disabled Compare button**

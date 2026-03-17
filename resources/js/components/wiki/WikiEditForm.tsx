@@ -1,7 +1,7 @@
 import { router, useForm } from '@inertiajs/react';
 import { BookOpen, X } from 'lucide-react';
-import {  useState } from 'react';
-import type {KeyboardEvent} from 'react';
+import { useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     destroyCharacter,
@@ -25,27 +25,40 @@ type Props = {
     onSuccess: () => void;
 };
 
-function isCharacter(item: Character | WikiEntry, tab: WikiTab): item is Character {
+function isCharacter(
+    item: Character | WikiEntry,
+    tab: WikiTab,
+): item is Character {
     return tab === 'characters';
 }
 
-export default function WikiEditForm({ item, tab, book, storylines, onCancel, onSuccess }: Props) {
+export default function WikiEditForm({
+    item,
+    tab,
+    book,
+    storylines,
+    onCancel,
+    onSuccess,
+}: Props) {
     const { t } = useTranslation('wiki');
     const isChar = isCharacter(item, tab);
 
     const characterForm = useForm({
         name: isChar ? item.name : '',
         description: item.description ?? '',
-        aliases: isChar ? item.aliases ?? [] : [],
-        storylines: isChar ? item.storylines ?? [] : [],
-        role: isChar && item.chapters?.length ? item.chapters[0]?.pivot?.role ?? '' : '',
+        aliases: isChar ? (item.aliases ?? []) : [],
+        storylines: isChar ? (item.storylines ?? []) : [],
+        role:
+            isChar && item.chapters?.length
+                ? (item.chapters[0]?.pivot?.role ?? '')
+                : '',
     });
 
     const entryForm = useForm({
         name: !isChar ? item.name : '',
         description: item.description ?? '',
         kind: !isChar ? (item as WikiEntry).kind : '',
-        type: !isChar ? (item as WikiEntry).type ?? '' : '',
+        type: !isChar ? ((item as WikiEntry).type ?? '') : '',
     });
 
     const [aliasInput, setAliasInput] = useState('');
@@ -56,7 +69,10 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
             e.preventDefault();
             const value = aliasInput.trim();
             if (value && !characterForm.data.aliases.includes(value)) {
-                characterForm.setData('aliases', [...characterForm.data.aliases, value]);
+                characterForm.setData('aliases', [
+                    ...characterForm.data.aliases,
+                    value,
+                ]);
             }
             setAliasInput('');
         }
@@ -73,7 +89,9 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
         const current = characterForm.data.storylines;
         characterForm.setData(
             'storylines',
-            current.includes(id) ? current.filter((s) => s !== id) : [...current, id],
+            current.includes(id)
+                ? current.filter((s) => s !== id)
+                : [...current, id],
         );
     };
 
@@ -114,7 +132,11 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                 <div className="flex items-center gap-3">
                     <Input
                         type="text"
-                        value={isChar ? characterForm.data.name : entryForm.data.name}
+                        value={
+                            isChar
+                                ? characterForm.data.name
+                                : entryForm.data.name
+                        }
                         onChange={(e) => {
                             if (isChar) {
                                 characterForm.setData('name', e.target.value);
@@ -132,10 +154,24 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="secondary" size="sm" type="button" onClick={onCancel}>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        type="button"
+                        onClick={onCancel}
+                    >
                         {t('create.cancel')}
                     </Button>
-                    <Button variant="primary" size="sm" type="submit" disabled={isChar ? characterForm.processing : entryForm.processing}>
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        type="submit"
+                        disabled={
+                            isChar
+                                ? characterForm.processing
+                                : entryForm.processing
+                        }
+                    >
                         {t('edit.save')}
                     </Button>
                 </div>
@@ -144,7 +180,7 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
             {/* Aliases — characters only */}
             {isChar && (
                 <div>
-                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                    <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                         {t('field.aliases')}
                     </label>
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -154,7 +190,10 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                                 className="flex items-center gap-1.5 rounded bg-neutral-bg px-2.5 py-1 text-[12px] text-ink-soft"
                             >
                                 {alias}
-                                <button type="button" onClick={() => removeAlias(alias)}>
+                                <button
+                                    type="button"
+                                    onClick={() => removeAlias(alias)}
+                                >
                                     <X size={10} className="text-ink-faint" />
                                 </button>
                             </span>
@@ -174,7 +213,7 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
             {/* Type — wiki entries only */}
             {!isChar && (
                 <div>
-                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                    <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                         {t('field.type')}
                     </label>
                     <Input
@@ -190,14 +229,21 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
 
             {/* Description */}
             <div>
-                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                     {t('field.description')}
                 </label>
                 <Textarea
-                    value={isChar ? characterForm.data.description : entryForm.data.description}
+                    value={
+                        isChar
+                            ? characterForm.data.description
+                            : entryForm.data.description
+                    }
                     onChange={(e) =>
                         isChar
-                            ? characterForm.setData('description', e.target.value)
+                            ? characterForm.setData(
+                                  'description',
+                                  e.target.value,
+                              )
                             : entryForm.setData('description', e.target.value)
                     }
                     rows={4}
@@ -211,17 +257,25 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                 {/* Role — characters only */}
                 {isChar && (
                     <div>
-                        <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                        <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                             {t('field.role')}
                         </label>
                         <Select
                             value={characterForm.data.role}
-                            onChange={(e) => characterForm.setData('role', e.target.value)}
+                            onChange={(e) =>
+                                characterForm.setData('role', e.target.value)
+                            }
                             className="w-auto"
                         >
-                            <option value="protagonist">{t('role.mainCharacter')}</option>
-                            <option value="supporting">{t('role.supporting')}</option>
-                            <option value="mentioned">{t('role.mentioned')}</option>
+                            <option value="protagonist">
+                                {t('role.mainCharacter')}
+                            </option>
+                            <option value="supporting">
+                                {t('role.supporting')}
+                            </option>
+                            <option value="mentioned">
+                                {t('role.mentioned')}
+                            </option>
                         </Select>
                     </div>
                 )}
@@ -229,12 +283,15 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                 {/* Storylines — characters only */}
                 {isChar && storylines.length > 0 && (
                     <div>
-                        <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                        <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                             {t('field.storylines')}
                         </label>
                         <div className="flex flex-wrap gap-1.5">
                             {storylines.map((s) => {
-                                const selected = characterForm.data.storylines.includes(s.id);
+                                const selected =
+                                    characterForm.data.storylines.includes(
+                                        s.id,
+                                    );
                                 return (
                                     <button
                                         key={s.id}
@@ -247,7 +304,12 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                                         }`}
                                     >
                                         {s.name}
-                                        {selected && <X size={12} className="text-ink-muted" />}
+                                        {selected && (
+                                            <X
+                                                size={12}
+                                                className="text-ink-muted"
+                                            />
+                                        )}
                                     </button>
                                 );
                             })}
@@ -257,12 +319,14 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
 
                 {/* Source */}
                 <div>
-                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                    <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                         {t('source')}
                     </label>
                     <span className="flex items-center gap-1.5 text-[13px] text-ink-muted">
                         <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#C9D4C5]" />
-                        {item.is_ai_extracted ? t('aiExtracted') : t('edit.manualEntry')}
+                        {item.is_ai_extracted
+                            ? t('aiExtracted')
+                            : t('edit.manualEntry')}
                     </span>
                 </div>
             </div>
@@ -271,13 +335,16 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
 
             {/* Appears In — empty state */}
             <div>
-                <h3 className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                <h3 className="mb-3 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                     {t('appearsIn')}
                 </h3>
                 {item.chapters && item.chapters.length > 0 ? (
                     <div className="flex flex-col">
                         {item.chapters.map((chapter) => (
-                            <div key={chapter.id} className="flex items-center gap-4 border-t border-border-subtle py-3">
+                            <div
+                                key={chapter.id}
+                                className="flex items-center gap-4 border-t border-border-subtle py-3"
+                            >
                                 <span className="text-[13px] text-ink">
                                     {chapter.reader_order}. {chapter.title}
                                 </span>
@@ -287,8 +354,12 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                 ) : (
                     <div className="flex flex-col items-center gap-2 py-8 text-center">
                         <BookOpen size={20} className="text-ink-faint" />
-                        <p className="text-[13px] text-ink-muted">{t('edit.noAppearances')}</p>
-                        <p className="text-[12px] text-ink-faint">{t('edit.appearancesHint')}</p>
+                        <p className="text-[13px] text-ink-muted">
+                            {t('edit.noAppearances')}
+                        </p>
+                        <p className="text-[12px] text-ink-faint">
+                            {t('edit.appearancesHint')}
+                        </p>
                     </div>
                 )}
             </div>

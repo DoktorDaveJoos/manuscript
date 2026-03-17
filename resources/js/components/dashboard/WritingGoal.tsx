@@ -19,7 +19,9 @@ export default function WritingGoal({
     const [goal, setGoal] = useState(writingGoal.daily_word_count_goal);
     const [isEditing, setIsEditing] = useState(false);
     const [inputValue, setInputValue] = useState(String(goal ?? 500));
-    const [targetValue, setTargetValue] = useState(String(targetWordCount ?? ''));
+    const [targetValue, setTargetValue] = useState(
+        String(targetWordCount ?? ''),
+    );
     const [saveError, setSaveError] = useState(false);
 
     const handleSave = useCallback(async () => {
@@ -28,7 +30,12 @@ export default function WritingGoal({
 
         const body: Record<string, unknown> = { daily_word_count_goal: parsed };
         const parsedTarget = targetValue ? parseInt(targetValue, 10) : null;
-        if (parsedTarget !== null && (isNaN(parsedTarget) || parsedTarget < 1000 || parsedTarget > 500000)) {
+        if (
+            parsedTarget !== null &&
+            (isNaN(parsedTarget) ||
+                parsedTarget < 1000 ||
+                parsedTarget > 500000)
+        ) {
             if (targetValue !== '') return;
         }
         body.target_word_count = parsedTarget;
@@ -70,8 +77,16 @@ export default function WritingGoal({
     if (!goal && !isEditing) {
         return (
             <div className="rounded-xl border border-border-light bg-surface-card p-6">
-                <p className="text-sm text-ink-muted">{t('writingGoal.setupPrompt')}</p>
-                <Button variant="primary" size="sm" type="button" onClick={() => setIsEditing(true)} className="mt-3">
+                <p className="text-sm text-ink-muted">
+                    {t('writingGoal.setupPrompt')}
+                </p>
+                <Button
+                    variant="primary"
+                    size="sm"
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="mt-3"
+                >
                     {t('writingGoal.setGoal')}
                 </Button>
             </div>
@@ -82,7 +97,7 @@ export default function WritingGoal({
     if (isEditing) {
         return (
             <div className="rounded-xl border border-border-light bg-surface-card p-6">
-                <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                <label className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                     {t('writingGoal.dailyWordGoal')}
                 </label>
                 <div className="mt-2 flex flex-col gap-4">
@@ -92,12 +107,17 @@ export default function WritingGoal({
                             min={50}
                             max={50000}
                             value={inputValue}
-                            onChange={(e) => { setInputValue(e.target.value); setSaveError(false); }}
+                            onChange={(e) => {
+                                setInputValue(e.target.value);
+                                setSaveError(false);
+                            }}
                             onKeyDown={handleKeyDown}
                             className="w-28"
                             autoFocus
                         />
-                        <span className="text-xs text-ink-faint">{t('writingGoal.wordsPerDay')}</span>
+                        <span className="text-xs text-ink-faint">
+                            {t('writingGoal.wordsPerDay')}
+                        </span>
                     </div>
                     <div className="flex items-center gap-2">
                         <Input
@@ -105,24 +125,45 @@ export default function WritingGoal({
                             min={1000}
                             max={500000}
                             value={targetValue}
-                            onChange={(e) => { setTargetValue(e.target.value); setSaveError(false); }}
+                            onChange={(e) => {
+                                setTargetValue(e.target.value);
+                                setSaveError(false);
+                            }}
                             onKeyDown={handleKeyDown}
                             placeholder={t('writingGoal.optional')}
                             className="w-28"
                         />
-                        <span className="text-xs text-ink-faint">{t('writingGoal.manuscriptTarget')}</span>
+                        <span className="text-xs text-ink-faint">
+                            {t('writingGoal.manuscriptTarget')}
+                        </span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="flex-1" />
-                        <Button variant="ghost" size="sm" type="button" onClick={() => { setIsEditing(false); setInputValue(String(goal ?? 500)); setSaveError(false); }}>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            type="button"
+                            onClick={() => {
+                                setIsEditing(false);
+                                setInputValue(String(goal ?? 500));
+                                setSaveError(false);
+                            }}
+                        >
                             {t('writingGoal.cancel')}
                         </Button>
-                        <Button variant="primary" size="sm" type="button" onClick={handleSave}>
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            type="button"
+                            onClick={handleSave}
+                        >
                             {t('writingGoal.save')}
                         </Button>
                     </div>
                     {saveError && (
-                        <p className="text-xs text-red-600">{t('writingGoal.saveError')}</p>
+                        <p className="text-xs text-red-600">
+                            {t('writingGoal.saveError')}
+                        </p>
                     )}
                 </div>
             </div>
@@ -131,14 +172,20 @@ export default function WritingGoal({
 
     // Goal display
     const effectiveGoal = goal ?? 0;
-    const progress = effectiveGoal > 0 ? Math.min(100, Math.round((writingGoal.today_words / effectiveGoal) * 100)) : 0;
+    const progress =
+        effectiveGoal > 0
+            ? Math.min(
+                  100,
+                  Math.round((writingGoal.today_words / effectiveGoal) * 100),
+              )
+            : 0;
     const wordsToGo = Math.max(0, effectiveGoal - writingGoal.today_words);
 
     return (
         <div className="flex flex-col gap-4 rounded-xl border border-border-light bg-surface-card p-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                     {t('writingGoal.todaysWriting')}
                 </span>
                 <button
@@ -172,7 +219,9 @@ export default function WritingGoal({
             <div className="flex items-center justify-between">
                 <span className="text-[12px] text-ink-muted">
                     {wordsToGo > 0
-                        ? t('writingGoal.wordsToGo', { value: wordsToGo.toLocaleString(i18n.language) })
+                        ? t('writingGoal.wordsToGo', {
+                              value: wordsToGo.toLocaleString(i18n.language),
+                          })
                         : t('writingGoal.goalReached')}
                 </span>
 

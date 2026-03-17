@@ -22,8 +22,13 @@ createInertiaApp({
         const locale = (props.initialPage.props.locale as string) ?? 'en';
         i18n.changeLanguage(locale);
 
-        const settings = props.initialPage.props.app_settings as AppSettings | undefined;
-        if (import.meta.env.VITE_SENTRY_ELECTRON_DSN && settings?.send_error_reports) {
+        const settings = props.initialPage.props.app_settings as
+            | AppSettings
+            | undefined;
+        if (
+            import.meta.env.VITE_SENTRY_ELECTRON_DSN &&
+            settings?.send_error_reports
+        ) {
             import('@sentry/electron/renderer').then((Sentry) => {
                 Sentry.init({
                     dsn: import.meta.env.VITE_SENTRY_ELECTRON_DSN,
@@ -32,7 +37,8 @@ createInertiaApp({
             });
         }
 
-        const appVersion = (props.initialPage.props.app_version as string) ?? '0.0.0';
+        const appVersion =
+            (props.initialPage.props.app_version as string) ?? '0.0.0';
         const root = createRoot(el);
 
         root.render(

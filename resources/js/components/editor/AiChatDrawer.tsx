@@ -4,7 +4,12 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { chat } from '@/actions/App/Http/Controllers/AiController';
 import { jsonFetchHeaders } from '@/lib/utils';
-import type { Book, Chapter, Character, CharacterChapterPivot } from '@/types/models';
+import type {
+    Book,
+    Chapter,
+    Character,
+    CharacterChapterPivot,
+} from '@/types/models';
 
 const md = new MarkdownIt({ linkify: true, breaks: true });
 
@@ -18,9 +23,18 @@ type Message = {
     content: string;
 };
 
-const AssistantMessage = memo(function AssistantMessage({ content }: { content: string }) {
+const AssistantMessage = memo(function AssistantMessage({
+    content,
+}: {
+    content: string;
+}) {
     const html = useMemo(() => md.render(content), [content]);
-    return <div className="ai-chat-markdown" dangerouslySetInnerHTML={{ __html: html }} />;
+    return (
+        <div
+            className="ai-chat-markdown"
+            dangerouslySetInnerHTML={{ __html: html }}
+        />
+    );
 });
 
 type ChapterWithCharacters = Chapter & {
@@ -86,9 +100,13 @@ export default function AiChatDrawer({
 
         const handleMouseMove = (e: MouseEvent) => {
             const delta = startX - e.clientX;
-            const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
+            const newWidth = Math.min(
+                MAX_WIDTH,
+                Math.max(MIN_WIDTH, startWidth + delta),
+            );
             widthRef.current = newWidth;
-            if (asideRef.current) asideRef.current.style.width = `${newWidth}px`;
+            if (asideRef.current)
+                asideRef.current.style.width = `${newWidth}px`;
         };
 
         const handleMouseUp = () => {
@@ -135,10 +153,15 @@ export default function AiChatDrawer({
             });
 
             if (!response.ok) {
-                const errorText = await response.text().catch(() => 'Chat request failed');
+                const errorText = await response
+                    .text()
+                    .catch(() => 'Chat request failed');
                 setMessages((prev) => {
                     const updated = [...prev];
-                    updated[updated.length - 1] = { role: 'assistant', content: `Error: ${errorText}` };
+                    updated[updated.length - 1] = {
+                        role: 'assistant',
+                        content: `Error: ${errorText}`,
+                    };
                     return updated;
                 });
                 setIsStreaming(false);
@@ -167,7 +190,10 @@ export default function AiChatDrawer({
                     setMessages((prev) => {
                         const updated = [...prev];
                         const last = updated[updated.length - 1];
-                        updated[updated.length - 1] = { ...last, content: last.content + text };
+                        updated[updated.length - 1] = {
+                            ...last,
+                            content: last.content + text,
+                        };
                         return updated;
                     });
                 };
@@ -178,7 +204,11 @@ export default function AiChatDrawer({
                         if (data === '[DONE]') continue;
                         try {
                             const parsed = JSON.parse(data);
-                            const text = parsed.text ?? parsed.content ?? parsed.delta ?? '';
+                            const text =
+                                parsed.text ??
+                                parsed.content ??
+                                parsed.delta ??
+                                '';
                             if (text) appendChunk(text);
                         } catch {
                             if (data.trim()) appendChunk(data);
@@ -189,10 +219,15 @@ export default function AiChatDrawer({
         } catch {
             setMessages((prev) => {
                 const updated = [...prev];
-                if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
+                if (
+                    updated.length > 0 &&
+                    updated[updated.length - 1].role === 'assistant'
+                ) {
                     updated[updated.length - 1] = {
                         ...updated[updated.length - 1],
-                        content: updated[updated.length - 1].content || t('chat.connectionFailed'),
+                        content:
+                            updated[updated.length - 1].content ||
+                            t('chat.connectionFailed'),
                     };
                 }
                 return updated;
@@ -212,11 +247,17 @@ export default function AiChatDrawer({
         [handleSend],
     );
 
-    const characterNames = (chapter.characters ?? []).map((c) => c.name).slice(0, 3);
+    const characterNames = (chapter.characters ?? [])
+        .map((c) => c.name)
+        .slice(0, 3);
     const wordCount = chapter.word_count ?? 0;
 
     return (
-        <aside ref={asideRef} className="relative flex h-full shrink-0 flex-col border-l border-[#F0EFED] bg-white" style={{ width }}>
+        <aside
+            ref={asideRef}
+            className="relative flex h-full shrink-0 flex-col border-l border-[#F0EFED] bg-white"
+            style={{ width }}
+        >
             {/* Resize handle */}
             <div
                 onMouseDown={handleMouseDown}
@@ -229,7 +270,9 @@ export default function AiChatDrawer({
             <div className="flex h-11 items-center justify-between border-b border-[#F0EFED] px-5">
                 <div className="flex items-center gap-2">
                     <Sparkles size={14} className="text-accent" />
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink">{t('askAi')}</span>
+                    <span className="text-[11px] font-semibold tracking-[0.06em] text-ink uppercase">
+                        {t('askAi')}
+                    </span>
                 </div>
                 <button
                     type="button"
@@ -245,24 +288,36 @@ export default function AiChatDrawer({
                 <div className="flex items-center gap-2">
                     <span className="size-[5px] shrink-0 rounded-full bg-ai-green" />
                     <BookOpen size={13} className="shrink-0 text-accent" />
-                    <span className="truncate text-xs font-medium text-ink">{chapter.title || 'Untitled'}</span>
+                    <span className="truncate text-xs font-medium text-ink">
+                        {chapter.title || 'Untitled'}
+                    </span>
                     <span className="shrink-0 rounded-[3px] bg-[#F0EFED] px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
-                        {t('chat.chapter', { number: chapter.reader_order + 1 })}
+                        {t('chat.chapter', {
+                            number: chapter.reader_order + 1,
+                        })}
                     </span>
                 </div>
                 <div className="flex items-center gap-1">
                     <span className="truncate text-[11px] text-[#B5B5B5]">
-                        {t('chat.fullContext')}{characterNames.length > 0 && ` · ${characterNames.join(', ')}`}{wordCount > 0 && ` · ${t('chat.words', { count: wordCount.toLocaleString() })}`}
+                        {t('chat.fullContext')}
+                        {characterNames.length > 0 &&
+                            ` · ${characterNames.join(', ')}`}
+                        {wordCount > 0 &&
+                            ` · ${t('chat.words', { count: wordCount.toLocaleString() })}`}
                     </span>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1">
                         <span className="size-1 rounded-full bg-ai-green" />
-                        <span className="text-[10px] text-ink-muted">{t('chat.chapterLoaded')}</span>
+                        <span className="text-[10px] text-ink-muted">
+                            {t('chat.chapterLoaded')}
+                        </span>
                     </div>
                     <div className="flex items-center gap-1">
                         <span className="size-1 rounded-full bg-ai-green" />
-                        <span className="text-[10px] text-ink-muted">{t('chat.bookContext')}</span>
+                        <span className="text-[10px] text-ink-muted">
+                            {t('chat.bookContext')}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -274,7 +329,7 @@ export default function AiChatDrawer({
                         {t('chat.emptyState')}
                     </p>
                 )}
-                {messages.map((msg, i) => (
+                {messages.map((msg, i) =>
                     msg.role === 'user' ? (
                         <div key={i} className="flex flex-col items-end gap-1">
                             <div className="max-w-[85%] rounded-2xl bg-[#F5F4F2] px-4 py-3 text-sm leading-relaxed text-ink">
@@ -285,22 +340,22 @@ export default function AiChatDrawer({
                         <div key={i} className="flex flex-col gap-1.5">
                             <Sparkles size={14} className="text-accent" />
                             <div className="max-w-[85%] rounded-2xl border border-[#F0EFED] bg-white px-4 py-3 text-sm leading-relaxed text-ink">
-                                {msg.content
-                                    ? <AssistantMessage content={msg.content} />
-                                    : isStreaming && i === messages.length - 1
-                                        ? (
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="size-1.5 animate-pulse rounded-full bg-accent opacity-90" />
-                                                <span className="size-1.5 animate-pulse rounded-full bg-accent opacity-55 [animation-delay:150ms]" />
-                                                <span className="size-1.5 animate-pulse rounded-full bg-accent opacity-30 [animation-delay:300ms]" />
-                                                <span className="ml-1 text-xs text-ink-muted">{t('chat.thinking')}</span>
-                                            </div>
-                                        )
-                                        : null}
+                                {msg.content ? (
+                                    <AssistantMessage content={msg.content} />
+                                ) : isStreaming && i === messages.length - 1 ? (
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="size-1.5 animate-pulse rounded-full bg-accent opacity-90" />
+                                        <span className="size-1.5 animate-pulse rounded-full bg-accent opacity-55 [animation-delay:150ms]" />
+                                        <span className="size-1.5 animate-pulse rounded-full bg-accent opacity-30 [animation-delay:300ms]" />
+                                        <span className="ml-1 text-xs text-ink-muted">
+                                            {t('chat.thinking')}
+                                        </span>
+                                    </div>
+                                ) : null}
                             </div>
                         </div>
-                    )
-                ))}
+                    ),
+                )}
                 <div ref={messagesEndRef} />
             </div>
 

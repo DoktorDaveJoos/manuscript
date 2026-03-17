@@ -40,29 +40,46 @@ export default function ChapterActContextMenu({
         }
 
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () =>
+            document.removeEventListener('mousedown', handleClickOutside);
     }, [onClose]);
 
     const itemClass =
         'flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] text-ink-soft transition-colors hover:bg-neutral-bg';
 
     return (
-        <div ref={ref} className={`fixed z-50 w-[200px] rounded-lg bg-surface-card ${menuShadow}`} style={{ left: position.x, top: position.y }}>
+        <div
+            ref={ref}
+            className={`fixed z-50 w-[200px] rounded-lg bg-surface-card ${menuShadow}`}
+            style={{ left: position.x, top: position.y }}
+        >
             <div className="flex flex-col p-1">
                 <div
                     className="relative"
                     onMouseEnter={() => setAssignOpen(true)}
                     onMouseLeave={() => setAssignOpen(false)}
                 >
-                    <button type="button" className={`${itemClass} justify-between`}>
+                    <button
+                        type="button"
+                        className={`${itemClass} justify-between`}
+                    >
                         <span className="flex items-center gap-2.5">
-                            <ArrowRight size={14} className="shrink-0 text-ink-muted" />
+                            <ArrowRight
+                                size={14}
+                                className="shrink-0 text-ink-muted"
+                            />
                             {t('contextMenu.assignTo')}
                         </span>
-                        <ChevronRight size={10} strokeWidth={2.5} className="text-ink-faint" />
+                        <ChevronRight
+                            size={10}
+                            strokeWidth={2.5}
+                            className="text-ink-faint"
+                        />
                     </button>
                     {assignOpen && (
-                        <div className={`absolute left-full top-0 ml-1 w-[180px] rounded-lg bg-surface-card ${menuShadow}`}>
+                        <div
+                            className={`absolute top-0 left-full ml-1 w-[180px] rounded-lg bg-surface-card ${menuShadow}`}
+                        >
                             <div className="flex flex-col p-1">
                                 {acts.map((act, i) => (
                                     <button
@@ -76,9 +93,16 @@ export default function ChapterActContextMenu({
                                     >
                                         <span
                                             className="inline-block size-[7px] rounded-full"
-                                            style={{ backgroundColor: ACT_COLORS[i] ?? 'var(--color-accent)' }}
+                                            style={{
+                                                backgroundColor:
+                                                    ACT_COLORS[i] ??
+                                                    'var(--color-accent)',
+                                            }}
                                         />
-                                        {t('actTitle', { number: act.number, title: act.title })}
+                                        {t('actTitle', {
+                                            number: act.number,
+                                            title: act.title,
+                                        })}
                                     </button>
                                 ))}
                             </div>
@@ -111,7 +135,10 @@ export default function ChapterActContextMenu({
                             }}
                             className={itemClass}
                         >
-                            <Download size={14} className="shrink-0 text-ink-muted" />
+                            <Download
+                                size={14}
+                                className="shrink-0 text-ink-muted"
+                            />
                             {t('contextMenu.exportChapter')}
                         </button>
                     </>

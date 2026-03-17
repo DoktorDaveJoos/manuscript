@@ -12,7 +12,7 @@ import WikiEntryList from '@/components/wiki/WikiEntryList';
 import WikiSearchInput from '@/components/wiki/WikiSearchInput';
 import WikiSearchResults from '@/components/wiki/WikiSearchResults';
 import WikiTabBar from '@/components/wiki/WikiTabBar';
-import type {WikiTab} from '@/components/wiki/WikiTabBar';
+import type { WikiTab } from '@/components/wiki/WikiTabBar';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { Book, Character, WikiEntry } from '@/types/models';
 
@@ -21,7 +21,13 @@ const MIN_WIDTH = 220;
 const MAX_WIDTH = 480;
 const DEFAULT_WIDTH = 280;
 
-const validTabs: WikiTab[] = ['characters', 'location', 'organization', 'item', 'lore'];
+const validTabs: WikiTab[] = [
+    'characters',
+    'location',
+    'organization',
+    'item',
+    'lore',
+];
 
 type Props = {
     book: Book;
@@ -44,7 +50,9 @@ export default function WikiIndex({
 }: Props) {
     const { t } = useTranslation('wiki');
     const storylines = useSidebarStorylines();
-    const initialTab = validTabs.includes(tab as WikiTab) ? (tab as WikiTab) : 'characters';
+    const initialTab = validTabs.includes(tab as WikiTab)
+        ? (tab as WikiTab)
+        : 'characters';
     const [activeTab, setActiveTab] = useState<WikiTab>(initialTab);
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [query, setQuery] = useState('');
@@ -69,13 +77,18 @@ export default function WikiIndex({
         const groups: { tab: WikiTab; items: (Character | WikiEntry)[] }[] = [];
 
         for (const tab of validTabs) {
-            const matched = entriesByTab[tab].filter((entry) => entry.name.toLowerCase().includes(q));
+            const matched = entriesByTab[tab].filter((entry) =>
+                entry.name.toLowerCase().includes(q),
+            );
             if (matched.length > 0) groups.push({ tab, items: matched });
         }
         return groups;
     }, [query, entriesByTab]);
 
-    const totalResults = searchResults.reduce((sum, g) => sum + g.items.length, 0);
+    const totalResults = searchResults.reduce(
+        (sum, g) => sum + g.items.length,
+        0,
+    );
 
     const handleSearchSelect = (id: number, tab: WikiTab) => {
         setActiveTab(tab);
@@ -122,9 +135,13 @@ export default function WikiIndex({
 
         const handleMouseMove = (e: MouseEvent) => {
             const delta = e.clientX - startX;
-            const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
+            const newWidth = Math.min(
+                MAX_WIDTH,
+                Math.max(MIN_WIDTH, startWidth + delta),
+            );
             widthRef.current = newWidth;
-            if (panelRef.current) panelRef.current.style.width = `${newWidth}px`;
+            if (panelRef.current)
+                panelRef.current.style.width = `${newWidth}px`;
         };
 
         const handleMouseUp = () => {
@@ -167,7 +184,8 @@ export default function WikiIndex({
 
     const selectedEntry =
         activeTab !== 'characters'
-            ? ((currentItems as WikiEntry[]).find((e) => e.id === selectedId) ?? null)
+            ? ((currentItems as WikiEntry[]).find((e) => e.id === selectedId) ??
+              null)
             : null;
 
     const editingItem = editingId
@@ -202,11 +220,22 @@ export default function WikiIndex({
         }
 
         if (selectedCharacter) {
-            return <CharacterDetail character={selectedCharacter} onEdit={() => handleEdit(selectedCharacter.id)} />;
+            return (
+                <CharacterDetail
+                    character={selectedCharacter}
+                    onEdit={() => handleEdit(selectedCharacter.id)}
+                />
+            );
         }
 
         if (selectedEntry) {
-            return <WikiEntryDetail entry={selectedEntry} tab={activeTab} onEdit={() => handleEdit(selectedEntry.id)} />;
+            return (
+                <WikiEntryDetail
+                    entry={selectedEntry}
+                    tab={activeTab}
+                    onEdit={() => handleEdit(selectedEntry.id)}
+                />
+            );
         }
 
         return <WikiEmptyState />;
@@ -216,16 +245,31 @@ export default function WikiIndex({
         <>
             <Head title={t('pageTitle', { title: book.title })} />
             <div className="flex h-screen overflow-hidden bg-surface">
-                <Sidebar book={book} storylines={storylines} scenesVisible={false} onScenesVisibleChange={() => {}} />
+                <Sidebar
+                    book={book}
+                    storylines={storylines}
+                    scenesVisible={false}
+                    onScenesVisibleChange={() => {}}
+                />
 
                 {/* List panel */}
-                <div ref={panelRef} className="relative flex shrink-0 flex-col border-r border-border-light bg-surface-card" style={{ width }}>
+                <div
+                    ref={panelRef}
+                    className="relative flex shrink-0 flex-col border-r border-border-light bg-surface-card"
+                    style={{ width }}
+                >
                     {/* Header */}
-                    <div className="flex items-center justify-between px-5 pb-0 pt-5">
+                    <div className="flex items-center justify-between px-5 pt-5 pb-0">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-[18px] font-semibold text-ink">{t('heading')}</h1>
+                            <h1 className="text-[18px] font-semibold text-ink">
+                                {t('heading')}
+                            </h1>
                             <span className="text-[13px] text-ink-faint">
-                                {isSearching ? t('search.results', { count: totalResults }) : count}
+                                {isSearching
+                                    ? t('search.results', {
+                                          count: totalResults,
+                                      })
+                                    : count}
                             </span>
                         </div>
                         <AddEntryDropdown onSelect={handleAddEntry} />
@@ -239,7 +283,10 @@ export default function WikiIndex({
                     {/* Tabs — hidden during search */}
                     {!isSearching && (
                         <div className="px-5 pt-4">
-                            <WikiTabBar activeTab={activeTab} onTabChange={handleTabChange} />
+                            <WikiTabBar
+                                activeTab={activeTab}
+                                onTabChange={handleTabChange}
+                            />
                         </div>
                     )}
 

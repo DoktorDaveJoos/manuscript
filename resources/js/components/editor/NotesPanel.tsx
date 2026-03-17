@@ -9,7 +9,13 @@ import { jsonFetchHeaders } from '@/lib/utils';
 const md = new MarkdownIt({ linkify: true });
 
 type SaveStatus = 'idle' | 'saving' | 'saved';
-export type BlockType = 'text' | 'todo' | 'bullet' | 'heading' | 'divider' | 'callout';
+export type BlockType =
+    | 'text'
+    | 'todo'
+    | 'bullet'
+    | 'heading'
+    | 'divider'
+    | 'callout';
 
 type LineData = {
     id: number;
@@ -19,13 +25,23 @@ type LineData = {
 };
 
 let nextLineId = 0;
-function createLine(type: BlockType, text: string, checked?: boolean): LineData {
+function createLine(
+    type: BlockType,
+    text: string,
+    checked?: boolean,
+): LineData {
     return { id: nextLineId++, type, text, checked };
 }
 
-function parseLine(raw: string): { type: BlockType; text: string; checked?: boolean } {
-    if (/^\[x\] /i.test(raw)) return { type: 'todo', text: raw.slice(4), checked: true };
-    if (raw.startsWith('[ ] ')) return { type: 'todo', text: raw.slice(4), checked: false };
+function parseLine(raw: string): {
+    type: BlockType;
+    text: string;
+    checked?: boolean;
+} {
+    if (/^\[x\] /i.test(raw))
+        return { type: 'todo', text: raw.slice(4), checked: true };
+    if (raw.startsWith('[ ] '))
+        return { type: 'todo', text: raw.slice(4), checked: false };
     if (raw.startsWith('- ')) return { type: 'bullet', text: raw.slice(2) };
     if (raw.startsWith('## ')) return { type: 'heading', text: raw.slice(3) };
     if (raw === '---') return { type: 'divider', text: '' };
@@ -43,12 +59,18 @@ function parseLines(text: string): LineData[] {
 
 function serializeLine(line: LineData): string {
     switch (line.type) {
-        case 'todo': return `[${line.checked ? 'x' : ' '}] ${line.text}`;
-        case 'bullet': return `- ${line.text}`;
-        case 'heading': return `## ${line.text}`;
-        case 'divider': return '---';
-        case 'callout': return `> ${line.text}`;
-        default: return line.text;
+        case 'todo':
+            return `[${line.checked ? 'x' : ' '}] ${line.text}`;
+        case 'bullet':
+            return `- ${line.text}`;
+        case 'heading':
+            return `## ${line.text}`;
+        case 'divider':
+            return '---';
+        case 'callout':
+            return `> ${line.text}`;
+        default:
+            return line.text;
     }
 }
 
@@ -56,11 +78,17 @@ function serializeLines(lines: LineData[]): string {
     return lines.map(serializeLine).join('\n');
 }
 
-function detectConversion(text: string): { type: BlockType; remaining: string; checked?: boolean } | null {
-    if (text.startsWith('[ ] ')) return { type: 'todo', remaining: text.slice(4), checked: false };
-    if (text.startsWith('- ')) return { type: 'bullet', remaining: text.slice(2) };
-    if (text.startsWith('## ')) return { type: 'heading', remaining: text.slice(3) };
-    if (text.startsWith('> ')) return { type: 'callout', remaining: text.slice(2) };
+function detectConversion(
+    text: string,
+): { type: BlockType; remaining: string; checked?: boolean } | null {
+    if (text.startsWith('[ ] '))
+        return { type: 'todo', remaining: text.slice(4), checked: false };
+    if (text.startsWith('- '))
+        return { type: 'bullet', remaining: text.slice(2) };
+    if (text.startsWith('## '))
+        return { type: 'heading', remaining: text.slice(3) };
+    if (text.startsWith('> '))
+        return { type: 'callout', remaining: text.slice(2) };
     return null;
 }
 
@@ -78,7 +106,9 @@ export default function NotesPanel({
     onClose: () => void;
 }) {
     const { t } = useTranslation('editor');
-    const [lines, setLines] = useState<LineData[]>(() => parseLines(initialNotes ?? ''));
+    const [lines, setLines] = useState<LineData[]>(() =>
+        parseLines(initialNotes ?? ''),
+    );
     const [activeIndex, setActiveIndex] = useState(() => {
         const initial = initialNotes ?? '';
         return initial ? initial.split('\n').length - 1 : 0;
@@ -89,13 +119,21 @@ export default function NotesPanel({
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingRef = useRef<'dirty' | null>(null);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const [slashMenu, setSlashMenu] = useState<{ top: number; left: number; flip: boolean } | null>(null);
+    const [slashMenu, setSlashMenu] = useState<{
+        top: number;
+        left: number;
+        flip: boolean;
+    } | null>(null);
     const slashMenuRef = useRef(slashMenu);
-    useEffect(() => { slashMenuRef.current = slashMenu; }, [slashMenu]);
+    useEffect(() => {
+        slashMenuRef.current = slashMenu;
+    }, [slashMenu]);
     const slashDismissedRef = useRef(false);
     const cursorPosRef = useRef<number | null>(null);
     const linesRef = useRef(lines);
-    useEffect(() => { linesRef.current = lines; }, [lines]);
+    useEffect(() => {
+        linesRef.current = lines;
+    }, [lines]);
 
     useEffect(() => {
         requestAnimationFrame(() => {
@@ -103,7 +141,10 @@ export default function NotesPanel({
             if (!input) return;
             input.focus();
             if (cursorPosRef.current !== null) {
-                input.setSelectionRange(cursorPosRef.current, cursorPosRef.current);
+                input.setSelectionRange(
+                    cursorPosRef.current,
+                    cursorPosRef.current,
+                );
                 cursorPosRef.current = null;
             }
         });
@@ -124,17 +165,23 @@ export default function NotesPanel({
 
         setSaveStatus('saving');
         try {
-            const response = await fetch(updateNotes.url({ book: bookId, chapter: chapterId }), {
-                method: 'PATCH',
-                headers: jsonFetchHeaders(),
-                body: JSON.stringify({ notes: value || null }),
-                signal: controller.signal,
-            });
+            const response = await fetch(
+                updateNotes.url({ book: bookId, chapter: chapterId }),
+                {
+                    method: 'PATCH',
+                    headers: jsonFetchHeaders(),
+                    body: JSON.stringify({ notes: value || null }),
+                    signal: controller.signal,
+                },
+            );
             if (response.ok) {
                 onNotesChange?.(value || null);
                 setSaveStatus('saved');
                 if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-                savedTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+                savedTimerRef.current = setTimeout(
+                    () => setSaveStatus('idle'),
+                    2000,
+                );
             } else {
                 setSaveStatus('idle');
             }
@@ -146,7 +193,9 @@ export default function NotesPanel({
     }, [bookId, chapterId, onNotesChange]);
 
     const flushRef = useRef(flush);
-    useEffect(() => { flushRef.current = flush; }, [flush]);
+    useEffect(() => {
+        flushRef.current = flush;
+    }, [flush]);
 
     const scheduleSave = useCallback(() => {
         pendingRef.current = 'dirty';
@@ -175,7 +224,9 @@ export default function NotesPanel({
     const updateLine = useCallback(
         (index: number, updates: Partial<LineData>) => {
             setLines((prev) => {
-                const next = prev.map((l, i) => (i === index ? { ...l, ...updates } : l));
+                const next = prev.map((l, i) =>
+                    i === index ? { ...l, ...updates } : l,
+                );
                 linesRef.current = next;
                 return next;
             });
@@ -187,7 +238,8 @@ export default function NotesPanel({
     const toggleCheck = useCallback(
         (index: number) => {
             const line = linesRef.current[index];
-            if (line.type === 'todo') updateLine(index, { checked: !line.checked });
+            if (line.type === 'todo')
+                updateLine(index, { checked: !line.checked });
         },
         [updateLine],
     );
@@ -201,10 +253,18 @@ export default function NotesPanel({
             if (line.type === 'text') {
                 const conv = detectConversion(value);
                 if (conv) {
-                    updateLine(activeIndex, { type: conv.type, text: conv.remaining, checked: conv.checked });
+                    updateLine(activeIndex, {
+                        type: conv.type,
+                        text: conv.remaining,
+                        checked: conv.checked,
+                    });
                     requestAnimationFrame(() => {
                         const input = inputRef.current;
-                        if (input) input.setSelectionRange(conv.remaining.length, conv.remaining.length);
+                        if (input)
+                            input.setSelectionRange(
+                                conv.remaining.length,
+                                conv.remaining.length,
+                            );
                     });
                     return;
                 }
@@ -222,8 +282,14 @@ export default function NotesPanel({
                     if (panelRect) {
                         const lineTop = inputRect.top - panelRect.top;
                         const menuHeight = 210;
-                        const flip = lineTop + inputRect.height + menuHeight > panelRect.height;
-                        setSlashMenu({ top: flip ? lineTop : lineTop + inputRect.height, left: 20, flip });
+                        const flip =
+                            lineTop + inputRect.height + menuHeight >
+                            panelRect.height;
+                        setSlashMenu({
+                            top: flip ? lineTop : lineTop + inputRect.height,
+                            left: 20,
+                            flip,
+                        });
                     }
                 }
             } else {
@@ -247,7 +313,11 @@ export default function NotesPanel({
                 if (line.type === 'text' && line.text === '---') {
                     setLines((prev) => {
                         const next = [...prev];
-                        next[activeIndex] = { ...next[activeIndex], type: 'divider', text: '' };
+                        next[activeIndex] = {
+                            ...next[activeIndex],
+                            type: 'divider',
+                            text: '',
+                        };
                         next.splice(activeIndex + 1, 0, createLine('text', ''));
                         linesRef.current = next;
                         return next;
@@ -259,8 +329,16 @@ export default function NotesPanel({
                 }
 
                 // Empty continuable block → revert to text
-                if (!line.text && (line.type === 'todo' || line.type === 'bullet' || line.type === 'callout')) {
-                    updateLine(activeIndex, { type: 'text', checked: undefined });
+                if (
+                    !line.text &&
+                    (line.type === 'todo' ||
+                        line.type === 'bullet' ||
+                        line.type === 'callout')
+                ) {
+                    updateLine(activeIndex, {
+                        type: 'text',
+                        checked: undefined,
+                    });
                     return;
                 }
 
@@ -282,12 +360,25 @@ export default function NotesPanel({
                 const pos = input.selectionStart ?? input.value.length;
                 const before = input.value.substring(0, pos);
                 const after = input.value.substring(pos);
-                const continueType = (line.type === 'todo' || line.type === 'bullet' || line.type === 'callout') ? line.type : 'text';
+                const continueType =
+                    line.type === 'todo' ||
+                    line.type === 'bullet' ||
+                    line.type === 'callout'
+                        ? line.type
+                        : 'text';
 
                 setLines((prev) => {
                     const next = [...prev];
                     next[activeIndex] = { ...next[activeIndex], text: before };
-                    next.splice(activeIndex + 1, 0, createLine(continueType, after, continueType === 'todo' ? false : undefined));
+                    next.splice(
+                        activeIndex + 1,
+                        0,
+                        createLine(
+                            continueType,
+                            after,
+                            continueType === 'todo' ? false : undefined,
+                        ),
+                    );
                     linesRef.current = next;
                     return next;
                 });
@@ -301,12 +392,14 @@ export default function NotesPanel({
                     setLines((prev) => {
                         const next = [...prev];
                         next.splice(activeIndex, 1);
-                        if (next.length === 0) next.push(createLine('text', ''));
+                        if (next.length === 0)
+                            next.push(createLine('text', ''));
                         linesRef.current = next;
                         return next;
                     });
                     const newIdx = Math.max(0, activeIndex - 1);
-                    cursorPosRef.current = linesRef.current[newIdx]?.text.length ?? 0;
+                    cursorPosRef.current =
+                        linesRef.current[newIdx]?.text.length ?? 0;
                     setActiveIndex(newIdx);
                     scheduleSave();
                     return;
@@ -316,7 +409,10 @@ export default function NotesPanel({
                     // Non-text block at start → revert to text
                     if (line.type !== 'text') {
                         e.preventDefault();
-                        updateLine(activeIndex, { type: 'text', checked: undefined });
+                        updateLine(activeIndex, {
+                            type: 'text',
+                            checked: undefined,
+                        });
                         return;
                     }
                     // Merge with previous line
@@ -336,7 +432,10 @@ export default function NotesPanel({
                             const prevText = prev.text;
                             setLines((p) => {
                                 const next = [...p];
-                                next[activeIndex - 1] = { ...next[activeIndex - 1], text: prevText + next[activeIndex].text };
+                                next[activeIndex - 1] = {
+                                    ...next[activeIndex - 1],
+                                    text: prevText + next[activeIndex].text,
+                                };
                                 next.splice(activeIndex, 1);
                                 linesRef.current = next;
                                 return next;
@@ -349,11 +448,20 @@ export default function NotesPanel({
                 }
             } else if (e.key === 'ArrowUp' && activeIndex > 0) {
                 e.preventDefault();
-                cursorPosRef.current = Math.min(input.selectionStart ?? 0, linesRef.current[activeIndex - 1].text.length);
+                cursorPosRef.current = Math.min(
+                    input.selectionStart ?? 0,
+                    linesRef.current[activeIndex - 1].text.length,
+                );
                 setActiveIndex(activeIndex - 1);
-            } else if (e.key === 'ArrowDown' && activeIndex < linesRef.current.length - 1) {
+            } else if (
+                e.key === 'ArrowDown' &&
+                activeIndex < linesRef.current.length - 1
+            ) {
                 e.preventDefault();
-                cursorPosRef.current = Math.min(input.selectionStart ?? 0, linesRef.current[activeIndex + 1].text.length);
+                cursorPosRef.current = Math.min(
+                    input.selectionStart ?? 0,
+                    linesRef.current[activeIndex + 1].text.length,
+                );
                 setActiveIndex(activeIndex + 1);
             } else if (e.key === 'Escape') {
                 e.stopPropagation();
@@ -369,7 +477,11 @@ export default function NotesPanel({
             if (blockType === 'divider') {
                 setLines((prev) => {
                     const next = [...prev];
-                    next[activeIndex] = { ...next[activeIndex], type: 'divider', text: '' };
+                    next[activeIndex] = {
+                        ...next[activeIndex],
+                        type: 'divider',
+                        text: '',
+                    };
                     next.splice(activeIndex + 1, 0, createLine('text', ''));
                     linesRef.current = next;
                     return next;
@@ -412,9 +524,18 @@ export default function NotesPanel({
             const currentLine = linesRef.current[activeIndex];
 
             const newLines: LineData[] = [];
-            newLines.push(createLine(currentLine.type, before + pastedLines[0], currentLine.checked));
+            newLines.push(
+                createLine(
+                    currentLine.type,
+                    before + pastedLines[0],
+                    currentLine.checked,
+                ),
+            );
             for (let i = 1; i < pastedLines.length; i++) {
-                const raw = i === pastedLines.length - 1 ? pastedLines[i] + after : pastedLines[i];
+                const raw =
+                    i === pastedLines.length - 1
+                        ? pastedLines[i] + after
+                        : pastedLines[i];
                 const p = parseLine(raw);
                 newLines.push(createLine(p.type, p.text, p.checked));
             }
@@ -439,13 +560,20 @@ export default function NotesPanel({
     }, []);
 
     return (
-        <div data-notes-panel className="relative flex w-[260px] shrink-0 flex-col border-l border-border bg-white">
+        <div
+            data-notes-panel
+            className="relative flex w-[260px] shrink-0 flex-col border-l border-border bg-white"
+        >
             <header className="flex h-[44px] shrink-0 items-center justify-between border-b border-border px-4">
-                <span className="text-[13px] font-semibold text-ink">{t('notes.title')}</span>
+                <span className="text-[13px] font-semibold text-ink">
+                    {t('notes.title')}
+                </span>
                 <div className="flex items-center gap-1.5">
                     {saveStatus !== 'idle' && (
                         <span className="text-[10px] text-ink-faint">
-                            {saveStatus === 'saving' ? t('notes.saving') : t('notes.saved')}
+                            {saveStatus === 'saving'
+                                ? t('notes.saving')
+                                : t('notes.saved')}
                         </span>
                     )}
                     <Kbd keys="/" />
@@ -464,7 +592,9 @@ export default function NotesPanel({
                                 className="cursor-text py-1.5"
                                 onClick={() => handleClick(i)}
                             >
-                                <hr className={`border-t ${isActive ? 'border-accent' : 'border-border'}`} />
+                                <hr
+                                    className={`border-t ${isActive ? 'border-accent' : 'border-border'}`}
+                                />
                                 {isActive && (
                                     <input
                                         ref={inputRef}
@@ -481,13 +611,26 @@ export default function NotesPanel({
                     const checkbox = line.type === 'todo' && (
                         <button
                             tabIndex={-1}
-                            onClick={(e) => { e.stopPropagation(); toggleCheck(i); }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                toggleCheck(i);
+                            }}
                             className={`mt-[3px] flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm border-[1.5px] transition-colors ${
-                                line.checked ? 'border-accent bg-accent text-white' : 'border-ink-muted hover:border-ink-soft'
+                                line.checked
+                                    ? 'border-accent bg-accent text-white'
+                                    : 'border-ink-muted hover:border-ink-soft'
                             }`}
                         >
                             {line.checked && (
-                                <svg className="h-2.5 w-2.5" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <svg
+                                    className="h-2.5 w-2.5"
+                                    viewBox="0 0 10 10"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
                                     <path d="M2 5.5l2 2L8 3" />
                                 </svg>
                             )}
@@ -500,9 +643,15 @@ export default function NotesPanel({
 
                     const textClass = [
                         'min-w-0 flex-1 leading-5',
-                        line.type === 'heading' ? 'font-semibold text-[15px]' : 'text-[13px]',
-                        line.type === 'todo' && line.checked && 'text-ink-faint line-through',
-                    ].filter(Boolean).join(' ');
+                        line.type === 'heading'
+                            ? 'font-semibold text-[15px]'
+                            : 'text-[13px]',
+                        line.type === 'todo' &&
+                            line.checked &&
+                            'text-ink-faint line-through',
+                    ]
+                        .filter(Boolean)
+                        .join(' ');
 
                     const wrapClass = `flex items-start gap-1.5 ${line.type === 'callout' ? 'border-l-2 border-accent pl-2' : ''}`;
 
@@ -519,8 +668,14 @@ export default function NotesPanel({
                                     onChange={handleLineChange}
                                     onKeyDown={handleKeyDown}
                                     onPaste={handlePaste}
-                                    placeholder={lines.length === 1 && i === 0 && line.type === 'text' ? t('notes.placeholder') : undefined}
-                                    className={`${textClass} w-full border-0 bg-transparent p-0 font-sans text-ink placeholder:text-ink-faint focus:outline-none focus:ring-0`}
+                                    placeholder={
+                                        lines.length === 1 &&
+                                        i === 0 &&
+                                        line.type === 'text'
+                                            ? t('notes.placeholder')
+                                            : undefined
+                                    }
+                                    className={`${textClass} w-full border-0 bg-transparent p-0 font-sans text-ink placeholder:text-ink-faint focus:ring-0 focus:outline-none`}
                                 />
                             </div>
                         );

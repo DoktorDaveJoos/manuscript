@@ -38,7 +38,8 @@ export default function StorylineContextMenu({
         }
 
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () =>
+            document.removeEventListener('mousedown', handleClickOutside);
     }, [onClose]);
 
     const handleColorChange = async (color: string) => {
@@ -55,7 +56,11 @@ export default function StorylineContextMenu({
         'flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] text-ink-soft transition-colors hover:bg-neutral-bg';
 
     return (
-        <div ref={ref} className={`fixed z-50 w-[200px] rounded-lg bg-surface-card ${menuShadow}`} style={{ left: position.x, top: position.y }}>
+        <div
+            ref={ref}
+            className={`fixed z-50 w-[200px] rounded-lg bg-surface-card ${menuShadow}`}
+            style={{ left: position.x, top: position.y }}
+        >
             <div className="flex flex-col p-1">
                 <button
                     type="button"
@@ -73,16 +78,33 @@ export default function StorylineContextMenu({
                     onMouseEnter={() => setColorOpen(true)}
                     onMouseLeave={() => setColorOpen(false)}
                 >
-                    <button type="button" className={`${itemClass} justify-between`}>
+                    <button
+                        type="button"
+                        className={`${itemClass} justify-between`}
+                    >
                         <span className="flex items-center gap-2.5">
-                            {storyline.color && <span className="inline-block size-[7px] rounded-full" style={{ backgroundColor: storyline.color }} />}
+                            {storyline.color && (
+                                <span
+                                    className="inline-block size-[7px] rounded-full"
+                                    style={{ backgroundColor: storyline.color }}
+                                />
+                            )}
                             {t('contextMenu.color')}
                         </span>
-                        <ChevronRight size={10} strokeWidth={2.5} className="text-ink-faint" />
+                        <ChevronRight
+                            size={10}
+                            strokeWidth={2.5}
+                            className="text-ink-faint"
+                        />
                     </button>
                     {colorOpen && (
-                        <div className={`absolute left-full top-0 ml-1 w-[170px] rounded-lg bg-surface-card ${menuShadow}`}>
-                            <ColorPicker value={storyline.color} onChange={handleColorChange} />
+                        <div
+                            className={`absolute top-0 left-full ml-1 w-[170px] rounded-lg bg-surface-card ${menuShadow}`}
+                        >
+                            <ColorPicker
+                                value={storyline.color}
+                                onChange={handleColorChange}
+                            />
                         </div>
                     )}
                 </div>
@@ -96,8 +118,10 @@ export default function StorylineContextMenu({
                         onClose();
                         onDelete();
                     }}
-                    className={`flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] font-medium leading-[18px] transition-colors ${
-                        isLastStoryline ? 'cursor-not-allowed text-ink-faint' : 'text-delete hover:bg-neutral-bg'
+                    className={`flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] font-medium transition-colors ${
+                        isLastStoryline
+                            ? 'cursor-not-allowed text-ink-faint'
+                            : 'text-delete hover:bg-neutral-bg'
                     }`}
                 >
                     {t('contextMenu.deleteStoryline')}

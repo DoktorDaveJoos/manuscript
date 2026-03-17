@@ -18,7 +18,9 @@ interface Props {
 
 export default function WritingStyle({ book, writing_style_display }: Props) {
     const { t } = useTranslation('settings');
-    const [text, setText] = useState(book.writing_style_text ?? writing_style_display);
+    const [text, setText] = useState(
+        book.writing_style_text ?? writing_style_display,
+    );
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
 
@@ -46,11 +48,17 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
     }, [text, t]);
 
     return (
-        <SettingsLayout activeSection="writing-style" book={book} title={t('writingStyle.pageTitle', { bookTitle: book.title })}>
+        <SettingsLayout
+            activeSection="writing-style"
+            book={book}
+            title={t('writingStyle.pageTitle', { bookTitle: book.title })}
+        >
             <div className="flex flex-col gap-4">
                 <div className="flex items-start justify-between">
                     <div>
-                        <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">{t('writingStyle.title')}</h1>
+                        <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">
+                            {t('writingStyle.title')}
+                        </h1>
                         <p className="mt-1 text-[13px] text-ink-muted">
                             {t('writingStyle.description')}
                         </p>

@@ -8,11 +8,13 @@ type SharedProps = {
 };
 
 export function useAiFeatures() {
-    const { app_settings, license, ai_configured } = usePage<SharedProps>().props;
+    const { app_settings, license, ai_configured } =
+        usePage<SharedProps>().props;
 
     return {
         visible: app_settings.show_ai_features,
-        usable: license.active && ai_configured && app_settings.show_ai_features,
+        usable:
+            license.active && ai_configured && app_settings.show_ai_features,
         licensed: license.active,
         configured: ai_configured,
     };

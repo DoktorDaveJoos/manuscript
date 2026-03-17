@@ -29,17 +29,29 @@ export default function EditorBar({
             <div className="flex min-w-0 items-center gap-1.5 text-[12px]">
                 <span className="shrink-0 text-ink-faint">{storylineName}</span>
                 <span className="shrink-0 text-[#D5D5D5]">/</span>
-                <span className="min-w-0 truncate font-medium text-ink-soft">{chapterTitle}</span>
+                <span className="min-w-0 truncate font-medium text-ink-soft">
+                    {chapterTitle}
+                </span>
                 {saveStatus !== 'saved' && (
-                    <span className={`shrink-0 text-[11px] ${saveStatus === 'error' ? 'text-red-500' : 'text-ink-faint'}`}>
+                    <span
+                        className={`shrink-0 text-[11px] ${saveStatus === 'error' ? 'text-red-500' : 'text-ink-faint'}`}
+                    >
                         {t(`saveStatus.${saveStatus}`)}
                     </span>
                 )}
             </div>
 
             <div className="flex shrink-0 items-center gap-3.5">
-                <StatusBadge status={chapter.status} className="hidden @md:inline-flex" />
-                <span className="hidden @lg:inline text-[12px] text-ink-faint">{t('wordCount', { count: wordCount, formatted: wordCount.toLocaleString(i18n.language) })}</span>
+                <StatusBadge
+                    status={chapter.status}
+                    className="hidden @md:inline-flex"
+                />
+                <span className="hidden text-[12px] text-ink-faint @lg:inline">
+                    {t('wordCount', {
+                        count: wordCount,
+                        formatted: wordCount.toLocaleString(i18n.language),
+                    })}
+                </span>
                 <button
                     type="button"
                     onClick={onVersionClick}

@@ -54,14 +54,18 @@ function ShortcutDisplay({ shortcut }: { shortcut: string }) {
             elements.push(<CornerDownLeft key={i} size={12} />);
         } else {
             elements.push(
-                <span key={i} className="text-xs font-medium leading-none">
+                <span key={i} className="text-xs leading-none font-medium">
                     {ch}
                 </span>,
             );
         }
     }
 
-    return <span className="flex items-center gap-[3px] text-ink-faint">{elements}</span>;
+    return (
+        <span className="flex items-center gap-[3px] text-ink-faint">
+            {elements}
+        </span>
+    );
 }
 
 export default function CommandPalette({
@@ -105,7 +109,9 @@ export default function CommandPalette({
         return [
             {
                 id: 'focus-mode',
-                label: isFocusMode ? t('palette.leaveFocusMode') : t('palette.enterFocusMode'),
+                label: isFocusMode
+                    ? t('palette.leaveFocusMode')
+                    : t('palette.enterFocusMode'),
                 shortcut: isFocusMode ? 'Esc' : undefined,
                 sectionId: 'focus',
                 section: t('palette.section.focus'),
@@ -132,7 +138,11 @@ export default function CommandPalette({
                 shortcut: '\u2318B',
                 sectionId: 'textStyle',
                 section: t('palette.section.textStyle'),
-                icon: <span className="text-[15px] font-bold leading-none">B</span>,
+                icon: (
+                    <span className="text-[15px] leading-none font-bold">
+                        B
+                    </span>
+                ),
                 action: run(() => editor!.chain().focus().toggleBold().run()),
             },
             {
@@ -207,7 +217,19 @@ export default function CommandPalette({
                 }),
             },
         ];
-    }, [editor, onClose, onSplitScene, onSplitChapter, onNewChapter, onAddScene, onEnterFocusMode, isFocusMode, onToggleNotes, licensed, t]);
+    }, [
+        editor,
+        onClose,
+        onSplitScene,
+        onSplitChapter,
+        onNewChapter,
+        onAddScene,
+        onEnterFocusMode,
+        isFocusMode,
+        onToggleNotes,
+        licensed,
+        t,
+    ]);
 
     const filtered = useMemo(() => {
         if (!query.trim()) return items;
@@ -254,7 +276,9 @@ export default function CommandPalette({
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 if (filtered.length === 0) return;
-                setActiveIndex((prev) => (prev - 1 + filtered.length) % filtered.length);
+                setActiveIndex(
+                    (prev) => (prev - 1 + filtered.length) % filtered.length,
+                );
             } else if (e.key === 'Enter') {
                 e.preventDefault();
                 executeItem(activeIndex);
@@ -269,14 +293,19 @@ export default function CommandPalette({
     // Scroll active item into view
     useEffect(() => {
         if (!listRef.current) return;
-        const el = listRef.current.querySelector(`[data-index="${activeIndex}"]`);
+        const el = listRef.current.querySelector(
+            `[data-index="${activeIndex}"]`,
+        );
         el?.scrollIntoView({ block: 'nearest' });
     }, [activeIndex]);
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-surface/40 pt-[20vh]" onClick={onClose}>
+        <div
+            className="fixed inset-0 z-50 flex items-start justify-center bg-surface/40 pt-[20vh]"
+            onClick={onClose}
+        >
             <div
                 className="w-[420px] overflow-hidden rounded-[12px] bg-white shadow-[0_8px_32px_#1A1A1A18,0_2px_8px_#1A1A1A0A] dark:bg-surface-card"
                 onClick={(e) => e.stopPropagation()}
@@ -289,7 +318,10 @@ export default function CommandPalette({
                         ref={inputRef}
                         type="text"
                         value={query}
-                        onChange={(e) => { setQuery(e.target.value); setActiveIndex(0); }}
+                        onChange={(e) => {
+                            setQuery(e.target.value);
+                            setActiveIndex(0);
+                        }}
                         placeholder={t('palette.searchActions')}
                         className="min-w-0 flex-1 bg-transparent text-sm text-ink placeholder:text-ink-faint focus:outline-none"
                     />
@@ -306,58 +338,89 @@ export default function CommandPalette({
                 {/* Items list */}
                 <div ref={listRef}>
                     {filtered.length === 0 && (
-                        <div className="px-4 py-4 text-center text-sm text-ink-faint">{t('palette.noMatchingActions')}</div>
+                        <div className="px-4 py-4 text-center text-sm text-ink-faint">
+                            {t('palette.noMatchingActions')}
+                        </div>
                     )}
-                    {Array.from(sections.entries()).map(([section, sectionItems]) => {
-                        const sid = sectionItems[0]?.sectionId;
+                    {Array.from(sections.entries()).map(
+                        ([section, sectionItems]) => {
+                            const sid = sectionItems[0]?.sectionId;
 
-                        return (
-                            <div key={section} className={cn('flex flex-col gap-1', sid && SECTION_CLASSES[sid])}>
+                            return (
                                 <div
+                                    key={section}
                                     className={cn(
-                                        'flex items-center px-2.5 text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint',
-                                        sid === 'aiGenerate' && 'gap-1.5 text-accent',
+                                        'flex flex-col gap-1',
+                                        sid && SECTION_CLASSES[sid],
                                     )}
                                 >
-                                    {sid === 'aiGenerate' && <span className="size-1.5 rounded-full bg-accent" />}
-                                    {section}
-                                </div>
-                                {sectionItems.map((item) => {
-                                    const globalIndex = filtered.indexOf(item);
-                                    const isActive = globalIndex === activeIndex;
-                                    const isDisabled = item.disabled;
+                                    <div
+                                        className={cn(
+                                            'flex items-center px-2.5 text-[11px] font-medium tracking-[0.06em] text-ink-faint uppercase',
+                                            sid === 'aiGenerate' &&
+                                                'gap-1.5 text-accent',
+                                        )}
+                                    >
+                                        {sid === 'aiGenerate' && (
+                                            <span className="size-1.5 rounded-full bg-accent" />
+                                        )}
+                                        {section}
+                                    </div>
+                                    {sectionItems.map((item) => {
+                                        const globalIndex =
+                                            filtered.indexOf(item);
+                                        const isActive =
+                                            globalIndex === activeIndex;
+                                        const isDisabled = item.disabled;
 
-                                    return (
-                                        <button
-                                            key={item.id}
-                                            type="button"
-                                            data-index={globalIndex}
-                                            disabled={isDisabled}
-                                            onClick={() => executeItem(globalIndex)}
-                                            onMouseEnter={() => setActiveIndex(globalIndex)}
-                                            className={cn(
-                                                'flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-sm leading-4',
-                                                isActive && !isDisabled && 'bg-neutral-bg',
-                                                isDisabled && 'pointer-events-none opacity-40',
-                                            )}
-                                        >
-                                            <span className="flex size-4 shrink-0 items-center justify-center text-ink-soft">
-                                                {item.icon}
-                                            </span>
-                                            <span className="flex-1 text-ink">{item.label}</span>
-                                            {isDisabled && item.id.startsWith('ai-') && (
-                                                <span className="flex items-center gap-0.5 rounded bg-ink-faint/10 px-1 py-0.5 text-[10px] font-medium text-ink-faint">
-                                                    <Lock size={10} />
-                                                    PRO
+                                        return (
+                                            <button
+                                                key={item.id}
+                                                type="button"
+                                                data-index={globalIndex}
+                                                disabled={isDisabled}
+                                                onClick={() =>
+                                                    executeItem(globalIndex)
+                                                }
+                                                onMouseEnter={() =>
+                                                    setActiveIndex(globalIndex)
+                                                }
+                                                className={cn(
+                                                    'flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-sm leading-4',
+                                                    isActive &&
+                                                        !isDisabled &&
+                                                        'bg-neutral-bg',
+                                                    isDisabled &&
+                                                        'pointer-events-none opacity-40',
+                                                )}
+                                            >
+                                                <span className="flex size-4 shrink-0 items-center justify-center text-ink-soft">
+                                                    {item.icon}
                                                 </span>
-                                            )}
-                                            {item.shortcut && <ShortcutDisplay shortcut={item.shortcut} />}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        );
-                    })}
+                                                <span className="flex-1 text-ink">
+                                                    {item.label}
+                                                </span>
+                                                {isDisabled &&
+                                                    item.id.startsWith(
+                                                        'ai-',
+                                                    ) && (
+                                                        <span className="flex items-center gap-0.5 rounded bg-ink-faint/10 px-1 py-0.5 text-[10px] font-medium text-ink-faint">
+                                                            <Lock size={10} />
+                                                            PRO
+                                                        </span>
+                                                    )}
+                                                {item.shortcut && (
+                                                    <ShortcutDisplay
+                                                        shortcut={item.shortcut}
+                                                    />
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        },
+                    )}
                 </div>
             </div>
         </div>

@@ -12,7 +12,13 @@ interface Props {
     rules: ProsePassRule[];
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+function Toggle({
+    checked,
+    onChange,
+}: {
+    checked: boolean;
+    onChange: () => void;
+}) {
     return (
         <button
             type="button"
@@ -59,10 +65,16 @@ export default function ProsePassRules({ book, rules: initialRules }: Props) {
     );
 
     return (
-        <SettingsLayout activeSection="prose-pass-rules" book={book} title={t('prosePassRules.pageTitle', { bookTitle: book.title })}>
+        <SettingsLayout
+            activeSection="prose-pass-rules"
+            book={book}
+            title={t('prosePassRules.pageTitle', { bookTitle: book.title })}
+        >
             <div className="flex flex-col gap-4">
                 <div>
-                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">{t('prosePassRules.title')}</h1>
+                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">
+                        {t('prosePassRules.title')}
+                    </h1>
                     <p className="mt-1 text-[13px] text-ink-muted">
                         {t('prosePassRules.description')}
                     </p>
@@ -73,15 +85,24 @@ export default function ProsePassRules({ book, rules: initialRules }: Props) {
                         <div
                             key={rule.key}
                             className={`flex items-start gap-4 py-3.5 ${
-                                i < rules.length - 1 ? 'border-b border-border-light' : ''
+                                i < rules.length - 1
+                                    ? 'border-b border-border-light'
+                                    : ''
                             }`}
                         >
                             <div className="pt-0.5">
-                                <Toggle checked={rule.enabled} onChange={() => toggleRule(rule.key)} />
+                                <Toggle
+                                    checked={rule.enabled}
+                                    onChange={() => toggleRule(rule.key)}
+                                />
                             </div>
                             <div className="flex-1">
-                                <span className="text-[14px] font-medium text-ink">{rule.label}</span>
-                                <p className="mt-0.5 text-[13px] text-ink-muted">{rule.description}</p>
+                                <span className="text-[14px] font-medium text-ink">
+                                    {rule.label}
+                                </span>
+                                <p className="mt-0.5 text-[13px] text-ink-muted">
+                                    {rule.description}
+                                </p>
                             </div>
                         </div>
                     ))}

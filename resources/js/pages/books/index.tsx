@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { duplicate } from '@/actions/App/Http/Controllers/BookController';
 import BookCard from '@/components/onboarding/BookCard';
-import type {BookWithCounts} from '@/components/onboarding/BookCard';
+import type { BookWithCounts } from '@/components/onboarding/BookCard';
 import CreateBookDialog from '@/components/onboarding/CreateBookDialog';
 import DeleteBookDialog from '@/components/onboarding/DeleteBookDialog';
 import NewBookCard from '@/components/onboarding/NewBookCard';
@@ -23,12 +23,20 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
     return (
         <div className="flex flex-1 flex-col items-center justify-center pb-20">
             <div className="flex flex-col items-center gap-4">
-                <h1 className="font-serif text-5xl leading-[58px] tracking-[-0.02em] text-ink">{t('emptyState.title')}</h1>
+                <h1 className="font-serif text-5xl leading-[58px] tracking-[-0.02em] text-ink">
+                    {t('emptyState.title')}
+                </h1>
                 <p className="text-[15px] leading-6 text-ink-muted">
                     {t('emptyState.description')}
                 </p>
             </div>
-            <Button variant="primary" size="lg" type="button" onClick={onCreateClick} className="mt-10">
+            <Button
+                variant="primary"
+                size="lg"
+                type="button"
+                onClick={onCreateClick}
+                className="mt-10"
+            >
                 {t('emptyState.createButton')}
             </Button>
         </div>
@@ -51,8 +59,10 @@ function BookLibrary({
     const { t } = useTranslation('onboarding');
 
     return (
-        <div className="flex flex-1 flex-col items-center px-10 py-20 gap-12">
-            <h1 className="font-serif text-4xl leading-[44px] tracking-[-0.01em] text-ink">{t('bookLibrary.title')}</h1>
+        <div className="flex flex-1 flex-col items-center gap-12 px-10 py-20">
+            <h1 className="font-serif text-4xl leading-[44px] tracking-[-0.01em] text-ink">
+                {t('bookLibrary.title')}
+            </h1>
             <div className="flex flex-wrap justify-center gap-6">
                 {books.map((book) => (
                     <BookCard
@@ -75,7 +85,9 @@ export default function BooksIndex({ books }: { books: BookWithCounts[] }) {
     return (
         <>
             {books.length === 0 ? (
-                <EmptyState onCreateClick={() => setDialog({ type: 'create' })} />
+                <EmptyState
+                    onCreateClick={() => setDialog({ type: 'create' })}
+                />
             ) : (
                 <BookLibrary
                     books={books}
@@ -86,11 +98,25 @@ export default function BooksIndex({ books }: { books: BookWithCounts[] }) {
                 />
             )}
 
-            {dialog?.type === 'create' && <CreateBookDialog onClose={() => setDialog(null)} />}
-            {dialog?.type === 'rename' && <RenameBookDialog book={dialog.book} onClose={() => setDialog(null)} />}
-            {dialog?.type === 'delete' && <DeleteBookDialog book={dialog.book} onClose={() => setDialog(null)} />}
+            {dialog?.type === 'create' && (
+                <CreateBookDialog onClose={() => setDialog(null)} />
+            )}
+            {dialog?.type === 'rename' && (
+                <RenameBookDialog
+                    book={dialog.book}
+                    onClose={() => setDialog(null)}
+                />
+            )}
+            {dialog?.type === 'delete' && (
+                <DeleteBookDialog
+                    book={dialog.book}
+                    onClose={() => setDialog(null)}
+                />
+            )}
         </>
     );
 }
 
-BooksIndex.layout = (page: React.ReactNode) => <OnboardingLayout title="Your Books">{page}</OnboardingLayout>;
+BooksIndex.layout = (page: React.ReactNode) => (
+    <OnboardingLayout title="Your Books">{page}</OnboardingLayout>
+);

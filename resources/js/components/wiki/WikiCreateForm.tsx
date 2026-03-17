@@ -1,9 +1,12 @@
 import { router, useForm } from '@inertiajs/react';
 import { Camera, X } from 'lucide-react';
-import {  useState } from 'react';
-import type {KeyboardEvent} from 'react';
+import { useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { storeCharacter, storeEntry } from '@/actions/App/Http/Controllers/WikiController';
+import {
+    storeCharacter,
+    storeEntry,
+} from '@/actions/App/Http/Controllers/WikiController';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -19,7 +22,13 @@ type Props = {
     onSuccess: () => void;
 };
 
-export default function WikiCreateForm({ type, book, storylines, onCancel, onSuccess }: Props) {
+export default function WikiCreateForm({
+    type,
+    book,
+    storylines,
+    onCancel,
+    onSuccess,
+}: Props) {
     const { t } = useTranslation('wiki');
     const isCharacter = type === 'characters';
 
@@ -47,7 +56,10 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
             e.preventDefault();
             const value = aliasInput.trim();
             if (value && !characterForm.data.aliases.includes(value)) {
-                characterForm.setData('aliases', [...characterForm.data.aliases, value]);
+                characterForm.setData('aliases', [
+                    ...characterForm.data.aliases,
+                    value,
+                ]);
             }
             setAliasInput('');
         }
@@ -64,7 +76,9 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
         const current = characterForm.data.storylines;
         characterForm.setData(
             'storylines',
-            current.includes(id) ? current.filter((s) => s !== id) : [...current, id],
+            current.includes(id)
+                ? current.filter((s) => s !== id)
+                : [...current, id],
         );
     };
 
@@ -86,7 +100,9 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <h2 className="font-serif text-[30px] leading-[1.2] text-ink">{t(titleKey)}</h2>
+                <h2 className="font-serif text-[30px] leading-[1.2] text-ink">
+                    {t(titleKey)}
+                </h2>
                 <Button variant="ghost" type="button" onClick={onCancel}>
                     {t('create.cancel')}
                 </Button>
@@ -98,18 +114,24 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
                     <div className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-neutral-bg">
                         <Camera size={20} className="text-ink-faint" />
                     </div>
-                    <span className="text-[13px] text-ink-faint">{t('create.uploadPhoto')}</span>
+                    <span className="text-[13px] text-ink-faint">
+                        {t('create.uploadPhoto')}
+                    </span>
                 </div>
             )}
 
             {/* Name */}
             <div>
-                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                     {t('field.name')}
                 </label>
                 <Input
                     type="text"
-                    value={isCharacter ? characterForm.data.name : entryForm.data.name}
+                    value={
+                        isCharacter
+                            ? characterForm.data.name
+                            : entryForm.data.name
+                    }
                     onChange={(e) =>
                         isCharacter
                             ? characterForm.setData('name', e.target.value)
@@ -118,9 +140,13 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
                     placeholder={t('field.namePlaceholder')}
                     autoFocus
                 />
-                {(isCharacter ? characterForm.errors.name : entryForm.errors.name) && (
+                {(isCharacter
+                    ? characterForm.errors.name
+                    : entryForm.errors.name) && (
                     <p className="mt-1 text-[12px] text-red-600">
-                        {isCharacter ? characterForm.errors.name : entryForm.errors.name}
+                        {isCharacter
+                            ? characterForm.errors.name
+                            : entryForm.errors.name}
                     </p>
                 )}
             </div>
@@ -128,7 +154,7 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
             {/* Aliases — characters only */}
             {isCharacter && (
                 <div>
-                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                    <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                         {t('field.aliases')}
                     </label>
                     <div className="flex flex-wrap items-center gap-1.5 rounded-md bg-neutral-bg px-3 py-2">
@@ -138,7 +164,10 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
                                 className="flex items-center gap-1 rounded bg-border px-2.5 py-1 text-[12px] text-ink-soft"
                             >
                                 {alias}
-                                <button type="button" onClick={() => removeAlias(alias)}>
+                                <button
+                                    type="button"
+                                    onClick={() => removeAlias(alias)}
+                                >
                                     <X size={10} className="text-ink-faint" />
                                 </button>
                             </span>
@@ -148,7 +177,11 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
                             value={aliasInput}
                             onChange={(e) => setAliasInput(e.target.value)}
                             onKeyDown={handleAliasKeyDown}
-                            placeholder={characterForm.data.aliases.length === 0 ? t('field.aliasPlaceholder') : ''}
+                            placeholder={
+                                characterForm.data.aliases.length === 0
+                                    ? t('field.aliasPlaceholder')
+                                    : ''
+                            }
                             className="min-w-[80px] flex-1 bg-transparent text-[14px] text-ink placeholder:text-ink-faint focus:outline-none"
                         />
                     </div>
@@ -158,15 +191,21 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
             {/* Role — characters only */}
             {isCharacter && (
                 <div>
-                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                    <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                         {t('field.role')}
                     </label>
                     <Select
                         value={characterForm.data.role}
-                        onChange={(e) => characterForm.setData('role', e.target.value)}
+                        onChange={(e) =>
+                            characterForm.setData('role', e.target.value)
+                        }
                     >
-                        <option value="protagonist">{t('role.mainCharacter')}</option>
-                        <option value="supporting">{t('role.supporting')}</option>
+                        <option value="protagonist">
+                            {t('role.mainCharacter')}
+                        </option>
+                        <option value="supporting">
+                            {t('role.supporting')}
+                        </option>
                         <option value="mentioned">{t('role.mentioned')}</option>
                     </Select>
                 </div>
@@ -175,13 +214,15 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
             {/* Type — wiki entries only */}
             {!isCharacter && (
                 <div>
-                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                    <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                         {t('field.type')}
                     </label>
                     <Input
                         type="text"
                         value={entryForm.data.type}
-                        onChange={(e) => entryForm.setData('type', e.target.value)}
+                        onChange={(e) =>
+                            entryForm.setData('type', e.target.value)
+                        }
                         placeholder={t('field.typePlaceholder')}
                     />
                 </div>
@@ -189,18 +230,27 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
 
             {/* Description */}
             <div>
-                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                     {t('field.description')}
                 </label>
                 <Textarea
-                    value={isCharacter ? characterForm.data.description : entryForm.data.description}
+                    value={
+                        isCharacter
+                            ? characterForm.data.description
+                            : entryForm.data.description
+                    }
                     onChange={(e) =>
                         isCharacter
-                            ? characterForm.setData('description', e.target.value)
+                            ? characterForm.setData(
+                                  'description',
+                                  e.target.value,
+                              )
                             : entryForm.setData('description', e.target.value)
                     }
                     placeholder={
-                        isCharacter ? t('field.descriptionPlaceholder') : t('field.entryDescriptionPlaceholder')
+                        isCharacter
+                            ? t('field.descriptionPlaceholder')
+                            : t('field.entryDescriptionPlaceholder')
                     }
                     rows={4}
                 />
@@ -209,12 +259,13 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
             {/* Storylines — characters only */}
             {isCharacter && storylines.length > 0 && (
                 <div>
-                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                    <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                         {t('field.storylines')}
                     </label>
                     <div className="flex flex-wrap gap-2">
                         {storylines.map((s) => {
-                            const selected = characterForm.data.storylines.includes(s.id);
+                            const selected =
+                                characterForm.data.storylines.includes(s.id);
                             return (
                                 <button
                                     key={s.id}
@@ -237,7 +288,15 @@ export default function WikiCreateForm({ type, book, storylines, onCancel, onSuc
 
             {/* Actions */}
             <div className="flex items-center gap-4">
-                <Button variant="primary" type="submit" disabled={isCharacter ? characterForm.processing : entryForm.processing}>
+                <Button
+                    variant="primary"
+                    type="submit"
+                    disabled={
+                        isCharacter
+                            ? characterForm.processing
+                            : entryForm.processing
+                    }
+                >
                     {isCharacter ? t('create.submit') : t('create.submitEntry')}
                 </Button>
             </div>

@@ -4,74 +4,77 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
 @theme {
-    --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
-    --font-serif: 'Playfair Display', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-sans:
+        'Geist', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-serif:
+        'Playfair Display', ui-serif, Georgia, Cambria, 'Times New Roman',
+        Times, serif;
 
-    --color-surface: #FCFAF7;
-    --color-surface-card: #FCFAF7;
+    --color-surface: #fcfaf7;
+    --color-surface-card: #fcfaf7;
     --color-ink: #141414;
     --color-ink-muted: #737373;
-    --color-ink-faint: #A3A3A3;
-    --color-border: #E4E2DD;
-    --color-border-light: #E4E2DD;
-    --color-border-dashed: #D5D2CC;
-    --color-border-drop: #D5D2CC;
-    --color-neutral-bg: #F1EEEA;
-    --color-accent: #B87333;
-    --color-accent-dark: #9A6229;
-    --color-accent-light: #F5EDE3;
-    --color-danger: #DC2828;
-    --color-status-final: #6DBB7B;
-    --color-status-revised: #8AB0C8;
-    --color-status-draft: #B87333;
-    --color-border-subtle: #EEECE8;
-    --color-ai-green: #6DBB7B;
-    --color-delete: #DC2828;
-    --color-delete-bg: #FDF2F0;
-    --color-drop: #4A7C59;
+    --color-ink-faint: #a3a3a3;
+    --color-border: #e4e2dd;
+    --color-border-light: #e4e2dd;
+    --color-border-dashed: #d5d2cc;
+    --color-border-drop: #d5d2cc;
+    --color-neutral-bg: #f1eeea;
+    --color-accent: #b87333;
+    --color-accent-dark: #9a6229;
+    --color-accent-light: #f5ede3;
+    --color-danger: #dc2828;
+    --color-status-final: #6dbb7b;
+    --color-status-revised: #8ab0c8;
+    --color-status-draft: #b87333;
+    --color-border-subtle: #eeece8;
+    --color-ai-green: #6dbb7b;
+    --color-delete: #dc2828;
+    --color-delete-bg: #fdf2f0;
+    --color-drop: #4a7c59;
     --color-ink-soft: #595959;
-    --color-section-header: #D5D2CC;
-    --color-kbd-bg: #F5F3EF;
-    --color-ink-whisper: #1414144D;
-    --color-surface-warm: #F5EDE3;
-    --color-ink-warm: #6B6358;
+    --color-section-header: #d5d2cc;
+    --color-kbd-bg: #f5f3ef;
+    --color-ink-whisper: #1414144d;
+    --color-surface-warm: #f5ede3;
+    --color-ink-warm: #6b6358;
 }
 
 html.dark {
-    --color-surface: #0F0F0F;
-    --color-surface-card: #1A1A1A;
-    --color-ink: #EBE7E0;
-    --color-ink-muted: #8C8C8C;
-    --color-ink-faint: #6B6B6B;
-    --color-ink-soft: #C4C0B8;
-    --color-border: #2E2E2E;
+    --color-surface: #0f0f0f;
+    --color-surface-card: #1a1a1a;
+    --color-ink: #ebe7e0;
+    --color-ink-muted: #8c8c8c;
+    --color-ink-faint: #6b6b6b;
+    --color-ink-soft: #c4c0b8;
+    --color-border: #2e2e2e;
     --color-border-light: #242424;
-    --color-border-subtle: #1F1F1F;
-    --color-border-dashed: #3A3A3A;
-    --color-border-drop: #3A3A3A;
-    --color-neutral-bg: #1A1A1A;
-    --color-accent: #D4956A;
-    --color-accent-dark: #B87333;
-    --color-accent-light: #2A2015;
-    --color-danger: #D34545;
-    --color-status-final: #6DBB7B;
-    --color-status-revised: #D4956A;
-    --color-status-draft: #6B6B6B;
-    --color-ai-green: #6DBB7B;
-    --color-delete: #D34545;
-    --color-delete-bg: #3A2020;
-    --color-drop: #5A8F5C;
-    --color-section-header: #3A3A3A;
-    --color-kbd-bg: #1F1F1F;
-    --color-ink-whisper: #EBE7E04D;
-    --color-surface-warm: #2A2015;
-    --color-ink-warm: #A89E92;
+    --color-border-subtle: #1f1f1f;
+    --color-border-dashed: #3a3a3a;
+    --color-border-drop: #3a3a3a;
+    --color-neutral-bg: #1a1a1a;
+    --color-accent: #d4956a;
+    --color-accent-dark: #b87333;
+    --color-accent-light: #2a2015;
+    --color-danger: #d34545;
+    --color-status-final: #6dbb7b;
+    --color-status-revised: #d4956a;
+    --color-status-draft: #6b6b6b;
+    --color-ai-green: #6dbb7b;
+    --color-delete: #d34545;
+    --color-delete-bg: #3a2020;
+    --color-drop: #5a8f5c;
+    --color-section-header: #3a3a3a;
+    --color-kbd-bg: #1f1f1f;
+    --color-ink-whisper: #ebe7e04d;
+    --color-surface-warm: #2a2015;
+    --color-ink-warm: #a89e92;
 }
 
 @layer base {
     button:not(:disabled),
-    [role="button"]:not(:disabled) {
+    [role='button']:not(:disabled) {
         cursor: pointer;
     }
 
@@ -217,9 +220,15 @@ h1[contenteditable]:empty::before {
     line-height: 1.3;
 }
 
-.ai-chat-markdown h1 { font-size: 1.15em; }
-.ai-chat-markdown h2 { font-size: 1.1em; }
-.ai-chat-markdown h3 { font-size: 1.05em; }
+.ai-chat-markdown h1 {
+    font-size: 1.15em;
+}
+.ai-chat-markdown h2 {
+    font-size: 1.1em;
+}
+.ai-chat-markdown h3 {
+    font-size: 1.05em;
+}
 
 .ai-chat-markdown ul,
 .ai-chat-markdown ol {
@@ -287,21 +296,36 @@ h1[contenteditable]:empty::before {
     line-height: 20px;
     color: var(--color-ink);
 }
-.notes-line-md p { margin: 0; }
-.notes-line-md h1, .notes-line-md h2, .notes-line-md h3 {
+.notes-line-md p {
+    margin: 0;
+}
+.notes-line-md h1,
+.notes-line-md h2,
+.notes-line-md h3 {
     font-weight: 600;
     margin: 0;
     line-height: 20px;
 }
-.notes-line-md h1 { font-size: 15px; }
-.notes-line-md h2 { font-size: 14px; }
-.notes-line-md h3 { font-size: 13px; }
-.notes-line-md ul, .notes-line-md ol {
+.notes-line-md h1 {
+    font-size: 15px;
+}
+.notes-line-md h2 {
+    font-size: 14px;
+}
+.notes-line-md h3 {
+    font-size: 13px;
+}
+.notes-line-md ul,
+.notes-line-md ol {
     padding-left: 1.4em;
     margin: 0;
 }
-.notes-line-md li { margin: 0; }
-.notes-line-md li::marker { color: var(--color-ink-muted); }
+.notes-line-md li {
+    margin: 0;
+}
+.notes-line-md li::marker {
+    color: var(--color-ink-muted);
+}
 .notes-line-md blockquote {
     border-left: 2px solid var(--color-border);
     padding-left: 0.6em;
@@ -319,7 +343,9 @@ h1[contenteditable]:empty::before {
     border-radius: 3px;
     background: var(--color-neutral-bg);
 }
-.notes-line-md strong { font-weight: 600; }
+.notes-line-md strong {
+    font-weight: 600;
+}
 .notes-line-md a {
     color: var(--color-accent);
     text-decoration: underline;

@@ -11,7 +11,11 @@ import {
 import Button from '@/components/ui/Button';
 import { getXsrfToken } from '@/lib/csrf';
 import { ruleCheckers, RULE_THRESHOLDS, stripTags } from '@/lib/ruleCheckers';
-import type { ChapterVersion, ProsePassRule, VersionSource } from '@/types/models';
+import type {
+    ChapterVersion,
+    ProsePassRule,
+    VersionSource,
+} from '@/types/models';
 
 function splitParagraphs(html: string | null): string[] {
     if (!html) return [];
@@ -39,13 +43,21 @@ function htmlDecode(text: string): string {
 }
 
 function normalizeForComparison(text: string): string {
-    return text.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+    return text
+        .replace(/\u00a0/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 function wordDiffParagraph(
     origText: string,
     revText: string,
-): { leftSegs: DiffSegment[]; rightSegs: DiffSegment[]; hasChanges: boolean; changeCount: number } {
+): {
+    leftSegs: DiffSegment[];
+    rightSegs: DiffSegment[];
+    hasChanges: boolean;
+    changeCount: number;
+} {
     const wordDiffs = diffWords(origText, revText);
     const leftSegs: DiffSegment[] = [];
     const rightSegs: DiffSegment[] = [];
@@ -115,8 +127,18 @@ function computeDiff(
         changedIndices.push(idx);
         changeCount++;
         aligned.push({
-            left: side === 'left' ? { segments: [{ text: origTexts[origIdx], type: 'removed' }] } : null,
-            right: side === 'right' ? { segments: [{ text: revTexts[revIdx], type: 'added' }] } : null,
+            left:
+                side === 'left'
+                    ? {
+                          segments: [
+                              { text: origTexts[origIdx], type: 'removed' },
+                          ],
+                      }
+                    : null,
+            right:
+                side === 'right'
+                    ? { segments: [{ text: revTexts[revIdx], type: 'added' }] }
+                    : null,
             hasChanges: true,
             index: idx,
         });
@@ -132,7 +154,11 @@ function computeDiff(
             // Equal paragraphs — compute word-level diff within each pair
             for (let j = 0; j < part.count!; j++) pushWordDiff();
             i++;
-        } else if (part.removed && i + 1 < arrayDiff.length && arrayDiff[i + 1].added) {
+        } else if (
+            part.removed &&
+            i + 1 < arrayDiff.length &&
+            arrayDiff[i + 1].added
+        ) {
             // Removed + Added: pair them for word-level diffs
             const removedCount = part.count!;
             const addedCount = arrayDiff[i + 1].count!;
@@ -181,7 +207,10 @@ function mergeParagraphs(
     const origUsed = new Map<string, number>();
     const revUsed = new Map<string, number>();
 
-    function makeHtmlLookup(map: Map<string, string[]>, used: Map<string, number>) {
+    function makeHtmlLookup(
+        map: Map<string, string[]>,
+        used: Map<string, number>,
+    ) {
         return (text: string): string => {
             const idx = used.get(text) ?? 0;
             const arr = map.get(text);
@@ -256,7 +285,9 @@ export default function DiffView({
     }, [diff.changedIndices]);
 
     const totalChanged = diff.changedIndices.length;
-    const selectedCount = diff.changedIndices.filter((i) => selectedParagraphs.has(i)).length;
+    const selectedCount = diff.changedIndices.filter((i) =>
+        selectedParagraphs.has(i),
+    ).length;
     const isPartial = selectedCount < totalChanged;
 
     const toggleParagraph = useCallback((index: number) => {
@@ -314,7 +345,13 @@ export default function DiffView({
                     examples: result.examples,
                 };
             })
-            .filter(Boolean) as { label: string; key: string; pass: boolean; count: number; examples: string[] }[];
+            .filter(Boolean) as {
+            label: string;
+            key: string;
+            pass: boolean;
+            count: number;
+            examples: string[];
+        }[];
     }, [prosePassRules, pendingVersion.content]);
 
     const handleAccept = useCallback(async () => {
@@ -365,7 +402,16 @@ export default function DiffView({
         } catch {
             setIsAccepting(false);
         }
-    }, [bookId, chapterId, pendingVersion.id, pendingVersion.content, currentVersion.content, isPartial, selectedParagraphs, diff.aligned]);
+    }, [
+        bookId,
+        chapterId,
+        pendingVersion.id,
+        pendingVersion.content,
+        currentVersion.content,
+        isPartial,
+        selectedParagraphs,
+        diff.aligned,
+    ]);
 
     const handleReject = useCallback(async () => {
         setIsRejecting(true);
@@ -400,13 +446,16 @@ export default function DiffView({
         if (isSyncing.current) return;
         isSyncing.current = true;
 
-        const active = source === 'left' ? leftPanelRef.current : rightPanelRef.current;
-        const target = source === 'left' ? rightPanelRef.current : leftPanelRef.current;
+        const active =
+            source === 'left' ? leftPanelRef.current : rightPanelRef.current;
+        const target =
+            source === 'left' ? rightPanelRef.current : leftPanelRef.current;
 
         if (active && target) {
             const maxScroll = active.scrollHeight - active.clientHeight;
             const ratio = maxScroll > 0 ? active.scrollTop / maxScroll : 0;
-            const newScrollTop = ratio * (target.scrollHeight - target.clientHeight);
+            const newScrollTop =
+                ratio * (target.scrollHeight - target.clientHeight);
             if (Math.abs(target.scrollTop - newScrollTop) < 1) {
                 isSyncing.current = false;
                 return;
@@ -419,10 +468,14 @@ export default function DiffView({
         });
     }, []);
 
-    const sourceLabel = (source: VersionSource) => t(`diff.sourceLabel.${source}`);
+    const sourceLabel = (source: VersionSource) =>
+        t(`diff.sourceLabel.${source}`);
 
     const acceptLabel = isPartial
-        ? t('diff.acceptPartial', { selected: selectedCount, total: totalChanged })
+        ? t('diff.acceptPartial', {
+              selected: selectedCount,
+              total: totalChanged,
+          })
         : t('diff.acceptAll');
 
     return (
@@ -433,7 +486,9 @@ export default function DiffView({
                     <span className="text-ink-faint">{chapterTitle}</span>
                     <span className="text-ink-faint">/</span>
                     <span className="font-medium text-accent">
-                        {t('diff.reviewing', { source: sourceLabel(pendingVersion.source) })}
+                        {t('diff.reviewing', {
+                            source: sourceLabel(pendingVersion.source),
+                        })}
                     </span>
                     <span className="text-ink-faint">
                         {t('diff.changeCount', { count: diff.changeCount })}
@@ -444,15 +499,33 @@ export default function DiffView({
                             onClick={toggleAll}
                             className="ml-2 text-xs font-medium text-accent transition-colors hover:text-accent/80"
                         >
-                            {selectedCount === totalChanged ? t('diff.deselectAll') : t('diff.selectAll')}
+                            {selectedCount === totalChanged
+                                ? t('diff.deselectAll')
+                                : t('diff.selectAll')}
                         </button>
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="secondary" size="sm" type="button" onClick={handleReject} disabled={isRejecting || isAccepting}>
-                        {isRejecting ? t('diff.rejecting') : t('diff.rejectAll')}
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        type="button"
+                        onClick={handleReject}
+                        disabled={isRejecting || isAccepting}
+                    >
+                        {isRejecting
+                            ? t('diff.rejecting')
+                            : t('diff.rejectAll')}
                     </Button>
-                    <Button variant="primary" size="sm" type="button" onClick={handleAccept} disabled={isAccepting || isRejecting || selectedCount === 0}>
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        type="button"
+                        onClick={handleAccept}
+                        disabled={
+                            isAccepting || isRejecting || selectedCount === 0
+                        }
+                    >
                         {isAccepting ? t('diff.accepting') : acceptLabel}
                     </Button>
                 </div>
@@ -461,11 +534,20 @@ export default function DiffView({
             {/* Truncation warning */}
             {truncationWarning && (
                 <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-6 py-2.5">
-                    <TriangleAlert size={16} fill="currentColor" className="shrink-0 text-amber-600" />
+                    <TriangleAlert
+                        size={16}
+                        fill="currentColor"
+                        className="shrink-0 text-amber-600"
+                    />
                     <p className="text-xs leading-relaxed text-amber-800">
                         {t('diff.truncationWarning', {
-                            revWords: truncationWarning.revWords.toLocaleString(i18n.language),
-                            origWords: truncationWarning.origWords.toLocaleString(i18n.language),
+                            revWords: truncationWarning.revWords.toLocaleString(
+                                i18n.language,
+                            ),
+                            origWords:
+                                truncationWarning.origWords.toLocaleString(
+                                    i18n.language,
+                                ),
                         })}
                     </p>
                 </div>
@@ -474,9 +556,13 @@ export default function DiffView({
             {/* Side-by-side diff */}
             <div className="flex flex-1 overflow-hidden">
                 {/* Left: Original */}
-                <div ref={leftPanelRef} onScroll={() => handleScroll('left')} className="flex-1 overflow-y-auto border-r border-border px-12 py-8">
+                <div
+                    ref={leftPanelRef}
+                    onScroll={() => handleScroll('left')}
+                    className="flex-1 overflow-y-auto border-r border-border px-12 py-8"
+                >
                     <div className="mb-6 flex items-center gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
+                        <span className="text-xs font-semibold tracking-wider text-ink-faint uppercase">
                             {t('diff.original')}
                         </span>
                         <span className="text-xs text-ink-faint">
@@ -487,7 +573,12 @@ export default function DiffView({
                     <div className="max-w-prose space-y-4 font-serif text-base leading-relaxed text-ink">
                         {diff.aligned.map((para) =>
                             para.left ? (
-                                <p key={`l-${para.index}`} className={!para.right ? 'opacity-60' : undefined}>
+                                <p
+                                    key={`l-${para.index}`}
+                                    className={
+                                        !para.right ? 'opacity-60' : undefined
+                                    }
+                                >
                                     {para.left.segments.map((seg, j) =>
                                         seg.type === 'removed' ? (
                                             <span
@@ -513,9 +604,13 @@ export default function DiffView({
                 </div>
 
                 {/* Right: Revision */}
-                <div ref={rightPanelRef} onScroll={() => handleScroll('right')} className="flex-1 overflow-y-auto px-12 py-8">
+                <div
+                    ref={rightPanelRef}
+                    onScroll={() => handleScroll('right')}
+                    className="flex-1 overflow-y-auto px-12 py-8"
+                >
                     <div className="mb-6 flex items-center gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
+                        <span className="text-xs font-semibold tracking-wider text-ink-faint uppercase">
                             {t('diff.revision')}
                         </span>
                         <span className="text-xs text-ink-faint">
@@ -526,14 +621,21 @@ export default function DiffView({
                     <div className="max-w-prose space-y-4 font-serif text-base leading-relaxed text-ink">
                         {diff.aligned.map((para) =>
                             para.right ? (
-                                <div key={`r-${para.index}`} className="group flex gap-2">
+                                <div
+                                    key={`r-${para.index}`}
+                                    className="group flex gap-2"
+                                >
                                     {para.hasChanges && (
                                         <button
                                             type="button"
-                                            onClick={() => toggleParagraph(para.index)}
+                                            onClick={() =>
+                                                toggleParagraph(para.index)
+                                            }
                                             className="mt-1 flex size-4 shrink-0 items-center justify-center rounded border border-border transition-colors hover:border-accent"
                                         >
-                                            {selectedParagraphs.has(para.index) && (
+                                            {selectedParagraphs.has(
+                                                para.index,
+                                            ) && (
                                                 <Check
                                                     size={10}
                                                     strokeWidth={2.5}
@@ -542,7 +644,13 @@ export default function DiffView({
                                             )}
                                         </button>
                                     )}
-                                    <p className={!para.left ? 'opacity-80' : undefined}>
+                                    <p
+                                        className={
+                                            !para.left
+                                                ? 'opacity-80'
+                                                : undefined
+                                        }
+                                    >
                                         {para.right.segments.map((seg, j) =>
                                             seg.type === 'added' ? (
                                                 <span
@@ -575,18 +683,29 @@ export default function DiffView({
                     <button
                         type="button"
                         onClick={() => setRulesExpanded(!rulesExpanded)}
-                        className="flex w-full items-center gap-2 px-6 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-ink-faint transition-colors hover:text-ink-muted"
+                        className="flex w-full items-center gap-2 px-6 py-2.5 text-left text-xs font-semibold tracking-wider text-ink-faint uppercase transition-colors hover:text-ink-muted"
                     >
-                        {rulesExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                        {rulesExpanded ? (
+                            <ChevronDown size={12} />
+                        ) : (
+                            <ChevronRight size={12} />
+                        )}
                         {t('diff.ruleCompliance')}
-                        <span className="font-normal normal-case tracking-normal">
-                            {t('diff.rulesPassing', { passing: ruleResults.filter((r) => r.pass).length, total: ruleResults.length })}
+                        <span className="font-normal tracking-normal normal-case">
+                            {t('diff.rulesPassing', {
+                                passing: ruleResults.filter((r) => r.pass)
+                                    .length,
+                                total: ruleResults.length,
+                            })}
                         </span>
                     </button>
                     {rulesExpanded && (
                         <div className="grid grid-cols-2 gap-x-8 gap-y-2 px-6 pb-4 lg:grid-cols-3">
                             {ruleResults.map((rule) => (
-                                <div key={rule.key} className="flex items-start gap-2">
+                                <div
+                                    key={rule.key}
+                                    className="flex items-start gap-2"
+                                >
                                     <span
                                         className={`mt-0.5 size-2 shrink-0 rounded-full ${rule.pass ? 'bg-ai-green' : 'bg-amber-500'}`}
                                     />
@@ -595,13 +714,16 @@ export default function DiffView({
                                             {rule.label}
                                         </span>
                                         <span className="ml-1.5 text-xs text-ink-faint">
-                                            {t('diff.ruleFound', { count: rule.count })}
+                                            {t('diff.ruleFound', {
+                                                count: rule.count,
+                                            })}
                                         </span>
-                                        {!rule.pass && rule.examples.length > 0 && (
-                                            <p className="truncate text-[11px] text-ink-faint">
-                                                {rule.examples.join(', ')}
-                                            </p>
-                                        )}
+                                        {!rule.pass &&
+                                            rule.examples.length > 0 && (
+                                                <p className="truncate text-[11px] text-ink-faint">
+                                                    {rule.examples.join(', ')}
+                                                </p>
+                                            )}
                                     </div>
                                 </div>
                             ))}

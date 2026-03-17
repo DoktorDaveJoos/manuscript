@@ -21,9 +21,14 @@ export default function PlotPointCard({ plotPoint, onClick }: Props) {
             <div className="flex items-start gap-1.5">
                 <div
                     className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full"
-                    style={{ backgroundColor: STATUS_COLORS[plotPoint.status] ?? '#B0A99F' }}
+                    style={{
+                        backgroundColor:
+                            STATUS_COLORS[plotPoint.status] ?? '#B0A99F',
+                    }}
                 />
-                <span className="text-xs font-medium leading-tight text-ink">{plotPoint.title}</span>
+                <span className="text-xs leading-tight font-medium text-ink">
+                    {plotPoint.title}
+                </span>
             </div>
             <div className="mt-1.5">
                 <span

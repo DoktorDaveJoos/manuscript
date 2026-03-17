@@ -1,6 +1,6 @@
 # Chapter 1: The Morning After
 
-The sun rose slowly over the valley. **Bold text** and *italic text* mixed together.
+The sun rose slowly over the valley. **Bold text** and _italic text_ mixed together.
 
 A second paragraph in the first chapter.
 

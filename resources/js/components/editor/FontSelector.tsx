@@ -4,11 +4,36 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 export const FONTS = [
-    { id: 'eb-garamond', label: 'EB Garamond', family: "'EB Garamond', ui-serif, Georgia, serif", favorite: true },
-    { id: 'palatino', label: 'Palatino', family: "Palatino, 'Palatino Linotype', 'Book Antiqua', serif", favorite: true },
-    { id: 'georgia', label: 'Georgia', family: "Georgia, 'Times New Roman', Times, serif", favorite: true },
-    { id: 'times', label: 'Times New Roman', family: "'Times New Roman', Times, serif", favorite: false },
-    { id: 'courier', label: 'Courier New', family: "'Courier New', Courier, monospace", favorite: false },
+    {
+        id: 'eb-garamond',
+        label: 'EB Garamond',
+        family: "'EB Garamond', ui-serif, Georgia, serif",
+        favorite: true,
+    },
+    {
+        id: 'palatino',
+        label: 'Palatino',
+        family: "Palatino, 'Palatino Linotype', 'Book Antiqua', serif",
+        favorite: true,
+    },
+    {
+        id: 'georgia',
+        label: 'Georgia',
+        family: "Georgia, 'Times New Roman', Times, serif",
+        favorite: true,
+    },
+    {
+        id: 'times',
+        label: 'Times New Roman',
+        family: "'Times New Roman', Times, serif",
+        favorite: false,
+    },
+    {
+        id: 'courier',
+        label: 'Courier New',
+        family: "'Courier New', Courier, monospace",
+        favorite: false,
+    },
 ] as const;
 
 export const DEFAULT_FONT_ID = 'eb-garamond';
@@ -60,16 +85,19 @@ export default function FontSelector({
                 title={t('font.title')}
                 className="flex h-7 items-center gap-1 rounded px-2 text-xs text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
             >
-                <span style={{ fontFamily: selected.family }} className="text-[13px] leading-none">
+                <span
+                    style={{ fontFamily: selected.family }}
+                    className="text-[13px] leading-none"
+                >
                     {selected.label}
                 </span>
                 <ChevronDown size={10} strokeWidth={2.5} className="shrink-0" />
             </button>
 
             {open && (
-                <div className="absolute left-0 top-full z-50 mt-1 w-[200px] overflow-hidden rounded-lg border border-border bg-surface-card shadow-[0_4px_6px_#1414140F,0_12px_32px_#1414141A]">
+                <div className="absolute top-full left-0 z-50 mt-1 w-[200px] overflow-hidden rounded-lg border border-border bg-surface-card shadow-[0_4px_6px_#1414140F,0_12px_32px_#1414141A]">
                     <div className="px-1 pt-2 pb-1">
-                        <div className="px-2 py-1 text-[10px] font-medium uppercase leading-3 tracking-[0.08em] text-section-header">
+                        <div className="px-2 py-1 text-[10px] leading-3 font-medium tracking-[0.08em] text-section-header uppercase">
                             {t('font.favorites')}
                         </div>
                         {favorites.map((font) => (
@@ -85,7 +113,7 @@ export default function FontSelector({
                         ))}
                     </div>
                     <div className="border-t border-border-subtle px-1 py-1 pb-2">
-                        <div className="px-2 py-1 text-[10px] font-medium uppercase leading-3 tracking-[0.08em] text-section-header">
+                        <div className="px-2 py-1 text-[10px] leading-3 font-medium tracking-[0.08em] text-section-header uppercase">
                             {t('font.more')}
                         </div>
                         {more.map((font) => (
@@ -126,7 +154,10 @@ function FontItem({
             <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center text-ink-muted">
                 {isSelected && <Check size={14} strokeWidth={2.5} />}
             </span>
-            <span className="flex-1 text-ink" style={{ fontFamily: font.family }}>
+            <span
+                className="flex-1 text-ink"
+                style={{ fontFamily: font.family }}
+            >
                 {font.label}
             </span>
         </button>

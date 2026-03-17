@@ -6,12 +6,28 @@ const CELL = 10;
 const GAP = 2;
 const COLS = 53;
 const ROWS = 7;
-const DAY_LABEL_KEYS = ['', 'heatmap.dayLabels.mon', '', 'heatmap.dayLabels.wed', '', 'heatmap.dayLabels.fri', ''] as const;
+const DAY_LABEL_KEYS = [
+    '',
+    'heatmap.dayLabels.mon',
+    '',
+    'heatmap.dayLabels.wed',
+    '',
+    'heatmap.dayLabels.fri',
+    '',
+] as const;
 const MONTH_LABEL_KEYS = [
-    'heatmap.monthLabels.jan', 'heatmap.monthLabels.feb', 'heatmap.monthLabels.mar',
-    'heatmap.monthLabels.apr', 'heatmap.monthLabels.may', 'heatmap.monthLabels.jun',
-    'heatmap.monthLabels.jul', 'heatmap.monthLabels.aug', 'heatmap.monthLabels.sep',
-    'heatmap.monthLabels.oct', 'heatmap.monthLabels.nov', 'heatmap.monthLabels.dec',
+    'heatmap.monthLabels.jan',
+    'heatmap.monthLabels.feb',
+    'heatmap.monthLabels.mar',
+    'heatmap.monthLabels.apr',
+    'heatmap.monthLabels.may',
+    'heatmap.monthLabels.jun',
+    'heatmap.monthLabels.jul',
+    'heatmap.monthLabels.aug',
+    'heatmap.monthLabels.sep',
+    'heatmap.monthLabels.oct',
+    'heatmap.monthLabels.nov',
+    'heatmap.monthLabels.dec',
 ] as const;
 
 function intensityClass(words: number, dailyGoal: number | null): string {
@@ -37,7 +53,11 @@ export default function WritingHeatmap({
     dailyGoal: number | null;
 }) {
     const { t, i18n } = useTranslation('dashboard');
-    const [tooltip, setTooltip] = useState<{ x: number; y: number; day: HeatmapDay } | null>(null);
+    const [tooltip, setTooltip] = useState<{
+        x: number;
+        y: number;
+        day: HeatmapDay;
+    } | null>(null);
 
     const { grid, monthMarkers } = useMemo(() => {
         const lookup = new Map<string, HeatmapDay>();
@@ -61,7 +81,11 @@ export default function WritingHeatmap({
                 if (d > today) continue;
 
                 const dateStr = d.toISOString().slice(0, 10);
-                const entry = lookup.get(dateStr) ?? { date: dateStr, words: 0, goal_met: false };
+                const entry = lookup.get(dateStr) ?? {
+                    date: dateStr,
+                    words: 0,
+                    goal_met: false,
+                };
                 cells.push({ col, row, day: entry });
 
                 if (row === 0 && d.getMonth() !== lastMonth) {
@@ -82,16 +106,48 @@ export default function WritingHeatmap({
     return (
         <div className="rounded-xl border border-border-light bg-surface-card p-6">
             <div className="mb-3 flex items-center justify-between">
-                <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                     {t('heatmap.title', 'Writing Activity')}
                 </span>
                 <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-ink-faint">{t('heatmap.legendLess', 'Less')}</span>
-                    <svg width="10" height="10"><rect width="10" height="10" rx="2" className="fill-neutral-bg" /></svg>
-                    <svg width="10" height="10"><rect width="10" height="10" rx="2" className="fill-accent/25" /></svg>
-                    <svg width="10" height="10"><rect width="10" height="10" rx="2" className="fill-accent/50" /></svg>
-                    <svg width="10" height="10"><rect width="10" height="10" rx="2" className="fill-accent" /></svg>
-                    <span className="text-[10px] text-ink-faint">{t('heatmap.legendMore', 'More')}</span>
+                    <span className="text-[10px] text-ink-faint">
+                        {t('heatmap.legendLess', 'Less')}
+                    </span>
+                    <svg width="10" height="10">
+                        <rect
+                            width="10"
+                            height="10"
+                            rx="2"
+                            className="fill-neutral-bg"
+                        />
+                    </svg>
+                    <svg width="10" height="10">
+                        <rect
+                            width="10"
+                            height="10"
+                            rx="2"
+                            className="fill-accent/25"
+                        />
+                    </svg>
+                    <svg width="10" height="10">
+                        <rect
+                            width="10"
+                            height="10"
+                            rx="2"
+                            className="fill-accent/50"
+                        />
+                    </svg>
+                    <svg width="10" height="10">
+                        <rect
+                            width="10"
+                            height="10"
+                            rx="2"
+                            className="fill-accent"
+                        />
+                    </svg>
+                    <span className="text-[10px] text-ink-faint">
+                        {t('heatmap.legendMore', 'More')}
+                    </span>
                 </div>
             </div>
             <svg
@@ -138,8 +194,14 @@ export default function WritingHeatmap({
                         rx={2}
                         className={`${intensityClass(day.words, dailyGoal)} transition-colors`}
                         onMouseEnter={(e) => {
-                            const rect = (e.target as SVGRectElement).getBoundingClientRect();
-                            setTooltip({ x: rect.left + rect.width / 2, y: rect.top, day });
+                            const rect = (
+                                e.target as SVGRectElement
+                            ).getBoundingClientRect();
+                            setTooltip({
+                                x: rect.left + rect.width / 2,
+                                y: rect.top,
+                                day,
+                            });
                         }}
                         onMouseLeave={() => setTooltip(null)}
                     />
@@ -151,9 +213,17 @@ export default function WritingHeatmap({
                     className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full rounded-md bg-ink px-2.5 py-1.5 text-xs text-surface shadow-md"
                     style={{ left: tooltip.x, top: tooltip.y - 6 }}
                 >
-                    <span className="font-medium">{t('heatmap.words', { value: tooltip.day.words.toLocaleString(i18n.language) })}</span>
+                    <span className="font-medium">
+                        {t('heatmap.words', {
+                            value: tooltip.day.words.toLocaleString(
+                                i18n.language,
+                            ),
+                        })}
+                    </span>
                     <span className="ml-1.5 text-surface/70">
-                        {new Date(tooltip.day.date + 'T12:00:00').toLocaleDateString(i18n.language, {
+                        {new Date(
+                            tooltip.day.date + 'T12:00:00',
+                        ).toLocaleDateString(i18n.language, {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric',

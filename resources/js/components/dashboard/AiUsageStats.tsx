@@ -3,7 +3,11 @@ import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { resetUsage } from '@/actions/App/Http/Controllers/AiController';
 import { formatCompactCount, jsonFetchHeaders } from '@/lib/utils';
-import type { AiUsage, AiUsageFeatureBreakdown, AiUsageMonthly } from '@/types/models';
+import type {
+    AiUsage,
+    AiUsageFeatureBreakdown,
+    AiUsageMonthly,
+} from '@/types/models';
 
 const FEATURE_LABELS: Record<string, string> = {
     chat: 'AI Chat',
@@ -19,7 +23,11 @@ const FEATURE_LABELS: Record<string, string> = {
     other: 'Other',
 };
 
-function CostBreakdownTable({ breakdown }: { breakdown: AiUsageFeatureBreakdown[] }) {
+function CostBreakdownTable({
+    breakdown,
+}: {
+    breakdown: AiUsageFeatureBreakdown[];
+}) {
     const { t } = useTranslation('dashboard');
     if (breakdown.length === 0) return null;
 
@@ -28,27 +36,47 @@ function CostBreakdownTable({ breakdown }: { breakdown: AiUsageFeatureBreakdown[
 
     return (
         <div className="rounded-xl border border-border-light bg-surface-card p-6">
-            <span className="mb-4 block text-[10px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+            <span className="mb-4 block text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                 {t('aiUsage.costBreakdown', 'Cost Breakdown')}
             </span>
             <table className="w-full text-[13px]">
                 <thead>
-                    <tr className="border-b border-border-light text-left text-[10px] font-medium uppercase tracking-[0.08em] text-ink-muted">
-                        <th className="pb-3 font-medium">{t('aiUsage.feature', 'Feature')}</th>
-                        <th className="pb-3 text-right font-medium">{t('aiUsage.tokensCol', 'Tokens')}</th>
-                        <th className="pb-3 text-right font-medium">{t('aiUsage.costCol', 'Cost')}</th>
-                        <th className="pb-3 text-right font-medium">{t('aiUsage.shareCol', 'Share')}</th>
+                    <tr className="border-b border-border-light text-left text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
+                        <th className="pb-3 font-medium">
+                            {t('aiUsage.feature', 'Feature')}
+                        </th>
+                        <th className="pb-3 text-right font-medium">
+                            {t('aiUsage.tokensCol', 'Tokens')}
+                        </th>
+                        <th className="pb-3 text-right font-medium">
+                            {t('aiUsage.costCol', 'Cost')}
+                        </th>
+                        <th className="pb-3 text-right font-medium">
+                            {t('aiUsage.shareCol', 'Share')}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     {breakdown.map((f) => {
-                        const share = totalTokens > 0 ? (f.tokens / totalTokens) * 100 : 0;
+                        const share =
+                            totalTokens > 0
+                                ? (f.tokens / totalTokens) * 100
+                                : 0;
                         const cost = f.cost_micro / 1_000_000;
                         return (
-                            <tr key={f.feature} className="border-b border-border-subtle">
-                                <td className="py-3 font-medium text-ink">{FEATURE_LABELS[f.feature] ?? f.feature}</td>
-                                <td className="py-3 text-right text-ink-soft">{formatCompactCount(f.tokens)}</td>
-                                <td className="py-3 text-right text-ink-soft">${cost.toFixed(4)}</td>
+                            <tr
+                                key={f.feature}
+                                className="border-b border-border-subtle"
+                            >
+                                <td className="py-3 font-medium text-ink">
+                                    {FEATURE_LABELS[f.feature] ?? f.feature}
+                                </td>
+                                <td className="py-3 text-right text-ink-soft">
+                                    {formatCompactCount(f.tokens)}
+                                </td>
+                                <td className="py-3 text-right text-ink-soft">
+                                    ${cost.toFixed(4)}
+                                </td>
                                 <td className="py-3">
                                     <div className="flex items-center justify-end gap-2">
                                         <div className="h-[4px] w-[55px] overflow-hidden rounded-[2px] bg-neutral-bg">
@@ -57,7 +85,9 @@ function CostBreakdownTable({ breakdown }: { breakdown: AiUsageFeatureBreakdown[
                                                 style={{ width: `${share}%` }}
                                             />
                                         </div>
-                                        <span className="text-ink-soft">{Math.round(share)}%</span>
+                                        <span className="text-ink-soft">
+                                            {Math.round(share)}%
+                                        </span>
                                     </div>
                                 </td>
                             </tr>
@@ -66,9 +96,15 @@ function CostBreakdownTable({ breakdown }: { breakdown: AiUsageFeatureBreakdown[
                 </tbody>
                 <tfoot>
                     <tr className="text-[12px] font-semibold">
-                        <td className="pt-2.5 text-ink">{t('aiUsage.total', 'Total')}</td>
-                        <td className="pt-2.5 text-right text-ink">{formatCompactCount(totalTokens)}</td>
-                        <td className="pt-2.5 text-right text-ink">${(totalCost / 1_000_000).toFixed(4)}</td>
+                        <td className="pt-2.5 text-ink">
+                            {t('aiUsage.total', 'Total')}
+                        </td>
+                        <td className="pt-2.5 text-right text-ink">
+                            {formatCompactCount(totalTokens)}
+                        </td>
+                        <td className="pt-2.5 text-right text-ink">
+                            ${(totalCost / 1_000_000).toFixed(4)}
+                        </td>
                         <td className="pt-2.5 pl-4 text-ink-muted">100%</td>
                     </tr>
                 </tfoot>
@@ -103,7 +139,7 @@ function TokenUsageChart({ monthly }: { monthly: AiUsageMonthly[] }) {
 
     return (
         <div className="rounded-xl border border-border-light bg-surface-card p-6">
-            <span className="mb-4 block text-[10px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+            <span className="mb-4 block text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                 {t('aiUsage.tokenUsage', 'Token Usage')}
             </span>
             <svg
@@ -125,7 +161,12 @@ function TokenUsageChart({ monthly }: { monthly: AiUsageMonthly[] }) {
                                 className="stroke-border-light"
                                 strokeDasharray="2 3"
                             />
-                            <text x={32} y={y + 3} textAnchor="end" className="fill-ink-faint text-[9px]">
+                            <text
+                                x={32}
+                                y={y + 3}
+                                textAnchor="end"
+                                className="fill-ink-faint text-[9px]"
+                            >
                                 {formatGridLabel(v)}
                             </text>
                         </g>
@@ -147,7 +188,9 @@ function TokenUsageChart({ monthly }: { monthly: AiUsageMonthly[] }) {
                                 width={barW}
                                 height={Math.max(barH, 1)}
                                 rx={4}
-                                className={isLast ? 'fill-accent' : 'fill-accent/40'}
+                                className={
+                                    isLast ? 'fill-accent' : 'fill-accent/40'
+                                }
                             />
                             {/* Value label */}
                             <text
@@ -175,7 +218,13 @@ function TokenUsageChart({ monthly }: { monthly: AiUsageMonthly[] }) {
     );
 }
 
-export default function AiUsageStats({ bookId, usage }: { bookId: number; usage: AiUsage }) {
+export default function AiUsageStats({
+    bookId,
+    usage,
+}: {
+    bookId: number;
+    usage: AiUsage;
+}) {
     const { t, i18n } = useTranslation('dashboard');
     const [confirming, setConfirming] = useState(false);
 
@@ -209,54 +258,73 @@ export default function AiUsageStats({ bookId, usage }: { bookId: number; usage:
                     onBlur={() => setConfirming(false)}
                     className="text-[12px] text-ink-faint transition-colors hover:text-ink"
                 >
-                    {confirming ? t('aiUsage.confirmReset') : t('aiUsage.reset')}
+                    {confirming
+                        ? t('aiUsage.confirmReset')
+                        : t('aiUsage.reset')}
                 </button>
             </div>
 
             {/* Summary cards */}
             <div className="flex gap-4">
                 <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-6">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                    <span className="text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.tokensUsed', 'Tokens Used')}
                     </span>
                     <span className="font-serif text-[32px] font-bold text-ink">
-                        {formatCompactCount(usage.input_tokens + usage.output_tokens)}
+                        {formatCompactCount(
+                            usage.input_tokens + usage.output_tokens,
+                        )}
                     </span>
-                    <span className="text-[12px] text-ink-muted">{t('aiUsage.tokens', 'tokens')}</span>
+                    <span className="text-[12px] text-ink-muted">
+                        {t('aiUsage.tokens', 'tokens')}
+                    </span>
                 </div>
                 <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-6">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                    <span className="text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.estCost')}
                     </span>
-                    <span className="font-serif text-[32px] font-bold text-ink">{usage.cost_display}</span>
-                    <span className="text-[12px] text-ink-muted">{t('aiUsage.thisMonth', 'this month')}</span>
+                    <span className="font-serif text-[32px] font-bold text-ink">
+                        {usage.cost_display}
+                    </span>
+                    <span className="text-[12px] text-ink-muted">
+                        {t('aiUsage.thisMonth', 'this month')}
+                    </span>
                 </div>
                 <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-6">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                    <span className="text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.apiRequests', 'API Requests')}
                     </span>
                     <span className="font-serif text-[32px] font-bold text-ink">
                         {usage.request_count.toLocaleString(i18n.language)}
                     </span>
-                    <span className="text-[12px] text-ink-muted">{t('aiUsage.totalLabel', 'total')}</span>
+                    <span className="text-[12px] text-ink-muted">
+                        {t('aiUsage.totalLabel', 'total')}
+                    </span>
                 </div>
                 <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-6">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                    <span className="text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.avgCost', 'Avg. Cost')}
                     </span>
-                    <span className="font-serif text-[32px] font-bold text-ink">{usage.avg_cost_display}</span>
-                    <span className="text-[12px] text-ink-muted">{t('aiUsage.perRequest', 'per request')}</span>
+                    <span className="font-serif text-[32px] font-bold text-ink">
+                        {usage.avg_cost_display}
+                    </span>
+                    <span className="text-[12px] text-ink-muted">
+                        {t('aiUsage.perRequest', 'per request')}
+                    </span>
                 </div>
             </div>
 
             {usage.reset_at && (
                 <span className="text-[12px] text-ink-faint">
                     {t('aiUsage.trackingSince', {
-                        date: new Date(usage.reset_at).toLocaleDateString(i18n.language, {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                        }),
+                        date: new Date(usage.reset_at).toLocaleDateString(
+                            i18n.language,
+                            {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                            },
+                        ),
                     })}
                 </span>
             )}

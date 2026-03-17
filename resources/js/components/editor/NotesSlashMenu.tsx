@@ -1,4 +1,10 @@
-import { Heading, List, MessageSquare, Minus, SquareCheckBig } from 'lucide-react';
+import {
+    Heading,
+    List,
+    MessageSquare,
+    Minus,
+    SquareCheckBig,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { BlockType } from '@/components/editor/NotesPanel';
@@ -11,11 +17,36 @@ type SlashMenuItem = {
 };
 
 const ITEMS: SlashMenuItem[] = [
-    { icon: SquareCheckBig, labelKey: 'notes.slash.todo', descriptionKey: 'notes.slash.todoDescription', blockType: 'todo' },
-    { icon: List, labelKey: 'notes.slash.bulletList', descriptionKey: 'notes.slash.bulletListDescription', blockType: 'bullet' },
-    { icon: Heading, labelKey: 'notes.slash.heading', descriptionKey: 'notes.slash.headingDescription', blockType: 'heading' },
-    { icon: Minus, labelKey: 'notes.slash.divider', descriptionKey: 'notes.slash.dividerDescription', blockType: 'divider' },
-    { icon: MessageSquare, labelKey: 'notes.slash.callout', descriptionKey: 'notes.slash.calloutDescription', blockType: 'callout' },
+    {
+        icon: SquareCheckBig,
+        labelKey: 'notes.slash.todo',
+        descriptionKey: 'notes.slash.todoDescription',
+        blockType: 'todo',
+    },
+    {
+        icon: List,
+        labelKey: 'notes.slash.bulletList',
+        descriptionKey: 'notes.slash.bulletListDescription',
+        blockType: 'bullet',
+    },
+    {
+        icon: Heading,
+        labelKey: 'notes.slash.heading',
+        descriptionKey: 'notes.slash.headingDescription',
+        blockType: 'heading',
+    },
+    {
+        icon: Minus,
+        labelKey: 'notes.slash.divider',
+        descriptionKey: 'notes.slash.dividerDescription',
+        blockType: 'divider',
+    },
+    {
+        icon: MessageSquare,
+        labelKey: 'notes.slash.callout',
+        descriptionKey: 'notes.slash.calloutDescription',
+        blockType: 'callout',
+    },
 ];
 
 export default function NotesSlashMenu({
@@ -46,11 +77,17 @@ export default function NotesSlashMenu({
         setActiveIndex(0);
     }
 
-    useEffect(() => { activeIndexRef.current = activeIndex; }, [activeIndex]);
+    useEffect(() => {
+        activeIndexRef.current = activeIndex;
+    }, [activeIndex]);
 
-    const filtered = query ? ITEMS.filter((item) => item.blockType.includes(query.toLowerCase())) : ITEMS;
+    const filtered = query
+        ? ITEMS.filter((item) => item.blockType.includes(query.toLowerCase()))
+        : ITEMS;
     const filteredRef = useRef(filtered);
-    useEffect(() => { filteredRef.current = filtered; }, [filtered]);
+    useEffect(() => {
+        filteredRef.current = filtered;
+    }, [filtered]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -77,7 +114,10 @@ export default function NotesSlashMenu({
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 if (items.length > 0) {
-                    const idx = Math.min(activeIndexRef.current, items.length - 1);
+                    const idx = Math.min(
+                        activeIndexRef.current,
+                        items.length - 1,
+                    );
                     onSelectRef.current(items[idx].blockType);
                 }
             } else if (e.key === 'Escape') {
@@ -88,12 +128,16 @@ export default function NotesSlashMenu({
         };
 
         document.addEventListener('keydown', handleKeyDown, true);
-        return () => document.removeEventListener('keydown', handleKeyDown, true);
+        return () =>
+            document.removeEventListener('keydown', handleKeyDown, true);
     }, []);
 
     useEffect(() => {
         const handleClick = (e: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+            if (
+                menuRef.current &&
+                !menuRef.current.contains(e.target as Node)
+            ) {
                 onCloseRef.current();
             }
         };
@@ -124,17 +168,23 @@ export default function NotesSlashMenu({
                         <button
                             key={item.blockType}
                             className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left ${
-                                isActive ? 'bg-accent-light' : 'hover:bg-neutral-bg'
+                                isActive
+                                    ? 'bg-accent-light'
+                                    : 'hover:bg-neutral-bg'
                             }`}
                             onMouseEnter={() => setActiveIndex(index)}
                             onClick={() => onSelect(item.blockType)}
                         >
                             <Icon
                                 size={16}
-                                className={isActive ? 'shrink-0 text-accent' : 'shrink-0 text-ink-muted'}
+                                className={
+                                    isActive
+                                        ? 'shrink-0 text-accent'
+                                        : 'shrink-0 text-ink-muted'
+                                }
                             />
                             <div className="min-w-0">
-                                <div className="text-[13px] font-medium leading-tight text-ink">
+                                <div className="text-[13px] leading-tight font-medium text-ink">
                                     {t(item.labelKey)}
                                 </div>
                                 <div className="text-[11px] leading-tight text-ink-faint">

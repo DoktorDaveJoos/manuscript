@@ -3,7 +3,10 @@ import { DOMSerializer } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { split, updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
+import {
+    split,
+    updateTitle,
+} from '@/actions/App/Http/Controllers/ChapterController';
 import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
 import AiChatDrawer from '@/components/editor/AiChatDrawer';
@@ -11,7 +14,7 @@ import AiPanel from '@/components/editor/AiPanel';
 import CommandPalette from '@/components/editor/CommandPalette';
 import DiffView from '@/components/editor/DiffView';
 import EditorBar from '@/components/editor/EditorBar';
-import type {SaveStatus} from '@/components/editor/EditorBar';
+import type { SaveStatus } from '@/components/editor/EditorBar';
 import FormattingToolbar from '@/components/editor/FormattingToolbar';
 import NotesPanel from '@/components/editor/NotesPanel';
 import Sidebar from '@/components/editor/Sidebar';
@@ -22,8 +25,16 @@ import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import { getXsrfToken } from '@/lib/csrf';
 import { createChapter, jsonFetchHeaders } from '@/lib/utils';
-import type { Analysis, AppSettings, Book, Chapter, Character, CharacterChapterPivot, ProsePassRule, Scene } from '@/types/models';
-
+import type {
+    Analysis,
+    AppSettings,
+    Book,
+    Chapter,
+    Character,
+    CharacterChapterPivot,
+    ProsePassRule,
+    Scene,
+} from '@/types/models';
 
 type ChapterWithRelations = Chapter & {
     characters?: (Character & { pivot: CharacterChapterPivot })[];
@@ -34,7 +45,11 @@ function firstLine(text: string): string {
 }
 
 /** Cuts content from cursor to end of document, flushes the scene save, and returns the HTML + scene index. */
-async function splitAtCursor(editor: Editor, sceneId: number, scenes: Scene[]): Promise<{ belowHtml: string; currentIndex: number }> {
+async function splitAtCursor(
+    editor: Editor,
+    sceneId: number,
+    scenes: Scene[],
+): Promise<{ belowHtml: string; currentIndex: number }> {
     const { from } = editor.state.selection;
     const endPos = editor.state.doc.content.size;
 
@@ -48,7 +63,8 @@ async function splitAtCursor(editor: Editor, sceneId: number, scenes: Scene[]): 
 
     // Flush the current scene's save
     const sceneEl = document.getElementById(`scene-${sceneId}`);
-    const flush = (sceneEl as unknown as Record<string, () => Promise<void>>)?.__flush;
+    const flush = (sceneEl as unknown as Record<string, () => Promise<void>>)
+        ?.__flush;
     if (typeof flush === 'function') await flush();
 
     const currentIndex = scenes.findIndex((s) => s.id === sceneId);
@@ -76,12 +92,16 @@ export default function ChapterShow({
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
     const [chapterTitle, setChapterTitle] = useState(chapter.title);
     const [scenes, setScenes] = useState<Scene[]>(chapter.scenes ?? []);
-    const [chapterNotes, setChapterNotes] = useState<string | null>(chapter.notes);
+    const [chapterNotes, setChapterNotes] = useState<string | null>(
+        chapter.notes,
+    );
     const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
     const activeEditorRef = useRef<Editor | null>(null);
     activeEditorRef.current = activeEditor;
     const [activeSceneId, setActiveSceneId] = useState<number | null>(null);
-    const [pendingFocusSceneId, setPendingFocusSceneId] = useState<number | null>(null);
+    const [pendingFocusSceneId, setPendingFocusSceneId] = useState<
+        number | null
+    >(null);
     const [showVersions, setShowVersions] = useState(false);
     const [showNormalize, setShowNormalize] = useState(false);
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
@@ -98,7 +118,9 @@ export default function ChapterShow({
             const next = !prev;
             try {
                 localStorage.setItem('manuscript:notes-open', String(next));
-            } catch { /* no-op */ }
+            } catch {
+                /* no-op */
+            }
             return next;
         });
     }, []);
@@ -107,17 +129,25 @@ export default function ChapterShow({
         setIsNotesOpen(false);
         try {
             localStorage.setItem('manuscript:notes-open', 'false');
-        } catch { /* no-op */ }
+        } catch {
+            /* no-op */
+        }
         activeEditorRef.current?.commands.focus();
     }, []);
 
-    const [scenesVisible, setScenesVisible] = useState(app_settings.show_scenes);
+    const [scenesVisible, setScenesVisible] = useState(
+        app_settings.show_scenes,
+    );
 
     const handleScenesVisibleChange = useCallback((v: boolean) => {
         setScenesVisible(v);
         fetch('/settings', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': getXsrfToken(), Accept: 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-XSRF-TOKEN': getXsrfToken(),
+                Accept: 'application/json',
+            },
             body: JSON.stringify({ key: 'show_scenes', value: v }),
         }).then(() => router.reload({ only: ['app_settings'] }));
     }, []);
@@ -137,11 +167,14 @@ export default function ChapterShow({
             const next = !prev;
             try {
                 localStorage.setItem('manuscript:focus-mode', String(next));
-            } catch { /* no-op */ }
+            } catch {
+                /* no-op */
+            }
             if (next) {
                 document.documentElement.requestFullscreen?.().catch(() => {});
             } else {
-                if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+                if (document.fullscreenElement)
+                    document.exitFullscreen?.().catch(() => {});
             }
             return next;
         });
@@ -151,13 +184,18 @@ export default function ChapterShow({
         setIsFocusMode(false);
         try {
             localStorage.setItem('manuscript:focus-mode', 'false');
-        } catch { /* no-op */ }
-        if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+        } catch {
+            /* no-op */
+        }
+        if (document.fullscreenElement)
+            document.exitFullscreen?.().catch(() => {});
     }, []);
 
     const [editorFont, setEditorFont] = useState(() => {
         try {
-            return localStorage.getItem('manuscript:editor-font') || 'eb-garamond';
+            return (
+                localStorage.getItem('manuscript:editor-font') || 'eb-garamond'
+            );
         } catch {
             return 'eb-garamond';
         }
@@ -228,10 +266,16 @@ export default function ChapterShow({
     // Word count derived from scenes
     const wordCount = scenes.reduce((sum, s) => sum + s.word_count, 0);
 
-    const handleSceneWordCountChange = useCallback((sceneId: number, count: number) => {
-        setScenes((prev) => prev.map((s) => (s.id === sceneId ? { ...s, word_count: count } : s)));
-    }, []);
-
+    const handleSceneWordCountChange = useCallback(
+        (sceneId: number, count: number) => {
+            setScenes((prev) =>
+                prev.map((s) =>
+                    s.id === sceneId ? { ...s, word_count: count } : s,
+                ),
+            );
+        },
+        [],
+    );
 
     // Chapter title auto-save
     const titleAbortRef = useRef<AbortController | null>(null);
@@ -255,12 +299,15 @@ export default function ChapterShow({
         setSaveStatus('saving');
 
         try {
-            const response = await fetch(updateTitle.url({ book: book.id, chapter: chapter.id }), {
-                method: 'PATCH',
-                headers: jsonFetchHeaders(),
-                body: JSON.stringify({ title }),
-                signal: controller.signal,
-            });
+            const response = await fetch(
+                updateTitle.url({ book: book.id, chapter: chapter.id }),
+                {
+                    method: 'PATCH',
+                    headers: jsonFetchHeaders(),
+                    body: JSON.stringify({ title }),
+                    signal: controller.signal,
+                },
+            );
 
             if (!response.ok) throw new Error('Save failed');
 
@@ -301,8 +348,11 @@ export default function ChapterShow({
 
     // Flush all pending saves (title + all scenes in parallel)
     const handleBeforeNavigate = useCallback(async () => {
-        const sceneFlushes = Array.from(document.querySelectorAll('[id^="scene-"]')).map((el) => {
-            const flush = (el as unknown as Record<string, () => Promise<void>>).__flush;
+        const sceneFlushes = Array.from(
+            document.querySelectorAll('[id^="scene-"]'),
+        ).map((el) => {
+            const flush = (el as unknown as Record<string, () => Promise<void>>)
+                .__flush;
             return typeof flush === 'function' ? flush() : Promise.resolve();
         });
 
@@ -313,14 +363,17 @@ export default function ChapterShow({
     const handleAddScene = useCallback(
         async (afterPosition: number) => {
             try {
-                const response = await fetch(storeScene.url({ book: book.id, chapter: chapter.id }), {
-                    method: 'POST',
-                    headers: jsonFetchHeaders(),
-                    body: JSON.stringify({
-                        title: `Scene ${scenes.length + 1}`,
-                        position: afterPosition,
-                    }),
-                });
+                const response = await fetch(
+                    storeScene.url({ book: book.id, chapter: chapter.id }),
+                    {
+                        method: 'POST',
+                        headers: jsonFetchHeaders(),
+                        body: JSON.stringify({
+                            title: `Scene ${scenes.length + 1}`,
+                            position: afterPosition,
+                        }),
+                    },
+                );
 
                 if (response.ok) {
                     const newScene: Scene = await response.json();
@@ -349,7 +402,8 @@ export default function ChapterShow({
             }
         };
         document.addEventListener('keydown', handler, { capture: true });
-        return () => document.removeEventListener('keydown', handler, { capture: true });
+        return () =>
+            document.removeEventListener('keydown', handler, { capture: true });
     }, [isFocusMode, isPaletteOpen, exitFocusMode]);
 
     useEffect(() => {
@@ -358,28 +412,41 @@ export default function ChapterShow({
                 setIsFocusMode(false);
                 try {
                     localStorage.setItem('manuscript:focus-mode', 'false');
-                } catch { /* no-op */ }
+                } catch {
+                    /* no-op */
+                }
             }
         };
         document.addEventListener('fullscreenchange', onFullscreenChange);
-        return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+        return () =>
+            document.removeEventListener(
+                'fullscreenchange',
+                onFullscreenChange,
+            );
     }, [isFocusMode]);
 
     const handleSplitScene = useCallback(async () => {
         if (!activeEditor || !activeSceneId) return;
 
-        const { belowHtml, currentIndex } = await splitAtCursor(activeEditor, activeSceneId, scenes);
+        const { belowHtml, currentIndex } = await splitAtCursor(
+            activeEditor,
+            activeSceneId,
+            scenes,
+        );
         const insertPosition = currentIndex + 1;
 
-        const response = await fetch(storeScene.url({ book: book.id, chapter: chapter.id }), {
-            method: 'POST',
-            headers: jsonFetchHeaders(),
-            body: JSON.stringify({
-                title: `Scene ${scenes.length + 1}`,
-                position: insertPosition,
-                content: belowHtml,
-            }),
-        });
+        const response = await fetch(
+            storeScene.url({ book: book.id, chapter: chapter.id }),
+            {
+                method: 'POST',
+                headers: jsonFetchHeaders(),
+                body: JSON.stringify({
+                    title: `Scene ${scenes.length + 1}`,
+                    position: insertPosition,
+                    content: belowHtml,
+                }),
+            },
+        );
 
         if (!response.ok) return;
 
@@ -395,18 +462,27 @@ export default function ChapterShow({
     const handleSplitChapter = useCallback(async () => {
         if (!activeEditor || !activeSceneId) return;
 
-        const { belowHtml, currentIndex } = await splitAtCursor(activeEditor, activeSceneId, scenes);
-        const subsequentSceneIds = scenes.slice(currentIndex + 1).map((s) => s.id);
+        const { belowHtml, currentIndex } = await splitAtCursor(
+            activeEditor,
+            activeSceneId,
+            scenes,
+        );
+        const subsequentSceneIds = scenes
+            .slice(currentIndex + 1)
+            .map((s) => s.id);
 
-        const response = await fetch(split.url({ book: book.id, chapter: chapter.id }), {
-            method: 'POST',
-            headers: jsonFetchHeaders(),
-            body: JSON.stringify({
-                title: t('palette.newChapter'),
-                initial_content: belowHtml,
-                scene_ids: subsequentSceneIds,
-            }),
-        });
+        const response = await fetch(
+            split.url({ book: book.id, chapter: chapter.id }),
+            {
+                method: 'POST',
+                headers: jsonFetchHeaders(),
+                body: JSON.stringify({
+                    title: t('palette.newChapter'),
+                    initial_content: belowHtml,
+                    scene_ids: subsequentSceneIds,
+                }),
+            },
+        );
 
         if (!response.ok) return;
 
@@ -420,23 +496,33 @@ export default function ChapterShow({
     }, [book, chapter.storyline_id, handleBeforeNavigate, sidebarStorylines]);
 
     // Callbacks for sidebar-initiated scene mutations
-    const handleSidebarSceneRename = useCallback((sceneId: number, newTitle: string) => {
-        setScenes(prev => prev.map(s => s.id === sceneId ? { ...s, title: newTitle } : s));
-    }, []);
+    const handleSidebarSceneRename = useCallback(
+        (sceneId: number, newTitle: string) => {
+            setScenes((prev) =>
+                prev.map((s) =>
+                    s.id === sceneId ? { ...s, title: newTitle } : s,
+                ),
+            );
+        },
+        [],
+    );
 
     const handleSidebarSceneDelete = useCallback((sceneId: number) => {
-        setScenes(prev => prev.filter(s => s.id !== sceneId));
+        setScenes((prev) => prev.filter((s) => s.id !== sceneId));
     }, []);
 
     const handleSidebarSceneReorder = useCallback((orderedIds: number[]) => {
-        setScenes(prev => {
-            const map = new Map(prev.map(s => [s.id, s]));
-            return orderedIds.map(id => map.get(id)!).filter(Boolean);
+        setScenes((prev) => {
+            const map = new Map(prev.map((s) => [s.id, s]));
+            return orderedIds.map((id) => map.get(id)!).filter(Boolean);
         });
     }, []);
 
     const closePalette = useCallback(() => setIsPaletteOpen(false), []);
-    const handlePaletteAddScene = useCallback(() => handleAddScene(scenes.length), [handleAddScene, scenes.length]);
+    const handlePaletteAddScene = useCallback(
+        () => handleAddScene(scenes.length),
+        [handleAddScene, scenes.length],
+    );
 
     const povCharacterName = chapter.pov_character?.name ?? null;
     const timelineLabel = chapter.storyline?.timeline_label ?? null;
@@ -471,11 +557,16 @@ export default function ChapterShow({
                             <EditorBar
                                 chapter={chapter}
                                 chapterTitle={displayTitle}
-                                storylineName={chapter.storyline?.name ?? t('show.untitledStoryline')}
+                                storylineName={
+                                    chapter.storyline?.name ??
+                                    t('show.untitledStoryline')
+                                }
                                 wordCount={wordCount}
                                 saveStatus={saveStatus}
                                 versionCount={versionCount}
-                                onVersionClick={() => setShowVersions(!showVersions)}
+                                onVersionClick={() =>
+                                    setShowVersions(!showVersions)
+                                }
                             />
                         </div>
                         {showVersions && !isFocusMode && (
@@ -528,7 +619,9 @@ export default function ChapterShow({
                                 editorFont={editorFont}
                                 editorFontSize={editorFontSize}
                                 pendingFocusSceneId={pendingFocusSceneId}
-                                onFocusHandled={() => setPendingFocusSceneId(null)}
+                                onFocusHandled={() =>
+                                    setPendingFocusSceneId(null)
+                                }
                                 onActiveSceneIdChange={setActiveSceneId}
                                 scenesVisible={scenesVisible}
                             />
@@ -565,17 +658,28 @@ export default function ChapterShow({
                         className={`flex overflow-hidden transition-[width,opacity] duration-300 ${isFocusMode ? 'w-0 opacity-0' : ''}`}
                     >
                         <AiPanel
-                            characters={(chapter.characters as (Character & { pivot: CharacterChapterPivot })[]) ?? []}
+                            characters={
+                                (chapter.characters as (Character & {
+                                    pivot: CharacterChapterPivot;
+                                })[]) ?? []
+                            }
                             book={book}
                             chapter={chapter}
                             isOpen={isAiPanelOpen}
                             onToggle={toggleAiPanel}
-                            onError={(msg) => { console.error('[AiPanel]', msg); setSaveStatus('error'); }}
+                            onError={(msg) => {
+                                console.error('[AiPanel]', msg);
+                                setSaveStatus('error');
+                            }}
                             onOpenChat={() => setIsChatOpen(true)}
                             chapterAnalyses={chapterAnalyses}
                         />
                         {isChatOpen && (
-                            <AiChatDrawer book={book} chapter={chapter} onClose={() => setIsChatOpen(false)} />
+                            <AiChatDrawer
+                                book={book}
+                                chapter={chapter}
+                                onClose={() => setIsChatOpen(false)}
+                            />
                         )}
                     </div>
                 )}
@@ -645,13 +749,19 @@ function WhisperChrome({
             className={`fixed inset-x-0 bottom-0 z-40 flex items-end justify-between px-12 pb-8 transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`}
         >
             <span className="text-[13px] leading-4 tracking-[0.02em] text-ink-whisper">
-                {t('focusMode.chapterLabel', { number: chapterNumber, title: chapterTitle })}
+                {t('focusMode.chapterLabel', {
+                    number: chapterNumber,
+                    title: chapterTitle,
+                })}
             </span>
             <span className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1.5 text-[13px] leading-4 tracking-[0.02em] text-ink-whisper">
                 <Kbd keys="Esc" /> {t('focusMode.leaveFocusMode')}
             </span>
             <span className="text-[13px] leading-4 tracking-[0.02em] text-ink-whisper">
-                {t('focusMode.wordCount', { count: wordCount, formatted: wordCount.toLocaleString(i18n.language) })}
+                {t('focusMode.wordCount', {
+                    count: wordCount,
+                    formatted: wordCount.toLocaleString(i18n.language),
+                })}
             </span>
         </div>
     );

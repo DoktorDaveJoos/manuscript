@@ -78,7 +78,7 @@ export default function CrashReportDialog() {
                 <div className="mt-6 h-px bg-border-light" />
 
                 {/* Footer */}
-                <div className="flex flex-col items-center gap-4 px-10 pb-8 pt-6">
+                <div className="flex flex-col items-center gap-4 px-10 pt-6 pb-8">
                     <div className="flex w-full flex-col gap-3">
                         <button
                             type="button"

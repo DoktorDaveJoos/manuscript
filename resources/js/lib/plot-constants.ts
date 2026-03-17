@@ -19,4 +19,3 @@ export const NEXT_STATUS: Record<PlotPointStatus, PlotPointStatus> = {
     fulfilled: 'abandoned',
     abandoned: 'planned',
 };
-

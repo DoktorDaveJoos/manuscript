@@ -12,7 +12,10 @@ function useSubtitle(item: ListItem, tab: WikiTab): string {
         const char = item as Character;
         const chapterCount = char.chapters?.length ?? 0;
         const storylineCount = char.storylines?.length ?? 0;
-        const storylinePart = storylineCount > 0 ? ` · ${t('storylines', { count: storylineCount })}` : '';
+        const storylinePart =
+            storylineCount > 0
+                ? ` · ${t('storylines', { count: storylineCount })}`
+                : '';
         return `${t('chapters', { count: chapterCount })}${storylinePart}`;
     }
 
@@ -40,7 +43,13 @@ export default function WikiEntryList({
     return (
         <div className="flex flex-col gap-0.5">
             {items.map((item) => (
-                <WikiEntryListItem key={item.id} item={item} tab={tab} selectedId={selectedId} onSelect={onSelect} />
+                <WikiEntryListItem
+                    key={item.id}
+                    item={item}
+                    tab={tab}
+                    selectedId={selectedId}
+                    onSelect={onSelect}
+                />
             ))}
         </div>
     );
@@ -93,7 +102,9 @@ function WikiEntryListEmpty({ tab }: { tab: WikiTab }) {
             <div className="mb-3">
                 <WikiAvatar name="?" tab={tab} size="lg" />
             </div>
-            <p className="text-[13px] font-medium text-ink">{t(`empty.${tab}.title`)}</p>
+            <p className="text-[13px] font-medium text-ink">
+                {t(`empty.${tab}.title`)}
+            </p>
             <p className="mt-1.5 max-w-[240px] text-[12px] leading-relaxed text-ink-muted">
                 {t(`empty.${tab}.description`)}
             </p>

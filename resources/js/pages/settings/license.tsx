@@ -1,8 +1,12 @@
 import { router, usePage } from '@inertiajs/react';
-import { useState, useCallback, useEffect  } from 'react';
-import type {FormEvent} from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { activate, deactivate, revalidate } from '@/actions/App/Http/Controllers/LicenseController';
+import {
+    activate,
+    deactivate,
+    revalidate,
+} from '@/actions/App/Http/Controllers/LicenseController';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import SettingsLayout from '@/layouts/SettingsLayout';
@@ -53,7 +57,9 @@ export default function LicensePage({ book }: Props) {
                         if (res.status === 503) {
                             setError(t('license.error.network'));
                         } else {
-                            setError(json.message || t('license.error.invalid'));
+                            setError(
+                                json.message || t('license.error.invalid'),
+                            );
                         }
                         return;
                     }
@@ -76,7 +82,11 @@ export default function LicensePage({ book }: Props) {
             .then(async (res) => {
                 if (!res.ok) {
                     const json = await res.json();
-                    setError(res.status === 503 ? t('license.error.network') : json.message || t('license.error.failed'));
+                    setError(
+                        res.status === 503
+                            ? t('license.error.network')
+                            : json.message || t('license.error.failed'),
+                    );
                     return;
                 }
                 router.reload();
@@ -85,10 +95,16 @@ export default function LicensePage({ book }: Props) {
     }, [t]);
 
     return (
-        <SettingsLayout activeSection="license" book={book} title={t('license.title')}>
+        <SettingsLayout
+            activeSection="license"
+            book={book}
+            title={t('license.title')}
+        >
             <div className="flex flex-col gap-6">
                 <div>
-                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">{t('license.title')}</h1>
+                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">
+                        {t('license.title')}
+                    </h1>
                     <p className="mt-1 text-[14px] text-ink-muted">
                         {t('license.description')}
                     </p>
@@ -98,8 +114,12 @@ export default function LicensePage({ book }: Props) {
                     <div className="rounded-lg border border-border bg-surface-card p-6">
                         <div className="flex items-center gap-3">
                             <span className="text-status-final">●</span>
-                            <span className="text-[15px] font-medium text-ink">{t('license.active')}</span>
-                            <span className="text-[13px] text-ink-muted">{license.masked_key}</span>
+                            <span className="text-[15px] font-medium text-ink">
+                                {t('license.active')}
+                            </span>
+                            <span className="text-[13px] text-ink-muted">
+                                {license.masked_key}
+                            </span>
                             <button
                                 type="button"
                                 onClick={handleDeactivate}
@@ -108,16 +128,22 @@ export default function LicensePage({ book }: Props) {
                                 {t('license.deactivate')}
                             </button>
                         </div>
-                        {error && <span className="mt-2 block text-[12px] text-danger">{error}</span>}
+                        {error && (
+                            <span className="mt-2 block text-[12px] text-danger">
+                                {error}
+                            </span>
+                        )}
                     </div>
                 ) : (
                     <div className="rounded-lg border border-border bg-surface-card p-6">
-                        <h2 className="text-[15px] font-medium text-ink">{t('license.formTitle')}</h2>
+                        <h2 className="text-[15px] font-medium text-ink">
+                            {t('license.formTitle')}
+                        </h2>
                         <p className="mt-1 text-[13px] text-ink-muted">
                             {t('license.formDescription')}
                         </p>
                         <form onSubmit={handleActivate} className="mt-4">
-                            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                            <span className="mb-1.5 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                                 {t('license.keyLabel')}
                             </span>
                             <div className="flex items-start gap-3">
@@ -126,13 +152,26 @@ export default function LicensePage({ book }: Props) {
                                         type="text"
                                         value={key}
                                         onChange={(e) => setKey(e.target.value)}
-                                        placeholder={t('license.keyPlaceholder')}
+                                        placeholder={t(
+                                            'license.keyPlaceholder',
+                                        )}
                                         className="font-mono"
                                     />
-                                    {error && <span className="text-[12px] text-danger">{error}</span>}
+                                    {error && (
+                                        <span className="text-[12px] text-danger">
+                                            {error}
+                                        </span>
+                                    )}
                                 </div>
-                                <Button variant="accent" type="submit" disabled={activating || !key} className="h-9">
-                                    {activating ? t('license.activating') : t('license.activate')}
+                                <Button
+                                    variant="accent"
+                                    type="submit"
+                                    disabled={activating || !key}
+                                    className="h-9"
+                                >
+                                    {activating
+                                        ? t('license.activating')
+                                        : t('license.activate')}
                                 </Button>
                             </div>
                         </form>

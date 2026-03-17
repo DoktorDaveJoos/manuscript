@@ -6,7 +6,11 @@ type ChapterItem = {
     done: boolean;
 };
 
-export default function ImportChapterRow({ chapter }: { chapter: ChapterItem }) {
+export default function ImportChapterRow({
+    chapter,
+}: {
+    chapter: ChapterItem;
+}) {
     const { t, i18n } = useTranslation('onboarding');
     return (
         <div className="flex items-center gap-3 border-b border-border-light py-3.5">
@@ -26,12 +30,21 @@ export default function ImportChapterRow({ chapter }: { chapter: ChapterItem }) 
                 <div className="h-5 w-5 shrink-0 rounded-full border-[1.5px] border-ink-faint" />
             )}
 
-            <span className={`text-sm leading-[18px] ${chapter.done ? 'text-ink' : 'text-ink-muted'}`}>
+            <span
+                className={`text-sm leading-[18px] ${chapter.done ? 'text-ink' : 'text-ink-muted'}`}
+            >
                 {chapter.title}
             </span>
 
             <span className="ml-auto text-xs leading-4 text-ink-faint">
-                {chapter.wordCount !== null ? t('importChapterRow.words', { count: chapter.wordCount, formatted: chapter.wordCount.toLocaleString(i18n.language) }) : '...'}
+                {chapter.wordCount !== null
+                    ? t('importChapterRow.words', {
+                          count: chapter.wordCount,
+                          formatted: chapter.wordCount.toLocaleString(
+                              i18n.language,
+                          ),
+                      })
+                    : '...'}
             </span>
         </div>
     );

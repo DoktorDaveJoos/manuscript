@@ -3,11 +3,19 @@ import { useTranslation } from 'react-i18next';
 import type { Character } from '@/types/models';
 import WikiAvatar from './WikiAvatar';
 
-export default function CharacterDetail({ character, onEdit }: { character: Character; onEdit?: () => void }) {
+export default function CharacterDetail({
+    character,
+    onEdit,
+}: {
+    character: Character;
+    onEdit?: () => void;
+}) {
     const { t } = useTranslation('wiki');
 
     const storylineLabels = character.storylines?.length
-        ? character.storylines.map((s) => t('storylineLabel', { name: s })).join(', ')
+        ? character.storylines
+              .map((s) => t('storylineLabel', { name: s }))
+              .join(', ')
         : null;
 
     return (
@@ -15,24 +23,30 @@ export default function CharacterDetail({ character, onEdit }: { character: Char
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
-                    <WikiAvatar name={character.name} tab="characters" size="lg" />
+                    <WikiAvatar
+                        name={character.name}
+                        tab="characters"
+                        size="lg"
+                    />
                     <div>
                         <h2 className="font-serif text-[28px] leading-tight tracking-[-0.01em] text-ink">
                             {character.name}
                         </h2>
-                    {character.aliases && character.aliases.length > 0 && (
-                        <div className="mt-1.5 flex flex-wrap gap-1.5">
-                            <span className="text-[12px] text-ink-muted">{t('alsoKnownAs')}</span>
-                            {character.aliases.map((alias) => (
-                                <span
-                                    key={alias}
-                                    className="rounded border border-border px-2 py-0.5 text-[12px] text-ink-muted"
-                                >
-                                    {alias}
+                        {character.aliases && character.aliases.length > 0 && (
+                            <div className="mt-1.5 flex flex-wrap gap-1.5">
+                                <span className="text-[12px] text-ink-muted">
+                                    {t('alsoKnownAs')}
                                 </span>
-                            ))}
-                        </div>
-                    )}
+                                {character.aliases.map((alias) => (
+                                    <span
+                                        key={alias}
+                                        className="rounded border border-border px-2 py-0.5 text-[12px] text-ink-muted"
+                                    >
+                                        {alias}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
                 {onEdit && (
@@ -49,10 +63,12 @@ export default function CharacterDetail({ character, onEdit }: { character: Char
             {/* Description */}
             {character.description && (
                 <div>
-                    <h3 className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                    <h3 className="mb-2 text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('description')}
                     </h3>
-                    <p className="text-[14px] leading-relaxed text-ink">{character.description}</p>
+                    <p className="text-[14px] leading-relaxed text-ink">
+                        {character.description}
+                    </p>
                 </div>
             )}
 
@@ -60,12 +76,13 @@ export default function CharacterDetail({ character, onEdit }: { character: Char
             <div className="flex gap-12 border-t border-border-subtle pt-6">
                 {character.first_appearance_chapter && (
                     <div>
-                        <h4 className="mb-1 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                        <h4 className="mb-1 text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                             {t('firstAppearance')}
                         </h4>
                         <p className="text-[13px] text-ink">
                             {t('chapterEntry', {
-                                order: character.first_appearance_chapter.reader_order,
+                                order: character.first_appearance_chapter
+                                    .reader_order,
                                 title: character.first_appearance_chapter.title,
                             })}
                         </p>
@@ -73,18 +90,22 @@ export default function CharacterDetail({ character, onEdit }: { character: Char
                 )}
                 {storylineLabels && (
                     <div>
-                        <h4 className="mb-1 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                        <h4 className="mb-1 text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                             {t('storylinesHeading')}
                         </h4>
-                        <p className="text-[13px] text-ink">{storylineLabels}</p>
+                        <p className="text-[13px] text-ink">
+                            {storylineLabels}
+                        </p>
                     </div>
                 )}
                 {character.is_ai_extracted && (
                     <div>
-                        <h4 className="mb-1 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                        <h4 className="mb-1 text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                             {t('source')}
                         </h4>
-                        <p className="text-[13px] text-ink">{t('aiExtracted')}</p>
+                        <p className="text-[13px] text-ink">
+                            {t('aiExtracted')}
+                        </p>
                     </div>
                 )}
             </div>
@@ -92,7 +113,7 @@ export default function CharacterDetail({ character, onEdit }: { character: Char
             {/* Appears In */}
             {character.chapters && character.chapters.length > 0 && (
                 <div>
-                    <h3 className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                    <h3 className="mb-3 text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('appearsIn')}
                     </h3>
                     <div className="flex flex-col">
@@ -108,7 +129,8 @@ export default function CharacterDetail({ character, onEdit }: { character: Char
                                     className={`shrink-0 rounded px-2 py-0.5 text-[11px] font-medium ${
                                         chapter.pivot.role === 'protagonist'
                                             ? 'bg-accent/10 text-accent'
-                                            : chapter.pivot.role === 'supporting'
+                                            : chapter.pivot.role ===
+                                                'supporting'
                                               ? 'bg-neutral-bg text-ink-muted'
                                               : 'bg-neutral-bg text-ink-faint'
                                     }`}
@@ -116,7 +138,7 @@ export default function CharacterDetail({ character, onEdit }: { character: Char
                                     {t(`role.${chapter.pivot.role}`)}
                                 </span>
                                 {chapter.pivot.notes && (
-                                    <span className="text-[12px] italic text-ink-muted">
+                                    <span className="text-[12px] text-ink-muted italic">
                                         {chapter.pivot.notes}
                                     </span>
                                 )}

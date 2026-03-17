@@ -1,5 +1,12 @@
-import { ChevronLeft, ChevronRight, HeartPulse, Search, Sparkle, Zap  } from 'lucide-react';
-import type {LucideIcon} from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    HeartPulse,
+    Search,
+    Sparkle,
+    Zap,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import ProFeatureLock from '@/components/ui/ProFeatureLock';
@@ -60,8 +67,12 @@ export default function AiActionSidebar({
     const { visible, usable, licensed } = useAiFeatures();
 
     const [runningAction, setRunningAction] = useState<ActionKey | null>(null);
-    const [results, setResults] = useState<Partial<Record<ActionKey, ActionResult>>>({});
-    const [errors, setErrors] = useState<Partial<Record<ActionKey, string>>>({});
+    const [results, setResults] = useState<
+        Partial<Record<ActionKey, ActionResult>>
+    >({});
+    const [errors, setErrors] = useState<Partial<Record<ActionKey, string>>>(
+        {},
+    );
 
     const handleAction = useCallback(
         async (action: (typeof actionDefs)[number]) => {
@@ -69,21 +80,25 @@ export default function AiActionSidebar({
             setErrors((prev) => ({ ...prev, [action.key]: undefined }));
 
             try {
-                const response = await fetch(`/books/${book.id}/${action.route}`, {
-                    method: 'POST',
-                    headers: {
-                        Accept: 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-XSRF-TOKEN': getXsrfToken(),
+                const response = await fetch(
+                    `/books/${book.id}/${action.route}`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            Accept: 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-XSRF-TOKEN': getXsrfToken(),
+                        },
                     },
-                });
+                );
 
                 const data = await response.json();
 
                 if (!response.ok) {
                     setErrors((prev) => ({
                         ...prev,
-                        [action.key]: data.message ?? t('aiActions.actionFailed'),
+                        [action.key]:
+                            data.message ?? t('aiActions.actionFailed'),
                     }));
                 } else {
                     setResults((prev) => ({ ...prev, [action.key]: data }));
@@ -93,7 +108,10 @@ export default function AiActionSidebar({
                     }
                 }
             } catch {
-                setErrors((prev) => ({ ...prev, [action.key]: t('aiActions.networkError') }));
+                setErrors((prev) => ({
+                    ...prev,
+                    [action.key]: t('aiActions.networkError'),
+                }));
             } finally {
                 setRunningAction(null);
             }
@@ -114,7 +132,7 @@ export default function AiActionSidebar({
                 <>
                     {/* Header */}
                     <div className="flex h-12 items-center justify-between border-b border-border px-4">
-                        <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink">
+                        <span className="text-xs font-semibold tracking-[0.08em] text-ink uppercase">
                             {t('aiActions.header')}
                         </span>
                         <button
@@ -131,27 +149,45 @@ export default function AiActionSidebar({
                             {usable ? (
                                 actionDefs.map((action) => {
                                     const Icon = action.icon;
-                                    const isRunning = runningAction === action.key;
+                                    const isRunning =
+                                        runningAction === action.key;
                                     const result = results[action.key];
                                     const error = errors[action.key];
 
                                     return (
-                                        <div key={action.key} className="flex flex-col gap-2">
+                                        <div
+                                            key={action.key}
+                                            className="flex flex-col gap-2"
+                                        >
                                             <button
                                                 type="button"
-                                                onClick={() => handleAction(action)}
-                                                disabled={isRunning || runningAction !== null}
+                                                onClick={() =>
+                                                    handleAction(action)
+                                                }
+                                                disabled={
+                                                    isRunning ||
+                                                    runningAction !== null
+                                                }
                                                 className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5 text-left transition-colors hover:bg-surface disabled:opacity-50"
                                             >
-                                                <Icon size={18} className="shrink-0 text-ink-muted" />
+                                                <Icon
+                                                    size={18}
+                                                    className="shrink-0 text-ink-muted"
+                                                />
                                                 <div className="flex flex-col">
                                                     <span className="text-[13px] font-medium text-ink">
                                                         {isRunning
-                                                            ? t('aiActions.running')
-                                                            : t(`aiActions.${action.key}.label`)}
+                                                            ? t(
+                                                                  'aiActions.running',
+                                                              )
+                                                            : t(
+                                                                  `aiActions.${action.key}.label`,
+                                                              )}
                                                     </span>
                                                     <span className="text-[11px] text-ink-muted">
-                                                        {t(`aiActions.${action.key}.description`)}
+                                                        {t(
+                                                            `aiActions.${action.key}.description`,
+                                                        )}
                                                     </span>
                                                 </div>
                                             </button>
@@ -164,73 +200,155 @@ export default function AiActionSidebar({
 
                                             {result && !error && (
                                                 <div className="flex flex-col gap-2 rounded bg-surface px-3 py-2 text-xs text-ink-soft">
-                                                    {result.message && <p>{result.message}</p>}
+                                                    {result.message && (
+                                                        <p>{result.message}</p>
+                                                    )}
                                                     {result.tension_arc && (
                                                         <div className="flex flex-col gap-1">
                                                             <p className="font-medium">
-                                                                {t('aiActions.tensionArc')}
+                                                                {t(
+                                                                    'aiActions.tensionArc',
+                                                                )}
                                                             </p>
-                                                            {result.tension_arc.map((point) => (
-                                                                <div
-                                                                    key={point.chapter_id}
-                                                                    className="flex items-center justify-between"
-                                                                >
-                                                                    <span className="truncate">
-                                                                        {point.reader_order + 1}. {point.title}
-                                                                    </span>
-                                                                    <span className="ml-2 shrink-0 font-medium">
-                                                                        {point.tension_score}/10
-                                                                    </span>
-                                                                </div>
-                                                            ))}
+                                                            {result.tension_arc.map(
+                                                                (point) => (
+                                                                    <div
+                                                                        key={
+                                                                            point.chapter_id
+                                                                        }
+                                                                        className="flex items-center justify-between"
+                                                                    >
+                                                                        <span className="truncate">
+                                                                            {point.reader_order +
+                                                                                1}
+                                                                            .{' '}
+                                                                            {
+                                                                                point.title
+                                                                            }
+                                                                        </span>
+                                                                        <span className="ml-2 shrink-0 font-medium">
+                                                                            {
+                                                                                point.tension_score
+                                                                            }
+                                                                            /10
+                                                                        </span>
+                                                                    </div>
+                                                                ),
+                                                            )}
                                                         </div>
                                                     )}
                                                     {result.analysis && (
                                                         <div className="flex flex-col gap-2">
-                                                            {result.analysis.score != null && (
+                                                            {result.analysis
+                                                                .score !=
+                                                                null && (
                                                                 <div className="flex items-center justify-between">
                                                                     <span className="font-medium text-ink">
-                                                                        {t('aiActions.score')}
+                                                                        {t(
+                                                                            'aiActions.score',
+                                                                        )}
                                                                     </span>
-                                                                    <span className={cn(
-                                                                        'font-semibold',
-                                                                        result.analysis.score >= 7 ? 'text-ai-green' :
-                                                                        result.analysis.score >= 4 ? 'text-status-revised' :
-                                                                        'text-red-600',
-                                                                    )}>
-                                                                        {result.analysis.score}/10
+                                                                    <span
+                                                                        className={cn(
+                                                                            'font-semibold',
+                                                                            result
+                                                                                .analysis
+                                                                                .score >=
+                                                                                7
+                                                                                ? 'text-ai-green'
+                                                                                : result
+                                                                                        .analysis
+                                                                                        .score >=
+                                                                                    4
+                                                                                  ? 'text-status-revised'
+                                                                                  : 'text-red-600',
+                                                                        )}
+                                                                    >
+                                                                        {
+                                                                            result
+                                                                                .analysis
+                                                                                .score
+                                                                        }
+                                                                        /10
                                                                     </span>
                                                                 </div>
                                                             )}
-                                                            {result.analysis.findings && result.analysis.findings.length > 0 && (
-                                                                <div className="flex flex-col gap-1.5">
-                                                                    <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
-                                                                        {t('aiActions.findings')}
-                                                                    </span>
-                                                                    {result.analysis.findings.map((f, i) => (
-                                                                        <div key={i} className="flex gap-2">
-                                                                            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[#C4845C]" />
-                                                                            <span className="text-[11px] leading-[1.4] text-ink-soft">{f}</span>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                            {result.analysis.recommendations && result.analysis.recommendations.length > 0 && (
-                                                                <div className="flex flex-col gap-1.5">
-                                                                    <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
-                                                                        {t('aiActions.recommendations')}
-                                                                    </span>
-                                                                    {result.analysis.recommendations.map((r, i) => (
-                                                                        <div key={i} className="flex gap-2">
-                                                                            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-ink-muted" />
-                                                                            <span className="text-[11px] leading-[1.4] text-ink-soft">{r}</span>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                            {result.analysis.suggestion && (
+                                                            {result.analysis
+                                                                .findings &&
+                                                                result.analysis
+                                                                    .findings
+                                                                    .length >
+                                                                    0 && (
+                                                                    <div className="flex flex-col gap-1.5">
+                                                                        <span className="text-[10px] font-semibold tracking-[0.08em] text-ink-muted uppercase">
+                                                                            {t(
+                                                                                'aiActions.findings',
+                                                                            )}
+                                                                        </span>
+                                                                        {result.analysis.findings.map(
+                                                                            (
+                                                                                f,
+                                                                                i,
+                                                                            ) => (
+                                                                                <div
+                                                                                    key={
+                                                                                        i
+                                                                                    }
+                                                                                    className="flex gap-2"
+                                                                                >
+                                                                                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[#C4845C]" />
+                                                                                    <span className="text-[11px] leading-[1.4] text-ink-soft">
+                                                                                        {
+                                                                                            f
+                                                                                        }
+                                                                                    </span>
+                                                                                </div>
+                                                                            ),
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            {result.analysis
+                                                                .recommendations &&
+                                                                result.analysis
+                                                                    .recommendations
+                                                                    .length >
+                                                                    0 && (
+                                                                    <div className="flex flex-col gap-1.5">
+                                                                        <span className="text-[10px] font-semibold tracking-[0.08em] text-ink-muted uppercase">
+                                                                            {t(
+                                                                                'aiActions.recommendations',
+                                                                            )}
+                                                                        </span>
+                                                                        {result.analysis.recommendations.map(
+                                                                            (
+                                                                                r,
+                                                                                i,
+                                                                            ) => (
+                                                                                <div
+                                                                                    key={
+                                                                                        i
+                                                                                    }
+                                                                                    className="flex gap-2"
+                                                                                >
+                                                                                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-ink-muted" />
+                                                                                    <span className="text-[11px] leading-[1.4] text-ink-soft">
+                                                                                        {
+                                                                                            r
+                                                                                        }
+                                                                                    </span>
+                                                                                </div>
+                                                                            ),
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            {result.analysis
+                                                                .suggestion && (
                                                                 <p className="text-[11px] leading-[1.4] text-ink-soft">
-                                                                    {result.analysis.suggestion}
+                                                                    {
+                                                                        result
+                                                                            .analysis
+                                                                            .suggestion
+                                                                    }
                                                                 </p>
                                                             )}
                                                         </div>
@@ -267,13 +385,20 @@ export default function AiActionSidebar({
                                             key={action.key}
                                             className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5"
                                         >
-                                            <Icon size={18} className="shrink-0 text-ink-muted" />
+                                            <Icon
+                                                size={18}
+                                                className="shrink-0 text-ink-muted"
+                                            />
                                             <div className="flex flex-col">
                                                 <span className="text-[13px] font-medium text-ink">
-                                                    {t(`aiActions.${action.key}.label`)}
+                                                    {t(
+                                                        `aiActions.${action.key}.label`,
+                                                    )}
                                                 </span>
                                                 <span className="text-[11px] text-ink-muted">
-                                                    {t(`aiActions.${action.key}.description`)}
+                                                    {t(
+                                                        `aiActions.${action.key}.description`,
+                                                    )}
                                                 </span>
                                             </div>
                                         </div>

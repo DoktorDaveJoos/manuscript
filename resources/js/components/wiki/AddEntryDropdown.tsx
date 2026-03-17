@@ -11,7 +11,11 @@ const options: { type: WikiTab; icon: typeof User }[] = [
     { type: 'lore', icon: BookOpen },
 ];
 
-export default function AddEntryDropdown({ onSelect }: { onSelect: (type: WikiTab) => void }) {
+export default function AddEntryDropdown({
+    onSelect,
+}: {
+    onSelect: (type: WikiTab) => void;
+}) {
     const { t } = useTranslation('wiki');
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -47,7 +51,7 @@ export default function AddEntryDropdown({ onSelect }: { onSelect: (type: WikiTa
             </button>
 
             {open && (
-                <div className="absolute right-0 top-full z-20 mt-1 w-[184px] rounded-lg border border-border bg-surface-card py-1.5 shadow-[0_4px_12px_rgba(0,0,0,0.1)]">
+                <div className="absolute top-full right-0 z-20 mt-1 w-[184px] rounded-lg border border-border bg-surface-card py-1.5 shadow-[0_4px_12px_rgba(0,0,0,0.1)]">
                     {options.map(({ type, icon: Icon }) => (
                         <button
                             key={type}
@@ -57,8 +61,13 @@ export default function AddEntryDropdown({ onSelect }: { onSelect: (type: WikiTa
                             }}
                             className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[14px] text-ink transition-colors hover:bg-neutral-bg"
                         >
-                            <Icon size={16} className="shrink-0 text-ink-soft" />
-                            {t(`dropdown.${type === 'characters' ? 'character' : type}`)}
+                            <Icon
+                                size={16}
+                                className="shrink-0 text-ink-soft"
+                            />
+                            {t(
+                                `dropdown.${type === 'characters' ? 'character' : type}`,
+                            )}
                         </button>
                     ))}
                 </div>

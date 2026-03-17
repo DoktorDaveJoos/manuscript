@@ -20,8 +20,15 @@ export function formatCompactCount(count: number): string {
     return count.toLocaleString('en-US');
 }
 
-export function createChapter(bookId: number, storylineId: number, storylines: Storyline[]): void {
-    const totalChapters = storylines.reduce((sum, s) => sum + (s.chapters?.length ?? 0), 0);
+export function createChapter(
+    bookId: number,
+    storylineId: number,
+    storylines: Storyline[],
+): void {
+    const totalChapters = storylines.reduce(
+        (sum, s) => sum + (s.chapters?.length ?? 0),
+        0,
+    );
     router.post(store.url({ book: bookId }), {
         title: `Chapter ${totalChapters + 1}`,
         storyline_id: storylineId,

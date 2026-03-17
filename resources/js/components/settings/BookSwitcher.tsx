@@ -23,7 +23,8 @@ export default function BookSwitcher({
             }
         }
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () =>
+            document.removeEventListener('mousedown', handleClickOutside);
     }, [open]);
 
     const switchBook = () => {
@@ -36,14 +37,18 @@ export default function BookSwitcher({
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-faint transition-colors hover:bg-neutral-bg"
+                className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-[11px] font-semibold tracking-[0.05em] text-ink-faint uppercase transition-colors hover:bg-neutral-bg"
             >
                 <span className="truncate">{currentBook.title}</span>
-                <ChevronsUpDown size={12} strokeWidth={2.5} className="shrink-0" />
+                <ChevronsUpDown
+                    size={12}
+                    strokeWidth={2.5}
+                    className="shrink-0"
+                />
             </button>
 
             {open && books.length > 1 && (
-                <div className="absolute left-0 right-0 z-10 mt-1 rounded-md border border-border bg-surface-card py-1 shadow-sm">
+                <div className="absolute right-0 left-0 z-10 mt-1 rounded-md border border-border bg-surface-card py-1 shadow-sm">
                     {books.map((book) => (
                         <button
                             key={book.id}

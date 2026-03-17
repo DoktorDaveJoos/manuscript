@@ -11,18 +11,21 @@ The Plot page becomes the strategic command center for story structure. Authors 
 The primary Plot experience. A visual grid showing how storylines weave together across the manuscript.
 
 **Structure:**
+
 - **X-axis:** Acts as major column groups, chapters as columns within each act
 - **Y-axis:** Storylines as horizontal lanes, color-coded by storyline color
 - **Cells:** Plot point cards sit at storyline × chapter intersections
 - Empty cells are visible — gaps in a storyline are immediately obvious
 
 **Interactions:**
+
 - **Click empty cell** → create a new plot point at that storyline × chapter intersection
 - **Click a card** → detail panel slides open on the right with full metadata (title, description, type, status, linked chapter, characters) and a "Jump to chapter" button that navigates to the Editor
 - **Drag cards** → rearrange between cells to restructure the story (move beats between chapters or storylines)
 - **Drag between cards** → draw cause-and-effect connection lines. "This setup in Ch. 1 pays off in this resolution in Ch. 4." Connections render as subtle arrows/lines on the timeline. This is a key differentiator — no competitor offers this.
 
 **With AI enabled:**
+
 - Inline indicators on the timeline: gap highlights, imbalance warnings, quiet storyline detection
 - These reflect cached results from the last AI analysis run (not live/automatic)
 
@@ -31,6 +34,7 @@ The primary Plot experience. A visual grid showing how storylines weave together
 A compact visual curve that sits directly above the swimlane timeline, aligned to the same chapter columns.
 
 **Key behaviors:**
+
 - **Not visible by default.** The author must explicitly generate it via the AI Action Sidebar ("Generate Tension Arc" action)
 - Shows rising/falling tension across the manuscript as a smooth curve
 - Aligned with timeline columns so tension dips visually correspond to the beats below
@@ -45,6 +49,7 @@ A compact visual curve that sits directly above the swimlane timeline, aligned t
 A structured, scannable list of all plot points — the writer's companion for active drafting.
 
 **Structure:**
+
 - Tab switching at the top of the Plot page: "Timeline" (default) | "List"
 - Plot points grouped by Acts, matching the current Paper design
 - Each plot point shows: title, description, type badge (Setup/Conflict/Turning Point/Resolution/Worldbuilding), status dot (Planned/Fulfilled/Abandoned), linked chapter
@@ -52,6 +57,7 @@ A structured, scannable list of all plot points — the writer's companion for a
 - Add new plot point via "+" button
 
 **AI enrichment (when available):**
+
 - Results from AI analysis displayed contextually (health score, findings, suggested beats)
 - Same cached results as the timeline — running analysis in one view updates both
 
@@ -60,6 +66,7 @@ A structured, scannable list of all plot points — the writer's companion for a
 A compact plot points panel in the Editor sidebar, filtered to the currently active chapter.
 
 **Structure:**
+
 - Shows only plot points linked to the active chapter
 - Quick status toggling: click to cycle Planned → Fulfilled → Abandoned
 - Plot point type badge and title
@@ -73,6 +80,7 @@ A compact plot points panel in the Editor sidebar, filtered to the currently act
 A collapsible drawer on the right side of the Plot page (consistent with the Editor sidebar pattern).
 
 **Behavior:**
+
 - Collapsed by default — timeline gets maximum horizontal space
 - Author clicks to open when they want to run or review AI actions
 - **Completely hidden** when AI is disabled in app settings (existing toggle)
@@ -80,12 +88,12 @@ A collapsible drawer on the right side of the Plot page (consistent with the Edi
 
 **Available actions:**
 
-| Action | What it does | Output |
-|--------|-------------|--------|
-| **Generate Tension Arc** | Analyzes manuscript content to produce per-chapter tension scores | Tension curve appears above timeline |
-| **Run Plot Health Analysis** | Evaluates overall plot structure | Health score (0-100), continuity %, act balance %, resolution rate |
-| **Detect Plot Holes** | Chekhov checks, unfired setups, abandoned threads, deviations | List of findings with severity and descriptions |
-| **Suggest Next Beats** | Recommends plot points based on current structure and gaps | Numbered list of suggested beats with rationale |
+| Action                       | What it does                                                      | Output                                                             |
+| ---------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **Generate Tension Arc**     | Analyzes manuscript content to produce per-chapter tension scores | Tension curve appears above timeline                               |
+| **Run Plot Health Analysis** | Evaluates overall plot structure                                  | Health score (0-100), continuity %, act balance %, resolution rate |
+| **Detect Plot Holes**        | Chekhov checks, unfired setups, abandoned threads, deviations     | List of findings with severity and descriptions                    |
+| **Suggest Next Beats**       | Recommends plot points based on current structure and gaps        | Numbered list of suggested beats with rationale                    |
 
 Each action is a distinct button. Results display in the sidebar below the action that generated them.
 
@@ -96,20 +104,24 @@ Each action is a distinct button. Results display in the sidebar below the actio
 The key differentiator no competitor offers.
 
 **Data model:**
+
 - A `plot_point_connections` table linking two plot points: `source_plot_point_id` → `target_plot_point_id`
 - Connection type: `causes`, `sets_up`, `resolves`, `contradicts`
 - Optional description field for the connection
 
 **Timeline visualization:**
+
 - Connections render as subtle curved arrows between cards on the swimlane
 - Hovering a card highlights its connections (upstream causes, downstream effects)
 - Different line styles for connection types (solid for causes, dashed for sets_up, etc.)
 
 **Detail panel integration:**
+
 - When viewing a plot point's detail panel, connections are listed: "Set up by: [card]" / "Leads to: [card]"
 - Click a connected card to navigate to it
 
 **Creation:**
+
 - Author drags from one card's connection handle to another card
 - A small dialog confirms the connection type
 - Can also be created from the detail panel via a "Connect to..." action
@@ -118,20 +130,20 @@ The key differentiator no competitor offers.
 
 ### New table: `plot_point_connections`
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | bigint | Primary key |
-| book_id | foreignId | Parent book |
-| source_plot_point_id | foreignId | The cause/setup |
-| target_plot_point_id | foreignId | The effect/payoff |
-| type | enum | causes, sets_up, resolves, contradicts |
-| description | text, nullable | Optional note about the connection |
-| timestamps | | Created/updated at |
+| Column               | Type           | Description                            |
+| -------------------- | -------------- | -------------------------------------- |
+| id                   | bigint         | Primary key                            |
+| book_id              | foreignId      | Parent book                            |
+| source_plot_point_id | foreignId      | The cause/setup                        |
+| target_plot_point_id | foreignId      | The effect/payoff                      |
+| type                 | enum           | causes, sets_up, resolves, contradicts |
+| description          | text, nullable | Optional note about the connection     |
+| timestamps           |                | Created/updated at                     |
 
 ### New fields on `plot_points`
 
-| Column | Type | Description |
-|--------|------|-------------|
+| Column        | Type              | Description                                            |
+| ------------- | ----------------- | ------------------------------------------------------ |
 | tension_score | integer, nullable | AI-generated tension score (0-100) for the tension arc |
 
 ## AI Integration Rules
@@ -152,7 +164,7 @@ The key differentiator no competitor offers.
 ## Key Design Principles
 
 - **Progressive disclosure:** Timeline is simple at first glance. Complexity reveals on interaction (connections, detail panel, tension arc)
-- **Spatial thinking:** Authors think about stories spatially. The timeline lets them *see* their story's shape
+- **Spatial thinking:** Authors think about stories spatially. The timeline lets them _see_ their story's shape
 - **Low friction:** Click an empty cell to add a beat. Drag to rearrange. No forms or modals for basic operations
 - **AI as analyst:** AI finds problems and suggests solutions. It never writes plot points or makes changes without the author's explicit action
 - **Tight manuscript coupling:** Every plot point links to a chapter. "Jump to chapter" bridges planning and writing seamlessly

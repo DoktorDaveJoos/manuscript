@@ -1,13 +1,24 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
-import { useState, useCallback, useRef, useEffect  } from 'react';
-import type {FormEvent} from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { update as updateAiProvider, deleteKey, test as testConnection } from '@/actions/App/Http/Controllers/AiSettingsController';
+import {
+    update as updateAiProvider,
+    deleteKey,
+    test as testConnection,
+} from '@/actions/App/Http/Controllers/AiSettingsController';
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import { index as booksIndex } from '@/actions/App/Http/Controllers/BookController';
-import { activate, deactivate, revalidate } from '@/actions/App/Http/Controllers/LicenseController';
-import { updateWritingStyle, updateProsePassRules } from '@/actions/App/Http/Controllers/SettingsController';
+import {
+    activate,
+    deactivate,
+    revalidate,
+} from '@/actions/App/Http/Controllers/LicenseController';
+import {
+    updateWritingStyle,
+    updateProsePassRules,
+} from '@/actions/App/Http/Controllers/SettingsController';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import NavItem from '@/components/ui/NavItem';
@@ -16,9 +27,17 @@ import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
 import type { Theme } from '@/lib/theme';
 import { jsonFetchHeaders } from '@/lib/utils';
-import type { AppSettings, AiSetting, License, ProsePassRule } from '@/types/models';
+import type {
+    AppSettings,
+    AiSetting,
+    License,
+    ProsePassRule,
+} from '@/types/models';
 
-type ProviderSetting = AiSetting & { label: string; supports_embeddings: boolean };
+type ProviderSetting = AiSetting & {
+    label: string;
+    supports_embeddings: boolean;
+};
 
 interface Props {
     settings: AppSettings;
@@ -29,16 +48,28 @@ interface Props {
 }
 
 const THEME_OPTIONS = [
-    { value: 'light' as Theme, labelKey: 'appearance.theme.light' as const, descriptionKey: 'appearance.theme.lightDescription' as const },
-    { value: 'dark' as Theme, labelKey: 'appearance.theme.dark' as const, descriptionKey: 'appearance.theme.darkDescription' as const },
-    { value: 'system' as Theme, labelKey: 'appearance.theme.system' as const, descriptionKey: 'appearance.theme.systemDescription' as const },
+    {
+        value: 'light' as Theme,
+        labelKey: 'appearance.theme.light' as const,
+        descriptionKey: 'appearance.theme.lightDescription' as const,
+    },
+    {
+        value: 'dark' as Theme,
+        labelKey: 'appearance.theme.dark' as const,
+        descriptionKey: 'appearance.theme.darkDescription' as const,
+    },
+    {
+        value: 'system' as Theme,
+        labelKey: 'appearance.theme.system' as const,
+        descriptionKey: 'appearance.theme.systemDescription' as const,
+    },
 ];
 
 const LOCALES = ['en', 'de', 'es'] as const;
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
     return (
-        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+        <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
             {children}
         </span>
     );
@@ -77,7 +108,11 @@ function LicenseSection() {
                 .then(async (res) => {
                     const json = await res.json();
                     if (!res.ok) {
-                        setError(res.status === 503 ? t('license.error.network') : json.message || t('license.error.invalid'));
+                        setError(
+                            res.status === 503
+                                ? t('license.error.network')
+                                : json.message || t('license.error.invalid'),
+                        );
                         return;
                     }
                     setKey('');
@@ -98,7 +133,11 @@ function LicenseSection() {
             .then(async (res) => {
                 if (!res.ok) {
                     const json = await res.json();
-                    setError(res.status === 503 ? t('license.error.network') : json.message || t('license.error.failed'));
+                    setError(
+                        res.status === 503
+                            ? t('license.error.network')
+                            : json.message || t('license.error.failed'),
+                    );
                     return;
                 }
                 router.reload({ only: ['license'] });
@@ -115,8 +154,12 @@ function LicenseSection() {
                         <div className="flex items-center justify-between px-6 py-[18px]">
                             <div className="flex items-center gap-2.5">
                                 <span className="inline-block h-2 w-2 rounded-full bg-status-final" />
-                                <span className="text-[14px] font-medium text-ink">{t('license.active')}</span>
-                                <span className="text-[13px] text-ink-muted">{license.masked_key}</span>
+                                <span className="text-[14px] font-medium text-ink">
+                                    {t('license.active')}
+                                </span>
+                                <span className="text-[13px] text-ink-muted">
+                                    {license.masked_key}
+                                </span>
                             </div>
                             <button
                                 type="button"
@@ -128,19 +171,31 @@ function LicenseSection() {
                         </div>
                         <div className="border-t border-border" />
                         <div className="flex items-center gap-2.5 px-6 py-3.5">
-                            <span className="text-[14px] font-medium text-ink">Pro</span>
+                            <span className="text-[14px] font-medium text-ink">
+                                Pro
+                            </span>
                             <span className="rounded bg-accent/10 px-2 py-0.5 text-[12px] font-medium text-accent">
                                 Lifetime
                             </span>
                         </div>
-                        {error && <div className="px-6 pb-3"><span className="text-[12px] text-danger">{error}</span></div>}
+                        {error && (
+                            <div className="px-6 pb-3">
+                                <span className="text-[12px] text-danger">
+                                    {error}
+                                </span>
+                            </div>
+                        )}
                     </>
                 ) : (
                     <div className="p-6">
-                        <h2 className="text-[15px] font-medium text-ink">{t('license.formTitle')}</h2>
-                        <p className="mt-1 text-[13px] text-ink-muted">{t('license.formDescription')}</p>
+                        <h2 className="text-[15px] font-medium text-ink">
+                            {t('license.formTitle')}
+                        </h2>
+                        <p className="mt-1 text-[13px] text-ink-muted">
+                            {t('license.formDescription')}
+                        </p>
                         <form onSubmit={handleActivate} className="mt-4">
-                            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                            <span className="mb-1.5 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                                 {t('license.keyLabel')}
                             </span>
                             <div className="flex items-start gap-3">
@@ -149,13 +204,26 @@ function LicenseSection() {
                                         type="text"
                                         value={key}
                                         onChange={(e) => setKey(e.target.value)}
-                                        placeholder={t('license.keyPlaceholder')}
+                                        placeholder={t(
+                                            'license.keyPlaceholder',
+                                        )}
                                         className="font-mono"
                                     />
-                                    {error && <span className="text-[12px] text-danger">{error}</span>}
+                                    {error && (
+                                        <span className="text-[12px] text-danger">
+                                            {error}
+                                        </span>
+                                    )}
                                 </div>
-                                <Button variant="accent" type="submit" disabled={activating || !key} className="h-9">
-                                    {activating ? t('license.activating') : t('license.activate')}
+                                <Button
+                                    variant="accent"
+                                    type="submit"
+                                    disabled={activating || !key}
+                                    className="h-9"
+                                >
+                                    {activating
+                                        ? t('license.activating')
+                                        : t('license.activate')}
                                 </Button>
                             </div>
                         </form>
@@ -189,8 +257,12 @@ function LanguageSection() {
             <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
                 <div className="flex flex-col gap-4">
                     <div>
-                        <span className="text-[15px] font-medium text-ink">{t('language.title')}</span>
-                        <p className="mt-1 text-[13px] text-ink-muted">{t('language.description')}</p>
+                        <span className="text-[15px] font-medium text-ink">
+                            {t('language.title')}
+                        </span>
+                        <p className="mt-1 text-[13px] text-ink-muted">
+                            {t('language.description')}
+                        </p>
                     </div>
                     <div className="flex gap-2">
                         {LOCALES.map((locale) => (
@@ -204,7 +276,13 @@ function LanguageSection() {
                                         : 'border border-border text-ink-muted hover:border-ink hover:text-ink'
                                 }`}
                             >
-                                {{ en: 'English', de: 'Deutsch', es: 'Español' }[locale]}
+                                {
+                                    {
+                                        en: 'English',
+                                        de: 'Deutsch',
+                                        es: 'Español',
+                                    }[locale]
+                                }
                             </button>
                         ))}
                     </div>
@@ -226,8 +304,12 @@ function AppearanceSection() {
             <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
                 <div className="flex flex-col gap-4">
                     <div>
-                        <span className="text-[15px] font-medium text-ink">{t('appearance.theme.title')}</span>
-                        <p className="mt-1 text-[13px] text-ink-muted">{t('appearance.theme.description')}</p>
+                        <span className="text-[15px] font-medium text-ink">
+                            {t('appearance.theme.title')}
+                        </span>
+                        <p className="mt-1 text-[13px] text-ink-muted">
+                            {t('appearance.theme.description')}
+                        </p>
                     </div>
                     <div className="flex gap-3">
                         {THEME_OPTIONS.map((option) => (
@@ -241,8 +323,12 @@ function AppearanceSection() {
                                         : 'border-border text-ink-muted hover:border-border-dashed hover:text-ink'
                                 }`}
                             >
-                                <span className="text-[14px] font-medium">{t(option.labelKey)}</span>
-                                <span className="mt-0.5 text-[12px] text-ink-muted">{t(option.descriptionKey)}</span>
+                                <span className="text-[14px] font-medium">
+                                    {t(option.labelKey)}
+                                </span>
+                                <span className="mt-0.5 text-[12px] text-ink-muted">
+                                    {t(option.descriptionKey)}
+                                </span>
                             </button>
                         ))}
                     </div>
@@ -254,9 +340,17 @@ function AppearanceSection() {
 
 // ─── Editor Section ──────────────────────────────────────────────────
 
-function EditorSection({ settings, saveSetting }: { settings: AppSettings; saveSetting: (key: string, value: boolean) => void }) {
+function EditorSection({
+    settings,
+    saveSetting,
+}: {
+    settings: AppSettings;
+    saveSetting: (key: string, value: boolean) => void;
+}) {
     const { t } = useTranslation('settings');
-    const [hideToolbar, setHideToolbar] = useState(settings.hide_formatting_toolbar);
+    const [hideToolbar, setHideToolbar] = useState(
+        settings.hide_formatting_toolbar,
+    );
     const [showAi, setShowAi] = useState(settings.show_ai_features);
 
     return (
@@ -265,8 +359,12 @@ function EditorSection({ settings, saveSetting }: { settings: AppSettings; saveS
             <div className="mt-3 flex flex-col gap-3">
                 <div className="flex items-center justify-between rounded-lg border border-border bg-surface-card px-6 py-3.5">
                     <div>
-                        <span className="text-[14px] font-medium text-ink">{t('appearance.hideToolbar.label')}</span>
-                        <p className="mt-0.5 text-[13px] text-ink-muted">{t('appearance.hideToolbar.description')}</p>
+                        <span className="text-[14px] font-medium text-ink">
+                            {t('appearance.hideToolbar.label')}
+                        </span>
+                        <p className="mt-0.5 text-[13px] text-ink-muted">
+                            {t('appearance.hideToolbar.description')}
+                        </p>
                     </div>
                     <Toggle
                         checked={hideToolbar}
@@ -279,8 +377,12 @@ function EditorSection({ settings, saveSetting }: { settings: AppSettings; saveS
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-border bg-surface-card px-6 py-3.5">
                     <div>
-                        <span className="text-[14px] font-medium text-ink">{t('appearance.showAi.label')}</span>
-                        <p className="mt-0.5 text-[13px] text-ink-muted">{t('appearance.showAi.description')}</p>
+                        <span className="text-[14px] font-medium text-ink">
+                            {t('appearance.showAi.label')}
+                        </span>
+                        <p className="mt-0.5 text-[13px] text-ink-muted">
+                            {t('appearance.showAi.description')}
+                        </p>
                     </div>
                     <Toggle
                         checked={showAi}
@@ -298,16 +400,26 @@ function EditorSection({ settings, saveSetting }: { settings: AppSettings; saveS
 
 // ─── AI Providers Section ────────────────────────────────────────────
 
-type TestStatus = { type: 'idle' } | { type: 'loading' } | { type: 'success'; message: string } | { type: 'error'; message: string };
+type TestStatus =
+    | { type: 'idle' }
+    | { type: 'loading' }
+    | { type: 'success'; message: string }
+    | { type: 'error'; message: string };
 
 function ProviderForm({ setting }: { setting: ProviderSetting }) {
     const { t } = useTranslation('settings');
     const [apiKey, setApiKey] = useState('');
     const [baseUrl, setBaseUrl] = useState(setting.base_url ?? '');
     const [apiVersion, setApiVersion] = useState(setting.api_version ?? '');
-    const [writingModel, setWritingModel] = useState(setting.writing_model ?? '');
-    const [analysisModel, setAnalysisModel] = useState(setting.analysis_model ?? '');
-    const [extractionModel, setExtractionModel] = useState(setting.extraction_model ?? '');
+    const [writingModel, setWritingModel] = useState(
+        setting.writing_model ?? '',
+    );
+    const [analysisModel, setAnalysisModel] = useState(
+        setting.analysis_model ?? '',
+    );
+    const [extractionModel, setExtractionModel] = useState(
+        setting.extraction_model ?? '',
+    );
     const [saving, setSaving] = useState(false);
     const [testStatus, setTestStatus] = useState<TestStatus>({ type: 'idle' });
     const [saveMessage, setSaveMessage] = useState('');
@@ -315,7 +427,9 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
 
     const isAzure = setting.provider === 'azure';
     const isOllama = setting.provider === 'ollama';
-    const configured = setting.requires_api_key ? setting.has_api_key : !!setting.base_url;
+    const configured = setting.requires_api_key
+        ? setting.has_api_key
+        : !!setting.base_url;
 
     const handleSave = useCallback(
         (e: FormEvent) => {
@@ -346,7 +460,16 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                 .catch(() => setSaveMessage(t('aiProviders.saveFailed')))
                 .finally(() => setSaving(false));
         },
-        [apiKey, baseUrl, apiVersion, writingModel, analysisModel, extractionModel, setting.provider, t],
+        [
+            apiKey,
+            baseUrl,
+            apiVersion,
+            writingModel,
+            analysisModel,
+            extractionModel,
+            setting.provider,
+            t,
+        ],
     );
 
     const handleTest = useCallback(() => {
@@ -357,11 +480,18 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
         })
             .then(async (res) => {
                 const json = await res.json();
-                setTestStatus(json.success ? { type: 'success', message: json.message } : { type: 'error', message: json.message });
+                setTestStatus(
+                    json.success
+                        ? { type: 'success', message: json.message }
+                        : { type: 'error', message: json.message },
+                );
                 setTimeout(() => setTestStatus({ type: 'idle' }), 5000);
             })
             .catch(() => {
-                setTestStatus({ type: 'error', message: t('aiProviders.testFailed') });
+                setTestStatus({
+                    type: 'error',
+                    message: t('aiProviders.testFailed'),
+                });
                 setTimeout(() => setTestStatus({ type: 'idle' }), 5000);
             });
     }, [setting.provider, t]);
@@ -369,14 +499,20 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
     const hasAdvanced = true;
 
     // Input component handles base styling; no inputClasses needed
-    const fieldLabelClasses = 'text-[12px] font-medium uppercase tracking-[0.06em] text-ink-muted';
+    const fieldLabelClasses =
+        'text-[12px] font-medium uppercase tracking-[0.06em] text-ink-muted';
 
     return (
-        <form onSubmit={handleSave} className="border-t border-border-light px-5 pb-5 pt-4">
+        <form
+            onSubmit={handleSave}
+            className="border-t border-border-light px-5 pt-4 pb-5"
+        >
             <div className="flex flex-col gap-5 pl-[30px]">
                 {setting.requires_api_key && (
                     <div className="flex flex-col gap-2">
-                        <span className={fieldLabelClasses}>{t('aiProviders.apiKey')}</span>
+                        <span className={fieldLabelClasses}>
+                            {t('aiProviders.apiKey')}
+                        </span>
                         {setting.has_api_key && !apiKey ? (
                             <div className="flex items-center justify-between gap-3 rounded-md border border-border px-4 py-2.5">
                                 <span className="font-mono text-[13px] leading-[1.43] text-ink-muted">
@@ -391,9 +527,15 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                                         })
                                             .then((res) => {
                                                 if (!res.ok) throw new Error();
-                                                router.reload({ only: ['ai_providers'] });
+                                                router.reload({
+                                                    only: ['ai_providers'],
+                                                });
                                             })
-                                            .catch(() => setSaveMessage(t('aiProviders.saveFailed')));
+                                            .catch(() =>
+                                                setSaveMessage(
+                                                    t('aiProviders.saveFailed'),
+                                                ),
+                                            );
                                     }}
                                     className="text-ink-muted transition-colors hover:text-danger"
                                 >
@@ -418,7 +560,20 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                         className="flex items-center gap-1.5 self-start text-[13px] font-medium text-ink-muted transition-colors hover:text-ink"
                     >
                         {t('aiProviders.advancedSettings')}
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                        >
+                            <path
+                                d="M6 4l4 4-4 4"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        </svg>
                     </button>
                 )}
 
@@ -426,36 +581,110 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                     <>
                         {setting.requires_base_url && (
                             <label className="flex flex-col gap-2">
-                                <span className={fieldLabelClasses}>{t('aiProviders.baseUrl')}</span>
-                                <Input type="url" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={isOllama ? 'http://localhost:11434' : 'https://your-resource.openai.azure.com'} />
+                                <span className={fieldLabelClasses}>
+                                    {t('aiProviders.baseUrl')}
+                                </span>
+                                <Input
+                                    type="url"
+                                    value={baseUrl}
+                                    onChange={(e) => setBaseUrl(e.target.value)}
+                                    placeholder={
+                                        isOllama
+                                            ? 'http://localhost:11434'
+                                            : 'https://your-resource.openai.azure.com'
+                                    }
+                                />
                             </label>
                         )}
                         {isAzure && (
                             <label className="flex flex-col gap-2">
-                                <span className={fieldLabelClasses}>{t('aiProviders.apiVersion')}</span>
-                                <Input type="text" value={apiVersion} onChange={(e) => setApiVersion(e.target.value)} placeholder="2024-10-21" />
+                                <span className={fieldLabelClasses}>
+                                    {t('aiProviders.apiVersion')}
+                                </span>
+                                <Input
+                                    type="text"
+                                    value={apiVersion}
+                                    onChange={(e) =>
+                                        setApiVersion(e.target.value)
+                                    }
+                                    placeholder="2024-10-21"
+                                />
                             </label>
                         )}
 
                         <div>
-                            <p className="text-[12px] text-ink-muted">{t('aiProviders.advancedDescription')}</p>
+                            <p className="text-[12px] text-ink-muted">
+                                {t('aiProviders.advancedDescription')}
+                            </p>
                             <div className="mt-4 flex flex-col gap-4">
                                 <label className="flex flex-col gap-1">
-                                    <span className={fieldLabelClasses}>{t('aiProviders.writingModel')}</span>
-                                    <span className="text-[11px] text-ink-faint">{t('aiProviders.writingModelDescription')}</span>
-                                    <Input type="text" value={writingModel} onChange={(e) => setWritingModel(e.target.value)} placeholder={t('aiProviders.modelPlaceholder')} className="mt-1" />
-                                    <span className="text-[11px] text-ink-faint">{t('aiProviders.writingModelHint')}</span>
+                                    <span className={fieldLabelClasses}>
+                                        {t('aiProviders.writingModel')}
+                                    </span>
+                                    <span className="text-[11px] text-ink-faint">
+                                        {t(
+                                            'aiProviders.writingModelDescription',
+                                        )}
+                                    </span>
+                                    <Input
+                                        type="text"
+                                        value={writingModel}
+                                        onChange={(e) =>
+                                            setWritingModel(e.target.value)
+                                        }
+                                        placeholder={t(
+                                            'aiProviders.modelPlaceholder',
+                                        )}
+                                        className="mt-1"
+                                    />
+                                    <span className="text-[11px] text-ink-faint">
+                                        {t('aiProviders.writingModelHint')}
+                                    </span>
                                 </label>
                                 <label className="flex flex-col gap-1">
-                                    <span className={fieldLabelClasses}>{t('aiProviders.analysisModel')}</span>
-                                    <span className="text-[11px] text-ink-faint">{t('aiProviders.analysisModelDescription')}</span>
-                                    <Input type="text" value={analysisModel} onChange={(e) => setAnalysisModel(e.target.value)} placeholder={t('aiProviders.modelPlaceholder')} className="mt-1" />
+                                    <span className={fieldLabelClasses}>
+                                        {t('aiProviders.analysisModel')}
+                                    </span>
+                                    <span className="text-[11px] text-ink-faint">
+                                        {t(
+                                            'aiProviders.analysisModelDescription',
+                                        )}
+                                    </span>
+                                    <Input
+                                        type="text"
+                                        value={analysisModel}
+                                        onChange={(e) =>
+                                            setAnalysisModel(e.target.value)
+                                        }
+                                        placeholder={t(
+                                            'aiProviders.modelPlaceholder',
+                                        )}
+                                        className="mt-1"
+                                    />
                                 </label>
                                 <label className="flex flex-col gap-1">
-                                    <span className={fieldLabelClasses}>{t('aiProviders.extractionModel')}</span>
-                                    <span className="text-[11px] text-ink-faint">{t('aiProviders.extractionModelDescription')}</span>
-                                    <Input type="text" value={extractionModel} onChange={(e) => setExtractionModel(e.target.value)} placeholder={t('aiProviders.modelPlaceholder')} className="mt-1" />
-                                    <span className="text-[11px] text-ink-faint">{t('aiProviders.extractionModelHint')}</span>
+                                    <span className={fieldLabelClasses}>
+                                        {t('aiProviders.extractionModel')}
+                                    </span>
+                                    <span className="text-[11px] text-ink-faint">
+                                        {t(
+                                            'aiProviders.extractionModelDescription',
+                                        )}
+                                    </span>
+                                    <Input
+                                        type="text"
+                                        value={extractionModel}
+                                        onChange={(e) =>
+                                            setExtractionModel(e.target.value)
+                                        }
+                                        placeholder={t(
+                                            'aiProviders.modelPlaceholder',
+                                        )}
+                                        className="mt-1"
+                                    />
+                                    <span className="text-[11px] text-ink-faint">
+                                        {t('aiProviders.extractionModelHint')}
+                                    </span>
                                 </label>
                             </div>
                         </div>
@@ -463,15 +692,42 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                 )}
 
                 <div className="flex items-center gap-3 pt-1">
-                    <Button variant="primary" size="lg" type="submit" disabled={saving}>
-                        {saving ? t('aiProviders.saving') : t('aiProviders.save')}
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        type="submit"
+                        disabled={saving}
+                    >
+                        {saving
+                            ? t('aiProviders.saving')
+                            : t('aiProviders.save')}
                     </Button>
-                    <Button variant="secondary" size="lg" type="button" onClick={handleTest} disabled={testStatus.type === 'loading' || !configured}>
-                        {testStatus.type === 'loading' ? t('aiProviders.testing') : t('aiProviders.testConnection')}
+                    <Button
+                        variant="secondary"
+                        size="lg"
+                        type="button"
+                        onClick={handleTest}
+                        disabled={testStatus.type === 'loading' || !configured}
+                    >
+                        {testStatus.type === 'loading'
+                            ? t('aiProviders.testing')
+                            : t('aiProviders.testConnection')}
                     </Button>
-                    {saveMessage && <span className="text-[12px] font-medium text-status-final">{saveMessage}</span>}
-                    {testStatus.type === 'success' && <span className="text-[12px] font-medium text-status-final">{testStatus.message}</span>}
-                    {testStatus.type === 'error' && <span className="text-[12px] font-medium text-danger">{testStatus.message}</span>}
+                    {saveMessage && (
+                        <span className="text-[12px] font-medium text-status-final">
+                            {saveMessage}
+                        </span>
+                    )}
+                    {testStatus.type === 'success' && (
+                        <span className="text-[12px] font-medium text-status-final">
+                            {testStatus.message}
+                        </span>
+                    )}
+                    {testStatus.type === 'error' && (
+                        <span className="text-[12px] font-medium text-danger">
+                            {testStatus.message}
+                        </span>
+                    )}
                 </div>
             </div>
         </form>
@@ -484,7 +740,9 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
     const locked = !license.active;
 
     const enabledProvider = providers.find((p) => p.enabled)?.provider ?? null;
-    const [expandedProvider, setExpandedProvider] = useState<string | null>(enabledProvider);
+    const [expandedProvider, setExpandedProvider] = useState<string | null>(
+        enabledProvider,
+    );
 
     const handleSelect = useCallback(
         (provider: string) => {
@@ -515,14 +773,21 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
     return (
         <div>
             <SectionLabel>{t('aiProviders.title').toUpperCase()}</SectionLabel>
-            <div className={`mt-3 overflow-hidden rounded-lg border border-border ${locked ? 'opacity-50' : ''}`}>
+            <div
+                className={`mt-3 overflow-hidden rounded-lg border border-border ${locked ? 'opacity-50' : ''}`}
+            >
                 {providers.map((setting, i) => {
                     const isSelected = setting.enabled;
                     const isExpanded = expandedProvider === setting.provider;
-                    const configured = setting.requires_api_key ? setting.has_api_key : !!setting.base_url;
+                    const configured = setting.requires_api_key
+                        ? setting.has_api_key
+                        : !!setting.base_url;
 
                     return (
-                        <div key={setting.provider} className={i > 0 ? 'border-t border-border' : ''}>
+                        <div
+                            key={setting.provider}
+                            className={i > 0 ? 'border-t border-border' : ''}
+                        >
                             <button
                                 type="button"
                                 onClick={() => handleToggle(setting.provider)}
@@ -530,20 +795,51 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
                                 className="flex w-full items-center gap-3 px-5 py-4 text-left"
                             >
                                 {locked ? (
-                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="text-ink-faint">
-                                        <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-                                        <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                    <svg
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 16 16"
+                                        fill="none"
+                                        className="text-ink-faint"
+                                    >
+                                        <rect
+                                            x="3"
+                                            y="7"
+                                            width="10"
+                                            height="7"
+                                            rx="1.5"
+                                            stroke="currentColor"
+                                            strokeWidth="1.5"
+                                        />
+                                        <path
+                                            d="M5 7V5a3 3 0 016 0v2"
+                                            stroke="currentColor"
+                                            strokeWidth="1.5"
+                                            strokeLinecap="round"
+                                        />
                                     </svg>
                                 ) : (
-                                    <span className={`flex size-[18px] items-center justify-center rounded-full border-2 transition-colors ${isSelected ? 'border-accent' : 'border-border'}`}>
-                                        {isSelected && <span className="size-[10px] rounded-full bg-accent" />}
+                                    <span
+                                        className={`flex size-[18px] items-center justify-center rounded-full border-2 transition-colors ${isSelected ? 'border-accent' : 'border-border'}`}
+                                    >
+                                        {isSelected && (
+                                            <span className="size-[10px] rounded-full bg-accent" />
+                                        )}
                                     </span>
                                 )}
-                                <span className={`text-[15px] ${isSelected ? 'font-medium' : ''} text-ink`}>{setting.label}</span>
+                                <span
+                                    className={`text-[15px] ${isSelected ? 'font-medium' : ''} text-ink`}
+                                >
+                                    {setting.label}
+                                </span>
                                 <span className="flex-1" />
                                 {!locked && (
-                                    <span className={`rounded px-2.5 py-1 text-[11px] font-medium ${configured ? 'bg-status-final/15 text-status-final' : 'bg-neutral-bg text-ink-faint'}`}>
-                                        {configured ? t('aiProviders.configured') : t('aiProviders.notConfigured')}
+                                    <span
+                                        className={`rounded px-2.5 py-1 text-[11px] font-medium ${configured ? 'bg-status-final/15 text-status-final' : 'bg-neutral-bg text-ink-faint'}`}
+                                    >
+                                        {configured
+                                            ? t('aiProviders.configured')
+                                            : t('aiProviders.notConfigured')}
                                     </span>
                                 )}
                                 {!locked && (
@@ -554,11 +850,19 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
                                         fill="none"
                                         className={`text-ink-muted transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                                     >
-                                        <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path
+                                            d="M4 6l4 4 4-4"
+                                            stroke="currentColor"
+                                            strokeWidth="1.5"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
                                     </svg>
                                 )}
                             </button>
-                            {isExpanded && !locked && <ProviderForm setting={setting} />}
+                            {isExpanded && !locked && (
+                                <ProviderForm setting={setting} />
+                            )}
                         </div>
                     );
                 })}
@@ -569,7 +873,11 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
 
 // ─── Writing Style Section ───────────────────────────────────────────
 
-function WritingStyleSection({ writingStyleText }: { writingStyleText: string }) {
+function WritingStyleSection({
+    writingStyleText,
+}: {
+    writingStyleText: string;
+}) {
     const { t } = useTranslation('settings');
     const [text, setText] = useState(writingStyleText);
     const [saving, setSaving] = useState(false);
@@ -600,20 +908,39 @@ function WritingStyleSection({ writingStyleText }: { writingStyleText: string })
             <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
                 <div className="flex flex-col gap-4">
                     <div>
-                        <span className="text-[15px] font-medium text-ink">{t('writingStyle.title')}</span>
-                        <p className="mt-1 text-[13px] text-ink-muted">{t('writingStyle.description')}</p>
+                        <span className="text-[15px] font-medium text-ink">
+                            {t('writingStyle.title')}
+                        </span>
+                        <p className="mt-1 text-[13px] text-ink-muted">
+                            {t('writingStyle.description')}
+                        </p>
                     </div>
                     <div>
                         <div className="flex items-center justify-between rounded-t-md border border-border bg-surface px-3 py-2">
                             <div className="flex items-center gap-1.5">
-                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="text-ink-faint">
-                                    <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 16 16"
+                                    fill="none"
+                                    className="text-ink-faint"
+                                >
+                                    <path
+                                        d="M2 4h12M4 8h8M6 12h4"
+                                        stroke="currentColor"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                    />
                                 </svg>
-                                <span className="text-[12px] text-ink-faint">{t('writingStyle.markdown')}</span>
+                                <span className="text-[12px] text-ink-faint">
+                                    {t('writingStyle.markdown')}
+                                </span>
                             </div>
                             {(saving || saved) && (
                                 <span className="text-[12px] font-medium text-status-final">
-                                    {saving ? t('writingStyle.saving') : t('writingStyle.saved')}
+                                    {saving
+                                        ? t('writingStyle.saving')
+                                        : t('writingStyle.saved')}
                                 </span>
                             )}
                         </div>
@@ -633,13 +960,19 @@ function WritingStyleSection({ writingStyleText }: { writingStyleText: string })
 
 // ─── Revision Rules Section ──────────────────────────────────────────
 
-function RevisionRulesSection({ initialRules }: { initialRules: ProsePassRule[] }) {
+function RevisionRulesSection({
+    initialRules,
+}: {
+    initialRules: ProsePassRule[];
+}) {
     const { t } = useTranslation('settings');
     const [rules, setRules] = useState(initialRules);
 
     const toggleRule = useCallback(
         (key: string) => {
-            const updated = rules.map((r) => (r.key === key ? { ...r, enabled: !r.enabled } : r));
+            const updated = rules.map((r) =>
+                r.key === key ? { ...r, enabled: !r.enabled } : r,
+            );
             setRules(updated);
 
             fetch(updateProsePassRules.url(), {
@@ -655,23 +988,38 @@ function RevisionRulesSection({ initialRules }: { initialRules: ProsePassRule[] 
 
     return (
         <div>
-            <SectionLabel>{t('prosePassRules.title').toUpperCase()}</SectionLabel>
+            <SectionLabel>
+                {t('prosePassRules.title').toUpperCase()}
+            </SectionLabel>
             <div className="mt-3 rounded-lg border border-border bg-surface-card">
-                <div className="px-6 pb-4 pt-5">
-                    <span className="text-[15px] font-medium text-ink">{t('prosePassRules.title')}</span>
-                    <p className="mt-1 text-[13px] text-ink-muted">{t('prosePassRules.description')}</p>
+                <div className="px-6 pt-5 pb-4">
+                    <span className="text-[15px] font-medium text-ink">
+                        {t('prosePassRules.title')}
+                    </span>
+                    <p className="mt-1 text-[13px] text-ink-muted">
+                        {t('prosePassRules.description')}
+                    </p>
                 </div>
                 <div className="border-t border-border" />
                 {rules.map((rule, i) => (
                     <div key={rule.key}>
                         <div className="flex items-center justify-between px-6 py-3.5">
                             <div>
-                                <span className="text-[14px] font-medium text-ink">{rule.label}</span>
-                                <p className="mt-0.5 text-[13px] text-ink-muted">{rule.description}</p>
+                                <span className="text-[14px] font-medium text-ink">
+                                    {rule.label}
+                                </span>
+                                <p className="mt-0.5 text-[13px] text-ink-muted">
+                                    {rule.description}
+                                </p>
                             </div>
-                            <Toggle checked={rule.enabled} onChange={() => toggleRule(rule.key)} />
+                            <Toggle
+                                checked={rule.enabled}
+                                onChange={() => toggleRule(rule.key)}
+                            />
                         </div>
-                        {i < rules.length - 1 && <div className="border-t border-border" />}
+                        {i < rules.length - 1 && (
+                            <div className="border-t border-border" />
+                        )}
                     </div>
                 ))}
             </div>
@@ -681,17 +1029,29 @@ function RevisionRulesSection({ initialRules }: { initialRules: ProsePassRule[] 
 
 // ─── Privacy Section ─────────────────────────────────────────────────
 
-function PrivacySection({ settings, saveSetting }: { settings: AppSettings; saveSetting: (key: string, value: boolean) => void }) {
+function PrivacySection({
+    settings,
+    saveSetting,
+}: {
+    settings: AppSettings;
+    saveSetting: (key: string, value: boolean) => void;
+}) {
     const { t } = useTranslation('settings');
-    const [sendErrorReports, setSendErrorReports] = useState(settings.send_error_reports);
+    const [sendErrorReports, setSendErrorReports] = useState(
+        settings.send_error_reports,
+    );
 
     return (
         <div>
             <SectionLabel>{t('privacy.sectionLabel')}</SectionLabel>
             <div className="mt-3 flex items-center justify-between rounded-lg border border-border bg-surface-card px-6 py-3.5">
                 <div>
-                    <span className="text-[14px] font-medium text-ink">{t('appearance.sendErrorReports.label')}</span>
-                    <p className="mt-0.5 text-[13px] text-ink-muted">{t('privacy.description')}</p>
+                    <span className="text-[14px] font-medium text-ink">
+                        {t('appearance.sendErrorReports.label')}
+                    </span>
+                    <p className="mt-0.5 text-[13px] text-ink-muted">
+                        {t('privacy.description')}
+                    </p>
                 </div>
                 <Toggle
                     checked={sendErrorReports}
@@ -708,10 +1068,24 @@ function PrivacySection({ settings, saveSetting }: { settings: AppSettings; save
 
 // ─── Updates Section ─────────────────────────────────────────────────
 
-function UpdatesSection({ version, settings, saveSetting }: { version: string; settings: AppSettings; saveSetting: (key: string, value: boolean) => void }) {
+function UpdatesSection({
+    version,
+    settings,
+    saveSetting,
+}: {
+    version: string;
+    settings: AppSettings;
+    saveSetting: (key: string, value: boolean) => void;
+}) {
     const { t } = useTranslation('settings');
-    const { state: updateState, checkForUpdates, installUpdate } = useAutoUpdater();
-    const [autoUpdate, setAutoUpdate] = useState((settings as Record<string, unknown>).auto_update !== false);
+    const {
+        state: updateState,
+        checkForUpdates,
+        installUpdate,
+    } = useAutoUpdater();
+    const [autoUpdate, setAutoUpdate] = useState(
+        (settings as Record<string, unknown>).auto_update !== false,
+    );
 
     return (
         <div>
@@ -720,16 +1094,32 @@ function UpdatesSection({ version, settings, saveSetting }: { version: string; s
                 {/* Version row */}
                 <div className="flex items-center justify-between px-6 py-[18px]">
                     <div className="flex flex-col gap-1">
-                        <span className="text-[12px] text-ink-muted">{t('updates.currentVersion')}</span>
-                        <span className="text-[20px] font-semibold text-ink">{version}</span>
+                        <span className="text-[12px] text-ink-muted">
+                            {t('updates.currentVersion')}
+                        </span>
+                        <span className="text-[20px] font-semibold text-ink">
+                            {version}
+                        </span>
                     </div>
                     <div>
                         {updateState.status === 'ready' ? (
-                            <Button variant="accent" type="button" onClick={installUpdate}>
+                            <Button
+                                variant="accent"
+                                type="button"
+                                onClick={installUpdate}
+                            >
                                 {t('appearance.update.restart')}
                             </Button>
                         ) : (
-                            <Button variant="secondary" type="button" onClick={checkForUpdates} disabled={updateState.status === 'checking' || updateState.status === 'downloading'}>
+                            <Button
+                                variant="secondary"
+                                type="button"
+                                onClick={checkForUpdates}
+                                disabled={
+                                    updateState.status === 'checking' ||
+                                    updateState.status === 'downloading'
+                                }
+                            >
                                 {t('appearance.update.checkForUpdates')}
                             </Button>
                         )}
@@ -741,8 +1131,12 @@ function UpdatesSection({ version, settings, saveSetting }: { version: string; s
                 {/* Auto-update row */}
                 <div className="flex items-center justify-between px-6 py-3.5">
                     <div>
-                        <span className="text-[14px] font-medium text-ink">{t('updates.autoUpdate')}</span>
-                        <p className="mt-0.5 text-[13px] text-ink-muted">{t('updates.autoUpdateDescription')}</p>
+                        <span className="text-[14px] font-medium text-ink">
+                            {t('updates.autoUpdate')}
+                        </span>
+                        <p className="mt-0.5 text-[13px] text-ink-muted">
+                            {t('updates.autoUpdateDescription')}
+                        </p>
                     </div>
                     <Toggle
                         checked={autoUpdate}
@@ -759,21 +1153,38 @@ function UpdatesSection({ version, settings, saveSetting }: { version: string; s
                 {/* Status row */}
                 <div className="flex items-center gap-2 px-6 py-3.5">
                     {updateState.status === 'checking' && (
-                        <span className="text-[12px] text-ink-muted">{t('appearance.update.checking')}</span>
+                        <span className="text-[12px] text-ink-muted">
+                            {t('appearance.update.checking')}
+                        </span>
                     )}
                     {updateState.status === 'downloading' && (
-                        <span className="text-[12px] text-ink-muted">{t('appearance.update.downloading', { progress: updateState.progress })}</span>
+                        <span className="text-[12px] text-ink-muted">
+                            {t('appearance.update.downloading', {
+                                progress: updateState.progress,
+                            })}
+                        </span>
                     )}
                     {updateState.status === 'ready' && (
-                        <span className="text-[12px] font-medium text-accent">{t('appearance.update.readyToInstall', { version: updateState.version })}</span>
+                        <span className="text-[12px] font-medium text-accent">
+                            {t('appearance.update.readyToInstall', {
+                                version: updateState.version,
+                            })}
+                        </span>
                     )}
                     {updateState.status === 'error' && (
-                        <span className="text-[12px] text-red-500">{updateState.error}</span>
+                        <span className="text-[12px] text-red-500">
+                            {updateState.error}
+                        </span>
                     )}
-                    {(updateState.status === 'idle' || updateState.status === 'available') && (
+                    {(updateState.status === 'idle' ||
+                        updateState.status === 'available') && (
                         <>
-                            <span className="text-[13px] font-semibold text-status-final">✓</span>
-                            <span className="text-[12px] text-ink-muted">{t('updates.upToDate')}</span>
+                            <span className="text-[13px] font-semibold text-status-final">
+                                ✓
+                            </span>
+                            <span className="text-[12px] text-ink-muted">
+                                {t('updates.upToDate')}
+                            </span>
                         </>
                     )}
                 </div>
@@ -784,23 +1195,58 @@ function UpdatesSection({ version, settings, saveSetting }: { version: string; s
 
 // ─── Sidebar ─────────────────────────────────────────────────────────
 
-type SectionKey = 'license' | 'language' | 'appearance' | 'toolbar' | 'ai-features' | 'writing-style' | 'revision-rules' | 'privacy' | 'updates';
+type SectionKey =
+    | 'license'
+    | 'language'
+    | 'appearance'
+    | 'toolbar'
+    | 'ai-features'
+    | 'writing-style'
+    | 'revision-rules'
+    | 'privacy'
+    | 'updates';
 
 type NavSection = { key: SectionKey; label: string; groupKey?: string };
 
 const NAV_ITEMS: NavSection[] = [
     { key: 'license', label: 'section.license' },
-    { key: 'language', label: 'language.navLabel', groupKey: 'sidebar.general' },
-    { key: 'appearance', label: 'section.appearance', groupKey: 'sidebar.general' },
+    {
+        key: 'language',
+        label: 'language.navLabel',
+        groupKey: 'sidebar.general',
+    },
+    {
+        key: 'appearance',
+        label: 'section.appearance',
+        groupKey: 'sidebar.general',
+    },
     { key: 'toolbar', label: 'sidebar.toolbar', groupKey: 'sidebar.editor' },
-    { key: 'ai-features', label: 'sidebar.aiFeatures', groupKey: 'sidebar.editor' },
-    { key: 'writing-style', label: 'section.writingStyle', groupKey: 'sidebar.editor' },
-    { key: 'revision-rules', label: 'section.prosePassRules', groupKey: 'sidebar.editor' },
+    {
+        key: 'ai-features',
+        label: 'sidebar.aiFeatures',
+        groupKey: 'sidebar.editor',
+    },
+    {
+        key: 'writing-style',
+        label: 'section.writingStyle',
+        groupKey: 'sidebar.editor',
+    },
+    {
+        key: 'revision-rules',
+        label: 'section.prosePassRules',
+        groupKey: 'sidebar.editor',
+    },
     { key: 'privacy', label: 'privacy.navLabel', groupKey: 'sidebar.account' },
     { key: 'updates', label: 'updates.navLabel', groupKey: 'sidebar.account' },
 ];
 
-function SettingsSidebar({ activeSection, onNavigate }: { activeSection: SectionKey; onNavigate: (key: SectionKey) => void }) {
+function SettingsSidebar({
+    activeSection,
+    onNavigate,
+}: {
+    activeSection: SectionKey;
+    onNavigate: (key: SectionKey) => void;
+}) {
     const { t } = useTranslation('settings');
 
     return (
@@ -810,21 +1256,35 @@ function SettingsSidebar({ activeSection, onNavigate }: { activeSection: Section
                     href={booksIndex.url()}
                     className="flex items-center gap-1.5 text-[12px] font-medium text-ink-muted transition-colors hover:text-ink"
                 >
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="shrink-0">
-                        <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        className="shrink-0"
+                    >
+                        <path
+                            d="M10 3L5 8l5 5"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
                     </svg>
                     {t('back')}
                 </Link>
             </div>
             <nav className="flex flex-1 flex-col gap-0.5 px-2.5">
                 {NAV_ITEMS.map((item, index) => {
-                    const prevGroupKey = index > 0 ? NAV_ITEMS[index - 1].groupKey : undefined;
-                    const showGroup = item.groupKey && item.groupKey !== prevGroupKey;
+                    const prevGroupKey =
+                        index > 0 ? NAV_ITEMS[index - 1].groupKey : undefined;
+                    const showGroup =
+                        item.groupKey && item.groupKey !== prevGroupKey;
 
                     return (
                         <div key={item.key}>
                             {showGroup && (
-                                <span className="mb-1.5 mt-3 block px-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                                <span className="mt-3 mb-1.5 block px-2.5 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                                     {t(item.groupKey!)}
                                 </span>
                             )}
@@ -844,7 +1304,13 @@ function SettingsSidebar({ activeSection, onNavigate }: { activeSection: Section
 
 // ─── Main Page ───────────────────────────────────────────────────────
 
-export default function Settings({ settings, ai_providers, writing_style_text, prose_pass_rules, version }: Props) {
+export default function Settings({
+    settings,
+    ai_providers,
+    writing_style_text,
+    prose_pass_rules,
+    version,
+}: Props) {
     const { t } = useTranslation('settings');
 
     const licenseRef = useRef<HTMLDivElement>(null);
@@ -857,7 +1323,9 @@ export default function Settings({ settings, ai_providers, writing_style_text, p
     const privacyRef = useRef<HTMLDivElement>(null);
     const updatesRef = useRef<HTMLDivElement>(null);
 
-    const sectionRefs = useRef<Record<SectionKey, React.RefObject<HTMLDivElement | null>>>({
+    const sectionRefs = useRef<
+        Record<SectionKey, React.RefObject<HTMLDivElement | null>>
+    >({
         license: licenseRef,
         language: languageRef,
         appearance: appearanceRef,
@@ -883,13 +1351,19 @@ export default function Settings({ settings, ai_providers, writing_style_text, p
                 let topEntry: IntersectionObserverEntry | null = null;
                 for (const entry of entries) {
                     if (entry.isIntersecting) {
-                        if (!topEntry || entry.boundingClientRect.top < topEntry.boundingClientRect.top) {
+                        if (
+                            !topEntry ||
+                            entry.boundingClientRect.top <
+                                topEntry.boundingClientRect.top
+                        ) {
                             topEntry = entry;
                         }
                     }
                 }
                 if (topEntry) {
-                    const key = topEntry.target.getAttribute('data-section') as SectionKey | null;
+                    const key = topEntry.target.getAttribute(
+                        'data-section',
+                    ) as SectionKey | null;
                     if (key) setActiveSection(key);
                 }
             },
@@ -908,7 +1382,10 @@ export default function Settings({ settings, ai_providers, writing_style_text, p
     }, []);
 
     const handleNavigate = useCallback((key: SectionKey) => {
-        sectionRefs.current[key]?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        sectionRefs.current[key]?.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+        });
     }, []);
 
     const saveSetting = useCallback((key: string, value: boolean) => {
@@ -926,33 +1403,100 @@ export default function Settings({ settings, ai_providers, writing_style_text, p
             <Head title={t('title')} />
             <div className="flex h-screen flex-col overflow-hidden bg-surface">
                 <div className="flex min-h-0 flex-1">
-                    <SettingsSidebar activeSection={activeSection} onNavigate={handleNavigate} />
+                    <SettingsSidebar
+                        activeSection={activeSection}
+                        onNavigate={handleNavigate}
+                    />
                     <main ref={mainRef} className="flex-1 overflow-y-auto">
-                        <div className="mx-auto w-full max-w-[760px] px-[60px] pb-[80vh] pt-12">
+                        <div className="mx-auto w-full max-w-[760px] px-[60px] pt-12 pb-[80vh]">
                             <div className="flex flex-col gap-9">
                                 {/* Page header */}
                                 <div>
-                                    <h1 className="text-[24px] font-semibold tracking-[-0.02em] text-ink">{t('title')}</h1>
-                                    <p className="mt-1 text-[14px] text-ink-muted">{t('pageDescription')}</p>
+                                    <h1 className="text-[24px] font-semibold tracking-[-0.02em] text-ink">
+                                        {t('title')}
+                                    </h1>
+                                    <p className="mt-1 text-[14px] text-ink-muted">
+                                        {t('pageDescription')}
+                                    </p>
                                 </div>
 
-                                <div ref={licenseRef} data-section="license"><LicenseSection /></div>
-
-                                <div className="flex flex-col gap-9">
-                                    <div ref={languageRef} data-section="language"><LanguageSection /></div>
-                                    <div ref={appearanceRef} data-section="appearance"><AppearanceSection /></div>
-                                    <div ref={toolbarRef} data-section="toolbar"><EditorSection settings={settings} saveSetting={saveSetting} /></div>
-                                </div>
-
-                                <div className="flex flex-col gap-9">
-                                    <div ref={aiFeaturesRef} data-section="ai-features"><AiProvidersSection providers={ai_providers} /></div>
-                                    <div ref={writingStyleRef} data-section="writing-style"><WritingStyleSection writingStyleText={writing_style_text} /></div>
-                                    <div ref={revisionRulesRef} data-section="revision-rules"><RevisionRulesSection initialRules={prose_pass_rules} /></div>
+                                <div ref={licenseRef} data-section="license">
+                                    <LicenseSection />
                                 </div>
 
                                 <div className="flex flex-col gap-9">
-                                    <div ref={privacyRef} data-section="privacy"><PrivacySection settings={settings} saveSetting={saveSetting} /></div>
-                                    <div ref={updatesRef} data-section="updates"><UpdatesSection version={version} settings={settings} saveSetting={saveSetting} /></div>
+                                    <div
+                                        ref={languageRef}
+                                        data-section="language"
+                                    >
+                                        <LanguageSection />
+                                    </div>
+                                    <div
+                                        ref={appearanceRef}
+                                        data-section="appearance"
+                                    >
+                                        <AppearanceSection />
+                                    </div>
+                                    <div
+                                        ref={toolbarRef}
+                                        data-section="toolbar"
+                                    >
+                                        <EditorSection
+                                            settings={settings}
+                                            saveSetting={saveSetting}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-9">
+                                    <div
+                                        ref={aiFeaturesRef}
+                                        data-section="ai-features"
+                                    >
+                                        <AiProvidersSection
+                                            providers={ai_providers}
+                                        />
+                                    </div>
+                                    <div
+                                        ref={writingStyleRef}
+                                        data-section="writing-style"
+                                    >
+                                        <WritingStyleSection
+                                            writingStyleText={
+                                                writing_style_text
+                                            }
+                                        />
+                                    </div>
+                                    <div
+                                        ref={revisionRulesRef}
+                                        data-section="revision-rules"
+                                    >
+                                        <RevisionRulesSection
+                                            initialRules={prose_pass_rules}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-9">
+                                    <div
+                                        ref={privacyRef}
+                                        data-section="privacy"
+                                    >
+                                        <PrivacySection
+                                            settings={settings}
+                                            saveSetting={saveSetting}
+                                        />
+                                    </div>
+                                    <div
+                                        ref={updatesRef}
+                                        data-section="updates"
+                                    >
+                                        <UpdatesSection
+                                            version={version}
+                                            settings={settings}
+                                            saveSetting={saveSetting}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>

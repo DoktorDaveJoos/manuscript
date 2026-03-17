@@ -3,7 +3,9 @@ export type Theme = 'light' | 'dark' | 'system';
 const STORAGE_KEY = 'manuscript:theme';
 
 function getSystemPreference(): 'light' | 'dark' {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
 }
 
 function applyTheme(theme: Theme): void {
@@ -35,9 +37,11 @@ export function setTheme(theme: Theme): void {
 export function initTheme(): void {
     applyTheme(getTheme());
 
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-        if (getTheme() === 'system') {
-            applyTheme('system');
-        }
-    });
+    window
+        .matchMedia('(prefers-color-scheme: dark)')
+        .addEventListener('change', () => {
+            if (getTheme() === 'system') {
+                applyTheme('system');
+            }
+        });
 }

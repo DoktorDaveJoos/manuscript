@@ -14,7 +14,7 @@ Most writing tools either ignore craft entirely or try to write for you. Manuscr
 
 - **Your data stays yours.** Everything lives in a local SQLite database on your machine. Copy it, back it up, delete it — your call.
 - **AI is a tool, not a crutch.** Every core feature works without AI. When you do enable it, AI refines your prose and analyzes your structure — it never invents content.
-- **Built for craft, not content generation.** Manuscript teaches you *why* something is a problem, not just that it is one.
+- **Built for craft, not content generation.** Manuscript teaches you _why_ something is a problem, not just that it is one.
 
 ---
 
@@ -50,10 +50,10 @@ Most writing tools either ignore craft entirely or try to write for you. Manuscr
 - **Writing Style extraction** — automatically derives your style patterns from the manuscript, editable by you
 - **AI Preparation Pipeline** — multi-phase batch indexing: chunking, embedding, analysis, entity extraction, and story bible population
 - **Story Heartbeat Canvas** — four analysis lanes visualizing your novel at a glance:
-  - **Tension Arc** — chapter-by-chapter tension curve with act blocks and plot point markers
-  - **Chapter Hook Score** — instantly see where readers might stop turning pages
-  - **Pacing Rhythm** — word count variation revealing tempo patterns
-  - **Storyline Weave** — POV distribution and storyline balance
+    - **Tension Arc** — chapter-by-chapter tension curve with act blocks and plot point markers
+    - **Chapter Hook Score** — instantly see where readers might stop turning pages
+    - **Pacing Rhythm** — word count variation revealing tempo patterns
+    - **Storyline Weave** — POV distribution and storyline balance
 - **Thriller Health Dashboard** — weighted health score (hooks, pacing, tension, weave) with actionable next steps
 - **Plot AI** — plot hole detection, beat suggestions, and tension arc generation from the plot view
 - **Scene Audit** — flags scenes without clear plot or character function
@@ -74,16 +74,16 @@ Anthropic, OpenAI, Google Gemini, Groq, xAI, DeepSeek, Mistral, Ollama (local), 
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Desktop | [NativePHP](https://nativephp.com) — ships as a native app on macOS, Windows, and Linux |
-| Backend | [Laravel 12](https://laravel.com) with PHP 8.4 |
-| Frontend | [React 19](https://react.dev) via [Inertia.js v2](https://inertiajs.com) |
-| Styling | [Tailwind CSS v4](https://tailwindcss.com) |
-| Editor | [Tiptap](https://tiptap.dev) rich text editor |
-| Database | SQLite with [sqlite-vec](https://github.com/asg017/sqlite-vec) for local vector search |
-| AI | [Laravel AI](https://github.com/laravel/ai) for multi-provider support |
-| Testing | [Pest v4](https://pestphp.com) |
+| Layer    | Technology                                                                              |
+| -------- | --------------------------------------------------------------------------------------- |
+| Desktop  | [NativePHP](https://nativephp.com) — ships as a native app on macOS, Windows, and Linux |
+| Backend  | [Laravel 12](https://laravel.com) with PHP 8.4                                          |
+| Frontend | [React 19](https://react.dev) via [Inertia.js v2](https://inertiajs.com)                |
+| Styling  | [Tailwind CSS v4](https://tailwindcss.com)                                              |
+| Editor   | [Tiptap](https://tiptap.dev) rich text editor                                           |
+| Database | SQLite with [sqlite-vec](https://github.com/asg017/sqlite-vec) for local vector search  |
+| AI       | [Laravel AI](https://github.com/laravel/ai) for multi-provider support                  |
+| Testing  | [Pest v4](https://pestphp.com)                                                          |
 
 ---
 
@@ -145,17 +145,17 @@ If you download a **pre-built, ready-to-run desktop app**, that's the Pro versio
 
 This is a gift to the authors out there doing great creative work. Build it yourself and enjoy everything for free. Or grab the bundled app to support development and get going in seconds.
 
-| | Open Source (self-built) | Pro (pre-built app) |
-|---|---|---|
-| Multi-book management | Yes | Yes |
-| Chapter editor, scenes & versioning | Yes | Yes |
-| Storylines, story bible, plot canvas | Yes | Yes |
-| Dashboard, writing goals & heatmap | Yes | Yes |
-| DOCX import & export | Yes | Yes |
-| AI Prose Pass, Chat & analysis | Yes | Yes (with license) |
-| AI Preparation Pipeline | Yes | Yes (with license) |
-| Pre-built native app | - | Yes |
-| **Price** | **Free** | **One-time purchase** |
+|                                      | Open Source (self-built) | Pro (pre-built app)   |
+| ------------------------------------ | ------------------------ | --------------------- |
+| Multi-book management                | Yes                      | Yes                   |
+| Chapter editor, scenes & versioning  | Yes                      | Yes                   |
+| Storylines, story bible, plot canvas | Yes                      | Yes                   |
+| Dashboard, writing goals & heatmap   | Yes                      | Yes                   |
+| DOCX import & export                 | Yes                      | Yes                   |
+| AI Prose Pass, Chat & analysis       | Yes                      | Yes (with license)    |
+| AI Preparation Pipeline              | Yes                      | Yes (with license)    |
+| Pre-built native app                 | -                        | Yes                   |
+| **Price**                            | **Free**                 | **One-time purchase** |
 
 AI features always require your own API key regardless of version — you pay the AI providers directly for the tokens you use.
 
@@ -200,4 +200,4 @@ Built with love in the Allgau, Germany. Made possible by the incredible open sou
 
 ---
 
-*Manuscript — because your story deserves better tools.*
+_Manuscript — because your story deserves better tools._

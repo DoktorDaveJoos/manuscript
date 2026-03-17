@@ -35,13 +35,17 @@ export default function BookCard({
 
     function formatWords(count: number | null): string {
         if (!count) return t('bookCard.words', { count: 0, formatted: '0' });
-        return t('bookCard.words', { count, formatted: count.toLocaleString(i18n.language) });
+        return t('bookCard.words', {
+            count,
+            formatted: count.toLocaleString(i18n.language),
+        });
     }
 
     const [hoursAgo] = useState(() => computeHoursAgo(book.updated_at));
     const updatedAtLabel = (() => {
         if (hoursAgo < 1) return t('bookCard.editedJustNow');
-        if (hoursAgo < 24) return t('bookCard.editedHoursAgo', { count: hoursAgo });
+        if (hoursAgo < 24)
+            return t('bookCard.editedHoursAgo', { count: hoursAgo });
         const days = Math.floor(hoursAgo / 24);
         if (days < 30) return t('bookCard.editedDaysAgo', { count: days });
         const months = Math.floor(days / 30);
@@ -60,13 +64,21 @@ export default function BookCard({
             onClick={() => router.visit(editor.url(book))}
             className="relative flex w-[400px] shrink-0 cursor-pointer flex-col gap-5 rounded-[10px] border border-border bg-surface-card p-8 transition-shadow hover:shadow-md"
         >
-            <div className="absolute right-4 top-4">
-                <BookCardMenu onRename={onRename} onDuplicate={onDuplicate} onDelete={onDelete} />
+            <div className="absolute top-4 right-4">
+                <BookCardMenu
+                    onRename={onRename}
+                    onDuplicate={onDuplicate}
+                    onDelete={onDelete}
+                />
             </div>
 
             <div className="flex flex-col gap-1.5 pr-8">
-                <h3 className="font-serif text-2xl leading-8 tracking-[-0.01em] text-ink">{book.title}</h3>
-                <p className="text-[13px] leading-[18px] text-ink-muted">{meta}</p>
+                <h3 className="font-serif text-2xl leading-8 tracking-[-0.01em] text-ink">
+                    {book.title}
+                </h3>
+                <p className="text-[13px] leading-[18px] text-ink-muted">
+                    {meta}
+                </p>
             </div>
 
             <ProgressBar
@@ -77,7 +89,9 @@ export default function BookCard({
                 }}
             />
 
-            <span className="text-xs leading-4 text-ink-faint">{updatedAtLabel}</span>
+            <span className="text-xs leading-4 text-ink-faint">
+                {updatedAtLabel}
+            </span>
         </div>
     );
 }

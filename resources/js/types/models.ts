@@ -1,14 +1,44 @@
 export type StorylineType = 'main' | 'backstory' | 'parallel';
 export type ChapterStatus = 'draft' | 'revised' | 'final';
-export type VersionSource = 'original' | 'ai_revision' | 'manual_edit' | 'normalization' | 'beautify' | 'snapshot';
+export type VersionSource =
+    | 'original'
+    | 'ai_revision'
+    | 'manual_edit'
+    | 'normalization'
+    | 'beautify'
+    | 'snapshot';
 export type VersionStatus = 'accepted' | 'pending';
-export type PlotPointType = 'setup' | 'conflict' | 'turning_point' | 'resolution' | 'worldbuilding';
+export type PlotPointType =
+    | 'setup'
+    | 'conflict'
+    | 'turning_point'
+    | 'resolution'
+    | 'worldbuilding';
 export type PlotPointStatus = 'planned' | 'fulfilled' | 'abandoned';
 export type ConnectionType = 'causes' | 'sets_up' | 'resolves' | 'contradicts';
 export type CharacterRole = 'protagonist' | 'supporting' | 'mentioned';
-export type AnalysisType = 'pacing' | 'plothole' | 'character_consistency' | 'density' | 'plot_deviation' | 'next_chapter_suggestion' | 'chapter_hook' | 'scene_audit' | 'thriller_health';
+export type AnalysisType =
+    | 'pacing'
+    | 'plothole'
+    | 'character_consistency'
+    | 'density'
+    | 'plot_deviation'
+    | 'next_chapter_suggestion'
+    | 'chapter_hook'
+    | 'scene_audit'
+    | 'thriller_health';
 export type HookType = 'cliffhanger' | 'soft_hook' | 'closed' | 'dead_end';
-export type AiProvider = 'anthropic' | 'openai' | 'gemini' | 'groq' | 'xai' | 'deepseek' | 'mistral' | 'ollama' | 'azure' | 'openrouter';
+export type AiProvider =
+    | 'anthropic'
+    | 'openai'
+    | 'gemini'
+    | 'groq'
+    | 'xai'
+    | 'deepseek'
+    | 'mistral'
+    | 'ollama'
+    | 'azure'
+    | 'openrouter';
 
 export type StoryBible = {
     themes?: string[];
@@ -104,9 +134,25 @@ export type Character = {
     chapters?: (Chapter & { pivot: CharacterChapterPivot })[];
 };
 
-export type ScenePurpose = 'turning_point' | 'revelation' | 'deepening' | 'setup' | 'resolution' | 'transition';
-export type PacingFeel = 'breakneck' | 'brisk' | 'measured' | 'languid' | 'static';
-export type InformationDelivery = 'organic' | 'mostly_organic' | 'mixed' | 'exposition_heavy' | 'info_dump';
+export type ScenePurpose =
+    | 'turning_point'
+    | 'revelation'
+    | 'deepening'
+    | 'setup'
+    | 'resolution'
+    | 'transition';
+export type PacingFeel =
+    | 'breakneck'
+    | 'brisk'
+    | 'measured'
+    | 'languid'
+    | 'static';
+export type InformationDelivery =
+    | 'organic'
+    | 'mostly_organic'
+    | 'mixed'
+    | 'exposition_heavy'
+    | 'info_dump';
 
 export type Chapter = {
     id: number;
@@ -257,7 +303,11 @@ export type HealthMetrics = {
     last_analyzed_at: string;
     attention_items: AttentionItem[];
 };
-export type SuggestedNext = { title: string; description: string; chapter_id?: number };
+export type SuggestedNext = {
+    title: string;
+    description: string;
+    chapter_id?: number;
+};
 
 export type WritingGoalData = {
     daily_word_count_goal: number | null;
@@ -335,7 +385,14 @@ export type NormalizePreviewResult = {
     total_changes: number;
 };
 
-export type PreparationPhase = 'chunking' | 'embedding' | 'writing_style' | 'chapter_analysis' | 'entity_extraction' | 'story_bible' | 'health_analysis';
+export type PreparationPhase =
+    | 'chunking'
+    | 'embedding'
+    | 'writing_style'
+    | 'chapter_analysis'
+    | 'entity_extraction'
+    | 'story_bible'
+    | 'health_analysis';
 
 export type PhaseError = {
     phase: string;

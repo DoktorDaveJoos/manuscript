@@ -1,8 +1,11 @@
 import { Head, usePage } from '@inertiajs/react';
-import type {PropsWithChildren} from 'react';
+import type { PropsWithChildren } from 'react';
 import UpdateBanner from '@/components/ui/UpdateBanner';
 
-export default function AppLayout({ children, title }: PropsWithChildren<{ title?: string }>) {
+export default function AppLayout({
+    children,
+    title,
+}: PropsWithChildren<{ title?: string }>) {
     const { name } = usePage().props;
 
     return (

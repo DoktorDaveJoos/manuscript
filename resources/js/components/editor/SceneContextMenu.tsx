@@ -30,14 +30,19 @@ export default function SceneContextMenu({
         }
 
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () =>
+            document.removeEventListener('mousedown', handleClickOutside);
     }, [onClose]);
 
     const itemClass =
         'flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] text-ink-soft transition-colors hover:bg-neutral-bg';
 
     return (
-        <div ref={ref} className={`fixed z-50 w-[200px] rounded-lg bg-surface-card ${menuShadow}`} style={{ left: position.x, top: position.y }}>
+        <div
+            ref={ref}
+            className={`fixed z-50 w-[200px] rounded-lg bg-surface-card ${menuShadow}`}
+            style={{ left: position.x, top: position.y }}
+        >
             <div className="flex flex-col p-1">
                 <button
                     type="button"
@@ -61,7 +66,7 @@ export default function SceneContextMenu({
                                 onClose();
                                 onDelete();
                             }}
-                            className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] font-medium leading-[18px] text-delete transition-colors hover:bg-neutral-bg"
+                            className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] font-medium text-delete transition-colors hover:bg-neutral-bg"
                         >
                             <Trash2 size={14} className="shrink-0" />
                             {t('contextMenu.delete')}

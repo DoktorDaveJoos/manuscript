@@ -17,12 +17,30 @@ interface Props {
 }
 
 const THEME_OPTIONS = [
-    { value: 'light' as Theme, labelKey: 'appearance.theme.light' as const, descriptionKey: 'appearance.theme.lightDescription' as const },
-    { value: 'dark' as Theme, labelKey: 'appearance.theme.dark' as const, descriptionKey: 'appearance.theme.darkDescription' as const },
-    { value: 'system' as Theme, labelKey: 'appearance.theme.system' as const, descriptionKey: 'appearance.theme.systemDescription' as const },
+    {
+        value: 'light' as Theme,
+        labelKey: 'appearance.theme.light' as const,
+        descriptionKey: 'appearance.theme.lightDescription' as const,
+    },
+    {
+        value: 'dark' as Theme,
+        labelKey: 'appearance.theme.dark' as const,
+        descriptionKey: 'appearance.theme.darkDescription' as const,
+    },
+    {
+        value: 'system' as Theme,
+        labelKey: 'appearance.theme.system' as const,
+        descriptionKey: 'appearance.theme.systemDescription' as const,
+    },
 ];
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+function Toggle({
+    checked,
+    onChange,
+}: {
+    checked: boolean;
+    onChange: () => void;
+}) {
     return (
         <button
             type="button"
@@ -56,10 +74,16 @@ function SettingRow({
     border?: boolean;
 }) {
     return (
-        <div className={`flex items-center justify-between py-3.5 ${border ? 'border-b border-border-light' : ''}`}>
+        <div
+            className={`flex items-center justify-between py-3.5 ${border ? 'border-b border-border-light' : ''}`}
+        >
             <div>
-                <span className="text-[14px] font-medium text-ink">{label}</span>
-                <p className="mt-0.5 text-[13px] text-ink-muted">{description}</p>
+                <span className="text-[14px] font-medium text-ink">
+                    {label}
+                </span>
+                <p className="mt-0.5 text-[13px] text-ink-muted">
+                    {description}
+                </p>
             </div>
             <Toggle checked={checked} onChange={onChange} />
         </div>
@@ -69,10 +93,18 @@ function SettingRow({
 export default function Appearance({ settings, book, version }: Props) {
     const { t } = useTranslation('settings');
     const { theme, setTheme } = useTheme();
-    const { state: updateState, checkForUpdates, installUpdate } = useAutoUpdater();
+    const {
+        state: updateState,
+        checkForUpdates,
+        installUpdate,
+    } = useAutoUpdater();
     const [showAi, setShowAi] = useState(settings.show_ai_features);
-    const [hideToolbar, setHideToolbar] = useState(settings.hide_formatting_toolbar);
-    const [sendErrorReports, setSendErrorReports] = useState(settings.send_error_reports);
+    const [hideToolbar, setHideToolbar] = useState(
+        settings.hide_formatting_toolbar,
+    );
+    const [sendErrorReports, setSendErrorReports] = useState(
+        settings.send_error_reports,
+    );
 
     const saveSetting = useCallback((key: string, value: boolean) => {
         fetch(update.url(), {
@@ -85,10 +117,16 @@ export default function Appearance({ settings, book, version }: Props) {
     }, []);
 
     return (
-        <SettingsLayout activeSection="appearance" book={book} title={t('appearance.title')}>
+        <SettingsLayout
+            activeSection="appearance"
+            book={book}
+            title={t('appearance.title')}
+        >
             <div className="flex flex-col gap-6">
                 <div>
-                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">{t('appearance.title')}</h1>
+                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">
+                        {t('appearance.title')}
+                    </h1>
                     <p className="mt-1 text-[14px] text-ink-muted">
                         {t('appearance.description')}
                     </p>
@@ -98,8 +136,12 @@ export default function Appearance({ settings, book, version }: Props) {
                 <div className="rounded-lg border border-border bg-surface-card p-6">
                     <div className="flex flex-col gap-4">
                         <div>
-                            <span className="text-[15px] font-medium text-ink">{t('appearance.theme.title')}</span>
-                            <p className="mt-0.5 text-[13px] text-ink-muted">{t('appearance.theme.description')}</p>
+                            <span className="text-[15px] font-medium text-ink">
+                                {t('appearance.theme.title')}
+                            </span>
+                            <p className="mt-0.5 text-[13px] text-ink-muted">
+                                {t('appearance.theme.description')}
+                            </p>
                         </div>
                         <div className="flex gap-3">
                             {THEME_OPTIONS.map((option) => (
@@ -113,8 +155,12 @@ export default function Appearance({ settings, book, version }: Props) {
                                             : 'border-border text-ink-muted hover:border-border-dashed hover:text-ink'
                                     }`}
                                 >
-                                    <span className="text-[14px] font-medium">{t(option.labelKey)}</span>
-                                    <span className="mt-0.5 text-[12px] text-ink-muted">{t(option.descriptionKey)}</span>
+                                    <span className="text-[14px] font-medium">
+                                        {t(option.labelKey)}
+                                    </span>
+                                    <span className="mt-0.5 text-[12px] text-ink-muted">
+                                        {t(option.descriptionKey)}
+                                    </span>
                                 </button>
                             ))}
                         </div>
@@ -138,13 +184,15 @@ export default function Appearance({ settings, book, version }: Props) {
 
                 {/* Editor section */}
                 <div>
-                    <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                         {t('appearance.editor')}
                     </span>
                     <div className="mt-3 rounded-lg border border-border bg-surface-card px-6">
                         <SettingRow
                             label={t('appearance.hideToolbar.label')}
-                            description={t('appearance.hideToolbar.description')}
+                            description={t(
+                                'appearance.hideToolbar.description',
+                            )}
                             checked={hideToolbar}
                             onChange={() => {
                                 const next = !hideToolbar;
@@ -158,13 +206,15 @@ export default function Appearance({ settings, book, version }: Props) {
 
                 {/* Privacy */}
                 <div>
-                    <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                         {t('appearance.privacy')}
                     </span>
                     <div className="mt-3 rounded-lg border border-border bg-surface-card px-6">
                         <SettingRow
                             label={t('appearance.sendErrorReports.label')}
-                            description={t('appearance.sendErrorReports.description')}
+                            description={t(
+                                'appearance.sendErrorReports.description',
+                            )}
                             checked={sendErrorReports}
                             onChange={() => {
                                 const next = !sendErrorReports;
@@ -180,32 +230,56 @@ export default function Appearance({ settings, book, version }: Props) {
                 <div className="rounded-lg border border-border bg-surface-card p-6">
                     <div className="flex items-start justify-between">
                         <div className="flex flex-col gap-2">
-                            <span className="text-[13px] font-medium text-ink-muted">{t('appearance.version')}</span>
+                            <span className="text-[13px] font-medium text-ink-muted">
+                                {t('appearance.version')}
+                            </span>
                             <p className="text-[15px] text-ink">{version}</p>
                             {updateState.status === 'checking' && (
-                                <p className="text-[13px] text-ink-muted">{t('appearance.update.checking')}</p>
+                                <p className="text-[13px] text-ink-muted">
+                                    {t('appearance.update.checking')}
+                                </p>
                             )}
                             {updateState.status === 'downloading' && (
                                 <p className="text-[13px] text-ink-muted">
-                                    {t('appearance.update.downloading', { progress: updateState.progress })}
+                                    {t('appearance.update.downloading', {
+                                        progress: updateState.progress,
+                                    })}
                                 </p>
                             )}
                             {updateState.status === 'ready' && (
                                 <p className="text-[13px] font-medium text-accent">
-                                    {t('appearance.update.readyToInstall', { version: updateState.version })}
+                                    {t('appearance.update.readyToInstall', {
+                                        version: updateState.version,
+                                    })}
                                 </p>
                             )}
                             {updateState.status === 'error' && (
-                                <p className="text-[13px] text-red-500">{updateState.error}</p>
+                                <p className="text-[13px] text-red-500">
+                                    {updateState.error}
+                                </p>
                             )}
                         </div>
                         <div>
                             {updateState.status === 'ready' ? (
-                                <Button variant="accent" size="sm" type="button" onClick={installUpdate}>
+                                <Button
+                                    variant="accent"
+                                    size="sm"
+                                    type="button"
+                                    onClick={installUpdate}
+                                >
                                     {t('appearance.update.restart')}
                                 </Button>
                             ) : (
-                                <Button variant="secondary" size="sm" type="button" onClick={checkForUpdates} disabled={updateState.status === 'checking' || updateState.status === 'downloading'}>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    type="button"
+                                    onClick={checkForUpdates}
+                                    disabled={
+                                        updateState.status === 'checking' ||
+                                        updateState.status === 'downloading'
+                                    }
+                                >
                                     {t('appearance.update.checkForUpdates')}
                                 </Button>
                             )}

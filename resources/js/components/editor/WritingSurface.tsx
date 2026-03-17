@@ -63,7 +63,9 @@ export default function WritingSurface({
     const { t } = useTranslation('editor');
 
     const fontFamily = useMemo(() => {
-        return FONTS.find((f) => f.id === editorFont)?.family ?? FONTS[0].family;
+        return (
+            FONTS.find((f) => f.id === editorFont)?.family ?? FONTS[0].family
+        );
     }, [editorFont]);
 
     const titleRef = useRef<HTMLHeadingElement>(null);
@@ -80,7 +82,9 @@ export default function WritingSurface({
         if (!el) return;
         const observer = new ResizeObserver((entries) => {
             for (const entry of entries) {
-                const height = entry.contentBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
+                const height =
+                    entry.contentBoxSize?.[0]?.blockSize ??
+                    entry.contentRect.height;
                 setContainerHeight(height);
             }
         });
@@ -112,7 +116,9 @@ export default function WritingSurface({
             if (e.key === 'Enter' && e.shiftKey) {
                 e.preventDefault();
                 if (scenes.length > 0) {
-                    editorRegistry.current.get(scenes[0].id)?.commands.focus('start');
+                    editorRegistry.current
+                        .get(scenes[0].id)
+                        ?.commands.focus('start');
                 }
             } else if (e.key === 'Enter') {
                 e.preventDefault();
@@ -125,12 +131,16 @@ export default function WritingSurface({
                 const range = sel.getRangeAt(0);
                 const rect = range.getBoundingClientRect();
                 const titleRect = titleRef.current.getBoundingClientRect();
-                const lineHeight = parseFloat(getComputedStyle(titleRef.current).lineHeight) || 20;
+                const lineHeight =
+                    parseFloat(getComputedStyle(titleRef.current).lineHeight) ||
+                    20;
 
                 if (titleRect.bottom - rect.bottom < lineHeight) {
                     e.preventDefault();
                     if (scenes.length > 0) {
-                        const firstEditor = editorRegistry.current.get(scenes[0].id);
+                        const firstEditor = editorRegistry.current.get(
+                            scenes[0].id,
+                        );
                         firstEditor?.commands.focus('start');
                     }
                 }
@@ -171,7 +181,8 @@ export default function WritingSurface({
             if (container) {
                 container.scrollTop = Math.max(
                     0,
-                    container.scrollTop - (halfContainerRef.current - NORMAL_PADDING_TOP),
+                    container.scrollTop -
+                        (halfContainerRef.current - NORMAL_PADDING_TOP),
                 );
             }
             return;
@@ -187,23 +198,37 @@ export default function WritingSurface({
         if (justEnabled) {
             const container = scrollContainerRef.current;
             if (container) {
-                container.scrollTop += halfContainerRef.current - NORMAL_PADDING_TOP;
+                container.scrollTop +=
+                    halfContainerRef.current - NORMAL_PADDING_TOP;
             }
         }
 
         // Center the cursor (instant on mode activation)
         requestAnimationFrame(() => {
             if (!activeEditor?.view || !scrollContainerRef.current) return;
-            centerCursorInContainer(activeEditor.view, scrollContainerRef.current, justEnabled);
+            centerCursorInContainer(
+                activeEditor.view,
+                scrollContainerRef.current,
+                justEnabled,
+            );
         });
     }, [isTypewriterMode, activeEditor]);
 
     // Re-center cursor when container resizes (focus mode toggle, window resize)
     useEffect(() => {
-        if (!isTypewriterMode || !activeEditor?.view || !scrollContainerRef.current) return;
+        if (
+            !isTypewriterMode ||
+            !activeEditor?.view ||
+            !scrollContainerRef.current
+        )
+            return;
         requestAnimationFrame(() => {
             if (!activeEditor?.view || !scrollContainerRef.current) return;
-            centerCursorInContainer(activeEditor.view, scrollContainerRef.current, true);
+            centerCursorInContainer(
+                activeEditor.view,
+                scrollContainerRef.current,
+                true,
+            );
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-center on actual resize
     }, [containerHeight]);
@@ -217,19 +242,30 @@ export default function WritingSurface({
     }, [pendingFocusSceneId, onFocusHandled]);
 
     const metadataParts: string[] = [];
-    if (povCharacterName) metadataParts.push(t('writingSurface.pov', { name: povCharacterName }));
-    if (timelineLabel) metadataParts.push(t('writingSurface.timeline', { label: timelineLabel }));
+    if (povCharacterName)
+        metadataParts.push(t('writingSurface.pov', { name: povCharacterName }));
+    if (timelineLabel)
+        metadataParts.push(
+            t('writingSurface.timeline', { label: timelineLabel }),
+        );
 
     return (
         <div
             ref={scrollContainerRef}
             className="flex flex-1 items-start justify-center overflow-y-auto"
-            style={{ '--font-serif': fontFamily, '--editor-font-size': `${editorFontSize}px` } as React.CSSProperties}
+            style={
+                {
+                    '--font-serif': fontFamily,
+                    '--editor-font-size': `${editorFontSize}px`,
+                } as React.CSSProperties
+            }
         >
             <div
                 className="w-full max-w-[660px] px-[30px]"
                 style={{
-                    paddingTop: isTypewriterMode ? halfContainer : NORMAL_PADDING_TOP,
+                    paddingTop: isTypewriterMode
+                        ? halfContainer
+                        : NORMAL_PADDING_TOP,
                     paddingBottom: halfContainer,
                     minHeight: containerHeight + halfContainer,
                 }}
@@ -270,7 +306,8 @@ export default function WritingSurface({
                                           // Place cursor at end of title
                                           const sel = window.getSelection();
                                           if (sel) {
-                                              const range = document.createRange();
+                                              const range =
+                                                  document.createRange();
                                               range.selectNodeContents(el);
                                               range.collapse(false);
                                               sel.removeAllRanges();
@@ -279,14 +316,18 @@ export default function WritingSurface({
                                       }
                                     : () => {
                                           const prevId = scenes[i - 1].id;
-                                          editorRegistry.current.get(prevId)?.commands.focus('end');
+                                          editorRegistry.current
+                                              .get(prevId)
+                                              ?.commands.focus('end');
                                       }
                             }
                             onExitDown={
                                 i < scenes.length - 1
                                     ? () => {
                                           const nextId = scenes[i + 1].id;
-                                          editorRegistry.current.get(nextId)?.commands.focus('start');
+                                          editorRegistry.current
+                                              .get(nextId)
+                                              ?.commands.focus('start');
                                       }
                                     : undefined
                             }

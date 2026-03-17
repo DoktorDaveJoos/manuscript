@@ -2,7 +2,10 @@ import { router } from '@inertiajs/react';
 import { ArrowRight, ChevronRight, Circle, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { reorder, updateStatus } from '@/actions/App/Http/Controllers/ChapterController';
+import {
+    reorder,
+    updateStatus,
+} from '@/actions/App/Http/Controllers/ChapterController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Chapter, ChapterStatus, Storyline } from '@/types/models';
 
@@ -46,7 +49,8 @@ export default function ChapterContextMenu({
         }
 
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () =>
+            document.removeEventListener('mousedown', handleClickOutside);
     }, [onClose]);
 
     const handleStatusChange = async (status: ChapterStatus) => {
@@ -60,7 +64,12 @@ export default function ChapterContextMenu({
     };
 
     const handleMove = (storylineId: number) => {
-        const allChapters = storylines.flatMap((s) => (s.chapters ?? []).map((ch) => ({ id: ch.id, storyline_id: ch.storyline_id })));
+        const allChapters = storylines.flatMap((s) =>
+            (s.chapters ?? []).map((ch) => ({
+                id: ch.id,
+                storyline_id: ch.storyline_id,
+            })),
+        );
         const order = allChapters.map((ch) => ({
             id: ch.id,
             storyline_id: ch.id === chapter.id ? storylineId : ch.storyline_id,
@@ -76,12 +85,18 @@ export default function ChapterContextMenu({
         );
     };
 
-    const otherStorylines = storylines.filter((s) => s.id !== chapter.storyline_id);
+    const otherStorylines = storylines.filter(
+        (s) => s.id !== chapter.storyline_id,
+    );
     const itemClass =
         'flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] text-ink-soft transition-colors hover:bg-neutral-bg';
 
     return (
-        <div ref={ref} className={`fixed z-50 w-[200px] rounded-lg bg-surface-card ${menuShadow}`} style={{ left: position.x, top: position.y }}>
+        <div
+            ref={ref}
+            className={`fixed z-50 w-[200px] rounded-lg bg-surface-card ${menuShadow}`}
+            style={{ left: position.x, top: position.y }}
+        >
             <div className="flex flex-col p-1">
                 <button
                     type="button"
@@ -100,24 +115,41 @@ export default function ChapterContextMenu({
                     onMouseEnter={() => setStatusOpen(true)}
                     onMouseLeave={() => setStatusOpen(false)}
                 >
-                    <button type="button" className={`${itemClass} justify-between`}>
+                    <button
+                        type="button"
+                        className={`${itemClass} justify-between`}
+                    >
                         <span className="flex items-center gap-2.5">
-                            <Circle size={14} fill="currentColor" className="shrink-0 text-ink-muted" />
+                            <Circle
+                                size={14}
+                                fill="currentColor"
+                                className="shrink-0 text-ink-muted"
+                            />
                             {t('contextMenu.status')}
                         </span>
-                        <ChevronRight size={10} strokeWidth={2.5} className="text-ink-faint" />
+                        <ChevronRight
+                            size={10}
+                            strokeWidth={2.5}
+                            className="text-ink-faint"
+                        />
                     </button>
                     {statusOpen && (
-                        <div className={`absolute left-full top-0 ml-1 w-[160px] rounded-lg bg-surface-card ${menuShadow}`}>
+                        <div
+                            className={`absolute top-0 left-full ml-1 w-[160px] rounded-lg bg-surface-card ${menuShadow}`}
+                        >
                             <div className="flex flex-col p-1">
                                 {statusValues.map((value) => (
                                     <button
                                         key={value}
                                         type="button"
-                                        onClick={() => handleStatusChange(value)}
+                                        onClick={() =>
+                                            handleStatusChange(value)
+                                        }
                                         className={`${itemClass} ${chapter.status === value ? 'font-medium' : ''}`}
                                     >
-                                        <span className={`inline-block size-[7px] rounded-full ${statusDotClass[value]}`} />
+                                        <span
+                                            className={`inline-block size-[7px] rounded-full ${statusDotClass[value]}`}
+                                        />
                                         {t(`status.${value}`)}
                                     </button>
                                 ))}
@@ -132,19 +164,44 @@ export default function ChapterContextMenu({
                         onMouseEnter={() => setMoveOpen(true)}
                         onMouseLeave={() => setMoveOpen(false)}
                     >
-                        <button type="button" className={`${itemClass} justify-between`}>
+                        <button
+                            type="button"
+                            className={`${itemClass} justify-between`}
+                        >
                             <span className="flex items-center gap-2.5">
-                                <ArrowRight size={14} className="shrink-0 text-ink-muted" />
+                                <ArrowRight
+                                    size={14}
+                                    className="shrink-0 text-ink-muted"
+                                />
                                 {t('contextMenu.moveTo')}
                             </span>
-                            <ChevronRight size={10} strokeWidth={2.5} className="text-ink-faint" />
+                            <ChevronRight
+                                size={10}
+                                strokeWidth={2.5}
+                                className="text-ink-faint"
+                            />
                         </button>
                         {moveOpen && (
-                            <div className={`absolute left-full top-0 ml-1 w-[180px] rounded-lg bg-surface-card ${menuShadow}`}>
+                            <div
+                                className={`absolute top-0 left-full ml-1 w-[180px] rounded-lg bg-surface-card ${menuShadow}`}
+                            >
                                 <div className="flex flex-col p-1">
                                     {otherStorylines.map((s) => (
-                                        <button key={s.id} type="button" onClick={() => handleMove(s.id)} className={itemClass}>
-                                            {s.color && <span className="inline-block size-[7px] rounded-full" style={{ backgroundColor: s.color }} />}
+                                        <button
+                                            key={s.id}
+                                            type="button"
+                                            onClick={() => handleMove(s.id)}
+                                            className={itemClass}
+                                        >
+                                            {s.color && (
+                                                <span
+                                                    className="inline-block size-[7px] rounded-full"
+                                                    style={{
+                                                        backgroundColor:
+                                                            s.color,
+                                                    }}
+                                                />
+                                            )}
                                             {s.name}
                                         </button>
                                     ))}
@@ -162,7 +219,7 @@ export default function ChapterContextMenu({
                         onClose();
                         onDelete();
                     }}
-                    className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] font-medium leading-[18px] text-delete transition-colors hover:bg-neutral-bg"
+                    className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] font-medium text-delete transition-colors hover:bg-neutral-bg"
                 >
                     <Trash2 size={14} className="shrink-0" />
                     {t('contextMenu.delete')}

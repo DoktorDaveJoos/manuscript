@@ -3,16 +3,28 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { StoryBible } from '@/types/models';
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+    title,
+    children,
+}: {
+    title: string;
+    children: React.ReactNode;
+}) {
     return (
         <div className="flex flex-col gap-2">
-            <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">{title}</span>
+            <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
+                {title}
+            </span>
             {children}
         </div>
     );
 }
 
-export default function StoryBibleSummary({ storyBible }: { storyBible: StoryBible }) {
+export default function StoryBibleSummary({
+    storyBible,
+}: {
+    storyBible: StoryBible;
+}) {
     const { t } = useTranslation('dashboard');
     const [expanded, setExpanded] = useState(false);
 
@@ -22,7 +34,9 @@ export default function StoryBibleSummary({ storyBible }: { storyBible: StoryBib
         { key: 'timeline' as const, title: t('storyBible.timeline') },
     ];
 
-    const hasContent = Object.values(storyBible).some((v) => Array.isArray(v) && v.length > 0);
+    const hasContent = Object.values(storyBible).some(
+        (v) => Array.isArray(v) && v.length > 0,
+    );
 
     if (!hasContent) return null;
 
@@ -38,7 +52,7 @@ export default function StoryBibleSummary({ storyBible }: { storyBible: StoryBib
                     strokeWidth={2.5}
                     className={`text-ink-muted transition-transform ${expanded ? 'rotate-90' : ''}`}
                 />
-                <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                     {t('storyBible.title')}
                 </span>
             </button>
@@ -67,7 +81,10 @@ export default function StoryBibleSummary({ storyBible }: { storyBible: StoryBib
                             <Section key={key} title={title}>
                                 <div className="flex flex-col gap-1">
                                     {items.map((item, i) => (
-                                        <span key={i} className="text-[13px] leading-[18px] text-ink-muted">
+                                        <span
+                                            key={i}
+                                            className="text-[13px] leading-[18px] text-ink-muted"
+                                        >
                                             {item}
                                         </span>
                                     ))}

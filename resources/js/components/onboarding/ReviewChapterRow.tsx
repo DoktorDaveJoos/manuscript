@@ -45,7 +45,9 @@ export default function ReviewChapterRow({
                 className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border-[1.5px] transition-colors"
                 style={{
                     borderColor: chapter.included ? '#141414' : '#C5C1B8',
-                    backgroundColor: chapter.included ? '#141414' : 'transparent',
+                    backgroundColor: chapter.included
+                        ? '#141414'
+                        : 'transparent',
                 }}
             >
                 {chapter.included && (

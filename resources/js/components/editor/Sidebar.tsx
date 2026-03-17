@@ -1,6 +1,12 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { BookOpen, LayoutGrid, Settings, Waypoints } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { index } from '@/actions/App/Http/Controllers/BookController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
@@ -65,7 +71,9 @@ export default function Sidebar({
         return DEFAULT_WIDTH;
     });
     const widthRef = useRef(width);
-    useEffect(() => { widthRef.current = width; }, [width]);
+    useEffect(() => {
+        widthRef.current = width;
+    }, [width]);
     const dragCleanupRef = useRef<(() => void) | null>(null);
 
     useEffect(() => {
@@ -90,9 +98,13 @@ export default function Sidebar({
 
         const handleMouseMove = (e: MouseEvent) => {
             const delta = e.clientX - startX;
-            const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
+            const newWidth = Math.min(
+                MAX_WIDTH,
+                Math.max(MIN_WIDTH, startWidth + delta),
+            );
             widthRef.current = newWidth;
-            if (sidebarRef.current) sidebarRef.current.style.width = `${newWidth}px`;
+            if (sidebarRef.current)
+                sidebarRef.current.style.width = `${newWidth}px`;
         };
 
         const handleMouseUp = () => {
@@ -125,11 +137,22 @@ export default function Sidebar({
     const isPlot = currentUrl.endsWith('/plot');
 
     const totalWords = storylines.reduce(
-        (sum, s) => sum + (s.chapters?.reduce((c, ch) =>
-            c + (ch.id === activeChapterId && activeChapterWordCount != null ? activeChapterWordCount : ch.word_count), 0) ?? 0),
+        (sum, s) =>
+            sum +
+            (s.chapters?.reduce(
+                (c, ch) =>
+                    c +
+                    (ch.id === activeChapterId && activeChapterWordCount != null
+                        ? activeChapterWordCount
+                        : ch.word_count),
+                0,
+            ) ?? 0),
         0,
     );
-    const totalChapters = storylines.reduce((sum, s) => sum + (s.chapters?.length ?? 0), 0);
+    const totalChapters = storylines.reduce(
+        (sum, s) => sum + (s.chapters?.length ?? 0),
+        0,
+    );
 
     const handleAddChapter = async (storylineId: number) => {
         await onBeforeNavigate?.();
@@ -138,7 +161,9 @@ export default function Sidebar({
 
     const handleAddStoryline = async () => {
         await onBeforeNavigate?.();
-        router.post(storeStoryline.url({ book: book.id }), { name: `Storyline ${storylines.length + 1}` });
+        router.post(storeStoryline.url({ book: book.id }), {
+            name: `Storyline ${storylines.length + 1}`,
+        });
     };
 
     return (
@@ -149,10 +174,16 @@ export default function Sidebar({
         >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-[18px]">
-                <Link href={index.url()} className="text-[13px] font-semibold uppercase tracking-[0.06em] text-ink">
+                <Link
+                    href={index.url()}
+                    className="text-[13px] font-semibold tracking-[0.06em] text-ink uppercase"
+                >
                     Manuscript
                 </Link>
-                <Link href={settingsIndex.url()} className="text-[#9CA3AF] hover:text-ink transition-colors">
+                <Link
+                    href={settingsIndex.url()}
+                    className="text-[#9CA3AF] transition-colors hover:text-ink"
+                >
                     <Settings size={18} />
                 </Link>
             </div>
@@ -164,7 +195,10 @@ export default function Sidebar({
                     isActive={isDashboard}
                     href={showDashboard.url(book)}
                     icon={
-                        <LayoutGrid size={16} className="shrink-0 text-[#B0B0B0]" />
+                        <LayoutGrid
+                            size={16}
+                            className="shrink-0 text-[#B0B0B0]"
+                        />
                     }
                 />
                 <NavItem
@@ -172,7 +206,10 @@ export default function Sidebar({
                     href={indexWiki.url(book)}
                     isActive={isWiki}
                     icon={
-                        <BookOpen size={16} className="shrink-0 text-[#B0B0B0]" />
+                        <BookOpen
+                            size={16}
+                            className="shrink-0 text-[#B0B0B0]"
+                        />
                     }
                 />
                 <NavItem
@@ -180,13 +217,20 @@ export default function Sidebar({
                     href={indexPlot.url(book)}
                     isActive={isPlot}
                     icon={
-                        <Waypoints size={16} className="shrink-0 text-[#B0B0B0]" />
+                        <Waypoints
+                            size={16}
+                            className="shrink-0 text-[#B0B0B0]"
+                        />
                     }
                 />
             </div>
 
             {/* Chapter list */}
-            <div ref={scrollContainerRef} onScroll={handleSidebarScroll} className="flex-1 overflow-y-auto px-3 py-2">
+            <div
+                ref={scrollContainerRef}
+                onScroll={handleSidebarScroll}
+                className="flex-1 overflow-y-auto px-3 py-2"
+            >
                 <ChapterList
                     bookTitle={book.title}
                     storylines={storylines}
@@ -212,9 +256,15 @@ export default function Sidebar({
 
             {/* Footer */}
             <div className="flex items-center gap-3 px-5 py-3.5">
-                <span className="text-[11px] text-[#B5B5B5]">{t('wordsCompact', { formatted: formatCompactCount(totalWords) })}</span>
+                <span className="text-[11px] text-[#B5B5B5]">
+                    {t('wordsCompact', {
+                        formatted: formatCompactCount(totalWords),
+                    })}
+                </span>
                 <span className="text-[11px] text-[#B5B5B5]">·</span>
-                <span className="text-[11px] text-[#B5B5B5]">{t('chapters', { count: totalChapters })}</span>
+                <span className="text-[11px] text-[#B5B5B5]">
+                    {t('chapters', { count: totalChapters })}
+                </span>
             </div>
 
             {/* Resize handle */}

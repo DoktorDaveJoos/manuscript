@@ -40,10 +40,18 @@ function buildSmoothPath(points: { x: number; y: number }[]): string {
     return d;
 }
 
-export default function TensionArc({ data, chapterCount, labelWidth, columnWidth, onCollapse }: Props) {
+export default function TensionArc({
+    data,
+    chapterCount,
+    labelWidth,
+    columnWidth,
+    onCollapse,
+}: Props) {
     const { t } = useTranslation('plot');
     const H = 60;
-    const sortedData = [...data].sort((a, b) => a.reader_order - b.reader_order);
+    const sortedData = [...data].sort(
+        (a, b) => a.reader_order - b.reader_order,
+    );
     const totalWidth = labelWidth + chapterCount * columnWidth;
 
     const points = sortedData.map((d) => ({
@@ -60,14 +68,17 @@ export default function TensionArc({ data, chapterCount, labelWidth, columnWidth
             : '';
 
     return (
-        <div className="inline-flex items-start" style={{ minWidth: totalWidth }}>
+        <div
+            className="inline-flex items-start"
+            style={{ minWidth: totalWidth }}
+        >
             {/* Left label */}
             <div
                 className="flex shrink-0 flex-col justify-center gap-0.5 px-3 py-2"
                 style={{ width: labelWidth }}
             >
                 <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-soft">
+                    <span className="text-[10px] font-semibold tracking-wide text-ink-soft uppercase">
                         {t('tensionArc.label')}
                     </span>
                     <button
@@ -79,7 +90,9 @@ export default function TensionArc({ data, chapterCount, labelWidth, columnWidth
                         <ChevronUp size={10} strokeWidth={2.5} />
                     </button>
                 </div>
-                <span className="text-[9px] text-ink-faint">{t('tensionArc.aiGenerated')}</span>
+                <span className="text-[9px] text-ink-faint">
+                    {t('tensionArc.aiGenerated')}
+                </span>
             </div>
 
             {/* SVG chart */}
@@ -90,9 +103,23 @@ export default function TensionArc({ data, chapterCount, labelWidth, columnWidth
                 className="block"
             >
                 <defs>
-                    <linearGradient id="tension-fill-gradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" style={{ stopColor: 'var(--color-accent)' }} stopOpacity={0.2} />
-                        <stop offset="100%" style={{ stopColor: 'var(--color-accent)' }} stopOpacity={0} />
+                    <linearGradient
+                        id="tension-fill-gradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                    >
+                        <stop
+                            offset="0%"
+                            style={{ stopColor: 'var(--color-accent)' }}
+                            stopOpacity={0.2}
+                        />
+                        <stop
+                            offset="100%"
+                            style={{ stopColor: 'var(--color-accent)' }}
+                            stopOpacity={0}
+                        />
                     </linearGradient>
                 </defs>
 
@@ -103,13 +130,23 @@ export default function TensionArc({ data, chapterCount, labelWidth, columnWidth
 
                 {/* Line */}
                 {linePath && (
-                    <path d={linePath} fill="none" stroke="var(--color-accent)" strokeWidth={2} />
+                    <path
+                        d={linePath}
+                        fill="none"
+                        stroke="var(--color-accent)"
+                        strokeWidth={2}
+                    />
                 )}
 
                 {/* Data points and labels */}
                 {points.map((p, i) => (
                     <g key={sortedData[i].chapter_id}>
-                        <circle cx={p.x} cy={p.y} r={3} fill="var(--color-accent)" />
+                        <circle
+                            cx={p.x}
+                            cy={p.y}
+                            r={3}
+                            fill="var(--color-accent)"
+                        />
                         <text
                             x={p.x}
                             y={H - 2}

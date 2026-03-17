@@ -24,13 +24,20 @@ export const ParagraphEnterExtension = Extension.create({
                 }
 
                 // Preserve default list Enter behavior (new item / lift on empty)
-                if ($from.depth > 1 && $from.node($from.depth - 1).type.name === 'listItem') {
+                if (
+                    $from.depth > 1 &&
+                    $from.node($from.depth - 1).type.name === 'listItem'
+                ) {
                     return false;
                 }
 
                 // Non-collapsed selection: delete then insert line break
                 if (!empty) {
-                    return editor.chain().deleteSelection().setHardBreak().run();
+                    return editor
+                        .chain()
+                        .deleteSelection()
+                        .setHardBreak()
+                        .run();
                 }
 
                 const parentNode = $from.parent;

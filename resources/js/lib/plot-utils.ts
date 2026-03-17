@@ -41,7 +41,9 @@ export function buildTimelineGrid(
             grid.set(key, {
                 storylineId: storyline.id,
                 actId: act.id,
-                chapters: act.chapters.filter((ch) => ch.storyline_id === storyline.id),
+                chapters: act.chapters.filter(
+                    (ch) => ch.storyline_id === storyline.id,
+                ),
                 plotPoints: [],
             });
         }

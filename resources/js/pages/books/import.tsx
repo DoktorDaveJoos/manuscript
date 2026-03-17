@@ -2,14 +2,18 @@ import { router } from '@inertiajs/react';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { confirmImport, parse, skipImport } from '@/actions/App/Http/Controllers/BookController';
+import {
+    confirmImport,
+    parse,
+    skipImport,
+} from '@/actions/App/Http/Controllers/BookController';
 import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 import DropZone from '@/components/onboarding/DropZone';
 import FileRow from '@/components/onboarding/FileRow';
 import ImportChapterRow from '@/components/onboarding/ImportChapterRow';
-import type {ChapterItem} from '@/components/onboarding/ImportChapterRow';
+import type { ChapterItem } from '@/components/onboarding/ImportChapterRow';
 import ReviewPhase from '@/components/onboarding/ReviewPhase';
-import type {ReviewStoryline} from '@/components/onboarding/ReviewPhase';
+import type { ReviewStoryline } from '@/components/onboarding/ReviewPhase';
 import Button from '@/components/ui/Button';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
 import type { Book, Storyline, StorylineType } from '@/types/models';
@@ -65,9 +69,11 @@ function UploadPhase({
     }
 
     return (
-        <div className="flex flex-1 flex-col items-center px-10 pt-20 pb-16 gap-8">
+        <div className="flex flex-1 flex-col items-center gap-8 px-10 pt-20 pb-16">
             <div className="flex flex-col items-center gap-2">
-                <h1 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">{book.title}</h1>
+                <h1 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">
+                    {book.title}
+                </h1>
                 <p className="text-sm leading-[18px] text-ink-muted">
                     {t('uploadPhase.subtitle')}
                 </p>
@@ -82,14 +88,18 @@ function UploadPhase({
                             <FileRow
                                 key={`${entry.file.name}-${i}`}
                                 file={entry.file}
-                                onRemove={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
+                                onRemove={() =>
+                                    setFiles((prev) =>
+                                        prev.filter((_, j) => j !== i),
+                                    )
+                                }
                             />
                         ))}
                     </div>
                 )}
 
                 {files.length >= 2 && (
-                    <label className="flex items-center gap-3 px-4 py-3 cursor-pointer">
+                    <label className="flex cursor-pointer items-center gap-3 px-4 py-3">
                         <input
                             type="checkbox"
                             checked={mergeMode}
@@ -104,7 +114,7 @@ function UploadPhase({
             </div>
 
             <div className="w-[480px] pt-6">
-                <p className="text-[11px] font-medium uppercase leading-[14px] tracking-[0.08em] text-ink-faint">
+                <p className="text-[11px] leading-[14px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                     {t('importGuide.label')}
                 </p>
                 <div className="mt-5 flex flex-col">
@@ -117,7 +127,7 @@ function UploadPhase({
                                 {step}
                             </span>
                             <div className="flex flex-col gap-1">
-                                <p className="text-sm font-medium leading-[18px] text-ink">
+                                <p className="text-sm leading-[18px] font-medium text-ink">
                                     {t(`importGuide.step${step}.title`)}
                                 </p>
                                 <p className="text-[13px] leading-5 text-ink-soft">
@@ -130,11 +140,21 @@ function UploadPhase({
             </div>
 
             <div className="flex items-center gap-4 pt-4">
-                <Button variant="secondary" size="lg" type="button" onClick={() => router.post(skipImport.url(book))}>
+                <Button
+                    variant="secondary"
+                    size="lg"
+                    type="button"
+                    onClick={() => router.post(skipImport.url(book))}
+                >
                     {t('uploadPhase.skip')}
                 </Button>
                 {files.length > 0 && (
-                    <Button variant="primary" size="lg" type="button" onClick={() => onStartParsing(files, mergeMode)}>
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        type="button"
+                        onClick={() => onStartParsing(files, mergeMode)}
+                    >
                         {t('uploadPhase.importFiles', { count: files.length })}
                     </Button>
                 )}
@@ -172,10 +192,14 @@ function ParsingPhase({
     }));
 
     return (
-        <div className="flex flex-1 flex-col items-center px-10 pt-20 pb-16 gap-10">
+        <div className="flex flex-1 flex-col items-center gap-10 px-10 pt-20 pb-16">
             <div className="flex flex-col items-center gap-2">
-                <h1 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">{book.title}</h1>
-                <p className="text-sm leading-[18px] text-ink-muted">{t('parsingPhase.subtitle')}</p>
+                <h1 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">
+                    {book.title}
+                </h1>
+                <p className="text-sm leading-[18px] text-ink-muted">
+                    {t('parsingPhase.subtitle')}
+                </p>
             </div>
 
             <div className="flex w-[400px] flex-col">
@@ -197,7 +221,9 @@ export default function BooksImport({
     book: Book & { storylines: Pick<Storyline, 'id' | 'book_id' | 'name'>[] };
 }) {
     const { t } = useTranslation('onboarding');
-    const [phase, setPhase] = useState<'upload' | 'parsing' | 'review'>('upload');
+    const [phase, setPhase] = useState<'upload' | 'parsing' | 'review'>(
+        'upload',
+    );
     const [reviewData, setReviewData] = useState<ReviewStoryline[]>([]);
     const [parsingChapters, setParsingChapters] = useState<ChapterItem[]>([]);
     const [submitting, setSubmitting] = useState(false);
@@ -217,35 +243,45 @@ export default function BooksImport({
         const allChapters: ChapterItem[] = [];
 
         try {
-            const { data } = await axios.post<ParseResponse>(parse.url(book), formData);
+            const { data } = await axios.post<ParseResponse>(
+                parse.url(book),
+                formData,
+            );
 
-            const storylines: ReviewStoryline[] = data.storylines.map((s, si) => {
-                const hasMultipleChapters = s.chapters.length > 1 || s.chapters[0]?.title !== 'Full Document';
+            const storylines: ReviewStoryline[] = data.storylines.map(
+                (s, si) => {
+                    const hasMultipleChapters =
+                        s.chapters.length > 1 ||
+                        s.chapters[0]?.title !== 'Full Document';
 
-                s.chapters.forEach((ch) => {
-                    allChapters.push({
-                        title: t('import.chapterLabel', { number: ch.number, title: ch.title }),
-                        wordCount: ch.word_count,
-                        done: false,
+                    s.chapters.forEach((ch) => {
+                        allChapters.push({
+                            title: t('import.chapterLabel', {
+                                number: ch.number,
+                                title: ch.title,
+                            }),
+                            wordCount: ch.word_count,
+                            done: false,
+                        });
                     });
-                });
 
-                return {
-                    name: s.storyline_name,
-                    type: s.storyline_type,
-                    filename: files[si]?.file.name ?? '',
-                    chapters: s.chapters.map((ch) => ({
-                        number: ch.number,
-                        title: ch.title,
-                        wordCount: ch.word_count,
-                        content: ch.content,
-                        included: ch.content.trim().length > 0,
-                    })),
-                    notice: !hasMultipleChapters
-                        ? t('import.noHeadingsNotice')
-                        : undefined,
-                };
-            });
+                    return {
+                        name: s.storyline_name,
+                        type: s.storyline_type,
+                        filename: files[si]?.file.name ?? '',
+                        chapters: s.chapters.map((ch) => ({
+                            number: ch.number,
+                            title: ch.title,
+                            wordCount: ch.word_count,
+                            content: ch.content,
+                            included: ch.content.trim().length > 0,
+                        })),
+                        notice: !hasMultipleChapters
+                            ? t('import.noHeadingsNotice')
+                            : undefined,
+                    };
+                },
+            );
 
             setReviewData(storylines);
             setParsingChapters(allChapters);
@@ -305,4 +341,6 @@ export default function BooksImport({
     );
 }
 
-BooksImport.layout = (page: React.ReactNode) => <OnboardingLayout title="Import">{page}</OnboardingLayout>;
+BooksImport.layout = (page: React.ReactNode) => (
+    <OnboardingLayout title="Import">{page}</OnboardingLayout>
+);

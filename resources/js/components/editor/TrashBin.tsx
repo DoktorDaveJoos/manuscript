@@ -2,7 +2,11 @@ import { router } from '@inertiajs/react';
 import { AlignLeft, ChevronRight, Circle, File, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { index as trashIndex, restore as trashRestore, empty as trashEmpty } from '@/actions/App/Http/Controllers/TrashController';
+import {
+    index as trashIndex,
+    restore as trashRestore,
+    empty as trashEmpty,
+} from '@/actions/App/Http/Controllers/TrashController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { TrashItem } from '@/types/models';
 
@@ -47,7 +51,9 @@ export default function TrashBin({ bookId }: { bookId: number }) {
             body: JSON.stringify({ type: item.type, id: item.id }),
         });
         if (res.ok) {
-            setItems((prev) => prev.filter((i) => !(i.id === item.id && i.type === item.type)));
+            setItems((prev) =>
+                prev.filter((i) => !(i.id === item.id && i.type === item.type)),
+            );
             router.reload({ only: ['book'] });
         }
     };
@@ -87,13 +93,19 @@ export default function TrashBin({ bookId }: { bookId: number }) {
             >
                 <span className="flex items-center gap-1.5">
                     <Trash2 size={11} className="shrink-0 text-[#B5B5B5]" />
-                    <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-[#B5B5B5]">{t('trash.title')}</span>
+                    <span className="text-[10px] font-medium tracking-[0.08em] text-[#B5B5B5] uppercase">
+                        {t('trash.title')}
+                    </span>
                 </span>
                 <span className="flex items-center gap-1.5">
                     {items.length > 0 && (
-                        <span className="text-[10px] tabular-nums text-[#C5C5C5]">{items.length}</span>
+                        <span className="text-[10px] text-[#C5C5C5] tabular-nums">
+                            {items.length}
+                        </span>
                     )}
-                    <span className={`flex shrink-0 items-center text-[#C5C5C5] transition-transform ${isOpen ? 'rotate-90' : ''}`}>
+                    <span
+                        className={`flex shrink-0 items-center text-[#C5C5C5] transition-transform ${isOpen ? 'rotate-90' : ''}`}
+                    >
                         <ChevronRight size={10} />
                     </span>
                 </span>
@@ -102,22 +114,30 @@ export default function TrashBin({ bookId }: { bookId: number }) {
             {isOpen && (
                 <div className="flex flex-col pb-2">
                     {loading && items.length === 0 && (
-                        <div className="px-2.5 py-1.5 text-[11px] text-ink-faint">{t('trash.loading')}</div>
+                        <div className="px-2.5 py-1.5 text-[11px] text-ink-faint">
+                            {t('trash.loading')}
+                        </div>
                     )}
                     {!loading && items.length === 0 && (
-                        <div className="px-2.5 py-1.5 text-[11px] text-ink-faint">{t('trash.empty')}</div>
+                        <div className="px-2.5 py-1.5 text-[11px] text-ink-faint">
+                            {t('trash.empty')}
+                        </div>
                     )}
                     {items.map((item) => (
                         <div
                             key={`${item.type}-${item.id}`}
                             className="group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px] text-ink-muted"
                         >
-                            <span className="text-ink-faint">{typeIcon[item.type]}</span>
-                            <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                            <span className="text-ink-faint">
+                                {typeIcon[item.type]}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate">
+                                {item.name}
+                            </span>
                             <button
                                 type="button"
                                 onClick={() => handleRestore(item)}
-                                className="shrink-0 text-[11px] text-ink-faint opacity-0 transition-opacity hover:text-ink group-hover:opacity-100"
+                                className="shrink-0 text-[11px] text-ink-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-ink"
                             >
                                 {t('trash.restore')}
                             </button>

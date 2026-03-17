@@ -27,27 +27,91 @@ const RAW_TEMPLATES: RawTemplate[] = [
     {
         key: 'three_act',
         acts: [
-            { color: '#B87333', beats: [{ type: 'setup' }, { type: 'conflict' }, { type: 'turning_point' }] },
-            { color: '#8B6914', beats: [{ type: 'conflict' }, { type: 'turning_point' }, { type: 'conflict' }] },
-            { color: '#6B4423', beats: [{ type: 'turning_point' }, { type: 'resolution' }] },
+            {
+                color: '#B87333',
+                beats: [
+                    { type: 'setup' },
+                    { type: 'conflict' },
+                    { type: 'turning_point' },
+                ],
+            },
+            {
+                color: '#8B6914',
+                beats: [
+                    { type: 'conflict' },
+                    { type: 'turning_point' },
+                    { type: 'conflict' },
+                ],
+            },
+            {
+                color: '#6B4423',
+                beats: [{ type: 'turning_point' }, { type: 'resolution' }],
+            },
         ],
     },
     {
         key: 'five_act',
         acts: [
-            { color: '#B87333', beats: [{ type: 'setup' }, { type: 'conflict' }, { type: 'turning_point' }] },
-            { color: '#8B6914', beats: [{ type: 'conflict' }, { type: 'turning_point' }] },
-            { color: '#A0522D', beats: [{ type: 'conflict' }, { type: 'conflict' }, { type: 'turning_point' }] },
-            { color: '#6B4423', beats: [{ type: 'turning_point' }, { type: 'resolution' }] },
-            { color: '#4A3728', beats: [{ type: 'resolution' }, { type: 'resolution' }] },
+            {
+                color: '#B87333',
+                beats: [
+                    { type: 'setup' },
+                    { type: 'conflict' },
+                    { type: 'turning_point' },
+                ],
+            },
+            {
+                color: '#8B6914',
+                beats: [{ type: 'conflict' }, { type: 'turning_point' }],
+            },
+            {
+                color: '#A0522D',
+                beats: [
+                    { type: 'conflict' },
+                    { type: 'conflict' },
+                    { type: 'turning_point' },
+                ],
+            },
+            {
+                color: '#6B4423',
+                beats: [{ type: 'turning_point' }, { type: 'resolution' }],
+            },
+            {
+                color: '#4A3728',
+                beats: [{ type: 'resolution' }, { type: 'resolution' }],
+            },
         ],
     },
     {
         key: 'heros_journey',
         acts: [
-            { color: '#B87333', beats: [{ type: 'setup' }, { type: 'conflict' }, { type: 'conflict' }, { type: 'setup' }] },
-            { color: '#8B6914', beats: [{ type: 'turning_point' }, { type: 'conflict' }, { type: 'conflict' }, { type: 'turning_point' }, { type: 'conflict' }] },
-            { color: '#6B4423', beats: [{ type: 'turning_point' }, { type: 'resolution' }, { type: 'resolution' }] },
+            {
+                color: '#B87333',
+                beats: [
+                    { type: 'setup' },
+                    { type: 'conflict' },
+                    { type: 'conflict' },
+                    { type: 'setup' },
+                ],
+            },
+            {
+                color: '#8B6914',
+                beats: [
+                    { type: 'turning_point' },
+                    { type: 'conflict' },
+                    { type: 'conflict' },
+                    { type: 'turning_point' },
+                    { type: 'conflict' },
+                ],
+            },
+            {
+                color: '#6B4423',
+                beats: [
+                    { type: 'turning_point' },
+                    { type: 'resolution' },
+                    { type: 'resolution' },
+                ],
+            },
         ],
     },
 ];

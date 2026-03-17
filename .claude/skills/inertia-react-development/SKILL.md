@@ -1,9 +1,9 @@
 ---
 name: inertia-react-development
-description: "Develops Inertia.js v2 React client-side applications. Activates when creating React pages, forms, or navigation; using <Link>, <Form>, useForm, or router; working with deferred props, prefetching, or polling; or when user mentions React with Inertia, React pages, React forms, or React navigation."
+description: 'Develops Inertia.js v2 React client-side applications. Activates when creating React pages, forms, or navigation; using <Link>, <Form>, useForm, or router; working with deferred props, prefetching, or polling; or when user mentions React with Inertia, React pages, React forms, or React navigation.'
 license: MIT
 metadata:
-  author: laravel
+    author: laravel
 ---
 
 # Inertia React Development
@@ -31,6 +31,7 @@ React page components should be placed in the `resources/js/pages` directory.
 ### Page Component Structure
 
 <!-- Basic React Page Component -->
+
 ```react
 export default function UsersIndex({ users }) {
     return (
@@ -51,6 +52,7 @@ export default function UsersIndex({ users }) {
 Use `<Link>` for client-side navigation instead of traditional `<a>` tags:
 
 <!-- Inertia React Navigation -->
+
 ```react
 import { Link, router } from '@inertiajs/react'
 
@@ -62,6 +64,7 @@ import { Link, router } from '@inertiajs/react'
 ### Link with Method
 
 <!-- Link with POST Method -->
+
 ```react
 import { Link } from '@inertiajs/react'
 
@@ -75,6 +78,7 @@ import { Link } from '@inertiajs/react'
 Prefetch pages to improve perceived performance:
 
 <!-- Prefetch on Hover -->
+
 ```react
 import { Link } from '@inertiajs/react'
 
@@ -86,6 +90,7 @@ import { Link } from '@inertiajs/react'
 ### Programmatic Navigation
 
 <!-- Router Visit -->
+
 ```react
 import { router } from '@inertiajs/react'
 
@@ -108,6 +113,7 @@ router.visit('/users', {
 The recommended way to build forms is with the `<Form>` component:
 
 <!-- Form Component Example -->
+
 ```react
 import { Form } from '@inertiajs/react'
 
@@ -137,6 +143,7 @@ export default function CreateUser() {
 ### Form Component With All Props
 
 <!-- Form Component Full Example -->
+
 ```react
 import { Form } from '@inertiajs/react'
 
@@ -186,6 +193,7 @@ The `<Form>` component supports automatic resetting:
 Use the `search-docs` tool with a query of `form component resetting` for detailed guidance.
 
 <!-- Form with Reset Props -->
+
 ```react
 import { Form } from '@inertiajs/react'
 
@@ -215,6 +223,7 @@ Forms can also be built using the `useForm` helper for more programmatic control
 For more programmatic control or to follow existing conventions, use the `useForm` hook:
 
 <!-- useForm Hook Example -->
+
 ```react
 import { useForm } from '@inertiajs/react'
 
@@ -270,6 +279,7 @@ export default function CreateUser() {
 Use deferred props to load data after initial page render:
 
 <!-- Deferred Props with Empty State -->
+
 ```react
 export default function UsersIndex({ users }) {
     // users will be undefined initially, then populated
@@ -298,6 +308,7 @@ export default function UsersIndex({ users }) {
 Automatically refresh data at intervals:
 
 <!-- Polling Example -->
+
 ```react
 import { router } from '@inertiajs/react'
 import { useEffect } from 'react'
@@ -325,6 +336,7 @@ export default function Dashboard({ stats }) {
 Lazy-load a prop when an element scrolls into view. Useful for deferring expensive data that sits below the fold:
 
 <!-- WhenVisible Example -->
+
 ```react
 import { WhenVisible } from '@inertiajs/react'
 

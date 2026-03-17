@@ -46,10 +46,12 @@ export default function WikiEntryDetail({
             {/* Description */}
             {entry.description && (
                 <div>
-                    <h3 className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                    <h3 className="mb-2 text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('description')}
                     </h3>
-                    <p className="text-[14px] leading-relaxed text-ink">{entry.description}</p>
+                    <p className="text-[14px] leading-relaxed text-ink">
+                        {entry.description}
+                    </p>
                 </div>
             )}
 
@@ -57,12 +59,13 @@ export default function WikiEntryDetail({
             <div className="flex gap-12 border-t border-border-subtle pt-6">
                 {entry.first_appearance_chapter && (
                     <div>
-                        <h4 className="mb-1 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                        <h4 className="mb-1 text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                             {t('firstAppearance')}
                         </h4>
                         <p className="text-[13px] text-ink">
                             {t('chapterEntry', {
-                                order: entry.first_appearance_chapter.reader_order,
+                                order: entry.first_appearance_chapter
+                                    .reader_order,
                                 title: entry.first_appearance_chapter.title,
                             })}
                         </p>
@@ -70,10 +73,12 @@ export default function WikiEntryDetail({
                 )}
                 {entry.is_ai_extracted && (
                     <div>
-                        <h4 className="mb-1 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                        <h4 className="mb-1 text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                             {t('source')}
                         </h4>
-                        <p className="text-[13px] text-ink">{t('aiExtracted')}</p>
+                        <p className="text-[13px] text-ink">
+                            {t('aiExtracted')}
+                        </p>
                     </div>
                 )}
             </div>
@@ -81,7 +86,7 @@ export default function WikiEntryDetail({
             {/* Appears In */}
             {entry.chapters && entry.chapters.length > 0 && (
                 <div>
-                    <h3 className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted">
+                    <h3 className="mb-3 text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('appearsIn')}
                     </h3>
                     <div className="flex flex-col">

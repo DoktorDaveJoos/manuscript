@@ -18,7 +18,6 @@ import enPlot from './en/plot.json';
 import enSettings from './en/settings.json';
 import enWiki from './en/wiki.json';
 
-
 import esAi from './es/ai.json';
 import esCommon from './es/common.json';
 import esDashboard from './es/dashboard.json';
@@ -64,7 +63,16 @@ i18n.use(initReactI18next).init({
     lng: 'en',
     fallbackLng: 'en',
     defaultNS: 'common',
-    ns: ['common', 'editor', 'dashboard', 'settings', 'onboarding', 'plot', 'wiki', 'ai'],
+    ns: [
+        'common',
+        'editor',
+        'dashboard',
+        'settings',
+        'onboarding',
+        'plot',
+        'wiki',
+        'ai',
+    ],
     interpolation: {
         escapeValue: false,
     },

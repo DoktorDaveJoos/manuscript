@@ -1,8 +1,17 @@
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { analyzeChapter, chapterAnalysisStatus } from '@/actions/App/Http/Controllers/AiController';
+import {
+    analyzeChapter,
+    chapterAnalysisStatus,
+} from '@/actions/App/Http/Controllers/AiController';
 import { jsonFetchHeaders } from '@/lib/utils';
-import type { Analysis, HookType, InformationDelivery, PacingFeel, ScenePurpose } from '@/types/models';
+import type {
+    Analysis,
+    HookType,
+    InformationDelivery,
+    PacingFeel,
+    ScenePurpose,
+} from '@/types/models';
 
 type AnalysisStatusResponse = {
     analysis_status: 'pending' | 'running' | 'completed' | 'failed' | null;
@@ -36,7 +45,9 @@ export function useChapterAnalysis(
 ) {
     const [status, setStatus] = useState(initialStatus);
     const [error, setError] = useState<string | null>(null);
-    const [analyses, setAnalyses] = useState<Record<string, Analysis>>(initialAnalyses ?? {});
+    const [analyses, setAnalyses] = useState<Record<string, Analysis>>(
+        initialAnalyses ?? {},
+    );
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const pollCountRef = useRef(0);
 
@@ -80,7 +91,10 @@ export function useChapterAnalysis(
 
             try {
                 const res = await fetch(
-                    chapterAnalysisStatus.url({ book: bookId, chapter: chapterId }),
+                    chapterAnalysisStatus.url({
+                        book: bookId,
+                        chapter: chapterId,
+                    }),
                     { headers: { Accept: 'application/json' } },
                 );
                 if (!res.ok) throw new Error();
@@ -89,7 +103,10 @@ export function useChapterAnalysis(
                 setError(data.analysis_error);
                 setAnalyses(data.analyses);
 
-                if (data.analysis_status === 'completed' || data.analysis_status === 'failed') {
+                if (
+                    data.analysis_status === 'completed' ||
+                    data.analysis_status === 'failed'
+                ) {
                     router.reload({ only: ['chapter', 'chapterAnalyses'] });
                 }
             } catch {
@@ -104,7 +121,9 @@ export function useChapterAnalysis(
 
     const handleAnalyze = useCallback(async () => {
         if (!bookId || !chapterId) {
-            setError('Invalid book or chapter. Please reload the page and try again.');
+            setError(
+                'Invalid book or chapter. Please reload the page and try again.',
+            );
             setStatus('failed');
             return;
         }
@@ -114,10 +133,13 @@ export function useChapterAnalysis(
         pollCountRef.current = 0;
 
         try {
-            const res = await fetch(analyzeChapter.url({ book: bookId, chapter: chapterId }), {
-                method: 'POST',
-                headers: jsonFetchHeaders(),
-            });
+            const res = await fetch(
+                analyzeChapter.url({ book: bookId, chapter: chapterId }),
+                {
+                    method: 'POST',
+                    headers: jsonFetchHeaders(),
+                },
+            );
 
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));

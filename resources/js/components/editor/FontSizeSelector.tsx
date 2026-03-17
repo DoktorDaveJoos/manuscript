@@ -55,7 +55,7 @@ export default function FontSizeSelector({
             </button>
 
             {open && (
-                <div className="absolute left-0 top-full z-50 mt-1 w-[120px] overflow-hidden rounded-lg border border-border bg-surface-card shadow-[0_4px_6px_#1414140F,0_12px_32px_#1414141A]">
+                <div className="absolute top-full left-0 z-50 mt-1 w-[120px] overflow-hidden rounded-lg border border-border bg-surface-card shadow-[0_4px_6px_#1414140F,0_12px_32px_#1414141A]">
                     <div className="px-1 py-1">
                         {FONT_SIZES.map((size) => (
                             <button
@@ -70,9 +70,13 @@ export default function FontSizeSelector({
                                 )}
                             >
                                 <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center text-ink-muted">
-                                    {size === value && <Check size={14} strokeWidth={2.5} />}
+                                    {size === value && (
+                                        <Check size={14} strokeWidth={2.5} />
+                                    )}
                                 </span>
-                                <span className="flex-1 text-ink">{size}px</span>
+                                <span className="flex-1 text-ink">
+                                    {size}px
+                                </span>
                             </button>
                         ))}
                     </div>

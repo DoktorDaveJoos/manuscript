@@ -21,6 +21,7 @@ Das Tool läuft vollständig lokal. Der Autor ist Owner seiner Geschichte. Keine
 ## 2. Zielgruppe
 
 **Primär**
+
 - Self-Publisher auf Amazon KDP die Serienromane produzieren (Romance, Fantasy, Thriller)
 - Autoren mit starkem Storytelling-Instinkt aber inkonsistenter Prosa
 - Autoren die komplexe Multi-Storyline-Romane mit mehreren POVs schreiben
@@ -28,10 +29,12 @@ Das Tool läuft vollständig lokal. Der Autor ist Owner seiner Geschichte. Keine
 - Einsteiger-Autoren die handwerkliche Grundlagen erlernen wollen
 
 **Sekundär**
+
 - Hobbyautoren die professioneller werden wollen
 - Schreibgruppen die gemeinsam an einem Projekt arbeiten (spätere Phase)
 
 **Nicht-Zielgruppe**
+
 - Autoren die wollen dass AI den Roman schreibt — das Tool ist kein Ghostwriter
 - Verlage und professionelle Lektoren — andere Tool-Kategorie
 
@@ -39,15 +42,15 @@ Das Tool läuft vollständig lokal. Der Autor ist Owner seiner Geschichte. Keine
 
 ## 3. Kernprinzipien
 
-| Prinzip | Beschreibung |
-|---|---|
-| **Offline-First** | Das Tool funktioniert vollständig ohne Internetverbindung. Kein Account, keine Cloud, keine Abhängigkeit von externen Services. |
-| **AI als Opt-In** | Alle AI-Features sind deaktiviert solange kein API Key hinterlegt ist. Jede Kernfunktion — Versionierung, Plot-Verwaltung, Charakter-Datenbank — funktioniert ohne AI. |
-| **Autor bleibt Author** | AI überarbeitet Prosa, erfindet nichts. Dialoge, Struktur und emotionale Architektur kommen immer vom Autor. |
-| **Own Your Story** | Alle Daten liegen in einer lokalen SQLite-Datei. Der Autor kann diese Datei kopieren, sichern, teilen oder löschen — vollständige Kontrolle. |
-| **BYOK** | Bring Your Own API Key. Keine versteckten Kosten, kein Abo für AI-Features. Der Autor zahlt direkt an Anthropic/OpenAI. |
-| **Mehrere Bücher** | Das Tool ist von Anfang an für mehrere Bücher ausgelegt. Performance und Datenstruktur skalieren entsprechend. |
-| **Handwerk lehrbar machen** | Das Tool erklärt warum etwas ein Problem ist — nicht nur dass es eines ist. Besonders für Einsteiger. |
+| Prinzip                     | Beschreibung                                                                                                                                                           |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Offline-First**           | Das Tool funktioniert vollständig ohne Internetverbindung. Kein Account, keine Cloud, keine Abhängigkeit von externen Services.                                        |
+| **AI als Opt-In**           | Alle AI-Features sind deaktiviert solange kein API Key hinterlegt ist. Jede Kernfunktion — Versionierung, Plot-Verwaltung, Charakter-Datenbank — funktioniert ohne AI. |
+| **Autor bleibt Author**     | AI überarbeitet Prosa, erfindet nichts. Dialoge, Struktur und emotionale Architektur kommen immer vom Autor.                                                           |
+| **Own Your Story**          | Alle Daten liegen in einer lokalen SQLite-Datei. Der Autor kann diese Datei kopieren, sichern, teilen oder löschen — vollständige Kontrolle.                           |
+| **BYOK**                    | Bring Your Own API Key. Keine versteckten Kosten, kein Abo für AI-Features. Der Autor zahlt direkt an Anthropic/OpenAI.                                                |
+| **Mehrere Bücher**          | Das Tool ist von Anfang an für mehrere Bücher ausgelegt. Performance und Datenstruktur skalieren entsprechend.                                                         |
+| **Handwerk lehrbar machen** | Das Tool erklärt warum etwas ein Problem ist — nicht nur dass es eines ist. Besonders für Einsteiger.                                                                  |
 
 ---
 
@@ -93,6 +96,7 @@ Dieser Abschnitt dokumentiert die Genre-Spezifika die als Basis für die AI-Anal
 ## 5. Feature-Übersicht
 
 ### 5.1 Buch-Management
+
 - Mehrere Bücher pro Installation
 - Pro Buch: Titel, Sprache, optionaler API Key (verschlüsselt gespeichert)
 - Import via `.docx` — Heading 1 als Kapitel-Trennzeichen
@@ -111,6 +115,7 @@ Beim Upload wird das Manuskript automatisch verarbeitet:
 Ohne API Key: Kapitel werden gespeichert, Embeddings werden übersprungen. Alle anderen Features bleiben verfügbar.
 
 ### 5.3 Storyline-Verwaltung
+
 - Jedes Buch hat eine oder mehrere Storylines
 - Typen: `main` | `backstory` | `parallel`
 - Jede Storyline hat einen Timeline-Label (z.B. "2062", "2058–2060")
@@ -120,12 +125,14 @@ Ohne API Key: Kapitel werden gespeichert, Embeddings werden übersprungen. Alle 
 - Lesereihenfolge-Planung (Einstreuung von Backstory-Kapiteln): Phase 3
 
 ### 5.4 Akt-Struktur
+
 - Optional: Autor kann Akte definieren (nicht auf 3 limitiert)
 - Kapitel und Plot Points können Akten zugeordnet werden
 - Canvas visualisiert Akte als farbige Blöcke auf der X-Achse
 - AI kann prüfen ob Akt-Balance stimmt (z.B. Akt 2 zu kurz, Stakes steigen nicht)
 
 ### 5.5 Charakter-Datenbank
+
 - Manuelle Anlage: Name, Aliases, Beschreibung, erstes Auftreten
 - Mit AI Key: automatische Extraktion aus Kapiteln
 - Charakter-Karten: wer taucht in welchem Kapitel auf, in welcher Rolle
@@ -133,6 +140,7 @@ Ohne API Key: Kapitel werden gespeichert, Embeddings werden übersprungen. Alle 
 - Cross-Storyline: Charakter kann in mehreren Storylines auftreten
 
 ### 5.6 Plot-Verwaltung
+
 - Plot Points manuell anlegen: Titel, Beschreibung, Typ, geplantem Kapitel
 - Typen: `setup` | `conflict` | `turning_point` | `resolution` | `worldbuilding`
 - Mit AI Key: Plot Points automatisch aus Kapiteln ableiten
@@ -150,14 +158,15 @@ Der Canvas ist kein einfaches Diagramm — er ist das visuelle Kommandozentrum d
 
 Vier horizontale Spuren übereinander, alle teilen die X-Achse (Kapitel in Lesereihenfolge):
 
-| Spur | Inhalt | Zweck |
-|------|--------|-------|
-| **Tension Arc** | Spannungskurve 1–10 über alle Kapitel mit Akt-Blöcken, Plot-Point-Markern, Storyline-Spuren | Der "Puls" der Geschichte — zeigt den dramaturgischen Bogen |
+| Spur                   | Inhalt                                                                                             | Zweck                                                                                                                                       |
+| ---------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Tension Arc**        | Spannungskurve 1–10 über alle Kapitel mit Akt-Blöcken, Plot-Point-Markern, Storyline-Spuren        | Der "Puls" der Geschichte — zeigt den dramaturgischen Bogen                                                                                 |
 | **Chapter Hook Score** | Farbige Blöcke die jedes Kapitelende bewerten: `cliffhanger` · `soft_hook` · `closed` · `dead_end` | **Die Killer-Funktion** — zeigt exakt wo Leser aufhören weiterzulesen. Eine Reihe grüner Blöcke mit einem roten = sofort behebbares Problem |
-| **Pacing Rhythm** | Proportionale Balken die Kapitel-Wortzahlen darstellen | Visuelles Tempo-Muster — monotone gleich-lange Kapitel vs. gute Kurz-Lang-Variation |
-| **Storyline Weave** | Farbige Bänder die zeigen welcher POV/Storyline jedes Kapitel gehört | Zeigt ob Storylines gut verwoben sind oder ob ein POV zu lange dominiert |
+| **Pacing Rhythm**      | Proportionale Balken die Kapitel-Wortzahlen darstellen                                             | Visuelles Tempo-Muster — monotone gleich-lange Kapitel vs. gute Kurz-Lang-Variation                                                         |
+| **Storyline Weave**    | Farbige Bänder die zeigen welcher POV/Storyline jedes Kapitel gehört                               | Zeigt ob Storylines gut verwoben sind oder ob ein POV zu lange dominiert                                                                    |
 
 **Tension Arc (oberste Spur):**
+
 - Y-Achse: Spannungsintensität 1–10 (AI-bewertet, manuell überschreibbar)
 - Akte als farbige Hintergrund-Blöcke
 - Plot Points als Pins auf der Kapitel-Position
@@ -165,17 +174,20 @@ Vier horizontale Spuren übereinander, alle teilen die X-Achse (Kapitel in Leser
 - Villain-Screentime als optionales Overlay (Toggle)
 
 **Chapter Hook Score:**
+
 - Pro Kapitel ein farbiger Block mit Score-Zahl
 - Farbkodierung: `cliffhanger` = Amber/Warm · `soft_hook` = Grün · `closed` = Grau · `dead_end` = Rot
 - AI-Reasoning pro Hook verfügbar (Klick öffnet Detail)
 - Warnung wenn aufeinanderfolgende Kapitel `closed` oder `dead_end` sind
 
 **Pacing Rhythm:**
+
 - Balken-Höhe proportional zur Wortzahl des Kapitels
 - Durchschnittslinie als Referenz
 - Ausreißer visuell hervorgehoben (zu kurz / zu lang)
 
 **Storyline Weave:**
+
 - Farbige Bänder pro Kapitel — Farbe = Storyline
 - POV-Initialen im Band
 - Warnung wenn eine Storyline mehr als 3 Kapitel hintereinander dominiert
@@ -185,10 +197,10 @@ Vier horizontale Spuren übereinander, alle teilen die X-Achse (Kapitel in Leser
 Rechtes Panel mit aggregierter Gesundheitsanalyse:
 
 - **Health Score (0–100):** Gewichteter Gesamtwert
-  - Hooks: 35% — Kapitelschluss-Qualität ist der stärkste Faktor
-  - Pacing: 25% — Rhythmus und Wortzahl-Variation
-  - Tension: 25% — Spannungskurven-Verlauf und Progression
-  - Weave: 15% — Storyline-Verteilung und POV-Balance
+    - Hooks: 35% — Kapitelschluss-Qualität ist der stärkste Faktor
+    - Pacing: 25% — Rhythmus und Wortzahl-Variation
+    - Tension: 25% — Spannungskurven-Verlauf und Progression
+    - Weave: 15% — Storyline-Verteilung und POV-Balance
 - **Top 3 schwächste Hooks:** Klickbar, mit AI-Reasoning warum der Hook schwach ist
 - **Pacing-Alerts:** Monotonie-Warnung, Ausreißer, ruhige Kapitel-Serien
 - **Next Action:** Konkreter Vorschlag was der Autor als nächstes tun sollte
@@ -201,6 +213,7 @@ Rechtes Panel mit aggregierter Gesundheitsanalyse:
 - Kapitel-Klick: öffnet Detail-Panel mit AI-Analyse für dieses Kapitel
 
 ### 5.8 Kapitel-Versionierung
+
 - Jedes Kapitel hat eine vollständige Versionshistorie
 - Versionsquellen: `original` | `ai_revision` | `manual_edit`
 - Jede Version hat einen Timestamp und eine Zusammenfassung der Änderungen
@@ -209,7 +222,7 @@ Rechtes Panel mit aggregierter Gesundheitsanalyse:
 
 ### 5.9 AI Prosa-Editor
 
-*Nur mit API Key.* Überarbeitet ein Kapitel auf Prosa-Ebene:
+_Nur mit API Key._ Überarbeitet ein Kapitel auf Prosa-Ebene:
 
 - Kontext wird automatisch zusammengestellt: Story Bible + Charakter-Cards + vorheriges Kapitel-Summary
 - Dialoge bleiben exakt unverändert
@@ -223,7 +236,7 @@ Rechtes Panel mit aggregierter Gesundheitsanalyse:
 
 ## 6. AI Analyse-Engine (Thriller-optimiert)
 
-*Nur mit API Key. Läuft beim Ingest und auf Abruf.*
+_Nur mit API Key. Läuft beim Ingest und auf Abruf._
 
 ### 6.1 Szenen-Audit
 
@@ -314,16 +327,16 @@ Spezialisierte Analyse für Kapitel 1:
 
 ## 7. Tech Stack
 
-| Komponente | Entscheidung |
-|---|---|
-| **Desktop-Framework** | NativePHP — bundled PHP + SQLite als native `.dmg` / `.exe` / `.AppImage` |
-| **Backend** | Laravel (PHP) — API-Routes, Queue-Jobs für Analyse, Eloquent ORM |
-| **Datenbank** | SQLite mit `sqlite-vec` Extension — Vektor-Suche lokal, kein externer Service |
-| **Frontend** | React via Inertia.js — SPA-Feel ohne separaten Build-Prozess. Tailwind CSS. |
-| **Vektorisierung** | OpenAI `text-embedding-3-small` — günstig, stabil, ausreichend für Roman-Scope |
-| **AI-Modell** | Claude Sonnet (Anthropic) für Analyse und Prosa. GPT-4o als Alternative. |
-| **Plattformen** | macOS, Windows, Linux via NativePHP Build-Pipeline |
-| **Import/Export** | `phpoffice/phpword` für `.docx` Parsing und Export |
+| Komponente            | Entscheidung                                                                   |
+| --------------------- | ------------------------------------------------------------------------------ |
+| **Desktop-Framework** | NativePHP — bundled PHP + SQLite als native `.dmg` / `.exe` / `.AppImage`      |
+| **Backend**           | Laravel (PHP) — API-Routes, Queue-Jobs für Analyse, Eloquent ORM               |
+| **Datenbank**         | SQLite mit `sqlite-vec` Extension — Vektor-Suche lokal, kein externer Service  |
+| **Frontend**          | React via Inertia.js — SPA-Feel ohne separaten Build-Prozess. Tailwind CSS.    |
+| **Vektorisierung**    | OpenAI `text-embedding-3-small` — günstig, stabil, ausreichend für Roman-Scope |
+| **AI-Modell**         | Claude Sonnet (Anthropic) für Analyse und Prosa. GPT-4o als Alternative.       |
+| **Plattformen**       | macOS, Windows, Linux via NativePHP Build-Pipeline                             |
+| **Import/Export**     | `phpoffice/phpword` für `.docx` Parsing und Export                             |
 
 ### sqlite-vec Bundle-Strategie
 
@@ -520,12 +533,12 @@ created_at      DATETIME
 
 ### 9.1 Hierarchisches Context Management
 
-| Ebene | Inhalt | Tokens | Wann |
-|---|---|---|---|
-| **Story Bible** | Charaktere, Setting, Plot-Outline, Stil-Regeln, Genre-spezifische Regeln | ~5.000 | Immer |
-| **Kapitel-Summaries** | Komprimiert was bisher geschah | ~3.000 | Immer |
-| **Aktives Kapitel** | Volltext aktuelles + vorheriges Kapitel | ~10.000 | Immer |
-| **RAG** | Semantische Suche für spezifische Details | ~2.000 | On Demand |
+| Ebene                 | Inhalt                                                                   | Tokens  | Wann      |
+| --------------------- | ------------------------------------------------------------------------ | ------- | --------- |
+| **Story Bible**       | Charaktere, Setting, Plot-Outline, Stil-Regeln, Genre-spezifische Regeln | ~5.000  | Immer     |
+| **Kapitel-Summaries** | Komprimiert was bisher geschah                                           | ~3.000  | Immer     |
+| **Aktives Kapitel**   | Volltext aktuelles + vorheriges Kapitel                                  | ~10.000 | Immer     |
+| **RAG**               | Semantische Suche für spezifische Details                                | ~2.000  | On Demand |
 
 Resultat: ~20.000 Tokens pro Call statt 150.000. ~90% günstiger, bessere Qualität.
 
@@ -559,6 +572,7 @@ Generalisierter System-Prompt der auf jedes Kapitel anwendbar ist:
 ## 10. User Flows
 
 ### Flow A — Neues Buch anlegen
+
 1. Buch erstellen: Titel, Sprache
 2. `.docx` hochladen — Kapitel werden automatisch erkannt
 3. Storylines definieren (oder Standard "Hauptlinie" übernehmen)
@@ -567,6 +581,7 @@ Generalisierter System-Prompt der auf jedes Kapitel anwendbar ist:
 6. AI Key hinterlegen (optional) → Analyse läuft im Hintergrund
 
 ### Flow B — Kapitel überarbeiten (AI)
+
 1. Kapitel auswählen
 2. "AI Prosa-Pass" starten
 3. Überarbeitung streamt rein — Original und Revision nebeneinander
@@ -575,6 +590,7 @@ Generalisierter System-Prompt der auf jedes Kapitel anwendbar ist:
 6. Ablehnen → vorherige Version bleibt aktiv
 
 ### Flow C — Story Heartbeat Canvas
+
 1. Canvas öffnen → Story Heartbeat mit vier Analyse-Spuren
 2. Tension Arc zeigt Spannungskurve mit Akt-Blöcken und Plot Points
 3. Chapter Hook Score zeigt sofort wo Kapitelenden schwach sind (farbige Blöcke)
@@ -584,6 +600,7 @@ Generalisierter System-Prompt der auf jedes Kapitel anwendbar ist:
 7. Lanes einzeln ein-/ausblendbar, Stakes und Villain als Overlays
 
 ### Flow D — Analyse-Report
+
 1. "Analyse starten" für ganzes Buch oder einzelnes Kapitel
 2. Szenen-Audit läuft durch
 3. Erster-Kapitel-Audit separat
@@ -592,6 +609,7 @@ Generalisierter System-Prompt der auf jedes Kapitel anwendbar ist:
 6. Report exportierbar als `.md` oder `.txt`
 
 ### Flow E — Ohne AI
+
 1. Buch anlegen, Kapitel importieren
 2. Kapitel manuell bearbeiten
 3. Versionierung funktioniert vollständig
@@ -602,22 +620,23 @@ Generalisierter System-Prompt der auf jedes Kapitel anwendbar ist:
 
 ## 11. Monetarisierung & Distribution
 
-| Aspekt | Detail |
-|---|---|
-| **Modell** | Freemium — Basis kostenlos, AI-Features für €99 einmalig freischalten |
-| **Basis** | Kostenlos, unbegrenzt nutzbar, alle manuellen Features |
-| **AI Unlock** | €99 One-Time Purchase — schaltet alle AI-Features permanent frei |
-| **AI-Kosten** | Trägt der Autor selbst via eigenem API Key (BYOK). Transparente Token-Kosten-Schätzung pro Operation in der UI. |
-| **Spenden** | Optionaler "Support the Developer"-Button in der App |
-| **Distribution** | Direkt-Download von eigener Website. Kein App Store. |
-| **Lizenz** | Perpetual License — Offline-Aktivierung via License Key, kein Server-Check, funktioniert für immer |
-| **Updates** | Kostenlose Updates innerhalb der Major-Version. Neue Genre-Profile in späteren Major-Versionen optional bezahlbar. |
+| Aspekt           | Detail                                                                                                             |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Modell**       | Freemium — Basis kostenlos, AI-Features für €99 einmalig freischalten                                              |
+| **Basis**        | Kostenlos, unbegrenzt nutzbar, alle manuellen Features                                                             |
+| **AI Unlock**    | €99 One-Time Purchase — schaltet alle AI-Features permanent frei                                                   |
+| **AI-Kosten**    | Trägt der Autor selbst via eigenem API Key (BYOK). Transparente Token-Kosten-Schätzung pro Operation in der UI.    |
+| **Spenden**      | Optionaler "Support the Developer"-Button in der App                                                               |
+| **Distribution** | Direkt-Download von eigener Website. Kein App Store.                                                               |
+| **Lizenz**       | Perpetual License — Offline-Aktivierung via License Key, kein Server-Check, funktioniert für immer                 |
+| **Updates**      | Kostenlose Updates innerhalb der Major-Version. Neue Genre-Profile in späteren Major-Versionen optional bezahlbar. |
 
 ---
 
 ## 12. Entwicklungsphasen
 
 ### Phase 1 — Foundation (MVP)
+
 - NativePHP Setup + SQLite Schema
 - `.docx` Import + Kapitel-Splitting
 - Storyline, Akt, Charakter-Verwaltung (manuell)
@@ -626,6 +645,7 @@ Generalisierter System-Prompt der auf jedes Kapitel anwendbar ist:
 - Einfacher Canvas ohne AI-Scoring
 
 ### Phase 2 — AI Layer
+
 - API Key Verwaltung (verschlüsselt)
 - Ingest + Embedding + sqlite-vec
 - Style Guide Generierung
@@ -640,6 +660,7 @@ Generalisierter System-Prompt der auf jedes Kapitel anwendbar ist:
 - Canvas mit AI-Scoring
 
 ### Phase 3 — Advanced
+
 - Villain-Dashboard
 - Stakes-Tracker
 - Charakter-Konsistenz-Check
@@ -655,14 +676,14 @@ Generalisierter System-Prompt der auf jedes Kapitel anwendbar ist:
 
 ## 13. Entscheidungen & Produktdefinition
 
-| Frage | Entscheidung |
-|---|---|
-| **Tool-UI Sprache** | Englisch — internationale Zielgruppe. `book_language` ist ein freies Feld, der Autor schreibt in beliebiger Sprache. |
-| **Desktop vs. Web** | Konsequent Desktop-Only. Keine Web-Version geplant. |
-| **Lizenzmodell** | Basis-App kostenlos — kein Purchase nötig. AI-Features (alle Features aus Abschnitt 6) werden durch einmalige Zahlung von **€99** freigeschaltet. Perpetual License, kein Server-Check, Offline-Aktivierung via License Key. |
-| **Style Guide** | AI-generiert beim ersten Ingest, danach manuell editierbar. Der Autor hat immer das letzte Wort. |
-| **Canvas** | Phase 1+2: reine Visualisierung. Drag & Drop und interaktive Bearbeitung in Phase 3. |
-| **Genre-Profile** | Phase 1+2: Thriller only mit vollständigem Analyse-Set. Weitere Genre-Profile (Romance, Fantasy, Crime etc.) kommen in späteren Major-Versionen als erweiterbare Profile. |
+| Frage               | Entscheidung                                                                                                                                                                                                                 |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Tool-UI Sprache** | Englisch — internationale Zielgruppe. `book_language` ist ein freies Feld, der Autor schreibt in beliebiger Sprache.                                                                                                         |
+| **Desktop vs. Web** | Konsequent Desktop-Only. Keine Web-Version geplant.                                                                                                                                                                          |
+| **Lizenzmodell**    | Basis-App kostenlos — kein Purchase nötig. AI-Features (alle Features aus Abschnitt 6) werden durch einmalige Zahlung von **€99** freigeschaltet. Perpetual License, kein Server-Check, Offline-Aktivierung via License Key. |
+| **Style Guide**     | AI-generiert beim ersten Ingest, danach manuell editierbar. Der Autor hat immer das letzte Wort.                                                                                                                             |
+| **Canvas**          | Phase 1+2: reine Visualisierung. Drag & Drop und interaktive Bearbeitung in Phase 3.                                                                                                                                         |
+| **Genre-Profile**   | Phase 1+2: Thriller only mit vollständigem Analyse-Set. Weitere Genre-Profile (Romance, Fantasy, Crime etc.) kommen in späteren Major-Versionen als erweiterbare Profile.                                                    |
 
 ### Lizenzmodell im Detail
 
@@ -689,4 +710,4 @@ Der Autor trägt seine eigenen API-Kosten direkt. Die €99 sind die Lizenz für
 
 ---
 
-*Manuscript · Allgäu Digitalwerk · Internes Dokument*
+_Manuscript · Allgäu Digitalwerk · Internes Dokument_

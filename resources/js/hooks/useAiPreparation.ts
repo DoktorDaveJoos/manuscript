@@ -1,17 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { start as startPreparation, status as preparationStatus } from '@/actions/App/Http/Controllers/AiPreparationController';
+import {
+    start as startPreparation,
+    status as preparationStatus,
+} from '@/actions/App/Http/Controllers/AiPreparationController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { AiPreparationStatus } from '@/types/models';
 
 export const TOTAL_PHASES = 7;
 
-export function useAiPreparation(bookId: number, initialStatus: AiPreparationStatus | null) {
-    const [status, setStatus] = useState<AiPreparationStatus | null>(initialStatus);
+export function useAiPreparation(
+    bookId: number,
+    initialStatus: AiPreparationStatus | null,
+) {
+    const [status, setStatus] = useState<AiPreparationStatus | null>(
+        initialStatus,
+    );
     const [starting, setStarting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const isRunning = !!(status && !['completed', 'failed'].includes(status.status));
+    const isRunning = !!(
+        status && !['completed', 'failed'].includes(status.status)
+    );
 
     useEffect(() => {
         if (!isRunning) {

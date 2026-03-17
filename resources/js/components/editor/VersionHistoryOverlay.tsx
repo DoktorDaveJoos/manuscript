@@ -31,7 +31,9 @@ export default function VersionHistoryOverlay({
     chapterId: number;
     onClose: () => void;
 }) {
-    const [versionList, setVersionList] = useState<ChapterVersion[] | null>(null);
+    const [versionList, setVersionList] = useState<ChapterVersion[] | null>(
+        null,
+    );
     const [restoring, setRestoring] = useState<number | null>(null);
     const [deleting, setDeleting] = useState<number | null>(null);
     const [showForm, setShowForm] = useState(false);
@@ -41,7 +43,8 @@ export default function VersionHistoryOverlay({
     const ref = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const sourceLabel = (source: VersionSource) => t(`versionHistory.sourceLabel.${source}`);
+    const sourceLabel = (source: VersionSource) =>
+        t(`versionHistory.sourceLabel.${source}`);
 
     const formatDate = (dateStr: string): string => {
         const date = new Date(dateStr);
@@ -72,7 +75,8 @@ export default function VersionHistoryOverlay({
             }
         }
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () =>
+            document.removeEventListener('mousedown', handleClickOutside);
     }, [onClose]);
 
     useEffect(() => {
@@ -85,7 +89,11 @@ export default function VersionHistoryOverlay({
         (version: ChapterVersion) => {
             setRestoring(version.id);
             router.post(
-                restoreVersion.url({ book: bookId, chapter: chapterId, version: version.id }),
+                restoreVersion.url({
+                    book: bookId,
+                    chapter: chapterId,
+                    version: version.id,
+                }),
                 {},
                 {
                     onFinish: () => {
@@ -101,13 +109,20 @@ export default function VersionHistoryOverlay({
     const handleDelete = useCallback(
         (version: ChapterVersion) => {
             setDeleting(version.id);
-            fetch(destroyVersion.url({ book: bookId, chapter: chapterId, version: version.id }), {
-                method: 'DELETE',
-                headers: {
-                    Accept: 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
+            fetch(
+                destroyVersion.url({
+                    book: bookId,
+                    chapter: chapterId,
+                    version: version.id,
+                }),
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-XSRF-TOKEN': getXsrfToken(),
+                    },
                 },
-            }).then(() => {
+            ).then(() => {
                 setDeleting(null);
                 fetchVersions();
             });
@@ -140,10 +155,12 @@ export default function VersionHistoryOverlay({
     return (
         <div
             ref={ref}
-            className="absolute right-0 top-full z-50 mt-1 w-[360px] rounded-lg border border-border bg-surface-card shadow-lg"
+            className="absolute top-full right-0 z-50 mt-1 w-[360px] rounded-lg border border-border bg-surface-card shadow-lg"
         >
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <span className="text-sm font-medium text-ink">{t('versionHistory.title')}</span>
+                <span className="text-sm font-medium text-ink">
+                    {t('versionHistory.title')}
+                </span>
                 <button
                     type="button"
                     onClick={() => setShowForm((v) => !v)}
@@ -154,12 +171,17 @@ export default function VersionHistoryOverlay({
             </div>
 
             {showForm && (
-                <form onSubmit={handleCreate} className="border-b border-border px-4 py-3">
+                <form
+                    onSubmit={handleCreate}
+                    className="border-b border-border px-4 py-3"
+                >
                     <div className="mb-2 flex items-center gap-2">
                         <span className="rounded-full bg-status-final/15 px-1.5 py-0.5 text-[10px] font-medium text-status-final">
                             {t('versionHistory.snapshot')}
                         </span>
-                        <span className="text-xs text-ink-muted">{t('versionHistory.newVersionSnapshot')}</span>
+                        <span className="text-xs text-ink-muted">
+                            {t('versionHistory.newVersionSnapshot')}
+                        </span>
                     </div>
                     <Input
                         ref={inputRef}
@@ -171,11 +193,26 @@ export default function VersionHistoryOverlay({
                         className="mb-2"
                     />
                     <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" type="button" onClick={() => { setShowForm(false); setSummary(''); }}>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            type="button"
+                            onClick={() => {
+                                setShowForm(false);
+                                setSummary('');
+                            }}
+                        >
                             {t('versionHistory.cancel')}
                         </Button>
-                        <Button variant="accent" size="sm" type="submit" disabled={creating}>
-                            {creating ? t('versionHistory.creating') : t('versionHistory.create')}
+                        <Button
+                            variant="accent"
+                            size="sm"
+                            type="submit"
+                            disabled={creating}
+                        >
+                            {creating
+                                ? t('versionHistory.creating')
+                                : t('versionHistory.create')}
                         </Button>
                     </div>
                 </form>
@@ -183,9 +220,13 @@ export default function VersionHistoryOverlay({
 
             <div className="max-h-[340px] overflow-y-auto">
                 {versionList === null ? (
-                    <div className="px-4 py-6 text-center text-xs text-ink-faint">{t('versionHistory.loading')}</div>
+                    <div className="px-4 py-6 text-center text-xs text-ink-faint">
+                        {t('versionHistory.loading')}
+                    </div>
                 ) : versionList.length === 0 ? (
-                    <div className="px-4 py-6 text-center text-xs text-ink-faint">{t('versionHistory.empty')}</div>
+                    <div className="px-4 py-6 text-center text-xs text-ink-faint">
+                        {t('versionHistory.empty')}
+                    </div>
                 ) : (
                     <div className="flex flex-col">
                         {versionList.map((version) => (
@@ -204,10 +245,16 @@ export default function VersionHistoryOverlay({
                                             {sourceLabel(version.source)}
                                         </span>
                                         {version.is_current && (
-                                            <span className="text-[10px] font-medium text-status-final">{t('versionHistory.current')}</span>
+                                            <span className="text-[10px] font-medium text-status-final">
+                                                {t('versionHistory.current')}
+                                            </span>
                                         )}
                                         {version.status === 'pending' && (
-                                            <span className="text-[10px] font-medium text-accent">{t('versionHistory.pendingReview')}</span>
+                                            <span className="text-[10px] font-medium text-accent">
+                                                {t(
+                                                    'versionHistory.pendingReview',
+                                                )}
+                                            </span>
                                         )}
                                     </div>
                                     {version.change_summary && (
@@ -224,18 +271,26 @@ export default function VersionHistoryOverlay({
                                     <div className="flex shrink-0 gap-1">
                                         <button
                                             type="button"
-                                            onClick={() => handleRestore(version)}
+                                            onClick={() =>
+                                                handleRestore(version)
+                                            }
                                             disabled={restoring !== null}
                                             className="rounded-md border border-border px-2 py-1 text-[11px] text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink disabled:opacity-50"
                                         >
-                                            {restoring === version.id ? t('versionHistory.restoring') : t('versionHistory.restore')}
+                                            {restoring === version.id
+                                                ? t('versionHistory.restoring')
+                                                : t('versionHistory.restore')}
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => handleDelete(version)}
+                                            onClick={() =>
+                                                handleDelete(version)
+                                            }
                                             disabled={deleting !== null}
                                             className="rounded-md border border-border p-1 text-ink-faint transition-colors hover:bg-delete-bg hover:text-delete disabled:opacity-50"
-                                            title={t('versionHistory.deleteVersion')}
+                                            title={t(
+                                                'versionHistory.deleteVersion',
+                                            )}
                                         >
                                             <Trash2 size={14} />
                                         </button>

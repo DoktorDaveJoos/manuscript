@@ -28,7 +28,8 @@ export default function TextActionsDropdown({
 
         document.addEventListener('mousedown', handleClickOutside);
 
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () =>
+            document.removeEventListener('mousedown', handleClickOutside);
     }, [open]);
 
     return (
@@ -43,7 +44,7 @@ export default function TextActionsDropdown({
             </button>
 
             {open && (
-                <div className="absolute right-0 top-full z-50 mt-1 w-[220px] rounded-lg bg-surface-card shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]">
+                <div className="absolute top-full right-0 z-50 mt-1 w-[220px] rounded-lg bg-surface-card shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]">
                     <div className="flex flex-col p-1">
                         <button
                             type="button"
@@ -53,7 +54,9 @@ export default function TextActionsDropdown({
                             }}
                             className="w-full rounded-[5px] px-3 py-2 text-left transition-colors hover:bg-neutral-bg"
                         >
-                            <span className="block text-xs font-medium text-ink">{t('textActions.normalize')}</span>
+                            <span className="block text-xs font-medium text-ink">
+                                {t('textActions.normalize')}
+                            </span>
                             <span className="block text-[11px] text-ink-faint">
                                 {t('textActions.normalizeDescription')}
                             </span>
@@ -82,7 +85,9 @@ export default function TextActionsDropdown({
                                     )}
                                 </span>
                                 <span className="block text-[11px] text-ink-faint">
-                                    {isBeautifying ? t('textActions.processing') : t('textActions.beautifyDescription')}
+                                    {isBeautifying
+                                        ? t('textActions.processing')
+                                        : t('textActions.beautifyDescription')}
                                 </span>
                             </button>
                         )}

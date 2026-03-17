@@ -1,8 +1,18 @@
 import { useSyncExternalStore } from 'react';
-import { check, download, install } from '@/actions/App/Http/Controllers/UpdateController';
+import {
+    check,
+    download,
+    install,
+} from '@/actions/App/Http/Controllers/UpdateController';
 import { jsonFetchHeaders } from '@/lib/utils';
 
-type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'error';
+type UpdateStatus =
+    | 'idle'
+    | 'checking'
+    | 'available'
+    | 'downloading'
+    | 'ready'
+    | 'error';
 
 export interface UpdateState {
     status: UpdateStatus;
@@ -21,7 +31,10 @@ const EVENTS = {
     ERROR: 'Native\\Desktop\\Events\\AutoUpdater\\Error',
 } as const;
 
-function normalizeReleaseNotes(notes: string | string[] | null | undefined, fallback: string | null = null): string | null {
+function normalizeReleaseNotes(
+    notes: string | string[] | null | undefined,
+    fallback: string | null = null,
+): string | null {
     return Array.isArray(notes) ? notes.join('\n') : (notes ?? fallback);
 }
 
@@ -62,48 +75,73 @@ function getSnapshot() {
 let nativeListenersRegistered = false;
 
 function ensureNativeListeners() {
-    if (nativeListenersRegistered || typeof window === 'undefined' || !window.Native?.on) {
+    if (
+        nativeListenersRegistered ||
+        typeof window === 'undefined' ||
+        !window.Native?.on
+    ) {
         return;
     }
     nativeListenersRegistered = true;
 
     window.Native.on(EVENTS.CHECKING, () => {
         setState((prev) =>
-            prev.status === 'checking' && prev.error === null ? prev : { ...prev, status: 'checking', error: null },
+            prev.status === 'checking' && prev.error === null
+                ? prev
+                : { ...prev, status: 'checking', error: null },
         );
     });
 
-    window.Native.on(EVENTS.AVAILABLE, (payload: { version?: string; releaseNotes?: string | string[] | null }) => {
-        setState((prev) => ({
-            ...prev,
-            status: 'available',
-            version: payload?.version ?? null,
-            releaseNotes: normalizeReleaseNotes(payload?.releaseNotes),
-        }));
-    });
+    window.Native.on(
+        EVENTS.AVAILABLE,
+        (payload: {
+            version?: string;
+            releaseNotes?: string | string[] | null;
+        }) => {
+            setState((prev) => ({
+                ...prev,
+                status: 'available',
+                version: payload?.version ?? null,
+                releaseNotes: normalizeReleaseNotes(payload?.releaseNotes),
+            }));
+        },
+    );
 
     window.Native.on(EVENTS.NOT_AVAILABLE, () => {
         setState((prev) =>
-            prev.status === 'idle' && prev.error === null ? prev : { ...prev, status: 'idle', error: null },
+            prev.status === 'idle' && prev.error === null
+                ? prev
+                : { ...prev, status: 'idle', error: null },
         );
     });
 
     window.Native.on(EVENTS.PROGRESS, (payload: { percent?: number }) => {
         const progress = Math.round(payload?.percent ?? 0);
         setState((prev) =>
-            prev.status === 'downloading' && prev.progress === progress ? prev : { ...prev, status: 'downloading', progress },
+            prev.status === 'downloading' && prev.progress === progress
+                ? prev
+                : { ...prev, status: 'downloading', progress },
         );
     });
 
-    window.Native.on(EVENTS.DOWNLOADED, (payload: { version?: string; releaseNotes?: string | string[] | null }) => {
-        setState((prev) => ({
-            ...prev,
-            status: 'ready',
-            version: payload?.version ?? prev.version,
-            progress: 100,
-            releaseNotes: normalizeReleaseNotes(payload?.releaseNotes, prev.releaseNotes),
-        }));
-    });
+    window.Native.on(
+        EVENTS.DOWNLOADED,
+        (payload: {
+            version?: string;
+            releaseNotes?: string | string[] | null;
+        }) => {
+            setState((prev) => ({
+                ...prev,
+                status: 'ready',
+                version: payload?.version ?? prev.version,
+                progress: 100,
+                releaseNotes: normalizeReleaseNotes(
+                    payload?.releaseNotes,
+                    prev.releaseNotes,
+                ),
+            }));
+        },
+    );
 
     window.Native.on(EVENTS.ERROR, (payload: { message?: string }) => {
         setState((prev) => ({
@@ -125,14 +163,18 @@ function postAction(url: string, errorMsg: string) {
 
 function checkForUpdates() {
     setState((prev) =>
-        prev.status === 'checking' ? prev : { ...prev, status: 'checking', error: null },
+        prev.status === 'checking'
+            ? prev
+            : { ...prev, status: 'checking', error: null },
     );
     postAction(check.url(), 'Failed to check for updates');
 }
 
 function downloadUpdate() {
     setState((prev) =>
-        prev.status === 'downloading' ? prev : { ...prev, status: 'downloading', progress: 0, error: null },
+        prev.status === 'downloading'
+            ? prev
+            : { ...prev, status: 'downloading', progress: 0, error: null },
     );
     postAction(download.url(), 'Failed to download update');
 }
@@ -141,7 +183,13 @@ function installUpdate() {
     postAction(install.url(), 'Failed to install update');
 }
 
-const IDLE_STATE: UpdateState = { status: 'idle', version: null, progress: 0, error: null, releaseNotes: null };
+const IDLE_STATE: UpdateState = {
+    status: 'idle',
+    version: null,
+    progress: 0,
+    error: null,
+    releaseNotes: null,
+};
 
 function dismissUpdate() {
     setState(() => IDLE_STATE);
@@ -153,5 +201,11 @@ function dismissUpdate() {
 export function useAutoUpdater() {
     ensureNativeListeners();
     const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-    return { state: snapshot, checkForUpdates, downloadUpdate, installUpdate, dismissUpdate };
+    return {
+        state: snapshot,
+        checkForUpdates,
+        downloadUpdate,
+        installUpdate,
+        dismissUpdate,
+    };
 }
