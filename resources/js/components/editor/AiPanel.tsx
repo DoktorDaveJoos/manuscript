@@ -12,6 +12,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type ChapterCharacter = Character & { pivot: CharacterChapterPivot };
+type AnalysisWithSummary = { score?: number; findings?: string[]; summary?: string };
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
     return (
@@ -118,15 +119,17 @@ function CharacterRow({ character, roleText }: { character: ChapterCharacter; ro
     );
 }
 
+const MAX_FINDINGS_DISPLAYED = 3;
+
 function collectFindings(analyses: Record<string, Analysis>): { text: string; variant: 'warning' | 'info' }[] {
     const items: { text: string; variant: 'warning' | 'info' }[] = [];
     for (const analysis of Object.values(analyses)) {
         const result = analysis.result as { findings?: string[]; recommendations?: string[] } | null;
         if (!result) continue;
-        for (const f of result.findings ?? []) {
+        for (const f of (result.findings ?? []).slice(0, MAX_FINDINGS_DISPLAYED)) {
             items.push({ text: f, variant: 'warning' });
         }
-        for (const r of result.recommendations ?? []) {
+        for (const r of (result.recommendations ?? []).slice(0, MAX_FINDINGS_DISPLAYED)) {
             items.push({ text: r, variant: 'info' });
         }
     }
@@ -262,12 +265,12 @@ export default function AiPanel({
     const hookLabel = scoreLabel(avgHookScore, EMPTY_SCORE);
 
     // Manuscript level
-    const consistencyAnalysis = analyses['character_consistency']?.result as { score?: number; findings?: string[] } | null;
+    const consistencyAnalysis = analyses['character_consistency']?.result as AnalysisWithSummary | null;
     const consistencyLabel = scoreLabel(consistencyAnalysis?.score ?? null, EMPTY_SCORE);
-    const consistencyDetail = consistencyAnalysis?.findings?.[0] ?? null;
-    const plotAnalysis = analyses['plot_deviation']?.result as { score?: number; findings?: string[] } | null;
+    const consistencyDetail = consistencyAnalysis?.summary ?? null;
+    const plotAnalysis = analyses['plot_deviation']?.result as AnalysisWithSummary | null;
     const plotLabel = plotScoreLabel(plotAnalysis?.score ?? null, EMPTY_SCORE);
-    const plotDetail = plotAnalysis?.findings?.[0] ?? null;
+    const plotDetail = plotAnalysis?.summary ?? null;
 
     if (!visible) return null;
 

@@ -20,7 +20,7 @@ trait RunsManuscriptAnalyses
             $agent = new ManuscriptAnalyzer($book, $type);
 
             $prompt = "Perform a {$type->value} analysis of the manuscript (book ID: {$book->id})."
-                ." Focus on chapter '{$chapter->title}' (ID: {$chapter->id}).";
+                ." Focus on chapter {$chapter->reader_order}, '{$chapter->title}'.";
 
             $response = $agent->prompt($prompt);
 

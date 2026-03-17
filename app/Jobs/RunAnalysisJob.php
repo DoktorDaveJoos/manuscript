@@ -40,7 +40,7 @@ class RunAnalysisJob implements ShouldQueue
         $agent = new ManuscriptAnalyzer($this->book, $this->analysisType);
 
         $chapterContext = $this->chapter
-            ? " Focus on chapter '{$this->chapter->title}' (ID: {$this->chapter->id})."
+            ? " Focus on chapter {$this->chapter->reader_order}, '{$this->chapter->title}'."
             : ' Analyze the entire manuscript.';
 
         $prompt = "Perform a {$this->analysisType->value} analysis of the manuscript (book ID: {$this->book->id}).{$chapterContext}";
