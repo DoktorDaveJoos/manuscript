@@ -11,6 +11,9 @@ trait UsesTaskCategoryModel
 
     public function model(): ?string
     {
-        return AiSetting::activeProvider()?->modelForCategory(static::taskCategory());
+        $provider = AiSetting::activeProvider();
+
+        return $provider?->modelForCategory(static::taskCategory())
+            ?? $provider?->text_model;
     }
 }
