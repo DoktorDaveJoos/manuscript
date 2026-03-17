@@ -1,4 +1,3 @@
-import { beautify } from '@/actions/App/Http/Controllers/AiController';
 import { split, updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
 import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
@@ -77,11 +76,12 @@ export default function ChapterShow({
     const [chapterTitle, setChapterTitle] = useState(chapter.title);
     const [scenes, setScenes] = useState<Scene[]>(chapter.scenes ?? []);
     const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
+    const activeEditorRef = useRef<Editor | null>(null);
+    activeEditorRef.current = activeEditor;
     const [activeSceneId, setActiveSceneId] = useState<number | null>(null);
     const [pendingFocusSceneId, setPendingFocusSceneId] = useState<number | null>(null);
     const [showVersions, setShowVersions] = useState(false);
     const [showNormalize, setShowNormalize] = useState(false);
-    const [isBeautifying, setIsBeautifying] = useState(false);
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
     const [isNotesOpen, setIsNotesOpen] = useState(() => {
         try {
@@ -106,8 +106,8 @@ export default function ChapterShow({
         try {
             localStorage.setItem('manuscript:notes-open', 'false');
         } catch {}
-        activeEditor?.commands.focus();
-    }, [activeEditor]);
+        activeEditorRef.current?.commands.focus();
+    }, []);
 
     const [scenesVisible, setScenesVisible] = useState(app_settings.show_scenes);
 
@@ -349,28 +349,6 @@ export default function ChapterShow({
         [book.id, chapter.id, scenes.length],
     );
 
-    const handleBeautify = useCallback(async () => {
-        setIsBeautifying(true);
-        try {
-            const response = await fetch(beautify.url({ book: book.id, chapter: chapter.id }), {
-                method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
-                },
-            });
-
-            if (!response.ok) throw new Error('Beautify failed');
-
-            await response.text();
-            router.reload();
-        } catch {
-            setSaveStatus('error');
-        } finally {
-            setIsBeautifying(false);
-        }
-    }, [book.id, chapter.id]);
-
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             if (e.code === 'Slash' && e.shiftKey) {
@@ -606,7 +584,7 @@ export default function ChapterShow({
                             chapter={chapter}
                             isOpen={isAiPanelOpen}
                             onToggle={toggleAiPanel}
-                            onError={() => setSaveStatus('error')}
+                            onError={(msg) => { console.error('[AiPanel]', msg); setSaveStatus('error'); }}
                             onOpenChat={() => setIsChatOpen(true)}
                             chapterAnalyses={chapterAnalyses}
                         />

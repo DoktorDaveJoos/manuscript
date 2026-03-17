@@ -1,6 +1,6 @@
 import { analyzeChapter, chapterAnalysisStatus } from '@/actions/App/Http/Controllers/AiController';
 import { jsonFetchHeaders } from '@/lib/utils';
-import type { Analysis } from '@/types/models';
+import type { Analysis, HookType, InformationDelivery, PacingFeel, ScenePurpose } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -10,19 +10,19 @@ type AnalysisStatusResponse = {
     analyzed_at: string | null;
     tension_score: number | null;
     hook_score: number | null;
-    hook_type: string | null;
+    hook_type: HookType | null;
     summary: string | null;
-    scene_purpose: string | null;
+    scene_purpose: ScenePurpose | null;
     value_shift: string | null;
     emotional_state_open: string | null;
     emotional_state_close: string | null;
     emotional_shift_magnitude: number | null;
     micro_tension_score: number | null;
-    pacing_feel: string | null;
+    pacing_feel: PacingFeel | null;
     entry_hook_score: number | null;
     exit_hook_score: number | null;
     sensory_grounding: number | null;
-    information_delivery: string | null;
+    information_delivery: InformationDelivery | null;
     analyses: Record<string, Analysis>;
 };
 

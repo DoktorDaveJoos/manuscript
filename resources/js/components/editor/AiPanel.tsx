@@ -4,10 +4,10 @@ import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useChapterAnalysis } from '@/hooks/useChapterAnalysis';
 import { getXsrfToken } from '@/lib/csrf';
 import { cn } from '@/lib/utils';
-import type { Analysis, Book, Chapter, Character, CharacterChapterPivot, CharacterRole } from '@/types/models';
-import { writingStyle } from '@/actions/App/Http/Controllers/BookSettingsController';
+import type { Analysis, Book, Chapter, Character, CharacterChapterPivot, InformationDelivery } from '@/types/models';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { applyChapter } from '@/actions/App/Http/Controllers/NormalizationController';
-import { ChevronLeft, Lock, MessageCircle, PenTool, Pilcrow, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock, MessageCircle, PenTool, Pilcrow, Sparkles } from 'lucide-react';
 import { Link, router } from '@inertiajs/react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -50,7 +50,7 @@ function infoLabel(text: string): ScoreLabel {
     return { text, textColor: 'text-ink-muted', dotColor: 'bg-ink-muted' };
 }
 
-function deliveryLabel(value: string | null, t: (key: string) => string, empty: ScoreLabel): ScoreLabel {
+function deliveryLabel(value: InformationDelivery | null, t: (key: string) => string, empty: ScoreLabel): ScoreLabel {
     if (!value) return empty;
     const label = t(`delivery.${value}`);
     if (value === 'organic' || value === 'mostly_organic') {
@@ -67,8 +67,8 @@ function CraftMetricRow({ label, score, detail }: { label: string; score: ScoreL
         <div className="flex flex-col gap-[3px]">
             <div className="flex items-center justify-between">
                 <span className="text-[13px] text-ink">{label}</span>
-                <div className="flex items-center gap-1.5">
-                    <span className={cn('size-1.5 rounded-full', score.dotColor)} />
+                <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
+                    <span className={cn('size-1.5 shrink-0 rounded-full', score.dotColor)} />
                     <span className={cn('text-xs font-medium', score.textColor)}>{score.text}</span>
                 </div>
             </div>
@@ -94,7 +94,7 @@ function FindingDot({ variant }: { variant: 'warning' | 'info' }) {
     return (
         <span
             className={cn(
-                'mt-1.5 size-[5px] shrink-0 rounded-full',
+                'mt-1.5 size-1.5 shrink-0 rounded-full',
                 variant === 'warning' ? 'bg-[#C4845C]' : 'bg-[#8A8A8A]',
             )}
         />
@@ -138,7 +138,7 @@ function getNextChapterSuggestion(analyses: Record<string, Analysis>): string | 
 }
 
 const actionButtonClass =
-    'flex items-center justify-center gap-2 rounded-md bg-ink px-3 py-[9px] text-[13px] font-medium text-surface transition-colors hover:bg-ink/90 disabled:opacity-50';
+    'flex items-center justify-center gap-1.5 rounded-lg bg-ink px-3 py-[9px] text-[13px] font-medium text-surface transition-colors hover:bg-ink/90 disabled:opacity-50';
 
 export default function AiPanel({
     characters,
@@ -162,8 +162,6 @@ export default function AiPanel({
     const { t, i18n } = useTranslation('ai');
     const { visible, usable, licensed } = useAiFeatures();
     const aiEnabled = usable;
-
-    if (!visible) return null;
 
     const [isRunningProse, setIsRunningProse] = useState(false);
     const { status: analysisStatus, isAnalyzing, error: analysisError, analyses, handleAnalyze } =
@@ -245,6 +243,8 @@ export default function AiPanel({
     const plotLabel = plotScoreLabel(plotAnalysis?.score ?? null, EMPTY_SCORE);
     const plotDetail = plotAnalysis?.findings?.[0] ?? null;
 
+    if (!visible) return null;
+
     return (
         <aside
             className={cn(
@@ -255,21 +255,28 @@ export default function AiPanel({
             {isOpen ? (
                 <>
                     {/* Header */}
-                    <div className="flex items-center gap-2 px-5 py-3">
-                        <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#1A1A1A]">
-                            {t('headerTitle')}
-                        </span>
-                        {licensed ? (
-                            <span
-                                className={cn(
-                                    'size-1.5 rounded-full',
-                                    aiEnabled ? 'bg-ai-green' : 'bg-status-revised',
-                                )}
-                            />
-                        ) : (
-                            <Lock size={14} className="text-ink-faint" />
-                        )}
-                    </div>
+                    <button
+                        type="button"
+                        onClick={onToggle}
+                        className="flex items-center justify-between px-5 py-3"
+                    >
+                        <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#1A1A1A]">
+                                {t('headerTitle')}
+                            </span>
+                            {licensed ? (
+                                <span
+                                    className={cn(
+                                        'size-1.5 rounded-full',
+                                        aiEnabled ? 'bg-ai-green' : 'bg-status-revised',
+                                    )}
+                                />
+                            ) : (
+                                <Lock size={14} className="text-ink-faint" />
+                            )}
+                        </div>
+                        <ChevronRight size={14} className="text-[#B5B5B5]" />
+                    </button>
 
                     {licensed ? (
                         <>
@@ -303,17 +310,17 @@ export default function AiPanel({
                                                 className={actionButtonClass}
                                             >
                                                 <Pilcrow size={14} strokeWidth={2.5} />
-                                                {t('actions.normalize')}
+                                                {t('actions.beautify')}
                                             </button>
                                             <p className="text-xs leading-relaxed text-ink-muted">
-                                                {t('actions.normalizeDescription')}
+                                                {t('actions.beautifyDescription')}
                                             </p>
                                         </>
                                     ) : (
                                         <p className="text-xs leading-relaxed text-ink-muted">
                                             {t('actions.notConfigured')}{' '}
                                             <Link
-                                                href="/settings/ai"
+                                                href="/settings"
                                                 className="font-medium text-accent underline decoration-accent/30 hover:decoration-accent"
                                             >
                                                 {t('actions.configureSettings')}
@@ -322,40 +329,36 @@ export default function AiPanel({
                                     )}
                                 </div>
 
-                                <SectionDivider />
-
                                 {/* Prose section */}
-                                <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>{t('section.prose')}</SectionLabel>
-                                    {aiEnabled ? (
-                                        <>
-                                            <button
-                                                type="button"
-                                                onClick={handleRunProse}
-                                                disabled={isRunningProse}
-                                                className={actionButtonClass}
-                                            >
-                                                <PenTool size={14} strokeWidth={2.5} />
-                                                {isRunningProse ? t('prose.running') : t('prose.runProsePass')}
-                                            </button>
-                                            <p className="text-xs leading-relaxed text-ink-muted">
-                                                {t('prose.description')}
-                                            </p>
-                                            <Link
-                                                href={writingStyle.url(book)}
-                                                className="text-xs font-medium text-[#C4845C] transition-colors hover:text-[#B0734D]"
-                                            >
-                                                {t('prose.settingsLink')}
-                                            </Link>
-                                        </>
-                                    ) : null}
-                                </div>
+                                {aiEnabled && (
+                                    <div className="flex flex-col gap-2.5">
+                                        <SectionLabel>{t('section.prose')}</SectionLabel>
+                                        <button
+                                            type="button"
+                                            onClick={handleRunProse}
+                                            disabled={isRunningProse}
+                                            className={actionButtonClass}
+                                        >
+                                            <PenTool size={14} strokeWidth={2.5} />
+                                            {isRunningProse ? t('prose.running') : t('prose.runProsePass')}
+                                        </button>
+                                        <p className="text-xs leading-relaxed text-ink-muted">
+                                            {t('prose.description')}
+                                        </p>
+                                        <Link
+                                            href={settingsIndex.url()}
+                                            className="text-xs font-medium text-[#C4845C] transition-colors hover:text-[#B0734D]"
+                                        >
+                                            {t('prose.settingsLink')}
+                                        </Link>
+                                    </div>
+                                )}
 
                                 <SectionDivider />
 
                                 {/* Craft Metrics */}
                                 <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>{t('section.craftMetrics')}</SectionLabel>
+                                    <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#1A1A1A]">{t('section.craftMetrics')}</span>
                                     <div className="flex flex-col gap-4">
                                         <LevelGroup title={t('level.chapter')}>
                                             <CraftMetricRow
@@ -418,14 +421,14 @@ export default function AiPanel({
 
                                         <LevelGroup title={t('level.manuscript')}>
                                             <CraftMetricRow
-                                                label={t('metric.consistency')}
-                                                score={consistencyLabel}
-                                                detail={consistencyDetail}
-                                            />
-                                            <CraftMetricRow
                                                 label={t('metric.plotAlignment')}
                                                 score={plotLabel}
                                                 detail={plotDetail}
+                                            />
+                                            <CraftMetricRow
+                                                label={t('metric.consistency')}
+                                                score={consistencyLabel}
+                                                detail={consistencyDetail}
                                             />
                                         </LevelGroup>
                                     </div>
