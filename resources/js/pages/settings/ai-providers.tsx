@@ -5,6 +5,8 @@ import SettingsLayout from '@/layouts/SettingsLayout';
 import { getXsrfToken } from '@/lib/csrf';
 import { router, usePage } from '@inertiajs/react';
 import { useState, useCallback, type FormEvent } from 'react';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 
 type ProviderSetting = AiSetting & { label: string; supports_embeddings: boolean };
 
@@ -19,15 +21,18 @@ function ProviderCard({
     setting,
     locked,
     isSelected,
-    onSelect,
+    isExpanded,
+    onToggle,
 }: {
     setting: ProviderSetting;
     locked: boolean;
     isSelected: boolean;
-    onSelect: () => void;
+    isExpanded: boolean;
+    onToggle: () => void;
 }) {
     const { t } = useTranslation('settings');
     const [apiKey, setApiKey] = useState('');
+    const [apiKeyFocused, setApiKeyFocused] = useState(false);
     const [baseUrl, setBaseUrl] = useState(setting.base_url ?? '');
     const [apiVersion, setApiVersion] = useState(setting.api_version ?? '');
     const [textModel, setTextModel] = useState(setting.text_model ?? '');
@@ -102,55 +107,66 @@ function ProviderCard({
     const configured = setting.requires_api_key ? setting.has_api_key : !!setting.base_url;
 
     return (
-        <div className={`rounded-lg border border-border bg-surface-card ${locked ? 'opacity-50' : ''}`}>
-            {/* Header row — radio select */}
+        <div className={locked ? 'opacity-50' : ''}>
+            {/* Header row — click to expand/collapse */}
             <button
                 type="button"
-                onClick={onSelect}
+                onClick={onToggle}
                 disabled={locked}
-                className="flex w-full items-center justify-between px-5 py-4 text-left"
+                className="flex w-full items-center gap-3 px-5 py-4 text-left"
             >
-                <div className="flex items-center gap-3">
-                    {locked ? (
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="text-ink-faint">
-                            <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-                            <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                    ) : (
-                        <span
-                            className={`flex size-[18px] items-center justify-center rounded-full border-2 transition-colors ${
-                                isSelected ? 'border-accent' : 'border-border'
-                            }`}
-                        >
-                            {isSelected && <span className="size-[10px] rounded-full bg-accent" />}
-                        </span>
-                    )}
-                    <span className="text-[15px] font-medium text-ink">{setting.label}</span>
-                    {!locked && (
-                        <span
-                            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                                configured ? 'bg-status-final/15 text-status-final' : 'bg-neutral-bg text-ink-muted'
-                            }`}
-                        >
-                            {configured ? t('aiProviders.configured') : t('aiProviders.notConfigured')}
-                        </span>
-                    )}
-                </div>
+                {locked ? (
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="text-ink-faint">
+                        <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+                        <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                ) : (
+                    <span
+                        className={`flex size-[18px] items-center justify-center rounded-full border-2 transition-colors ${
+                            isSelected ? 'border-accent' : 'border-border'
+                        }`}
+                    >
+                        {isSelected && <span className="size-[10px] rounded-full bg-accent" />}
+                    </span>
+                )}
+                <span className={`text-[15px] ${isSelected ? 'font-medium' : ''} text-ink`}>{setting.label}</span>
+                {!locked && (
+                    <span
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                            configured ? 'bg-status-final/15 text-status-final' : 'bg-neutral-bg text-ink-muted'
+                        }`}
+                    >
+                        {configured ? t('aiProviders.configured') : t('aiProviders.notConfigured')}
+                    </span>
+                )}
+                <span className="flex-1" />
+                {!locked && (
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        className={`text-ink-muted transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                    >
+                        <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                )}
             </button>
 
-            {/* Expanded form when selected and not locked */}
-            {isSelected && !locked && (
+            {/* Expanded form */}
+            {isExpanded && !locked && (
                 <form onSubmit={handleSave} className="border-t border-border-light px-5 pb-5 pt-4">
                     <div className="flex flex-col gap-4">
                         {setting.requires_api_key && (
                             <label className="flex flex-col gap-1.5">
                                 <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.apiKey')}</span>
-                                <input
-                                    type="password"
+                                <Input
+                                    type={apiKey || apiKeyFocused ? 'password' : 'text'}
                                     value={apiKey}
                                     onChange={(e) => setApiKey(e.target.value)}
-                                    placeholder={setting.has_api_key ? t('aiProviders.apiKeyMask') : t('aiProviders.apiKeyPlaceholder')}
-                                    className="h-9 rounded-md border border-border bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
+                                    onFocus={() => setApiKeyFocused(true)}
+                                    onBlur={() => setApiKeyFocused(false)}
+                                    placeholder={setting.masked_api_key ?? t('aiProviders.apiKeyPlaceholder')}
                                 />
                             </label>
                         )}
@@ -158,12 +174,11 @@ function ProviderCard({
                         {setting.requires_base_url && (
                             <label className="flex flex-col gap-1.5">
                                 <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.baseUrl')}</span>
-                                <input
+                                <Input
                                     type="url"
                                     value={baseUrl}
                                     onChange={(e) => setBaseUrl(e.target.value)}
                                     placeholder={isOllama ? 'http://localhost:11434' : 'https://your-resource.openai.azure.com'}
-                                    className="h-9 rounded-md border border-border bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
                                 />
                             </label>
                         )}
@@ -171,12 +186,11 @@ function ProviderCard({
                         {isAzure && (
                             <label className="flex flex-col gap-1.5">
                                 <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.apiVersion')}</span>
-                                <input
+                                <Input
                                     type="text"
                                     value={apiVersion}
                                     onChange={(e) => setApiVersion(e.target.value)}
                                     placeholder="2024-10-21"
-                                    className="h-9 rounded-md border border-border bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
                                 />
                             </label>
                         )}
@@ -185,12 +199,11 @@ function ProviderCard({
                             <span className="text-[13px] font-medium text-ink-muted">
                                 {isAzure ? t('aiProviders.deploymentName') : t('aiProviders.textModel')}
                             </span>
-                            <input
+                            <Input
                                 type="text"
                                 value={textModel}
                                 onChange={(e) => setTextModel(e.target.value)}
                                 placeholder={isAzure ? 'gpt-4o' : t('aiProviders.modelPlaceholder')}
-                                className="h-9 rounded-md border border-border bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
                             />
                         </label>
 
@@ -200,43 +213,32 @@ function ProviderCard({
                                     <span className="text-[13px] font-medium text-ink-muted">
                                         {isAzure ? t('aiProviders.embeddingDeployment') : t('aiProviders.embeddingModel')}
                                     </span>
-                                    <input
+                                    <Input
                                         type="text"
                                         value={embeddingModel}
                                         onChange={(e) => setEmbeddingModel(e.target.value)}
                                         placeholder={isAzure ? 'text-embedding-3-small' : t('aiProviders.modelPlaceholder')}
-                                        className="h-9 rounded-md border border-border bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
                                     />
                                 </label>
                                 <label className="flex w-32 flex-col gap-1.5">
                                     <span className="text-[13px] font-medium text-ink-muted">{t('aiProviders.dimensions')}</span>
-                                    <input
+                                    <Input
                                         type="number"
                                         value={embeddingDimensions}
                                         onChange={(e) => setEmbeddingDimensions(e.target.value)}
                                         placeholder="1536"
-                                        className="h-9 rounded-md border border-border bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
                                     />
                                 </label>
                             </div>
                         )}
 
                         <div className="flex items-center gap-3 pt-1">
-                            <button
-                                type="submit"
-                                disabled={saving}
-                                className="h-8 rounded-md bg-ink px-3.5 text-[13px] font-medium text-surface transition-opacity hover:opacity-90 disabled:opacity-50"
-                            >
+                            <Button variant="primary" size="sm" type="submit" disabled={saving} className="h-8">
                                 {saving ? t('aiProviders.saving') : t('aiProviders.save')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleTest}
-                                disabled={testStatus.type === 'loading' || !configured}
-                                className="h-8 rounded-md border border-border px-3.5 text-[13px] font-medium text-ink transition-colors hover:bg-neutral-bg disabled:opacity-50"
-                            >
+                            </Button>
+                            <Button variant="secondary" size="sm" type="button" onClick={handleTest} disabled={testStatus.type === 'loading' || !configured} className="h-8">
                                 {testStatus.type === 'loading' ? t('aiProviders.testing') : t('aiProviders.testConnection')}
-                            </button>
+                            </Button>
 
                             {saveMessage && (
                                 <span className="text-[12px] font-medium text-status-final">{saveMessage}</span>
@@ -260,23 +262,29 @@ export default function AiProviders({ settings, book }: Props) {
     const { license } = usePage<{ license: License }>().props;
     const locked = !license.active;
 
-    const handleSelect = useCallback(
+    const enabledProvider = settings.find((s) => s.enabled)?.provider ?? null;
+    const [expandedProvider, setExpandedProvider] = useState<string | null>(enabledProvider);
+
+    const handleToggle = useCallback(
         (provider: string) => {
             if (locked) return;
-
-            fetch(update.url(provider), {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
-                    Accept: 'application/json',
-                },
-                body: JSON.stringify({ enabled: true }),
-            }).then(() => {
-                router.reload({ only: ['settings'] });
-            });
+            const willExpand = expandedProvider !== provider;
+            setExpandedProvider(willExpand ? provider : null);
+            if (willExpand && provider !== enabledProvider) {
+                fetch(update.url(provider), {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-XSRF-TOKEN': getXsrfToken(),
+                        Accept: 'application/json',
+                    },
+                    body: JSON.stringify({ enabled: true }),
+                }).then(() => {
+                    router.reload({ only: ['settings'] });
+                });
+            }
         },
-        [locked],
+        [locked, expandedProvider, enabledProvider],
     );
 
     return (
@@ -289,15 +297,17 @@ export default function AiProviders({ settings, book }: Props) {
                     </p>
                 </div>
 
-                <div className="flex flex-col gap-3">
-                    {settings.map((setting) => (
-                        <ProviderCard
-                            key={setting.provider}
-                            setting={setting}
-                            locked={locked}
-                            isSelected={setting.enabled}
-                            onSelect={() => handleSelect(setting.provider)}
-                        />
+                <div className={`overflow-hidden rounded-lg border border-border ${locked ? 'opacity-50' : ''}`}>
+                    {settings.map((setting, i) => (
+                        <div key={setting.provider} className={i > 0 ? 'border-t border-border' : ''}>
+                            <ProviderCard
+                                setting={setting}
+                                locked={locked}
+                                isSelected={setting.enabled}
+                                isExpanded={expandedProvider === setting.provider}
+                                onToggle={() => handleToggle(setting.provider)}
+                            />
+                        </div>
                     ))}
                 </div>
             </div>

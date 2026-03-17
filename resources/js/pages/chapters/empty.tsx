@@ -1,3 +1,4 @@
+import Button from '@/components/ui/Button';
 import { importMethod } from '@/actions/App/Http/Controllers/BookController';
 import { store } from '@/actions/App/Http/Controllers/ChapterController';
 import type { Book, Storyline } from '@/types/models';
@@ -32,13 +33,9 @@ export default function ChapterEmpty({
                     </p>
                 </div>
                 <div className="mt-10 flex items-center gap-4">
-                    <button
-                        type="button"
-                        onClick={handleCreateChapter}
-                        className="rounded-md bg-ink px-7 py-3 text-sm font-medium leading-[18px] text-surface"
-                    >
+                    <Button variant="primary" size="lg" type="button" onClick={handleCreateChapter}>
                         {t('empty.createFirst')}
-                    </button>
+                    </Button>
                     <Link
                         href={importMethod.url(book)}
                         className="rounded-md border border-border px-7 py-3 text-sm font-medium leading-[18px] text-ink-muted"

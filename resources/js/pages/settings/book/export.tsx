@@ -2,6 +2,8 @@ import { useTranslation } from 'react-i18next';
 import SettingsLayout from '@/layouts/SettingsLayout';
 import { downloadExport } from '@/lib/export-download';
 import { useState, useCallback } from 'react';
+import Button from '@/components/ui/Button';
+import Select from '@/components/ui/Select';
 
 type BookData = { id: number; title: string };
 type StorylineRef = { id: number; name: string };
@@ -131,15 +133,15 @@ export default function Export({ book, storylines }: Props) {
                         </div>
 
                         {scope === 'storyline' && storylines.length > 1 && (
-                            <select
+                            <Select
                                 value={storylineId ?? ''}
                                 onChange={(e) => setStorylineId(Number(e.target.value))}
-                                className="mt-3 h-9 rounded-md border border-border bg-surface px-3 text-[13px] text-ink focus:border-accent focus:outline-none"
+                                className="mt-3 w-auto"
                             >
                                 {storylines.map((s) => (
                                     <option key={s.id} value={s.id}>{s.name}</option>
                                 ))}
-                            </select>
+                            </Select>
                         )}
                     </div>
 
@@ -157,14 +159,9 @@ export default function Export({ book, storylines }: Props) {
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={handleExport}
-                        disabled={exporting}
-                        className="h-10 rounded-md bg-ink px-6 text-[14px] font-medium text-surface transition-opacity hover:opacity-90 disabled:opacity-50"
-                    >
+                    <Button variant="primary" size="lg" type="button" onClick={handleExport} disabled={exporting}>
                         {exporting ? t('export.exporting') : t('export.exportManuscript')}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </SettingsLayout>

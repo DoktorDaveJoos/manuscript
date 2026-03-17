@@ -1,3 +1,4 @@
+import Button from '@/components/ui/Button';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -145,22 +146,13 @@ export default function NormalizePreview({
                 </div>
 
                 <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded-md px-4 py-2 text-sm text-ink-muted transition-colors hover:text-ink"
-                    >
+                    <Button variant="ghost" type="button" onClick={onClose}>
                         {t('normalize.cancel')}
-                    </button>
+                    </Button>
                     {preview && preview.total_changes > 0 && (
-                        <button
-                            type="button"
-                            onClick={handleApply}
-                            disabled={applying}
-                            className="rounded-md bg-ink px-4 py-2 text-sm font-medium text-surface transition-colors hover:bg-ink/90 disabled:opacity-50"
-                        >
+                        <Button variant="primary" type="button" onClick={handleApply} disabled={applying}>
                             {applying ? t('normalize.applying') : t('normalize.applyChanges')}
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>

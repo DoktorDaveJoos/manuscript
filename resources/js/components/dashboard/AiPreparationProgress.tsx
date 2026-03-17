@@ -1,3 +1,4 @@
+import Button from '@/components/ui/Button';
 import { useAiPreparation, TOTAL_PHASES } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
 import { Check, Lock } from 'lucide-react';
@@ -101,14 +102,9 @@ export default function AiPreparationProgress({
 
     return (
         <div className="flex flex-col gap-1">
-            <button
-                type="button"
-                onClick={handleStart}
-                disabled={starting}
-                className="rounded-md border border-border bg-surface-card px-4 py-2 text-sm text-ink transition-colors hover:bg-neutral-bg disabled:opacity-50"
-            >
+            <Button variant="secondary" type="button" onClick={handleStart} disabled={starting}>
                 {starting ? t('preparation.starting') : t('preparationProgress.prepareForAi')}
-            </button>
+            </Button>
             {error && <span className="text-xs text-red-600">{error}</span>}
             {status?.status === 'failed' && (
                 <span className="text-xs text-red-600">{status.error_message ?? t('preparation.failed')}</span>

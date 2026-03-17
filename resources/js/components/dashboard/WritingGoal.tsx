@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { WritingGoalData } from '@/types/models';
 import { update as updateWritingGoal } from '@/actions/App/Http/Controllers/WritingGoalController';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 
 export default function WritingGoal({
     bookId,
@@ -69,13 +71,9 @@ export default function WritingGoal({
         return (
             <div className="rounded-xl border border-border-light bg-surface-card p-6">
                 <p className="text-sm text-ink-muted">{t('writingGoal.setupPrompt')}</p>
-                <button
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    className="mt-3 rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-surface transition-colors hover:bg-ink/90"
-                >
+                <Button variant="primary" size="sm" type="button" onClick={() => setIsEditing(true)} className="mt-3">
                     {t('writingGoal.setGoal')}
-                </button>
+                </Button>
             </div>
         );
     }
@@ -89,20 +87,20 @@ export default function WritingGoal({
                 </label>
                 <div className="mt-2 flex flex-col gap-4">
                     <div className="flex items-center gap-2">
-                        <input
+                        <Input
                             type="number"
                             min={50}
                             max={50000}
                             value={inputValue}
                             onChange={(e) => { setInputValue(e.target.value); setSaveError(false); }}
                             onKeyDown={handleKeyDown}
-                            className="w-28 rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-border"
+                            className="w-28"
                             autoFocus
                         />
                         <span className="text-xs text-ink-faint">{t('writingGoal.wordsPerDay')}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <input
+                        <Input
                             type="number"
                             min={1000}
                             max={500000}
@@ -110,30 +108,18 @@ export default function WritingGoal({
                             onChange={(e) => { setTargetValue(e.target.value); setSaveError(false); }}
                             onKeyDown={handleKeyDown}
                             placeholder={t('writingGoal.optional')}
-                            className="w-28 rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint/50 focus:outline-none focus:ring-1 focus:ring-border"
+                            className="w-28"
                         />
                         <span className="text-xs text-ink-faint">{t('writingGoal.manuscriptTarget')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="flex-1" />
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setIsEditing(false);
-                                setInputValue(String(goal ?? 500));
-                                setSaveError(false);
-                            }}
-                            className="rounded-md px-3 py-1.5 text-[12px] text-ink-muted transition-colors hover:bg-neutral-bg"
-                        >
+                        <Button variant="ghost" size="sm" type="button" onClick={() => { setIsEditing(false); setInputValue(String(goal ?? 500)); setSaveError(false); }}>
                             {t('writingGoal.cancel')}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleSave}
-                            className="rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-surface transition-colors hover:bg-ink/90"
-                        >
+                        </Button>
+                        <Button variant="primary" size="sm" type="button" onClick={handleSave}>
                             {t('writingGoal.save')}
-                        </button>
+                        </Button>
                     </div>
                     {saveError && (
                         <p className="text-xs text-red-600">{t('writingGoal.saveError')}</p>

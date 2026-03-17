@@ -5,6 +5,8 @@ import { jsonFetchHeaders } from '@/lib/utils';
 import type { License } from '@/types/models';
 import { router, usePage } from '@inertiajs/react';
 import { useState, useCallback, useEffect, type FormEvent } from 'react';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 
 interface Props {
     book?: { id: number; title: string } | null;
@@ -119,22 +121,18 @@ export default function LicensePage({ book }: Props) {
                             </span>
                             <div className="flex items-start gap-3">
                                 <div className="flex flex-1 flex-col gap-1">
-                                    <input
+                                    <Input
                                         type="text"
                                         value={key}
                                         onChange={(e) => setKey(e.target.value)}
                                         placeholder={t('license.keyPlaceholder')}
-                                        className="h-9 rounded-md border border-border bg-surface px-3 font-mono text-[13px] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
+                                        className="font-mono"
                                     />
                                     {error && <span className="text-[12px] text-danger">{error}</span>}
                                 </div>
-                                <button
-                                    type="submit"
-                                    disabled={activating || !key}
-                                    className="h-9 rounded-md bg-accent px-4 text-[13px] font-medium text-surface transition-opacity hover:opacity-90 disabled:opacity-50"
-                                >
+                                <Button variant="accent" type="submit" disabled={activating || !key} className="h-9">
                                     {activating ? t('license.activating') : t('license.activate')}
-                                </button>
+                                </Button>
                             </div>
                         </form>
                     </div>

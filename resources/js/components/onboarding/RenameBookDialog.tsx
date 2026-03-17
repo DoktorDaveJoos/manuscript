@@ -3,6 +3,8 @@ import type { Book } from '@/types/models';
 import { useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 
 export default function RenameBookDialog({ book, onClose }: { book: Book; onClose: () => void }) {
     const { t } = useTranslation('onboarding');
@@ -33,32 +35,24 @@ export default function RenameBookDialog({ book, onClose }: { book: Book; onClos
                     <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
                         {t('renameBook.labelTitle')}
                     </label>
-                    <input
+                    <Input
+                        variant="dialog"
                         type="text"
                         value={form.data.title}
                         onChange={(e) => form.setData('title', e.target.value)}
                         placeholder={t('renameBook.placeholderTitle')}
-                        className="rounded-md border border-border bg-surface px-4 py-3 text-sm leading-[18px] text-ink outline-none placeholder:text-ink-faint"
                         autoFocus
                     />
                     {form.errors.title && <span className="text-xs text-red-600">{form.errors.title}</span>}
                 </fieldset>
 
                 <div className="flex items-center justify-end gap-3">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded-md px-5 py-2.5 text-sm font-medium leading-[18px] text-ink-muted"
-                    >
+                    <Button variant="ghost" size="lg" type="button" onClick={onClose}>
                         {t('renameBook.cancel')}
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={form.processing}
-                        className="rounded-md bg-ink px-6 py-2.5 text-sm font-medium leading-[18px] text-surface disabled:opacity-50"
-                    >
+                    </Button>
+                    <Button variant="primary" size="lg" type="submit" disabled={form.processing}>
                         {t('renameBook.save')}
-                    </button>
+                    </Button>
                 </div>
             </form>
         </div>

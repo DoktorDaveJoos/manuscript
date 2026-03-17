@@ -1,3 +1,4 @@
+import Button from '@/components/ui/Button';
 import BookCard, { type BookWithCounts } from '@/components/onboarding/BookCard';
 import CreateBookDialog from '@/components/onboarding/CreateBookDialog';
 import DeleteBookDialog from '@/components/onboarding/DeleteBookDialog';
@@ -26,13 +27,9 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
                     {t('emptyState.description')}
                 </p>
             </div>
-            <button
-                type="button"
-                onClick={onCreateClick}
-                className="mt-10 rounded-md bg-ink px-7 py-3 text-sm font-medium leading-[18px] text-surface"
-            >
+            <Button variant="primary" size="lg" type="button" onClick={onCreateClick} className="mt-10">
                 {t('emptyState.createButton')}
-            </button>
+            </Button>
         </div>
     );
 }

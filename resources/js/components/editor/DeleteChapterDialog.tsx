@@ -1,6 +1,7 @@
 import { destroy } from '@/actions/App/Http/Controllers/ChapterController';
 import type { Chapter } from '@/types/models';
 import { router } from '@inertiajs/react';
+import Button from '@/components/ui/Button';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
@@ -47,17 +48,12 @@ export default function DeleteChapterDialog({
                 </div>
 
                 <div className="flex items-center justify-end gap-3">
-                    <button type="button" onClick={onClose} className="rounded-md px-5 py-2.5 text-sm font-medium leading-[18px] text-ink-faint">
+                    <Button variant="ghost" size="lg" type="button" onClick={onClose}>
                         {t('deleteChapter.cancel')}
-                    </button>
-                    <button
-                        type="button"
-                        disabled={processing}
-                        onClick={handleDelete}
-                        className="rounded-md bg-delete px-6 py-2.5 text-sm font-medium leading-[18px] text-surface transition-opacity disabled:opacity-50"
-                    >
+                    </Button>
+                    <Button variant="danger" size="lg" type="button" disabled={processing} onClick={handleDelete}>
                         {t('deleteChapter.confirm')}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

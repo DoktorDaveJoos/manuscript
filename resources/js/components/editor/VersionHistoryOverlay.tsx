@@ -10,6 +10,8 @@ import { router } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 
 const sourceBadgeClass: Record<VersionSource, string> = {
     original: 'bg-neutral-bg text-ink-muted',
@@ -159,33 +161,22 @@ export default function VersionHistoryOverlay({
                         </span>
                         <span className="text-xs text-ink-muted">{t('versionHistory.newVersionSnapshot')}</span>
                     </div>
-                    <input
+                    <Input
                         ref={inputRef}
                         type="text"
                         value={summary}
                         onChange={(e) => setSummary(e.target.value)}
                         placeholder={t('versionHistory.summaryPlaceholder')}
                         maxLength={255}
-                        className="mb-2 w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
+                        className="mb-2"
                     />
                     <div className="flex justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setShowForm(false);
-                                setSummary('');
-                            }}
-                            className="rounded-md px-2.5 py-1 text-[11px] text-ink-muted hover:text-ink"
-                        >
+                        <Button variant="ghost" size="sm" type="button" onClick={() => { setShowForm(false); setSummary(''); }}>
                             {t('versionHistory.cancel')}
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={creating}
-                            className="rounded-md bg-accent px-2.5 py-1 text-[11px] font-medium text-surface transition-colors hover:bg-accent/90 disabled:opacity-50"
-                        >
+                        </Button>
+                        <Button variant="accent" size="sm" type="submit" disabled={creating}>
                             {creating ? t('versionHistory.creating') : t('versionHistory.create')}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             )}

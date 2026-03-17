@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
 import ReviewChapterRow, { type ReviewChapter } from '@/components/onboarding/ReviewChapterRow';
 import type { Book, StorylineType } from '@/types/models';
 
@@ -92,21 +93,12 @@ export default function ReviewPhase({
             </span>
 
             <div className="flex items-center gap-4">
-                <button
-                    type="button"
-                    onClick={onBack}
-                    className="rounded-md border border-border px-6 py-2.5 text-sm font-medium leading-[18px] text-ink-muted"
-                >
+                <Button variant="secondary" size="lg" type="button" onClick={onBack}>
                     {t('reviewPhase.back')}
-                </button>
-                <button
-                    type="button"
-                    onClick={onConfirm}
-                    disabled={includedChapters.length === 0 || submitting}
-                    className="rounded-md bg-ink px-7 py-2.5 text-sm font-medium leading-[18px] text-surface disabled:opacity-50"
-                >
+                </Button>
+                <Button variant="primary" size="lg" type="button" onClick={onConfirm} disabled={includedChapters.length === 0 || submitting}>
                     {submitting ? t('reviewPhase.importing') : t('reviewPhase.confirmImport')}
-                </button>
+                </Button>
             </div>
         </div>
     );

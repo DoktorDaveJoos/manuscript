@@ -16,6 +16,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import { router } from '@inertiajs/react';
 import { ChevronDown, ChevronUp, GripVertical, Plus, Sparkles, Trash2, X } from 'lucide-react';
+import Button from '@/components/ui/Button';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -189,32 +190,22 @@ export default function PlotWizardModal({ book, template, storylines, chapters, 
                 {/* Footer */}
                 <div className="flex items-center justify-between px-8 py-5">
                     {currentStepIndex > 0 ? (
-                        <button
-                            onClick={handleBack}
-                            className="rounded-lg border border-border px-6 py-2.5 text-[13px] font-medium text-ink-soft hover:bg-neutral-bg"
-                        >
+                        <Button variant="secondary" size="lg" onClick={handleBack} className="rounded-lg">
                             {t('wizard.back')}
-                        </button>
+                        </Button>
                     ) : (
                         <div />
                     )}
 
                     {currentStep === 'review' ? (
-                        <button
-                            onClick={handleCreate}
-                            disabled={submitting}
-                            className="flex items-center gap-2 rounded-lg bg-ink px-6 py-2.5 text-[13px] font-medium text-surface disabled:opacity-50"
-                        >
+                        <Button variant="primary" size="lg" onClick={handleCreate} disabled={submitting} className="gap-2 rounded-lg">
                             <Sparkles size={14} />
                             {t('wizard.createStructure')}
-                        </button>
+                        </Button>
                     ) : (
-                        <button
-                            onClick={handleNext}
-                            className="rounded-lg bg-ink px-6 py-2.5 text-[13px] font-medium text-surface"
-                        >
+                        <Button variant="primary" size="lg" onClick={handleNext} className="rounded-lg">
                             {t('wizard.next')}
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>

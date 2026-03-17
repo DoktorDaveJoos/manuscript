@@ -9,6 +9,7 @@ import type { ChapterVersion, ProsePassRule, VersionSource } from '@/types/model
 import { Check, ChevronDown, ChevronRight, TriangleAlert } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { diffArrays, diffWords } from 'diff';
+import Button from '@/components/ui/Button';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -448,22 +449,12 @@ export default function DiffView({
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={handleReject}
-                        disabled={isRejecting || isAccepting}
-                        className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink disabled:opacity-50"
-                    >
+                    <Button variant="secondary" size="sm" type="button" onClick={handleReject} disabled={isRejecting || isAccepting}>
                         {isRejecting ? t('diff.rejecting') : t('diff.rejectAll')}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleAccept}
-                        disabled={isAccepting || isRejecting || selectedCount === 0}
-                        className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-surface transition-colors hover:bg-ink/90 disabled:opacity-50"
-                    >
+                    </Button>
+                    <Button variant="primary" size="sm" type="button" onClick={handleAccept} disabled={isAccepting || isRejecting || selectedCount === 0}>
                         {isAccepting ? t('diff.accepting') : acceptLabel}
-                    </button>
+                    </Button>
                 </div>
             </div>
 

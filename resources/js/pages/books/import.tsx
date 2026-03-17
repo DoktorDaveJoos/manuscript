@@ -1,5 +1,6 @@
 import { confirmImport, parse, skipImport } from '@/actions/App/Http/Controllers/BookController';
 import { editor } from '@/actions/App/Http/Controllers/ChapterController';
+import Button from '@/components/ui/Button';
 import DropZone from '@/components/onboarding/DropZone';
 import FileRow from '@/components/onboarding/FileRow';
 import ImportChapterRow, { type ChapterItem } from '@/components/onboarding/ImportChapterRow';
@@ -127,21 +128,13 @@ function UploadPhase({
             </div>
 
             <div className="flex items-center gap-4 pt-4">
-                <button
-                    type="button"
-                    onClick={() => router.post(skipImport.url(book))}
-                    className="rounded-md border border-border px-5 py-2.5 text-sm font-medium leading-[18px] text-ink-muted"
-                >
+                <Button variant="secondary" size="lg" type="button" onClick={() => router.post(skipImport.url(book))}>
                     {t('uploadPhase.skip')}
-                </button>
+                </Button>
                 {files.length > 0 && (
-                    <button
-                        type="button"
-                        onClick={() => onStartParsing(files, mergeMode)}
-                        className="rounded-md bg-ink px-5 py-2.5 text-sm font-medium leading-[18px] text-surface"
-                    >
+                    <Button variant="primary" size="lg" type="button" onClick={() => onStartParsing(files, mergeMode)}>
                         {t('uploadPhase.importFiles', { count: files.length })}
-                    </button>
+                    </Button>
                 )}
             </div>
         </div>

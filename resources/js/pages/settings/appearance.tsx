@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
@@ -200,22 +201,13 @@ export default function Appearance({ settings, book, version }: Props) {
                         </div>
                         <div>
                             {updateState.status === 'ready' ? (
-                                <button
-                                    type="button"
-                                    onClick={installUpdate}
-                                    className="rounded-md bg-accent px-3.5 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-accent/90"
-                                >
+                                <Button variant="accent" size="sm" type="button" onClick={installUpdate}>
                                     {t('appearance.update.restart')}
-                                </button>
+                                </Button>
                             ) : (
-                                <button
-                                    type="button"
-                                    onClick={checkForUpdates}
-                                    disabled={updateState.status === 'checking' || updateState.status === 'downloading'}
-                                    className="rounded-md border border-border px-3.5 py-1.5 text-[13px] font-medium text-ink transition-colors hover:bg-surface disabled:opacity-50"
-                                >
+                                <Button variant="secondary" size="sm" type="button" onClick={checkForUpdates} disabled={updateState.status === 'checking' || updateState.status === 'downloading'}>
                                     {t('appearance.update.checkForUpdates')}
-                                </button>
+                                </Button>
                             )}
                         </div>
                     </div>

@@ -1,3 +1,4 @@
+import Button from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import type { Chapter, Storyline } from '@/types/models';
 import {
@@ -426,20 +427,12 @@ export default function ReadingOrderPanel({
                             {t('readingOrder.confirmMessage', { count: orderedChapters.length })}
                         </p>
                         <div className="mt-4 flex justify-end gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setShowConfirmDialog(false)}
-                                className="rounded border border-border-light px-3 py-1.5 text-[13px] font-medium text-ink-soft transition-colors hover:bg-neutral-bg"
-                            >
+                            <Button variant="secondary" size="sm" type="button" onClick={() => setShowConfirmDialog(false)}>
                                 {t('readingOrder.confirmCancel')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleInterleaveConfirm}
-                                className="rounded-md bg-accent px-3 py-1.5 text-[13px] font-medium text-surface transition-colors hover:bg-accent/90"
-                            >
+                            </Button>
+                            <Button variant="accent" size="sm" type="button" onClick={handleInterleaveConfirm}>
                                 {t('readingOrder.confirmContinue')}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>

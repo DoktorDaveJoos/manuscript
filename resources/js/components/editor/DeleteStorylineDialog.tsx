@@ -3,6 +3,8 @@ import type { Storyline } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 
 export default function DeleteStorylineDialog({
     bookId,
@@ -66,28 +68,23 @@ export default function DeleteStorylineDialog({
                     <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
                         {t('deleteStoryline.confirmLabel')}
                     </label>
-                    <input
+                    <Input
+                        variant="dialog"
                         type="text"
                         value={confirmation}
                         onChange={(e) => setConfirmation(e.target.value)}
                         placeholder={storyline.name}
-                        className="rounded-md border border-border bg-surface px-4 py-3 text-sm leading-[18px] text-ink placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-border"
                         autoFocus
                     />
                 </fieldset>
 
                 <div className="flex items-center justify-end gap-3">
-                    <button type="button" onClick={onClose} className="rounded-md px-5 py-2.5 text-sm font-medium leading-[18px] text-ink-muted">
+                    <Button variant="ghost" size="lg" type="button" onClick={onClose}>
                         {t('deleteStoryline.cancel')}
-                    </button>
-                    <button
-                        type="button"
-                        disabled={!isConfirmed || processing}
-                        onClick={handleDelete}
-                        className="rounded-md bg-delete px-6 py-2.5 text-sm font-medium leading-[18px] text-surface transition-opacity disabled:opacity-50"
-                    >
+                    </Button>
+                    <Button variant="danger" size="lg" type="button" disabled={!isConfirmed || processing} onClick={handleDelete}>
                         {t('deleteStoryline.confirm')}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

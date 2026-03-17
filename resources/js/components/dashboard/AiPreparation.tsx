@@ -1,3 +1,4 @@
+import Button from '@/components/ui/Button';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useAiPreparation, TOTAL_PHASES } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
@@ -55,7 +56,7 @@ export default function AiPreparation({
             description = t('preparation.addApiKey');
             linkContent = (
                 <Link
-                    href="/settings/ai"
+                    href="/settings"
                     className="text-[13px] font-medium text-accent transition-colors hover:text-accent/80"
                 >
                     {t('preparation.goToSettings')}
@@ -145,14 +146,10 @@ export default function AiPreparation({
                         </span>
                     </div>
                 </div>
-                <button
-                    type="button"
-                    onClick={handleStart}
-                    className="flex items-center gap-1.5 rounded-lg border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-neutral-bg"
-                >
+                <Button variant="secondary" type="button" onClick={handleStart} className="gap-1.5 rounded-lg">
                     <RefreshCw size={14} />
                     {t('preparation.reRunBook', 'Re-run for whole book')}
-                </button>
+                </Button>
             </div>
         );
     }
@@ -178,15 +175,10 @@ export default function AiPreparation({
                 )}
             </div>
             <div className="flex w-[200px] shrink-0 flex-col items-center gap-2">
-                <button
-                    type="button"
-                    onClick={handleStart}
-                    disabled={starting}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-ink px-5 py-2.5 text-[13px] font-semibold text-surface transition-colors hover:bg-ink/90 disabled:opacity-50"
-                >
+                <Button variant="primary" size="lg" type="button" onClick={handleStart} disabled={starting} className="w-full gap-1.5 rounded-lg font-semibold">
                     <Sparkle size={14} fill="currentColor" className="text-surface" />
                     {starting ? t('preparation.starting') : t('preparation.prepareManuscript')}
-                </button>
+                </Button>
                 <span className="text-[11px] text-ink-faint">{t('preparation.setupTime')}</span>
             </div>
         </div>

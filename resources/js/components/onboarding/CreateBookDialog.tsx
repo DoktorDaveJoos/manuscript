@@ -1,6 +1,9 @@
 import { useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
 
 const LANGUAGES = [
     { value: 'de', label: 'Deutsch' },
@@ -65,12 +68,12 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                         <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
                             {t('createBook.labelTitle')}
                         </label>
-                        <input
+                        <Input
+                            variant="dialog"
                             type="text"
                             value={form.data.title}
                             onChange={(e) => form.setData('title', e.target.value)}
                             placeholder={t('createBook.placeholderTitle')}
-                            className="rounded-md border border-border bg-surface px-4 py-3 text-sm leading-[18px] text-ink outline-none placeholder:text-ink-faint"
                             autoFocus
                         />
                         {form.errors.title && (
@@ -82,12 +85,12 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                         <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
                             {t('createBook.labelAuthor')}
                         </label>
-                        <input
+                        <Input
+                            variant="dialog"
                             type="text"
                             value={form.data.author}
                             onChange={(e) => form.setData('author', e.target.value)}
                             placeholder={t('createBook.placeholderAuthor')}
-                            className="rounded-md border border-border bg-surface px-4 py-3 text-sm leading-[18px] text-ink outline-none placeholder:text-ink-faint"
                         />
                     </fieldset>
 
@@ -95,24 +98,25 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                         <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
                             {t('createBook.labelLanguage')}
                         </label>
-                        <select
+                        <Select
+                            variant="dialog"
                             value={form.data.language}
                             onChange={(e) => form.setData('language', e.target.value)}
-                            className="appearance-none rounded-md border border-border bg-surface px-4 py-3 text-sm leading-[18px] text-ink outline-none"
                         >
                             {LANGUAGES.map((lang) => (
                                 <option key={lang.value} value={lang.value}>
                                     {lang.label}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </fieldset>
 
                     <fieldset className="flex flex-col gap-1.5">
                         <label className="text-xs font-medium uppercase leading-4 tracking-[0.08em] text-ink-muted">
                             {t('createBook.labelGenre')}
                         </label>
-                        <select
+                        <Select
+                            variant="dialog"
                             value={form.data.genre}
                             onChange={(e) => {
                                 const newGenre = e.target.value;
@@ -122,7 +126,6 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                                     secondary_genres: prev.secondary_genres.filter((g) => g !== newGenre),
                                 }));
                             }}
-                            className="appearance-none rounded-md border border-border bg-surface px-4 py-3 text-sm leading-[18px] text-ink outline-none"
                         >
                             <option value="">{t('createBook.placeholderGenre')}</option>
                             {GENRES.map((g) => (
@@ -130,7 +133,7 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                                     {g.label}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </fieldset>
 
                     {form.data.genre && (
@@ -165,7 +168,8 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                                     })}
                                 </div>
                             )}
-                            <select
+                            <Select
+                                variant="dialog"
                                 value=""
                                 onChange={(e) => {
                                     if (e.target.value) {
@@ -175,7 +179,6 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                                         ]);
                                     }
                                 }}
-                                className="appearance-none rounded-md border border-border bg-surface px-4 py-3 text-sm leading-[18px] text-ink outline-none"
                             >
                                 <option value="">{t('createBook.placeholderSecondaryGenres')}</option>
                                 {GENRES.filter(
@@ -187,26 +190,18 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                                         {g.label}
                                     </option>
                                 ))}
-                            </select>
+                            </Select>
                         </fieldset>
                     )}
                 </div>
 
                 <div className="flex items-center justify-end gap-3">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded-md px-5 py-2.5 text-sm font-medium leading-[18px] text-ink-muted"
-                    >
+                    <Button variant="ghost" size="lg" type="button" onClick={onClose}>
                         {t('createBook.cancel')}
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={form.processing}
-                        className="rounded-md bg-ink px-6 py-2.5 text-sm font-medium leading-[18px] text-surface disabled:opacity-50"
-                    >
+                    </Button>
+                    <Button variant="primary" size="lg" type="submit" disabled={form.processing}>
                         {t('createBook.continue')}
-                    </button>
+                    </Button>
                 </div>
             </form>
         </div>

@@ -10,6 +10,10 @@ import { BookOpen, X } from 'lucide-react';
 import { type KeyboardEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { WikiTab } from './WikiTabBar';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import Textarea from '@/components/ui/Textarea';
+import Select from '@/components/ui/Select';
 
 type Props = {
     item: Character | WikiEntry;
@@ -107,7 +111,7 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <input
+                    <Input
                         type="text"
                         value={isChar ? characterForm.data.name : entryForm.data.name}
                         onChange={(e) => {
@@ -115,7 +119,7 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                                 ? characterForm.setData('name', e.target.value)
                                 : entryForm.setData('name', e.target.value);
                         }}
-                        className="rounded-md border border-border bg-neutral-bg px-3 py-2 font-serif text-[28px] text-ink focus:outline-none focus:ring-1 focus:ring-border"
+                        className="font-serif text-[28px]"
                     />
                     {isDirty && (
                         <span className="flex items-center gap-1.5 text-[12px] text-ink-muted">
@@ -125,20 +129,12 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="rounded-md border border-border px-3 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:bg-neutral-bg"
-                    >
+                    <Button variant="secondary" size="sm" type="button" onClick={onCancel}>
                         {t('create.cancel')}
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={isChar ? characterForm.processing : entryForm.processing}
-                        className="rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-surface transition-colors hover:bg-ink/90 disabled:opacity-50"
-                    >
+                    </Button>
+                    <Button variant="primary" size="sm" type="submit" disabled={isChar ? characterForm.processing : entryForm.processing}>
                         {t('edit.save')}
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -178,14 +174,13 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                     <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                         {t('field.type')}
                     </label>
-                    <input
+                    <Input
                         type="text"
                         value={entryForm.data.type}
                         onChange={(e) => {
                             entryForm.setData('type', e.target.value);
                         }}
                         placeholder={t('field.typePlaceholder')}
-                        className="w-full rounded-md bg-neutral-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-border"
                     />
                 </div>
             )}
@@ -195,7 +190,7 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                 <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                     {t('field.description')}
                 </label>
-                <textarea
+                <Textarea
                     value={isChar ? characterForm.data.description : entryForm.data.description}
                     onChange={(e) =>
                         isChar
@@ -203,7 +198,6 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                             : entryForm.setData('description', e.target.value)
                     }
                     rows={4}
-                    className="w-full resize-none rounded-md border border-border bg-surface-card px-3 py-2.5 text-[14px] text-ink focus:outline-none focus:ring-1 focus:ring-border"
                 />
             </div>
 
@@ -217,15 +211,15 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                         <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
                             {t('field.role')}
                         </label>
-                        <select
+                        <Select
                             value={characterForm.data.role}
                             onChange={(e) => characterForm.setData('role', e.target.value)}
-                            className="appearance-none rounded-md bg-neutral-bg px-3 py-2 text-[13px] text-ink focus:outline-none focus:ring-1 focus:ring-border"
+                            className="w-auto"
                         >
                             <option value="protagonist">{t('role.mainCharacter')}</option>
                             <option value="supporting">{t('role.supporting')}</option>
                             <option value="mentioned">{t('role.mentioned')}</option>
-                        </select>
+                        </Select>
                     </div>
                 )}
 
