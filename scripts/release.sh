@@ -24,7 +24,7 @@ preflight_checks() {
     divider
 
     # 1. Working tree clean
-    if [ -n "$(git status --porcelain)" ]; then
+    if [ -n "$(git diff --name-only HEAD)" ] || [ -n "$(git diff --cached --name-only)" ]; then
         fail "Working tree is not clean"
         echo "  Commit or stash your changes before releasing."
         exit 1
