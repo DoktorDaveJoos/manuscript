@@ -1,3 +1,4 @@
+import type { FormDataConvertible } from '@inertiajs/core';
 import { Head, router } from '@inertiajs/react';
 import { Check, Filter } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -118,8 +119,10 @@ export default function Plot({
     const filteredPlotPoints = useMemo(
         () =>
             storylineFilter.size > 0
-                ? plotPoints.filter((pp) =>
-                      storylineFilter.has(pp.storyline_id),
+                ? plotPoints.filter(
+                      (pp) =>
+                          pp.storyline_id !== null &&
+                          storylineFilter.has(pp.storyline_id),
                   )
                 : plotPoints,
         [plotPoints, storylineFilter],
@@ -148,7 +151,7 @@ export default function Plot({
     ) => {
         router.patch(
             updatePlotPoint.url({ book: book.id, plotPoint: id }),
-            data,
+            data as Record<string, FormDataConvertible>,
             {
                 preserveScroll: true,
             },
@@ -325,7 +328,8 @@ export default function Plot({
                                                             className="mr-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
                                                             style={{
                                                                 backgroundColor:
-                                                                    s.color,
+                                                                    s.color ??
+                                                                    undefined,
                                                             }}
                                                         />
                                                         {s.name}

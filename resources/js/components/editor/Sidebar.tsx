@@ -39,8 +39,8 @@ export default function Sidebar({
     onSceneDelete,
     onSceneReorder,
     onSceneAdd,
-    scenesVisible,
-    onScenesVisibleChange,
+    scenesVisible = false,
+    onScenesVisibleChange = () => {},
     isFocusMode = false,
 }: {
     book: Book;
@@ -54,8 +54,8 @@ export default function Sidebar({
     onSceneDelete?: (sceneId: number) => void;
     onSceneReorder?: (orderedIds: number[]) => void;
     onSceneAdd?: (afterPosition: number) => Promise<void>;
-    scenesVisible: boolean;
-    onScenesVisibleChange: (v: boolean) => void;
+    scenesVisible?: boolean;
+    onScenesVisibleChange?: (v: boolean) => void;
     isFocusMode?: boolean;
 }) {
     const { t } = useTranslation();

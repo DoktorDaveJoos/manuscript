@@ -303,7 +303,7 @@ export default function AiChatDrawer({
                         {characterNames.length > 0 &&
                             ` · ${characterNames.join(', ')}`}
                         {wordCount > 0 &&
-                            ` · ${t('chat.words', { count: wordCount.toLocaleString() })}`}
+                            ` · ${t('chat.words', { count: wordCount, formattedCount: wordCount.toLocaleString() })}`}
                     </span>
                 </div>
                 <div className="flex items-center gap-3">
