@@ -1,9 +1,9 @@
-import { destroy } from '@/actions/App/Http/Controllers/ChapterController';
-import type { Chapter } from '@/types/models';
 import { router } from '@inertiajs/react';
-import Button from '@/components/ui/Button';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { destroy } from '@/actions/App/Http/Controllers/ChapterController';
+import Button from '@/components/ui/Button';
+import type { Chapter } from '@/types/models';
 
 export default function DeleteChapterDialog({
     bookId,

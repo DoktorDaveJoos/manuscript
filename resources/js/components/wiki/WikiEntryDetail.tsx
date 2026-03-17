@@ -1,6 +1,6 @@
-import type { WikiEntry } from '@/types/models';
 import { Pencil } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { WikiEntry } from '@/types/models';
 import WikiAvatar from './WikiAvatar';
 import type { WikiTab } from './WikiTabBar';
 

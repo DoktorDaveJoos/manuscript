@@ -1,13 +1,13 @@
-import { cn } from '@/lib/utils';
+import type { Editor } from '@tiptap/react';
+import { useEditorState } from '@tiptap/react';
 import {
     List,
     ListOrdered,
     Maximize2,
     StickyNote,
 } from 'lucide-react';
-import type { Editor } from '@tiptap/react';
-import { useEditorState } from '@tiptap/react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
 import FontSelector from './FontSelector';
 import FontSizeSelector from './FontSizeSelector';
 

@@ -1,12 +1,12 @@
+import type { Editor } from '@tiptap/core';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { SaveStatus } from '@/components/editor/EditorBar';
 import {
     cancelTypewriterAnimation,
     centerCursorInContainer,
 } from '@/extensions/TypewriterScrollExtension';
-import type { SaveStatus } from '@/components/editor/EditorBar';
 import type { Scene } from '@/types/models';
-import type { Editor } from '@tiptap/core';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { DEFAULT_FONT_ID, FONTS } from './FontSelector';
 import { DEFAULT_FONT_SIZE } from './FontSizeSelector';
 import SceneEditor from './SceneEditor';

@@ -1,21 +1,22 @@
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Trash2 } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect  } from 'react';
+import type {FormEvent} from 'react';
 import { useTranslation } from 'react-i18next';
-import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import { update as updateAiProvider, deleteKey, test as testConnection } from '@/actions/App/Http/Controllers/AiSettingsController';
-import { updateWritingStyle, updateProsePassRules } from '@/actions/App/Http/Controllers/SettingsController';
-import { activate, deactivate, revalidate } from '@/actions/App/Http/Controllers/LicenseController';
+import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import { index as booksIndex } from '@/actions/App/Http/Controllers/BookController';
+import { activate, deactivate, revalidate } from '@/actions/App/Http/Controllers/LicenseController';
+import { updateWritingStyle, updateProsePassRules } from '@/actions/App/Http/Controllers/SettingsController';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import NavItem from '@/components/ui/NavItem';
 import Toggle from '@/components/ui/Toggle';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
-import { jsonFetchHeaders } from '@/lib/utils';
 import type { Theme } from '@/lib/theme';
+import { jsonFetchHeaders } from '@/lib/utils';
 import type { AppSettings, AiSetting, License, ProsePassRule } from '@/types/models';
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
-import { useState, useCallback, useRef, useEffect, type FormEvent } from 'react';
 
 type ProviderSetting = AiSetting & { label: string; supports_embeddings: boolean };
 
@@ -85,7 +86,7 @@ function LicenseSection() {
                 .catch(() => setError(t('license.error.network')))
                 .finally(() => setActivating(false));
         },
-        [key],
+        [key, t],
     );
 
     const handleDeactivate = useCallback(() => {
@@ -103,7 +104,7 @@ function LicenseSection() {
                 router.reload({ only: ['license'] });
             })
             .catch(() => setError(t('license.error.network')));
-    }, []);
+    }, [t]);
 
     return (
         <div>
@@ -345,7 +346,7 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                 .catch(() => setSaveMessage(t('aiProviders.saveFailed')))
                 .finally(() => setSaving(false));
         },
-        [apiKey, baseUrl, apiVersion, writingModel, analysisModel, extractionModel, setting.provider],
+        [apiKey, baseUrl, apiVersion, writingModel, analysisModel, extractionModel, setting.provider, t],
     );
 
     const handleTest = useCallback(() => {
@@ -363,7 +364,7 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                 setTestStatus({ type: 'error', message: t('aiProviders.testFailed') });
                 setTimeout(() => setTestStatus({ type: 'idle' }), 5000);
             });
-    }, [setting.provider]);
+    }, [setting.provider, t]);
 
     const hasAdvanced = true;
 
@@ -802,8 +803,6 @@ const NAV_ITEMS: NavSection[] = [
 function SettingsSidebar({ activeSection, onNavigate }: { activeSection: SectionKey; onNavigate: (key: SectionKey) => void }) {
     const { t } = useTranslation('settings');
 
-    let lastGroup: string | undefined;
-
     return (
         <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border bg-white">
             <div className="px-5 py-4">
@@ -818,9 +817,9 @@ function SettingsSidebar({ activeSection, onNavigate }: { activeSection: Section
                 </Link>
             </div>
             <nav className="flex flex-1 flex-col gap-0.5 px-2.5">
-                {NAV_ITEMS.map((item) => {
-                    const showGroup = item.groupKey && item.groupKey !== lastGroup;
-                    if (item.groupKey) lastGroup = item.groupKey;
+                {NAV_ITEMS.map((item, index) => {
+                    const prevGroupKey = index > 0 ? NAV_ITEMS[index - 1].groupKey : undefined;
+                    const showGroup = item.groupKey && item.groupKey !== prevGroupKey;
 
                     return (
                         <div key={item.key}>

@@ -1,9 +1,9 @@
 import { router } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { resetUsage } from '@/actions/App/Http/Controllers/AiController';
 import { formatCompactCount, jsonFetchHeaders } from '@/lib/utils';
 import type { AiUsage, AiUsageFeatureBreakdown, AiUsageMonthly } from '@/types/models';
-import { resetUsage } from '@/actions/App/Http/Controllers/AiController';
 
 const FEATURE_LABELS: Record<string, string> = {
     chat: 'AI Chat',

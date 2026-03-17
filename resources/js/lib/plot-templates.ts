@@ -1,5 +1,5 @@
-import type { PlotPointType } from '@/types/models';
 import type { TFunction } from 'i18next';
+import type { PlotPointType } from '@/types/models';
 
 export interface TemplateBeat {
     title: string;

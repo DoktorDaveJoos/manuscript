@@ -1,11 +1,11 @@
-import type { Act, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
 import { X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import Input from '@/components/ui/Input';
-import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
+import Textarea from '@/components/ui/Textarea';
+import type { Act, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
 
 const TYPE_OPTIONS = ['setup', 'conflict', 'turning_point', 'resolution', 'worldbuilding'] as const;
 
@@ -20,7 +20,7 @@ type Props = {
     onUpdate: (data: Record<string, unknown>) => void;
 };
 
-export default function DetailPanel({ plotPoint, storylines, acts, connections, onClose, onUpdate }: Props) {
+export default function DetailPanel({ plotPoint, acts, connections, onClose, onUpdate }: Props) {
     const { t } = useTranslation('plot');
     const [title, setTitle] = useState(plotPoint.title);
     const [description, setDescription] = useState(plotPoint.description ?? '');

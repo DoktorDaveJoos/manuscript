@@ -1,7 +1,7 @@
-import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { EllipsisVertical, Lock } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAiFeatures } from '@/hooks/useAiFeatures';
 
 export default function TextActionsDropdown({
     onNormalizeClick,

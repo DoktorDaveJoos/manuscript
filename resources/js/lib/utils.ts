@@ -1,9 +1,9 @@
-import { store } from '@/actions/App/Http/Controllers/ChapterController';
-import type { Storyline } from '@/types/models';
 import { router } from '@inertiajs/react';
 import type { ClassValue } from 'clsx';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { store } from '@/actions/App/Http/Controllers/ChapterController';
+import type { Storyline } from '@/types/models';
 import { getXsrfToken } from './csrf';
 
 export function cn(...inputs: ClassValue[]) {

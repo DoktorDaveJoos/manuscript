@@ -1,10 +1,10 @@
-import { updateNotes } from '@/actions/App/Http/Controllers/ChapterController';
-import { jsonFetchHeaders } from '@/lib/utils';
-import Kbd from '@/components/ui/Kbd';
-import NotesSlashMenu from '@/components/editor/NotesSlashMenu';
 import MarkdownIt from 'markdown-it';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { updateNotes } from '@/actions/App/Http/Controllers/ChapterController';
+import NotesSlashMenu from '@/components/editor/NotesSlashMenu';
+import Kbd from '@/components/ui/Kbd';
+import { jsonFetchHeaders } from '@/lib/utils';
 
 const md = new MarkdownIt({ linkify: true });
 
@@ -91,11 +91,11 @@ export default function NotesPanel({
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [slashMenu, setSlashMenu] = useState<{ top: number; left: number; flip: boolean } | null>(null);
     const slashMenuRef = useRef(slashMenu);
-    slashMenuRef.current = slashMenu;
+    useEffect(() => { slashMenuRef.current = slashMenu; }, [slashMenu]);
     const slashDismissedRef = useRef(false);
     const cursorPosRef = useRef<number | null>(null);
     const linesRef = useRef(lines);
-    linesRef.current = lines;
+    useEffect(() => { linesRef.current = lines; }, [lines]);
 
     useEffect(() => {
         requestAnimationFrame(() => {
@@ -146,7 +146,7 @@ export default function NotesPanel({
     }, [bookId, chapterId, onNotesChange]);
 
     const flushRef = useRef(flush);
-    flushRef.current = flush;
+    useEffect(() => { flushRef.current = flush; }, [flush]);
 
     const scheduleSave = useCallback(() => {
         pendingRef.current = 'dirty';

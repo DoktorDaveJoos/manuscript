@@ -1,14 +1,15 @@
-import { storeCharacter, storeEntry } from '@/actions/App/Http/Controllers/WikiController';
-import type { Book, Storyline } from '@/types/models';
 import { router, useForm } from '@inertiajs/react';
 import { Camera, X } from 'lucide-react';
-import { type KeyboardEvent, useState } from 'react';
+import {  useState } from 'react';
+import type {KeyboardEvent} from 'react';
 import { useTranslation } from 'react-i18next';
-import type { WikiTab } from './WikiTabBar';
+import { storeCharacter, storeEntry } from '@/actions/App/Http/Controllers/WikiController';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
+import Textarea from '@/components/ui/Textarea';
+import type { Book, Storyline } from '@/types/models';
+import type { WikiTab } from './WikiTabBar';
 
 type Props = {
     type: WikiTab;

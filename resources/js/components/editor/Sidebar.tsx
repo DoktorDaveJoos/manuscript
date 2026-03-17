@@ -1,16 +1,16 @@
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
+import { Link, router, usePage } from '@inertiajs/react';
+import { BookOpen, LayoutGrid, Settings, Waypoints } from 'lucide-react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { index } from '@/actions/App/Http/Controllers/BookController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
 import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
 import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
 import NavItem from '@/components/ui/NavItem';
 import { createChapter, formatCompactCount } from '@/lib/utils';
 import type { Book, Scene, Storyline } from '@/types/models';
-import { Link, router, usePage } from '@inertiajs/react';
-import { BookOpen, LayoutGrid, Settings, Waypoints } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import ChapterList from './ChapterList';
 import TrashBin from './TrashBin';
 
@@ -65,7 +65,7 @@ export default function Sidebar({
         return DEFAULT_WIDTH;
     });
     const widthRef = useRef(width);
-    widthRef.current = width;
+    useEffect(() => { widthRef.current = width; }, [width]);
     const dragCleanupRef = useRef<(() => void) | null>(null);
 
     useEffect(() => {

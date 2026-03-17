@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
+import ReviewChapterRow from '@/components/onboarding/ReviewChapterRow';
+import type {ReviewChapter} from '@/components/onboarding/ReviewChapterRow';
 import Button from '@/components/ui/Button';
-import ReviewChapterRow, { type ReviewChapter } from '@/components/onboarding/ReviewChapterRow';
 import type { Book, StorylineType } from '@/types/models';
 
 export type ReviewStoryline = {

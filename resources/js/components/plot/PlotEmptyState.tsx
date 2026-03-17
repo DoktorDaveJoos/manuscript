@@ -1,6 +1,7 @@
-import { getPlotTemplates, type PlotTemplate } from '@/lib/plot-templates';
 import { Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { getPlotTemplates  } from '@/lib/plot-templates';
+import type {PlotTemplate} from '@/lib/plot-templates';
 
 type PlotEmptyStateProps = {
     onSelectTemplate: (template: PlotTemplate) => void;

@@ -1,3 +1,7 @@
+import { Head, router } from '@inertiajs/react';
+import { Check, Filter } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { assignAct, interleave as interleaveChapters, reorder as reorderChapters } from '@/actions/App/Http/Controllers/ChapterController';
 import { store as storePlotPoint, update as updatePlotPoint } from '@/actions/App/Http/Controllers/PlotPointController';
 import Sidebar from '@/components/editor/Sidebar';
@@ -7,16 +11,12 @@ import PlotPointList from '@/components/plot/PlotPointList';
 import PlotWizardModal from '@/components/plot/PlotWizardModal';
 import ReadingOrderPanel from '@/components/plot/ReadingOrderPanel';
 import SwimLaneTimeline from '@/components/plot/SwimLaneTimeline';
+import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import { getXsrfToken } from '@/lib/csrf';
 import { downloadExport } from '@/lib/export-download';
-import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { PlotTemplate } from '@/lib/plot-templates';
-import type { Act, Book, Chapter, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
-import { Head, router } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
-import { Check, Filter } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import type { Act, Book, Chapter, PlotPoint, PlotPointConnection, Storyline } from '@/types/models';
 
 type ChapterCol = {
     id: number;

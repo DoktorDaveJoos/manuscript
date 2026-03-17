@@ -1,19 +1,20 @@
+import { router, useForm } from '@inertiajs/react';
+import { BookOpen, X } from 'lucide-react';
+import {  useState } from 'react';
+import type {KeyboardEvent} from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     destroyCharacter,
     destroyEntry,
     updateCharacter,
     updateEntry,
 } from '@/actions/App/Http/Controllers/WikiController';
-import type { Book, Character, Storyline, WikiEntry } from '@/types/models';
-import { router, useForm } from '@inertiajs/react';
-import { BookOpen, X } from 'lucide-react';
-import { type KeyboardEvent, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import type { WikiTab } from './WikiTabBar';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
+import Textarea from '@/components/ui/Textarea';
+import type { Book, Character, Storyline, WikiEntry } from '@/types/models';
+import type { WikiTab } from './WikiTabBar';
 
 type Props = {
     item: Character | WikiEntry;
@@ -115,9 +116,11 @@ export default function WikiEditForm({ item, tab, book, storylines, onCancel, on
                         type="text"
                         value={isChar ? characterForm.data.name : entryForm.data.name}
                         onChange={(e) => {
-                            isChar
-                                ? characterForm.setData('name', e.target.value)
-                                : entryForm.setData('name', e.target.value);
+                            if (isChar) {
+                                characterForm.setData('name', e.target.value);
+                            } else {
+                                entryForm.setData('name', e.target.value);
+                            }
                         }}
                         className="font-serif text-[28px]"
                     />

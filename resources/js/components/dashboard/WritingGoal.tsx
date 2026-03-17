@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { jsonFetchHeaders } from '@/lib/utils';
-import type { WritingGoalData } from '@/types/models';
 import { update as updateWritingGoal } from '@/actions/App/Http/Controllers/WritingGoalController';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type { WritingGoalData } from '@/types/models';
 
 export default function WritingGoal({
     bookId,

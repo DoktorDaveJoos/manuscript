@@ -1,3 +1,6 @@
+import { Head } from '@inertiajs/react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Sidebar from '@/components/editor/Sidebar';
 import AddEntryDropdown from '@/components/wiki/AddEntryDropdown';
 import CharacterDetail from '@/components/wiki/CharacterDetail';
@@ -8,12 +11,10 @@ import WikiEntryDetail from '@/components/wiki/WikiEntryDetail';
 import WikiEntryList from '@/components/wiki/WikiEntryList';
 import WikiSearchInput from '@/components/wiki/WikiSearchInput';
 import WikiSearchResults from '@/components/wiki/WikiSearchResults';
-import WikiTabBar, { type WikiTab } from '@/components/wiki/WikiTabBar';
+import WikiTabBar from '@/components/wiki/WikiTabBar';
+import type {WikiTab} from '@/components/wiki/WikiTabBar';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { Book, Character, WikiEntry } from '@/types/models';
-import { Head } from '@inertiajs/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 const STORAGE_KEY = 'wiki-sidebar-width';
 const MIN_WIDTH = 220;
@@ -51,13 +52,16 @@ export default function WikiIndex({
     const [editingId, setEditingId] = useState<number | null>(null);
     const isSearching = query.trim().length > 0;
 
-    const entriesByTab: Record<WikiTab, (Character | WikiEntry)[]> = {
-        characters,
-        location: locations,
-        organization: organizations,
-        item: items,
-        lore,
-    };
+    const entriesByTab = useMemo<Record<WikiTab, (Character | WikiEntry)[]>>(
+        () => ({
+            characters,
+            location: locations,
+            organization: organizations,
+            item: items,
+            lore,
+        }),
+        [characters, locations, organizations, items, lore],
+    );
 
     const searchResults = useMemo(() => {
         if (!query.trim()) return [];
@@ -69,7 +73,7 @@ export default function WikiIndex({
             if (matched.length > 0) groups.push({ tab, items: matched });
         }
         return groups;
-    }, [query, characters, locations, organizations, items, lore]);
+    }, [query, entriesByTab]);
 
     const totalResults = searchResults.reduce((sum, g) => sum + g.items.length, 0);
 
@@ -90,7 +94,9 @@ export default function WikiIndex({
         return DEFAULT_WIDTH;
     });
     const widthRef = useRef(width);
-    widthRef.current = width;
+    useEffect(() => {
+        widthRef.current = width;
+    }, [width]);
     const panelRef = useRef<HTMLDivElement>(null);
     const dragCleanupRef = useRef<(() => void) | null>(null);
 

@@ -1,22 +1,23 @@
-import Button from '@/components/ui/Button';
-import { cn } from '@/lib/utils';
-import type { Chapter, Storyline } from '@/types/models';
 import {
     DndContext,
     DragOverlay,
     PointerSensor,
     closestCenter,
     useSensor,
-    useSensors,
-    type DragEndEvent,
-    type DragStartEvent,
+    useSensors
+    
+    
 } from '@dnd-kit/core';
+import type {DragEndEvent, DragStartEvent} from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { downloadExport } from '@/lib/export-download';
 import { Download, GripVertical, ListOrdered } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
+import { downloadExport } from '@/lib/export-download';
+import { cn } from '@/lib/utils';
+import type { Chapter, Storyline } from '@/types/models';
 
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } };
 const STORAGE_KEY = 'manuscript:reading-order-width';
@@ -126,8 +127,17 @@ export default function ReadingOrderPanel({
     onInterleave,
 }: ReadingOrderPanelProps) {
     const { t } = useTranslation('plot');
-    const [orderedChapters, setOrderedChapters] = useState<Chapter[]>([]);
+    const sortedFromProps = useMemo(
+        () => [...chapters].sort((a, b) => a.reader_order - b.reader_order),
+        [chapters],
+    );
+    const [orderedChapters, setOrderedChapters] = useState(sortedFromProps);
     const [activeChapter, setActiveChapter] = useState<Chapter | null>(null);
+    const [prevSorted, setPrevSorted] = useState(sortedFromProps);
+    if (prevSorted !== sortedFromProps) {
+        setPrevSorted(sortedFromProps);
+        setOrderedChapters(sortedFromProps);
+    }
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [exporting, setExporting] = useState(false);
 
@@ -140,7 +150,9 @@ export default function ReadingOrderPanel({
         return DEFAULT_WIDTH;
     });
     const widthRef = useRef(width);
-    widthRef.current = width;
+    useEffect(() => {
+        widthRef.current = width;
+    }, [width]);
     const asideRef = useRef<HTMLElement>(null);
     const dragCleanupRef = useRef<(() => void) | null>(null);
 
@@ -184,10 +196,6 @@ export default function ReadingOrderPanel({
 
     const sensors = useSensors(useSensor(PointerSensor, POINTER_SENSOR_OPTIONS));
 
-    useEffect(() => {
-        const sorted = [...chapters].sort((a, b) => a.reader_order - b.reader_order);
-        setOrderedChapters(sorted);
-    }, [chapters]);
 
     const storylineMap = useMemo(() => {
         const map = new Map<number, Storyline>();

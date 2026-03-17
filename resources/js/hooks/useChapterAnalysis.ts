@@ -1,8 +1,8 @@
+import { router } from '@inertiajs/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { analyzeChapter, chapterAnalysisStatus } from '@/actions/App/Http/Controllers/AiController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Analysis, HookType, InformationDelivery, PacingFeel, ScenePurpose } from '@/types/models';
-import { router } from '@inertiajs/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
 
 type AnalysisStatusResponse = {
     analysis_status: 'pending' | 'running' | 'completed' | 'failed' | null;

@@ -1,7 +1,7 @@
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
-import { Check, ChevronsUpDown } from 'lucide-react';
 import { router } from '@inertiajs/react';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 
 type BookRef = { id: number; title: string };
 
@@ -26,7 +26,7 @@ export default function BookSwitcher({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [open]);
 
-    const switchBook = (book: BookRef) => {
+    const switchBook = () => {
         setOpen(false);
         router.visit(settingsIndex.url());
     };
@@ -48,7 +48,7 @@ export default function BookSwitcher({
                         <button
                             key={book.id}
                             type="button"
-                            onClick={() => switchBook(book)}
+                            onClick={() => switchBook()}
                             className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
                         >
                             <Check

@@ -1,6 +1,6 @@
+import { useTranslation } from 'react-i18next';
 import Kbd from '@/components/ui/Kbd';
 import type { Chapter } from '@/types/models';
-import { useTranslation } from 'react-i18next';
 import StatusBadge from './StatusBadge';
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';

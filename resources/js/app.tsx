@@ -1,7 +1,7 @@
-import UpdateDialog from '@/components/ui/UpdateDialog';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
+import UpdateDialog from '@/components/ui/UpdateDialog';
 import '../css/app.css';
 import i18n from './i18n';
 import { initTheme } from './lib/theme';

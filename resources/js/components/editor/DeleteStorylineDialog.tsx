@@ -1,10 +1,10 @@
-import { destroy } from '@/actions/App/Http/Controllers/StorylineController';
-import type { Storyline } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { destroy } from '@/actions/App/Http/Controllers/StorylineController';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import type { Storyline } from '@/types/models';
 
 export default function DeleteStorylineDialog({
     bookId,

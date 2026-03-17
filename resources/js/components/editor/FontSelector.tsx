@@ -1,7 +1,7 @@
-import { cn } from '@/lib/utils';
 import { Check, ChevronDown } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
 
 export const FONTS = [
     { id: 'eb-garamond', label: 'EB Garamond', family: "'EB Garamond', ui-serif, Georgia, serif", favorite: true },

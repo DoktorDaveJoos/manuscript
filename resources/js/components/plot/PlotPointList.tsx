@@ -1,6 +1,6 @@
+import { useTranslation } from 'react-i18next';
 import { STATUS_COLORS, TYPE_STYLES } from '@/lib/plot-constants';
 import type { Act, PlotPoint, Storyline } from '@/types/models';
-import { useTranslation } from 'react-i18next';
 
 type Props = {
     acts: (Act & { chapters: { id: number; title: string }[] })[];

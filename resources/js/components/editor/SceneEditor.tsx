@@ -1,12 +1,12 @@
-import { updateContent } from '@/actions/App/Http/Controllers/SceneController';
-import useChapterEditor from '@/hooks/useChapterEditor';
-import { jsonFetchHeaders } from '@/lib/utils';
-import type { SaveStatus } from '@/components/editor/EditorBar';
-import type { Scene } from '@/types/models';
 import type { Editor } from '@tiptap/react';
 import { EditorContent } from '@tiptap/react';
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
+import { updateContent } from '@/actions/App/Http/Controllers/SceneController';
+import type { SaveStatus } from '@/components/editor/EditorBar';
+import useChapterEditor from '@/hooks/useChapterEditor';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type { Scene } from '@/types/models';
 
 export default function SceneEditor({
     scene,
@@ -39,9 +39,11 @@ export default function SceneEditor({
 }) {
     // Stable refs for cross-scene navigation callbacks (avoids editor re-creation)
     const onExitUpRef = useRef<(() => void) | null>(onExitUp ?? null);
-    onExitUpRef.current = onExitUp ?? null;
     const onExitDownRef = useRef<(() => void) | null>(onExitDown ?? null);
-    onExitDownRef.current = onExitDown ?? null;
+    useEffect(() => {
+        onExitUpRef.current = onExitUp ?? null;
+        onExitDownRef.current = onExitDown ?? null;
+    }, [onExitUp, onExitDown]);
 
     // Content auto-save
     const contentAbortRef = useRef<AbortController | null>(null);
@@ -94,7 +96,7 @@ export default function SceneEditor({
 
     // Expose flush for parent
     const flushRef = useRef({ flushContentSave });
-    flushRef.current = { flushContentSave };
+    useEffect(() => { flushRef.current = { flushContentSave }; }, [flushContentSave]);
 
     // Attach flush to the DOM node so parent can call it
     const containerRef = useRef<HTMLDivElement>(null);

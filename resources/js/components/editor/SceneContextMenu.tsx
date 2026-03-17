@@ -1,7 +1,7 @@
-import type { Scene } from '@/types/models';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Scene } from '@/types/models';
 
 const menuShadow = 'shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]';
 

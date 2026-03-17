@@ -1,7 +1,8 @@
+import { router } from '@inertiajs/react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 import type { Book } from '@/types/models';
-import { router } from '@inertiajs/react';
-import { useTranslation } from 'react-i18next';
 import BookCardMenu from './BookCardMenu';
 import ProgressBar from './ProgressBar';
 
@@ -13,6 +14,11 @@ type BookWithCounts = Book & {
     chapters_sum_word_count: number | null;
     storylines?: { id: number; book_id: number; name: string }[];
 };
+
+function computeHoursAgo(updatedAt: string): number {
+    const diff = Date.now() - new Date(updatedAt).getTime();
+    return Math.floor(diff / 3600000);
+}
 
 export default function BookCard({
     book,
@@ -32,16 +38,15 @@ export default function BookCard({
         return t('bookCard.words', { count, formatted: count.toLocaleString(i18n.language) });
     }
 
-    function timeAgo(date: string): string {
-        const diff = Date.now() - new Date(date).getTime();
-        const hours = Math.floor(diff / 3600000);
-        if (hours < 1) return t('bookCard.editedJustNow');
-        if (hours < 24) return t('bookCard.editedHoursAgo', { count: hours });
-        const days = Math.floor(hours / 24);
+    const [hoursAgo] = useState(() => computeHoursAgo(book.updated_at));
+    const updatedAtLabel = (() => {
+        if (hoursAgo < 1) return t('bookCard.editedJustNow');
+        if (hoursAgo < 24) return t('bookCard.editedHoursAgo', { count: hoursAgo });
+        const days = Math.floor(hoursAgo / 24);
         if (days < 30) return t('bookCard.editedDaysAgo', { count: days });
         const months = Math.floor(days / 30);
         return t('bookCard.editedMonthsAgo', { count: months });
-    }
+    })();
 
     const storylineCount = book.storylines?.length ?? 0;
     const meta = [
@@ -72,7 +77,7 @@ export default function BookCard({
                 }}
             />
 
-            <span className="text-xs leading-4 text-ink-faint">{timeAgo(book.updated_at)}</span>
+            <span className="text-xs leading-4 text-ink-faint">{updatedAtLabel}</span>
         </div>
     );
 }

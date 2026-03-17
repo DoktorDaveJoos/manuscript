@@ -1,7 +1,7 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { start as startPreparation, status as preparationStatus } from '@/actions/App/Http/Controllers/AiPreparationController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { AiPreparationStatus } from '@/types/models';
-import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const TOTAL_PHASES = 7;
 

@@ -1,17 +1,17 @@
+import { router } from '@inertiajs/react';
+import { diffArrays, diffWords } from 'diff';
+import { Check, ChevronDown, ChevronRight, TriangleAlert } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     acceptPartialVersion,
     acceptVersion,
     rejectVersion,
 } from '@/actions/App/Http/Controllers/ChapterController';
+import Button from '@/components/ui/Button';
 import { getXsrfToken } from '@/lib/csrf';
 import { ruleCheckers, RULE_THRESHOLDS, stripTags } from '@/lib/ruleCheckers';
 import type { ChapterVersion, ProsePassRule, VersionSource } from '@/types/models';
-import { Check, ChevronDown, ChevronRight, TriangleAlert } from 'lucide-react';
-import { router } from '@inertiajs/react';
-import { diffArrays, diffWords } from 'diff';
-import Button from '@/components/ui/Button';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 function splitParagraphs(html: string | null): string[] {
     if (!html) return [];

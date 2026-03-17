@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { dismissMilestone } from '@/actions/App/Http/Controllers/DashboardController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { ManuscriptTarget } from '@/types/models';
-import { dismissMilestone } from '@/actions/App/Http/Controllers/DashboardController';
 
 export default function MilestoneCelebration({
     bookId,

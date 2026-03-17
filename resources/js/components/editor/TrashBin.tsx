@@ -1,10 +1,10 @@
-import { index as trashIndex, restore as trashRestore, empty as trashEmpty } from '@/actions/App/Http/Controllers/TrashController';
-import { jsonFetchHeaders } from '@/lib/utils';
-import type { TrashItem } from '@/types/models';
 import { router } from '@inertiajs/react';
 import { AlignLeft, ChevronRight, Circle, File, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { index as trashIndex, restore as trashRestore, empty as trashEmpty } from '@/actions/App/Http/Controllers/TrashController';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type { TrashItem } from '@/types/models';
 
 const typeIcon: Record<TrashItem['type'], React.ReactNode> = {
     storyline: <Circle size={8} className="shrink-0" />,

@@ -1,5 +1,5 @@
-import type { WikiEntryKind } from '@/types/models';
 import { useTranslation } from 'react-i18next';
+import type { WikiEntryKind } from '@/types/models';
 
 export type WikiTab = 'characters' | WikiEntryKind;
 

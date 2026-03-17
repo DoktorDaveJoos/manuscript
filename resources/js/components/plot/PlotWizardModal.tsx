@@ -1,6 +1,3 @@
-import { store as setupStructure } from '@/actions/App/Http/Controllers/PlotSetupController';
-import type { PlotTemplate, TemplateBeat } from '@/lib/plot-templates';
-import type { Book, Chapter, PlotPointType, Storyline } from '@/types/models';
 import {
     DndContext,
     DragOverlay,
@@ -8,17 +5,21 @@ import {
     closestCenter,
     useDroppable,
     useSensor,
-    useSensors,
-    type DragEndEvent,
-    type DragStartEvent,
+    useSensors
+    
+    
 } from '@dnd-kit/core';
+import type {DragEndEvent, DragStartEvent} from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { router } from '@inertiajs/react';
 import { ChevronDown, ChevronUp, GripVertical, Plus, Sparkles, Trash2, X } from 'lucide-react';
-import Button from '@/components/ui/Button';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { store as setupStructure } from '@/actions/App/Http/Controllers/PlotSetupController';
+import Button from '@/components/ui/Button';
+import type { PlotTemplate, TemplateBeat } from '@/lib/plot-templates';
+import type { Book, Chapter, PlotPointType, Storyline } from '@/types/models';
 
 type WizardAct = {
     title: string;
@@ -179,7 +180,6 @@ export default function PlotWizardModal({ book, template, storylines, chapters, 
                             template={template}
                             acts={acts}
                             chapterAssignments={chapterAssignments}
-                            chapters={chapters}
                             hasChapters={hasChapters}
                         />
                     )}
@@ -550,13 +550,11 @@ function ReviewStep({
     template,
     acts,
     chapterAssignments,
-    chapters,
     hasChapters,
 }: {
     template: PlotTemplate;
     acts: WizardAct[];
     chapterAssignments: ChapterAssignments;
-    chapters: Chapter[];
     hasChapters: boolean;
 }) {
     const { t } = useTranslation('plot');

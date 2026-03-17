@@ -1,5 +1,6 @@
 import { Upload } from 'lucide-react';
-import { useCallback, useRef, useState, type DragEvent } from 'react';
+import { useCallback, useRef, useState  } from 'react';
+import type {DragEvent} from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function DropZone({ onFiles }: { onFiles: (files: File[]) => void }) {

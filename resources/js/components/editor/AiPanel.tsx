@@ -1,15 +1,15 @@
+import { Link, router } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight, Lock, MessageCircle, PenTool, Pilcrow, Sparkles } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { beautify, revise } from '@/actions/App/Http/Controllers/AiController';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import ProFeatureLock from '@/components/ui/ProFeatureLock';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useChapterAnalysis } from '@/hooks/useChapterAnalysis';
 import { getXsrfToken } from '@/lib/csrf';
 import { cn } from '@/lib/utils';
 import type { Analysis, Book, Chapter, Character, CharacterChapterPivot, InformationDelivery } from '@/types/models';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
-import { ChevronLeft, ChevronRight, Lock, MessageCircle, PenTool, Pilcrow, Sparkles } from 'lucide-react';
-import { Link, router } from '@inertiajs/react';
-import { useCallback, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 type ChapterCharacter = Character & { pivot: CharacterChapterPivot };
 type AnalysisWithSummary = { score?: number; findings?: string[]; summary?: string };

@@ -200,7 +200,7 @@ export default function AiChatDrawer({
         } finally {
             setIsStreaming(false);
         }
-    }, [book.id, chapter.id, isStreaming]);
+    }, [book.id, chapter.id, isStreaming, t]);
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {

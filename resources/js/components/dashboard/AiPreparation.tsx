@@ -1,10 +1,10 @@
+import { Link } from '@inertiajs/react';
+import { Lock, RefreshCw, Sparkle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useAiPreparation, TOTAL_PHASES } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
-import { Link } from '@inertiajs/react';
-import { Lock, RefreshCw, Sparkle } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 export default function AiPreparation({
     bookId,

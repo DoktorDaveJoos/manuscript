@@ -1,10 +1,10 @@
+import { router } from '@inertiajs/react';
+import { ChevronRight } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { update } from '@/actions/App/Http/Controllers/StorylineController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Storyline } from '@/types/models';
-import { ChevronRight } from 'lucide-react';
-import { router } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import ColorPicker from './ColorPicker';
 
 const menuShadow = 'shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]';

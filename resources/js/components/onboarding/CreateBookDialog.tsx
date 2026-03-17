@@ -1,5 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import { type FormEvent } from 'react';
+import type {FormEvent} from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';

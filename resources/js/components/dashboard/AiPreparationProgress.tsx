@@ -1,8 +1,8 @@
+import { Check, Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import { useAiPreparation, TOTAL_PHASES } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
-import { Check, Lock } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 export default function AiPreparationProgress({
     bookId,

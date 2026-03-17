@@ -1,6 +1,6 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import type { ChapterStatus } from '@/types/models';
-import { useTranslation } from 'react-i18next';
 
 export default function StatusBadge({ status, className }: { status: ChapterStatus; className?: string }) {
     const { t } = useTranslation('editor');

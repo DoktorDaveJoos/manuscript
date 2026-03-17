@@ -1,14 +1,14 @@
+import { router } from '@inertiajs/react';
+import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import Button from '@/components/ui/Button';
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
+import Button from '@/components/ui/Button';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
 import SettingsLayout from '@/layouts/SettingsLayout';
-import { jsonFetchHeaders } from '@/lib/utils';
 import type { Theme } from '@/lib/theme';
+import { jsonFetchHeaders } from '@/lib/utils';
 import type { AppSettings } from '@/types/models';
-import { router } from '@inertiajs/react';
-import { useState, useCallback } from 'react';
 
 interface Props {
     settings: AppSettings;

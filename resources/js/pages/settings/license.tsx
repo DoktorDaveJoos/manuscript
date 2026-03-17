@@ -1,12 +1,13 @@
+import { router, usePage } from '@inertiajs/react';
+import { useState, useCallback, useEffect  } from 'react';
+import type {FormEvent} from 'react';
 import { useTranslation } from 'react-i18next';
 import { activate, deactivate, revalidate } from '@/actions/App/Http/Controllers/LicenseController';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 import SettingsLayout from '@/layouts/SettingsLayout';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { License } from '@/types/models';
-import { router, usePage } from '@inertiajs/react';
-import { useState, useCallback, useEffect, type FormEvent } from 'react';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
 
 interface Props {
     book?: { id: number; title: string } | null;
@@ -62,7 +63,7 @@ export default function LicensePage({ book }: Props) {
                 .catch(() => setError(t('license.error.network')))
                 .finally(() => setActivating(false));
         },
-        [key],
+        [key, t],
     );
 
     const handleDeactivate = useCallback(() => {
@@ -81,7 +82,7 @@ export default function LicensePage({ book }: Props) {
                 router.reload();
             })
             .catch(() => setError(t('license.error.network')));
-    }, []);
+    }, [t]);
 
     return (
         <SettingsLayout activeSection="license" book={book} title={t('license.title')}>

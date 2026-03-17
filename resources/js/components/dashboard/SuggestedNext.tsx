@@ -1,8 +1,8 @@
 import { Link } from '@inertiajs/react';
 import { Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { SuggestedNext as SuggestedNextType } from '@/types/models';
 import { show as showChapter } from '@/actions/App/Http/Controllers/ChapterController';
+import type { SuggestedNext as SuggestedNextType } from '@/types/models';
 
 export default function SuggestedNext({
     suggestion,

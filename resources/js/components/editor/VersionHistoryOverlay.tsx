@@ -1,17 +1,17 @@
+import { router } from '@inertiajs/react';
+import { Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     createSnapshot,
     destroyVersion,
     restoreVersion,
     versions,
 } from '@/actions/App/Http/Controllers/ChapterController';
-import { getXsrfToken } from '@/lib/csrf';
-import type { ChapterVersion, VersionSource } from '@/types/models';
-import { router } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import { getXsrfToken } from '@/lib/csrf';
+import type { ChapterVersion, VersionSource } from '@/types/models';
 
 const sourceBadgeClass: Record<VersionSource, string> = {
     original: 'bg-neutral-bg text-ink-muted',

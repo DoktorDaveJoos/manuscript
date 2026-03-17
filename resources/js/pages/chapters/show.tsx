@@ -1,3 +1,8 @@
+import { Head, router, usePage } from '@inertiajs/react';
+import { DOMSerializer } from '@tiptap/pm/model';
+import type { Editor } from '@tiptap/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { split, updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
 import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
@@ -5,7 +10,8 @@ import AiChatDrawer from '@/components/editor/AiChatDrawer';
 import AiPanel from '@/components/editor/AiPanel';
 import CommandPalette from '@/components/editor/CommandPalette';
 import DiffView from '@/components/editor/DiffView';
-import EditorBar, { type SaveStatus } from '@/components/editor/EditorBar';
+import EditorBar from '@/components/editor/EditorBar';
+import type {SaveStatus} from '@/components/editor/EditorBar';
 import FormattingToolbar from '@/components/editor/FormattingToolbar';
 import NotesPanel from '@/components/editor/NotesPanel';
 import Sidebar from '@/components/editor/Sidebar';
@@ -16,12 +22,7 @@ import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import { getXsrfToken } from '@/lib/csrf';
 import { createChapter, jsonFetchHeaders } from '@/lib/utils';
-import type { Analysis, Book, Chapter, Character, CharacterChapterPivot, ProsePassRule, Scene } from '@/types/models';
-import { Head, router, usePage } from '@inertiajs/react';
-import { DOMSerializer } from '@tiptap/pm/model';
-import type { Editor } from '@tiptap/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import type { Analysis, AppSettings, Book, Chapter, Character, CharacterChapterPivot, ProsePassRule, Scene } from '@/types/models';
 
 
 type ChapterWithRelations = Chapter & {
@@ -71,7 +72,7 @@ export default function ChapterShow({
     const pendingVersion = chapter.pending_version ?? null;
     const sidebarStorylines = useSidebarStorylines();
     const { visible: aiVisible, licensed: isLicensed } = useAiFeatures();
-    const { app_settings } = usePage<{ app_settings: import('@/types/models').AppSettings }>().props;
+    const { app_settings } = usePage<{ app_settings: AppSettings }>().props;
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
     const [chapterTitle, setChapterTitle] = useState(chapter.title);
     const [scenes, setScenes] = useState<Scene[]>(chapter.scenes ?? []);
@@ -97,7 +98,7 @@ export default function ChapterShow({
             const next = !prev;
             try {
                 localStorage.setItem('manuscript:notes-open', String(next));
-            } catch {}
+            } catch { /* no-op */ }
             return next;
         });
     }, []);
@@ -106,7 +107,7 @@ export default function ChapterShow({
         setIsNotesOpen(false);
         try {
             localStorage.setItem('manuscript:notes-open', 'false');
-        } catch {}
+        } catch { /* no-op */ }
         activeEditorRef.current?.commands.focus();
     }, []);
 
@@ -121,19 +122,7 @@ export default function ChapterShow({
         }).then(() => router.reload({ only: ['app_settings'] }));
     }, []);
 
-    const [isTypewriterMode, setIsTypewriterMode] = useState(app_settings.typewriter_mode);
-
-    const toggleTypewriterMode = useCallback(() => {
-        setIsTypewriterMode((prev) => {
-            const next = !prev;
-            fetch('/settings', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': getXsrfToken(), Accept: 'application/json' },
-                body: JSON.stringify({ key: 'typewriter_mode', value: next }),
-            }).then(() => router.reload({ only: ['app_settings'] }));
-            return next;
-        });
-    }, []);
+    const isTypewriterMode = app_settings.typewriter_mode;
 
     const [isFocusMode, setIsFocusMode] = useState(() => {
         try {
@@ -148,7 +137,7 @@ export default function ChapterShow({
             const next = !prev;
             try {
                 localStorage.setItem('manuscript:focus-mode', String(next));
-            } catch {}
+            } catch { /* no-op */ }
             if (next) {
                 document.documentElement.requestFullscreen?.().catch(() => {});
             } else {
@@ -162,7 +151,7 @@ export default function ChapterShow({
         setIsFocusMode(false);
         try {
             localStorage.setItem('manuscript:focus-mode', 'false');
-        } catch {}
+        } catch { /* no-op */ }
         if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
     }, []);
 
@@ -369,7 +358,7 @@ export default function ChapterShow({
                 setIsFocusMode(false);
                 try {
                     localStorage.setItem('manuscript:focus-mode', 'false');
-                } catch {}
+                } catch { /* no-op */ }
             }
         };
         document.addEventListener('fullscreenchange', onFullscreenChange);

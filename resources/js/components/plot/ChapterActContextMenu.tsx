@@ -1,7 +1,7 @@
-import type { Act } from '@/types/models';
 import { ChevronRight, ArrowRight, Download, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Act } from '@/types/models';
 
 const ACT_COLORS: Record<number, string> = {
     0: 'var(--color-accent)',

@@ -1,10 +1,10 @@
+import { router } from '@inertiajs/react';
+import { ArrowRight, ChevronRight, Circle, Pencil, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { reorder, updateStatus } from '@/actions/App/Http/Controllers/ChapterController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Chapter, ChapterStatus, Storyline } from '@/types/models';
-import { ArrowRight, ChevronRight, Circle, Pencil, Trash2 } from 'lucide-react';
-import { router } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 const statusDotClass: Record<ChapterStatus, string> = {
     draft: 'bg-status-draft',

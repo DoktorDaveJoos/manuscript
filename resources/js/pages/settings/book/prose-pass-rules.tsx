@@ -1,9 +1,9 @@
+import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { updateProsePassRules } from '@/actions/App/Http/Controllers/SettingsController';
 import SettingsLayout from '@/layouts/SettingsLayout';
 import { getXsrfToken } from '@/lib/csrf';
 import type { ProsePassRule } from '@/types/models';
-import { useState, useCallback } from 'react';
 
 type BookData = { id: number; title: string };
 
@@ -55,7 +55,7 @@ export default function ProsePassRules({ book, rules: initialRules }: Props) {
                 setRules(rules);
             });
         },
-        [book, rules],
+        [rules],
     );
 
     return (

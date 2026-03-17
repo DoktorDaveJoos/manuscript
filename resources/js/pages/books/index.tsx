@@ -1,14 +1,15 @@
-import Button from '@/components/ui/Button';
-import BookCard, { type BookWithCounts } from '@/components/onboarding/BookCard';
+import { router } from '@inertiajs/react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { duplicate } from '@/actions/App/Http/Controllers/BookController';
+import BookCard from '@/components/onboarding/BookCard';
+import type {BookWithCounts} from '@/components/onboarding/BookCard';
 import CreateBookDialog from '@/components/onboarding/CreateBookDialog';
 import DeleteBookDialog from '@/components/onboarding/DeleteBookDialog';
 import NewBookCard from '@/components/onboarding/NewBookCard';
 import RenameBookDialog from '@/components/onboarding/RenameBookDialog';
+import Button from '@/components/ui/Button';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { duplicate } from '@/actions/App/Http/Controllers/BookController';
-import { router } from '@inertiajs/react';
 
 type DialogState =
     | { type: 'create' }

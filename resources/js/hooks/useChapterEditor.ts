@@ -1,6 +1,3 @@
-import { ParagraphEnterExtension } from '@/extensions/ParagraphEnterExtension';
-import { SceneBridgeExtension } from '@/extensions/SceneBridgeExtension';
-import { TypewriterScrollExtension } from '@/extensions/TypewriterScrollExtension';
 import CharacterCount from '@tiptap/extension-character-count';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
@@ -8,7 +5,10 @@ import Typography from '@tiptap/extension-typography';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type { RefObject } from 'react';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { ParagraphEnterExtension } from '@/extensions/ParagraphEnterExtension';
+import { SceneBridgeExtension } from '@/extensions/SceneBridgeExtension';
+import { TypewriterScrollExtension } from '@/extensions/TypewriterScrollExtension';
 
 export default function useChapterEditor({
     content,
@@ -26,7 +26,7 @@ export default function useChapterEditor({
     onExitDownRef: RefObject<(() => void) | null>;
 }) {
     const onUpdateRef = useRef(onUpdate);
-    onUpdateRef.current = onUpdate;
+    useEffect(() => { onUpdateRef.current = onUpdate; }, [onUpdate]);
 
     const editor = useEditor(
         {

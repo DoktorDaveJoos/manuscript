@@ -1,10 +1,10 @@
-import { update } from '@/actions/App/Http/Controllers/BookController';
-import type { Book } from '@/types/models';
 import { useForm } from '@inertiajs/react';
-import { type FormEvent } from 'react';
+import type {FormEvent} from 'react';
 import { useTranslation } from 'react-i18next';
+import { update } from '@/actions/App/Http/Controllers/BookController';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import type { Book } from '@/types/models';
 
 export default function RenameBookDialog({ book, onClose }: { book: Book; onClose: () => void }) {
     const { t } = useTranslation('onboarding');

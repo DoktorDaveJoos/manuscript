@@ -1,32 +1,32 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import enCommon from './en/common.json';
-import enEditor from './en/editor.json';
-import enDashboard from './en/dashboard.json';
-import enSettings from './en/settings.json';
-import enOnboarding from './en/onboarding.json';
-import enPlot from './en/plot.json';
-import enWiki from './en/wiki.json';
-import enAi from './en/ai.json';
-
+import deAi from './de/ai.json';
 import deCommon from './de/common.json';
-import deEditor from './de/editor.json';
 import deDashboard from './de/dashboard.json';
-import deSettings from './de/settings.json';
+import deEditor from './de/editor.json';
 import deOnboarding from './de/onboarding.json';
 import dePlot from './de/plot.json';
+import deSettings from './de/settings.json';
 import deWiki from './de/wiki.json';
-import deAi from './de/ai.json';
+import enAi from './en/ai.json';
+import enCommon from './en/common.json';
+import enDashboard from './en/dashboard.json';
+import enEditor from './en/editor.json';
+import enOnboarding from './en/onboarding.json';
+import enPlot from './en/plot.json';
+import enSettings from './en/settings.json';
+import enWiki from './en/wiki.json';
 
+
+import esAi from './es/ai.json';
 import esCommon from './es/common.json';
-import esEditor from './es/editor.json';
 import esDashboard from './es/dashboard.json';
-import esSettings from './es/settings.json';
+import esEditor from './es/editor.json';
 import esOnboarding from './es/onboarding.json';
 import esPlot from './es/plot.json';
+import esSettings from './es/settings.json';
 import esWiki from './es/wiki.json';
-import esAi from './es/ai.json';
 
 i18n.use(initReactI18next).init({
     resources: {

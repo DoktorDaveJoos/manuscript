@@ -1,7 +1,7 @@
+import type { DraggableSyntheticListeners } from '@dnd-kit/core';
+import { GripVertical } from 'lucide-react';
 import { formatCompactCount } from '@/lib/utils';
 import type { Scene } from '@/types/models';
-import { GripVertical } from 'lucide-react';
-import type { DraggableSyntheticListeners } from '@dnd-kit/core';
 
 export default function SceneListItem({
     scene,

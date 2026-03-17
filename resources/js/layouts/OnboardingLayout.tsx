@@ -1,8 +1,8 @@
+import { Head, Link, usePage } from '@inertiajs/react';
+import type {PropsWithChildren} from 'react';
+import { useTranslation } from 'react-i18next';
 import CrashReportDialog from '@/components/onboarding/CrashReportDialog';
 import type { AppSettings } from '@/types/models';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { type PropsWithChildren } from 'react';
-import { useTranslation } from 'react-i18next';
 
 export default function OnboardingLayout({ children, title }: PropsWithChildren<{ title?: string }>) {
     const { t } = useTranslation();

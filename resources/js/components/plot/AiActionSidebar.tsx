@@ -1,11 +1,12 @@
+import { ChevronLeft, ChevronRight, HeartPulse, Search, Sparkle, Zap  } from 'lucide-react';
+import type {LucideIcon} from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import ProFeatureLock from '@/components/ui/ProFeatureLock';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { getXsrfToken } from '@/lib/csrf';
 import { cn } from '@/lib/utils';
 import type { Book } from '@/types/models';
-import { ChevronLeft, ChevronRight, HeartPulse, Search, Sparkle, Zap, type LucideIcon } from 'lucide-react';
-import { useCallback, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 type TensionPoint = {
     chapter_id: number;

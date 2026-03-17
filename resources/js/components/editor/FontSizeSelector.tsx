@@ -1,7 +1,7 @@
-import { cn } from '@/lib/utils';
 import { Check, ChevronDown } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
 
 export const FONT_SIZES = [14, 16, 18, 20, 22, 24] as const;
 

@@ -1,3 +1,21 @@
+import {
+    DndContext,
+    DragOverlay,
+    PointerSensor,
+    closestCenter,
+    useSensor,
+    useSensors
+    
+    
+    
+} from '@dnd-kit/core';
+import type {DragEndEvent, DragOverEvent, DragStartEvent} from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { router } from '@inertiajs/react';
+import { Book, ChevronDown, GripVertical, Plus } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { reorder as reorderChapters, updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
 import {
     destroy as destroyScene,
@@ -8,23 +26,6 @@ import {
 import { reorder as reorderStorylines, update as updateStoryline } from '@/actions/App/Http/Controllers/StorylineController';
 import { formatCompactCount, jsonFetchHeaders } from '@/lib/utils';
 import type { Chapter, Scene, Storyline } from '@/types/models';
-import { router } from '@inertiajs/react';
-import {
-    DndContext,
-    DragOverlay,
-    PointerSensor,
-    closestCenter,
-    useSensor,
-    useSensors,
-    type DragEndEvent,
-    type DragOverEvent,
-    type DragStartEvent,
-} from '@dnd-kit/core';
-import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Book, ChevronDown, GripVertical, Plus } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import ChapterContextMenu from './ChapterContextMenu';
 import ChapterListItem from './ChapterListItem';
 import DeleteChapterDialog from './DeleteChapterDialog';
@@ -385,15 +386,6 @@ export default function ChapterList({
         }
     }, [activeChapterId]);
 
-    const toggleChapterExpand = useCallback((chapterId: number) => {
-        setExpandedChapterIds((prev) => {
-            const next = new Set(prev);
-            if (next.has(chapterId)) next.delete(chapterId);
-            else next.add(chapterId);
-            return next;
-        });
-    }, []);
-
     const toggleStorylineCollapse = useCallback((storylineId: number) => {
         setCollapsedStorylineIds((prev) => {
             const next = new Set(prev);
@@ -636,7 +628,7 @@ export default function ChapterList({
             });
             router.reload({ only: ['book'] });
         },
-        [bookId],
+        [bookId, t],
     );
 
     const showHeaders = storylines.length > 1;

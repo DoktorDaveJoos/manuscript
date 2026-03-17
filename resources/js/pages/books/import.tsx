@@ -1,16 +1,18 @@
-import { confirmImport, parse, skipImport } from '@/actions/App/Http/Controllers/BookController';
-import { editor } from '@/actions/App/Http/Controllers/ChapterController';
-import Button from '@/components/ui/Button';
-import DropZone from '@/components/onboarding/DropZone';
-import FileRow from '@/components/onboarding/FileRow';
-import ImportChapterRow, { type ChapterItem } from '@/components/onboarding/ImportChapterRow';
-import ReviewPhase, { type ReviewStoryline } from '@/components/onboarding/ReviewPhase';
-import OnboardingLayout from '@/layouts/OnboardingLayout';
-import type { Book, Storyline, StorylineType } from '@/types/models';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { confirmImport, parse, skipImport } from '@/actions/App/Http/Controllers/BookController';
+import { editor } from '@/actions/App/Http/Controllers/ChapterController';
+import DropZone from '@/components/onboarding/DropZone';
+import FileRow from '@/components/onboarding/FileRow';
+import ImportChapterRow from '@/components/onboarding/ImportChapterRow';
+import type {ChapterItem} from '@/components/onboarding/ImportChapterRow';
+import ReviewPhase from '@/components/onboarding/ReviewPhase';
+import type {ReviewStoryline} from '@/components/onboarding/ReviewPhase';
+import Button from '@/components/ui/Button';
+import OnboardingLayout from '@/layouts/OnboardingLayout';
+import type { Book, Storyline, StorylineType } from '@/types/models';
 
 function normalizeFilenameToStorylineName(filename: string): string {
     return filename
@@ -272,7 +274,7 @@ export default function BooksImport({
         try {
             await axios.post(confirmImport.url(book), payload);
             router.visit(editor.url(book));
-        } catch (error) {
+        } catch {
             setSubmitting(false);
         }
     }

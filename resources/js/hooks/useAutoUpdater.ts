@@ -1,6 +1,6 @@
+import { useSyncExternalStore } from 'react';
 import { check, download, install } from '@/actions/App/Http/Controllers/UpdateController';
 import { jsonFetchHeaders } from '@/lib/utils';
-import { useSyncExternalStore } from 'react';
 
 type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'error';
 

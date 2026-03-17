@@ -1,5 +1,5 @@
-import type { AppSettings, License } from '@/types/models';
 import { usePage } from '@inertiajs/react';
+import type { AppSettings, License } from '@/types/models';
 
 type SharedProps = {
     app_settings: AppSettings;

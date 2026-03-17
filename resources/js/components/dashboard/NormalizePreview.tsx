@@ -1,7 +1,7 @@
-import Button from '@/components/ui/Button';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
 import { getXsrfToken } from '@/lib/csrf';
 import type { NormalizePreviewResult } from '@/types/models';
 

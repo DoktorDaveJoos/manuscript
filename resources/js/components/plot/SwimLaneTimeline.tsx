@@ -1,10 +1,10 @@
-import { buildTimelineGrid, cellKey } from '@/lib/plot-utils';
-import type { Act, PlotPoint, Storyline } from '@/types/models';
-import { DndContext, DragOverlay, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import { DndContext, DragOverlay, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { buildTimelineGrid, cellKey } from '@/lib/plot-utils';
+import type { Act, PlotPoint, Storyline } from '@/types/models';
 import ChapterActContextMenu from './ChapterActContextMenu';
 import PlotPointCard from './PlotPointCard';
 

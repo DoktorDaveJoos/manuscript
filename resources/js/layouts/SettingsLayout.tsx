@@ -1,10 +1,10 @@
+import { Head, Link, usePage } from '@inertiajs/react';
+import type {PropsWithChildren} from 'react';
+import { useTranslation } from 'react-i18next';
 import { index as booksIndex } from '@/actions/App/Http/Controllers/BookController';
 import BookSwitcher from '@/components/settings/BookSwitcher';
 import NavItem from '@/components/ui/NavItem';
 import UpdateBanner from '@/components/ui/UpdateBanner';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { type PropsWithChildren } from 'react';
-import { useTranslation } from 'react-i18next';
 
 type ActiveSection = 'appearance' | 'license' | 'ai-providers' | 'writing-style' | 'prose-pass-rules' | 'export';
 

@@ -1,7 +1,7 @@
-import type { BlockType } from '@/components/editor/NotesPanel';
 import { Heading, List, MessageSquare, Minus, SquareCheckBig } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { BlockType } from '@/components/editor/NotesPanel';
 
 type SlashMenuItem = {
     icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -35,17 +35,22 @@ export default function NotesSlashMenu({
     const menuRef = useRef<HTMLDivElement>(null);
     const onSelectRef = useRef(onSelect);
     const onCloseRef = useRef(onClose);
-    onSelectRef.current = onSelect;
-    onCloseRef.current = onClose;
+    useEffect(() => {
+        onSelectRef.current = onSelect;
+        onCloseRef.current = onClose;
+    }, [onSelect, onClose]);
+
+    const [prevQuery, setPrevQuery] = useState(query);
+    if (prevQuery !== query) {
+        setPrevQuery(query);
+        setActiveIndex(0);
+    }
+
+    useEffect(() => { activeIndexRef.current = activeIndex; }, [activeIndex]);
 
     const filtered = query ? ITEMS.filter((item) => item.blockType.includes(query.toLowerCase())) : ITEMS;
     const filteredRef = useRef(filtered);
-    filteredRef.current = filtered;
-
-    useEffect(() => {
-        setActiveIndex(0);
-        activeIndexRef.current = 0;
-    }, [query]);
+    useEffect(() => { filteredRef.current = filtered; }, [filtered]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {

@@ -1,10 +1,10 @@
-import { show } from '@/actions/App/Http/Controllers/ChapterController';
-import { formatCompactCount } from '@/lib/utils';
-import type { Chapter } from '@/types/models';
 import type { DraggableSyntheticListeners } from '@dnd-kit/core';
 import { router } from '@inertiajs/react';
 import { GripVertical } from 'lucide-react';
 import { forwardRef } from 'react';
+import { show } from '@/actions/App/Http/Controllers/ChapterController';
+import { formatCompactCount } from '@/lib/utils';
+import type { Chapter } from '@/types/models';
 
 type ChapterListItemProps = {
     chapter: Chapter;

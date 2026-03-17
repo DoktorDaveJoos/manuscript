@@ -1,9 +1,9 @@
+import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { updateWritingStyle } from '@/actions/App/Http/Controllers/SettingsController';
+import Textarea from '@/components/ui/Textarea';
 import SettingsLayout from '@/layouts/SettingsLayout';
 import { getXsrfToken } from '@/lib/csrf';
-import { useState, useCallback } from 'react';
-import Textarea from '@/components/ui/Textarea';
 
 type BookData = {
     id: number;
@@ -43,7 +43,7 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
             })
             .catch(() => setMessage(t('writingStyle.saveFailed')))
             .finally(() => setSaving(false));
-    }, [book, text]);
+    }, [text, t]);
 
     return (
         <SettingsLayout activeSection="writing-style" book={book} title={t('writingStyle.pageTitle', { bookTitle: book.title })}>

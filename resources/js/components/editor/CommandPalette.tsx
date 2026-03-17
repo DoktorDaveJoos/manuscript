@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import type { Editor } from '@tiptap/react';
 import {
     ArrowBigUp,
     BookOpen,
@@ -14,9 +14,9 @@ import {
     Search,
     StickyNote,
 } from 'lucide-react';
-import type { Editor } from '@tiptap/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
 
 type SectionId = 'focus' | 'textStyle' | 'aiGenerate' | 'chapter';
 
@@ -226,14 +226,12 @@ export default function CommandPalette({
     }, [filtered]);
 
     useEffect(() => {
-        setActiveIndex(0);
-    }, [query]);
-
-    useEffect(() => {
         if (isOpen) {
-            setQuery('');
-            setActiveIndex(0);
-            requestAnimationFrame(() => inputRef.current?.focus());
+            requestAnimationFrame(() => {
+                setQuery('');
+                setActiveIndex(0);
+                inputRef.current?.focus();
+            });
         }
     }, [isOpen]);
 
@@ -291,7 +289,7 @@ export default function CommandPalette({
                         ref={inputRef}
                         type="text"
                         value={query}
-                        onChange={(e) => setQuery(e.target.value)}
+                        onChange={(e) => { setQuery(e.target.value); setActiveIndex(0); }}
                         placeholder={t('palette.searchActions')}
                         className="min-w-0 flex-1 bg-transparent text-sm text-ink placeholder:text-ink-faint focus:outline-none"
                     />

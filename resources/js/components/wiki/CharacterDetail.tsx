@@ -1,6 +1,6 @@
-import type { Character } from '@/types/models';
 import { Pencil } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { Character } from '@/types/models';
 import WikiAvatar from './WikiAvatar';
 
 export default function CharacterDetail({ character, onEdit }: { character: Character; onEdit?: () => void }) {
