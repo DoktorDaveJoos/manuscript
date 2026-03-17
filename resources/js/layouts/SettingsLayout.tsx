@@ -1,6 +1,5 @@
 import { index as booksIndex } from '@/actions/App/Http/Controllers/BookController';
 import BookSwitcher from '@/components/settings/BookSwitcher';
-import LanguageSelector from '@/components/ui/LanguageSelector';
 import NavItem from '@/components/ui/NavItem';
 import UpdateBanner from '@/components/ui/UpdateBanner';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -29,8 +28,8 @@ export default function SettingsLayout({ children, activeSection, book, title }:
                 <div className="flex min-h-0 flex-1">
                 {/* Sidebar */}
                 <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border bg-surface">
-                    {/* Header — Back link + Language selector */}
-                    <div className="flex items-center justify-between px-5 py-4">
+                    {/* Header — Back link */}
+                    <div className="px-5 py-4">
                         <Link
                             href={book ? `/books/${book.id}/dashboard` : booksIndex.url()}
                             className="flex items-center gap-1.5 text-[12px] font-medium text-ink-muted transition-colors hover:text-ink"
@@ -40,7 +39,6 @@ export default function SettingsLayout({ children, activeSection, book, title }:
                             </svg>
                             {t('back')}
                         </Link>
-                        <LanguageSelector />
                     </div>
 
                     {/* App settings */}

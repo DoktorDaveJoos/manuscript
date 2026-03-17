@@ -203,7 +203,7 @@ function LanguageSection() {
                                         : 'border border-border text-ink-muted hover:border-ink hover:text-ink'
                                 }`}
                             >
-                                {locale === 'en' ? 'English' : 'Deutsch'}
+                                {{ en: 'English', de: 'Deutsch', es: 'Español' }[locale]}
                             </button>
                         ))}
                     </div>

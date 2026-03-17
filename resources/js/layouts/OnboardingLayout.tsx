@@ -1,5 +1,4 @@
 import CrashReportDialog from '@/components/onboarding/CrashReportDialog';
-import LanguageSelector from '@/components/ui/LanguageSelector';
 import type { AppSettings } from '@/types/models';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
@@ -18,10 +17,7 @@ export default function OnboardingLayout({ children, title }: PropsWithChildren<
                     <span className="text-[13px] font-semibold uppercase tracking-[0.08em] text-ink">
                         Manuscript
                     </span>
-                    <div className="flex items-center gap-3">
-                        <LanguageSelector />
-                        <Link href="/settings" className="text-[13px] text-ink-muted hover:text-ink">{t('settings')}</Link>
-                    </div>
+                    <Link href="/settings" className="text-[13px] text-ink-muted hover:text-ink">{t('settings')}</Link>
                 </header>
 
                 <main className="flex flex-1 flex-col">{children}</main>
