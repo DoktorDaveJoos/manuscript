@@ -32,7 +32,7 @@ const THEME_OPTIONS = [
     { value: 'system' as Theme, labelKey: 'appearance.theme.system' as const, descriptionKey: 'appearance.theme.systemDescription' as const },
 ];
 
-const LOCALES = ['en', 'de'] as const;
+const LOCALES = ['en', 'de', 'es'] as const;
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
     return (

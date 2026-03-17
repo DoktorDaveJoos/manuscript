@@ -19,6 +19,15 @@ import dePlot from './de/plot.json';
 import deWiki from './de/wiki.json';
 import deAi from './de/ai.json';
 
+import esCommon from './es/common.json';
+import esEditor from './es/editor.json';
+import esDashboard from './es/dashboard.json';
+import esSettings from './es/settings.json';
+import esOnboarding from './es/onboarding.json';
+import esPlot from './es/plot.json';
+import esWiki from './es/wiki.json';
+import esAi from './es/ai.json';
+
 i18n.use(initReactI18next).init({
     resources: {
         en: {
@@ -40,6 +49,16 @@ i18n.use(initReactI18next).init({
             plot: dePlot,
             wiki: deWiki,
             ai: deAi,
+        },
+        es: {
+            common: esCommon,
+            editor: esEditor,
+            dashboard: esDashboard,
+            settings: esSettings,
+            onboarding: esOnboarding,
+            plot: esPlot,
+            wiki: esWiki,
+            ai: esAi,
         },
     },
     lng: 'en',

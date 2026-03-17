@@ -1,0 +1,21 @@
+{
+    "wordsCompact": "{{formatted}} palabras",
+    "words_one": "{{count}} palabra",
+    "words_other": "{{count}} palabras",
+    "chapters_one": "{{count}} capítulo",
+    "chapters_other": "{{count}} capítulos",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "confirm": "Confirmar",
+    "close": "Cerrar",
+    "back": "Volver",
+    "loading": "Cargando…",
+    "search": "Buscar…",
+    "noResults": "Sin resultados",
+    "settings": "Configuración",
+    "nav.dashboard": "Panel",
+    "nav.wiki": "Wiki",
+    "nav.plot": "Trama",
+    "nav.canvas": "Lienzo"
+}

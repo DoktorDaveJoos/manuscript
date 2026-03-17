@@ -13,7 +13,7 @@ class SetLocale
     {
         $locale = AppSetting::get('locale', 'en');
 
-        if (in_array($locale, ['en', 'de'])) {
+        if (in_array($locale, ['en', 'de', 'es'])) {
             app()->setLocale($locale);
         }
 

@@ -2,7 +2,7 @@ import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import { usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 
-const LOCALES = ['en', 'de'] as const;
+const LOCALES = ['en', 'de', 'es'] as const;
 
 export default function LanguageSelector() {
     const { i18n } = useTranslation();
