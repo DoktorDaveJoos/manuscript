@@ -20,7 +20,7 @@ class CharacterFactory extends Factory
     {
         return [
             'book_id' => Book::factory(),
-            'name' => fake()->firstName() . ' ' . fake()->lastName(),
+            'name' => fake()->firstName().' '.fake()->lastName(),
             'description' => fake()->paragraph(),
             'is_ai_extracted' => false,
         ];
