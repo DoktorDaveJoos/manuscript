@@ -344,7 +344,10 @@ export default function AiChatDrawer({
                                     <AssistantMessage content={msg.content} />
                                 ) : isStreaming && i === messages.length - 1 ? (
                                     <div className="flex items-center gap-[5px]">
-                                        <Loader size={14} className="animate-spin text-accent" />
+                                        <Loader
+                                            size={14}
+                                            className="animate-spin text-accent"
+                                        />
                                         <span className="text-xs tracking-[0.01em] text-ink-muted">
                                             {t('chat.thinking')}
                                         </span>
