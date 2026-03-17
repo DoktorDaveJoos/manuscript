@@ -1,18 +1,12 @@
+import { cn } from '@/lib/utils';
 import type { ChapterStatus } from '@/types/models';
 import { useTranslation } from 'react-i18next';
 
-const dotClass: Record<ChapterStatus, string> = {
-    draft: 'bg-status-draft',
-    revised: 'bg-status-revised',
-    final: 'bg-status-final',
-};
-
-export default function StatusBadge({ status }: { status: ChapterStatus }) {
+export default function StatusBadge({ status, className }: { status: ChapterStatus; className?: string }) {
     const { t } = useTranslation('editor');
 
     return (
-        <span className="flex items-center gap-1.5 text-xs text-ink-muted">
-            <span className={`inline-block size-1.5 rounded-full ${dotClass[status]}`} />
+        <span className={cn('rounded-[4px] bg-neutral-bg px-2 py-0.5 text-[11px] font-medium text-ink-muted', className)}>
             {t(`status.${status}`)}
         </span>
     );

@@ -25,10 +25,10 @@ function tokenize(keys: string): string[] {
     return tokens;
 }
 
-export default function Kbd({ keys }: { keys: string }) {
+export default function Kbd({ keys, className }: { keys: string; className?: string }) {
     const tokens = tokenize(keys);
     return (
-        <span className="inline-flex items-center gap-0.5">
+        <span className={className ? `inline-flex items-center gap-0.5 ${className}` : 'inline-flex items-center gap-0.5'}>
             {tokens.map((token, i) => (
                 <kbd
                     key={i}

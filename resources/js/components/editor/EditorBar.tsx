@@ -1,6 +1,5 @@
 import Kbd from '@/components/ui/Kbd';
 import type { Chapter } from '@/types/models';
-import { History } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import StatusBadge from './StatusBadge';
 
@@ -12,7 +11,6 @@ export default function EditorBar({
     storylineName,
     wordCount,
     versionCount,
-    saveStatus,
     onVersionClick,
 }: {
     chapter: Chapter;
@@ -20,38 +18,29 @@ export default function EditorBar({
     storylineName: string;
     wordCount: number;
     versionCount: number;
-    saveStatus: SaveStatus;
     onVersionClick: () => void;
 }) {
     const { t, i18n } = useTranslation('editor');
 
     return (
-        <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-6">
-            <div className="flex items-center gap-3">
-                <span className="flex items-center gap-1.5 text-sm">
-                    <span className="text-ink-faint">{storylineName}</span>
-                    <span className="text-ink-faint">/</span>
-                    <span className="text-ink">{chapterTitle}</span>
-                </span>
-                <StatusBadge status={chapter.status} />
+        <div className="@container flex h-[38px] shrink-0 items-center justify-between px-8">
+            <div className="flex min-w-0 items-center gap-1.5 text-[12px]">
+                <span className="shrink-0 text-ink-faint">{storylineName}</span>
+                <span className="shrink-0 text-[#D5D5D5]">/</span>
+                <span className="min-w-0 truncate font-medium text-ink-soft">{chapterTitle}</span>
             </div>
 
-            <div className="flex items-center gap-4">
-                <span
-                    className={`text-xs ${saveStatus === 'error' ? 'text-red-600' : saveStatus === 'saving' ? 'text-ink-faint' : 'text-ink-muted'}`}
-                >
-                    {t(`saveStatus.${saveStatus}`)}
-                </span>
-                <span className="text-xs text-ink-faint">{t('wordCount', { count: wordCount, formatted: wordCount.toLocaleString(i18n.language) })}</span>
+            <div className="flex shrink-0 items-center gap-3.5">
+                <StatusBadge status={chapter.status} className="hidden @md:inline-flex" />
+                <span className="hidden @lg:inline text-[12px] text-ink-faint">{t('wordCount', { count: wordCount, formatted: wordCount.toLocaleString(i18n.language) })}</span>
                 <button
                     type="button"
                     onClick={onVersionClick}
-                    className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
+                    className="text-[12px] text-ink-faint transition-colors hover:text-ink"
                 >
-                    <History size={12} />
                     v{versionCount}
                 </button>
-                <Kbd keys="⇧Tab" />
+                <Kbd keys="⌘P" className="hidden @xl:inline-flex" />
             </div>
         </div>
     );
