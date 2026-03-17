@@ -68,11 +68,13 @@ export default function NotesPanel({
     bookId,
     chapterId,
     initialNotes,
+    onNotesChange,
     onClose,
 }: {
     bookId: number;
     chapterId: number;
     initialNotes: string | null;
+    onNotesChange?: (notes: string | null) => void;
     onClose: () => void;
 }) {
     const { t } = useTranslation('editor');
@@ -107,12 +109,6 @@ export default function NotesPanel({
         });
     }, [activeIndex]);
 
-    const scheduleSave = useCallback(() => {
-        pendingRef.current = 'dirty';
-        if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(() => flush(), 1500);
-    }, []);
-
     const flush = useCallback(async () => {
         if (timerRef.current) {
             clearTimeout(timerRef.current);
@@ -134,13 +130,23 @@ export default function NotesPanel({
                 body: JSON.stringify({ notes: value || null }),
                 signal: controller.signal,
             });
+            onNotesChange?.(value || null);
             setSaveStatus('saved');
             if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
             savedTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
         } catch {
             // Ignore abort errors
         }
-    }, [bookId, chapterId]);
+    }, [bookId, chapterId, onNotesChange]);
+
+    const flushRef = useRef(flush);
+    flushRef.current = flush;
+
+    const scheduleSave = useCallback(() => {
+        pendingRef.current = 'dirty';
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => flushRef.current(), 1500);
+    }, []);
 
     useEffect(() => {
         return () => {
@@ -150,6 +156,7 @@ export default function NotesPanel({
             const value = serializeLines(linesRef.current);
             if (pendingRef.current !== null || value !== (initialNotes ?? '')) {
                 pendingRef.current = null;
+                onNotesChange?.(value || null);
                 fetch(updateNotes.url({ book: bookId, chapter: chapterId }), {
                     method: 'PATCH',
                     headers: jsonFetchHeaders(),
@@ -157,7 +164,7 @@ export default function NotesPanel({
                 }).catch(() => {});
             }
         };
-    }, [bookId, chapterId, initialNotes]);
+    }, [bookId, chapterId, initialNotes, onNotesChange]);
 
     const updateLine = useCallback(
         (index: number, updates: Partial<LineData>) => {

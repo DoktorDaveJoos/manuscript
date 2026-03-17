@@ -75,6 +75,7 @@ export default function ChapterShow({
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
     const [chapterTitle, setChapterTitle] = useState(chapter.title);
     const [scenes, setScenes] = useState<Scene[]>(chapter.scenes ?? []);
+    const [chapterNotes, setChapterNotes] = useState<string | null>(chapter.notes);
     const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
     const activeEditorRef = useRef<Editor | null>(null);
     activeEditorRef.current = activeEditor;
@@ -230,6 +231,10 @@ export default function ChapterShow({
     useEffect(() => {
         setChapterTitle(chapter.title);
     }, [chapter.id, chapter.title]);
+
+    useEffect(() => {
+        setChapterNotes(chapter.notes);
+    }, [chapter.id, chapter.notes]);
 
     // Word count derived from scenes
     const wordCount = scenes.reduce((sum, s) => sum + s.word_count, 0);
@@ -563,7 +568,8 @@ export default function ChapterShow({
                     <NotesPanel
                         bookId={book.id}
                         chapterId={chapter.id}
-                        initialNotes={chapter.notes}
+                        initialNotes={chapterNotes}
+                        onNotesChange={setChapterNotes}
                         onClose={closeNotes}
                     />
                 )}
