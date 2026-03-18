@@ -15,7 +15,6 @@ class License extends Model
     {
         return [
             'activated' => 'boolean',
-            'license_key_id' => 'integer',
             'activation_limit' => 'integer',
             'activation_usage' => 'integer',
             'expires_at' => 'datetime',
@@ -37,20 +36,6 @@ class License extends Model
     public static function isActive(): bool
     {
         return self::active() !== null;
-    }
-
-    /**
-     * Verify that the license belongs to our store and product.
-     *
-     * @param  array<string, mixed>  $meta
-     */
-    public static function verifyMeta(array $meta): bool
-    {
-        $storeId = config('app.lemonsqueezy.store_id');
-        $productId = config('app.lemonsqueezy.product_id');
-
-        return ($meta['store_id'] ?? null) === $storeId
-            && ($meta['product_id'] ?? null) === $productId;
     }
 
     /**

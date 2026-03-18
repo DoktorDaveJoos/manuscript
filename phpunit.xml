@@ -31,7 +31,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
-        <env name="LEMONSQUEEZY_STORE_ID" value="12345"/>
-        <env name="LEMONSQUEEZY_PRODUCT_ID" value="67890"/>
+        <env name="POLAR_ACCESS_TOKEN" value="test-polar-token"/>
+        <env name="POLAR_ORGANIZATION_ID" value="test-org-id"/>
     </php>
 </phpunit>

@@ -44,16 +44,19 @@ jobs:
           SENTRY_LARAVEL_DSN: ${{ secrets.SENTRY_LARAVEL_DSN }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           VITE_SENTRY_ELECTRON_DSN: ${{ secrets.VITE_SENTRY_ELECTRON_DSN }}
-          LEMONSQUEEZY_STORE_ID: ${{ secrets.LEMONSQUEEZY_STORE_ID }}
-          LEMONSQUEEZY_PRODUCT_ID: ${{ secrets.LEMONSQUEEZY_PRODUCT_ID }}
+          POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
+          POLAR_ORGANIZATION_ID: ${{ secrets.POLAR_ORGANIZATION_ID }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
+          sed -i '' "s/APP_ENV=.*/APP_ENV=production/" .env
+          sed -i '' "s/APP_DEBUG=.*/APP_DEBUG=false/" .env
+          sed -i '' "s/LOG_LEVEL=.*/LOG_LEVEL=error/" .env
           sed -i '' "s/NATIVEPHP_APP_VERSION=.*/NATIVEPHP_APP_VERSION=${VERSION}/" .env
           sed -i '' "s|SENTRY_LARAVEL_DSN=.*|SENTRY_LARAVEL_DSN=${SENTRY_LARAVEL_DSN}|" .env
           sed -i '' "s|VITE_SENTRY_DSN=.*|VITE_SENTRY_DSN=${VITE_SENTRY_DSN}|" .env
           sed -i '' "s|VITE_SENTRY_ELECTRON_DSN=.*|VITE_SENTRY_ELECTRON_DSN=${VITE_SENTRY_ELECTRON_DSN}|" .env
-          sed -i '' "s|LEMONSQUEEZY_STORE_ID=.*|LEMONSQUEEZY_STORE_ID=${LEMONSQUEEZY_STORE_ID}|" .env
-          sed -i '' "s|LEMONSQUEEZY_PRODUCT_ID=.*|LEMONSQUEEZY_PRODUCT_ID=${LEMONSQUEEZY_PRODUCT_ID}|" .env
+          sed -i '' "s|POLAR_ACCESS_TOKEN=.*|POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN}|" .env
+          sed -i '' "s|POLAR_ORGANIZATION_ID=.*|POLAR_ORGANIZATION_ID=${POLAR_ORGANIZATION_ID}|" .env
 
       - name: Install Apple signing certificate
         env:

@@ -875,137 +875,60 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
     );
 }
 
-// ─── Writing Style Section ───────────────────────────────────────────
+// ─── Markdown Textarea Section (shared) ─────────────────────────────
 
-function WritingStyleSection({
-    writingStyleText,
+function MarkdownTextareaSection({
+    initialText,
+    saveUrl,
+    fieldName,
+    i18nPrefix,
+    sectionLabelKey,
 }: {
-    writingStyleText: string;
+    initialText: string;
+    saveUrl: string;
+    fieldName: string;
+    i18nPrefix: string;
+    sectionLabelKey?: string;
 }) {
     const { t } = useTranslation('settings');
-    const [text, setText] = useState(writingStyleText);
+    const [text, setText] = useState(initialText);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
+    const lastSavedRef = useRef(initialText);
 
     const handleSave = useCallback(() => {
-        if (!text) return;
+        if (!text || text === lastSavedRef.current) return;
         setSaving(true);
         setSaved(false);
 
-        fetch(updateWritingStyle.url(), {
+        fetch(saveUrl, {
             method: 'PUT',
             headers: jsonFetchHeaders(),
-            body: JSON.stringify({ writing_style_text: text }),
+            body: JSON.stringify({ [fieldName]: text }),
         })
             .then(async (res) => {
                 if (!res.ok) throw new Error('Save failed');
+                lastSavedRef.current = text;
                 setSaved(true);
                 setTimeout(() => setSaved(false), 3000);
             })
             .catch(() => {})
             .finally(() => setSaving(false));
-    }, [text]);
-
-    return (
-        <div>
-            <SectionLabel>{t('writingStyle.title').toUpperCase()}</SectionLabel>
-            <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
-                <div className="flex flex-col gap-4">
-                    <div>
-                        <span className="text-[15px] font-medium text-ink">
-                            {t('writingStyle.title')}
-                        </span>
-                        <p className="mt-1 text-[13px] text-ink-muted">
-                            {t('writingStyle.description')}
-                        </p>
-                    </div>
-                    <div>
-                        <div className="flex items-center justify-between rounded-t-md border border-border bg-surface px-3 py-2">
-                            <div className="flex items-center gap-1.5">
-                                <svg
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                    className="text-ink-faint"
-                                >
-                                    <path
-                                        d="M2 4h12M4 8h8M6 12h4"
-                                        stroke="currentColor"
-                                        strokeWidth="1.5"
-                                        strokeLinecap="round"
-                                    />
-                                </svg>
-                                <span className="text-[12px] text-ink-faint">
-                                    {t('writingStyle.markdown')}
-                                </span>
-                            </div>
-                            {(saving || saved) && (
-                                <span className="text-[12px] font-medium text-status-final">
-                                    {saving
-                                        ? t('writingStyle.saving')
-                                        : t('writingStyle.saved')}
-                                </span>
-                            )}
-                        </div>
-                        <textarea
-                            value={text}
-                            onChange={(e) => setText(e.target.value)}
-                            onBlur={handleSave}
-                            placeholder={t('writingStyle.placeholder')}
-                            className="h-[200px] w-full resize-y rounded-b-md border border-t-0 border-border bg-surface-card px-3 py-2.5 font-mono text-[13px] leading-[1.7] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
-                        />
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ─── Acknowledgment Section ──────────────────────────────────────────
-
-function AcknowledgmentSection({
-    acknowledgmentText,
-}: {
-    acknowledgmentText: string;
-}) {
-    const { t } = useTranslation('settings');
-    const [text, setText] = useState(acknowledgmentText);
-    const [saving, setSaving] = useState(false);
-    const [saved, setSaved] = useState(false);
-
-    const handleSave = useCallback(() => {
-        if (!text) return;
-        setSaving(true);
-        setSaved(false);
-
-        fetch(updateAcknowledgment.url(), {
-            method: 'PUT',
-            headers: jsonFetchHeaders(),
-            body: JSON.stringify({ acknowledgment_text: text }),
-        })
-            .then(async (res) => {
-                if (!res.ok) throw new Error('Save failed');
-                setSaved(true);
-                setTimeout(() => setSaved(false), 3000);
-            })
-            .catch(() => {})
-            .finally(() => setSaving(false));
-    }, [text]);
+    }, [text, saveUrl, fieldName]);
 
     return (
         <div>
             <SectionLabel>
-                {t('acknowledgment.sectionLabel').toUpperCase()}
+                {t(sectionLabelKey ?? `${i18nPrefix}.title`).toUpperCase()}
             </SectionLabel>
             <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
                 <div className="flex flex-col gap-4">
                     <div>
                         <span className="text-[15px] font-medium text-ink">
-                            {t('acknowledgment.title')}
+                            {t(`${i18nPrefix}.title`)}
                         </span>
                         <p className="mt-1 text-[13px] text-ink-muted">
-                            {t('acknowledgment.description')}
+                            {t(`${i18nPrefix}.description`)}
                         </p>
                     </div>
                     <div>
@@ -1026,14 +949,14 @@ function AcknowledgmentSection({
                                     />
                                 </svg>
                                 <span className="text-[12px] text-ink-faint">
-                                    {t('acknowledgment.markdown')}
+                                    {t(`${i18nPrefix}.markdown`)}
                                 </span>
                             </div>
                             {(saving || saved) && (
                                 <span className="text-[12px] font-medium text-status-final">
                                     {saving
-                                        ? t('acknowledgment.saving')
-                                        : t('acknowledgment.saved')}
+                                        ? t(`${i18nPrefix}.saving`)
+                                        : t(`${i18nPrefix}.saved`)}
                                 </span>
                             )}
                         </div>
@@ -1041,96 +964,7 @@ function AcknowledgmentSection({
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                             onBlur={handleSave}
-                            placeholder={t('acknowledgment.placeholder')}
-                            className="h-[200px] w-full resize-y rounded-b-md border border-t-0 border-border bg-surface-card px-3 py-2.5 font-mono text-[13px] leading-[1.7] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
-                        />
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ─── About the Author Section ───────────────────────────────────────
-
-function AboutAuthorSection({
-    aboutAuthorText,
-}: {
-    aboutAuthorText: string;
-}) {
-    const { t } = useTranslation('settings');
-    const [text, setText] = useState(aboutAuthorText);
-    const [saving, setSaving] = useState(false);
-    const [saved, setSaved] = useState(false);
-
-    const handleSave = useCallback(() => {
-        if (!text) return;
-        setSaving(true);
-        setSaved(false);
-
-        fetch(updateAboutAuthor.url(), {
-            method: 'PUT',
-            headers: jsonFetchHeaders(),
-            body: JSON.stringify({ about_author_text: text }),
-        })
-            .then(async (res) => {
-                if (!res.ok) throw new Error('Save failed');
-                setSaved(true);
-                setTimeout(() => setSaved(false), 3000);
-            })
-            .catch(() => {})
-            .finally(() => setSaving(false));
-    }, [text]);
-
-    return (
-        <div>
-            <SectionLabel>
-                {t('aboutAuthor.sectionLabel').toUpperCase()}
-            </SectionLabel>
-            <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
-                <div className="flex flex-col gap-4">
-                    <div>
-                        <span className="text-[15px] font-medium text-ink">
-                            {t('aboutAuthor.title')}
-                        </span>
-                        <p className="mt-1 text-[13px] text-ink-muted">
-                            {t('aboutAuthor.description')}
-                        </p>
-                    </div>
-                    <div>
-                        <div className="flex items-center justify-between rounded-t-md border border-border bg-surface px-3 py-2">
-                            <div className="flex items-center gap-1.5">
-                                <svg
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                    className="text-ink-faint"
-                                >
-                                    <path
-                                        d="M2 4h12M4 8h8M6 12h4"
-                                        stroke="currentColor"
-                                        strokeWidth="1.5"
-                                        strokeLinecap="round"
-                                    />
-                                </svg>
-                                <span className="text-[12px] text-ink-faint">
-                                    {t('aboutAuthor.markdown')}
-                                </span>
-                            </div>
-                            {(saving || saved) && (
-                                <span className="text-[12px] font-medium text-status-final">
-                                    {saving
-                                        ? t('aboutAuthor.saving')
-                                        : t('aboutAuthor.saved')}
-                                </span>
-                            )}
-                        </div>
-                        <textarea
-                            value={text}
-                            onChange={(e) => setText(e.target.value)}
-                            onBlur={handleSave}
-                            placeholder={t('aboutAuthor.placeholder')}
+                            placeholder={t(`${i18nPrefix}.placeholder`)}
                             className="h-[200px] w-full resize-y rounded-b-md border border-t-0 border-border bg-surface-card px-3 py-2.5 font-mono text-[13px] leading-[1.7] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
                         />
                     </div>
@@ -1661,10 +1495,11 @@ export default function Settings({
                                         ref={writingStyleRef}
                                         data-section="writing-style"
                                     >
-                                        <WritingStyleSection
-                                            writingStyleText={
-                                                writing_style_text
-                                            }
+                                        <MarkdownTextareaSection
+                                            initialText={writing_style_text}
+                                            saveUrl={updateWritingStyle.url()}
+                                            fieldName="writing_style_text"
+                                            i18nPrefix="writingStyle"
                                         />
                                     </div>
                                     <div
@@ -1682,18 +1517,24 @@ export default function Settings({
                                         ref={acknowledgmentRef}
                                         data-section="acknowledgment"
                                     >
-                                        <AcknowledgmentSection
-                                            acknowledgmentText={
-                                                acknowledgment_text
-                                            }
+                                        <MarkdownTextareaSection
+                                            initialText={acknowledgment_text}
+                                            saveUrl={updateAcknowledgment.url()}
+                                            fieldName="acknowledgment_text"
+                                            i18nPrefix="acknowledgment"
+                                            sectionLabelKey="acknowledgment.sectionLabel"
                                         />
                                     </div>
                                     <div
                                         ref={aboutAuthorRef}
                                         data-section="about-author"
                                     >
-                                        <AboutAuthorSection
-                                            aboutAuthorText={about_author_text}
+                                        <MarkdownTextareaSection
+                                            initialText={about_author_text}
+                                            saveUrl={updateAboutAuthor.url()}
+                                            fieldName="about_author_text"
+                                            i18nPrefix="aboutAuthor"
+                                            sectionLabelKey="aboutAuthor.sectionLabel"
                                         />
                                     </div>
                                 </div>

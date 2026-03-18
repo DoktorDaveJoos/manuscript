@@ -13,15 +13,15 @@ class LicenseFactory extends Factory
     public function definition(): array
     {
         return [
-            'license_key' => (string) Str::uuid(),
+            'license_key' => fake()->regexify('[A-Z0-9]{8}-[A-Z0-9]{8}-[A-Z0-9]{8}-[A-Z0-9]{8}'),
             'activated' => true,
             'instance_id' => (string) Str::uuid(),
             'instance_name' => fake()->domainWord(),
-            'license_key_id' => fake()->randomNumber(6),
-            'status' => 'active',
+            'license_key_id' => (string) Str::uuid(),
+            'status' => 'granted',
             'customer_name' => fake()->name(),
             'customer_email' => fake()->safeEmail(),
-            'product_name' => 'Manuscript Pro',
+            'product_name' => null,
             'activation_limit' => 5,
             'activation_usage' => 1,
             'expires_at' => null,

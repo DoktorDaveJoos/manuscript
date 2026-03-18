@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\TrimSize;
 use App\Http\Requests\ExportBookRequest;
 use App\Models\Book;
 use App\Services\Export\ExportService;
@@ -94,11 +95,23 @@ class BookSettingsController extends Controller
 
     public function export(Book $book): Response
     {
-        $book->load('storylines');
+        $book->load('storylines', 'acts');
 
-        return Inertia::render('settings/book/export', [
+        $chapters = $book->chapters()
+            ->select('id', 'book_id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count')
+            ->with(['currentVersion' => fn ($q) => $q->selectRaw('id, chapter_id, SUBSTR(content, 1, 1500) as content')])
+            ->orderBy('reader_order')
+            ->get();
+
+        return Inertia::render('books/export', [
             'book' => $book->only('id', 'title'),
-            'storylines' => $book->storylines->map(fn ($s) => $s->only('id', 'name')),
+            'storylines' => $book->storylines->map(fn ($s) => $s->only('id', 'name', 'color', 'type')),
+            'chapters' => $chapters->map(fn ($ch) => [
+                ...$ch->only('id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count'),
+                'content' => $ch->currentVersion?->content,
+            ]),
+            'trimSizes' => collect(TrimSize::cases())->map(fn ($t) => ['value' => $t->value, 'label' => $t->label()]),
+            'acts' => $book->acts->map(fn ($a) => $a->only('id', 'number', 'title')),
         ]);
     }
 

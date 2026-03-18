@@ -120,9 +120,9 @@ return [
     |
     */
 
-    'lemonsqueezy' => [
-        'store_id' => (int) env('LEMONSQUEEZY_STORE_ID', 0),
-        'product_id' => (int) env('LEMONSQUEEZY_PRODUCT_ID', 0),
+    'polar' => [
+        'access_token' => env('POLAR_ACCESS_TOKEN', ''),
+        'organization_id' => env('POLAR_ORGANIZATION_ID', ''),
     ],
 
     'maintenance' => [

@@ -1,0 +1,47 @@
+{
+    "title": "Export",
+    "subtitle": "Configure and export your manuscript.",
+    "pageTitle": "Export — {{bookTitle}}",
+
+    "format": "FORMAT",
+    "template": "TEMPLATE",
+    "templateHint": "Controls typography, chapter headings, and page formatting.",
+    "pdfOptions": "PDF OPTIONS",
+    "pdfOptionsHint": "Only applies to PDF exports.",
+    "trimSize": "Trim size",
+    "fontSize": "Font size",
+    "options": "OPTIONS",
+
+    "includeChapterTitles": "Include chapter titles",
+    "includeActBreaks": "Include act breaks",
+    "showPageNumbers": "Show page numbers",
+
+    "exportAs": "Export as .{{format}}",
+    "exporting": "Exporting…",
+    "previewInBrowser": "Preview in browser",
+
+    "readingOrder": "Reading Order",
+    "readingOrderSubtitle": "Drag to reorder export sequence",
+    "frontMatter": "FRONT MATTER",
+    "chapters": "CHAPTERS",
+    "backMatter": "BACK MATTER",
+    "excludedHint": "Unchecked items are excluded from export",
+
+    "frontMatter.titlePage": "Title Page",
+    "frontMatter.copyright": "Copyright",
+    "frontMatter.tableOfContents": "Table of Contents",
+    "frontMatter.dedication": "Dedication",
+
+    "backMatter.acknowledgments": "Acknowledgments",
+    "backMatter.aboutTheAuthor": "About the Author",
+    "backMatter.alsoBy": "Also By",
+
+    "preview": "PREVIEW",
+    "preview.contents": "Contents",
+    "preview.copyright": "Copyright \u00a9 2024. All rights reserved.",
+    "preview.dedication": "For those who believed.",
+    "preview.acknowledgments": "Acknowledgments",
+    "preview.aboutTheAuthor": "About the Author",
+    "preview.alsoBy": "Also By",
+    "preview.empty": "Select chapters to preview"
+}

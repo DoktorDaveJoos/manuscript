@@ -12,7 +12,7 @@ class ActivateLicenseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'license_key' => ['required', 'string', 'uuid'],
+            'license_key' => ['required', 'string'],
         ];
     }
 }

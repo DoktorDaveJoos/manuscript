@@ -16,14 +16,17 @@ test('prose pass rules page redirects to unified settings', function () {
         ->assertRedirect('/settings');
 });
 
-test('export page loads with storylines', function () {
+test('export page loads with chapters and trim sizes', function () {
     $book = Book::factory()->create();
 
     $this->get(route('books.settings.export', $book))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('settings/book/export')
+            ->component('books/export')
             ->has('book')
             ->has('storylines')
+            ->has('chapters')
+            ->has('trimSizes')
+            ->has('acts')
         );
 });

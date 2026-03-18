@@ -26,51 +26,6 @@ test('isActive returns correct state', function () {
     expect(License::isActive())->toBeTrue();
 });
 
-test('verifyMeta accepts matching store and product ids', function () {
-    config([
-        'app.lemonsqueezy.store_id' => 12345,
-        'app.lemonsqueezy.product_id' => 67890,
-    ]);
-
-    expect(License::verifyMeta([
-        'store_id' => 12345,
-        'product_id' => 67890,
-    ]))->toBeTrue();
-});
-
-test('verifyMeta rejects wrong store id', function () {
-    config([
-        'app.lemonsqueezy.store_id' => 12345,
-        'app.lemonsqueezy.product_id' => 67890,
-    ]);
-
-    expect(License::verifyMeta([
-        'store_id' => 99999,
-        'product_id' => 67890,
-    ]))->toBeFalse();
-});
-
-test('verifyMeta rejects wrong product id', function () {
-    config([
-        'app.lemonsqueezy.store_id' => 12345,
-        'app.lemonsqueezy.product_id' => 67890,
-    ]);
-
-    expect(License::verifyMeta([
-        'store_id' => 12345,
-        'product_id' => 11111,
-    ]))->toBeFalse();
-});
-
-test('verifyMeta rejects missing keys', function () {
-    config([
-        'app.lemonsqueezy.store_id' => 12345,
-        'app.lemonsqueezy.product_id' => 67890,
-    ]);
-
-    expect(License::verifyMeta([]))->toBeFalse();
-});
-
 test('needsRevalidation returns true when never validated', function () {
     $license = License::factory()->make(['last_validated_at' => null]);
 

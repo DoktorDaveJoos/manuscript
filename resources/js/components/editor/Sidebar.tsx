@@ -1,5 +1,11 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { BookOpen, LayoutGrid, Settings, Waypoints } from 'lucide-react';
+import {
+    ArrowUpFromLine,
+    BookOpen,
+    LayoutGrid,
+    Settings,
+    Waypoints,
+} from 'lucide-react';
 import {
     useCallback,
     useEffect,
@@ -9,6 +15,7 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { index } from '@/actions/App/Http/Controllers/BookController';
+import { exportMethod } from '@/actions/App/Http/Controllers/BookSettingsController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
 import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
@@ -135,6 +142,7 @@ export default function Sidebar({
     const isDashboard = currentUrl.endsWith('/dashboard');
     const isWiki = currentUrl.includes('/wiki');
     const isPlot = currentUrl.endsWith('/plot');
+    const isExport = currentUrl.includes('/settings/export');
 
     const totalWords = storylines.reduce(
         (sum, s) =>
@@ -218,6 +226,17 @@ export default function Sidebar({
                     isActive={isPlot}
                     icon={
                         <Waypoints
+                            size={16}
+                            className="shrink-0 text-ink-faint"
+                        />
+                    }
+                />
+                <NavItem
+                    label={t('nav.export')}
+                    href={exportMethod.url(book)}
+                    isActive={isExport}
+                    icon={
+                        <ArrowUpFromLine
                             size={16}
                             className="shrink-0 text-ink-faint"
                         />

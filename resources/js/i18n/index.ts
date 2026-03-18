@@ -13,6 +13,7 @@ import enAi from './en/ai.json';
 import enCommon from './en/common.json';
 import enDashboard from './en/dashboard.json';
 import enEditor from './en/editor.json';
+import enExport from './en/export.json';
 import enOnboarding from './en/onboarding.json';
 import enPlot from './en/plot.json';
 import enSettings from './en/settings.json';
@@ -38,6 +39,7 @@ i18n.use(initReactI18next).init({
             plot: enPlot,
             wiki: enWiki,
             ai: enAi,
+            export: enExport,
         },
         de: {
             common: deCommon,
@@ -72,6 +74,7 @@ i18n.use(initReactI18next).init({
         'plot',
         'wiki',
         'ai',
+        'export',
     ],
     interpolation: {
         escapeValue: false,

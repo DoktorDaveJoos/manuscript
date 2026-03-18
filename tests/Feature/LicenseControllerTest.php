@@ -5,44 +5,47 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
-beforeEach(function () {
-    config([
-        'app.lemonsqueezy.store_id' => 12345,
-        'app.lemonsqueezy.product_id' => 67890,
-    ]);
-});
-
-function fakeLsActivation(string $licenseKey, array $overrides = []): array
+function fakePolarActivation(string $key, array $overrides = []): array
 {
-    return array_merge([
-        'activated' => true,
-        'instance' => [
-            'id' => (string) Str::uuid(),
-            'name' => gethostname(),
-        ],
+    $licenseKeyId = (string) Str::uuid();
+    $activationId = (string) Str::uuid();
+
+    $defaults = [
+        'id' => $activationId,
+        'license_key_id' => $licenseKeyId,
+        'label' => gethostname(),
+        'meta' => [],
+        'created_at' => now()->toIso8601String(),
+        'modified_at' => null,
         'license_key' => [
-            'id' => 111222,
-            'status' => 'active',
-            'key' => $licenseKey,
-            'activation_limit' => 5,
-            'activation_usage' => 1,
+            'id' => $licenseKeyId,
+            'organization_id' => 'test-org-id',
+            'customer_id' => (string) Str::uuid(),
+            'customer' => [
+                'name' => 'Jane Doe',
+                'email' => 'jane@example.com',
+            ],
+            'benefit_id' => (string) Str::uuid(),
+            'key' => $key,
+            'display_key' => substr($key, 0, 8).'****',
+            'status' => 'granted',
+            'limit_activations' => 5,
+            'usage' => 1,
+            'limit_usage' => null,
+            'validations' => 0,
+            'last_validated_at' => null,
             'expires_at' => null,
         ],
-        'meta' => [
-            'store_id' => 12345,
-            'product_id' => 67890,
-            'customer_name' => 'Jane Doe',
-            'customer_email' => 'jane@example.com',
-            'product_name' => 'Manuscript Pro',
-        ],
-    ], $overrides);
+    ];
+
+    return array_replace_recursive($defaults, $overrides);
 }
 
 test('activate with valid key stores license', function () {
-    $key = (string) Str::uuid();
+    $key = 'MANU-AAAA-BBBB-CCCC';
 
     Http::fake([
-        'api.lemonsqueezy.com/v1/licenses/activate' => Http::response(fakeLsActivation($key)),
+        'api.polar.sh/v1/license-keys/activate' => Http::response(fakePolarActivation($key)),
     ]);
 
     $this->postJson(route('license.activate'), ['license_key' => $key])
@@ -59,12 +62,11 @@ test('activate with valid key stores license', function () {
 });
 
 test('activate with invalid key returns 422', function () {
-    $key = (string) Str::uuid();
+    $key = 'INVALID-KEY';
 
     Http::fake([
-        'api.lemonsqueezy.com/v1/licenses/activate' => Http::response([
-            'activated' => false,
-            'error' => 'The license key was not found.',
+        'api.polar.sh/v1/license-keys/activate' => Http::response([
+            'detail' => 'License key not found.',
         ], 404),
     ]);
 
@@ -74,32 +76,27 @@ test('activate with invalid key returns 422', function () {
     expect(License::query()->count())->toBe(0);
 });
 
-test('activate with wrong product returns 422', function () {
-    $key = (string) Str::uuid();
+test('activate with revoked key returns 422', function () {
+    $key = 'MANU-AAAA-BBBB-CCCC';
 
     Http::fake([
-        'api.lemonsqueezy.com/v1/licenses/activate' => Http::response(
-            fakeLsActivation($key, [
-                'meta' => [
-                    'store_id' => 99999,
-                    'product_id' => 99999,
-                    'customer_name' => 'Jane Doe',
-                    'customer_email' => 'jane@example.com',
-                    'product_name' => 'Other Product',
+        'api.polar.sh/v1/license-keys/activate' => Http::response(
+            fakePolarActivation($key, [
+                'license_key' => [
+                    'status' => 'revoked',
                 ],
             ])
         ),
     ]);
 
     $this->postJson(route('license.activate'), ['license_key' => $key])
-        ->assertStatus(422)
-        ->assertJsonPath('message', 'This license key is not valid for Manuscript.');
+        ->assertStatus(422);
 
     expect(License::query()->count())->toBe(0);
 });
 
-test('activate with malformed key returns validation error', function () {
-    $this->postJson(route('license.activate'), ['license_key' => 'not-a-uuid'])
+test('activate with missing key returns validation error', function () {
+    $this->postJson(route('license.activate'), ['license_key' => ''])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('license_key');
 });
@@ -107,19 +104,15 @@ test('activate with malformed key returns validation error', function () {
 test('activate returns 503 when offline', function () {
     Http::fake(fn (Request $request) => throw new \Illuminate\Http\Client\ConnectionException('Connection refused'));
 
-    $key = (string) Str::uuid();
-
-    $this->postJson(route('license.activate'), ['license_key' => $key])
+    $this->postJson(route('license.activate'), ['license_key' => 'MANU-AAAA-BBBB-CCCC'])
         ->assertStatus(503);
 });
 
-test('deactivate calls LS API and removes license', function () {
+test('deactivate calls Polar API and removes license', function () {
     $license = License::factory()->create();
 
     Http::fake([
-        'api.lemonsqueezy.com/v1/licenses/deactivate' => Http::response([
-            'deactivated' => true,
-        ]),
+        'api.polar.sh/v1/license-keys/deactivate' => Http::response(null, 204),
     ]);
 
     expect(License::isActive())->toBeTrue();
@@ -147,8 +140,10 @@ test('revalidate updates last_validated_at on success', function () {
     $license = License::factory()->stale()->create();
 
     Http::fake([
-        'api.lemonsqueezy.com/v1/licenses/validate' => Http::response([
-            'valid' => true,
+        'api.polar.sh/v1/license-keys/validate' => Http::response([
+            'id' => $license->license_key_id,
+            'status' => 'granted',
+            'key' => $license->license_key,
         ]),
     ]);
 
@@ -196,11 +191,4 @@ test('license status is shared in inertia props', function () {
     $page = $response->original->getData()['page'];
     expect($page['props']['license']['active'])->toBeTrue();
     expect($page['props']['license']['masked_key'])->not->toBeNull();
-});
-
-test('isActive returns correct state', function () {
-    expect(License::isActive())->toBeFalse();
-
-    License::factory()->create();
-    expect(License::isActive())->toBeTrue();
 });

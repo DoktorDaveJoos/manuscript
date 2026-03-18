@@ -11,8 +11,7 @@ type ActiveSection =
     | 'license'
     | 'ai-providers'
     | 'writing-style'
-    | 'prose-pass-rules'
-    | 'export';
+    | 'prose-pass-rules';
 
 type BookRef = { id: number; title: string };
 
@@ -116,13 +115,6 @@ export default function SettingsLayout({
                                             isActive={
                                                 activeSection ===
                                                 'prose-pass-rules'
-                                            }
-                                        />
-                                        <NavItem
-                                            label={t('section.export')}
-                                            href={`/books/${book.id}/settings/export`}
-                                            isActive={
-                                                activeSection === 'export'
                                             }
                                         />
                                     </div>

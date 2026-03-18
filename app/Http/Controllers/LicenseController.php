@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ActivateLicenseRequest;
 use App\Models\Book;
 use App\Models\License;
-use App\Services\LemonSqueezyService;
+use App\Services\PolarService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +14,7 @@ use Inertia\Response;
 
 class LicenseController extends Controller
 {
-    public function __construct(private LemonSqueezyService $lemonSqueezy) {}
+    public function __construct(private PolarService $polar) {}
 
     public function index(): Response
     {
@@ -31,7 +31,7 @@ class LicenseController extends Controller
         $hostname = gethostname();
 
         try {
-            $result = $this->lemonSqueezy->activate($key, $hostname);
+            $result = $this->polar->activate($key, $hostname);
         } catch (ConnectionException) {
             return response()->json([
                 'message' => __('Could not reach the license server. Please check your internet connection.'),
@@ -39,38 +39,33 @@ class LicenseController extends Controller
         }
 
         if (! $result['success']) {
+            $detail = $result['data']['detail'] ?? null;
+
             return response()->json([
-                'message' => $result['data']['error'] ?? __('Invalid license key.'),
+                'message' => $detail ?? __('Invalid license key.'),
             ], 422);
         }
 
-        $meta = $result['data']['meta'] ?? [];
+        $data = $result['data'];
+        $licenseKey = $data['license_key'] ?? [];
+        $customer = $licenseKey['customer'] ?? [];
 
-        if (! License::verifyMeta($meta)) {
-            return response()->json([
-                'message' => __('This license key is not valid for Manuscript.'),
-            ], 422);
-        }
-
-        $instance = $result['data']['instance'] ?? [];
-        $licenseKeyData = $result['data']['license_key'] ?? [];
-
-        DB::transaction(function () use ($key, $hostname, $instance, $licenseKeyData, $meta) {
+        DB::transaction(function () use ($key, $hostname, $data, $licenseKey, $customer) {
             License::query()->delete();
 
             License::create([
                 'license_key' => $key,
                 'activated' => true,
-                'instance_id' => $instance['id'] ?? null,
+                'instance_id' => $data['id'] ?? null,
                 'instance_name' => $hostname,
-                'license_key_id' => $licenseKeyData['id'] ?? null,
-                'status' => $licenseKeyData['status'] ?? 'active',
-                'customer_name' => $meta['customer_name'] ?? null,
-                'customer_email' => $meta['customer_email'] ?? null,
-                'product_name' => $meta['product_name'] ?? null,
-                'activation_limit' => $licenseKeyData['activation_limit'] ?? null,
-                'activation_usage' => $licenseKeyData['activation_usage'] ?? 0,
-                'expires_at' => $licenseKeyData['expires_at'] ?? null,
+                'license_key_id' => $licenseKey['id'] ?? null,
+                'status' => $licenseKey['status'] ?? 'granted',
+                'customer_name' => $customer['name'] ?? null,
+                'customer_email' => $customer['email'] ?? null,
+                'product_name' => null,
+                'activation_limit' => $licenseKey['limit_activations'] ?? null,
+                'activation_usage' => $licenseKey['usage'] ?? 0,
+                'expires_at' => $licenseKey['expires_at'] ?? null,
                 'last_validated_at' => now(),
             ]);
         });
@@ -91,7 +86,7 @@ class LicenseController extends Controller
         }
 
         try {
-            $result = $this->lemonSqueezy->deactivate(
+            $result = $this->polar->deactivate(
                 $license->license_key,
                 $license->instance_id,
             );
@@ -103,7 +98,7 @@ class LicenseController extends Controller
 
         if (! $result['success']) {
             return response()->json([
-                'message' => $result['data']['error'] ?? __('Failed to deactivate license.'),
+                'message' => $result['data']['detail'] ?? __('Failed to deactivate license.'),
             ], 422);
         }
 
@@ -127,7 +122,7 @@ class LicenseController extends Controller
         }
 
         try {
-            $result = $this->lemonSqueezy->validate(
+            $result = $this->polar->validate(
                 $license->license_key,
                 $license->instance_id,
             );
