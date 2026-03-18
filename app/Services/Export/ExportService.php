@@ -3,6 +3,7 @@
 namespace App\Services\Export;
 
 use App\Enums\ExportFormat;
+use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Services\Export\Exporters\DocxExporter;
@@ -25,6 +26,25 @@ class ExportService
     {
         $format = ExportFormat::from($options['format'] ?? 'docx');
         $chapters = $this->resolveChapters($book, $options);
+
+        // Inject AppSetting content only when front/back matter is requested
+        if (! empty($options['front_matter']) || ! empty($options['back_matter'])) {
+            $frontMatter = (array) ($options['front_matter'] ?? []);
+            $backMatter = (array) ($options['back_matter'] ?? []);
+
+            if (in_array('dedication', $frontMatter)) {
+                $options['dedication_text'] = (string) AppSetting::get('dedication_text', '');
+            }
+            if (in_array('acknowledgments', $backMatter)) {
+                $options['acknowledgment_text'] = (string) AppSetting::get('acknowledgment_text', '');
+            }
+            if (in_array('about-author', $backMatter)) {
+                $options['about_author_text'] = (string) AppSetting::get('about_author_text', '');
+            }
+            if (in_array('also-by', $backMatter)) {
+                $options['also_by_text'] = (string) AppSetting::get('also_by_text', '');
+            }
+        }
 
         $exportOptions = ExportOptions::fromArray($options);
 

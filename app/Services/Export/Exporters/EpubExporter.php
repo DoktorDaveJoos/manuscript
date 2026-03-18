@@ -8,6 +8,7 @@ use App\Services\Export\ContentPreparer;
 use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
 use App\Services\Export\FontService;
+use App\Services\Export\Templates\ClassicTemplate;
 use Illuminate\Support\Collection;
 use ZipArchive;
 
@@ -34,13 +35,19 @@ class EpubExporter implements Exporter
         $this->addStylesheet($zip);
         $this->addFonts($zip);
 
+        // Front matter files
+        $frontMatterFiles = $this->addFrontMatter($zip, $book, $chapters, $options);
+
         $chapterFiles = $this->addChapters($zip, $chapters, $options);
 
-        if ($options->includeTableOfContents) {
-            $this->addTocXhtml($zip, $chapters);
+        // Back matter files
+        $backMatterFiles = $this->addBackMatter($zip, $options);
+
+        if ($options->includeTableOfContents && ! in_array('toc', $options->frontMatter)) {
+            $this->addTocXhtml($zip, $chapters, $frontMatterFiles, $backMatterFiles);
         }
-        $this->addTocNcx($zip, $book, $chapters, $uuid);
-        $this->addContentOpf($zip, $book, $chapters, $chapterFiles, $options, $uuid);
+        $this->addTocNcx($zip, $book, $chapters, $frontMatterFiles, $backMatterFiles, $uuid);
+        $this->addContentOpf($zip, $book, $chapters, $frontMatterFiles, $chapterFiles, $backMatterFiles, $options, $uuid);
 
         $zip->close();
 
@@ -64,74 +71,8 @@ class EpubExporter implements Exporter
     private function addStylesheet(ZipArchive $zip): void
     {
         $fontFace = $this->fontService->epubFontFaceCss();
-
-        $css = <<<CSS
-        {$fontFace}
-
-        body {
-            font-family: "Literata", Georgia, serif;
-            font-size: 1em;
-            line-height: 1.6; /* keep in sync with getLineHeightMultiplier() in usePreviewPages.ts */
-            margin: 1em;
-            text-align: justify;
-            hyphens: auto;
-            -webkit-hyphens: auto;
-        }
-        h1 {
-            font-size: 1.8em;
-            font-weight: 700;
-            margin: 2em 0 1em;
-            text-align: center;
-            page-break-before: always;
-        }
-        h1:first-child {
-            page-break-before: avoid;
-        }
-        h2 {
-            font-size: 1.4em;
-            font-weight: 700;
-            margin: 2em 0 0.5em;
-            text-align: center;
-        }
-        p {
-            margin: 0;
-            text-indent: 1.5em;
-            widows: 2;
-            orphans: 2;
-        }
-        p:first-child,
-        hr.scene-break + p,
-        h1 + p,
-        h2 + p {
-            text-indent: 0;
-        }
-        hr.scene-break {
-            border: none;
-            text-align: center;
-            margin: 1.5em 0;
-        }
-        hr.scene-break::after {
-            content: "* * *";
-            font-style: italic;
-        }
-        .act-break {
-            font-size: 1.6em;
-            font-weight: 700;
-            text-align: center;
-            margin: 3em 0 1em;
-        }
-        nav#toc ol {
-            list-style: none;
-            padding: 0;
-        }
-        nav#toc ol li {
-            margin: 0.5em 0;
-        }
-        nav#toc ol li a {
-            text-decoration: none;
-            color: inherit;
-        }
-        CSS;
+        $template = new ClassicTemplate;
+        $css = $template->epubCss($fontFace);
 
         $zip->addFromString('OEBPS/Styles/stylesheet.css', $css);
     }
@@ -144,6 +85,149 @@ class EpubExporter implements Exporter
 
         $zip->addFile($this->fontService->regularFontPath(), 'OEBPS/Fonts/Literata.ttf');
         $zip->addFile($this->fontService->italicFontPath(), 'OEBPS/Fonts/Literata-Italic.ttf');
+    }
+
+    /**
+     * @return array<int, array{id: string, file: string, label: string}>
+     */
+    private function addFrontMatter(ZipArchive $zip, Book $book, Collection $chapters, ExportOptions $options): array
+    {
+        $files = [];
+
+        foreach ($options->frontMatter as $item) {
+            match ($item) {
+                'title-page' => $files[] = $this->addTitlePage($zip, $book),
+                'copyright' => $files[] = $this->addCopyrightPage($zip, $book),
+                'dedication' => $files[] = $this->addDedicationPage($zip, $options->dedicationText),
+                'toc' => $files[] = $this->addTocAsFrontMatter($zip, $chapters, $options),
+                default => null,
+            };
+        }
+
+        return array_filter($files);
+    }
+
+    /**
+     * @return array<int, array{id: string, file: string, label: string}>
+     */
+    private function addBackMatter(ZipArchive $zip, ExportOptions $options): array
+    {
+        $matterConfig = [
+            'also-by' => ['epubType' => 'other-credits', 'heading' => 'Also By', 'text' => $options->alsoByText],
+            'acknowledgments' => ['epubType' => 'acknowledgments', 'heading' => 'Acknowledgments', 'text' => $options->acknowledgmentText],
+            'about-author' => ['epubType' => 'contributors', 'heading' => 'About the Author', 'text' => $options->aboutAuthorText],
+        ];
+
+        $files = [];
+
+        foreach ($options->backMatter as $item) {
+            if (isset($matterConfig[$item])) {
+                $cfg = $matterConfig[$item];
+                $files[] = $this->addMatterPage($zip, $item, $cfg['epubType'], $cfg['heading'], $cfg['text']);
+            }
+        }
+
+        return $files;
+    }
+
+    /**
+     * @return array{id: string, file: string, label: string}
+     */
+    private function addTitlePage(ZipArchive $zip, Book $book): array
+    {
+        $title = htmlspecialchars($book->title, ENT_XML1, 'UTF-8');
+        $author = htmlspecialchars($book->author ?? '', ENT_XML1, 'UTF-8');
+
+        $authorBlock = $author !== '' ? "<p class=\"author\">{$author}</p>" : '';
+
+        $body = <<<HTML
+        <section epub:type="titlepage" class="title-page">
+          <h1>{$title}</h1>
+          {$authorBlock}
+        </section>
+        HTML;
+
+        $xhtml = $this->wrapXhtml($title, $body);
+        $zip->addFromString('OEBPS/Text/title-page.xhtml', $xhtml);
+
+        return ['id' => 'title-page', 'file' => 'title-page.xhtml', 'label' => $title];
+    }
+
+    /**
+     * @return array{id: string, file: string, label: string}
+     */
+    private function addCopyrightPage(ZipArchive $zip, Book $book): array
+    {
+        $title = htmlspecialchars($book->title, ENT_XML1, 'UTF-8');
+        $year = date('Y');
+
+        $body = <<<HTML
+        <section epub:type="copyright-page" class="copyright-page">
+          <p>Copyright &#169; {$year}</p>
+          <p>{$title}</p>
+          <p>All rights reserved.</p>
+        </section>
+        HTML;
+
+        $xhtml = $this->wrapXhtml('Copyright', $body);
+        $zip->addFromString('OEBPS/Text/copyright.xhtml', $xhtml);
+
+        return ['id' => 'copyright', 'file' => 'copyright.xhtml', 'label' => 'Copyright'];
+    }
+
+    /**
+     * @return array{id: string, file: string, label: string}
+     */
+    private function addDedicationPage(ZipArchive $zip, string $dedicationText): array
+    {
+        $content = $this->contentPreparer->toMatterXhtml($dedicationText);
+
+        $body = <<<HTML
+        <section epub:type="dedication" class="dedication-page">
+          {$content}
+        </section>
+        HTML;
+
+        $xhtml = $this->wrapXhtml('Dedication', $body);
+        $zip->addFromString('OEBPS/Text/dedication.xhtml', $xhtml);
+
+        return ['id' => 'dedication', 'file' => 'dedication.xhtml', 'label' => 'Dedication'];
+    }
+
+    /**
+     * @return array{id: string, file: string, label: string}|null
+     */
+    private function addTocAsFrontMatter(ZipArchive $zip, Collection $chapters, ExportOptions $options): ?array
+    {
+        if ($chapters->isEmpty()) {
+            return null;
+        }
+
+        $this->addTocXhtml($zip, $chapters, [], []);
+
+        return ['id' => 'toc', 'file' => '../toc.xhtml', 'label' => 'Table of Contents'];
+    }
+
+    /**
+     * @return array{id: string, file: string, label: string}
+     */
+    private function addMatterPage(ZipArchive $zip, string $id, string $epubType, string $heading, string $text): array
+    {
+        $content = $this->contentPreparer->toMatterXhtml($text);
+
+        $body = <<<HTML
+        <section epub:type="{$epubType}">
+          <p class="matter-title">{$heading}</p>
+          <div class="matter-body">
+          {$content}
+          </div>
+        </section>
+        HTML;
+
+        $xhtml = $this->wrapXhtml($heading, $body);
+        $zip->addFromString("OEBPS/Text/{$id}.xhtml", $xhtml);
+
+        return ['id' => $id, 'file' => "{$id}.xhtml", 'label' => $heading];
     }
 
     /**
@@ -190,13 +274,21 @@ class EpubExporter implements Exporter
         return $chapterFiles;
     }
 
-    private function addTocXhtml(ZipArchive $zip, Collection $chapters): void
+    /**
+     * @param  array<int, array{id: string, file: string, label: string}>  $frontMatterFiles
+     * @param  array<int, array{id: string, file: string, label: string}>  $backMatterFiles
+     */
+    private function addTocXhtml(ZipArchive $zip, Collection $chapters, array $frontMatterFiles, array $backMatterFiles): void
     {
         $items = '';
         foreach ($chapters as $index => $chapter) {
             $num = $this->chapterNum($index);
             $title = htmlspecialchars($chapter->title, ENT_XML1, 'UTF-8');
             $items .= "        <li><a href=\"Text/chapter-{$num}.xhtml\">{$title}</a></li>\n";
+        }
+
+        foreach ($backMatterFiles as $matter) {
+            $items .= "        <li><a href=\"Text/{$matter['file']}\">{$matter['label']}</a></li>\n";
         }
 
         $body = <<<HTML
@@ -211,15 +303,34 @@ class EpubExporter implements Exporter
         $zip->addFromString('OEBPS/toc.xhtml', $xhtml);
     }
 
-    private function addTocNcx(ZipArchive $zip, Book $book, Collection $chapters, string $uuid): void
+    /**
+     * @param  array<int, array{id: string, file: string, label: string}>  $frontMatterFiles
+     * @param  array<int, array{id: string, file: string, label: string}>  $backMatterFiles
+     */
+    private function addTocNcx(ZipArchive $zip, Book $book, Collection $chapters, array $frontMatterFiles, array $backMatterFiles, string $uuid): void
     {
         $bookTitle = htmlspecialchars($book->title, ENT_XML1, 'UTF-8');
         $navPoints = '';
+        $playOrder = 1;
+
+        foreach ($frontMatterFiles as $matter) {
+            if ($matter['id'] === 'toc') {
+                continue;
+            }
+            $href = "Text/{$matter['file']}";
+            $navPoints .= <<<XML
+                <navPoint id="{$matter['id']}" playOrder="{$playOrder}">
+                  <navLabel><text>{$matter['label']}</text></navLabel>
+                  <content src="{$href}"/>
+                </navPoint>
+
+            XML;
+            $playOrder++;
+        }
 
         foreach ($chapters as $index => $chapter) {
             $num = $this->chapterNum($index);
             $title = htmlspecialchars($chapter->title, ENT_XML1, 'UTF-8');
-            $playOrder = $index + 1;
             $navPoints .= <<<XML
                 <navPoint id="chapter-{$num}" playOrder="{$playOrder}">
                   <navLabel><text>{$title}</text></navLabel>
@@ -227,6 +338,18 @@ class EpubExporter implements Exporter
                 </navPoint>
 
             XML;
+            $playOrder++;
+        }
+
+        foreach ($backMatterFiles as $matter) {
+            $navPoints .= <<<XML
+                <navPoint id="{$matter['id']}" playOrder="{$playOrder}">
+                  <navLabel><text>{$matter['label']}</text></navLabel>
+                  <content src="Text/{$matter['file']}"/>
+                </navPoint>
+
+            XML;
+            $playOrder++;
         }
 
         $ncx = <<<XML
@@ -245,9 +368,11 @@ class EpubExporter implements Exporter
     }
 
     /**
+     * @param  array<int, array{id: string, file: string, label: string}>  $frontMatterFiles
      * @param  array<int, string>  $chapterFiles
+     * @param  array<int, array{id: string, file: string, label: string}>  $backMatterFiles
      */
-    private function addContentOpf(ZipArchive $zip, Book $book, Collection $chapters, array $chapterFiles, ExportOptions $options, string $uuid): void
+    private function addContentOpf(ZipArchive $zip, Book $book, Collection $chapters, array $frontMatterFiles, array $chapterFiles, array $backMatterFiles, ExportOptions $options, string $uuid): void
     {
         $title = htmlspecialchars($book->title, ENT_XML1, 'UTF-8');
         $author = htmlspecialchars($book->author ?? 'Unknown', ENT_XML1, 'UTF-8');
@@ -260,7 +385,8 @@ class EpubExporter implements Exporter
             <item id="stylesheet" href="Styles/stylesheet.css" media-type="text/css"/>
         XML;
 
-        if ($options->includeTableOfContents) {
+        $hasTocInFrontMatter = in_array('toc', $options->frontMatter);
+        if ($options->includeTableOfContents || $hasTocInFrontMatter) {
             $manifestItems .= "\n    <item id=\"toc\" href=\"toc.xhtml\" media-type=\"application/xhtml+xml\" properties=\"nav\"/>";
         }
 
@@ -269,19 +395,46 @@ class EpubExporter implements Exporter
             $manifestItems .= "\n    <item id=\"font-italic\" href=\"Fonts/Literata-Italic.ttf\" media-type=\"font/ttf\"/>";
         }
 
+        // Front matter manifest
+        foreach ($frontMatterFiles as $matter) {
+            if ($matter['id'] === 'toc') {
+                continue; // Already in manifest above
+            }
+            $manifestItems .= "\n    <item id=\"{$matter['id']}\" href=\"Text/{$matter['file']}\" media-type=\"application/xhtml+xml\"/>";
+        }
+
         foreach ($chapterFiles as $index => $file) {
             $num = $this->chapterNum($index);
             $manifestItems .= "\n    <item id=\"chapter-{$num}\" href=\"Text/{$file}\" media-type=\"application/xhtml+xml\"/>";
         }
 
-        // Build spine
+        // Back matter manifest
+        foreach ($backMatterFiles as $matter) {
+            $manifestItems .= "\n    <item id=\"{$matter['id']}\" href=\"Text/{$matter['file']}\" media-type=\"application/xhtml+xml\"/>";
+        }
+
+        // Build spine — front matter, then TOC, then chapters, then back matter
         $spineItems = '';
-        if ($options->includeTableOfContents) {
+
+        foreach ($frontMatterFiles as $matter) {
+            if ($matter['id'] === 'toc') {
+                $spineItems .= "    <itemref idref=\"toc\"/>\n";
+            } else {
+                $spineItems .= "    <itemref idref=\"{$matter['id']}\"/>\n";
+            }
+        }
+
+        if (($options->includeTableOfContents && ! $hasTocInFrontMatter)) {
             $spineItems .= "    <itemref idref=\"toc\"/>\n";
         }
+
         foreach ($chapterFiles as $index => $file) {
             $num = $this->chapterNum($index);
             $spineItems .= "    <itemref idref=\"chapter-{$num}\"/>\n";
+        }
+
+        foreach ($backMatterFiles as $matter) {
+            $spineItems .= "    <itemref idref=\"{$matter['id']}\"/>\n";
         }
 
         $opf = <<<XML

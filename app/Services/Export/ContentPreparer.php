@@ -41,14 +41,48 @@ class ContentPreparer
     {
         $html = $this->normalizeHtml($html);
 
-        // Convert <hr> to styled scene break
+        // Convert <hr> to styled scene break (spaced asterisks matching preview)
         $html = preg_replace(
             '/<hr\s*\/?>/',
-            '<p class="scene-break">* * *</p>',
+            '<p class="scene-break">*&nbsp;&nbsp;*&nbsp;&nbsp;*</p>',
             $html,
         );
 
         return $html;
+    }
+
+    /**
+     * Convert plain text (from AppSetting) to <p> tags for mPDF.
+     */
+    public function toMatterHtml(string $plainText): string
+    {
+        return $this->plainTextToParagraphs($plainText, ENT_HTML5, 'matter-body');
+    }
+
+    /**
+     * Convert plain text (from AppSetting) to XHTML-compliant <p> tags for EPUB.
+     */
+    public function toMatterXhtml(string $plainText): string
+    {
+        return $this->plainTextToParagraphs($plainText, ENT_XML1);
+    }
+
+    /**
+     * Convert plain text to <p> tags with configurable encoding and optional class.
+     */
+    private function plainTextToParagraphs(string $plainText, int $encoding, ?string $class = null): string
+    {
+        if (trim($plainText) === '') {
+            return '';
+        }
+
+        $lines = preg_split('/\r?\n/', trim($plainText));
+        $classAttr = $class !== null ? " class=\"{$class}\"" : '';
+
+        return implode("\n", array_map(
+            fn (string $line) => "<p{$classAttr}>".htmlspecialchars($line, $encoding, 'UTF-8').'</p>',
+            array_filter($lines, fn (string $line) => trim($line) !== ''),
+        ));
     }
 
     /**

@@ -27,6 +27,10 @@ class ExportBookRequest extends FormRequest
             'show_page_numbers' => ['boolean'],
             'trim_size' => ['nullable', Rule::enum(TrimSize::class)],
             'font_size' => ['nullable', 'integer', 'in:10,11,12,13,14'],
+            'front_matter' => ['nullable', 'array'],
+            'front_matter.*' => ['string', 'in:title-page,copyright,dedication,toc'],
+            'back_matter' => ['nullable', 'array'],
+            'back_matter.*' => ['string', 'in:also-by,acknowledgments,about-author'],
         ];
     }
 }

@@ -27,6 +27,10 @@ interface ExportPreviewProps {
     frontMatter: MatterItem[];
     backMatter: MatterItem[];
     acts: ActRef[];
+    dedicationText?: string;
+    acknowledgmentText?: string;
+    aboutAuthorText?: string;
+    alsoByText?: string;
 }
 
 const PAGE_GAP = 12; // gap-3
@@ -118,7 +122,13 @@ function TocPage({
     );
 }
 
-function DedicationPage({ bodySize }: { bodySize: string }) {
+function DedicationPage({
+    bodySize,
+    text,
+}: {
+    bodySize: string;
+    text?: string;
+}) {
     const { t } = useTranslation('export');
     return (
         <div className="flex flex-1 items-center justify-center">
@@ -126,7 +136,7 @@ function DedicationPage({ bodySize }: { bodySize: string }) {
                 className="text-center text-neutral-500 italic"
                 style={{ fontSize: bodySize }}
             >
-                {t('preview.dedication')}
+                {text || t('preview.dedication')}
             </p>
         </div>
     );
@@ -191,7 +201,7 @@ function ChapterPage({
                         Chapter {(page.chapterIndex ?? 0) + 1}
                     </div>
                     <h2
-                        className="text-center leading-tight tracking-[-0.01em] text-neutral-900"
+                        className="text-center leading-tight font-normal tracking-[-0.01em] text-neutral-900"
                         style={{ fontSize: titleSize }}
                     >
                         {page.title}
@@ -274,7 +284,12 @@ function ChapterPage({
             </div>
 
             {showPageNumbers && (
-                <div className="mt-2 shrink-0 text-center text-[8px] text-[#B5B5B5]">
+                <div
+                    className={cn(
+                        'mt-2 shrink-0 text-[8px] text-[#B5B5B5]',
+                        pageNumber % 2 === 0 ? 'text-left' : 'text-right',
+                    )}
+                >
                     {pageNumber}
                 </div>
             )}
@@ -285,9 +300,11 @@ function ChapterPage({
 function BackMatterPage({
     type,
     bodySize,
+    text,
 }: {
     type: string;
     bodySize: string;
+    text?: string;
 }) {
     const { t } = useTranslation('export');
     const keyMap: Record<string, string> = {
@@ -297,16 +314,18 @@ function BackMatterPage({
     };
 
     const heading = t(keyMap[type] ?? type);
+    const displayText =
+        text || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.';
     return (
         <div className="flex flex-1 flex-col pt-4">
             <h3 className="mb-3 text-center text-[10px] font-semibold tracking-[0.15em] text-neutral-900 uppercase">
                 {heading}
             </h3>
             <p
-                className="text-center leading-relaxed text-neutral-400"
+                className="leading-relaxed text-[#4A4A4A]"
                 style={{ fontSize: bodySize }}
             >
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                {displayText}
             </p>
         </div>
     );
@@ -327,6 +346,10 @@ export default function ExportPreview({
     frontMatter,
     backMatter,
     acts,
+    dedicationText,
+    acknowledgmentText,
+    aboutAuthorText,
+    alsoByText,
 }: ExportPreviewProps) {
     const { t } = useTranslation('export');
 
@@ -355,6 +378,15 @@ export default function ExportPreview({
 
     const hasContent = pages.length > 0;
 
+    const backMatterTextMap: Record<string, string | undefined> = useMemo(
+        () => ({
+            acknowledgments: acknowledgmentText,
+            'about-author': aboutAuthorText,
+            'also-by': alsoByText,
+        }),
+        [acknowledgmentText, aboutAuthorText, alsoByText],
+    );
+
     const renderPage = useCallback(
         (i: number, page: PreviewPage) => (
             <div className="flex justify-center px-7 pb-3">
@@ -375,7 +407,10 @@ export default function ExportPreview({
                         />
                     )}
                     {page.type === 'dedication' && (
-                        <DedicationPage bodySize={bodySize} />
+                        <DedicationPage
+                            bodySize={bodySize}
+                            text={dedicationText}
+                        />
                     )}
                     {page.type === 'act-break' && (
                         <ActBreakPage
@@ -395,10 +430,12 @@ export default function ExportPreview({
                             lineHeight={lineHeight}
                         />
                     )}
-                    {(page.type === 'acknowledgments' ||
-                        page.type === 'about-author' ||
-                        page.type === 'also-by') && (
-                        <BackMatterPage type={page.type} bodySize={bodySize} />
+                    {backMatterTextMap[page.type] !== undefined && (
+                        <BackMatterPage
+                            type={page.type}
+                            bodySize={bodySize}
+                            text={backMatterTextMap[page.type]}
+                        />
                     )}
                 </PageShell>
             </div>
@@ -413,6 +450,8 @@ export default function ExportPreview({
             format,
             showPageNumbers,
             lineHeight,
+            dedicationText,
+            backMatterTextMap,
         ],
     );
 

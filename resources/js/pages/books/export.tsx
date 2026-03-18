@@ -25,6 +25,10 @@ interface Props {
     chapters: ChapterRow[];
     trimSizes: TrimSizeOption[];
     acts: ActRef[];
+    dedicationText: string;
+    acknowledgmentText: string;
+    aboutAuthorText: string;
+    alsoByText: string;
 }
 
 const INITIAL_FRONT_MATTER: MatterItem[] = [
@@ -56,6 +60,10 @@ export default function Export({
     chapters,
     trimSizes,
     acts,
+    dedicationText,
+    acknowledgmentText,
+    aboutAuthorText,
+    alsoByText,
 }: Props) {
     const { t } = useTranslation('export');
     const sidebarStorylines = useSidebarStorylines();
@@ -173,6 +181,11 @@ export default function Export({
             data.font_size = fontSize;
         }
 
+        data.front_matter = frontMatter
+            .filter((i) => i.checked)
+            .map((i) => i.id);
+        data.back_matter = backMatter.filter((i) => i.checked).map((i) => i.id);
+
         downloadExport(book, data)
             .catch(() => {})
             .finally(() => setExporting(false));
@@ -187,6 +200,8 @@ export default function Export({
         includeToc,
         trimSize,
         fontSize,
+        frontMatter,
+        backMatter,
     ]);
 
     return (
@@ -243,6 +258,10 @@ export default function Export({
                     frontMatter={frontMatter}
                     backMatter={backMatter}
                     acts={acts}
+                    dedicationText={dedicationText}
+                    acknowledgmentText={acknowledgmentText}
+                    aboutAuthorText={aboutAuthorText}
+                    alsoByText={alsoByText}
                 />
             </div>
         </>

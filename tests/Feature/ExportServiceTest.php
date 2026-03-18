@@ -620,6 +620,131 @@ test('export endpoint validates font_size', function () {
     ])->assertUnprocessable();
 });
 
+// === Front/Back Matter Tests ===
+
+test('pdf includes title page when front_matter selected', function () {
+    $book = Book::factory()->create(['title' => 'Matter PDF', 'author' => 'Test Author']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Content.</p>', 'sort_order' => 1]);
+
+    $response = $this->service->export($book, [
+        'format' => 'pdf',
+        'scope' => 'full',
+        'front_matter' => ['title-page'],
+    ]);
+
+    expect($response->getStatusCode())->toBe(200);
+    $content = file_get_contents($response->getFile()->getPathname());
+    expect(str_starts_with($content, '%PDF'))->toBeTrue();
+});
+
+test('pdf includes front and back matter pages', function () {
+    $book = Book::factory()->create(['title' => 'Full Matter PDF', 'author' => 'Author']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Content.</p>', 'sort_order' => 1]);
+
+    $response = $this->service->export($book, [
+        'format' => 'pdf',
+        'scope' => 'full',
+        'front_matter' => ['title-page', 'copyright', 'dedication'],
+        'back_matter' => ['acknowledgments', 'about-author', 'also-by'],
+    ]);
+
+    expect($response->getStatusCode())->toBe(200);
+    $content = file_get_contents($response->getFile()->getPathname());
+    expect(str_starts_with($content, '%PDF'))->toBeTrue();
+});
+
+test('epub includes title page xhtml', function () {
+    $book = Book::factory()->create(['title' => 'EPUB Matter', 'author' => 'Jane', 'language' => 'en']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Content.</p>', 'sort_order' => 1]);
+
+    $response = $this->service->export($book, [
+        'format' => 'epub',
+        'scope' => 'full',
+        'front_matter' => ['title-page', 'copyright', 'dedication'],
+    ]);
+
+    $zip = new ZipArchive;
+    $zip->open($response->getFile()->getPathname());
+
+    expect($zip->locateName('OEBPS/Text/title-page.xhtml'))->not->toBeFalse();
+    expect($zip->locateName('OEBPS/Text/copyright.xhtml'))->not->toBeFalse();
+    expect($zip->locateName('OEBPS/Text/dedication.xhtml'))->not->toBeFalse();
+
+    $titlePage = $zip->getFromName('OEBPS/Text/title-page.xhtml');
+    expect($titlePage)->toContain('EPUB Matter');
+    expect($titlePage)->toContain('epub:type="titlepage"');
+
+    $copyrightPage = $zip->getFromName('OEBPS/Text/copyright.xhtml');
+    expect($copyrightPage)->toContain('epub:type="copyright-page"');
+
+    $dedicationPage = $zip->getFromName('OEBPS/Text/dedication.xhtml');
+    expect($dedicationPage)->toContain('epub:type="dedication"');
+
+    $zip->close();
+});
+
+test('epub includes back matter in spine', function () {
+    $book = Book::factory()->create(['title' => 'Spine Test', 'author' => 'Author', 'language' => 'en']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Content.</p>', 'sort_order' => 1]);
+
+    $response = $this->service->export($book, [
+        'format' => 'epub',
+        'scope' => 'full',
+        'front_matter' => ['title-page'],
+        'back_matter' => ['acknowledgments', 'about-author'],
+    ]);
+
+    $zip = new ZipArchive;
+    $zip->open($response->getFile()->getPathname());
+
+    $opf = $zip->getFromName('OEBPS/content.opf');
+
+    // Front matter before chapters in spine
+    $titlePagePos = strpos($opf, 'idref="title-page"');
+    $chapterPos = strpos($opf, 'idref="chapter-001"');
+    expect($titlePagePos)->toBeLessThan($chapterPos);
+
+    // Back matter after chapters in spine
+    $ackPos = strpos($opf, 'idref="acknowledgments"');
+    $aboutPos = strpos($opf, 'idref="about-author"');
+    expect($chapterPos)->toBeLessThan($ackPos);
+    expect($ackPos)->toBeLessThan($aboutPos);
+
+    $zip->close();
+});
+
+test('export endpoint accepts front_matter and back_matter arrays', function () {
+    $book = Book::factory()->create(['author' => 'Test', 'language' => 'en']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Text.</p>', 'sort_order' => 1]);
+
+    $this->postJson(route('books.settings.export.run', $book), [
+        'format' => 'pdf',
+        'scope' => 'full',
+        'front_matter' => ['title-page', 'copyright'],
+        'back_matter' => ['acknowledgments'],
+    ])->assertOk();
+});
+
+test('export endpoint rejects invalid front_matter values', function () {
+    $book = Book::factory()->create();
+
+    $this->postJson(route('books.settings.export.run', $book), [
+        'format' => 'pdf',
+        'scope' => 'full',
+        'front_matter' => ['invalid-page'],
+    ])->assertUnprocessable();
+});
+
 // === Backward Compatibility ===
 
 test('backward compatible with legacy scope-based request', function () {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\TrimSize;
 use App\Http\Requests\ExportBookRequest;
+use App\Models\AppSetting;
 use App\Models\Book;
 use App\Services\Export\ExportService;
 use App\Services\WritingStyleService;
@@ -112,6 +113,10 @@ class BookSettingsController extends Controller
             ]),
             'trimSizes' => collect(TrimSize::cases())->map(fn ($t) => ['value' => $t->value, 'label' => $t->label()]),
             'acts' => $book->acts->map(fn ($a) => $a->only('id', 'number', 'title')),
+            'dedicationText' => (string) AppSetting::get('dedication_text', ''),
+            'acknowledgmentText' => (string) AppSetting::get('acknowledgment_text', ''),
+            'aboutAuthorText' => (string) AppSetting::get('about_author_text', ''),
+            'alsoByText' => (string) AppSetting::get('also_by_text', ''),
         ]);
     }
 
