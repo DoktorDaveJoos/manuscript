@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import {
     ChevronLeft,
     ChevronRight,
@@ -9,6 +10,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import ProFeatureLock from '@/components/ui/ProFeatureLock';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { getXsrfToken } from '@/lib/csrf';
@@ -64,6 +66,7 @@ export default function AiActionSidebar({
     onTensionArcGenerated?: (data: TensionData[]) => void;
 }) {
     const { t } = useTranslation('plot');
+    const pageUrl = usePage().url;
     const { visible, usable, licensed } = useAiFeatures();
 
     const [runningAction, setRunningAction] = useState<ActionKey | null>(null);
@@ -366,7 +369,11 @@ export default function AiActionSidebar({
                                         components={{
                                             1: (
                                                 <a
-                                                    href="/settings"
+                                                    href={settingsIndex.url({
+                                                        query: {
+                                                            from: pageUrl,
+                                                        },
+                                                    })}
                                                     className="font-medium text-ink-soft underline decoration-ink-soft/30 hover:decoration-ink-soft"
                                                 />
                                             ),

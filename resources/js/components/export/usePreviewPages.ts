@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import type { Format } from '@/components/export/ExportSettings';
-import { TRIM_RATIOS } from '@/components/export/trim-sizes';
 import type { ActRef, ChapterRow, MatterItem } from '@/components/export/types';
 
 export type PreviewPageType =
@@ -28,9 +27,14 @@ export type PreviewPage = {
     pageInChapter?: number;
 };
 
+export const SCENE_BREAK_MARKER = '***';
+/** Prefix on paragraphs that are continuations split across pages. */
+export const CONTINUATION_PREFIX = '\x01';
+
 /** Strip HTML tags and decode common entities for plain-text preview. */
 function stripHtml(html: string): string {
     return html
+        .replace(/<hr\s*\/?>/gi, `\n\n${SCENE_BREAK_MARKER}\n\n`)
         .replace(/<br\s*\/?>/gi, '\n')
         .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
         .replace(/<[^>]+>/g, '')
@@ -59,26 +63,85 @@ function contentToParagraphs(content: string | undefined): string[] {
         .filter(Boolean);
 }
 
-const PAGE_WIDTH = 220;
-const TEXT_WIDTH = 180; // PAGE_WIDTH minus px-5 padding (20px each side)
-const PADDING_TOP = 24; // pt-6
-const PADDING_BOTTOM = 16; // pb-4
-const RUNNING_HEADER_HEIGHT = 20;
-const CHAPTER_TITLE_HEIGHT = 44;
-const PAGE_NUMBER_HEIGHT = 15;
+// Calculation constants — must stay in sync with PageShell in ExportPreview.tsx
+export const PAGE_WIDTH = 340;
+const PADDING_TOP = 40; // pt-10
+const PADDING_BOTTOM = 32; // pb-8
+const PADDING_LEFT = 40; // pl-10
+const PADDING_RIGHT = 36; // pr-[36px]
+const TEXT_WIDTH = PAGE_WIDTH - PADDING_LEFT - PADDING_RIGHT; // 264
+const RUNNING_HEADER_HEIGHT = 24; // text-[7px] (~10px) + mb-3 (12px) ≈ 22, rounded up
+const CHAPTER_TITLE_HEIGHT = 86; // pt-6 (24) + mb-1 (4) + label (~10) + title (~23) + pb-5 (20) ≈ 81, +5 safety
+const PAGE_NUMBER_HEIGHT = 22; // mt-2 (8px) + text-[8px] (~12px) ≈ 20, rounded up
 
-function getPageTextHeight(format: Format, trimSize: string): number {
-    let ratio: number;
-    if (format === 'epub') ratio = 3 / 4;
-    else if (format === 'docx' || format === 'txt') ratio = 216 / 279;
-    else ratio = TRIM_RATIOS[trimSize] ?? 152 / 229;
+const CHAR_WIDTH_RATIO = 0.55; // average char width as fraction of font size (serif at preview scale)
+const MIN_WIDOWS = 2;
+const MIN_ORPHANS = 2;
 
-    const pageHeight = PAGE_WIDTH / ratio;
-    return pageHeight - PADDING_TOP - PADDING_BOTTOM;
+/** Format-specific line-height multipliers matching actual export output.
+ *  Keep in sync with PdfExporter.php (1.5) and EpubExporter.php (1.6). */
+export function getLineHeightMultiplier(format: Format): number {
+    switch (format) {
+        case 'pdf':
+            return 1.5;
+        case 'epub':
+            return 1.6;
+        default:
+            return 1.75;
+    }
 }
 
+/** Parse a trim size string like "6x9" into width/height numbers. */
+export function parseTrimSize(trimSize: string): {
+    width: number;
+    height: number;
+} {
+    const parts = trimSize.split('x');
+    const w = parseFloat(parts[0]);
+    const h = parseFloat(parts[1]);
+    if (isNaN(w) || isNaN(h) || w <= 0 || h <= 0) {
+        return { width: 6, height: 9 }; // fallback
+    }
+    return { width: w, height: h };
+}
+
+/** Compute page render height from trim size ratio, keeping PAGE_WIDTH fixed. */
+export function computePageHeight(trimSize: string): number {
+    const { width, height } = parseTrimSize(trimSize);
+    return Math.round(PAGE_WIDTH * (height / width));
+}
+
+/** Estimate line count by simulating word-wrap (words can't split mid-line). */
 function estimateParaLines(text: string, charsPerLine: number): number {
-    return Math.max(1, Math.ceil(text.length / charsPerLine));
+    const words = text.split(/\s+/).filter(Boolean);
+    if (words.length === 0) return 1;
+
+    let lines = 1;
+    let lineLen = 0;
+
+    for (const word of words) {
+        const needed = lineLen === 0 ? word.length : word.length + 1;
+        if (lineLen > 0 && lineLen + needed > charsPerLine) {
+            lines++;
+            lineLen = word.length;
+        } else {
+            lineLen += needed;
+        }
+    }
+
+    return lines;
+}
+
+/**
+ * Find the last word-boundary space before targetPos. Returns -1 if no good
+ * break exists. Rejects breaks in the first 30% to avoid leaving a very short
+ * fragment on the page (looks worse than pushing the whole paragraph).
+ */
+function findWordBreak(text: string, targetPos: number): number {
+    if (targetPos >= text.length) return -1;
+    const MIN_FRAGMENT_RATIO = 0.3;
+    const lastSpace = text.lastIndexOf(' ', targetPos);
+    return lastSpace > targetPos * MIN_FRAGMENT_RATIO ? lastSpace : -1;
 }
 
 function splitParagraphsIntoPages(
@@ -95,17 +158,65 @@ function splitParagraphsIntoPages(
     let maxLines = firstPageMaxLines;
 
     for (const para of paragraphs) {
-        const paraLines = estimateParaLines(para, charsPerLine);
-        const spacing = current.length > 0 ? 1 : 0;
+        const isBreak = para === SCENE_BREAK_MARKER;
+        const paraLines = isBreak ? 3 : estimateParaLines(para, charsPerLine);
 
-        if (current.length > 0 && linesUsed + spacing + paraLines > maxLines) {
+        if (current.length > 0 && linesUsed + paraLines > maxLines) {
+            // Try to split a long text paragraph across this page and the next
+            const availableLines = maxLines - linesUsed;
+            if (!isBreak && availableLines >= MIN_ORPHANS) {
+                const breakCharPos = availableLines * charsPerLine;
+                const splitIdx = findWordBreak(para, breakCharPos);
+                if (splitIdx > 0) {
+                    const part1 = para.slice(0, splitIdx).trimEnd();
+                    const part2 = para.slice(splitIdx).trimStart();
+                    const part2Lines = estimateParaLines(part2, charsPerLine);
+
+                    // Widow prevention: if part2 would be fewer than MIN_WIDOWS
+                    // lines on the next page, reject the split
+                    if (part1 && part2 && part2Lines >= MIN_WIDOWS) {
+                        current.push(part1);
+                        pages.push(current);
+                        current = [CONTINUATION_PREFIX + part2];
+                        linesUsed = part2Lines;
+                        maxLines = continuationMaxLines;
+                        continue;
+                    }
+                }
+            }
+
+            // Orphan prevention: if current page would end with only 1 line
+            // from the last paragraph, pull it to the next page too
+            if (
+                !isBreak &&
+                current.length > 0 &&
+                availableLines < MIN_ORPHANS
+            ) {
+                const lastPara = current[current.length - 1];
+                if (
+                    lastPara &&
+                    lastPara !== SCENE_BREAK_MARKER &&
+                    estimateParaLines(lastPara, charsPerLine) === 1 &&
+                    current.length > 1
+                ) {
+                    current.pop();
+                    pages.push(current);
+                    current = [lastPara, para];
+                    linesUsed =
+                        estimateParaLines(lastPara, charsPerLine) + paraLines;
+                    maxLines = continuationMaxLines;
+                    continue;
+                }
+            }
+
+            // Cannot split — push whole paragraph to next page
             pages.push(current);
             current = [para];
             linesUsed = paraLines;
             maxLines = continuationMaxLines;
         } else {
             current.push(para);
-            linesUsed += spacing + paraLines;
+            linesUsed += paraLines;
         }
     }
 
@@ -123,6 +234,7 @@ export function usePreviewPages({
     selectedChapterIds,
     includeActBreaks,
     includeChapterTitles,
+    showPageNumbers,
     acts,
     format,
     trimSize,
@@ -134,6 +246,7 @@ export function usePreviewPages({
     selectedChapterIds: Set<number>;
     includeActBreaks: boolean;
     includeChapterTitles: boolean;
+    showPageNumbers: boolean;
     acts: ActRef[];
     format: Format;
     trimSize: string;
@@ -160,28 +273,29 @@ export function usePreviewPages({
             pages.push(page);
         }
 
-        // Compute pagination parameters
+        // Compute pagination parameters — must match rendered PageShell sizing
+        const pageHeight = computePageHeight(trimSize);
+        const baseTextHeight = pageHeight - PADDING_TOP - PADDING_BOTTOM;
         const scale = fontSize / 11;
-        const bodySize = 7 * scale;
-        const lineHeight = bodySize * 1.75;
-        const charWidth = bodySize * 0.45;
+        const bodySize = 9 * scale; // matches ExportPreview render
+        const lineHeightMultiplier = getLineHeightMultiplier(format);
+        const lineHeight = bodySize * lineHeightMultiplier;
+        const charWidth = bodySize * CHAR_WIDTH_RATIO;
         const charsPerLine = Math.max(1, Math.floor(TEXT_WIDTH / charWidth));
-        const baseTextHeight = getPageTextHeight(format, trimSize);
 
         const hasRunningHeader = format === 'pdf';
-        const hasPageNumbers = format === 'pdf';
 
         let firstPageHeight = baseTextHeight;
         let contPageHeight = baseTextHeight;
 
         if (hasRunningHeader) {
-            firstPageHeight -= RUNNING_HEADER_HEIGHT;
+            // Running header is suppressed on chapter openers
             contPageHeight -= RUNNING_HEADER_HEIGHT;
         }
         if (includeChapterTitles) {
             firstPageHeight -= CHAPTER_TITLE_HEIGHT;
         }
-        if (hasPageNumbers) {
+        if (showPageNumbers) {
             firstPageHeight -= PAGE_NUMBER_HEIGHT;
             contPageHeight -= PAGE_NUMBER_HEIGHT;
         }
@@ -258,6 +372,7 @@ export function usePreviewPages({
         selectedChapterIds,
         includeActBreaks,
         includeChapterTitles,
+        showPageNumbers,
         acts,
         format,
         trimSize,

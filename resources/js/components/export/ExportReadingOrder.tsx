@@ -13,14 +13,18 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Check, ChevronDown, GripVertical } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { ArrowUpRight, Check, ChevronDown, GripVertical } from 'lucide-react';
+import type { PropsWithChildren } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import type {
     ChapterRow,
     MatterItem,
     StorylineRef,
 } from '@/components/export/types';
+import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { cn } from '@/lib/utils';
 
 type ExportReadingOrderProps = {
@@ -147,9 +151,11 @@ function SortableChapterRow({
 function MatterRow({
     item,
     onToggle,
+    fromUrl,
 }: {
     item: MatterItem;
     onToggle: () => void;
+    fromUrl: string;
 }) {
     return (
         <div className="flex items-center gap-2">
@@ -159,7 +165,7 @@ function MatterRow({
             <CustomCheckbox checked={item.checked} onClick={onToggle} />
             <span
                 className={cn(
-                    'text-[12px]',
+                    'min-w-0 flex-1 truncate text-[12px]',
                     item.checked
                         ? 'text-[#4A4A4A] dark:text-ink-soft'
                         : 'text-[#B5B5B5] dark:text-ink-faint',
@@ -167,6 +173,16 @@ function MatterRow({
             >
                 {item.label}
             </span>
+            {item.settingsSection && (
+                <Link
+                    href={settingsIndex.url({
+                        query: { section: item.settingsSection, from: fromUrl },
+                    })}
+                    className="shrink-0 text-[#B5B5B5] transition-colors hover:text-ink-muted dark:text-ink-faint dark:hover:text-ink-soft"
+                >
+                    <ArrowUpRight className="h-3 w-3" />
+                </Link>
+            )}
         </div>
     );
 }
@@ -174,13 +190,26 @@ function MatterRow({
 function SectionHeader({
     children,
     count,
+    expanded,
+    onToggle,
 }: {
     children: React.ReactNode;
     count?: number;
+    expanded: boolean;
+    onToggle: () => void;
 }) {
     return (
-        <div className="flex items-center gap-1.5">
-            <ChevronDown className="h-3 w-3 text-[#8A8A8A] dark:text-ink-faint" />
+        <button
+            type="button"
+            onClick={onToggle}
+            className="flex w-full items-center gap-1.5"
+        >
+            <ChevronDown
+                className={cn(
+                    'h-3 w-3 text-[#8A8A8A] transition-transform dark:text-ink-faint',
+                    !expanded && '-rotate-90',
+                )}
+            />
             <span className="text-[10px] font-semibold tracking-[0.08em] text-ink-muted uppercase">
                 {children}
             </span>
@@ -189,6 +218,22 @@ function SectionHeader({
                     {count}
                 </span>
             )}
+        </button>
+    );
+}
+
+function CollapsibleSection({
+    expanded,
+    children,
+}: PropsWithChildren<{ expanded: boolean }>) {
+    return (
+        <div
+            className={cn(
+                'grid transition-[grid-template-rows] duration-200 ease-out',
+                expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+            )}
+        >
+            <div className="overflow-hidden">{children}</div>
         </div>
     );
 }
@@ -205,7 +250,27 @@ export default function ExportReadingOrder({
     onToggleBackMatter,
 }: ExportReadingOrderProps) {
     const { t } = useTranslation('export');
+    const pageUrl = usePage().url;
     const [activeChapter, setActiveChapter] = useState<ChapterRow | null>(null);
+    const [expandedSections, setExpandedSections] = useState(
+        () => new Set(['front-matter', 'chapters', 'back-matter']),
+    );
+
+    const toggleSection = useCallback((key: string) => {
+        setExpandedSections((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    }, []);
+
+    const { width, panelRef, handleMouseDown } = useResizablePanel({
+        storageKey: 'export-reading-order-width',
+        minWidth: 220,
+        maxWidth: 400,
+        defaultWidth: 260,
+    });
 
     const sensors = useSensors(
         useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
@@ -251,10 +316,22 @@ export default function ExportReadingOrder({
         : undefined;
 
     return (
-        <aside className="flex h-full w-[260px] shrink-0 flex-col border-r border-border-subtle bg-neutral-bg">
+        <aside
+            ref={panelRef}
+            className="relative flex h-full shrink-0 flex-col border-r border-border-subtle bg-white dark:bg-surface-card"
+            style={{ width }}
+        >
+            {/* Resize handle */}
+            <div
+                onMouseDown={handleMouseDown}
+                className="group absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize"
+            >
+                <div className="absolute inset-y-0 right-[3px] w-px bg-transparent transition-colors group-hover:bg-ink/20" />
+            </div>
+
             {/* Header */}
             <div className="flex flex-col gap-1 px-4 py-5">
-                <h2 className="text-[14px] font-semibold text-ink">
+                <h2 className="text-[14px] font-semibold tracking-[0.06em] text-ink uppercase">
                     {t('readingOrder')}
                 </h2>
                 <p className="text-[11px] text-ink-faint">
@@ -267,95 +344,125 @@ export default function ExportReadingOrder({
                 {/* Front matter */}
                 <div className="border-b border-border-subtle">
                     <div className="px-4 pt-3 pb-2">
-                        <SectionHeader>{t('frontMatter')}</SectionHeader>
+                        <SectionHeader
+                            expanded={expandedSections.has('front-matter')}
+                            onToggle={() => toggleSection('front-matter')}
+                        >
+                            {t('frontMatter')}
+                        </SectionHeader>
                     </div>
-                    <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
-                        {frontMatter.map((item) => (
-                            <MatterRow
-                                key={item.id}
-                                item={item}
-                                onToggle={() => onToggleFrontMatter(item.id)}
-                            />
-                        ))}
-                    </div>
+                    <CollapsibleSection
+                        expanded={expandedSections.has('front-matter')}
+                    >
+                        <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
+                            {frontMatter.map((item) => (
+                                <MatterRow
+                                    key={item.id}
+                                    item={item}
+                                    onToggle={() =>
+                                        onToggleFrontMatter(item.id)
+                                    }
+                                    fromUrl={pageUrl}
+                                />
+                            ))}
+                        </div>
+                    </CollapsibleSection>
                 </div>
 
                 {/* Chapters */}
                 <div className="border-b border-border-subtle">
                     <div className="px-4 pt-1.5 pb-1">
-                        <SectionHeader count={orderedChapters.length}>
+                        <SectionHeader
+                            count={orderedChapters.length}
+                            expanded={expandedSections.has('chapters')}
+                            onToggle={() => toggleSection('chapters')}
+                        >
                             {t('chapters')}
                         </SectionHeader>
                     </div>
-                    <div className="flex flex-col px-4 pt-1 pb-3.5">
-                        <DndContext
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragStart={handleDragStart}
-                            onDragEnd={handleDragEnd}
-                        >
-                            <SortableContext
-                                items={orderedChapters.map(
-                                    (ch) => `export-${ch.id}`,
-                                )}
-                                strategy={verticalListSortingStrategy}
+                    <CollapsibleSection
+                        expanded={expandedSections.has('chapters')}
+                    >
+                        <div className="flex flex-col px-4 pt-1 pb-3.5">
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragStart={handleDragStart}
+                                onDragEnd={handleDragEnd}
                             >
-                                {orderedChapters.map((chapter, index) => (
-                                    <SortableChapterRow
-                                        key={chapter.id}
-                                        chapter={chapter}
-                                        index={index}
-                                        storyline={storylineMap.get(
-                                            chapter.storyline_id,
-                                        )}
-                                        checked={selectedChapterIds.has(
-                                            chapter.id,
-                                        )}
-                                        onToggle={() =>
-                                            onToggleChapter(chapter.id)
-                                        }
-                                    />
-                                ))}
-                            </SortableContext>
-
-                            <DragOverlay>
-                                {activeChapter && (
-                                    <div className="flex items-center gap-2 rounded bg-white px-2 py-1 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A] dark:bg-surface-card">
-                                        <span className="flex shrink-0 items-center text-[#D0D0D0] dark:text-ink-faint">
-                                            <GripVertical className="h-3 w-3" />
-                                        </span>
-                                        <span
-                                            className="h-1.5 w-1.5 shrink-0 rounded-full"
-                                            style={{
-                                                backgroundColor:
-                                                    activeStoryline?.color ??
-                                                    '#737373',
-                                            }}
+                                <SortableContext
+                                    items={orderedChapters.map(
+                                        (ch) => `export-${ch.id}`,
+                                    )}
+                                    strategy={verticalListSortingStrategy}
+                                >
+                                    {orderedChapters.map((chapter, index) => (
+                                        <SortableChapterRow
+                                            key={chapter.id}
+                                            chapter={chapter}
+                                            index={index}
+                                            storyline={storylineMap.get(
+                                                chapter.storyline_id,
+                                            )}
+                                            checked={selectedChapterIds.has(
+                                                chapter.id,
+                                            )}
+                                            onToggle={() =>
+                                                onToggleChapter(chapter.id)
+                                            }
                                         />
-                                        <span className="min-w-0 flex-1 truncate text-[12px] text-[#4A4A4A] dark:text-ink-soft">
-                                            {activeChapter.title}
-                                        </span>
-                                    </div>
-                                )}
-                            </DragOverlay>
-                        </DndContext>
-                    </div>
+                                    ))}
+                                </SortableContext>
+
+                                <DragOverlay>
+                                    {activeChapter && (
+                                        <div className="flex items-center gap-2 rounded bg-white px-2 py-1 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A] dark:bg-surface-card">
+                                            <span className="flex shrink-0 items-center text-[#D0D0D0] dark:text-ink-faint">
+                                                <GripVertical className="h-3 w-3" />
+                                            </span>
+                                            <span
+                                                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                                style={{
+                                                    backgroundColor:
+                                                        activeStoryline?.color ??
+                                                        '#737373',
+                                                }}
+                                            />
+                                            <span className="min-w-0 flex-1 truncate text-[12px] text-[#4A4A4A] dark:text-ink-soft">
+                                                {activeChapter.title}
+                                            </span>
+                                        </div>
+                                    )}
+                                </DragOverlay>
+                            </DndContext>
+                        </div>
+                    </CollapsibleSection>
                 </div>
 
                 {/* Back matter */}
                 <div className="border-b border-border-subtle">
                     <div className="px-4 pt-3 pb-2">
-                        <SectionHeader>{t('backMatter')}</SectionHeader>
+                        <SectionHeader
+                            expanded={expandedSections.has('back-matter')}
+                            onToggle={() => toggleSection('back-matter')}
+                        >
+                            {t('backMatter')}
+                        </SectionHeader>
                     </div>
-                    <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
-                        {backMatter.map((item) => (
-                            <MatterRow
-                                key={item.id}
-                                item={item}
-                                onToggle={() => onToggleBackMatter(item.id)}
-                            />
-                        ))}
-                    </div>
+                    <CollapsibleSection
+                        expanded={expandedSections.has('back-matter')}
+                    >
+                        <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
+                            {backMatter.map((item) => (
+                                <MatterRow
+                                    key={item.id}
+                                    item={item}
+                                    onToggle={() => onToggleBackMatter(item.id)}
+                                    fromUrl={pageUrl}
+                                />
+                            ))}
+                        </div>
+                    </CollapsibleSection>
                 </div>
             </div>
 

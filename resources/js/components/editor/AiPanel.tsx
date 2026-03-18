@@ -1,4 +1,4 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     ChevronLeft,
     ChevronRight,
@@ -273,6 +273,7 @@ export default function AiPanel({
     chapterAnalyses?: Record<string, Analysis>;
 }) {
     const { t, i18n } = useTranslation('ai');
+    const pageUrl = usePage().url;
     const { visible, usable, licensed } = useAiFeatures();
     const aiEnabled = usable;
 
@@ -551,7 +552,9 @@ export default function AiPanel({
                                         <DescriptionText>
                                             {t('actions.notConfigured')}{' '}
                                             <Link
-                                                href="/settings"
+                                                href={settingsIndex.url({
+                                                    query: { from: pageUrl },
+                                                })}
                                                 className="font-medium text-accent underline decoration-accent/30 hover:decoration-accent"
                                             >
                                                 {t('actions.configureSettings')}
@@ -584,7 +587,9 @@ export default function AiPanel({
                                             {t('prose.description')}
                                         </DescriptionText>
                                         <Link
-                                            href={settingsIndex.url()}
+                                            href={settingsIndex.url({
+                                                query: { from: pageUrl },
+                                            })}
                                             className="text-[11px] font-medium text-accent transition-colors hover:text-accent-dark"
                                         >
                                             {t('prose.settingsLink')}

@@ -29,7 +29,11 @@ export default function BookSwitcher({
 
     const switchBook = () => {
         setOpen(false);
-        router.visit(settingsIndex.url());
+        const from = new URLSearchParams(window.location.search).get('from');
+        const url = from
+            ? settingsIndex.url({ query: { from } })
+            : settingsIndex.url();
+        router.visit(url);
     };
 
     return (

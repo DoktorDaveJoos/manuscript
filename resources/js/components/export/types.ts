@@ -23,4 +23,5 @@ export type MatterItem = {
     id: string;
     label: string;
     checked: boolean;
+    settingsSection?: string;
 };

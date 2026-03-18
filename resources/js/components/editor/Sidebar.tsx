@@ -6,13 +6,7 @@ import {
     Settings,
     Waypoints,
 } from 'lucide-react';
-import {
-    useCallback,
-    useEffect,
-    useLayoutEffect,
-    useRef,
-    useState,
-} from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { index } from '@/actions/App/Http/Controllers/BookController';
 import { exportMethod } from '@/actions/App/Http/Controllers/BookSettingsController';
@@ -22,15 +16,11 @@ import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsC
 import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
 import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
 import NavItem from '@/components/ui/NavItem';
+import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { createChapter, formatCompactCount } from '@/lib/utils';
 import type { Book, Scene, Storyline } from '@/types/models';
 import ChapterList from './ChapterList';
 import TrashBin from './TrashBin';
-
-const STORAGE_KEY = 'manuscript:sidebar-width';
-const MIN_WIDTH = 200;
-const MAX_WIDTH = 400;
-const DEFAULT_WIDTH = 232;
 
 let savedScrollTop = 0;
 
@@ -67,63 +57,17 @@ export default function Sidebar({
 }) {
     const { t } = useTranslation();
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const sidebarRef = useRef<HTMLElement>(null);
 
-    const [width, setWidth] = useState(() => {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            const parsed = Number(stored);
-            if (parsed >= MIN_WIDTH && parsed <= MAX_WIDTH) return parsed;
-        }
-        return DEFAULT_WIDTH;
+    const {
+        width,
+        panelRef: sidebarRef,
+        handleMouseDown,
+    } = useResizablePanel({
+        storageKey: 'manuscript:sidebar-width',
+        minWidth: 200,
+        maxWidth: 400,
+        defaultWidth: 232,
     });
-    const widthRef = useRef(width);
-    useEffect(() => {
-        widthRef.current = width;
-    }, [width]);
-    const dragCleanupRef = useRef<(() => void) | null>(null);
-
-    useEffect(() => {
-        return () => dragCleanupRef.current?.();
-    }, []);
-
-    const handleMouseDown = useCallback((e: React.MouseEvent) => {
-        e.preventDefault();
-        const startX = e.clientX;
-        const startWidth = widthRef.current;
-
-        document.body.style.cursor = 'col-resize';
-        document.body.style.userSelect = 'none';
-
-        const cleanup = () => {
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-            dragCleanupRef.current = null;
-        };
-
-        const handleMouseMove = (e: MouseEvent) => {
-            const delta = e.clientX - startX;
-            const newWidth = Math.min(
-                MAX_WIDTH,
-                Math.max(MIN_WIDTH, startWidth + delta),
-            );
-            widthRef.current = newWidth;
-            if (sidebarRef.current)
-                sidebarRef.current.style.width = `${newWidth}px`;
-        };
-
-        const handleMouseUp = () => {
-            setWidth(widthRef.current);
-            localStorage.setItem(STORAGE_KEY, String(widthRef.current));
-            cleanup();
-        };
-
-        dragCleanupRef.current = cleanup;
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-    }, []);
 
     useLayoutEffect(() => {
         if (scrollContainerRef.current && savedScrollTop > 0) {
@@ -177,7 +121,7 @@ export default function Sidebar({
     return (
         <aside
             ref={sidebarRef}
-            className={`relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border-light bg-surface-card transition-[width,opacity] duration-300 ${isFocusMode ? 'opacity-0' : ''}`}
+            className={`relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border-light bg-white transition-[width,opacity] duration-300 dark:bg-surface-card ${isFocusMode ? 'opacity-0' : ''}`}
             style={{ width: isFocusMode ? 0 : width }}
         >
             {/* Header */}
@@ -189,7 +133,7 @@ export default function Sidebar({
                     Manuscript
                 </Link>
                 <Link
-                    href={settingsIndex.url()}
+                    href={settingsIndex.url({ query: { from: currentUrl } })}
                     className="text-ink-faint transition-colors hover:text-ink"
                 >
                     <Settings size={18} />

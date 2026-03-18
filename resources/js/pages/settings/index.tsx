@@ -1276,12 +1276,15 @@ function SettingsSidebar({
     onNavigate: (key: SectionKey) => void;
 }) {
     const { t } = useTranslation('settings');
+    const backHref =
+        new URLSearchParams(window.location.search).get('from') ||
+        booksIndex.url();
 
     return (
         <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border bg-surface-card">
             <div className="px-5 py-4">
                 <Link
-                    href={booksIndex.url()}
+                    href={backHref}
                     className="flex items-center gap-1.5 text-[12px] font-medium text-ink-muted transition-colors hover:text-ink"
                 >
                     <svg
@@ -1413,6 +1416,21 @@ export default function Settings({
         });
 
         return () => observer.disconnect();
+    }, []);
+
+    // Scroll to section from ?section= query param on mount
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const section = params.get('section') as SectionKey | null;
+        if (section && sectionRefs.current[section]?.current) {
+            // Small delay so the DOM is fully laid out
+            requestAnimationFrame(() => {
+                sectionRefs.current[section]?.current?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                });
+            });
+        }
     }, []);
 
     const handleNavigate = useCallback((key: SectionKey) => {

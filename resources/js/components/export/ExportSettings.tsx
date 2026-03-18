@@ -18,8 +18,8 @@ type ExportSettingsProps = {
     onIncludeChapterTitlesChange: () => void;
     includeActBreaks: boolean;
     onIncludeActBreaksChange: () => void;
-    includeTableOfContents: boolean;
-    onIncludeTableOfContentsChange: () => void;
+    showPageNumbers: boolean;
+    onShowPageNumbersChange: () => void;
     exporting: boolean;
     onExport: () => void;
 };
@@ -126,8 +126,8 @@ export default function ExportSettings({
     onIncludeChapterTitlesChange,
     includeActBreaks,
     onIncludeActBreaksChange,
-    includeTableOfContents,
-    onIncludeTableOfContentsChange,
+    showPageNumbers,
+    onShowPageNumbersChange,
     exporting,
     onExport,
 }: ExportSettingsProps) {
@@ -233,8 +233,8 @@ export default function ExportSettings({
                         />
                         <ToggleRow
                             label={t('showPageNumbers')}
-                            checked={includeTableOfContents}
-                            onChange={onIncludeTableOfContentsChange}
+                            checked={showPageNumbers}
+                            onChange={onShowPageNumbersChange}
                             border={false}
                         />
                     </div>

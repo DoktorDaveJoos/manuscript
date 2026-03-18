@@ -41,7 +41,6 @@ class PdfExporter implements Exporter
             'tempDir' => storage_path('app/mpdf-tmp'),
         ];
 
-        // Register Literata font if available (merge with mPDF defaults)
         if ($this->fontService->fontsAvailable()) {
             $defaultConfig = (new \Mpdf\Config\ConfigVariables)->getDefaults();
             $mpdfConfig['fontDir'] = array_merge($defaultConfig['fontDir'], [resource_path('fonts')]);
@@ -52,16 +51,17 @@ class PdfExporter implements Exporter
 
         $mpdf = new Mpdf($mpdfConfig);
 
-        // Running header and footer
         $bookTitle = htmlspecialchars($book->title, ENT_HTML5, 'UTF-8');
-        $mpdf->SetHTMLHeader("<div style=\"text-align: center; font-size: 9pt; color: #666; font-style: italic;\">{$bookTitle}</div>");
-        $mpdf->SetHTMLFooter('<div style="text-align: center; font-size: 9pt; color: #666;">{PAGENO}</div>');
+
+        if ($options->showPageNumbers) {
+            $this->setAlternatingFooters($mpdf);
+        }
+        $this->setAlternatingHeaders($mpdf, $bookTitle, $bookTitle);
 
         $css = $this->buildCss($fontSize);
         $mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);
 
-        $html = $this->buildHtml($chapters, $options);
-        $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
+        $this->writeChapters($mpdf, $bookTitle, $chapters, $options);
 
         $filename = ExportService::tempPath('pdf');
         $mpdf->Output($filename, \Mpdf\Output\Destination::FILE);
@@ -75,7 +75,7 @@ class PdfExporter implements Exporter
         body {
             font-family: literata, Georgia, serif;
             font-size: {$fontSize}pt;
-            line-height: 1.5;
+            line-height: 1.5; /* keep in sync with getLineHeightMultiplier() in usePreviewPages.ts */
             text-align: justify;
         }
         h1 {
@@ -129,39 +129,74 @@ class PdfExporter implements Exporter
         CSS;
     }
 
-    private function buildHtml(Collection $chapters, ExportOptions $options): string
+    private function writeChapters(Mpdf $mpdf, string $bookTitle, Collection $chapters, ExportOptions $options): void
     {
-        $html = '';
         $currentActId = null;
 
         if ($options->includeTableOfContents && $chapters->isNotEmpty()) {
-            $html .= $this->buildTocHtml($chapters, $options);
+            $tocHtml = $this->buildTocHtml($chapters, $options);
+            $mpdf->WriteHTML($tocHtml, \Mpdf\HTMLParserMode::HTML_BODY);
         }
 
         foreach ($chapters as $index => $chapter) {
+            $chapterTitle = htmlspecialchars($chapter->title, ENT_HTML5, 'UTF-8');
+            $chapterHtml = '';
+
             if ($options->includeActBreaks && $chapter->act_id && $chapter->act_id !== $currentActId) {
                 $currentActId = $chapter->act_id;
                 $actTitle = htmlspecialchars($chapter->act?->title ?? "Act {$chapter->act?->number}", ENT_HTML5, 'UTF-8');
-                $html .= "<p class=\"act-break\">{$actTitle}</p>\n";
+                $chapterHtml .= "<p class=\"act-break\">{$actTitle}</p>\n";
             }
 
             if ($options->includeChapterTitles) {
-                $title = htmlspecialchars($chapter->title, ENT_HTML5, 'UTF-8');
-                $html .= "<h1 id=\"chapter-{$index}\">{$title}</h1>\n";
+                $chapterHtml .= "<h1 id=\"chapter-{$index}\">{$chapterTitle}</h1>\n";
             }
 
             $scenes = $chapter->scenes ?? collect();
             foreach ($scenes as $sceneIndex => $scene) {
                 if ($sceneIndex > 0) {
-                    $html .= "<p class=\"scene-break\">* * *</p>\n";
+                    $chapterHtml .= "<p class=\"scene-break\">* * *</p>\n";
                 }
 
                 $content = $scene->content ?? '';
-                $html .= $this->contentPreparer->toPdfHtml($content);
+                $chapterHtml .= $this->contentPreparer->toPdfHtml($content);
             }
-        }
 
-        return $html;
+            $this->suppressHeaders($mpdf);
+            $mpdf->WriteHTML($chapterHtml, \Mpdf\HTMLParserMode::HTML_BODY);
+
+            $this->setAlternatingHeaders($mpdf, $bookTitle, $chapterTitle);
+        }
+    }
+
+    private function setAlternatingHeaders(Mpdf $mpdf, string $bookTitle, string $chapterTitle): void
+    {
+        $mpdf->SetHTMLHeader(
+            "<div style=\"text-align: left; font-size: 9pt; color: #666; font-style: italic;\">{$bookTitle}</div>",
+            'E',
+        );
+        $mpdf->SetHTMLHeader(
+            "<div style=\"text-align: right; font-size: 9pt; color: #666; font-style: italic;\">{$chapterTitle}</div>",
+            'O',
+        );
+    }
+
+    private function setAlternatingFooters(Mpdf $mpdf): void
+    {
+        $mpdf->SetHTMLFooter(
+            '<div style="text-align: left; font-size: 9pt; color: #666;">{PAGENO}</div>',
+            'E',
+        );
+        $mpdf->SetHTMLFooter(
+            '<div style="text-align: right; font-size: 9pt; color: #666;">{PAGENO}</div>',
+            'O',
+        );
+    }
+
+    private function suppressHeaders(Mpdf $mpdf): void
+    {
+        $mpdf->SetHTMLHeader('', 'O');
+        $mpdf->SetHTMLHeader('', 'E');
     }
 
     private function buildTocHtml(Collection $chapters, ExportOptions $options): string

@@ -14,7 +14,7 @@ export default function AppLayout({
             <div className="flex h-screen flex-col bg-surface">
                 <UpdateBanner />
                 <div className="flex min-h-0 flex-1">
-                    <aside className="flex w-64 shrink-0 flex-col border-r border-border-light bg-surface-card">
+                    <aside className="flex w-64 shrink-0 flex-col border-r border-border-light bg-white dark:bg-surface-card">
                         <div className="flex h-14 items-center border-b border-border-light px-5">
                             <span className="text-sm font-semibold tracking-tight text-ink">
                                 {name}

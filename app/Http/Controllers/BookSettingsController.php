@@ -99,7 +99,7 @@ class BookSettingsController extends Controller
 
         $chapters = $book->chapters()
             ->select('id', 'book_id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count')
-            ->with(['currentVersion' => fn ($q) => $q->selectRaw('id, chapter_id, SUBSTR(content, 1, 1500) as content')])
+            ->with(['scenes' => fn ($q) => $q->orderBy('sort_order')->select('id', 'chapter_id', 'content')])
             ->orderBy('reader_order')
             ->get();
 
@@ -108,7 +108,7 @@ class BookSettingsController extends Controller
             'storylines' => $book->storylines->map(fn ($s) => $s->only('id', 'name', 'color', 'type')),
             'chapters' => $chapters->map(fn ($ch) => [
                 ...$ch->only('id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count'),
-                'content' => $ch->currentVersion?->content,
+                'content' => $ch->getContentWithSceneBreaks(),
             ]),
             'trimSizes' => collect(TrimSize::cases())->map(fn ($t) => ['value' => $t->value, 'label' => $t->label()]),
             'acts' => $book->acts->map(fn ($a) => $a->only('id', 'number', 'title')),

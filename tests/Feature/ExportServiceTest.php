@@ -382,6 +382,102 @@ test('pdf chapter_ids ordering', function () {
     expect($response->getStatusCode())->toBe(200);
 });
 
+test('pdf exports multiple chapters successfully with alternating headers', function () {
+    $book = Book::factory()->create(['title' => 'Multi Chapter PDF']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $ch1 = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Dawn', 'reader_order' => 1]);
+    $ch2 = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Dusk', 'reader_order' => 2]);
+    $ch3 = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Midnight', 'reader_order' => 3]);
+    Scene::factory()->for($ch1)->create(['content' => '<p>Morning light.</p>', 'sort_order' => 1]);
+    Scene::factory()->for($ch2)->create(['content' => '<p>Evening glow.</p>', 'sort_order' => 1]);
+    Scene::factory()->for($ch3)->create(['content' => '<p>Stars above.</p>', 'sort_order' => 1]);
+
+    $response = $this->service->export($book, ['format' => 'pdf', 'scope' => 'full']);
+
+    expect($response->getStatusCode())->toBe(200);
+    $content = file_get_contents($response->getFile()->getPathname());
+    expect(str_starts_with($content, '%PDF'))->toBeTrue();
+});
+
+test('pdf with table of contents exports successfully', function () {
+    $book = Book::factory()->create(['title' => 'TOC PDF Book']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $ch1 = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Chapter One', 'reader_order' => 1]);
+    $ch2 = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Chapter Two', 'reader_order' => 2]);
+    Scene::factory()->for($ch1)->create(['content' => '<p>First content.</p>', 'sort_order' => 1]);
+    Scene::factory()->for($ch2)->create(['content' => '<p>Second content.</p>', 'sort_order' => 1]);
+
+    $response = $this->service->export($book, [
+        'format' => 'pdf',
+        'scope' => 'full',
+        'include_table_of_contents' => true,
+    ]);
+
+    expect($response->getStatusCode())->toBe(200);
+    $content = file_get_contents($response->getFile()->getPathname());
+    expect(str_starts_with($content, '%PDF'))->toBeTrue();
+});
+
+test('epub chapters include semantic epub:type attributes', function () {
+    $book = Book::factory()->create(['title' => 'Semantic EPUB', 'author' => 'Author', 'language' => 'en']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'First Chapter']);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Content here.</p>', 'sort_order' => 1]);
+
+    $response = $this->service->export($book, ['format' => 'epub', 'scope' => 'full']);
+
+    $zip = new ZipArchive;
+    $zip->open($response->getFile()->getPathname());
+
+    $chapterXhtml = $zip->getFromName('OEBPS/Text/chapter-001.xhtml');
+    expect($chapterXhtml)->toContain('xmlns:epub="http://www.idpf.org/2007/ops"');
+    expect($chapterXhtml)->toContain('epub:type="bodymatter"');
+    expect($chapterXhtml)->toContain('<section epub:type="chapter">');
+
+    $zip->close();
+});
+
+test('epub toc xhtml includes epub namespace', function () {
+    $book = Book::factory()->create(['title' => 'NS EPUB', 'author' => 'Author', 'language' => 'en']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Text.</p>', 'sort_order' => 1]);
+
+    $response = $this->service->export($book, [
+        'format' => 'epub',
+        'scope' => 'full',
+        'include_table_of_contents' => true,
+    ]);
+
+    $zip = new ZipArchive;
+    $zip->open($response->getFile()->getPathname());
+
+    $tocXhtml = $zip->getFromName('OEBPS/toc.xhtml');
+    expect($tocXhtml)->toContain('xmlns:epub="http://www.idpf.org/2007/ops"');
+
+    $zip->close();
+});
+
+test('epub stylesheet includes typography properties', function () {
+    $book = Book::factory()->create(['title' => 'Typo EPUB', 'author' => 'Author', 'language' => 'en']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Text.</p>', 'sort_order' => 1]);
+
+    $response = $this->service->export($book, ['format' => 'epub', 'scope' => 'full']);
+
+    $zip = new ZipArchive;
+    $zip->open($response->getFile()->getPathname());
+
+    $css = $zip->getFromName('OEBPS/Styles/stylesheet.css');
+    expect($css)->toContain('widows: 2');
+    expect($css)->toContain('orphans: 2');
+    expect($css)->toContain('hyphens: auto');
+    expect($css)->toContain('-webkit-hyphens: auto');
+
+    $zip->close();
+});
+
 // === KDP Tests ===
 
 test('exports book as kdp epub', function () {

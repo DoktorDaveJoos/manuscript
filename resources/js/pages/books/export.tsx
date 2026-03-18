@@ -36,8 +36,18 @@ const INITIAL_FRONT_MATTER: MatterItem[] = [
 
 const INITIAL_BACK_MATTER: MatterItem[] = [
     { id: 'also-by', label: 'Also By', checked: true },
-    { id: 'acknowledgments', label: 'Acknowledgments', checked: false },
-    { id: 'about-author', label: 'About the Author', checked: false },
+    {
+        id: 'acknowledgments',
+        label: 'Acknowledgments',
+        checked: false,
+        settingsSection: 'acknowledgment',
+    },
+    {
+        id: 'about-author',
+        label: 'About the Author',
+        checked: false,
+        settingsSection: 'about-author',
+    },
 ];
 
 export default function Export({
@@ -72,7 +82,7 @@ export default function Export({
     // Options
     const [includeChapterTitles, setIncludeChapterTitles] = useState(true);
     const [includeActBreaks, setIncludeActBreaks] = useState(false);
-    const [includeTableOfContents, setIncludeTableOfContents] = useState(false);
+    const [showPageNumbers, setShowPageNumbers] = useState(true);
     const [trimSize, setTrimSize] = useState('6x9');
     const [fontSize, setFontSize] = useState(11);
     const [exporting, setExporting] = useState(false);
@@ -80,6 +90,11 @@ export default function Export({
     // Front/back matter (visual only)
     const [frontMatter, setFrontMatter] = useState(INITIAL_FRONT_MATTER);
     const [backMatter, setBackMatter] = useState(INITIAL_BACK_MATTER);
+
+    const includeToc = useMemo(
+        () => frontMatter.find((item) => item.id === 'toc')?.checked ?? false,
+        [frontMatter],
+    );
 
     const handleToggleChapter = useCallback((id: number) => {
         setSelectedChapterIds((prev) => {
@@ -117,8 +132,8 @@ export default function Export({
         setIncludeActBreaks((prev) => !prev);
     }, []);
 
-    const handleToggleTableOfContents = useCallback(() => {
-        setIncludeTableOfContents((prev) => !prev);
+    const handleTogglePageNumbers = useCallback(() => {
+        setShowPageNumbers((prev) => !prev);
     }, []);
 
     const handleToggleFrontMatter = useCallback((id: string) => {
@@ -149,7 +164,8 @@ export default function Export({
             chapter_ids: checkedOrdered,
             include_chapter_titles: includeChapterTitles,
             include_act_breaks: includeActBreaks,
-            include_table_of_contents: includeTableOfContents,
+            include_table_of_contents: includeToc,
+            show_page_numbers: showPageNumbers,
         };
 
         if (format === 'pdf') {
@@ -167,7 +183,8 @@ export default function Export({
         selectedChapterIds,
         includeChapterTitles,
         includeActBreaks,
-        includeTableOfContents,
+        showPageNumbers,
+        includeToc,
         trimSize,
         fontSize,
     ]);
@@ -207,8 +224,8 @@ export default function Export({
                     onIncludeChapterTitlesChange={handleToggleChapterTitles}
                     includeActBreaks={includeActBreaks}
                     onIncludeActBreaksChange={handleToggleActBreaks}
-                    includeTableOfContents={includeTableOfContents}
-                    onIncludeTableOfContentsChange={handleToggleTableOfContents}
+                    showPageNumbers={showPageNumbers}
+                    onShowPageNumbersChange={handleTogglePageNumbers}
                     exporting={exporting}
                     onExport={handleExport}
                 />
@@ -219,7 +236,7 @@ export default function Export({
                     trimSize={trimSize}
                     fontSize={fontSize}
                     includeChapterTitles={includeChapterTitles}
-                    showPageNumbers={includeTableOfContents}
+                    showPageNumbers={showPageNumbers}
                     includeActBreaks={includeActBreaks}
                     selectedChapterIds={selectedChapterIds}
                     orderedChapters={orderedChapters}

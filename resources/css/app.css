@@ -3,13 +3,29 @@
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
+@font-face {
+    font-family: 'Literata';
+    src: url('../fonts/Literata.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Literata';
+    src: url('../fonts/Literata-Italic.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: italic;
+    font-display: swap;
+}
+
 @theme {
     --font-sans:
         'Geist', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
         'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --font-serif:
-        'Playfair Display', ui-serif, Georgia, Cambria, 'Times New Roman',
-        Times, serif;
+        'Literata', 'Playfair Display', ui-serif, Georgia, Cambria,
+        'Times New Roman', Times, serif;
 
     --color-surface: #fcfaf7;
     --color-surface-card: #fcfaf7;

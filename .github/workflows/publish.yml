@@ -77,6 +77,12 @@ jobs:
       - name: Fix electron-builder repo detection
         run: node -e "const p=JSON.parse(require('fs').readFileSync('vendor/nativephp/desktop/resources/electron/package.json','utf8')); p.repository={type:'git',url:'https://github.com/DoktorDaveJoos/manuscript.git'}; require('fs').writeFileSync('vendor/nativephp/desktop/resources/electron/package.json', JSON.stringify(p, null, 4))"
 
+      - name: Strip version from artifact names
+        run: |
+          sed -i '' "s/'-\${version}-setup.\${ext}'/'-setup.\${ext}'/g" vendor/nativephp/desktop/resources/electron/electron-builder.mjs
+          sed -i '' "s/'-\${version}-\${arch}.\${ext}'/'-\${arch}.\${ext}'/g" vendor/nativephp/desktop/resources/electron/electron-builder.mjs
+          sed -i '' "s/'-\${version}.\${ext}'/'.\${ext}'/g" vendor/nativephp/desktop/resources/electron/electron-builder.mjs
+
       - name: Build and publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

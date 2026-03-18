@@ -1,6 +1,7 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Lock, RefreshCw, Sparkle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import Button from '@/components/ui/Button';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useAiPreparation, TOTAL_PHASES } from '@/hooks/useAiPreparation';
@@ -14,6 +15,7 @@ export default function AiPreparation({
     initialStatus: AiPreparationStatus | null;
 }) {
     const { t } = useTranslation('ai');
+    const pageUrl = usePage().url;
     const { visible, usable, licensed, configured } = useAiFeatures();
     const { status, isRunning, starting, error, handleStart } =
         useAiPreparation(bookId, initialStatus);
@@ -68,7 +70,7 @@ export default function AiPreparation({
             description = t('preparation.addApiKey');
             linkContent = (
                 <Link
-                    href="/settings"
+                    href={settingsIndex.url({ query: { from: pageUrl } })}
                     className="text-[13px] font-medium text-accent transition-colors hover:text-accent/80"
                 >
                     {t('preparation.goToSettings')}

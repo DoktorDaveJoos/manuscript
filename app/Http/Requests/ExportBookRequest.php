@@ -24,6 +24,7 @@ class ExportBookRequest extends FormRequest
             'include_chapter_titles' => ['boolean'],
             'include_act_breaks' => ['boolean'],
             'include_table_of_contents' => ['boolean'],
+            'show_page_numbers' => ['boolean'],
             'trim_size' => ['nullable', Rule::enum(TrimSize::class)],
             'font_size' => ['nullable', 'integer', 'in:10,11,12,13,14'],
         ];

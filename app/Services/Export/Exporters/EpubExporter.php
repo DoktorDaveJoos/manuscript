@@ -71,9 +71,11 @@ class EpubExporter implements Exporter
         body {
             font-family: "Literata", Georgia, serif;
             font-size: 1em;
-            line-height: 1.6;
+            line-height: 1.6; /* keep in sync with getLineHeightMultiplier() in usePreviewPages.ts */
             margin: 1em;
             text-align: justify;
+            hyphens: auto;
+            -webkit-hyphens: auto;
         }
         h1 {
             font-size: 1.8em;
@@ -94,6 +96,8 @@ class EpubExporter implements Exporter
         p {
             margin: 0;
             text-indent: 1.5em;
+            widows: 2;
+            orphans: 2;
         }
         p:first-child,
         hr.scene-break + p,
@@ -179,7 +183,7 @@ class EpubExporter implements Exporter
             }
 
             $chapterTitle = htmlspecialchars($chapter->title, ENT_XML1, 'UTF-8');
-            $xhtml = $this->wrapXhtml($chapterTitle, $body);
+            $xhtml = $this->wrapXhtml($chapterTitle, $body, isChapter: true);
             $zip->addFromString("OEBPS/Text/{$fileName}", $xhtml);
         }
 
@@ -301,21 +305,24 @@ class EpubExporter implements Exporter
         $zip->addFromString('OEBPS/content.opf', $opf);
     }
 
-    private function wrapXhtml(string $title, string $body, bool $isNav = false): string
+    private function wrapXhtml(string $title, string $body, bool $isNav = false, bool $isChapter = false): string
     {
-        $epubNs = $isNav ? ' xmlns:epub="http://www.idpf.org/2007/ops"' : '';
+        $bodyAttr = $isChapter ? ' epub:type="bodymatter"' : '';
+        $wrappedBody = $isChapter
+            ? "<section epub:type=\"chapter\">\n{$body}\n</section>"
+            : $body;
 
         return <<<XHTML
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE html>
-        <html xmlns="http://www.w3.org/1999/xhtml"{$epubNs} xml:lang="en">
+        <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="en">
         <head>
           <meta charset="UTF-8"/>
           <title>{$title}</title>
           <link rel="stylesheet" type="text/css" href="../Styles/stylesheet.css"/>
         </head>
-        <body>
-        {$body}
+        <body{$bodyAttr}>
+        {$wrappedBody}
         </body>
         </html>
         XHTML;

@@ -14,18 +14,15 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Download, GripVertical, ListOrdered } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
+import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { downloadExport } from '@/lib/export-download';
 import { cn } from '@/lib/utils';
 import type { Chapter, Storyline } from '@/types/models';
 
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } };
-const STORAGE_KEY = 'manuscript:reading-order-width';
-const MIN_WIDTH = 220;
-const MAX_WIDTH = 480;
-const DEFAULT_WIDTH = 280;
 
 type ReadingOrderPanelProps = {
     chapters: Chapter[];
@@ -151,62 +148,17 @@ export default function ReadingOrderPanel({
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [exporting, setExporting] = useState(false);
 
-    const [width, setWidth] = useState(() => {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            const parsed = Number(stored);
-            if (parsed >= MIN_WIDTH && parsed <= MAX_WIDTH) return parsed;
-        }
-        return DEFAULT_WIDTH;
+    const {
+        width,
+        panelRef: asideRef,
+        handleMouseDown: handleResizeMouseDown,
+    } = useResizablePanel({
+        storageKey: 'manuscript:reading-order-width',
+        minWidth: 220,
+        maxWidth: 480,
+        defaultWidth: 280,
+        direction: 'right',
     });
-    const widthRef = useRef(width);
-    useEffect(() => {
-        widthRef.current = width;
-    }, [width]);
-    const asideRef = useRef<HTMLElement>(null);
-    const dragCleanupRef = useRef<(() => void) | null>(null);
-
-    useEffect(() => {
-        return () => dragCleanupRef.current?.();
-    }, []);
-
-    const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
-        e.preventDefault();
-        const startX = e.clientX;
-        const startWidth = widthRef.current;
-
-        document.body.style.cursor = 'col-resize';
-        document.body.style.userSelect = 'none';
-
-        const cleanup = () => {
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-            dragCleanupRef.current = null;
-        };
-
-        const handleMouseMove = (ev: MouseEvent) => {
-            const delta = startX - ev.clientX;
-            const newWidth = Math.min(
-                MAX_WIDTH,
-                Math.max(MIN_WIDTH, startWidth + delta),
-            );
-            widthRef.current = newWidth;
-            if (asideRef.current)
-                asideRef.current.style.width = `${newWidth}px`;
-        };
-
-        const handleMouseUp = () => {
-            setWidth(widthRef.current);
-            localStorage.setItem(STORAGE_KEY, String(widthRef.current));
-            cleanup();
-        };
-
-        dragCleanupRef.current = cleanup;
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-    }, []);
 
     const sensors = useSensors(
         useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
