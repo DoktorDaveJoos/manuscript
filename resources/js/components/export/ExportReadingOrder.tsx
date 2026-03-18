@@ -101,7 +101,7 @@ function SortableChapterRow({
             style={style}
             {...attributes}
             className={cn(
-                'flex items-center gap-2 py-[3px]',
+                'flex items-start gap-2 py-[3px]',
                 isDragging && 'opacity-50',
             )}
         >
@@ -119,7 +119,7 @@ function SortableChapterRow({
             </span>
 
             <span
-                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full"
                 style={{ backgroundColor: storyline?.color ?? '#737373' }}
             />
 
@@ -253,7 +253,7 @@ export default function ExportReadingOrder({
     return (
         <aside className="flex h-full w-[260px] shrink-0 flex-col border-r border-border-subtle bg-neutral-bg">
             {/* Header */}
-            <div className="flex flex-col gap-1 px-4 pt-5 pb-4">
+            <div className="flex flex-col gap-1 px-4 py-5">
                 <h2 className="text-[14px] font-semibold text-ink">
                     {t('readingOrder')}
                 </h2>
@@ -269,7 +269,7 @@ export default function ExportReadingOrder({
                     <div className="px-4 pt-3 pb-2">
                         <SectionHeader>{t('frontMatter')}</SectionHeader>
                     </div>
-                    <div className="flex flex-col gap-1 px-4 pt-0 pb-3.5">
+                    <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
                         {frontMatter.map((item) => (
                             <MatterRow
                                 key={item.id}
@@ -347,7 +347,7 @@ export default function ExportReadingOrder({
                     <div className="px-4 pt-3 pb-2">
                         <SectionHeader>{t('backMatter')}</SectionHeader>
                     </div>
-                    <div className="flex flex-col gap-1 px-4 pt-0 pb-3.5">
+                    <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
                         {backMatter.map((item) => (
                             <MatterRow
                                 key={item.id}
