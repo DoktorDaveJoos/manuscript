@@ -10,6 +10,8 @@ test('unified settings page loads', function () {
             ->has('settings')
             ->has('ai_providers')
             ->has('writing_style_text')
+            ->has('acknowledgment_text')
+            ->has('about_author_text')
             ->has('prose_pass_rules')
             ->has('version')
         );
@@ -78,6 +80,24 @@ test('global writing style saves', function () {
 
     AppSetting::clearCache();
     expect(AppSetting::get('writing_style_text'))->toBe('Dark, moody prose with short sentences.');
+});
+
+test('acknowledgment text saves', function () {
+    $this->putJson(route('settings.acknowledgment.update'), [
+        'acknowledgment_text' => 'I would like to thank my family and friends.',
+    ])->assertOk();
+
+    AppSetting::clearCache();
+    expect(AppSetting::get('acknowledgment_text'))->toBe('I would like to thank my family and friends.');
+});
+
+test('about author text saves', function () {
+    $this->putJson(route('settings.about-author.update'), [
+        'about_author_text' => 'Jane Doe is an author based in Portland.',
+    ])->assertOk();
+
+    AppSetting::clearCache();
+    expect(AppSetting::get('about_author_text'))->toBe('Jane Doe is an author based in Portland.');
 });
 
 test('global prose pass rules save', function () {

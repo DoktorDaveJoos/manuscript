@@ -43,6 +43,8 @@ class SettingsController extends Controller
             'settings' => $settings,
             'ai_providers' => $aiProviders,
             'writing_style_text' => $writingStyleText,
+            'acknowledgment_text' => AppSetting::get('acknowledgment_text', ''),
+            'about_author_text' => AppSetting::get('about_author_text', ''),
             'prose_pass_rules' => Book::globalProsePassRules(),
             'version' => config('app.version', '0.0.0'),
         ]);
@@ -57,6 +59,28 @@ class SettingsController extends Controller
         AppSetting::set('writing_style_text', $request->input('writing_style_text'));
 
         return response()->json(['message' => __('Writing style updated.')]);
+    }
+
+    public function updateAcknowledgment(Request $request): JsonResponse
+    {
+        $request->validate([
+            'acknowledgment_text' => ['required', 'string', 'max:10000'],
+        ]);
+
+        AppSetting::set('acknowledgment_text', $request->input('acknowledgment_text'));
+
+        return response()->json(['message' => __('Acknowledgment updated.')]);
+    }
+
+    public function updateAboutAuthor(Request $request): JsonResponse
+    {
+        $request->validate([
+            'about_author_text' => ['required', 'string', 'max:10000'],
+        ]);
+
+        AppSetting::set('about_author_text', $request->input('about_author_text'));
+
+        return response()->json(['message' => __('About the author updated.')]);
     }
 
     public function updateProsePassRules(Request $request): JsonResponse
