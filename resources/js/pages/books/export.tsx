@@ -90,19 +90,6 @@ export default function Export({
         });
     }, []);
 
-    const handleToggleAll = useCallback(
-        (checked: boolean) => {
-            if (checked) {
-                setSelectedChapterIds(
-                    new Set(orderedChapters.map((ch) => ch.id)),
-                );
-            } else {
-                setSelectedChapterIds(new Set());
-            }
-        },
-        [orderedChapters],
-    );
-
     const handleReorder = useCallback(
         (reordered: ChapterRow[]) => {
             setOrderedChapters(reordered);
