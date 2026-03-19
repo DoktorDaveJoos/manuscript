@@ -26,10 +26,11 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { store as setupStructure } from '@/actions/App/Http/Controllers/PlotSetupController';
 import Button from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
 import type { PlotTemplate, TemplateBeat } from '@/lib/plot-templates';
 import type { Book, Chapter, PlotPointType, Storyline } from '@/types/models';
+import { store as setupStructure } from '@/actions/App/Http/Controllers/PlotSetupController';
 
 type WizardAct = {
     title: string;
@@ -177,103 +178,104 @@ export default function PlotWizardModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/25" onClick={onClose} />
-            <div className="relative z-10 flex max-h-[80vh] w-[640px] flex-col rounded-2xl bg-surface-card shadow-[0_16px_48px_rgba(0,0,0,0.15),0_4px_12px_rgba(0,0,0,0.05)]">
-                {/* Header */}
-                <div className="flex items-center justify-between px-8 py-6">
-                    <div className="flex flex-col gap-1">
-                        <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                            {t('wizard.stepLabel', {
-                                current: currentStepIndex + 1,
-                                total: steps.length,
-                            })}
-                        </span>
-                        <h2 className="font-serif text-[24px] leading-8 tracking-[-0.01em] text-ink">
-                            {t(`wizard.${currentStep}.title`)}
-                        </h2>
-                    </div>
-                    <button
-                        onClick={onClose}
-                        className="flex h-8 w-8 items-center justify-center rounded-md text-ink-muted hover:bg-neutral-bg hover:text-ink"
-                    >
-                        <X size={18} />
-                    </button>
+        <Dialog
+            onClose={onClose}
+            width={640}
+            className="max-h-[80vh] rounded-2xl p-0 shadow-[0_16px_48px_rgba(0,0,0,0.15),0_4px_12px_rgba(0,0,0,0.05)]"
+        >
+            {/* Header */}
+            <div className="flex items-center justify-between px-8 py-6">
+                <div className="flex flex-col gap-1">
+                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                        {t('wizard.stepLabel', {
+                            current: currentStepIndex + 1,
+                            total: steps.length,
+                        })}
+                    </span>
+                    <h2 className="font-serif text-[24px] leading-8 tracking-[-0.01em] text-ink">
+                        {t(`wizard.${currentStep}.title`)}
+                    </h2>
                 </div>
-
-                <div className="border-t border-border" />
-
-                {/* Body */}
-                <div className="flex-1 overflow-y-auto px-8 py-5">
-                    {currentStep === 'customize' && (
-                        <CustomizeStep
-                            acts={acts}
-                            onUpdateAct={updateAct}
-                            onUpdateBeat={updateBeat}
-                            onRemoveBeat={removeBeat}
-                            onAddBeat={addBeat}
-                        />
-                    )}
-                    {currentStep === 'map-chapters' && (
-                        <MapChaptersStep
-                            acts={acts}
-                            chapters={chapters}
-                            storylines={storylines}
-                            assignments={chapterAssignments}
-                            onAssign={setChapterAssignments}
-                        />
-                    )}
-                    {currentStep === 'review' && (
-                        <ReviewStep
-                            template={template}
-                            acts={acts}
-                            chapterAssignments={chapterAssignments}
-                            hasChapters={hasChapters}
-                        />
-                    )}
-                </div>
-
-                <div className="border-t border-border" />
-
-                {/* Footer */}
-                <div className="flex items-center justify-between px-8 py-5">
-                    {currentStepIndex > 0 ? (
-                        <Button
-                            variant="secondary"
-                            size="lg"
-                            onClick={handleBack}
-                            className="rounded-lg"
-                        >
-                            {t('wizard.back')}
-                        </Button>
-                    ) : (
-                        <div />
-                    )}
-
-                    {currentStep === 'review' ? (
-                        <Button
-                            variant="primary"
-                            size="lg"
-                            onClick={handleCreate}
-                            disabled={submitting}
-                            className="gap-2 rounded-lg"
-                        >
-                            <Sparkles size={14} />
-                            {t('wizard.createStructure')}
-                        </Button>
-                    ) : (
-                        <Button
-                            variant="primary"
-                            size="lg"
-                            onClick={handleNext}
-                            className="rounded-lg"
-                        >
-                            {t('wizard.next')}
-                        </Button>
-                    )}
-                </div>
+                <button
+                    onClick={onClose}
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-ink-muted hover:bg-neutral-bg hover:text-ink"
+                >
+                    <X size={18} />
+                </button>
             </div>
-        </div>
+
+            <div className="border-t border-border" />
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-8 py-5">
+                {currentStep === 'customize' && (
+                    <CustomizeStep
+                        acts={acts}
+                        onUpdateAct={updateAct}
+                        onUpdateBeat={updateBeat}
+                        onRemoveBeat={removeBeat}
+                        onAddBeat={addBeat}
+                    />
+                )}
+                {currentStep === 'map-chapters' && (
+                    <MapChaptersStep
+                        acts={acts}
+                        chapters={chapters}
+                        storylines={storylines}
+                        assignments={chapterAssignments}
+                        onAssign={setChapterAssignments}
+                    />
+                )}
+                {currentStep === 'review' && (
+                    <ReviewStep
+                        template={template}
+                        acts={acts}
+                        chapterAssignments={chapterAssignments}
+                        hasChapters={hasChapters}
+                    />
+                )}
+            </div>
+
+            <div className="border-t border-border" />
+
+            {/* Footer */}
+            <div className="flex items-center justify-between px-8 py-5">
+                {currentStepIndex > 0 ? (
+                    <Button
+                        variant="secondary"
+                        size="lg"
+                        onClick={handleBack}
+                        className="rounded-lg"
+                    >
+                        {t('wizard.back')}
+                    </Button>
+                ) : (
+                    <div />
+                )}
+
+                {currentStep === 'review' ? (
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        onClick={handleCreate}
+                        disabled={submitting}
+                        className="gap-2 rounded-lg"
+                    >
+                        <Sparkles size={14} />
+                        {t('wizard.createStructure')}
+                    </Button>
+                ) : (
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        onClick={handleNext}
+                        className="rounded-lg"
+                    >
+                        {t('wizard.next')}
+                    </Button>
+                )}
+            </div>
+        </Dialog>
     );
 }
 

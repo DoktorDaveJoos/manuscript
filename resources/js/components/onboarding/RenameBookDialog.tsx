@@ -1,10 +1,11 @@
 import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { update } from '@/actions/App/Http/Controllers/BookController';
 import Button from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
 import Input from '@/components/ui/Input';
 import type { Book } from '@/types/models';
+import { update } from '@/actions/App/Http/Controllers/BookController';
 
 export default function RenameBookDialog({
     book,
@@ -26,12 +27,8 @@ export default function RenameBookDialog({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0" onClick={onClose} />
-            <form
-                onSubmit={handleSubmit}
-                className="relative z-10 flex w-[480px] flex-col gap-8 rounded-xl bg-surface-card p-10 shadow-[0_8px_40px_rgba(0,0,0,0.08)]"
-            >
+        <Dialog onClose={onClose} backdrop="none" className="gap-8">
+            <form onSubmit={handleSubmit} className="contents">
                 <div className="flex flex-col gap-2">
                     <h2 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">
                         {t('renameBook.title')}
@@ -79,6 +76,6 @@ export default function RenameBookDialog({
                     </Button>
                 </div>
             </form>
-        </div>
+        </Dialog>
     );
 }
