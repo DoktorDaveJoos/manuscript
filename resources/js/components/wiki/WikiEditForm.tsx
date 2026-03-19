@@ -3,18 +3,19 @@ import { BookOpen, X } from 'lucide-react';
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
+import FormField from '@/components/ui/FormField';
+import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
+import Textarea from '@/components/ui/Textarea';
+import type { Book, Character, Storyline, WikiEntry } from '@/types/models';
+import type { WikiTab } from './WikiTabBar';
 import {
     destroyCharacter,
     destroyEntry,
     updateCharacter,
     updateEntry,
 } from '@/actions/App/Http/Controllers/WikiController';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
-import Textarea from '@/components/ui/Textarea';
-import type { Book, Character, Storyline, WikiEntry } from '@/types/models';
-import type { WikiTab } from './WikiTabBar';
 
 type Props = {
     item: Character | WikiEntry;
@@ -31,6 +32,8 @@ function isCharacter(
 ): item is Character {
     return tab === 'characters';
 }
+
+const wikiLabelClass = 'text-[11px] text-ink-faint';
 
 export default function WikiEditForm({
     item,
@@ -179,10 +182,10 @@ export default function WikiEditForm({
 
             {/* Aliases — characters only */}
             {isChar && (
-                <div>
-                    <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                        {t('field.aliases')}
-                    </label>
+                <FormField
+                    label={t('field.aliases')}
+                    labelClassName={wikiLabelClass}
+                >
                     <div className="flex flex-wrap items-center gap-1.5">
                         {characterForm.data.aliases.map((alias) => (
                             <span
@@ -207,15 +210,15 @@ export default function WikiEditForm({
                             className="min-w-[80px] bg-transparent text-[12px] text-ink-soft placeholder:text-ink-faint focus:outline-none"
                         />
                     </div>
-                </div>
+                </FormField>
             )}
 
             {/* Type — wiki entries only */}
             {!isChar && (
-                <div>
-                    <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                        {t('field.type')}
-                    </label>
+                <FormField
+                    label={t('field.type')}
+                    labelClassName={wikiLabelClass}
+                >
                     <Input
                         type="text"
                         value={entryForm.data.type}
@@ -224,14 +227,14 @@ export default function WikiEditForm({
                         }}
                         placeholder={t('field.typePlaceholder')}
                     />
-                </div>
+                </FormField>
             )}
 
             {/* Description */}
-            <div>
-                <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                    {t('field.description')}
-                </label>
+            <FormField
+                label={t('field.description')}
+                labelClassName={wikiLabelClass}
+            >
                 <Textarea
                     value={
                         isChar
@@ -248,7 +251,7 @@ export default function WikiEditForm({
                     }
                     rows={4}
                 />
-            </div>
+            </FormField>
 
             <div className="border-t border-border-subtle" />
 
@@ -256,10 +259,10 @@ export default function WikiEditForm({
             <div className="flex gap-12">
                 {/* Role — characters only */}
                 {isChar && (
-                    <div>
-                        <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                            {t('field.role')}
-                        </label>
+                    <FormField
+                        label={t('field.role')}
+                        labelClassName={wikiLabelClass}
+                    >
                         <Select
                             value={characterForm.data.role}
                             onChange={(e) =>
@@ -277,15 +280,15 @@ export default function WikiEditForm({
                                 {t('role.mentioned')}
                             </option>
                         </Select>
-                    </div>
+                    </FormField>
                 )}
 
                 {/* Storylines — characters only */}
                 {isChar && storylines.length > 0 && (
-                    <div>
-                        <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                            {t('field.storylines')}
-                        </label>
+                    <FormField
+                        label={t('field.storylines')}
+                        labelClassName={wikiLabelClass}
+                    >
                         <div className="flex flex-wrap gap-1.5">
                             {storylines.map((s) => {
                                 const selected =
@@ -314,21 +317,18 @@ export default function WikiEditForm({
                                 );
                             })}
                         </div>
-                    </div>
+                    </FormField>
                 )}
 
                 {/* Source */}
-                <div>
-                    <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                        {t('source')}
-                    </label>
+                <FormField label={t('source')} labelClassName={wikiLabelClass}>
                     <span className="flex items-center gap-1.5 text-[13px] text-ink-muted">
                         <span className="inline-block h-1.5 w-1.5 rounded-full bg-ai-green" />
                         {item.is_ai_extracted
                             ? t('aiExtracted')
                             : t('edit.manualEntry')}
                     </span>
-                </div>
+                </FormField>
             </div>
 
             <div className="border-t border-border-subtle" />

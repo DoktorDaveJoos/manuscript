@@ -1,6 +1,6 @@
-import { ChevronRight, ArrowRight, Download, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, Download, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import ContextMenu from '@/components/ui/ContextMenu';
 import type { Act } from '@/types/models';
 
 const ACT_COLORS: Record<number, string> = {
@@ -8,8 +8,6 @@ const ACT_COLORS: Record<number, string> = {
     1: 'var(--color-status-revised)',
     2: '#A3C4A0',
 };
-
-const menuShadow = 'shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]';
 
 export default function ChapterActContextMenu({
     acts,
@@ -29,121 +27,67 @@ export default function ChapterActContextMenu({
     onClose: () => void;
 }) {
     const { t } = useTranslation('plot');
-    const ref = useRef<HTMLDivElement>(null);
-    const [assignOpen, setAssignOpen] = useState(false);
-
-    useEffect(() => {
-        function handleClickOutside(e: MouseEvent) {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                onClose();
-            }
-        }
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () =>
-            document.removeEventListener('mousedown', handleClickOutside);
-    }, [onClose]);
-
-    const itemClass =
-        'flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] text-ink-soft transition-colors hover:bg-neutral-bg';
 
     return (
-        <div
-            ref={ref}
-            className={`fixed z-50 w-[200px] rounded-lg bg-surface-card ${menuShadow}`}
-            style={{ left: position.x, top: position.y }}
-        >
-            <div className="flex flex-col p-1">
-                <div
-                    className="relative"
-                    onMouseEnter={() => setAssignOpen(true)}
-                    onMouseLeave={() => setAssignOpen(false)}
-                >
-                    <button
-                        type="button"
-                        className={`${itemClass} justify-between`}
-                    >
-                        <span className="flex items-center gap-2.5">
-                            <ArrowRight
-                                size={14}
-                                className="shrink-0 text-ink-muted"
-                            />
-                            {t('contextMenu.assignTo')}
-                        </span>
-                        <ChevronRight
-                            size={10}
-                            strokeWidth={2.5}
-                            className="text-ink-faint"
-                        />
-                    </button>
-                    {assignOpen && (
-                        <div
-                            className={`absolute top-0 left-full ml-1 w-[180px] rounded-lg bg-surface-card ${menuShadow}`}
-                        >
-                            <div className="flex flex-col p-1">
-                                {acts.map((act, i) => (
-                                    <button
-                                        key={act.id}
-                                        type="button"
-                                        onClick={() => {
-                                            onAssign(act.id);
-                                            onClose();
-                                        }}
-                                        className={itemClass}
-                                    >
-                                        <span
-                                            className="inline-block size-[7px] rounded-full"
-                                            style={{
-                                                backgroundColor:
-                                                    ACT_COLORS[i] ??
-                                                    'var(--color-accent)',
-                                            }}
-                                        />
-                                        {t('actTitle', {
-                                            number: act.number,
-                                            title: act.title,
-                                        })}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {currentActId != null && (
-                    <button
-                        type="button"
+        <ContextMenu position={position} onClose={onClose}>
+            <ContextMenu.Submenu
+                icon={
+                    <ArrowRight size={14} className="shrink-0 text-ink-muted" />
+                }
+                label={t('contextMenu.assignTo')}
+            >
+                {acts.map((act, i) => (
+                    <ContextMenu.Item
+                        key={act.id}
                         onClick={() => {
-                            onAssign(null);
+                            onAssign(act.id);
                             onClose();
                         }}
-                        className={itemClass}
                     >
-                        <X size={14} className="shrink-0 text-ink-muted" />
-                        {t('contextMenu.unassign')}
-                    </button>
-                )}
-
-                {onExport && chapterId != null && (
-                    <>
-                        <div className="my-1 border-t border-border-light" />
-                        <button
-                            type="button"
-                            onClick={() => {
-                                onExport(chapterId);
-                                onClose();
+                        <span
+                            className="inline-block size-[7px] rounded-full"
+                            style={{
+                                backgroundColor:
+                                    ACT_COLORS[i] ?? 'var(--color-accent)',
                             }}
-                            className={itemClass}
-                        >
+                        />
+                        {t('actTitle', {
+                            number: act.number,
+                            title: act.title,
+                        })}
+                    </ContextMenu.Item>
+                ))}
+            </ContextMenu.Submenu>
+
+            {currentActId != null && (
+                <ContextMenu.Item
+                    icon={<X size={14} className="shrink-0 text-ink-muted" />}
+                    label={t('contextMenu.unassign')}
+                    onClick={() => {
+                        onAssign(null);
+                        onClose();
+                    }}
+                />
+            )}
+
+            {onExport && chapterId != null && (
+                <>
+                    <ContextMenu.Separator />
+                    <ContextMenu.Item
+                        icon={
                             <Download
                                 size={14}
                                 className="shrink-0 text-ink-muted"
                             />
-                            {t('contextMenu.exportChapter')}
-                        </button>
-                    </>
-                )}
-            </div>
-        </div>
+                        }
+                        label={t('contextMenu.exportChapter')}
+                        onClick={() => {
+                            onExport(chapterId);
+                            onClose();
+                        }}
+                    />
+                </>
+            )}
+        </ContextMenu>
     );
 }

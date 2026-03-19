@@ -154,3 +154,4 @@ Route::get('/books/{book}/settings/writing-style', fn () => redirect('/settings'
 Route::get('/books/{book}/settings/prose-pass-rules', fn () => redirect('/settings'))->name('books.settings.prose-pass-rules');
 Route::get('/books/{book}/settings/export', [BookSettingsController::class, 'export'])->name('books.settings.export');
 Route::post('/books/{book}/settings/export', [BookSettingsController::class, 'doExport'])->name('books.settings.export.run');
+Route::post('/books/{book}/export/preview', [BookSettingsController::class, 'previewPdf'])->name('books.export.preview');

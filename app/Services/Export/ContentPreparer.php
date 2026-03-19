@@ -35,9 +35,9 @@ class ContentPreparer
     }
 
     /**
-     * Prepare HTML for mPDF consumption.
+     * Prepare HTML for chapter rendering (PDF and Chromium-based exports).
      */
-    public function toPdfHtml(string $html): string
+    public function toChapterHtml(string $html): string
     {
         $html = $this->normalizeHtml($html);
 
@@ -49,6 +49,27 @@ class ContentPreparer
         );
 
         return $html;
+    }
+
+    /**
+     * Backward-compatible alias for toChapterHtml().
+     */
+    public function toPdfHtml(string $html): string
+    {
+        return $this->toChapterHtml($html);
+    }
+
+    /**
+     * Add a drop cap to the first letter of the first paragraph.
+     */
+    public function addDropCap(string $html): string
+    {
+        return preg_replace(
+            '/(<p[^>]*>)(\s*)([a-zA-Z\x{00C0}-\x{024F}])/u',
+            '$1$2<span class="drop-cap">$3</span>',
+            $html,
+            1,
+        );
     }
 
     /**

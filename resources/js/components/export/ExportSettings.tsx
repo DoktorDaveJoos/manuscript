@@ -1,7 +1,8 @@
 import { BookOpen, ChevronDown, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TrimSizeOption } from '@/components/export/types';
-import Toggle from '@/components/ui/Toggle';
+import SectionLabel from '@/components/ui/SectionLabel';
+import ToggleRow from '@/components/ui/ToggleRow';
 import { cn } from '@/lib/utils';
 
 export type Format = 'epub' | 'pdf' | 'docx' | 'txt';
@@ -26,14 +27,6 @@ type ExportSettingsProps = {
 
 const FORMATS: Format[] = ['epub', 'pdf', 'docx', 'txt'];
 const FONT_SIZES = [10, 11, 12, 13, 14];
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-    return (
-        <span className="text-[10px] font-semibold tracking-[0.01em] text-[#B5B5B5] uppercase dark:text-ink-faint">
-            {children}
-        </span>
-    );
-}
 
 function FormatPill({
     label,
@@ -86,30 +79,6 @@ function InlineDropdown({
                 {options.find((o) => o.value === value)?.label ?? value}
             </span>
             <ChevronDown className="h-3 w-3 text-[#8A8A8A] dark:text-ink-faint" />
-        </div>
-    );
-}
-
-function ToggleRow({
-    label,
-    checked,
-    onChange,
-    border = true,
-}: {
-    label: string;
-    checked: boolean;
-    onChange: () => void;
-    border?: boolean;
-}) {
-    return (
-        <div
-            className={cn(
-                'flex items-center justify-between py-3',
-                border && 'border-b border-border-subtle',
-            )}
-        >
-            <span className="text-[13px] text-ink-soft">{label}</span>
-            <Toggle checked={checked} onChange={onChange} />
         </div>
     );
 }

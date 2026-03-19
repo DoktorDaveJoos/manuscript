@@ -10,9 +10,8 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { beautify, revise } from '@/actions/App/Http/Controllers/AiController';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import ProFeatureLock from '@/components/ui/ProFeatureLock';
+import SectionLabel from '@/components/ui/SectionLabel';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useChapterAnalysis } from '@/hooks/useChapterAnalysis';
 import { getXsrfToken } from '@/lib/csrf';
@@ -25,6 +24,8 @@ import type {
     CharacterChapterPivot,
     InformationDelivery,
 } from '@/types/models';
+import { beautify, revise } from '@/actions/App/Http/Controllers/AiController';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 
 type ChapterCharacter = Character & { pivot: CharacterChapterPivot };
 type AnalysisWithSummary = {
@@ -32,14 +33,6 @@ type AnalysisWithSummary = {
     findings?: string[];
     summary?: string;
 };
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-    return (
-        <span className="text-[10px] font-semibold tracking-[0.08em] text-ink-muted uppercase">
-            {children}
-        </span>
-    );
-}
 
 function DescriptionText({ children }: { children: React.ReactNode }) {
     return (
@@ -170,9 +163,7 @@ function LevelGroup({
 }) {
     return (
         <div className="flex flex-col gap-3">
-            <span className="text-[10px] font-semibold tracking-[0.08em] text-ink-muted uppercase">
-                {title}
-            </span>
+            <SectionLabel>{title}</SectionLabel>
             {children}
         </div>
     );
@@ -599,9 +590,9 @@ export default function AiPanel({
 
                                 {/* Craft Metrics */}
                                 <div className="flex flex-col gap-4">
-                                    <span className="text-[11px] font-semibold tracking-[0.08em] text-ink uppercase">
+                                    <SectionLabel className="text-[11px] text-ink">
                                         {t('section.craftMetrics')}
-                                    </span>
+                                    </SectionLabel>
                                     <LevelGroup title={t('level.chapter')}>
                                         <CraftMetricRow
                                             label={t('metric.tensionDynamics')}

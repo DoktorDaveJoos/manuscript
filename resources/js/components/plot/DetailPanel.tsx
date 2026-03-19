@@ -1,8 +1,10 @@
-import { X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
+import PanelHeader from '@/components/ui/PanelHeader';
+import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import type {
@@ -73,27 +75,12 @@ export default function DetailPanel({
 
     return (
         <aside className="flex h-full w-[320px] shrink-0 flex-col border-l border-border bg-surface-card">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <span className="text-xs font-medium tracking-[0.08em] text-ink-muted uppercase">
-                    {t('detailPanel.header')}
-                </span>
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="flex size-6 items-center justify-center rounded text-ink-muted transition-colors hover:text-ink-soft"
-                >
-                    <X size={14} strokeWidth={2.5} />
-                </button>
-            </div>
+            <PanelHeader title={t('detailPanel.header')} onClose={onClose} />
 
             {/* Scrollable content */}
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
                 {/* Title */}
-                <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                        {t('detailPanel.title')}
-                    </label>
+                <FormField label={t('detailPanel.title')} className="gap-1">
                     <Input
                         type="text"
                         value={title}
@@ -101,13 +88,13 @@ export default function DetailPanel({
                         onBlur={handleTitleBlur}
                         className="font-semibold"
                     />
-                </div>
+                </FormField>
 
                 {/* Description */}
-                <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                        {t('detailPanel.description')}
-                    </label>
+                <FormField
+                    label={t('detailPanel.description')}
+                    className="gap-1"
+                >
                     <Textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
@@ -115,13 +102,10 @@ export default function DetailPanel({
                         rows={4}
                         placeholder={t('detailPanel.descriptionPlaceholder')}
                     />
-                </div>
+                </FormField>
 
                 {/* Type */}
-                <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                        {t('detailPanel.type')}
-                    </label>
+                <FormField label={t('detailPanel.type')} className="gap-1">
                     <Select
                         value={plotPoint.type}
                         onChange={(e) => onUpdate({ type: e.target.value })}
@@ -132,13 +116,10 @@ export default function DetailPanel({
                             </option>
                         ))}
                     </Select>
-                </div>
+                </FormField>
 
                 {/* Status */}
-                <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                        {t('detailPanel.status')}
-                    </label>
+                <FormField label={t('detailPanel.status')} className="gap-1">
                     <Select
                         value={plotPoint.status}
                         onChange={(e) => onUpdate({ status: e.target.value })}
@@ -149,15 +130,15 @@ export default function DetailPanel({
                             </option>
                         ))}
                     </Select>
-                </div>
+                </FormField>
 
                 {/* Connections */}
                 {(incomingConnections.length > 0 ||
                     outgoingConnections.length > 0) && (
                     <div className="flex flex-col gap-2">
-                        <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
+                        <SectionLabel className="text-[11px]">
                             {t('detailPanel.connections')}
-                        </span>
+                        </SectionLabel>
 
                         {incomingConnections.map((conn) => (
                             <div

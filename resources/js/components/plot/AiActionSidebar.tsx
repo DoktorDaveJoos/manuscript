@@ -10,12 +10,13 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import ProFeatureLock from '@/components/ui/ProFeatureLock';
+import SectionLabel from '@/components/ui/SectionLabel';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { getXsrfToken } from '@/lib/csrf';
 import { cn } from '@/lib/utils';
 import type { Book } from '@/types/models';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 
 type TensionPoint = {
     chapter_id: number;
@@ -283,11 +284,11 @@ export default function AiActionSidebar({
                                                                     .length >
                                                                     0 && (
                                                                     <div className="flex flex-col gap-1.5">
-                                                                        <span className="text-[10px] font-semibold tracking-[0.08em] text-ink-muted uppercase">
+                                                                        <SectionLabel>
                                                                             {t(
                                                                                 'aiActions.findings',
                                                                             )}
-                                                                        </span>
+                                                                        </SectionLabel>
                                                                         {result.analysis.findings.map(
                                                                             (
                                                                                 f,
@@ -317,11 +318,11 @@ export default function AiActionSidebar({
                                                                     .length >
                                                                     0 && (
                                                                     <div className="flex flex-col gap-1.5">
-                                                                        <span className="text-[10px] font-semibold tracking-[0.08em] text-ink-muted uppercase">
+                                                                        <SectionLabel>
                                                                             {t(
                                                                                 'aiActions.recommendations',
                                                                             )}
-                                                                        </span>
+                                                                        </SectionLabel>
                                                                         {result.analysis.recommendations.map(
                                                                             (
                                                                                 r,

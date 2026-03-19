@@ -14,18 +14,20 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowUpRight, Check, ChevronDown, GripVertical } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, GripVertical } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import type {
     ChapterRow,
     MatterItem,
     StorylineRef,
 } from '@/components/export/types';
+import Checkbox from '@/components/ui/Checkbox';
+import SectionLabel from '@/components/ui/SectionLabel';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { cn } from '@/lib/utils';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 
 type ExportReadingOrderProps = {
     storylines: StorylineRef[];
@@ -40,34 +42,6 @@ type ExportReadingOrderProps = {
 };
 
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } };
-
-function CustomCheckbox({
-    checked,
-    onClick,
-}: {
-    checked: boolean;
-    onClick: () => void;
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className={cn(
-                'flex h-[14px] w-[14px] shrink-0 items-center justify-center rounded-[3px]',
-                checked
-                    ? 'bg-ink'
-                    : 'border border-[#D0CFCD] dark:border-ink-faint',
-            )}
-        >
-            {checked && (
-                <Check
-                    className="h-[10px] w-[10px] text-white"
-                    strokeWidth={3}
-                />
-            )}
-        </button>
-    );
-}
 
 function SortableChapterRow({
     chapter,
@@ -116,7 +90,7 @@ function SortableChapterRow({
                 <GripVertical className="h-3 w-3" />
             </span>
 
-            <CustomCheckbox checked={checked} onClick={onToggle} />
+            <Checkbox checked={checked} onChange={onToggle} />
 
             <span className="w-4 shrink-0 text-right text-[11px] font-medium text-[#B5B5B5] dark:text-ink-faint">
                 {index + 1}
@@ -162,7 +136,7 @@ function MatterRow({
             <span className="flex shrink-0 items-center text-[#D0D0D0] dark:text-ink-faint">
                 <GripVertical className="h-3 w-3" />
             </span>
-            <CustomCheckbox checked={item.checked} onClick={onToggle} />
+            <Checkbox checked={item.checked} onChange={onToggle} />
             <span
                 className={cn(
                     'min-w-0 flex-1 truncate text-[12px]',
@@ -210,9 +184,7 @@ function SectionHeader({
                     !expanded && '-rotate-90',
                 )}
             />
-            <span className="text-[10px] font-semibold tracking-[0.08em] text-ink-muted uppercase">
-                {children}
-            </span>
+            <SectionLabel>{children}</SectionLabel>
             {count !== undefined && (
                 <span className="text-[10px] text-[#B5B5B5] dark:text-ink-faint">
                     {count}
