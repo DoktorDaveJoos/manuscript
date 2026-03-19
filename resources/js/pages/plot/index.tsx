@@ -392,6 +392,7 @@ export default function Plot({
                                         storylines={storylines}
                                         acts={acts}
                                         connections={connections}
+                                        bookCharacters={characters}
                                         onClose={() =>
                                             setSelectedPlotPointId(null)
                                         }

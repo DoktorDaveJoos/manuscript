@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -9,6 +10,7 @@ import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import type {
     Act,
+    Character,
     PlotPoint,
     PlotPointConnection,
     Storyline,
@@ -29,6 +31,7 @@ type Props = {
     storylines: Storyline[];
     acts: Act[];
     connections: PlotPointConnection[];
+    bookCharacters: Character[];
     onClose: () => void;
     onUpdate: (data: Record<string, unknown>) => void;
 };
@@ -37,6 +40,7 @@ export default function DetailPanel({
     plotPoint,
     acts,
     connections,
+    bookCharacters,
     onClose,
     onUpdate,
 }: Props) {
@@ -131,6 +135,123 @@ export default function DetailPanel({
                         ))}
                     </Select>
                 </FormField>
+
+                {/* Characters */}
+                <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
+                        {t('detailPanel.characters')}
+                    </span>
+
+                    {(plotPoint.characters ?? []).map((char) => (
+                        <div
+                            key={char.id}
+                            className="flex items-center justify-between gap-2"
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-neutral-bg text-[10px] font-semibold text-ink-soft uppercase">
+                                    {char.name.charAt(0)}
+                                </span>
+                                <span className="text-[13px] text-ink-soft">
+                                    {char.name}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <select
+                                    value={char.pivot?.role ?? 'key'}
+                                    onChange={(e) => {
+                                        const updated = (
+                                            plotPoint.characters ?? []
+                                        ).map((c) =>
+                                            c.id === char.id
+                                                ? {
+                                                      id: c.id,
+                                                      role: e.target.value,
+                                                  }
+                                                : {
+                                                      id: c.id,
+                                                      role:
+                                                          c.pivot?.role ??
+                                                          'key',
+                                                  },
+                                        );
+                                        onUpdate({ characters: updated });
+                                    }}
+                                    className="rounded border border-border bg-surface-card px-1 py-0.5 text-[11px] text-ink-soft"
+                                >
+                                    <option value="key">
+                                        {t('detailPanel.characterRole.key')}
+                                    </option>
+                                    <option value="supporting">
+                                        {t(
+                                            'detailPanel.characterRole.supporting',
+                                        )}
+                                    </option>
+                                    <option value="mentioned">
+                                        {t(
+                                            'detailPanel.characterRole.mentioned',
+                                        )}
+                                    </option>
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const updated = (
+                                            plotPoint.characters ?? []
+                                        )
+                                            .filter((c) => c.id !== char.id)
+                                            .map((c) => ({
+                                                id: c.id,
+                                                role: c.pivot?.role ?? 'key',
+                                            }));
+                                        onUpdate({ characters: updated });
+                                    }}
+                                    className="flex h-5 w-5 items-center justify-center rounded text-ink-faint hover:text-ink-soft"
+                                >
+                                    <X size={12} />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+
+                    {(() => {
+                        const taggedIds = new Set(
+                            (plotPoint.characters ?? []).map((c) => c.id),
+                        );
+                        const available = bookCharacters.filter(
+                            (c) => !taggedIds.has(c.id),
+                        );
+                        if (available.length === 0) return null;
+                        return (
+                            <select
+                                value=""
+                                onChange={(e) => {
+                                    const charId = Number(e.target.value);
+                                    if (!charId) return;
+                                    const updated = [
+                                        ...(plotPoint.characters ?? []).map(
+                                            (c) => ({
+                                                id: c.id,
+                                                role: c.pivot?.role ?? 'key',
+                                            }),
+                                        ),
+                                        { id: charId, role: 'key' },
+                                    ];
+                                    onUpdate({ characters: updated });
+                                }}
+                                className="rounded border border-dashed border-border bg-transparent px-2 py-1.5 text-[12px] text-ink-muted"
+                            >
+                                <option value="">
+                                    {t('detailPanel.addCharacter')}
+                                </option>
+                                {available.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.name}
+                                    </option>
+                                ))}
+                            </select>
+                        );
+                    })()}
+                </div>
 
                 {/* Connections */}
                 {(incomingConnections.length > 0 ||
