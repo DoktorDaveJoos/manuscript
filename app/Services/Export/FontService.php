@@ -46,7 +46,7 @@ class FontService
     }
 
     /**
-     * Get base64-encoded font data for inline embedding in HTML.
+     * Get base64-encoded font data for inline CSS embedding (Chromium-based exports).
      *
      * @return array{regular: string, italic: string}
      */
