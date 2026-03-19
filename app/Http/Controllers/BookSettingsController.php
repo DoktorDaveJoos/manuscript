@@ -6,12 +6,17 @@ use App\Enums\TrimSize;
 use App\Http\Requests\ExportBookRequest;
 use App\Models\AppSetting;
 use App\Models\Book;
+use App\Services\Export\ContentPreparer;
+use App\Services\Export\Exporters\PdfExporter;
+use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
+use App\Services\Export\FontService;
 use App\Services\WritingStyleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Native\Desktop\Facades\System;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BookSettingsController extends Controller
@@ -123,5 +128,30 @@ class BookSettingsController extends Controller
     public function doExport(ExportBookRequest $request, Book $book, ExportService $service): BinaryFileResponse
     {
         return $service->export($book, $request->validated());
+    }
+
+    public function previewPdf(ExportBookRequest $request, Book $book): JsonResponse
+    {
+        if (! app()->bound(\Native\Desktop\Contracts\System::class)) {
+            return response()->json(['error' => 'PDF preview requires the desktop app'], 422);
+        }
+
+        $validated = $request->validated();
+        $chapters = ExportService::resolveChapters($book, $validated);
+        ExportService::injectMatterText($validated);
+        $options = ExportOptions::fromArray($validated);
+
+        $contentPreparer = new ContentPreparer;
+        $fontService = new FontService;
+        $exporter = new PdfExporter($contentPreparer, $fontService);
+        $html = $exporter->renderHtml($book, $chapters, $options);
+
+        $pdfBase64 = System::printToPDF($html, [
+            'preferCSSPageSize' => true,
+            'printBackground' => true,
+            'margins' => ['top' => 0, 'bottom' => 0, 'left' => 0, 'right' => 0],
+        ]);
+
+        return response()->json(['pdf' => $pdfBase64]);
     }
 }

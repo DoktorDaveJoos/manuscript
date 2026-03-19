@@ -46,6 +46,19 @@ class FontService
     }
 
     /**
+     * Get base64-encoded font data for inline embedding in HTML.
+     *
+     * @return array{regular: string, italic: string}
+     */
+    public function base64FontData(): array
+    {
+        return [
+            'regular' => base64_encode(file_get_contents($this->regularFontPath())),
+            'italic' => base64_encode(file_get_contents($this->italicFontPath())),
+        ];
+    }
+
+    /**
      * Get CSS @font-face declarations for EPUB embedding.
      */
     public function epubFontFaceCss(): string
