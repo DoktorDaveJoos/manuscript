@@ -3,16 +3,17 @@ import { Camera, X } from 'lucide-react';
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    storeCharacter,
-    storeEntry,
-} from '@/actions/App/Http/Controllers/WikiController';
 import Button from '@/components/ui/Button';
+import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import type { Book, Storyline } from '@/types/models';
 import type { WikiTab } from './WikiTabBar';
+import {
+    storeCharacter,
+    storeEntry,
+} from '@/actions/App/Http/Controllers/WikiController';
 
 type Props = {
     type: WikiTab;
@@ -21,6 +22,8 @@ type Props = {
     onCancel: () => void;
     onSuccess: () => void;
 };
+
+const wikiLabelClass = 'text-[11px] text-ink-faint';
 
 export default function WikiCreateForm({
     type,
@@ -121,10 +124,15 @@ export default function WikiCreateForm({
             )}
 
             {/* Name */}
-            <div>
-                <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                    {t('field.name')}
-                </label>
+            <FormField
+                label={t('field.name')}
+                error={
+                    isCharacter
+                        ? characterForm.errors.name
+                        : entryForm.errors.name
+                }
+                labelClassName={wikiLabelClass}
+            >
                 <Input
                     type="text"
                     value={
@@ -140,23 +148,14 @@ export default function WikiCreateForm({
                     placeholder={t('field.namePlaceholder')}
                     autoFocus
                 />
-                {(isCharacter
-                    ? characterForm.errors.name
-                    : entryForm.errors.name) && (
-                    <p className="mt-1 text-[12px] text-red-600">
-                        {isCharacter
-                            ? characterForm.errors.name
-                            : entryForm.errors.name}
-                    </p>
-                )}
-            </div>
+            </FormField>
 
             {/* Aliases — characters only */}
             {isCharacter && (
-                <div>
-                    <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                        {t('field.aliases')}
-                    </label>
+                <FormField
+                    label={t('field.aliases')}
+                    labelClassName={wikiLabelClass}
+                >
                     <div className="flex flex-wrap items-center gap-1.5 rounded-md bg-neutral-bg px-3 py-2">
                         {characterForm.data.aliases.map((alias) => (
                             <span
@@ -185,15 +184,15 @@ export default function WikiCreateForm({
                             className="min-w-[80px] flex-1 bg-transparent text-[14px] text-ink placeholder:text-ink-faint focus:outline-none"
                         />
                     </div>
-                </div>
+                </FormField>
             )}
 
             {/* Role — characters only */}
             {isCharacter && (
-                <div>
-                    <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                        {t('field.role')}
-                    </label>
+                <FormField
+                    label={t('field.role')}
+                    labelClassName={wikiLabelClass}
+                >
                     <Select
                         value={characterForm.data.role}
                         onChange={(e) =>
@@ -208,15 +207,15 @@ export default function WikiCreateForm({
                         </option>
                         <option value="mentioned">{t('role.mentioned')}</option>
                     </Select>
-                </div>
+                </FormField>
             )}
 
             {/* Type — wiki entries only */}
             {!isCharacter && (
-                <div>
-                    <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                        {t('field.type')}
-                    </label>
+                <FormField
+                    label={t('field.type')}
+                    labelClassName={wikiLabelClass}
+                >
                     <Input
                         type="text"
                         value={entryForm.data.type}
@@ -225,14 +224,14 @@ export default function WikiCreateForm({
                         }
                         placeholder={t('field.typePlaceholder')}
                     />
-                </div>
+                </FormField>
             )}
 
             {/* Description */}
-            <div>
-                <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                    {t('field.description')}
-                </label>
+            <FormField
+                label={t('field.description')}
+                labelClassName={wikiLabelClass}
+            >
                 <Textarea
                     value={
                         isCharacter
@@ -254,14 +253,14 @@ export default function WikiCreateForm({
                     }
                     rows={4}
                 />
-            </div>
+            </FormField>
 
             {/* Storylines — characters only */}
             {isCharacter && storylines.length > 0 && (
-                <div>
-                    <label className="mb-2 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                        {t('field.storylines')}
-                    </label>
+                <FormField
+                    label={t('field.storylines')}
+                    labelClassName={wikiLabelClass}
+                >
                     <div className="flex flex-wrap gap-2">
                         {storylines.map((s) => {
                             const selected =
@@ -283,7 +282,7 @@ export default function WikiCreateForm({
                             );
                         })}
                     </div>
-                </div>
+                </FormField>
             )}
 
             {/* Actions */}
