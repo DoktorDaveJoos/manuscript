@@ -3,6 +3,21 @@ import { Trash2 } from 'lucide-react';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import NavItem from '@/components/ui/NavItem';
+import SectionLabel from '@/components/ui/SectionLabel';
+import Toggle from '@/components/ui/Toggle';
+import { useAutoUpdater } from '@/hooks/useAutoUpdater';
+import { useTheme } from '@/hooks/useTheme';
+import type { Theme } from '@/lib/theme';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type {
+    AppSettings,
+    AiSetting,
+    License,
+    ProsePassRule,
+} from '@/types/models';
 import {
     update as updateAiProvider,
     deleteKey,
@@ -21,20 +36,6 @@ import {
     updateAboutAuthor,
     updateProsePassRules,
 } from '@/actions/App/Http/Controllers/SettingsController';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import NavItem from '@/components/ui/NavItem';
-import Toggle from '@/components/ui/Toggle';
-import { useAutoUpdater } from '@/hooks/useAutoUpdater';
-import { useTheme } from '@/hooks/useTheme';
-import type { Theme } from '@/lib/theme';
-import { jsonFetchHeaders } from '@/lib/utils';
-import type {
-    AppSettings,
-    AiSetting,
-    License,
-    ProsePassRule,
-} from '@/types/models';
 
 type ProviderSetting = AiSetting & {
     label: string;
@@ -70,14 +71,6 @@ const THEME_OPTIONS = [
 ];
 
 const LOCALES = ['en', 'de', 'es'] as const;
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-    return (
-        <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-            {children}
-        </span>
-    );
-}
 
 // ─── License Section ─────────────────────────────────────────────────
 
@@ -151,7 +144,9 @@ function LicenseSection() {
 
     return (
         <div>
-            <SectionLabel>{t('section.license').toUpperCase()}</SectionLabel>
+            <SectionLabel className="text-[11px] font-medium text-ink-faint">
+                {t('section.license').toUpperCase()}
+            </SectionLabel>
             <div className="mt-3 rounded-lg border border-border bg-surface-card">
                 {license.active ? (
                     <>
@@ -257,7 +252,9 @@ function LanguageSection() {
 
     return (
         <div>
-            <SectionLabel>{t('language.sectionLabel')}</SectionLabel>
+            <SectionLabel className="text-[11px] font-medium text-ink-faint">
+                {t('language.sectionLabel')}
+            </SectionLabel>
             <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
                 <div className="flex flex-col gap-4">
                     <div>
@@ -304,7 +301,9 @@ function AppearanceSection() {
 
     return (
         <div>
-            <SectionLabel>{t('appearance.title').toUpperCase()}</SectionLabel>
+            <SectionLabel className="text-[11px] font-medium text-ink-faint">
+                {t('appearance.title').toUpperCase()}
+            </SectionLabel>
             <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
                 <div className="flex flex-col gap-4">
                     <div>
@@ -359,7 +358,9 @@ function EditorSection({
 
     return (
         <div>
-            <SectionLabel>{t('appearance.editor').toUpperCase()}</SectionLabel>
+            <SectionLabel className="text-[11px] font-medium text-ink-faint">
+                {t('appearance.editor').toUpperCase()}
+            </SectionLabel>
             <div className="mt-3 flex flex-col gap-3">
                 <div className="flex items-center justify-between rounded-lg border border-border bg-surface-card px-6 py-3.5">
                     <div>
@@ -776,7 +777,9 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
 
     return (
         <div>
-            <SectionLabel>{t('aiProviders.title').toUpperCase()}</SectionLabel>
+            <SectionLabel className="text-[11px] font-medium text-ink-faint">
+                {t('aiProviders.title').toUpperCase()}
+            </SectionLabel>
             <div
                 className={`mt-3 overflow-hidden rounded-lg border border-border ${locked ? 'opacity-50' : ''}`}
             >
@@ -918,7 +921,7 @@ function MarkdownTextareaSection({
 
     return (
         <div>
-            <SectionLabel>
+            <SectionLabel className="text-[11px] font-medium text-ink-faint">
                 {t(sectionLabelKey ?? `${i18nPrefix}.title`).toUpperCase()}
             </SectionLabel>
             <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
@@ -1004,7 +1007,7 @@ function RevisionRulesSection({
 
     return (
         <div>
-            <SectionLabel>
+            <SectionLabel className="text-[11px] font-medium text-ink-faint">
                 {t('prosePassRules.title').toUpperCase()}
             </SectionLabel>
             <div className="mt-3 rounded-lg border border-border bg-surface-card">
@@ -1059,7 +1062,9 @@ function PrivacySection({
 
     return (
         <div>
-            <SectionLabel>{t('privacy.sectionLabel')}</SectionLabel>
+            <SectionLabel className="text-[11px] font-medium text-ink-faint">
+                {t('privacy.sectionLabel')}
+            </SectionLabel>
             <div className="mt-3 flex items-center justify-between rounded-lg border border-border bg-surface-card px-6 py-3.5">
                 <div>
                     <span className="text-[14px] font-medium text-ink">
@@ -1105,7 +1110,9 @@ function UpdatesSection({
 
     return (
         <div>
-            <SectionLabel>{t('updates.sectionLabel')}</SectionLabel>
+            <SectionLabel className="text-[11px] font-medium text-ink-faint">
+                {t('updates.sectionLabel')}
+            </SectionLabel>
             <div className="mt-3 rounded-lg border border-border bg-surface-card">
                 {/* Version row */}
                 <div className="flex items-center justify-between px-6 py-[18px]">
