@@ -7,19 +7,19 @@ class FontService
     private ?bool $available = null;
 
     /**
-     * Get the path to the regular Literata font file.
+     * Get the path to the regular Spectral font file.
      */
     public function regularFontPath(): string
     {
-        return resource_path('fonts/Literata.ttf');
+        return resource_path('fonts/Spectral.ttf');
     }
 
     /**
-     * Get the path to the italic Literata font file.
+     * Get the path to the italic Spectral font file.
      */
     public function italicFontPath(): string
     {
-        return resource_path('fonts/Literata-Italic.ttf');
+        return resource_path('fonts/Spectral-Italic.ttf');
     }
 
     /**
@@ -31,16 +31,16 @@ class FontService
     }
 
     /**
-     * Get mPDF font configuration for Literata.
+     * Get mPDF font configuration for Spectral.
      *
      * @return array<string, array<string, mixed>>
      */
     public function mPdfFontData(): array
     {
         return [
-            'literata' => [
-                'R' => 'Literata.ttf',
-                'I' => 'Literata-Italic.ttf',
+            'spectral' => [
+                'R' => 'Spectral.ttf',
+                'I' => 'Spectral-Italic.ttf',
             ],
         ];
     }
@@ -68,14 +68,14 @@ class FontService
         if ($this->fontsAvailable()) {
             $css .= <<<'CSS'
             @font-face {
-                font-family: "Literata";
-                src: url("../Fonts/Literata.ttf");
+                font-family: "Spectral";
+                src: url("../Fonts/Spectral.ttf");
                 font-weight: 100 900;
                 font-style: normal;
             }
             @font-face {
-                font-family: "Literata";
-                src: url("../Fonts/Literata-Italic.ttf");
+                font-family: "Spectral";
+                src: url("../Fonts/Spectral-Italic.ttf");
                 font-weight: 100 900;
                 font-style: italic;
             }

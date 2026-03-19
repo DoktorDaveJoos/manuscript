@@ -452,7 +452,7 @@ export default function AiPanel({
     return (
         <aside
             className={cn(
-                'flex h-full shrink-0 flex-col border-l border-border-light bg-surface-card transition-[width] duration-200 ease-in-out',
+                'flex h-full shrink-0 flex-col border-l border-border-light bg-surface-sidebar transition-[width] duration-200 ease-in-out',
                 isOpen ? 'w-[272px]' : 'w-10',
             )}
         >

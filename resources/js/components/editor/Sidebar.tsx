@@ -121,7 +121,7 @@ export default function Sidebar({
     return (
         <aside
             ref={sidebarRef}
-            className={`relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border-light bg-white transition-[width,opacity] duration-300 dark:bg-surface-card ${isFocusMode ? 'opacity-0' : ''}`}
+            className={`relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border-light bg-surface-sidebar transition-[width,opacity] duration-300 ${isFocusMode ? 'opacity-0' : ''}`}
             style={{ width: isFocusMode ? 0 : width }}
         >
             {/* Header */}
@@ -184,6 +184,11 @@ export default function Sidebar({
                             size={16}
                             className="shrink-0 text-ink-faint"
                         />
+                    }
+                    suffix={
+                        <span className="ml-auto rounded-full bg-ink px-1.5 py-1 text-[10px] leading-none font-medium text-surface">
+                            {t('preview')}
+                        </span>
                     }
                 />
             </div>

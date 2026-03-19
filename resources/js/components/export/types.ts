@@ -1,3 +1,22 @@
+// Front/back matter type constants — keep in sync with PHP enums
+export const FRONT_MATTER_TYPES = {
+    TitlePage: 'title-page',
+    Copyright: 'copyright',
+    Dedication: 'dedication',
+    Toc: 'toc',
+} as const;
+
+export const BACK_MATTER_TYPES = {
+    AlsoBy: 'also-by',
+    Acknowledgments: 'acknowledgments',
+    AboutAuthor: 'about-author',
+} as const;
+
+export type FrontMatterType =
+    (typeof FRONT_MATTER_TYPES)[keyof typeof FRONT_MATTER_TYPES];
+export type BackMatterType =
+    (typeof BACK_MATTER_TYPES)[keyof typeof BACK_MATTER_TYPES];
+
 export type ActRef = { id: number; number: number; title: string | null };
 
 export type ChapterRow = {

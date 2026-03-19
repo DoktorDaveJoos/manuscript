@@ -3,6 +3,8 @@
 namespace App\Services\Export\Exporters;
 
 use App\Contracts\Exporter;
+use App\Enums\BackMatterType;
+use App\Enums\FrontMatterType;
 use App\Models\Book;
 use App\Services\Export\ContentPreparer;
 use App\Services\Export\ExportOptions;
@@ -43,7 +45,7 @@ class EpubExporter implements Exporter
         // Back matter files
         $backMatterFiles = $this->addBackMatter($zip, $options);
 
-        if ($options->includeTableOfContents && ! in_array('toc', $options->frontMatter)) {
+        if ($options->includeTableOfContents && ! in_array(FrontMatterType::Toc->value, $options->frontMatter)) {
             $this->addTocXhtml($zip, $chapters, $frontMatterFiles, $backMatterFiles);
         }
         $this->addTocNcx($zip, $book, $chapters, $frontMatterFiles, $backMatterFiles, $uuid);
@@ -83,8 +85,8 @@ class EpubExporter implements Exporter
             return;
         }
 
-        $zip->addFile($this->fontService->regularFontPath(), 'OEBPS/Fonts/Literata.ttf');
-        $zip->addFile($this->fontService->italicFontPath(), 'OEBPS/Fonts/Literata-Italic.ttf');
+        $zip->addFile($this->fontService->regularFontPath(), 'OEBPS/Fonts/Spectral.ttf');
+        $zip->addFile($this->fontService->italicFontPath(), 'OEBPS/Fonts/Spectral-Italic.ttf');
     }
 
     /**
@@ -96,10 +98,10 @@ class EpubExporter implements Exporter
 
         foreach ($options->frontMatter as $item) {
             match ($item) {
-                'title-page' => $files[] = $this->addTitlePage($zip, $book),
-                'copyright' => $files[] = $this->addCopyrightPage($zip, $book),
-                'dedication' => $files[] = $this->addDedicationPage($zip, $options->dedicationText),
-                'toc' => $files[] = $this->addTocAsFrontMatter($zip, $chapters, $options),
+                FrontMatterType::TitlePage->value => $files[] = $this->addTitlePage($zip, $book),
+                FrontMatterType::Copyright->value => $files[] = $this->addCopyrightPage($zip, $book, $options->copyrightText),
+                FrontMatterType::Dedication->value => $files[] = $this->addDedicationPage($zip, $options->dedicationText),
+                FrontMatterType::Toc->value => $files[] = $this->addTocAsFrontMatter($zip, $chapters, $options),
                 default => null,
             };
         }
@@ -113,9 +115,9 @@ class EpubExporter implements Exporter
     private function addBackMatter(ZipArchive $zip, ExportOptions $options): array
     {
         $matterConfig = [
-            'also-by' => ['epubType' => 'other-credits', 'heading' => 'Also By', 'text' => $options->alsoByText],
-            'acknowledgments' => ['epubType' => 'acknowledgments', 'heading' => 'Acknowledgments', 'text' => $options->acknowledgmentText],
-            'about-author' => ['epubType' => 'contributors', 'heading' => 'About the Author', 'text' => $options->aboutAuthorText],
+            BackMatterType::AlsoBy->value => ['epubType' => 'other-credits', 'heading' => 'Also By', 'text' => $options->alsoByText],
+            BackMatterType::Acknowledgments->value => ['epubType' => 'acknowledgments', 'heading' => 'Acknowledgments', 'text' => $options->acknowledgmentText],
+            BackMatterType::AboutAuthor->value => ['epubType' => 'contributors', 'heading' => 'About the Author', 'text' => $options->aboutAuthorText],
         ];
 
         $files = [];
@@ -156,18 +158,28 @@ class EpubExporter implements Exporter
     /**
      * @return array{id: string, file: string, label: string}
      */
-    private function addCopyrightPage(ZipArchive $zip, Book $book): array
+    private function addCopyrightPage(ZipArchive $zip, Book $book, string $copyrightText = ''): array
     {
-        $title = htmlspecialchars($book->title, ENT_XML1, 'UTF-8');
-        $year = date('Y');
+        if ($copyrightText !== '') {
+            $content = $this->contentPreparer->toMatterXhtml($copyrightText);
 
-        $body = <<<HTML
-        <section epub:type="copyright-page" class="copyright-page">
-          <p>Copyright &#169; {$year}</p>
-          <p>{$title}</p>
-          <p>All rights reserved.</p>
-        </section>
-        HTML;
+            $body = <<<HTML
+            <section epub:type="copyright-page" class="copyright-page">
+              {$content}
+            </section>
+            HTML;
+        } else {
+            $title = htmlspecialchars($book->title, ENT_XML1, 'UTF-8');
+            $year = date('Y');
+
+            $body = <<<HTML
+            <section epub:type="copyright-page" class="copyright-page">
+              <p>Copyright &#169; {$year}</p>
+              <p>{$title}</p>
+              <p>All rights reserved.</p>
+            </section>
+            HTML;
+        }
 
         $xhtml = $this->wrapXhtml('Copyright', $body);
         $zip->addFromString('OEBPS/Text/copyright.xhtml', $xhtml);
@@ -385,14 +397,14 @@ class EpubExporter implements Exporter
             <item id="stylesheet" href="Styles/stylesheet.css" media-type="text/css"/>
         XML;
 
-        $hasTocInFrontMatter = in_array('toc', $options->frontMatter);
+        $hasTocInFrontMatter = in_array(FrontMatterType::Toc->value, $options->frontMatter);
         if ($options->includeTableOfContents || $hasTocInFrontMatter) {
             $manifestItems .= "\n    <item id=\"toc\" href=\"toc.xhtml\" media-type=\"application/xhtml+xml\" properties=\"nav\"/>";
         }
 
         if ($this->fontService->fontsAvailable()) {
-            $manifestItems .= "\n    <item id=\"font-regular\" href=\"Fonts/Literata.ttf\" media-type=\"font/ttf\"/>";
-            $manifestItems .= "\n    <item id=\"font-italic\" href=\"Fonts/Literata-Italic.ttf\" media-type=\"font/ttf\"/>";
+            $manifestItems .= "\n    <item id=\"font-regular\" href=\"Fonts/Spectral.ttf\" media-type=\"font/ttf\"/>";
+            $manifestItems .= "\n    <item id=\"font-italic\" href=\"Fonts/Spectral-Italic.ttf\" media-type=\"font/ttf\"/>";
         }
 
         // Front matter manifest

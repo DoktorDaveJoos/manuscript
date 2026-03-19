@@ -32,6 +32,7 @@ import {
 } from '@/actions/App/Http/Controllers/LicenseController';
 import {
     updateWritingStyle,
+    updateCopyright,
     updateAcknowledgment,
     updateAboutAuthor,
     updateProsePassRules,
@@ -46,6 +47,7 @@ interface Props {
     settings: AppSettings;
     ai_providers: ProviderSetting[];
     writing_style_text: string;
+    copyright_text: string;
     acknowledgment_text: string;
     about_author_text: string;
     prose_pass_rules: ProsePassRule[];
@@ -1226,6 +1228,7 @@ type SectionKey =
     | 'ai-features'
     | 'writing-style'
     | 'revision-rules'
+    | 'copyright'
     | 'acknowledgment'
     | 'about-author'
     | 'privacy'
@@ -1260,6 +1263,11 @@ const NAV_ITEMS: NavSection[] = [
         key: 'revision-rules',
         label: 'section.prosePassRules',
         groupKey: 'sidebar.editor',
+    },
+    {
+        key: 'copyright',
+        label: 'copyright.navLabel',
+        groupKey: 'sidebar.print',
     },
     {
         key: 'acknowledgment',
@@ -1346,6 +1354,7 @@ export default function Settings({
     settings,
     ai_providers,
     writing_style_text,
+    copyright_text,
     acknowledgment_text,
     about_author_text,
     prose_pass_rules,
@@ -1360,6 +1369,7 @@ export default function Settings({
     const aiFeaturesRef = useRef<HTMLDivElement>(null);
     const writingStyleRef = useRef<HTMLDivElement>(null);
     const revisionRulesRef = useRef<HTMLDivElement>(null);
+    const copyrightRef = useRef<HTMLDivElement>(null);
     const acknowledgmentRef = useRef<HTMLDivElement>(null);
     const aboutAuthorRef = useRef<HTMLDivElement>(null);
     const privacyRef = useRef<HTMLDivElement>(null);
@@ -1375,6 +1385,7 @@ export default function Settings({
         'ai-features': aiFeaturesRef,
         'writing-style': writingStyleRef,
         'revision-rules': revisionRulesRef,
+        copyright: copyrightRef,
         acknowledgment: acknowledgmentRef,
         'about-author': aboutAuthorRef,
         privacy: privacyRef,
@@ -1538,6 +1549,18 @@ export default function Settings({
                                 </div>
 
                                 <div className="flex flex-col gap-9">
+                                    <div
+                                        ref={copyrightRef}
+                                        data-section="copyright"
+                                    >
+                                        <MarkdownTextareaSection
+                                            initialText={copyright_text}
+                                            saveUrl={updateCopyright.url()}
+                                            fieldName="copyright_text"
+                                            i18nPrefix="copyright"
+                                            sectionLabelKey="copyright.sectionLabel"
+                                        />
+                                    </div>
                                     <div
                                         ref={acknowledgmentRef}
                                         data-section="acknowledgment"

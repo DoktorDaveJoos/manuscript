@@ -43,6 +43,7 @@ class SettingsController extends Controller
             'settings' => $settings,
             'ai_providers' => $aiProviders,
             'writing_style_text' => $writingStyleText,
+            'copyright_text' => AppSetting::get('copyright_text', ''),
             'acknowledgment_text' => AppSetting::get('acknowledgment_text', ''),
             'about_author_text' => AppSetting::get('about_author_text', ''),
             'prose_pass_rules' => Book::globalProsePassRules(),
@@ -59,6 +60,17 @@ class SettingsController extends Controller
         AppSetting::set('writing_style_text', $request->input('writing_style_text'));
 
         return response()->json(['message' => __('Writing style updated.')]);
+    }
+
+    public function updateCopyright(Request $request): JsonResponse
+    {
+        $request->validate([
+            'copyright_text' => ['required', 'string', 'max:10000'],
+        ]);
+
+        AppSetting::set('copyright_text', $request->input('copyright_text'));
+
+        return response()->json(['message' => __('Copyright updated.')]);
     }
 
     public function updateAcknowledgment(Request $request): JsonResponse

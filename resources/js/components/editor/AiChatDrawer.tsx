@@ -208,7 +208,7 @@ export default function AiChatDrawer({
     return (
         <aside
             ref={asideRef}
-            className="relative flex h-full shrink-0 flex-col border-l border-border-light bg-white dark:bg-surface-card"
+            className="relative flex h-full shrink-0 flex-col border-l border-border-light bg-surface-sidebar"
             style={{ width }}
         >
             {/* Resize handle */}

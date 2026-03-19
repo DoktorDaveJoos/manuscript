@@ -65,6 +65,7 @@
     --color-plot-resolution-text: #588258;
     --color-plot-worldbuilding-bg: #e8ecf2;
     --color-plot-worldbuilding-text: #586582;
+    --color-surface-sidebar: #ffffff;
 }
 
 html.dark {
@@ -106,6 +107,7 @@ html.dark {
     --color-plot-resolution-text: #8ebb8e;
     --color-plot-worldbuilding-bg: #282e38;
     --color-plot-worldbuilding-text: #8ea8c0;
+    --color-surface-sidebar: var(--color-surface-card);
 }
 
 @layer base {

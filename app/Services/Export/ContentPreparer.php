@@ -75,9 +75,9 @@ class ContentPreparer
     /**
      * Convert plain text (from AppSetting) to <p> tags for mPDF.
      */
-    public function toMatterHtml(string $plainText): string
+    public function toMatterHtml(string $plainText, string $class = 'matter-body'): string
     {
-        return $this->plainTextToParagraphs($plainText, ENT_HTML5, 'matter-body');
+        return $this->plainTextToParagraphs($plainText, ENT_HTML5, $class);
     }
 
     /**

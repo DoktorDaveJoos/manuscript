@@ -281,7 +281,7 @@ export default function ReadingOrderPanel({
     return (
         <aside
             ref={asideRef}
-            className="relative flex h-full shrink-0 flex-col border-l border-border-light bg-surface-card"
+            className="relative flex h-full shrink-0 flex-col border-l border-border-light bg-surface-sidebar"
             style={{ width }}
         >
             {/* Resize handle */}

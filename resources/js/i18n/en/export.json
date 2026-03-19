@@ -19,6 +19,8 @@
     "exportAs": "Export as .{{format}}",
     "exporting": "Exporting…",
     "previewInBrowser": "Preview in browser",
+    "proRequired": "Requires PRO license.",
+    "learnMore": "Learn more",
 
     "readingOrder": "Reading Order",
     "readingOrderSubtitle": "Drag to reorder export sequence",
@@ -30,18 +32,14 @@
     "frontMatter.titlePage": "Title Page",
     "frontMatter.copyright": "Copyright",
     "frontMatter.tableOfContents": "Table of Contents",
-    "frontMatter.dedication": "Dedication",
 
     "backMatter.acknowledgments": "Acknowledgments",
     "backMatter.aboutTheAuthor": "About the Author",
-    "backMatter.alsoBy": "Also By",
 
     "preview": "PREVIEW",
     "preview.contents": "Contents",
-    "preview.copyright": "Copyright \u00a9 2024. All rights reserved.",
-    "preview.dedication": "For those who believed.",
+    "preview.copyright": "Copyright \u00a9 {{year}}. All rights reserved.",
     "preview.acknowledgments": "Acknowledgments",
     "preview.aboutTheAuthor": "About the Author",
-    "preview.alsoBy": "Also By",
     "preview.empty": "Select chapters to preview"
 }

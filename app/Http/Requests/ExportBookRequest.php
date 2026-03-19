@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\BackMatterType;
 use App\Enums\ExportFormat;
+use App\Enums\FrontMatterType;
 use App\Enums\TrimSize;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -28,9 +30,9 @@ class ExportBookRequest extends FormRequest
             'trim_size' => ['nullable', Rule::enum(TrimSize::class)],
             'font_size' => ['nullable', 'integer', 'in:10,11,12,13,14'],
             'front_matter' => ['nullable', 'array'],
-            'front_matter.*' => ['string', 'in:title-page,copyright,dedication,toc'],
+            'front_matter.*' => ['string', Rule::enum(FrontMatterType::class)],
             'back_matter' => ['nullable', 'array'],
-            'back_matter.*' => ['string', 'in:also-by,acknowledgments,about-author'],
+            'back_matter.*' => ['string', Rule::enum(BackMatterType::class)],
         ];
     }
 }

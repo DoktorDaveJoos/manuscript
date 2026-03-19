@@ -128,7 +128,7 @@ export default function AiActionSidebar({
     return (
         <aside
             className={cn(
-                'flex h-full shrink-0 flex-col border-l border-border bg-surface-card transition-[width] duration-200 ease-in-out',
+                'flex h-full shrink-0 flex-col border-l border-border bg-surface-sidebar transition-[width] duration-200 ease-in-out',
                 isOpen ? 'w-[280px]' : 'w-10',
             )}
         >

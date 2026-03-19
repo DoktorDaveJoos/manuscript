@@ -18,5 +18,6 @@
     "nav.wiki": "Wiki",
     "nav.plot": "Plot",
     "nav.canvas": "Canvas",
-    "nav.export": "Export"
+    "nav.export": "Export",
+    "preview": "Preview"
 }

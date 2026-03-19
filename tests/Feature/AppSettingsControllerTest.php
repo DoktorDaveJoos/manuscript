@@ -10,6 +10,7 @@ test('unified settings page loads', function () {
             ->has('settings')
             ->has('ai_providers')
             ->has('writing_style_text')
+            ->has('copyright_text')
             ->has('acknowledgment_text')
             ->has('about_author_text')
             ->has('prose_pass_rules')
@@ -80,6 +81,15 @@ test('global writing style saves', function () {
 
     AppSetting::clearCache();
     expect(AppSetting::get('writing_style_text'))->toBe('Dark, moody prose with short sentences.');
+});
+
+test('copyright text saves', function () {
+    $this->putJson(route('settings.copyright.update'), [
+        'copyright_text' => 'Copyright 2024 Jane Doe. All rights reserved.',
+    ])->assertOk();
+
+    AppSetting::clearCache();
+    expect(AppSetting::get('copyright_text'))->toBe('Copyright 2024 Jane Doe. All rights reserved.');
 });
 
 test('acknowledgment text saves', function () {

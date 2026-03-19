@@ -39,7 +39,7 @@ class ClassicTemplate
 
         return <<<CSS
         body {
-            font-family: literata, Georgia, serif;
+            font-family: spectral, Georgia, serif;
             font-size: {$fontSize}pt;
             line-height: 1.5; /* keep in sync with getLineHeightMultiplier() in usePreviewPages.ts */
             text-align: justify;
@@ -168,7 +168,7 @@ class ClassicTemplate
         {$fontFaceCss}
 
         body {
-            font-family: "Literata", Georgia, serif;
+            font-family: "Spectral", Georgia, serif;
             font-size: 1em;
             line-height: 1.6; /* keep in sync with getLineHeightMultiplier() in usePreviewPages.ts */
             margin: 1em;

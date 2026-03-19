@@ -1,7 +1,14 @@
 import { router } from '@inertiajs/react';
 import { diffArrays, diffWords } from 'diff';
 import { Check, ChevronDown, ChevronRight, TriangleAlert } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     acceptPartialVersion,
@@ -437,11 +444,75 @@ export default function DiffView({
         }
     }, [bookId, chapterId, pendingVersion.id]);
 
-    // Synchronized scrolling
+    // Synchronized scrolling with height-matched spacers
     const leftPanelRef = useRef<HTMLDivElement>(null);
     const rightPanelRef = useRef<HTMLDivElement>(null);
+    const leftContentRef = useRef<HTMLDivElement>(null);
+    const rightContentRef = useRef<HTMLDivElement>(null);
     const isSyncing = useRef(false);
+    const isMeasuring = useRef(false);
 
+    // Measure paragraph heights and apply min-height so both panels have identical total height
+    const measureHeights = useCallback(() => {
+        const leftContainer = leftContentRef.current;
+        const rightContainer = rightContentRef.current;
+        if (!leftContainer || !rightContainer) return;
+
+        isMeasuring.current = true;
+
+        const leftEls =
+            leftContainer.querySelectorAll<HTMLElement>('[data-row]');
+        const rightEls =
+            rightContainer.querySelectorAll<HTMLElement>('[data-row]');
+
+        // Clear min-heights to measure natural content height
+        for (const el of leftEls) el.style.minHeight = '';
+        for (const el of rightEls) el.style.minHeight = '';
+
+        // Force synchronous reflow
+        void leftContainer.offsetHeight;
+
+        // Build index → element maps
+        const leftMap = new Map<number, HTMLElement>();
+        const rightMap = new Map<number, HTMLElement>();
+        for (const el of leftEls) leftMap.set(Number(el.dataset.row), el);
+        for (const el of rightEls) rightMap.set(Number(el.dataset.row), el);
+
+        // Compute and apply max height per row
+        for (const para of diff.aligned) {
+            const leftEl = leftMap.get(para.index);
+            const rightEl = rightMap.get(para.index);
+            const leftH = leftEl?.offsetHeight ?? 0;
+            const rightH = rightEl?.offsetHeight ?? 0;
+            const maxH = Math.max(leftH, rightH);
+            if (maxH > 0) {
+                if (leftEl) leftEl.style.minHeight = `${maxH}px`;
+                if (rightEl) rightEl.style.minHeight = `${maxH}px`;
+            }
+        }
+
+        // Keep guard up through the reflow triggered by minHeight changes
+        requestAnimationFrame(() => {
+            isMeasuring.current = false;
+        });
+    }, [diff.aligned]);
+
+    // Measure after render (before paint) to avoid flicker
+    useLayoutEffect(() => {
+        measureHeights();
+    }, [measureHeights]);
+
+    // Re-measure on resize (font load, window resize, etc.)
+    useEffect(() => {
+        const observer = new ResizeObserver(() => {
+            if (!isMeasuring.current) measureHeights();
+        });
+        if (leftContentRef.current) observer.observe(leftContentRef.current);
+        if (rightContentRef.current) observer.observe(rightContentRef.current);
+        return () => observer.disconnect();
+    }, [measureHeights]);
+
+    // Pixel-based scroll sync (panels have identical total height)
     const handleScroll = useCallback((source: 'left' | 'right') => {
         if (isSyncing.current) return;
         isSyncing.current = true;
@@ -452,15 +523,7 @@ export default function DiffView({
             source === 'left' ? rightPanelRef.current : leftPanelRef.current;
 
         if (active && target) {
-            const maxScroll = active.scrollHeight - active.clientHeight;
-            const ratio = maxScroll > 0 ? active.scrollTop / maxScroll : 0;
-            const newScrollTop =
-                ratio * (target.scrollHeight - target.clientHeight);
-            if (Math.abs(target.scrollTop - newScrollTop) < 1) {
-                isSyncing.current = false;
-                return;
-            }
-            target.scrollTop = newScrollTop;
+            target.scrollTop = active.scrollTop;
         }
 
         requestAnimationFrame(() => {
@@ -570,11 +633,15 @@ export default function DiffView({
                             {sourceLabel(currentVersion.source)}
                         </span>
                     </div>
-                    <div className="max-w-prose space-y-4 font-serif text-base leading-relaxed text-ink">
+                    <div
+                        ref={leftContentRef}
+                        className="max-w-prose space-y-4 font-serif text-base leading-relaxed text-ink"
+                    >
                         {diff.aligned.map((para) =>
                             para.left ? (
                                 <p
                                     key={`l-${para.index}`}
+                                    data-row={para.index}
                                     className={
                                         !para.right ? 'opacity-60' : undefined
                                     }
@@ -593,9 +660,9 @@ export default function DiffView({
                                     )}
                                 </p>
                             ) : (
-                                <p
+                                <div
                                     key={`l-${para.index}`}
-                                    className="h-0"
+                                    data-row={para.index}
                                     aria-hidden="true"
                                 />
                             ),
@@ -618,11 +685,15 @@ export default function DiffView({
                             {sourceLabel(pendingVersion.source)}
                         </span>
                     </div>
-                    <div className="max-w-prose space-y-4 font-serif text-base leading-relaxed text-ink">
+                    <div
+                        ref={rightContentRef}
+                        className="max-w-prose space-y-4 font-serif text-base leading-relaxed text-ink"
+                    >
                         {diff.aligned.map((para) =>
                             para.right ? (
                                 <div
                                     key={`r-${para.index}`}
+                                    data-row={para.index}
                                     className="group flex gap-2"
                                 >
                                     {para.hasChanges && (
@@ -666,9 +737,9 @@ export default function DiffView({
                                     </p>
                                 </div>
                             ) : (
-                                <p
+                                <div
                                     key={`r-${para.index}`}
-                                    className="h-0"
+                                    data-row={para.index}
                                     aria-hidden="true"
                                 />
                             ),

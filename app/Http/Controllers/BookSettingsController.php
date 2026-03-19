@@ -110,7 +110,7 @@ class BookSettingsController extends Controller
             ->get();
 
         return Inertia::render('books/export', [
-            'book' => $book->only('id', 'title'),
+            'book' => $book->only('id', 'title', 'author'),
             'storylines' => $book->storylines->map(fn ($s) => $s->only('id', 'name', 'color', 'type')),
             'chapters' => $chapters->map(fn ($ch) => [
                 ...$ch->only('id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count'),
@@ -118,10 +118,9 @@ class BookSettingsController extends Controller
             ]),
             'trimSizes' => collect(TrimSize::cases())->map(fn ($t) => ['value' => $t->value, 'label' => $t->label()]),
             'acts' => $book->acts->map(fn ($a) => $a->only('id', 'number', 'title')),
-            'dedicationText' => (string) AppSetting::get('dedication_text', ''),
+            'copyrightText' => (string) AppSetting::get('copyright_text', ''),
             'acknowledgmentText' => (string) AppSetting::get('acknowledgment_text', ''),
             'aboutAuthorText' => (string) AppSetting::get('about_author_text', ''),
-            'alsoByText' => (string) AppSetting::get('also_by_text', ''),
         ]);
     }
 

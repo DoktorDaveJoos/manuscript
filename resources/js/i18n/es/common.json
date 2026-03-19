@@ -17,5 +17,6 @@
     "nav.dashboard": "Panel",
     "nav.wiki": "Wiki",
     "nav.plot": "Trama",
-    "nav.canvas": "Lienzo"
+    "nav.canvas": "Lienzo",
+    "preview": "Vista previa"
 }

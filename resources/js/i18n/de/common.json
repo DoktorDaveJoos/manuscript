@@ -17,5 +17,6 @@
     "nav.dashboard": "Dashboard",
     "nav.wiki": "Wiki",
     "nav.plot": "Handlung",
-    "nav.canvas": "Leinwand"
+    "nav.canvas": "Leinwand",
+    "preview": "Vorschau"
 }
