@@ -22,6 +22,7 @@ type ChapterColumn = {
     act_id: number | null;
     storyline_id: number;
     tension_score: number | null;
+    word_count?: number;
 };
 
 type Props = {
@@ -140,6 +141,14 @@ export default function SwimLaneTimeline({
         currentActId: number | null;
         position: { x: number; y: number };
     } | null>(null);
+
+    const chapterWordCountMap = useMemo(() => {
+        const map = new Map<number, number>();
+        for (const ch of chapters) {
+            map.set(ch.id, ch.word_count ?? 0);
+        }
+        return map;
+    }, [chapters]);
 
     const handleDragStart = (event: DragStartEvent) => {
         const ch = event.active.data.current?.chapter as
@@ -297,6 +306,17 @@ export default function SwimLaneTimeline({
                                                 <PlotPointCard
                                                     key={pp.id}
                                                     plotPoint={pp}
+                                                    chapterWordCount={
+                                                        pp.intended_chapter_id
+                                                            ? chapterWordCountMap.get(
+                                                                  pp.intended_chapter_id,
+                                                              )
+                                                            : pp.actual_chapter_id
+                                                              ? chapterWordCountMap.get(
+                                                                    pp.actual_chapter_id,
+                                                                )
+                                                              : undefined
+                                                    }
                                                     onClick={() =>
                                                         onSelectPlotPoint(pp)
                                                     }

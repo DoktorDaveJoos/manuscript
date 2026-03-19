@@ -12,6 +12,12 @@
     "detailPanel.connections": "Conexiones",
     "detailPanel.plotPointFallback": "Punto de trama #{{id}}",
     "detailPanel.jumpToChapter": "Ir al capítulo",
+    "detailPanel.characters": "Personajes",
+    "detailPanel.addCharacter": "Añadir personaje",
+    "detailPanel.noCharacters": "Sin personajes asignados",
+    "detailPanel.characterRole.key": "Clave",
+    "detailPanel.characterRole.supporting": "Secundario",
+    "detailPanel.characterRole.mentioned": "Mencionado",
 
     "type.setup": "Introducción",
     "type.conflict": "Conflicto",
@@ -56,6 +62,9 @@
     "aiActions.holes.description": "Encuentra vacíos y contradicciones",
     "aiActions.beats.label": "Sugerir próximos beats",
     "aiActions.beats.description": "Puntos de trama recomendados por IA",
+
+    "card.wordCount": "{{count}} palabras",
+    "card.moreCharacters": "+{{count}}",
 
     "timeline.chapterAbbrev": "Cap. {{number}}",
     "timeline.unassignedChapters": "Capítulos sin asignar",

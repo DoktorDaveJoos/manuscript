@@ -4,11 +4,28 @@ import type { PlotPoint } from '@/types/models';
 
 type Props = {
     plotPoint: PlotPoint;
+    chapterWordCount?: number;
     onClick: () => void;
 };
 
-export default function PlotPointCard({ plotPoint, onClick }: Props) {
+function formatWordCount(count: number): string {
+    if (count >= 1000) {
+        return `${(count / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+    }
+    return String(count);
+}
+
+const MAX_VISIBLE_CHARACTERS = 3;
+
+export default function PlotPointCard({
+    plotPoint,
+    chapterWordCount,
+    onClick,
+}: Props) {
     const { t } = useTranslation('plot');
+    const characters = plotPoint.characters ?? [];
+    const visibleChars = characters.slice(0, MAX_VISIBLE_CHARACTERS);
+    const overflowCount = characters.length - MAX_VISIBLE_CHARACTERS;
 
     return (
         <button
@@ -30,12 +47,49 @@ export default function PlotPointCard({ plotPoint, onClick }: Props) {
                     {plotPoint.title}
                 </span>
             </div>
-            <div className="mt-1.5">
-                <span
-                    className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${TYPE_STYLES[plotPoint.type] ?? ''}`}
-                >
-                    {t(`type.${plotPoint.type}`)}
-                </span>
+
+            {plotPoint.description && (
+                <p className="mt-1 line-clamp-2 text-[11px] leading-[15px] text-ink-muted">
+                    {plotPoint.description}
+                </p>
+            )}
+
+            <div className="mt-1.5 flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1.5">
+                    <span
+                        className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${TYPE_STYLES[plotPoint.type] ?? ''}`}
+                    >
+                        {t(`type.${plotPoint.type}`)}
+                    </span>
+                    {chapterWordCount != null && chapterWordCount > 0 && (
+                        <span className="text-[10px] text-ink-faint">
+                            {t('card.wordCount', {
+                                count: formatWordCount(chapterWordCount),
+                            })}
+                        </span>
+                    )}
+                </div>
+
+                {characters.length > 0 && (
+                    <div className="flex items-center gap-0.5">
+                        {visibleChars.map((char) => (
+                            <span
+                                key={char.id}
+                                title={char.name}
+                                className="flex h-4 w-4 items-center justify-center rounded-full bg-neutral-bg text-[9px] font-semibold text-ink-soft uppercase"
+                            >
+                                {char.name.charAt(0)}
+                            </span>
+                        ))}
+                        {overflowCount > 0 && (
+                            <span className="text-[9px] text-ink-faint">
+                                {t('card.moreCharacters', {
+                                    count: overflowCount,
+                                })}
+                            </span>
+                        )}
+                    </div>
+                )}
             </div>
         </button>
     );

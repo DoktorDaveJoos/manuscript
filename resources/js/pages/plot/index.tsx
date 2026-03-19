@@ -28,6 +28,7 @@ import type {
     Act,
     Book,
     Chapter,
+    Character,
     PlotPoint,
     PlotPointConnection,
     Storyline,
@@ -40,6 +41,7 @@ type ChapterCol = {
     act_id: number;
     storyline_id: number;
     tension_score: number | null;
+    word_count?: number;
 };
 
 type PlotPageProps = {
@@ -49,6 +51,7 @@ type PlotPageProps = {
     plotPoints: PlotPoint[];
     connections: PlotPointConnection[];
     chapters: Chapter[];
+    characters: Character[];
 };
 
 type Tab = 'timeline' | 'list';
@@ -60,6 +63,7 @@ export default function Plot({
     plotPoints,
     connections,
     chapters,
+    characters,
 }: PlotPageProps) {
     const { t } = useTranslation('plot');
     const sidebarStorylines = useSidebarStorylines();

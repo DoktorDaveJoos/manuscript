@@ -12,6 +12,12 @@
     "detailPanel.connections": "Verbindungen",
     "detailPanel.plotPointFallback": "Handlungspunkt #{{id}}",
     "detailPanel.jumpToChapter": "Zum Kapitel springen",
+    "detailPanel.characters": "Figuren",
+    "detailPanel.addCharacter": "Figur hinzufügen",
+    "detailPanel.noCharacters": "Keine Figuren zugeordnet",
+    "detailPanel.characterRole.key": "Schlüssel",
+    "detailPanel.characterRole.supporting": "Neben",
+    "detailPanel.characterRole.mentioned": "Erwähnt",
 
     "type.setup": "Einf\u00fchrung",
     "type.conflict": "Konflikt",
@@ -56,6 +62,9 @@
     "aiActions.holes.description": "L\u00fccken und Widerspr\u00fcche finden",
     "aiActions.beats.label": "N\u00e4chste Beats vorschlagen",
     "aiActions.beats.description": "KI-empfohlene Handlungspunkte",
+
+    "card.wordCount": "{{count}} Wörter",
+    "card.moreCharacters": "+{{count}}",
 
     "timeline.chapterAbbrev": "Kap. {{number}}",
     "timeline.unassignedChapters": "Nicht zugeordnete Kapitel",

@@ -12,6 +12,12 @@
     "detailPanel.connections": "Connections",
     "detailPanel.plotPointFallback": "Plot point #{{id}}",
     "detailPanel.jumpToChapter": "Jump to chapter",
+    "detailPanel.characters": "Characters",
+    "detailPanel.addCharacter": "Add character",
+    "detailPanel.noCharacters": "No characters tagged",
+    "detailPanel.characterRole.key": "Key",
+    "detailPanel.characterRole.supporting": "Supporting",
+    "detailPanel.characterRole.mentioned": "Mentioned",
 
     "type.setup": "Setup",
     "type.conflict": "Conflict",
@@ -56,6 +62,9 @@
     "aiActions.holes.description": "Find gaps and contradictions",
     "aiActions.beats.label": "Suggest Next Beats",
     "aiActions.beats.description": "AI-recommended plot points",
+
+    "card.wordCount": "{{count}} words",
+    "card.moreCharacters": "+{{count}}",
 
     "timeline.chapterAbbrev": "Ch. {{number}}",
     "timeline.unassignedChapters": "Unassigned chapters",
