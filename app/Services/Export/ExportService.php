@@ -61,6 +61,9 @@ class ExportService
         $frontMatter = (array) ($options['front_matter'] ?? []);
         $backMatter = (array) ($options['back_matter'] ?? []);
 
+        if (in_array('copyright', $frontMatter)) {
+            $options['copyright_text'] = (string) AppSetting::get('copyright_text', '');
+        }
         if (in_array('dedication', $frontMatter)) {
             $options['dedication_text'] = (string) AppSetting::get('dedication_text', '');
         }
