@@ -1,13 +1,10 @@
 import { router } from '@inertiajs/react';
-import { ChevronRight } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { update } from '@/actions/App/Http/Controllers/StorylineController';
+import ContextMenu from '@/components/ui/ContextMenu';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Storyline } from '@/types/models';
 import ColorPicker from './ColorPicker';
-
-const menuShadow = 'shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]';
+import { update } from '@/actions/App/Http/Controllers/StorylineController';
 
 export default function StorylineContextMenu({
     bookId,
@@ -27,20 +24,6 @@ export default function StorylineContextMenu({
     onDelete: () => void;
 }) {
     const { t } = useTranslation('editor');
-    const ref = useRef<HTMLDivElement>(null);
-    const [colorOpen, setColorOpen] = useState(false);
-
-    useEffect(() => {
-        function handleClickOutside(e: MouseEvent) {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                onClose();
-            }
-        }
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () =>
-            document.removeEventListener('mousedown', handleClickOutside);
-    }, [onClose]);
 
     const handleColorChange = async (color: string) => {
         await fetch(update.url({ book: bookId, storyline: storyline.id }), {
@@ -52,81 +35,45 @@ export default function StorylineContextMenu({
         onClose();
     };
 
-    const itemClass =
-        'flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] text-ink-soft transition-colors hover:bg-neutral-bg';
-
     return (
-        <div
-            ref={ref}
-            className={`fixed z-50 w-[200px] rounded-lg bg-surface-card ${menuShadow}`}
-            style={{ left: position.x, top: position.y }}
-        >
-            <div className="flex flex-col p-1">
-                <button
-                    type="button"
-                    onClick={() => {
-                        onClose();
-                        onRename();
-                    }}
-                    className={itemClass}
-                >
-                    {t('contextMenu.rename')}
-                </button>
+        <ContextMenu position={position} onClose={onClose}>
+            <ContextMenu.Item
+                label={t('contextMenu.rename')}
+                onClick={() => {
+                    onClose();
+                    onRename();
+                }}
+            />
 
-                <div
-                    className="relative"
-                    onMouseEnter={() => setColorOpen(true)}
-                    onMouseLeave={() => setColorOpen(false)}
-                >
-                    <button
-                        type="button"
-                        className={`${itemClass} justify-between`}
-                    >
-                        <span className="flex items-center gap-2.5">
-                            {storyline.color && (
-                                <span
-                                    className="inline-block size-[7px] rounded-full"
-                                    style={{ backgroundColor: storyline.color }}
-                                />
-                            )}
-                            {t('contextMenu.color')}
-                        </span>
-                        <ChevronRight
-                            size={10}
-                            strokeWidth={2.5}
-                            className="text-ink-faint"
+            <ContextMenu.Submenu
+                icon={
+                    storyline.color ? (
+                        <span
+                            className="inline-block size-[7px] rounded-full"
+                            style={{ backgroundColor: storyline.color }}
                         />
-                    </button>
-                    {colorOpen && (
-                        <div
-                            className={`absolute top-0 left-full ml-1 w-[170px] rounded-lg bg-surface-card ${menuShadow}`}
-                        >
-                            <ColorPicker
-                                value={storyline.color}
-                                onChange={handleColorChange}
-                            />
-                        </div>
-                    )}
-                </div>
+                    ) : undefined
+                }
+                label={t('contextMenu.color')}
+                width="w-[170px]"
+            >
+                <ColorPicker
+                    value={storyline.color}
+                    onChange={handleColorChange}
+                />
+            </ContextMenu.Submenu>
 
-                <div className="mx-2 my-1 h-px bg-border" />
+            <ContextMenu.Separator />
 
-                <button
-                    type="button"
-                    disabled={isLastStoryline}
-                    onClick={() => {
-                        onClose();
-                        onDelete();
-                    }}
-                    className={`flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] font-medium transition-colors ${
-                        isLastStoryline
-                            ? 'cursor-not-allowed text-ink-faint'
-                            : 'text-delete hover:bg-neutral-bg'
-                    }`}
-                >
-                    {t('contextMenu.deleteStoryline')}
-                </button>
-            </div>
-        </div>
+            <ContextMenu.Item
+                label={t('contextMenu.deleteStoryline')}
+                variant="danger"
+                disabled={isLastStoryline}
+                onClick={() => {
+                    onClose();
+                    onDelete();
+                }}
+            />
+        </ContextMenu>
     );
 }

@@ -1,13 +1,13 @@
 import { router } from '@inertiajs/react';
-import { ArrowRight, ChevronRight, Circle, Pencil, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, Circle, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import ContextMenu from '@/components/ui/ContextMenu';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type { Chapter, ChapterStatus, Storyline } from '@/types/models';
 import {
     reorder,
     updateStatus,
 } from '@/actions/App/Http/Controllers/ChapterController';
-import { jsonFetchHeaders } from '@/lib/utils';
-import type { Chapter, ChapterStatus, Storyline } from '@/types/models';
 
 const statusDotClass: Record<ChapterStatus, string> = {
     draft: 'bg-status-draft',
@@ -16,8 +16,6 @@ const statusDotClass: Record<ChapterStatus, string> = {
 };
 
 const statusValues: ChapterStatus[] = ['draft', 'revised', 'final'];
-
-const menuShadow = 'shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]';
 
 export default function ChapterContextMenu({
     bookId,
@@ -37,21 +35,6 @@ export default function ChapterContextMenu({
     onDelete: () => void;
 }) {
     const { t } = useTranslation('editor');
-    const ref = useRef<HTMLDivElement>(null);
-    const [statusOpen, setStatusOpen] = useState(false);
-    const [moveOpen, setMoveOpen] = useState(false);
-
-    useEffect(() => {
-        function handleClickOutside(e: MouseEvent) {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                onClose();
-            }
-        }
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () =>
-            document.removeEventListener('mousedown', handleClickOutside);
-    }, [onClose]);
 
     const handleStatusChange = async (status: ChapterStatus) => {
         await fetch(updateStatus.url({ book: bookId, chapter: chapter.id }), {
@@ -88,143 +71,85 @@ export default function ChapterContextMenu({
     const otherStorylines = storylines.filter(
         (s) => s.id !== chapter.storyline_id,
     );
-    const itemClass =
-        'flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] text-ink-soft transition-colors hover:bg-neutral-bg';
 
     return (
-        <div
-            ref={ref}
-            className={`fixed z-50 w-[200px] rounded-lg bg-surface-card ${menuShadow}`}
-            style={{ left: position.x, top: position.y }}
-        >
-            <div className="flex flex-col p-1">
-                <button
-                    type="button"
-                    onClick={() => {
-                        onClose();
-                        onRename();
-                    }}
-                    className={itemClass}
-                >
-                    <Pencil size={14} className="shrink-0 text-ink-muted" />
-                    {t('contextMenu.rename')}
-                </button>
+        <ContextMenu position={position} onClose={onClose}>
+            <ContextMenu.Item
+                icon={<Pencil size={14} className="shrink-0 text-ink-muted" />}
+                label={t('contextMenu.rename')}
+                onClick={() => {
+                    onClose();
+                    onRename();
+                }}
+            />
 
-                <div
-                    className="relative"
-                    onMouseEnter={() => setStatusOpen(true)}
-                    onMouseLeave={() => setStatusOpen(false)}
-                >
-                    <button
-                        type="button"
-                        className={`${itemClass} justify-between`}
+            <ContextMenu.Submenu
+                icon={
+                    <Circle
+                        size={14}
+                        fill="currentColor"
+                        className="shrink-0 text-ink-muted"
+                    />
+                }
+                label={t('contextMenu.status')}
+                width="w-[160px]"
+            >
+                {statusValues.map((value) => (
+                    <ContextMenu.Item
+                        key={value}
+                        onClick={() => handleStatusChange(value)}
+                        className={
+                            chapter.status === value ? 'font-medium' : ''
+                        }
                     >
-                        <span className="flex items-center gap-2.5">
-                            <Circle
-                                size={14}
-                                fill="currentColor"
-                                className="shrink-0 text-ink-muted"
-                            />
-                            {t('contextMenu.status')}
-                        </span>
-                        <ChevronRight
-                            size={10}
-                            strokeWidth={2.5}
-                            className="text-ink-faint"
+                        <span
+                            className={`inline-block size-[7px] rounded-full ${statusDotClass[value]}`}
                         />
-                    </button>
-                    {statusOpen && (
-                        <div
-                            className={`absolute top-0 left-full ml-1 w-[160px] rounded-lg bg-surface-card ${menuShadow}`}
-                        >
-                            <div className="flex flex-col p-1">
-                                {statusValues.map((value) => (
-                                    <button
-                                        key={value}
-                                        type="button"
-                                        onClick={() =>
-                                            handleStatusChange(value)
-                                        }
-                                        className={`${itemClass} ${chapter.status === value ? 'font-medium' : ''}`}
-                                    >
-                                        <span
-                                            className={`inline-block size-[7px] rounded-full ${statusDotClass[value]}`}
-                                        />
-                                        {t(`status.${value}`)}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
+                        {t(`status.${value}`)}
+                    </ContextMenu.Item>
+                ))}
+            </ContextMenu.Submenu>
 
-                {otherStorylines.length > 0 && (
-                    <div
-                        className="relative"
-                        onMouseEnter={() => setMoveOpen(true)}
-                        onMouseLeave={() => setMoveOpen(false)}
-                    >
-                        <button
-                            type="button"
-                            className={`${itemClass} justify-between`}
-                        >
-                            <span className="flex items-center gap-2.5">
-                                <ArrowRight
-                                    size={14}
-                                    className="shrink-0 text-ink-muted"
-                                />
-                                {t('contextMenu.moveTo')}
-                            </span>
-                            <ChevronRight
-                                size={10}
-                                strokeWidth={2.5}
-                                className="text-ink-faint"
-                            />
-                        </button>
-                        {moveOpen && (
-                            <div
-                                className={`absolute top-0 left-full ml-1 w-[180px] rounded-lg bg-surface-card ${menuShadow}`}
-                            >
-                                <div className="flex flex-col p-1">
-                                    {otherStorylines.map((s) => (
-                                        <button
-                                            key={s.id}
-                                            type="button"
-                                            onClick={() => handleMove(s.id)}
-                                            className={itemClass}
-                                        >
-                                            {s.color && (
-                                                <span
-                                                    className="inline-block size-[7px] rounded-full"
-                                                    style={{
-                                                        backgroundColor:
-                                                            s.color,
-                                                    }}
-                                                />
-                                            )}
-                                            {s.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                <div className="mx-2 my-1 h-px bg-border" />
-
-                <button
-                    type="button"
-                    onClick={() => {
-                        onClose();
-                        onDelete();
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] font-medium text-delete transition-colors hover:bg-neutral-bg"
+            {otherStorylines.length > 0 && (
+                <ContextMenu.Submenu
+                    icon={
+                        <ArrowRight
+                            size={14}
+                            className="shrink-0 text-ink-muted"
+                        />
+                    }
+                    label={t('contextMenu.moveTo')}
                 >
-                    <Trash2 size={14} className="shrink-0" />
-                    {t('contextMenu.delete')}
-                </button>
-            </div>
-        </div>
+                    {otherStorylines.map((s) => (
+                        <ContextMenu.Item
+                            key={s.id}
+                            onClick={() => handleMove(s.id)}
+                        >
+                            {s.color && (
+                                <span
+                                    className="inline-block size-[7px] rounded-full"
+                                    style={{
+                                        backgroundColor: s.color,
+                                    }}
+                                />
+                            )}
+                            {s.name}
+                        </ContextMenu.Item>
+                    ))}
+                </ContextMenu.Submenu>
+            )}
+
+            <ContextMenu.Separator />
+
+            <ContextMenu.Item
+                icon={<Trash2 size={14} className="shrink-0" />}
+                label={t('contextMenu.delete')}
+                variant="danger"
+                onClick={() => {
+                    onClose();
+                    onDelete();
+                }}
+            />
+        </ContextMenu>
     );
 }
