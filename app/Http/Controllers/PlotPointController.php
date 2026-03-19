@@ -30,9 +30,23 @@ class PlotPointController extends Controller
 
     public function update(UpdatePlotPointRequest $request, Book $book, PlotPoint $plotPoint): JsonResponse
     {
-        $plotPoint->update($request->validated());
+        $validated = $request->validated();
+        $characters = null;
 
-        $plotPoint->load(['storyline', 'act', 'intendedChapter']);
+        if (array_key_exists('characters', $validated)) {
+            $characters = collect($validated['characters'])->mapWithKeys(
+                fn (array $item) => [$item['id'] => ['role' => $item['role']]]
+            )->all();
+            unset($validated['characters']);
+        }
+
+        $plotPoint->update($validated);
+
+        if ($characters !== null) {
+            $plotPoint->characters()->sync($characters);
+        }
+
+        $plotPoint->load(['storyline', 'act', 'intendedChapter', 'characters']);
 
         return response()->json($plotPoint);
     }

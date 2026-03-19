@@ -16,6 +16,7 @@ class PlotController extends Controller
             'acts.chapters' => fn ($q) => $q->orderBy('reader_order')
                 ->select('id', 'book_id', 'act_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count', 'tension_score'),
             'plotPoints' => fn ($q) => $q->orderBy('sort_order'),
+            'plotPoints.characters',
             'plotPointConnections.source',
             'plotPointConnections.target',
         ]);
@@ -25,6 +26,8 @@ class PlotController extends Controller
             ->select('id', 'book_id', 'act_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count')
             ->get();
 
+        $characters = $book->characters()->orderBy('name')->get();
+
         return Inertia::render('plot/index', [
             'book' => $book,
             'storylines' => $book->storylines,
@@ -32,6 +35,7 @@ class PlotController extends Controller
             'plotPoints' => $book->plotPoints,
             'connections' => $book->plotPointConnections,
             'chapters' => $chapters,
+            'characters' => $characters,
         ]);
     }
 }

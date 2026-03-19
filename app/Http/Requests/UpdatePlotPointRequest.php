@@ -27,6 +27,9 @@ class UpdatePlotPointRequest extends FormRequest
             'storyline_id' => ['nullable', 'exists:storylines,id'],
             'act_id' => ['nullable', 'exists:acts,id'],
             'intended_chapter_id' => ['nullable', 'exists:chapters,id'],
+            'characters' => ['sometimes', 'array'],
+            'characters.*.id' => ['required', 'integer', Rule::exists('characters', 'id')->where('book_id', $this->route('book')->id)],
+            'characters.*.role' => ['required', 'string', Rule::in(['key', 'supporting', 'mentioned'])],
         ];
     }
 }

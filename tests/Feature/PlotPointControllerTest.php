@@ -97,3 +97,91 @@ it('can attach characters to a plot point', function () {
         ->and($plotPoint->characters->first()->id)->toBe($character->id)
         ->and($plotPoint->characters->first()->pivot->role)->toBe('key');
 });
+
+it('syncs characters when updating a plot point', function () {
+    $book = Book::factory()->create();
+    $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
+    $char1 = Character::factory()->create(['book_id' => $book->id]);
+    $char2 = Character::factory()->create(['book_id' => $book->id]);
+
+    $this->patchJson(route('plotPoints.update', [$book, $plotPoint]), [
+        'characters' => [
+            ['id' => $char1->id, 'role' => 'key'],
+            ['id' => $char2->id, 'role' => 'supporting'],
+        ],
+    ])->assertOk();
+
+    $plotPoint->refresh();
+    expect($plotPoint->characters)->toHaveCount(2);
+    expect($plotPoint->characters->firstWhere('id', $char1->id)->pivot->role)->toBe('key');
+    expect($plotPoint->characters->firstWhere('id', $char2->id)->pivot->role)->toBe('supporting');
+});
+
+it('replaces previous characters on sync', function () {
+    $book = Book::factory()->create();
+    $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
+    $char1 = Character::factory()->create(['book_id' => $book->id]);
+    $char2 = Character::factory()->create(['book_id' => $book->id]);
+
+    $plotPoint->characters()->attach($char1->id, ['role' => 'key']);
+
+    $this->patchJson(route('plotPoints.update', [$book, $plotPoint]), [
+        'characters' => [
+            ['id' => $char2->id, 'role' => 'mentioned'],
+        ],
+    ])->assertOk();
+
+    $plotPoint->refresh();
+    expect($plotPoint->characters)->toHaveCount(1)
+        ->and($plotPoint->characters->first()->id)->toBe($char2->id);
+});
+
+it('detaches all characters with empty array', function () {
+    $book = Book::factory()->create();
+    $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
+    $char = Character::factory()->create(['book_id' => $book->id]);
+
+    $plotPoint->characters()->attach($char->id, ['role' => 'key']);
+
+    $this->patchJson(route('plotPoints.update', [$book, $plotPoint]), [
+        'characters' => [],
+    ])->assertOk();
+
+    expect($plotPoint->fresh()->characters)->toHaveCount(0);
+});
+
+it('rejects characters from another book', function () {
+    $book = Book::factory()->create();
+    $otherBook = Book::factory()->create();
+    $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
+    $otherChar = Character::factory()->create(['book_id' => $otherBook->id]);
+
+    $this->patchJson(route('plotPoints.update', [$book, $plotPoint]), [
+        'characters' => [
+            ['id' => $otherChar->id, 'role' => 'key'],
+        ],
+    ])->assertUnprocessable();
+});
+
+it('rejects invalid character role', function () {
+    $book = Book::factory()->create();
+    $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
+    $char = Character::factory()->create(['book_id' => $book->id]);
+
+    $this->patchJson(route('plotPoints.update', [$book, $plotPoint]), [
+        'characters' => [
+            ['id' => $char->id, 'role' => 'villain'],
+        ],
+    ])->assertUnprocessable();
+});
+
+it('rejects non-existent character ids', function () {
+    $book = Book::factory()->create();
+    $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
+
+    $this->patchJson(route('plotPoints.update', [$book, $plotPoint]), [
+        'characters' => [
+            ['id' => 99999, 'role' => 'key'],
+        ],
+    ])->assertUnprocessable();
+});
