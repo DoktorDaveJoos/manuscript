@@ -19,7 +19,7 @@ export default function Dialog({ onClose, width = 480, backdrop = 'dark', classN
                     'relative z-10 flex flex-col rounded-xl bg-surface-card p-10 shadow-[0_8px_40px_rgba(0,0,0,0.08)]',
                     className,
                 )}
-                style={{ width }}
+                style={width ? { width } : undefined}
             >
                 {children}
             </div>

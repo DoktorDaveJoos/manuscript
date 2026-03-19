@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
 import { getXsrfToken } from '@/lib/csrf';
 import type { NormalizePreviewResult } from '@/types/models';
 
@@ -82,112 +83,101 @@ export default function NormalizePreview({
     }, [applyUrl, onClose, t]);
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/20"
-            onClick={onClose}
+        <Dialog
+            onClose={onClose}
+            className="w-full max-w-lg rounded-lg border border-border p-0 shadow-lg"
         >
-            <div
-                className="w-full max-w-lg rounded-lg border border-border bg-surface-card shadow-lg"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex items-center justify-between border-b border-border px-6 py-4">
-                    <h2 className="text-sm font-medium text-ink">
-                        {chapterId
-                            ? t('normalize.titleChapter')
-                            : t('normalize.titleManuscript')}
-                    </h2>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-ink-faint transition-colors hover:text-ink"
-                    >
-                        <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 16 16"
-                            fill="none"
-                        >
-                            <path
-                                d="M4 4l8 8M12 4l-8 8"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                            />
-                        </svg>
-                    </button>
-                </div>
-
-                <div className="max-h-80 overflow-y-auto px-6 py-4">
-                    {loading && (
-                        <div className="flex items-center gap-2 text-sm text-ink-muted">
-                            <span className="inline-block size-3 animate-spin rounded-full border-2 border-ink-faint border-t-ink" />
-                            {t('normalize.analyzing')}
-                        </div>
-                    )}
-
-                    {error && <p className="text-sm text-red-600">{error}</p>}
-
-                    {preview && preview.total_changes === 0 && (
-                        <p className="text-sm text-ink-muted">
-                            {t('normalize.noChanges')}
-                        </p>
-                    )}
-
-                    {preview && preview.total_changes > 0 && (
-                        <div className="flex flex-col gap-3">
-                            <p className="text-sm text-ink-muted">
-                                {t('normalize.foundChanges', {
-                                    count: preview.total_changes,
-                                    chapters: preview.chapters.filter(
-                                        (c) => c.total_changes > 0,
-                                    ).length,
-                                })}
-                            </p>
-                            {preview.chapters
-                                .filter((c) => c.total_changes > 0)
-                                .map((ch) => (
-                                    <div
-                                        key={ch.id}
-                                        className="rounded-md border border-border-light px-4 py-3"
-                                    >
-                                        <p className="text-sm font-medium text-ink">
-                                            {ch.title}
-                                        </p>
-                                        <div className="mt-1.5 flex flex-wrap gap-2">
-                                            {ch.changes.map((change) => (
-                                                <span
-                                                    key={change.rule}
-                                                    className="rounded bg-neutral-bg px-2 py-0.5 text-xs text-ink-muted"
-                                                >
-                                                    {change.rule}:{' '}
-                                                    {change.count}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
-                    <Button variant="ghost" type="button" onClick={onClose}>
-                        {t('normalize.cancel')}
-                    </Button>
-                    {preview && preview.total_changes > 0 && (
-                        <Button
-                            variant="primary"
-                            type="button"
-                            onClick={handleApply}
-                            disabled={applying}
-                        >
-                            {applying
-                                ? t('normalize.applying')
-                                : t('normalize.applyChanges')}
-                        </Button>
-                    )}
-                </div>
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                <h2 className="text-sm font-medium text-ink">
+                    {chapterId
+                        ? t('normalize.titleChapter')
+                        : t('normalize.titleManuscript')}
+                </h2>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="text-ink-faint transition-colors hover:text-ink"
+                >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path
+                            d="M4 4l8 8M12 4l-8 8"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                        />
+                    </svg>
+                </button>
             </div>
-        </div>
+
+            <div className="max-h-80 overflow-y-auto px-6 py-4">
+                {loading && (
+                    <div className="flex items-center gap-2 text-sm text-ink-muted">
+                        <span className="inline-block size-3 animate-spin rounded-full border-2 border-ink-faint border-t-ink" />
+                        {t('normalize.analyzing')}
+                    </div>
+                )}
+
+                {error && <p className="text-sm text-red-600">{error}</p>}
+
+                {preview && preview.total_changes === 0 && (
+                    <p className="text-sm text-ink-muted">
+                        {t('normalize.noChanges')}
+                    </p>
+                )}
+
+                {preview && preview.total_changes > 0 && (
+                    <div className="flex flex-col gap-3">
+                        <p className="text-sm text-ink-muted">
+                            {t('normalize.foundChanges', {
+                                count: preview.total_changes,
+                                chapters: preview.chapters.filter(
+                                    (c) => c.total_changes > 0,
+                                ).length,
+                            })}
+                        </p>
+                        {preview.chapters
+                            .filter((c) => c.total_changes > 0)
+                            .map((ch) => (
+                                <div
+                                    key={ch.id}
+                                    className="rounded-md border border-border-light px-4 py-3"
+                                >
+                                    <p className="text-sm font-medium text-ink">
+                                        {ch.title}
+                                    </p>
+                                    <div className="mt-1.5 flex flex-wrap gap-2">
+                                        {ch.changes.map((change) => (
+                                            <span
+                                                key={change.rule}
+                                                className="rounded bg-neutral-bg px-2 py-0.5 text-xs text-ink-muted"
+                                            >
+                                                {change.rule}: {change.count}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                    </div>
+                )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
+                <Button variant="ghost" type="button" onClick={onClose}>
+                    {t('normalize.cancel')}
+                </Button>
+                {preview && preview.total_changes > 0 && (
+                    <Button
+                        variant="primary"
+                        type="button"
+                        onClick={handleApply}
+                        disabled={applying}
+                    >
+                        {applying
+                            ? t('normalize.applying')
+                            : t('normalize.applyChanges')}
+                    </Button>
+                )}
+            </div>
+        </Dialog>
     );
 }
