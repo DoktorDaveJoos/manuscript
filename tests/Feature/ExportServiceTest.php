@@ -1,10 +1,14 @@
 <?php
 
+use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\Scene;
 use App\Models\Storyline;
+use App\Services\Export\ContentPreparer;
+use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
+use Native\Desktop\Facades\System;
 
 beforeEach(function () {
     $this->service = new ExportService;
@@ -314,7 +318,7 @@ test('epub chapter_ids ordering', function () {
     $zip->close();
 });
 
-// === PDF Tests ===
+// === PDF Tests (Chromium-based via NativePHP System::printToPDF) ===
 
 test('exports book as pdf', function () {
     $book = Book::factory()->create(['title' => 'PDF Book']);
@@ -322,14 +326,17 @@ test('exports book as pdf', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Opening']);
     Scene::factory()->for($chapter)->create(['content' => '<p>The story begins.</p>', 'sort_order' => 1]);
 
+    System::shouldReceive('printToPDF')
+        ->once()
+        ->andReturn(base64_encode('%PDF-mock-content'));
+
     $response = $this->service->export($book, ['format' => 'pdf', 'scope' => 'full']);
 
     expect($response->getStatusCode())->toBe(200);
     expect($response->headers->get('content-disposition'))->toContain('pdf-book.pdf');
 
-    // Verify it's a valid PDF
     $content = file_get_contents($response->getFile()->getPathname());
-    expect(str_starts_with($content, '%PDF'))->toBeTrue();
+    expect($content)->toBe('%PDF-mock-content');
 });
 
 test('pdf respects trim size', function () {
@@ -338,6 +345,10 @@ test('pdf respects trim size', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
     Scene::factory()->for($chapter)->create(['content' => '<p>Content.</p>', 'sort_order' => 1]);
 
+    System::shouldReceive('printToPDF')
+        ->once()
+        ->andReturn(base64_encode('%PDF-mock-content'));
+
     $response = $this->service->export($book, [
         'format' => 'pdf',
         'scope' => 'full',
@@ -345,8 +356,7 @@ test('pdf respects trim size', function () {
     ]);
 
     expect($response->getStatusCode())->toBe(200);
-    $content = file_get_contents($response->getFile()->getPathname());
-    expect(str_starts_with($content, '%PDF'))->toBeTrue();
+    expect($response->headers->get('content-disposition'))->toContain('.pdf');
 });
 
 test('pdf respects font size', function () {
@@ -355,6 +365,10 @@ test('pdf respects font size', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
     Scene::factory()->for($chapter)->create(['content' => '<p>Content.</p>', 'sort_order' => 1]);
 
+    System::shouldReceive('printToPDF')
+        ->once()
+        ->andReturn(base64_encode('%PDF-mock-content'));
+
     $response = $this->service->export($book, [
         'format' => 'pdf',
         'scope' => 'full',
@@ -362,8 +376,7 @@ test('pdf respects font size', function () {
     ]);
 
     expect($response->getStatusCode())->toBe(200);
-    $content = file_get_contents($response->getFile()->getPathname());
-    expect(str_starts_with($content, '%PDF'))->toBeTrue();
+    expect($response->headers->get('content-disposition'))->toContain('.pdf');
 });
 
 test('pdf chapter_ids ordering', function () {
@@ -374,12 +387,17 @@ test('pdf chapter_ids ordering', function () {
     Scene::factory()->for($ch1)->create(['content' => '<p>First content.</p>', 'sort_order' => 1]);
     Scene::factory()->for($ch2)->create(['content' => '<p>Second content.</p>', 'sort_order' => 1]);
 
+    System::shouldReceive('printToPDF')
+        ->once()
+        ->andReturn(base64_encode('%PDF-mock-content'));
+
     $response = $this->service->export($book, [
         'format' => 'pdf',
         'chapter_ids' => [$ch2->id, $ch1->id],
     ]);
 
     expect($response->getStatusCode())->toBe(200);
+    expect($response->headers->get('content-disposition'))->toContain('.pdf');
 });
 
 test('pdf exports multiple chapters successfully with alternating headers', function () {
@@ -392,11 +410,17 @@ test('pdf exports multiple chapters successfully with alternating headers', func
     Scene::factory()->for($ch2)->create(['content' => '<p>Evening glow.</p>', 'sort_order' => 1]);
     Scene::factory()->for($ch3)->create(['content' => '<p>Stars above.</p>', 'sort_order' => 1]);
 
+    System::shouldReceive('printToPDF')
+        ->once()
+        ->andReturn(base64_encode('%PDF-mock-content'));
+
     $response = $this->service->export($book, ['format' => 'pdf', 'scope' => 'full']);
 
     expect($response->getStatusCode())->toBe(200);
+    expect($response->headers->get('content-disposition'))->toContain('.pdf');
+
     $content = file_get_contents($response->getFile()->getPathname());
-    expect(str_starts_with($content, '%PDF'))->toBeTrue();
+    expect($content)->toBe('%PDF-mock-content');
 });
 
 test('pdf with table of contents exports successfully', function () {
@@ -407,6 +431,10 @@ test('pdf with table of contents exports successfully', function () {
     Scene::factory()->for($ch1)->create(['content' => '<p>First content.</p>', 'sort_order' => 1]);
     Scene::factory()->for($ch2)->create(['content' => '<p>Second content.</p>', 'sort_order' => 1]);
 
+    System::shouldReceive('printToPDF')
+        ->once()
+        ->andReturn(base64_encode('%PDF-mock-content'));
+
     $response = $this->service->export($book, [
         'format' => 'pdf',
         'scope' => 'full',
@@ -414,8 +442,10 @@ test('pdf with table of contents exports successfully', function () {
     ]);
 
     expect($response->getStatusCode())->toBe(200);
+    expect($response->headers->get('content-disposition'))->toContain('.pdf');
+
     $content = file_get_contents($response->getFile()->getPathname());
-    expect(str_starts_with($content, '%PDF'))->toBeTrue();
+    expect($content)->toBe('%PDF-mock-content');
 });
 
 test('epub chapters include semantic epub:type attributes', function () {
@@ -562,12 +592,22 @@ test('export endpoint accepts new formats', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
     Scene::factory()->for($chapter)->create(['content' => '<p>Text.</p>', 'sort_order' => 1]);
 
-    foreach (['docx', 'txt', 'epub', 'pdf', 'kdp'] as $format) {
+    foreach (['docx', 'txt', 'epub', 'kdp'] as $format) {
         $this->postJson(route('books.settings.export.run', $book), [
             'format' => $format,
             'scope' => 'full',
         ])->assertOk();
     }
+
+    // PDF requires System::printToPDF mock (Chromium-based)
+    System::shouldReceive('printToPDF')
+        ->once()
+        ->andReturn(base64_encode('%PDF-mock-content'));
+
+    $this->postJson(route('books.settings.export.run', $book), [
+        'format' => 'pdf',
+        'scope' => 'full',
+    ])->assertOk();
 });
 
 test('export endpoint rejects invalid format', function () {
@@ -628,6 +668,10 @@ test('pdf includes title page when front_matter selected', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
     Scene::factory()->for($chapter)->create(['content' => '<p>Content.</p>', 'sort_order' => 1]);
 
+    System::shouldReceive('printToPDF')
+        ->once()
+        ->andReturn(base64_encode('%PDF-mock-content'));
+
     $response = $this->service->export($book, [
         'format' => 'pdf',
         'scope' => 'full',
@@ -635,8 +679,10 @@ test('pdf includes title page when front_matter selected', function () {
     ]);
 
     expect($response->getStatusCode())->toBe(200);
+    expect($response->headers->get('content-disposition'))->toContain('.pdf');
+
     $content = file_get_contents($response->getFile()->getPathname());
-    expect(str_starts_with($content, '%PDF'))->toBeTrue();
+    expect($content)->toBe('%PDF-mock-content');
 });
 
 test('pdf includes front and back matter pages', function () {
@@ -644,6 +690,10 @@ test('pdf includes front and back matter pages', function () {
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
     Scene::factory()->for($chapter)->create(['content' => '<p>Content.</p>', 'sort_order' => 1]);
+
+    System::shouldReceive('printToPDF')
+        ->once()
+        ->andReturn(base64_encode('%PDF-mock-content'));
 
     $response = $this->service->export($book, [
         'format' => 'pdf',
@@ -653,8 +703,10 @@ test('pdf includes front and back matter pages', function () {
     ]);
 
     expect($response->getStatusCode())->toBe(200);
+    expect($response->headers->get('content-disposition'))->toContain('.pdf');
+
     $content = file_get_contents($response->getFile()->getPathname());
-    expect(str_starts_with($content, '%PDF'))->toBeTrue();
+    expect($content)->toBe('%PDF-mock-content');
 });
 
 test('epub includes title page xhtml', function () {
@@ -727,6 +779,10 @@ test('export endpoint accepts front_matter and back_matter arrays', function () 
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
     Scene::factory()->for($chapter)->create(['content' => '<p>Text.</p>', 'sort_order' => 1]);
 
+    System::shouldReceive('printToPDF')
+        ->once()
+        ->andReturn(base64_encode('%PDF-mock-content'));
+
     $this->postJson(route('books.settings.export.run', $book), [
         'format' => 'pdf',
         'scope' => 'full',
@@ -759,4 +815,130 @@ test('backward compatible with legacy scope-based request', function () {
         'scope' => 'full',
         'include_chapter_titles' => true,
     ])->assertOk();
+});
+
+// === cssEscape Helper Tests ===
+
+test('cssEscape escapes double quotes', function () {
+    expect(cssEscape('Hello "World"'))->toBe('Hello \\"World\\"');
+});
+
+test('cssEscape escapes backslashes', function () {
+    expect(cssEscape('path\\to\\file'))->toBe('path\\\\to\\\\file');
+});
+
+test('cssEscape strips newlines', function () {
+    expect(cssEscape("line1\nline2\rline3"))->toBe('line1line2line3');
+});
+
+test('cssEscape handles combined special characters', function () {
+    expect(cssEscape("He said \"hello\"\nand left"))->toBe('He said \\"hello\\"and left');
+});
+
+// === Blade Template Tests ===
+
+test('pdf blade template renders valid html', function () {
+    $book = Book::factory()->create(['title' => 'Template Test', 'author' => 'Author']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Chapter One']);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Once upon a time.</p>', 'sort_order' => 1]);
+
+    $chapters = $book->chapters()
+        ->with(['scenes' => fn ($q) => $q->orderBy('sort_order'), 'act'])
+        ->orderBy('reader_order')
+        ->get();
+
+    $contentPreparer = new ContentPreparer;
+    $chapters = $chapters->map(function ($chapter) use ($contentPreparer) {
+        $scenes = $chapter->scenes ?? collect();
+        $preparedContent = '';
+        foreach ($scenes as $sceneIndex => $scene) {
+            if ($sceneIndex > 0) {
+                $preparedContent .= '<p class="scene-break">*&nbsp;&nbsp;*&nbsp;&nbsp;*</p>';
+            }
+            $html = $contentPreparer->toPdfHtml($scene->content ?? '');
+            if ($sceneIndex === 0) {
+                $html = $contentPreparer->addDropCap($html);
+            }
+            $preparedContent .= $html;
+        }
+        $chapter->prepared_content = $preparedContent;
+
+        return $chapter;
+    });
+
+    $options = ExportOptions::fromArray([
+        'include_chapter_titles' => true,
+        'show_page_numbers' => true,
+        'trim_size' => '6x9',
+        'font_size' => 11,
+        'front_matter' => ['title-page'],
+    ]);
+
+    $html = view('export.pdf', [
+        'book' => $book,
+        'chapters' => $chapters,
+        'options' => $options,
+        'fonts' => null,
+    ])->render();
+
+    expect($html)->toContain('<!DOCTYPE html>');
+    expect($html)->toContain('Template Test');
+    expect($html)->toContain('Chapter One');
+    expect($html)->toContain('Once upon a time');
+    expect($html)->toContain('@page');
+});
+
+// === Preview Endpoint Tests ===
+
+test('preview endpoint returns pdf base64', function () {
+    $book = Book::factory()->create(['title' => 'Preview Test']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Content.</p>', 'sort_order' => 1]);
+
+    System::shouldReceive('printToPDF')
+        ->once()
+        ->andReturn(base64_encode('%PDF-preview'));
+
+    $this->postJson(route('books.export.preview', $book), [
+        'format' => 'pdf',
+        'scope' => 'full',
+        'trim_size' => '6x9',
+        'font_size' => 11,
+    ])->assertOk()
+        ->assertJsonStructure(['pdf']);
+});
+
+test('preview endpoint returns 422 without nativephp', function () {
+    $book = Book::factory()->create();
+
+    $this->postJson(route('books.export.preview', $book), [
+        'format' => 'pdf',
+        'scope' => 'full',
+    ])->assertStatus(422);
+});
+
+// === Public Static Method Tests ===
+
+test('resolveChapters is accessible as public static method', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 1]);
+
+    $chapters = ExportService::resolveChapters($book, ['scope' => 'full']);
+
+    expect($chapters)->toHaveCount(1);
+});
+
+test('injectMatterText populates options from app settings', function () {
+    AppSetting::set('copyright_text', 'Test Copyright');
+
+    $options = [
+        'front_matter' => ['copyright'],
+    ];
+
+    ExportService::injectMatterText($options);
+
+    expect($options['copyright_text'])->toBe('Test Copyright');
 });
