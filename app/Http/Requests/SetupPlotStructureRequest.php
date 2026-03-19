@@ -19,7 +19,7 @@ class SetupPlotStructureRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'template' => ['required', 'string', Rule::in(['three_act', 'five_act', 'heros_journey'])],
+            'template' => ['required', 'string', Rule::in(['three_act', 'five_act', 'heros_journey', 'save_the_cat', 'story_circle'])],
             'acts' => ['required', 'array', 'min:1'],
             'acts.*.title' => ['required', 'string', 'max:255'],
             'acts.*.color' => ['nullable', 'string', 'max:7'],

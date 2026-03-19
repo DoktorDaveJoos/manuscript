@@ -150,6 +150,85 @@ test('it validates beat type must be a valid enum', function () {
     ])->assertSessionHasErrors(['acts.0.beats.0.type']);
 });
 
+test('it creates save-the-cat structure with 3 acts and 15 beats', function () {
+    $book = Book::factory()->create();
+
+    $this->post("/books/{$book->id}/plot/setup-structure", [
+        'template' => 'save_the_cat',
+        'acts' => [
+            [
+                'title' => 'Setup',
+                'color' => '#B87333',
+                'beats' => [
+                    ['title' => 'Opening Image', 'type' => 'setup'],
+                    ['title' => 'Theme Stated', 'type' => 'setup'],
+                    ['title' => 'Set-Up', 'type' => 'setup'],
+                    ['title' => 'Catalyst', 'type' => 'conflict'],
+                    ['title' => 'Debate', 'type' => 'conflict'],
+                ],
+            ],
+            [
+                'title' => 'Confrontation',
+                'color' => '#8B6914',
+                'beats' => [
+                    ['title' => 'Break Into Two', 'type' => 'turning_point'],
+                    ['title' => 'B Story', 'type' => 'setup'],
+                    ['title' => 'Fun and Games', 'type' => 'conflict'],
+                    ['title' => 'Midpoint', 'type' => 'turning_point'],
+                    ['title' => 'Bad Guys Close In', 'type' => 'conflict'],
+                    ['title' => 'All Is Lost', 'type' => 'conflict'],
+                    ['title' => 'Dark Night of the Soul', 'type' => 'conflict'],
+                ],
+            ],
+            [
+                'title' => 'Resolution',
+                'color' => '#6B4423',
+                'beats' => [
+                    ['title' => 'Break Into Three', 'type' => 'turning_point'],
+                    ['title' => 'Finale', 'type' => 'resolution'],
+                    ['title' => 'Final Image', 'type' => 'resolution'],
+                ],
+            ],
+        ],
+    ])->assertRedirect();
+
+    expect($book->acts()->count())->toBe(3)
+        ->and($book->plotPoints()->count())->toBe(15);
+});
+
+test('it creates story-circle structure with 2 acts and 8 beats', function () {
+    $book = Book::factory()->create();
+
+    $this->post("/books/{$book->id}/plot/setup-structure", [
+        'template' => 'story_circle',
+        'acts' => [
+            [
+                'title' => 'The Descent',
+                'color' => '#B87333',
+                'beats' => [
+                    ['title' => 'You', 'type' => 'setup'],
+                    ['title' => 'Need', 'type' => 'conflict'],
+                    ['title' => 'Go', 'type' => 'turning_point'],
+                    ['title' => 'Search', 'type' => 'conflict'],
+                ],
+            ],
+            [
+                'title' => 'The Return',
+                'color' => '#8B6914',
+                'beats' => [
+                    ['title' => 'Find', 'type' => 'turning_point'],
+                    ['title' => 'Take', 'type' => 'conflict'],
+                    ['title' => 'Return', 'type' => 'resolution'],
+                    ['title' => 'Change', 'type' => 'resolution'],
+                ],
+            ],
+        ],
+    ])->assertRedirect();
+
+    expect($book->acts()->count())->toBe(2)
+        ->and($book->plotPoints()->count())->toBe(8);
+});
+
 test('it sets sort_order sequentially across all acts', function () {
     $book = Book::factory()->create();
 

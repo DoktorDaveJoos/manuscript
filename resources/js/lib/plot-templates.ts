@@ -114,6 +114,64 @@ const RAW_TEMPLATES: RawTemplate[] = [
             },
         ],
     },
+    {
+        key: 'save_the_cat',
+        acts: [
+            {
+                color: '#B87333',
+                beats: [
+                    { type: 'setup' },
+                    { type: 'setup' },
+                    { type: 'setup' },
+                    { type: 'conflict' },
+                    { type: 'conflict' },
+                ],
+            },
+            {
+                color: '#8B6914',
+                beats: [
+                    { type: 'turning_point' },
+                    { type: 'setup' },
+                    { type: 'conflict' },
+                    { type: 'turning_point' },
+                    { type: 'conflict' },
+                    { type: 'conflict' },
+                    { type: 'conflict' },
+                ],
+            },
+            {
+                color: '#6B4423',
+                beats: [
+                    { type: 'turning_point' },
+                    { type: 'resolution' },
+                    { type: 'resolution' },
+                ],
+            },
+        ],
+    },
+    {
+        key: 'story_circle',
+        acts: [
+            {
+                color: '#B87333',
+                beats: [
+                    { type: 'setup' },
+                    { type: 'conflict' },
+                    { type: 'turning_point' },
+                    { type: 'conflict' },
+                ],
+            },
+            {
+                color: '#8B6914',
+                beats: [
+                    { type: 'turning_point' },
+                    { type: 'conflict' },
+                    { type: 'resolution' },
+                    { type: 'resolution' },
+                ],
+            },
+        ],
+    },
 ];
 
 export function getPlotTemplates(t: TFunction): PlotTemplate[] {
