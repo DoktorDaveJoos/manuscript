@@ -4,6 +4,7 @@ use App\Enums\PlotPointStatus;
 use App\Models\Act;
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\Character;
 use App\Models\PlotPoint;
 use App\Models\Storyline;
 
@@ -83,4 +84,16 @@ it('cycles plot point status', function () {
     ])->assertOk();
 
     expect($plotPoint->fresh()->status)->toBe(PlotPointStatus::Fulfilled);
+});
+
+it('can attach characters to a plot point', function () {
+    $book = Book::factory()->create();
+    $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
+    $character = Character::factory()->create(['book_id' => $book->id]);
+
+    $plotPoint->characters()->attach($character->id, ['role' => 'key']);
+
+    expect($plotPoint->characters)->toHaveCount(1)
+        ->and($plotPoint->characters->first()->id)->toBe($character->id)
+        ->and($plotPoint->characters->first()->pivot->role)->toBe('key');
 });

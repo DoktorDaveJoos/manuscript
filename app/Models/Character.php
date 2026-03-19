@@ -50,4 +50,14 @@ class Character extends Model
             ->withPivot(['role', 'notes'])
             ->withTimestamps();
     }
+
+    /**
+     * @return BelongsToMany<PlotPoint, $this>
+     */
+    public function plotPoints(): BelongsToMany
+    {
+        return $this->belongsToMany(PlotPoint::class)
+            ->withPivot('role')
+            ->withTimestamps();
+    }
 }

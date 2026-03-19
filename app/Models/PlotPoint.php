@@ -7,6 +7,7 @@ use App\Enums\PlotPointType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PlotPoint extends Model
@@ -83,5 +84,15 @@ class PlotPoint extends Model
     public function incomingConnections(): HasMany
     {
         return $this->hasMany(PlotPointConnection::class, 'target_plot_point_id');
+    }
+
+    /**
+     * @return BelongsToMany<Character, $this>
+     */
+    public function characters(): BelongsToMany
+    {
+        return $this->belongsToMany(Character::class)
+            ->withPivot('role')
+            ->withTimestamps();
     }
 }
