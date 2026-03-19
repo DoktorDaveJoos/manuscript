@@ -25,26 +25,9 @@ class ExportService
     public function export(Book $book, array $options): BinaryFileResponse
     {
         $format = ExportFormat::from($options['format'] ?? 'docx');
-        $chapters = $this->resolveChapters($book, $options);
+        $chapters = self::resolveChapters($book, $options);
 
-        // Inject AppSetting content only when front/back matter is requested
-        if (! empty($options['front_matter']) || ! empty($options['back_matter'])) {
-            $frontMatter = (array) ($options['front_matter'] ?? []);
-            $backMatter = (array) ($options['back_matter'] ?? []);
-
-            if (in_array('dedication', $frontMatter)) {
-                $options['dedication_text'] = (string) AppSetting::get('dedication_text', '');
-            }
-            if (in_array('acknowledgments', $backMatter)) {
-                $options['acknowledgment_text'] = (string) AppSetting::get('acknowledgment_text', '');
-            }
-            if (in_array('about-author', $backMatter)) {
-                $options['about_author_text'] = (string) AppSetting::get('about_author_text', '');
-            }
-            if (in_array('also-by', $backMatter)) {
-                $options['also_by_text'] = (string) AppSetting::get('also_by_text', '');
-            }
-        }
+        self::injectMatterText($options);
 
         $exportOptions = ExportOptions::fromArray($options);
 
@@ -65,9 +48,37 @@ class ExportService
     }
 
     /**
+     * Inject AppSetting content into options when front/back matter is requested.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public static function injectMatterText(array &$options): void
+    {
+        if (empty($options['front_matter']) && empty($options['back_matter'])) {
+            return;
+        }
+
+        $frontMatter = (array) ($options['front_matter'] ?? []);
+        $backMatter = (array) ($options['back_matter'] ?? []);
+
+        if (in_array('dedication', $frontMatter)) {
+            $options['dedication_text'] = (string) AppSetting::get('dedication_text', '');
+        }
+        if (in_array('acknowledgments', $backMatter)) {
+            $options['acknowledgment_text'] = (string) AppSetting::get('acknowledgment_text', '');
+        }
+        if (in_array('about-author', $backMatter)) {
+            $options['about_author_text'] = (string) AppSetting::get('about_author_text', '');
+        }
+        if (in_array('also-by', $backMatter)) {
+            $options['also_by_text'] = (string) AppSetting::get('also_by_text', '');
+        }
+    }
+
+    /**
      * @return Collection<int, Chapter>
      */
-    private function resolveChapters(Book $book, array $options): Collection
+    public static function resolveChapters(Book $book, array $options): Collection
     {
         $query = $book->chapters()
             ->with(['scenes' => fn ($q) => $q->orderBy('sort_order'), 'act'])
