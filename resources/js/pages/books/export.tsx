@@ -1,14 +1,12 @@
 import { Head } from '@inertiajs/react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { reorder as reorderChapters } from '@/actions/App/Http/Controllers/ChapterController';
 import Sidebar from '@/components/editor/Sidebar';
 import ExportPreview from '@/components/export/ExportPreview';
 import ExportReadingOrder from '@/components/export/ExportReadingOrder';
 import ExportSettings from '@/components/export/ExportSettings';
 import type { Format } from '@/components/export/ExportSettings';
 import type {
-    ActRef,
     ChapterRow,
     MatterItem,
     StorylineRef,
@@ -18,17 +16,13 @@ import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import { downloadExport } from '@/lib/export-download';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Book } from '@/types/models';
+import { reorder as reorderChapters } from '@/actions/App/Http/Controllers/ChapterController';
 
 interface Props {
     book: Book;
     storylines: StorylineRef[];
     chapters: ChapterRow[];
     trimSizes: TrimSizeOption[];
-    acts: ActRef[];
-    dedicationText: string;
-    acknowledgmentText: string;
-    aboutAuthorText: string;
-    alsoByText: string;
 }
 
 const INITIAL_FRONT_MATTER: MatterItem[] = [
@@ -59,11 +53,6 @@ export default function Export({
     storylines,
     chapters,
     trimSizes,
-    acts,
-    dedicationText,
-    acknowledgmentText,
-    aboutAuthorText,
-    alsoByText,
 }: Props) {
     const { t } = useTranslation('export');
     const sidebarStorylines = useSidebarStorylines();
@@ -246,7 +235,7 @@ export default function Export({
                 />
 
                 <ExportPreview
-                    bookTitle={book.title}
+                    bookId={book.id}
                     format={format}
                     trimSize={trimSize}
                     fontSize={fontSize}
@@ -257,11 +246,6 @@ export default function Export({
                     orderedChapters={orderedChapters}
                     frontMatter={frontMatter}
                     backMatter={backMatter}
-                    acts={acts}
-                    dedicationText={dedicationText}
-                    acknowledgmentText={acknowledgmentText}
-                    aboutAuthorText={aboutAuthorText}
-                    alsoByText={alsoByText}
                 />
             </div>
         </>

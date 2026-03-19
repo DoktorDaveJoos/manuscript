@@ -1,21 +1,42 @@
-import { useCallback, useMemo } from 'react';
+import * as pdfjsLib from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso } from 'react-virtuoso';
 import type { Format } from '@/components/export/ExportSettings';
-import type { ActRef, ChapterRow, MatterItem } from '@/components/export/types';
-import {
-    CONTINUATION_PREFIX,
-    PAGE_WIDTH,
-    SCENE_BREAK_MARKER,
-    computePageHeight,
-    getLineHeightMultiplier,
-    usePreviewPages,
-} from '@/components/export/usePreviewPages';
-import type { PreviewPage } from '@/components/export/usePreviewPages';
-import { cn } from '@/lib/utils';
+import type { MatterItem } from '@/components/export/types';
+import { jsonFetchHeaders } from '@/lib/utils';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.mjs',
+    import.meta.url,
+).toString();
+
+const PAGE_WIDTH = 340;
+const PAGE_GAP = 12;
+
+const TRIM_SPECS: Record<string, { w: number; h: number }> = {
+    '5x8': { w: 127, h: 203 },
+    '5.25x8': { w: 133, h: 203 },
+    '5.5x8.5': { w: 140, h: 216 },
+    '6x9': { w: 152, h: 229 },
+    '7x10': { w: 178, h: 254 },
+    '8.5x11': { w: 216, h: 279 },
+};
+
+function computePageHeight(trimSize: string): number {
+    const spec = TRIM_SPECS[trimSize] ?? TRIM_SPECS['6x9'];
+    return Math.round(PAGE_WIDTH * (spec.h / spec.w));
+}
+
+function computeScaleFactor(trimSize: string): number {
+    const spec = TRIM_SPECS[trimSize] ?? TRIM_SPECS['6x9'];
+    const pageWidthPt = (spec.w / 25.4) * 72;
+    return PAGE_WIDTH / pageWidthPt;
+}
 
 interface ExportPreviewProps {
-    bookTitle: string;
+    bookId: number;
     format: Format;
     trimSize: string;
     fontSize: number;
@@ -23,310 +44,89 @@ interface ExportPreviewProps {
     showPageNumbers: boolean;
     includeActBreaks: boolean;
     selectedChapterIds: Set<number>;
-    orderedChapters: ChapterRow[];
+    orderedChapters: Array<{ id: number }>;
     frontMatter: MatterItem[];
     backMatter: MatterItem[];
-    acts: ActRef[];
-    dedicationText?: string;
-    acknowledgmentText?: string;
-    aboutAuthorText?: string;
-    alsoByText?: string;
 }
 
-const PAGE_GAP = 12; // gap-3
+function SkeletonPage({ height }: { height: number }) {
+    return (
+        <div className="flex justify-center px-7 pb-3">
+            <div
+                className="animate-pulse rounded-[3px] bg-[#f0efe8] shadow-[0_6px_20px_#00000014]"
+                style={{ width: PAGE_WIDTH, height }}
+            />
+        </div>
+    );
+}
 
-function PageShell({
-    children,
-    isMono,
+function PdfPageCanvas({
+    pdfDoc,
+    pageNum,
+    scaleFactor,
     pageHeight,
 }: {
-    children: React.ReactNode;
-    isMono?: boolean;
+    pdfDoc: PDFDocumentProxy;
+    pageNum: number;
+    scaleFactor: number;
     pageHeight: number;
 }) {
-    return (
-        <div
-            className={cn(
-                'flex shrink-0 flex-col overflow-hidden rounded-[3px] pt-10 pr-[36px] pb-8 pl-10 shadow-[0_6px_20px_#00000014]',
-                isMono ? 'font-mono' : 'font-serif',
-            )}
-            style={{
-                width: PAGE_WIDTH,
-                height: pageHeight,
-                backgroundColor: '#FFFEFA',
-            }}
-        >
-            {children}
-        </div>
-    );
-}
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const renderingRef = useRef(false);
 
-function TitlePage({
-    bookTitle,
-    titleSize,
-}: {
-    bookTitle: string;
-    titleSize: string;
-}) {
-    return (
-        <div className="flex flex-1 items-center justify-center">
-            <h2
-                className="text-center font-serif leading-tight text-neutral-900"
-                style={{ fontSize: titleSize }}
-            >
-                {bookTitle}
-            </h2>
-        </div>
-    );
-}
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas || renderingRef.current) {
+            return;
+        }
 
-function CopyrightPage({ bodySize }: { bodySize: string }) {
-    const { t } = useTranslation('export');
-    return (
-        <div className="flex flex-1 flex-col justify-end">
-            <p
-                className="text-center leading-relaxed text-neutral-400"
-                style={{ fontSize: bodySize }}
-            >
-                {t('preview.copyright')}
-            </p>
-        </div>
-    );
-}
+        renderingRef.current = true;
 
-function TocPage({
-    chapterTitles,
-    bodySize,
-}: {
-    chapterTitles: string[];
-    bodySize: string;
-}) {
-    const { t } = useTranslation('export');
-    return (
-        <div className="flex flex-1 flex-col pt-4">
-            <h3 className="mb-3 text-center text-[10px] font-semibold tracking-[0.15em] text-neutral-900 uppercase">
-                {t('preview.contents')}
-            </h3>
-            <ul className="space-y-1 overflow-hidden">
-                {chapterTitles.map((title, i) => (
-                    <li
-                        key={i}
-                        className="truncate text-neutral-600"
-                        style={{ fontSize: bodySize }}
-                    >
-                        {title}
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-}
+        let cancelled = false;
 
-function DedicationPage({
-    bodySize,
-    text,
-}: {
-    bodySize: string;
-    text?: string;
-}) {
-    const { t } = useTranslation('export');
-    return (
-        <div className="flex flex-1 items-center justify-center">
-            <p
-                className="text-center text-neutral-500 italic"
-                style={{ fontSize: bodySize }}
-            >
-                {text || t('preview.dedication')}
-            </p>
-        </div>
-    );
-}
+        (async () => {
+            try {
+                const page = await pdfDoc.getPage(pageNum);
+                if (cancelled) {
+                    return;
+                }
 
-function ActBreakPage({
-    actNumber,
-    actTitle,
-}: {
-    actNumber: number;
-    actTitle?: string;
-}) {
-    return (
-        <div className="flex flex-1 flex-col items-center justify-center">
-            <span className="text-[11px] font-semibold tracking-[0.2em] text-neutral-900 uppercase">
-                Act {actNumber}
-            </span>
-            {actTitle && (
-                <span className="mt-1 text-[9px] text-neutral-500">
-                    {actTitle}
-                </span>
-            )}
-        </div>
-    );
-}
+                const viewport = page.getViewport({ scale: scaleFactor });
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
 
-function ChapterPage({
-    page,
-    format,
-    showPageNumbers,
-    pageNumber,
-    bodySize,
-    titleSize,
-    dropCapSize,
-    lineHeight,
-}: {
-    page: PreviewPage;
-    format: Format;
-    showPageNumbers: boolean;
-    pageNumber: number;
-    bodySize: string;
-    titleSize: string;
-    dropCapSize: string;
-    lineHeight: number;
-}) {
-    const showRunningHeader = format === 'pdf';
-    const paragraphs = page.paragraphs ?? [];
-    const useJustify = format === 'pdf' || format === 'epub';
-    const isChapterOpener = page.pageInChapter === 0;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    return;
+                }
+
+                ctx.fillStyle = '#FFFEFA';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                await page.render({ canvas, viewport }).promise;
+            } catch {
+                // Render cancelled or failed — ignore
+            } finally {
+                renderingRef.current = false;
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [pdfDoc, pageNum, scaleFactor]);
 
     return (
-        <div className="flex flex-1 flex-col overflow-hidden">
-            {showRunningHeader && !isChapterOpener && (
-                <div className="mb-3 shrink-0 text-right text-[7px] tracking-widest text-[#B5B5B5] uppercase">
-                    {page.title}
-                </div>
-            )}
-
-            {page.showTitle && (
-                <div className="shrink-0 pt-6 pb-5">
-                    <div className="mb-1 text-center text-[7px] font-medium tracking-[0.2em] text-[#B5B5B5] uppercase">
-                        Chapter {(page.chapterIndex ?? 0) + 1}
-                    </div>
-                    <h2
-                        className="text-center leading-tight font-normal tracking-[-0.01em] text-neutral-900"
-                        style={{ fontSize: titleSize }}
-                    >
-                        {page.title}
-                    </h2>
-                </div>
-            )}
-
-            <div className="min-h-0 flex-1 overflow-hidden">
-                {paragraphs.length > 0 ? (
-                    paragraphs.map((rawPara, i) => {
-                        if (rawPara === SCENE_BREAK_MARKER) {
-                            return (
-                                <p
-                                    key={i}
-                                    className="py-1.5 text-center tracking-[0.3em] text-[#B5B5B5]"
-                                    style={{
-                                        fontSize: bodySize,
-                                        lineHeight,
-                                    }}
-                                >
-                                    *&nbsp;&nbsp;*&nbsp;&nbsp;*
-                                </p>
-                            );
-                        }
-
-                        const isContinuation =
-                            rawPara.startsWith(CONTINUATION_PREFIX);
-                        const para = isContinuation
-                            ? rawPara.slice(CONTINUATION_PREFIX.length)
-                            : rawPara;
-
-                        const isChapterFirstPara =
-                            page.pageInChapter === 0 &&
-                            i === 0 &&
-                            !isContinuation;
-                        const isAfterBreak =
-                            i > 0 && paragraphs[i - 1] === SCENE_BREAK_MARKER;
-                        const shouldIndent =
-                            !isChapterFirstPara &&
-                            !isAfterBreak &&
-                            !isContinuation;
-
-                        return (
-                            <p
-                                key={i}
-                                className="text-[#4A4A4A]"
-                                style={{
-                                    fontSize: bodySize,
-                                    lineHeight,
-                                    textAlign: useJustify
-                                        ? 'justify'
-                                        : undefined,
-                                    textIndent: shouldIndent
-                                        ? '1.5em'
-                                        : undefined,
-                                }}
-                            >
-                                {isChapterFirstPara && para[0] && (
-                                    <span
-                                        className="float-left mt-0.5 mr-1 leading-[0.8] text-neutral-900"
-                                        style={{
-                                            fontSize: dropCapSize,
-                                        }}
-                                    >
-                                        {para[0]}
-                                    </span>
-                                )}
-                                {isChapterFirstPara ? para.slice(1) : para}
-                            </p>
-                        );
-                    })
-                ) : (
-                    <p
-                        className="text-neutral-400 italic"
-                        style={{ fontSize: bodySize, lineHeight }}
-                    >
-                        No content yet.
-                    </p>
-                )}
-            </div>
-
-            {showPageNumbers && (
-                <div
-                    className={cn(
-                        'mt-2 shrink-0 text-[8px] text-[#B5B5B5]',
-                        pageNumber % 2 === 0 ? 'text-left' : 'text-right',
-                    )}
-                >
-                    {pageNumber}
-                </div>
-            )}
-        </div>
-    );
-}
-
-function BackMatterPage({
-    type,
-    bodySize,
-    text,
-}: {
-    type: string;
-    bodySize: string;
-    text?: string;
-}) {
-    const { t } = useTranslation('export');
-    const keyMap: Record<string, string> = {
-        acknowledgments: 'preview.acknowledgments',
-        'about-author': 'preview.aboutTheAuthor',
-        'also-by': 'preview.alsoBy',
-    };
-
-    const heading = t(keyMap[type] ?? type);
-    const displayText =
-        text || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.';
-    return (
-        <div className="flex flex-1 flex-col pt-4">
-            <h3 className="mb-3 text-center text-[10px] font-semibold tracking-[0.15em] text-neutral-900 uppercase">
-                {heading}
-            </h3>
-            <p
-                className="leading-relaxed text-[#4A4A4A]"
-                style={{ fontSize: bodySize }}
-            >
-                {displayText}
-            </p>
+        <div className="flex justify-center px-7 pb-3">
+            <canvas
+                ref={canvasRef}
+                className="rounded-[3px] shadow-[0_6px_20px_#00000014]"
+                style={{
+                    width: PAGE_WIDTH,
+                    height: pageHeight,
+                    backgroundColor: '#FFFEFA',
+                }}
+            />
         </div>
     );
 }
@@ -334,7 +134,7 @@ function BackMatterPage({
 const VirtuosoFooter = () => <div className="h-6" />;
 
 export default function ExportPreview({
-    bookTitle,
+    bookId,
     format,
     trimSize,
     fontSize,
@@ -345,117 +145,160 @@ export default function ExportPreview({
     orderedChapters,
     frontMatter,
     backMatter,
-    acts,
-    dedicationText,
-    acknowledgmentText,
-    aboutAuthorText,
-    alsoByText,
 }: ExportPreviewProps) {
     const { t } = useTranslation('export');
 
-    const pages = usePreviewPages({
-        frontMatter,
-        backMatter,
-        orderedChapters,
-        selectedChapterIds,
-        includeActBreaks,
-        includeChapterTitles,
-        showPageNumbers,
-        acts,
+    const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
+    const [pageCount, setPageCount] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    const pageHeight = computePageHeight(trimSize);
+    const scaleFactor = computeScaleFactor(trimSize);
+
+    const selectedIdsArray = useMemo(
+        () => Array.from(selectedChapterIds),
+        [selectedChapterIds],
+    );
+
+    const orderedChapterIds = useMemo(
+        () => orderedChapters.map((ch) => ch.id),
+        [orderedChapters],
+    );
+
+    const checkedFrontMatter = useMemo(
+        () => frontMatter.filter((item) => item.checked).map((item) => item.id),
+        [frontMatter],
+    );
+
+    const checkedBackMatter = useMemo(
+        () => backMatter.filter((item) => item.checked).map((item) => item.id),
+        [backMatter],
+    );
+
+    const isPdf = format === 'pdf';
+    const hasSelectedChapters = selectedIdsArray.length > 0;
+
+    useEffect(() => {
+        if (!isPdf || !hasSelectedChapters) {
+            setPdfDoc(null);
+            setPageCount(0);
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            abortControllerRef.current?.abort();
+            const controller = new AbortController();
+            abortControllerRef.current = controller;
+
+            setLoading(true);
+            setError(null);
+
+            const orderedSelectedIds = orderedChapterIds.filter((id) =>
+                selectedChapterIds.has(id),
+            );
+
+            fetch(`/books/${bookId}/export/preview`, {
+                method: 'POST',
+                headers: jsonFetchHeaders(),
+                signal: controller.signal,
+                body: JSON.stringify({
+                    format,
+                    trim_size: trimSize,
+                    font_size: fontSize,
+                    include_chapter_titles: includeChapterTitles,
+                    show_page_numbers: showPageNumbers,
+                    include_act_breaks: includeActBreaks,
+                    chapter_ids: orderedSelectedIds,
+                    front_matter: checkedFrontMatter,
+                    back_matter: checkedBackMatter,
+                }),
+            })
+                .then(async (res) => {
+                    if (!res.ok) {
+                        throw new Error(`Server error: ${res.status}`);
+                    }
+                    return res.json() as Promise<{ pdf: string }>;
+                })
+                .then(async ({ pdf }) => {
+                    if (controller.signal.aborted) {
+                        return;
+                    }
+
+                    const binaryString = atob(pdf);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+
+                    const doc = await pdfjsLib.getDocument({ data: bytes })
+                        .promise;
+
+                    if (controller.signal.aborted) {
+                        doc.destroy();
+                        return;
+                    }
+
+                    setPdfDoc((prev) => {
+                        prev?.destroy();
+                        return doc;
+                    });
+                    setPageCount(doc.numPages);
+                    setLoading(false);
+                })
+                .catch((err: unknown) => {
+                    if (
+                        err instanceof DOMException &&
+                        err.name === 'AbortError'
+                    ) {
+                        return;
+                    }
+                    const message =
+                        err instanceof Error
+                            ? err.message
+                            : 'Failed to load preview';
+                    setError(message);
+                    setLoading(false);
+                });
+        }, 500);
+
+        return () => {
+            clearTimeout(timer);
+            abortControllerRef.current?.abort();
+        };
+    }, [
+        bookId,
+        isPdf,
+        hasSelectedChapters,
         format,
         trimSize,
         fontSize,
-    });
+        includeChapterTitles,
+        showPageNumbers,
+        includeActBreaks,
+        selectedIdsArray,
+        orderedChapterIds,
+        checkedFrontMatter,
+        checkedBackMatter,
+        selectedChapterIds,
+    ]);
 
-    // Scale preview sizes relative to the default 11pt
-    const scale = fontSize / 11;
-    const bodySize = `${(9 * scale).toFixed(1)}px`;
-    const dropCapSize = `${(44 * scale).toFixed(0)}px`;
-    const titleSize = `${(19 * scale).toFixed(0)}px`;
-    const isMono = format === 'txt';
-    const pageHeight = computePageHeight(trimSize);
-    const lineHeight = getLineHeightMultiplier(format);
+    useEffect(() => {
+        return () => {
+            pdfDoc?.destroy();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-    const hasContent = pages.length > 0;
-
-    const backMatterTextMap: Record<string, string | undefined> = useMemo(
-        () => ({
-            acknowledgments: acknowledgmentText,
-            'about-author': aboutAuthorText,
-            'also-by': alsoByText,
-        }),
-        [acknowledgmentText, aboutAuthorText, alsoByText],
-    );
-
-    const renderPage = useCallback(
-        (i: number, page: PreviewPage) => (
-            <div className="flex justify-center px-7 pb-3">
-                <PageShell isMono={isMono} pageHeight={pageHeight}>
-                    {page.type === 'title-page' && (
-                        <TitlePage
-                            bookTitle={bookTitle}
-                            titleSize={titleSize}
-                        />
-                    )}
-                    {page.type === 'copyright' && (
-                        <CopyrightPage bodySize={bodySize} />
-                    )}
-                    {page.type === 'toc' && (
-                        <TocPage
-                            chapterTitles={page.chapterTitles ?? []}
-                            bodySize={bodySize}
-                        />
-                    )}
-                    {page.type === 'dedication' && (
-                        <DedicationPage
-                            bodySize={bodySize}
-                            text={dedicationText}
-                        />
-                    )}
-                    {page.type === 'act-break' && (
-                        <ActBreakPage
-                            actNumber={page.actNumber ?? 0}
-                            actTitle={page.actTitle}
-                        />
-                    )}
-                    {page.type === 'chapter' && (
-                        <ChapterPage
-                            page={page}
-                            format={format}
-                            showPageNumbers={showPageNumbers}
-                            pageNumber={i + 1}
-                            bodySize={bodySize}
-                            titleSize={titleSize}
-                            dropCapSize={dropCapSize}
-                            lineHeight={lineHeight}
-                        />
-                    )}
-                    {backMatterTextMap[page.type] !== undefined && (
-                        <BackMatterPage
-                            type={page.type}
-                            bodySize={bodySize}
-                            text={backMatterTextMap[page.type]}
-                        />
-                    )}
-                </PageShell>
-            </div>
-        ),
-        [
-            isMono,
-            pageHeight,
-            bookTitle,
-            titleSize,
-            bodySize,
-            dropCapSize,
-            format,
-            showPageNumbers,
-            lineHeight,
-            dedicationText,
-            backMatterTextMap,
-        ],
+    const pageIndices = useMemo(
+        () => Array.from({ length: pageCount }, (_, i) => i + 1),
+        [pageCount],
     );
 
     const previewLabel = t('preview');
+
     const VirtuosoHeader = useCallback(
         () => (
             <div className="flex justify-center px-7 pt-6 pb-3">
@@ -466,13 +309,18 @@ export default function ExportPreview({
                     <span className="text-[10px] font-semibold tracking-[0.01em] text-[#B5B5B5] uppercase dark:text-ink-faint">
                         {previewLabel}
                     </span>
-                    <span className="text-[11px] text-[#B5B5B5] dark:text-ink-faint">
-                        Classic
-                    </span>
+                    <div className="flex items-center gap-2">
+                        {loading && pdfDoc && (
+                            <div className="h-3 w-3 animate-spin rounded-full border-2 border-[#B5B5B5] border-t-transparent" />
+                        )}
+                        <span className="text-[11px] text-[#B5B5B5] dark:text-ink-faint">
+                            Classic
+                        </span>
+                    </div>
                 </div>
             </div>
         ),
-        [previewLabel],
+        [previewLabel, loading, pdfDoc],
     );
 
     const virtuosoComponents = useMemo(
@@ -483,9 +331,30 @@ export default function ExportPreview({
         [VirtuosoHeader],
     );
 
+    const renderPage = useCallback(
+        (_index: number, pageNum: number) => {
+            if (!pdfDoc) {
+                return <SkeletonPage height={pageHeight} />;
+            }
+            return (
+                <PdfPageCanvas
+                    pdfDoc={pdfDoc}
+                    pageNum={pageNum}
+                    scaleFactor={scaleFactor}
+                    pageHeight={pageHeight}
+                />
+            );
+        },
+        [pdfDoc, scaleFactor, pageHeight],
+    );
+
+    const showEmptyState = !isPdf || !hasSelectedChapters;
+    const showSkeleton = isPdf && hasSelectedChapters && !pdfDoc && loading;
+    const showPdf = pdfDoc && pageCount > 0;
+
     return (
         <aside className="flex h-full w-[400px] shrink-0 flex-col items-center border-l border-border-subtle bg-neutral-bg">
-            {!hasContent ? (
+            {showEmptyState ? (
                 <div className="flex w-full flex-1 flex-col items-center gap-3 overflow-y-auto px-7 py-6">
                     <VirtuosoHeader />
                     <div className="flex flex-1 items-center justify-center">
@@ -494,15 +363,36 @@ export default function ExportPreview({
                         </p>
                     </div>
                 </div>
+            ) : showSkeleton ? (
+                <div className="flex w-full flex-1 flex-col items-center gap-3 overflow-y-auto">
+                    <VirtuosoHeader />
+                    {Array.from({ length: 3 }, (_, i) => (
+                        <SkeletonPage key={i} height={pageHeight} />
+                    ))}
+                </div>
+            ) : showPdf ? (
+                <div className="relative flex w-full flex-1 flex-col">
+                    {loading && (
+                        <div className="pointer-events-none absolute inset-0 z-10 bg-white/40 dark:bg-black/20" />
+                    )}
+                    <Virtuoso
+                        className="w-full flex-1"
+                        data={pageIndices}
+                        fixedItemHeight={pageHeight + PAGE_GAP}
+                        overscan={3}
+                        components={virtuosoComponents}
+                        itemContent={renderPage}
+                    />
+                </div>
             ) : (
-                <Virtuoso
-                    className="w-full flex-1"
-                    data={pages}
-                    fixedItemHeight={pageHeight + PAGE_GAP}
-                    overscan={3}
-                    components={virtuosoComponents}
-                    itemContent={renderPage}
-                />
+                <div className="flex w-full flex-1 flex-col items-center gap-3 overflow-y-auto px-7 py-6">
+                    <VirtuosoHeader />
+                    <div className="flex flex-1 items-center justify-center">
+                        <p className="text-center text-[12px] text-ink-muted">
+                            {error ?? t('preview.empty')}
+                        </p>
+                    </div>
+                </div>
             )}
         </aside>
     );
