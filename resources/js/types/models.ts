@@ -243,6 +243,7 @@ export type PlotPoint = {
     actual_chapter?: Chapter;
     outgoing_connections?: PlotPointConnection[];
     incoming_connections?: PlotPointConnection[];
+    characters?: (Character & { pivot: CharacterPlotPointPivot })[];
 };
 
 export type PlotPointConnection = {
@@ -441,6 +442,14 @@ export type CharacterChapterPivot = {
     chapter_id: number;
     role: CharacterRole;
     notes: string | null;
+};
+
+export type CharacterPlotPointRole = 'key' | 'supporting' | 'mentioned';
+
+export type CharacterPlotPointPivot = {
+    character_id: number;
+    plot_point_id: number;
+    role: CharacterPlotPointRole;
 };
 
 export type WikiEntryKind = 'location' | 'organization' | 'item' | 'lore';
