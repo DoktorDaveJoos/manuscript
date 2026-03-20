@@ -13,18 +13,11 @@ class PlotController extends Controller
         $book->load([
             'storylines' => fn ($q) => $q->orderBy('sort_order'),
             'acts' => fn ($q) => $q->orderBy('sort_order'),
-            'acts.chapters' => fn ($q) => $q->orderBy('reader_order')
-                ->select('id', 'book_id', 'act_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count', 'tension_score'),
             'plotPoints' => fn ($q) => $q->orderBy('sort_order'),
+            'plotPoints.beats' => fn ($q) => $q->orderBy('sort_order'),
+            'plotPoints.beats.chapters:id,title,reader_order',
             'plotPoints.characters',
-            'plotPointConnections.source',
-            'plotPointConnections.target',
         ]);
-
-        $chapters = $book->chapters()
-            ->orderBy('reader_order')
-            ->select('id', 'book_id', 'act_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count')
-            ->get();
 
         $characters = $book->characters()->orderBy('name')->get();
 
@@ -33,8 +26,6 @@ class PlotController extends Controller
             'storylines' => $book->storylines,
             'acts' => $book->acts,
             'plotPoints' => $book->plotPoints,
-            'connections' => $book->plotPointConnections,
-            'chapters' => $chapters,
             'characters' => $characters,
         ]);
     }

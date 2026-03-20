@@ -224,5 +224,22 @@
 
     "wizard.review.title": "Bereit, deinen Plot aufzubauen",
     "wizard.review.summary": "Wir erstellen {{acts}} Akte mit {{beats}} Story-Beats. Jeder Beat ist ein Handlungspunkt, den du nach und nach ausarbeiten kannst.",
-    "wizard.review.chaptersAssigned": "{{count}} Kap."
+    "wizard.review.chaptersAssigned": "{{count}} Kap.",
+
+    "beat.addBeat": "Beat hinzufügen",
+    "beat.details": "Beat-Details",
+    "beat.title": "Titel",
+    "beat.description": "Beschreibung",
+    "beat.descriptionPlaceholder": "Beschreibe, was in diesem Beat passiert...",
+    "beat.linkedChapters": "Verknüpfte Kapitel",
+    "beat.addChapter": "Kapitel hinzufügen",
+    "beat.progress": "{{fulfilled}} von {{total}} Beats",
+    "beat.contextMenu.createChapter": "Kapitel erstellen",
+    "beat.contextMenu.markFulfilled": "Als erfüllt markieren",
+    "beat.contextMenu.markPlanned": "Als geplant markieren",
+    "beat.contextMenu.markAbandoned": "Als verworfen markieren",
+    "beat.contextMenu.delete": "Beat löschen",
+    "act.addAct": "Akt hinzufügen",
+    "act.deleteAct": "Akt löschen",
+    "act.progress": "{{fulfilled}} von {{total}} Beats"
 }

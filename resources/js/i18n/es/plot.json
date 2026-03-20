@@ -224,5 +224,22 @@
 
     "wizard.review.title": "Listo para construir tu trama",
     "wizard.review.summary": "Crearemos {{acts}} actos con {{beats}} beats narrativos. Cada beat es un punto de trama que puedes completar a medida que tu historia avanza.",
-    "wizard.review.chaptersAssigned": "{{count}} cap"
+    "wizard.review.chaptersAssigned": "{{count}} cap",
+
+    "beat.addBeat": "Añadir beat",
+    "beat.details": "Detalles del beat",
+    "beat.title": "Título",
+    "beat.description": "Descripción",
+    "beat.descriptionPlaceholder": "Describe lo que sucede en este beat...",
+    "beat.linkedChapters": "Capítulos vinculados",
+    "beat.addChapter": "Añadir capítulo",
+    "beat.progress": "{{fulfilled}} de {{total}} beats",
+    "beat.contextMenu.createChapter": "Crear capítulo",
+    "beat.contextMenu.markFulfilled": "Marcar como cumplido",
+    "beat.contextMenu.markPlanned": "Marcar como planeado",
+    "beat.contextMenu.markAbandoned": "Marcar como abandonado",
+    "beat.contextMenu.delete": "Eliminar beat",
+    "act.addAct": "Añadir acto",
+    "act.deleteAct": "Eliminar acto",
+    "act.progress": "{{fulfilled}} de {{total}} beats"
 }
