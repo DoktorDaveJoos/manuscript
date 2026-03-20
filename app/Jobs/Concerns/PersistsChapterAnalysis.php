@@ -2,14 +2,13 @@
 
 namespace App\Jobs\Concerns;
 
-use App\Enums\PlotPointType;
 use App\Models\Book;
 use App\Models\Chapter;
 
 trait PersistsChapterAnalysis
 {
     /**
-     * Persist chapter analysis response fields and create plot points.
+     * Persist chapter analysis response fields.
      */
     private function persistChapterAnalysis(Book $book, Chapter $chapter, array $response): void
     {
@@ -31,24 +30,5 @@ trait PersistsChapterAnalysis
             'information_delivery' => $response['information_delivery'] ?? null,
             'analyzed_at' => now(),
         ]);
-
-        $plotPoints = $response['plot_points'] ?? [];
-        foreach ($plotPoints as $point) {
-            if (! is_array($point) || empty($point['description'])) {
-                continue;
-            }
-
-            $type = PlotPointType::tryFrom($point['type'] ?? '') ?? PlotPointType::Worldbuilding;
-
-            $book->plotPoints()->create([
-                'title' => $point['title'] ?? $point['description'],
-                'description' => $point['description'],
-                'type' => $type,
-                'status' => 'fulfilled',
-                'actual_chapter_id' => $chapter->id,
-                'sort_order' => $chapter->reader_order,
-                'is_ai_derived' => true,
-            ]);
-        }
     }
 }
