@@ -71,6 +71,14 @@ class PlotPoint extends Model
     }
 
     /**
+     * @return HasMany<Beat, $this>
+     */
+    public function beats(): HasMany
+    {
+        return $this->hasMany(Beat::class)->orderBy('sort_order');
+    }
+
+    /**
      * @return HasMany<PlotPointConnection, $this>
      */
     public function outgoingConnections(): HasMany
