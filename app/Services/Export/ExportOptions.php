@@ -2,6 +2,7 @@
 
 namespace App\Services\Export;
 
+use App\Enums\ExportFormat;
 use App\Enums\TrimSize;
 
 final readonly class ExportOptions
@@ -24,6 +25,7 @@ final readonly class ExportOptions
         public string $acknowledgmentText = '',
         public string $aboutAuthorText = '',
         public string $alsoByText = '',
+        public ?ExportFormat $previewFormat = null,
     ) {}
 
     /**
@@ -45,6 +47,7 @@ final readonly class ExportOptions
             acknowledgmentText: (string) ($data['acknowledgment_text'] ?? ''),
             aboutAuthorText: (string) ($data['about_author_text'] ?? ''),
             alsoByText: (string) ($data['also_by_text'] ?? ''),
+            previewFormat: isset($data['preview_format']) ? ExportFormat::from($data['preview_format']) : null,
         );
     }
 }

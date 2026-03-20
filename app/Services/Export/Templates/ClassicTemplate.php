@@ -34,11 +34,29 @@ class ClassicTemplate
      */
     public function pdfCss(int $fontSize): string
     {
+        return $this->baseCss($fontSize, 1.35);
+    }
+
+    /**
+     * CSS for e-book preview PDF — reflowable look, no running headers or page numbers.
+     */
+    public function ebookPreviewCss(int $fontSize): string
+    {
+        return $this->baseCss($fontSize, 1.5, pagedMedia: false);
+    }
+
+    /**
+     * Shared CSS for both PDF and e-book preview rendering.
+     */
+    private function baseCss(int $fontSize, float $lineHeight, bool $pagedMedia = true): string
+    {
+        $matterSectionPage = $pagedMedia ? "\n            page: matter;" : '';
+
         return <<<CSS
         body {
             font-family: crimsonpro, Georgia, serif;
             font-size: {$fontSize}pt;
-            line-height: 1.35; /* keep in sync with getLineHeightMultiplier() in usePreviewPages.ts */
+            line-height: {$lineHeight};
             text-align: justify;
             color: #2a2a2a;
         }
@@ -142,8 +160,7 @@ class ClassicTemplate
             color: #2a2a2a;
             text-indent: 0;
         }
-        .matter-section {
-            page: matter;
+        .matter-section {{$matterSectionPage}
             break-before: page;
         }
         .chapter-section {

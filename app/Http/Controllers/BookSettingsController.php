@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ExportFormat;
 use App\Enums\TrimSize;
 use App\Http\Requests\ExportBookRequest;
 use App\Models\AppSetting;
@@ -146,6 +147,7 @@ class BookSettingsController extends Controller
     public function previewPdf(ExportBookRequest $request, Book $book): JsonResponse
     {
         $validated = $request->validated();
+        $validated['preview_format'] = ExportFormat::from($validated['format'] ?? 'pdf')->value;
         $chapters = ExportService::resolveChapters($book, $validated);
         ExportService::injectMatterText($validated);
         $options = ExportOptions::fromArray($validated);

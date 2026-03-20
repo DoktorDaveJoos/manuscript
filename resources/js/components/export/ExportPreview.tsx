@@ -28,6 +28,13 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 
 const PAGE_GAP = 12;
 const PAGE_PADDING = 56; // px-7 = 28px each side
+const EBOOK_SPEC: TrimSizeOption = {
+    value: 'ebook',
+    label: 'E-Reader',
+    width: 90,
+    height: 122,
+};
+const VISUAL_FORMATS: Set<Format> = new Set(['pdf', 'epub', 'kdp' as Format]);
 
 function computePageDimensions(
     spec: TrimSizeOption,
@@ -176,9 +183,14 @@ export default function ExportPreview({
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const pageWidth = panelWidth - PAGE_PADDING;
+    const isEbookFormat = format === 'epub' || format === 'kdp';
+    const hasVisualPreview = VISUAL_FORMATS.has(format);
     const trimSpec = useMemo(
-        () => trimSizes.find((t) => t.value === trimSize) ?? trimSizes[0],
-        [trimSizes, trimSize],
+        () =>
+            isEbookFormat
+                ? EBOOK_SPEC
+                : (trimSizes.find((t) => t.value === trimSize) ?? trimSizes[0]),
+        [trimSizes, trimSize, isEbookFormat],
     );
     const { pageHeight, scaleFactor } = computePageDimensions(
         trimSpec,
@@ -205,11 +217,10 @@ export default function ExportPreview({
         [backMatter],
     );
 
-    const isPdf = format === 'pdf';
     const hasSelectedChapters = selectedIdsArray.length > 0;
 
     useEffect(() => {
-        if (!isPdf || !hasSelectedChapters) {
+        if (!hasSelectedChapters || !hasVisualPreview) {
             setPdfDoc(null);
             setPageCount(0);
             return;
@@ -302,8 +313,8 @@ export default function ExportPreview({
         };
     }, [
         bookId,
-        isPdf,
         hasSelectedChapters,
+        hasVisualPreview,
         format,
         trimSize,
         fontSize,
@@ -373,8 +384,8 @@ export default function ExportPreview({
         [pdfDoc, scaleFactor, pageWidth, pageHeight],
     );
 
-    const showEmptyState = !isPdf || !hasSelectedChapters;
-    const showSkeleton = isPdf && hasSelectedChapters && !pdfDoc && loading;
+    const showEmptyState = !hasSelectedChapters || !hasVisualPreview;
+    const showSkeleton = hasSelectedChapters && !pdfDoc && loading;
     const showPdf = pdfDoc && pageCount > 0;
 
     return (

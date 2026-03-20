@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <style>
         @php
+            $isEbook = $isEbookPreview ?? false;
             $trimSize = $options->trimSize ?? \App\Enums\TrimSize::UsTrade;
             $fontSize = $options->fontSize;
             $dimensions = $trimSize->dimensions();
             $margins = $trimSize->margins();
         @endphp
 
+        @unless ($isEbook)
         @@page {
             size: {{ $dimensions['width'] }}mm {{ $dimensions['height'] }}mm;
         }
@@ -66,18 +68,21 @@
             odd-header-name: _blank;
             even-header-name: _blank;
         }
+        @endunless
 
         {{-- Template CSS (typography, colors, spacing) --}}
         {!! $css !!}
 
+        @unless ($isEbook)
         .act-break {
             page: matter;
             break-before: page;
         }
+        @endunless
     </style>
 </head>
 <body>
-    @if ($options->showPageNumbers)
+    @if (!($isEbook) && $options->showPageNumbers)
     <htmlpagefooter name="footerL" style="display:none">
         <div style="font-size: 8pt; color: #999999;">{PAGENO}</div>
     </htmlpagefooter>
@@ -147,7 +152,7 @@
             <div class="act-break">{{ $chapter->act?->title ?? "Act {$chapter->act?->number}" }}</div>
         @endif
 
-        <section class="chapter-section" style="page: chapter-{{ $index }};">
+        <section class="chapter-section"@unless ($isEbook) style="page: chapter-{{ $index }};"@endunless>
             @if ($options->includeChapterTitles)
                 <p class="chapter-label" id="chapter-{{ $index }}">Chapter {{ $index + 1 }}</p>
                 <h1>{{ $chapter->title }}</h1>

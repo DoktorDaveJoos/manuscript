@@ -3,6 +3,7 @@
 namespace App\Services\Export\Exporters;
 
 use App\Contracts\Exporter;
+use App\Enums\ExportFormat;
 use App\Enums\TrimSize;
 use App\Models\Book;
 use App\Services\Export\ContentPreparer;
@@ -51,8 +52,9 @@ class PdfExporter implements Exporter
      */
     private function buildMpdf(Book $book, Collection $chapters, ExportOptions $options): Mpdf
     {
-        $html = $this->renderHtml($book, $chapters, $options);
-        $mpdf = $this->createMpdf($options);
+        $isEbookPreview = in_array($options->previewFormat, [ExportFormat::Epub, ExportFormat::Kdp], true);
+        $html = $this->renderHtml($book, $chapters, $options, $isEbookPreview);
+        $mpdf = $this->createMpdf($options, $isEbookPreview);
         $mpdf->WriteHTML($html);
 
         return $mpdf;
@@ -61,17 +63,22 @@ class PdfExporter implements Exporter
     /**
      * Render the HTML body content for mPDF (no doctype/head — mPDF handles that).
      */
-    public function renderHtml(Book $book, Collection $chapters, ExportOptions $options): string
+    public function renderHtml(Book $book, Collection $chapters, ExportOptions $options, bool $isEbookPreview = false): string
     {
         $preparedChapters = $this->prepareChapters($chapters);
 
+        $template = new ClassicTemplate;
         $fontSize = $options->fontSize;
+        $css = $isEbookPreview
+            ? $template->ebookPreviewCss($fontSize)
+            : $template->pdfCss($fontSize);
 
         return view('export.pdf', [
             'book' => $book,
             'chapters' => $preparedChapters,
             'options' => $options,
-            'css' => (new ClassicTemplate)->pdfCss($fontSize),
+            'css' => $css,
+            'isEbookPreview' => $isEbookPreview,
             'contentPreparer' => $this->contentPreparer,
         ])->render();
     }
@@ -79,12 +86,19 @@ class PdfExporter implements Exporter
     /**
      * Create a configured mPDF instance.
      */
-    private function createMpdf(ExportOptions $options): Mpdf
+    private function createMpdf(ExportOptions $options, bool $isEbookPreview = false): Mpdf
     {
-        $trimSize = $options->trimSize ?? TrimSize::UsTrade;
-        $dimensions = $trimSize->dimensions();
-        $margins = $trimSize->margins();
         $fontSize = $options->fontSize;
+
+        if ($isEbookPreview) {
+            // E-reader dimensions (~Kindle Paperwhite proportions)
+            $dimensions = ['width' => 90, 'height' => 122];
+            $margins = ['top' => 10, 'bottom' => 10, 'gutter' => 10, 'outer' => 10];
+        } else {
+            $trimSize = $options->trimSize ?? TrimSize::UsTrade;
+            $dimensions = $trimSize->dimensions();
+            $margins = $trimSize->margins();
+        }
 
         $defaultConfig = (new \Mpdf\Config\ConfigVariables)->getDefaults();
         $defaultFontConfig = (new \Mpdf\Config\FontVariables)->getDefaults();
@@ -104,8 +118,8 @@ class PdfExporter implements Exporter
             'margin_bottom' => $margins['bottom'],
             'margin_left' => $margins['gutter'],
             'margin_right' => $margins['outer'],
-            'margin_header' => 5,
-            'margin_footer' => 5,
+            'margin_header' => $isEbookPreview ? 0 : 5,
+            'margin_footer' => $isEbookPreview ? 0 : 5,
             'default_font_size' => $fontSize,
             'default_font' => 'crimsonpro',
             'fontDir' => $fontDirs,
