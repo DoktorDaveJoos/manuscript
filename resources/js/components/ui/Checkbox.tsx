@@ -14,7 +14,7 @@ export default function Checkbox({ checked, onChange, className }: CheckboxProps
             onClick={onChange}
             className={cn(
                 'flex h-[14px] w-[14px] shrink-0 items-center justify-center rounded-[3px]',
-                checked ? 'bg-ink' : 'border border-[#D0CFCD] dark:border-ink-faint',
+                checked ? 'bg-ink' : 'border border-border',
                 className,
             )}
         >

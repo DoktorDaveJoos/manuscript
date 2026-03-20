@@ -1,3 +1,16 @@
+// Polyfill Map.getOrInsertComputed (ES2025) — needed for pdfjs in older Electron/Chromium
+if (!Map.prototype.getOrInsertComputed) {
+    Map.prototype.getOrInsertComputed = function (
+        key: unknown,
+        cb: (k: unknown) => unknown,
+    ) {
+        if (this.has(key)) return this.get(key);
+        const v = cb(key);
+        this.set(key, v);
+        return v;
+    };
+}
+
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -5,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { Virtuoso } from 'react-virtuoso';
 import type { Format } from '@/components/export/ExportSettings';
 import type { MatterItem } from '@/components/export/types';
+import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { jsonFetchHeaders } from '@/lib/utils';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -12,8 +26,8 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
     import.meta.url,
 ).toString();
 
-const PAGE_WIDTH = 340;
 const PAGE_GAP = 12;
+const PAGE_PADDING = 56; // px-7 = 28px each side
 
 const TRIM_SPECS: Record<string, { w: number; h: number }> = {
     '5x8': { w: 127, h: 203 },
@@ -24,15 +38,15 @@ const TRIM_SPECS: Record<string, { w: number; h: number }> = {
     '8.5x11': { w: 216, h: 279 },
 };
 
-function computePageHeight(trimSize: string): number {
+function computePageHeight(trimSize: string, pageWidth: number): number {
     const spec = TRIM_SPECS[trimSize] ?? TRIM_SPECS['6x9'];
-    return Math.round(PAGE_WIDTH * (spec.h / spec.w));
+    return Math.round(pageWidth * (spec.h / spec.w));
 }
 
-function computeScaleFactor(trimSize: string): number {
+function computeScaleFactor(trimSize: string, pageWidth: number): number {
     const spec = TRIM_SPECS[trimSize] ?? TRIM_SPECS['6x9'];
     const pageWidthPt = (spec.w / 25.4) * 72;
-    return PAGE_WIDTH / pageWidthPt;
+    return pageWidth / pageWidthPt;
 }
 
 interface ExportPreviewProps {
@@ -49,12 +63,12 @@ interface ExportPreviewProps {
     backMatter: MatterItem[];
 }
 
-function SkeletonPage({ height }: { height: number }) {
+function SkeletonPage({ width, height }: { width: number; height: number }) {
     return (
         <div className="flex justify-center px-7 pb-3">
             <div
-                className="animate-pulse rounded-[3px] bg-[#f0efe8] shadow-[0_6px_20px_#00000014]"
-                style={{ width: PAGE_WIDTH, height }}
+                className="animate-pulse rounded-[3px] bg-neutral-bg shadow-[0_6px_20px_#00000014] dark:shadow-[0_6px_20px_#00000040]"
+                style={{ width, height }}
             />
         </div>
     );
@@ -64,11 +78,13 @@ function PdfPageCanvas({
     pdfDoc,
     pageNum,
     scaleFactor,
+    pageWidth,
     pageHeight,
 }: {
     pdfDoc: PDFDocumentProxy;
     pageNum: number;
     scaleFactor: number;
+    pageWidth: number;
     pageHeight: number;
 }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -103,9 +119,9 @@ function PdfPageCanvas({
                 ctx.fillStyle = '#FFFEFA';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                await page.render({ canvas, viewport }).promise;
+                await page.render({ canvasContext: ctx, viewport }).promise;
             } catch {
-                // Render cancelled or failed — ignore
+                // Render cancelled or failed
             } finally {
                 renderingRef.current = false;
             }
@@ -120,9 +136,9 @@ function PdfPageCanvas({
         <div className="flex justify-center px-7 pb-3">
             <canvas
                 ref={canvasRef}
-                className="rounded-[3px] shadow-[0_6px_20px_#00000014]"
+                className="rounded-[3px] shadow-[0_6px_20px_#00000014] dark:shadow-[0_6px_20px_#00000040]"
                 style={{
-                    width: PAGE_WIDTH,
+                    width: pageWidth,
                     height: pageHeight,
                     backgroundColor: '#FFFEFA',
                 }}
@@ -148,6 +164,18 @@ export default function ExportPreview({
 }: ExportPreviewProps) {
     const { t } = useTranslation('export');
 
+    const {
+        width: panelWidth,
+        panelRef,
+        handleMouseDown,
+    } = useResizablePanel({
+        storageKey: 'manuscript:export-preview-width',
+        minWidth: 300,
+        maxWidth: 700,
+        defaultWidth: 400,
+        direction: 'right',
+    });
+
     const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
     const [pageCount, setPageCount] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -155,8 +183,9 @@ export default function ExportPreview({
 
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    const pageHeight = computePageHeight(trimSize);
-    const scaleFactor = computeScaleFactor(trimSize);
+    const pageWidth = panelWidth - PAGE_PADDING;
+    const pageHeight = computePageHeight(trimSize, pageWidth);
+    const scaleFactor = computeScaleFactor(trimSize, pageWidth);
 
     const selectedIdsArray = useMemo(
         () => Array.from(selectedChapterIds),
@@ -218,7 +247,10 @@ export default function ExportPreview({
             })
                 .then(async (res) => {
                     if (!res.ok) {
-                        throw new Error(`Server error: ${res.status}`);
+                        const body = await res.text();
+                        const truncated = body.slice(0, 500);
+                        console.error('Preview error', res.status, truncated);
+                        throw new Error(truncated.slice(0, 300));
                     }
                     return res.json() as Promise<{ pdf: string }>;
                 })
@@ -233,8 +265,10 @@ export default function ExportPreview({
                         bytes[i] = binaryString.charCodeAt(i);
                     }
 
-                    const doc = await pdfjsLib.getDocument({ data: bytes })
-                        .promise;
+                    const doc = await pdfjsLib.getDocument({
+                        data: bytes,
+                        disableFontFace: true,
+                    }).promise;
 
                     if (controller.signal.aborted) {
                         doc.destroy();
@@ -282,7 +316,6 @@ export default function ExportPreview({
         orderedChapterIds,
         checkedFrontMatter,
         checkedBackMatter,
-        selectedChapterIds,
     ]);
 
     useEffect(() => {
@@ -301,22 +334,15 @@ export default function ExportPreview({
 
     const VirtuosoHeader = useCallback(
         () => (
-            <div className="flex justify-center px-7 pt-6 pb-3">
-                <div
-                    className="flex items-center justify-between"
-                    style={{ width: PAGE_WIDTH }}
-                >
-                    <span className="text-[10px] font-semibold tracking-[0.01em] text-[#B5B5B5] uppercase dark:text-ink-faint">
-                        {previewLabel}
-                    </span>
-                    <div className="flex items-center gap-2">
-                        {loading && pdfDoc && (
-                            <div className="h-3 w-3 animate-spin rounded-full border-2 border-[#B5B5B5] border-t-transparent" />
-                        )}
-                        <span className="text-[11px] text-[#B5B5B5] dark:text-ink-faint">
-                            Classic
-                        </span>
-                    </div>
+            <div className="flex items-center justify-between px-7 pt-6 pb-3">
+                <span className="text-[10px] font-semibold tracking-[0.01em] text-ink-faint uppercase">
+                    {previewLabel}
+                </span>
+                <div className="flex items-center gap-2">
+                    {loading && pdfDoc && (
+                        <span className="inline-block size-3 animate-spin rounded-full border-2 border-ink-faint border-t-ink" />
+                    )}
+                    <span className="text-[11px] text-ink-faint">Classic</span>
                 </div>
             </div>
         ),
@@ -334,18 +360,19 @@ export default function ExportPreview({
     const renderPage = useCallback(
         (_index: number, pageNum: number) => {
             if (!pdfDoc) {
-                return <SkeletonPage height={pageHeight} />;
+                return <SkeletonPage width={pageWidth} height={pageHeight} />;
             }
             return (
                 <PdfPageCanvas
                     pdfDoc={pdfDoc}
                     pageNum={pageNum}
                     scaleFactor={scaleFactor}
+                    pageWidth={pageWidth}
                     pageHeight={pageHeight}
                 />
             );
         },
-        [pdfDoc, scaleFactor, pageHeight],
+        [pdfDoc, scaleFactor, pageWidth, pageHeight],
     );
 
     const showEmptyState = !isPdf || !hasSelectedChapters;
@@ -353,7 +380,17 @@ export default function ExportPreview({
     const showPdf = pdfDoc && pageCount > 0;
 
     return (
-        <aside className="flex h-full w-[400px] shrink-0 flex-col items-center border-l border-border-subtle bg-neutral-bg">
+        <aside
+            ref={panelRef as React.RefObject<HTMLElement>}
+            className="relative flex h-full shrink-0 flex-col items-center border-l border-border-subtle bg-neutral-bg"
+            style={{ width: panelWidth }}
+        >
+            <div
+                onMouseDown={handleMouseDown}
+                className="group absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize"
+            >
+                <div className="absolute inset-y-0 left-[3px] w-px bg-transparent transition-colors group-hover:bg-ink/20" />
+            </div>
             {showEmptyState ? (
                 <div className="flex w-full flex-1 flex-col items-center gap-3 overflow-y-auto px-7 py-6">
                     <VirtuosoHeader />
@@ -367,7 +404,11 @@ export default function ExportPreview({
                 <div className="flex w-full flex-1 flex-col items-center gap-3 overflow-y-auto">
                     <VirtuosoHeader />
                     {Array.from({ length: 3 }, (_, i) => (
-                        <SkeletonPage key={i} height={pageHeight} />
+                        <SkeletonPage
+                            key={i}
+                            width={pageWidth}
+                            height={pageHeight}
+                        />
                     ))}
                 </div>
             ) : showPdf ? (

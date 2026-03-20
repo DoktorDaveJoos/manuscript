@@ -78,7 +78,7 @@ function InlineDropdown({
             <span className="text-[12px] text-ink">
                 {options.find((o) => o.value === value)?.label ?? value}
             </span>
-            <ChevronDown className="h-3 w-3 text-[#8A8A8A] dark:text-ink-faint" />
+            <ChevronDown className="h-3 w-3 text-ink-faint" />
         </div>
     );
 }
@@ -103,14 +103,14 @@ export default function ExportSettings({
     const { t } = useTranslation('export');
 
     return (
-        <div className="flex flex-1 flex-col overflow-y-auto bg-[#FAFAF8] dark:bg-surface">
+        <div className="flex flex-1 flex-col overflow-y-auto bg-surface">
             <div className="flex flex-1 flex-col px-11 pt-10 pb-10">
                 {/* Header */}
                 <div className="flex flex-col gap-1.5">
                     <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">
                         {t('title')}
                     </h1>
-                    <p className="text-[13px] text-[#B5B5B5] dark:text-ink-faint">
+                    <p className="text-[13px] text-ink-faint">
                         {t('subtitle')}
                     </p>
                 </div>
@@ -136,14 +136,14 @@ export default function ExportSettings({
                         <SectionLabel>{t('template')}</SectionLabel>
                         <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-white px-3.5 py-2.5 dark:border-border dark:bg-surface-card">
                             <div className="flex items-center gap-2.5">
-                                <BookOpen className="h-4 w-4 text-[#8A8A8A] dark:text-ink-faint" />
+                                <BookOpen className="h-4 w-4 text-ink-faint" />
                                 <span className="text-[13px] text-ink">
                                     Classic
                                 </span>
                             </div>
-                            <ChevronDown className="h-3.5 w-3.5 text-[#8A8A8A] dark:text-ink-faint" />
+                            <ChevronDown className="h-3.5 w-3.5 text-ink-faint" />
                         </div>
-                        <p className="text-[11px] text-[#B5B5B5] dark:text-ink-faint">
+                        <p className="text-[11px] text-ink-faint">
                             {t('templateHint')}
                         </p>
                     </div>
@@ -179,7 +179,7 @@ export default function ExportSettings({
                                     />
                                 </div>
                             </div>
-                            <p className="text-[11px] text-[#B5B5B5] dark:text-ink-faint">
+                            <p className="text-[11px] text-ink-faint">
                                 {t('pdfOptionsHint')}
                             </p>
                         </div>
@@ -223,7 +223,7 @@ export default function ExportSettings({
                         <Download className="h-3.5 w-3.5" />
                         {exporting ? t('exporting') : t('exportAs', { format })}
                     </button>
-                    <span className="text-[12px] text-[#B5B5B5] dark:text-ink-faint">
+                    <span className="text-[12px] text-ink-faint">
                         {t('previewInBrowser')}
                     </span>
                 </div>

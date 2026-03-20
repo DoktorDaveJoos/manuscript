@@ -14,10 +14,16 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowUpRight, ChevronDown, GripVertical } from 'lucide-react';
+import {
+    ArrowUpRight,
+    ChevronDown,
+    ChevronRight,
+    GripVertical,
+} from 'lucide-react';
 import type { PropsWithChildren } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import type {
     ChapterRow,
     MatterItem,
@@ -27,7 +33,6 @@ import Checkbox from '@/components/ui/Checkbox';
 import SectionLabel from '@/components/ui/SectionLabel';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { cn } from '@/lib/utils';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 
 type ExportReadingOrderProps = {
     storylines: StorylineRef[];
@@ -85,14 +90,14 @@ function SortableChapterRow({
         >
             <span
                 {...listeners}
-                className="flex shrink-0 cursor-grab items-center text-[#D0D0D0] active:cursor-grabbing dark:text-ink-faint"
+                className="flex shrink-0 cursor-grab items-center text-ink-faint active:cursor-grabbing"
             >
                 <GripVertical className="h-3 w-3" />
             </span>
 
             <Checkbox checked={checked} onChange={onToggle} />
 
-            <span className="w-4 shrink-0 text-right text-[11px] font-medium text-[#B5B5B5] dark:text-ink-faint">
+            <span className="w-4 shrink-0 text-right text-[11px] font-medium text-ink-faint">
                 {index + 1}
             </span>
 
@@ -105,15 +110,13 @@ function SortableChapterRow({
                 <div
                     className={cn(
                         'truncate text-[12px]',
-                        checked
-                            ? 'text-[#4A4A4A] dark:text-ink-soft'
-                            : 'text-[#B5B5B5] dark:text-ink-faint',
+                        checked ? 'text-ink-soft' : 'text-ink-faint',
                     )}
                 >
                     {chapter.title}
                 </div>
                 {storyline && (
-                    <div className="text-[10px] font-light text-[#B5B5B5] dark:text-ink-faint">
+                    <div className="text-[10px] font-light text-ink-faint">
                         {storyline.name}
                     </div>
                 )}
@@ -133,16 +136,14 @@ function MatterRow({
 }) {
     return (
         <div className="flex items-center gap-2">
-            <span className="flex shrink-0 items-center text-[#D0D0D0] dark:text-ink-faint">
+            <span className="flex shrink-0 items-center text-ink-faint">
                 <GripVertical className="h-3 w-3" />
             </span>
             <Checkbox checked={item.checked} onChange={onToggle} />
             <span
                 className={cn(
                     'min-w-0 flex-1 truncate text-[12px]',
-                    item.checked
-                        ? 'text-[#4A4A4A] dark:text-ink-soft'
-                        : 'text-[#B5B5B5] dark:text-ink-faint',
+                    item.checked ? 'text-ink-soft' : 'text-ink-faint',
                 )}
             >
                 {item.label}
@@ -152,7 +153,7 @@ function MatterRow({
                     href={settingsIndex.url({
                         query: { section: item.settingsSection, from: fromUrl },
                     })}
-                    className="shrink-0 text-[#B5B5B5] transition-colors hover:text-ink-muted dark:text-ink-faint dark:hover:text-ink-soft"
+                    className="shrink-0 text-ink-faint transition-colors hover:text-ink-muted dark:hover:text-ink-soft"
                 >
                     <ArrowUpRight className="h-3 w-3" />
                 </Link>
@@ -180,15 +181,13 @@ function SectionHeader({
         >
             <ChevronDown
                 className={cn(
-                    'h-3 w-3 text-[#8A8A8A] transition-transform dark:text-ink-faint',
+                    'h-3 w-3 text-ink-faint transition-transform',
                     !expanded && '-rotate-90',
                 )}
             />
             <SectionLabel>{children}</SectionLabel>
             {count !== undefined && (
-                <span className="text-[10px] text-[#B5B5B5] dark:text-ink-faint">
-                    {count}
-                </span>
+                <span className="text-[10px] text-ink-faint">{count}</span>
             )}
         </button>
     );
@@ -210,6 +209,8 @@ function CollapsibleSection({
     );
 }
 
+const COLLAPSED_KEY = 'export-reading-order-collapsed';
+
 export default function ExportReadingOrder({
     storylines,
     selectedChapterIds,
@@ -224,9 +225,20 @@ export default function ExportReadingOrder({
     const { t } = useTranslation('export');
     const pageUrl = usePage().url;
     const [activeChapter, setActiveChapter] = useState<ChapterRow | null>(null);
+    const [collapsed, setCollapsed] = useState(
+        () => localStorage.getItem(COLLAPSED_KEY) === '1',
+    );
     const [expandedSections, setExpandedSections] = useState(
         () => new Set(['front-matter', 'chapters', 'back-matter']),
     );
+
+    const toggleCollapsed = useCallback(() => {
+        setCollapsed((prev) => {
+            const next = !prev;
+            localStorage.setItem(COLLAPSED_KEY, next ? '1' : '0');
+            return next;
+        });
+    }, []);
 
     const toggleSection = useCallback((key: string) => {
         setExpandedSections((prev) => {
@@ -287,6 +299,23 @@ export default function ExportReadingOrder({
         ? storylineMap.get(activeChapter.storyline_id)
         : undefined;
 
+    if (collapsed) {
+        return (
+            <aside className="flex h-full w-9 shrink-0 flex-col items-center border-r border-border-subtle bg-white pt-3 dark:bg-surface-card">
+                <button
+                    type="button"
+                    onClick={toggleCollapsed}
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-ink-faint transition-colors hover:bg-surface-hover hover:text-ink-muted"
+                >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+                <span className="mt-3 text-[12px] font-semibold tracking-wide text-ink [writing-mode:vertical-lr]">
+                    {t('readingOrder')}
+                </span>
+            </aside>
+        );
+    }
+
     return (
         <aside
             ref={panelRef}
@@ -303,9 +332,18 @@ export default function ExportReadingOrder({
 
             {/* Header */}
             <div className="flex flex-col gap-1 px-4 py-5">
-                <h2 className="text-[14px] font-semibold tracking-[0.06em] text-ink uppercase">
-                    {t('readingOrder')}
-                </h2>
+                <div className="flex items-center justify-between">
+                    <h2 className="text-[14px] font-semibold tracking-[0.06em] text-ink uppercase">
+                        {t('readingOrder')}
+                    </h2>
+                    <button
+                        type="button"
+                        onClick={toggleCollapsed}
+                        className="flex h-6 w-6 items-center justify-center rounded-md text-ink-faint transition-colors hover:bg-surface-hover hover:text-ink-muted"
+                    >
+                        <ChevronDown className="h-3 w-3 rotate-90" />
+                    </button>
+                </div>
                 <p className="text-[11px] text-ink-faint">
                     {t('readingOrderSubtitle')}
                 </p>
@@ -389,7 +427,7 @@ export default function ExportReadingOrder({
                                 <DragOverlay>
                                     {activeChapter && (
                                         <div className="flex items-center gap-2 rounded bg-white px-2 py-1 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A] dark:bg-surface-card">
-                                            <span className="flex shrink-0 items-center text-[#D0D0D0] dark:text-ink-faint">
+                                            <span className="flex shrink-0 items-center text-ink-faint">
                                                 <GripVertical className="h-3 w-3" />
                                             </span>
                                             <span
@@ -400,7 +438,7 @@ export default function ExportReadingOrder({
                                                         '#737373',
                                                 }}
                                             />
-                                            <span className="min-w-0 flex-1 truncate text-[12px] text-[#4A4A4A] dark:text-ink-soft">
+                                            <span className="min-w-0 flex-1 truncate text-[12px] text-ink-soft">
                                                 {activeChapter.title}
                                             </span>
                                         </div>
@@ -440,7 +478,7 @@ export default function ExportReadingOrder({
 
             {/* Footer */}
             <div className="border-t border-border px-4 py-3.5">
-                <p className="text-[11px] text-[#B5B5B5] dark:text-ink-faint">
+                <p className="text-[11px] text-ink-faint">
                     {t('excludedHint')}
                 </p>
             </div>

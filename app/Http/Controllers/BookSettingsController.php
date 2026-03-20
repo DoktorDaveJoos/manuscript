@@ -16,7 +16,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Native\Desktop\Facades\System;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BookSettingsController extends Controller
@@ -124,17 +123,19 @@ class BookSettingsController extends Controller
         ]);
     }
 
-    public function doExport(ExportBookRequest $request, Book $book, ExportService $service): BinaryFileResponse
+    public function doExport(ExportBookRequest $request, Book $book, ExportService $service): BinaryFileResponse|JsonResponse
     {
-        return $service->export($book, $request->validated());
+        $validated = $request->validated();
+
+        if (($validated['format'] ?? '') === 'pdf' && ! config('nativephp-internal.running')) {
+            return response()->json(['error' => 'PDF export requires the desktop app'], 422);
+        }
+
+        return $service->export($book, $validated);
     }
 
     public function previewPdf(ExportBookRequest $request, Book $book): JsonResponse
     {
-        if (! app()->bound(\Native\Desktop\Contracts\System::class)) {
-            return response()->json(['error' => 'PDF preview requires the desktop app'], 422);
-        }
-
         $validated = $request->validated();
         $chapters = ExportService::resolveChapters($book, $validated);
         ExportService::injectMatterText($validated);
@@ -143,14 +144,15 @@ class BookSettingsController extends Controller
         $contentPreparer = new ContentPreparer;
         $fontService = new FontService;
         $exporter = new PdfExporter($contentPreparer, $fontService);
-        $html = $exporter->renderHtml($book, $chapters, $options);
 
-        $pdfBase64 = System::printToPDF($html, [
-            'preferCSSPageSize' => true,
-            'printBackground' => true,
-            'margins' => ['top' => 0, 'bottom' => 0, 'left' => 0, 'right' => 0],
-        ]);
+        try {
+            $pdfBytes = $exporter->generatePdfString($book, $chapters, $options);
+        } catch (\Throwable $e) {
+            report($e);
 
-        return response()->json(['pdf' => $pdfBase64]);
+            return response()->json(['error' => 'PDF generation failed: '.$e->getMessage()], 500);
+        }
+
+        return response()->json(['pdf' => base64_encode($pdfBytes)]);
     }
 }

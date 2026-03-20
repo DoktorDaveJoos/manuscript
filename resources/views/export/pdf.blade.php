@@ -12,18 +12,20 @@
             $contentPreparer = new \App\Services\Export\ContentPreparer();
         @endphp
 
-        @if ($fonts)
+        @if ($fontData ?? null)
         @font-face {
-            font-family: "Literata";
-            src: url("data:font/ttf;base64,{{ $fonts['regular'] }}") format("truetype");
+            font-family: "Spectral";
+            src: url("data:font/ttf;base64,{{ $fontData['regular'] }}") format("truetype");
             font-weight: normal;
             font-style: normal;
+            font-display: swap;
         }
         @font-face {
-            font-family: "Literata";
-            src: url("data:font/ttf;base64,{{ $fonts['italic'] }}") format("truetype");
+            font-family: "Spectral";
+            src: url("data:font/ttf;base64,{{ $fontData['italic'] }}") format("truetype");
             font-weight: normal;
             font-style: italic;
+            font-display: swap;
         }
         @endif
 
@@ -40,19 +42,9 @@
         }
 
         @if ($options->showPageNumbers)
-        @@page :left {
-            @@bottom-left {
-                content: counter(page);
-                font-size: 8pt;
-                color: #B5B5B5;
-            }
-        }
-        @@page :right {
-            @@bottom-right {
-                content: counter(page);
-                font-size: 8pt;
-                color: #B5B5B5;
-            }
+        @@page {
+            odd-footer-name: footerR;
+            even-footer-name: footerL;
         }
         @endif
 
@@ -81,33 +73,23 @@
             @@top-right { content: none; }
         }
         @if ($options->showPageNumbers)
-        @@page chapter-{{ $index }} :left {
-            @@bottom-left {
-                content: counter(page);
-                font-size: 8pt;
-                color: #B5B5B5;
-            }
-        }
-        @@page chapter-{{ $index }} :right {
-            @@bottom-right {
-                content: counter(page);
-                font-size: 8pt;
-                color: #B5B5B5;
-            }
+        @@page chapter-{{ $index }} {
+            odd-footer-name: footerR;
+            even-footer-name: footerL;
         }
         @endif
         @endforeach
 
         {{-- Matter pages suppress all headers and footers --}}
         @@page matter {
-            @@top-left { content: none; }
-            @@top-right { content: none; }
-            @@bottom-left { content: none; }
-            @@bottom-right { content: none; }
+            odd-footer-name: _blank;
+            even-footer-name: _blank;
+            odd-header-name: _blank;
+            even-header-name: _blank;
         }
 
         body {
-            font-family: "Literata", Georgia, serif;
+            font-family: "Spectral", Georgia, serif;
             font-size: {{ $fontSize }}pt;
             line-height: 1.5;
             text-align: justify;
@@ -250,6 +232,15 @@
     </style>
 </head>
 <body>
+    @if ($options->showPageNumbers)
+    <htmlpagefooter name="footerL" style="display:none">
+        <div style="font-size: 8pt; color: #B5B5B5;">{PAGENO}</div>
+    </htmlpagefooter>
+    <htmlpagefooter name="footerR" style="display:none">
+        <div style="font-size: 8pt; color: #B5B5B5; text-align: right;">{PAGENO}</div>
+    </htmlpagefooter>
+    @endif
+
     {{-- Front Matter --}}
     @foreach ($options->frontMatter as $item)
         @if ($item === 'title-page')

@@ -326,9 +326,7 @@ test('exports book as pdf', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Opening']);
     Scene::factory()->for($chapter)->create(['content' => '<p>The story begins.</p>', 'sort_order' => 1]);
 
-    System::shouldReceive('printToPDF')
-        ->once()
-        ->andReturn(base64_encode('%PDF-mock-content'));
+    // mPDF generates PDFs in PHP — no mocking needed
 
     $response = $this->service->export($book, ['format' => 'pdf', 'scope' => 'full']);
 
@@ -336,7 +334,7 @@ test('exports book as pdf', function () {
     expect($response->headers->get('content-disposition'))->toContain('pdf-book.pdf');
 
     $content = file_get_contents($response->getFile()->getPathname());
-    expect($content)->toBe('%PDF-mock-content');
+    expect($content)->toStartWith('%PDF');
 });
 
 test('pdf respects trim size', function () {
@@ -345,9 +343,7 @@ test('pdf respects trim size', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
     Scene::factory()->for($chapter)->create(['content' => '<p>Content.</p>', 'sort_order' => 1]);
 
-    System::shouldReceive('printToPDF')
-        ->once()
-        ->andReturn(base64_encode('%PDF-mock-content'));
+    // mPDF generates PDFs in PHP — no mocking needed
 
     $response = $this->service->export($book, [
         'format' => 'pdf',
@@ -365,9 +361,7 @@ test('pdf respects font size', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
     Scene::factory()->for($chapter)->create(['content' => '<p>Content.</p>', 'sort_order' => 1]);
 
-    System::shouldReceive('printToPDF')
-        ->once()
-        ->andReturn(base64_encode('%PDF-mock-content'));
+    // mPDF generates PDFs in PHP — no mocking needed
 
     $response = $this->service->export($book, [
         'format' => 'pdf',
@@ -387,9 +381,7 @@ test('pdf chapter_ids ordering', function () {
     Scene::factory()->for($ch1)->create(['content' => '<p>First content.</p>', 'sort_order' => 1]);
     Scene::factory()->for($ch2)->create(['content' => '<p>Second content.</p>', 'sort_order' => 1]);
 
-    System::shouldReceive('printToPDF')
-        ->once()
-        ->andReturn(base64_encode('%PDF-mock-content'));
+    // mPDF generates PDFs in PHP — no mocking needed
 
     $response = $this->service->export($book, [
         'format' => 'pdf',
@@ -410,9 +402,7 @@ test('pdf exports multiple chapters successfully with alternating headers', func
     Scene::factory()->for($ch2)->create(['content' => '<p>Evening glow.</p>', 'sort_order' => 1]);
     Scene::factory()->for($ch3)->create(['content' => '<p>Stars above.</p>', 'sort_order' => 1]);
 
-    System::shouldReceive('printToPDF')
-        ->once()
-        ->andReturn(base64_encode('%PDF-mock-content'));
+    // mPDF generates PDFs in PHP — no mocking needed
 
     $response = $this->service->export($book, ['format' => 'pdf', 'scope' => 'full']);
 
@@ -420,7 +410,7 @@ test('pdf exports multiple chapters successfully with alternating headers', func
     expect($response->headers->get('content-disposition'))->toContain('.pdf');
 
     $content = file_get_contents($response->getFile()->getPathname());
-    expect($content)->toBe('%PDF-mock-content');
+    expect($content)->toStartWith('%PDF');
 });
 
 test('pdf with table of contents exports successfully', function () {
@@ -431,9 +421,7 @@ test('pdf with table of contents exports successfully', function () {
     Scene::factory()->for($ch1)->create(['content' => '<p>First content.</p>', 'sort_order' => 1]);
     Scene::factory()->for($ch2)->create(['content' => '<p>Second content.</p>', 'sort_order' => 1]);
 
-    System::shouldReceive('printToPDF')
-        ->once()
-        ->andReturn(base64_encode('%PDF-mock-content'));
+    // mPDF generates PDFs in PHP — no mocking needed
 
     $response = $this->service->export($book, [
         'format' => 'pdf',
@@ -445,7 +433,7 @@ test('pdf with table of contents exports successfully', function () {
     expect($response->headers->get('content-disposition'))->toContain('.pdf');
 
     $content = file_get_contents($response->getFile()->getPathname());
-    expect($content)->toBe('%PDF-mock-content');
+    expect($content)->toStartWith('%PDF');
 });
 
 test('epub chapters include semantic epub:type attributes', function () {
@@ -599,10 +587,10 @@ test('export endpoint accepts new formats', function () {
         ])->assertOk();
     }
 
-    // PDF requires System::printToPDF mock (Chromium-based)
-    System::shouldReceive('printToPDF')
-        ->once()
-        ->andReturn(base64_encode('%PDF-mock-content'));
+    // PDF requires NativePHP environment + System::printToPDF mock (Chromium-based)
+    config(['nativephp-internal.running' => true]);
+
+    // mPDF generates PDFs in PHP — no mocking needed
 
     $this->postJson(route('books.settings.export.run', $book), [
         'format' => 'pdf',
@@ -668,9 +656,7 @@ test('pdf includes title page when front_matter selected', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
     Scene::factory()->for($chapter)->create(['content' => '<p>Content.</p>', 'sort_order' => 1]);
 
-    System::shouldReceive('printToPDF')
-        ->once()
-        ->andReturn(base64_encode('%PDF-mock-content'));
+    // mPDF generates PDFs in PHP — no mocking needed
 
     $response = $this->service->export($book, [
         'format' => 'pdf',
@@ -682,7 +668,7 @@ test('pdf includes title page when front_matter selected', function () {
     expect($response->headers->get('content-disposition'))->toContain('.pdf');
 
     $content = file_get_contents($response->getFile()->getPathname());
-    expect($content)->toBe('%PDF-mock-content');
+    expect($content)->toStartWith('%PDF');
 });
 
 test('pdf includes front and back matter pages', function () {
@@ -691,9 +677,7 @@ test('pdf includes front and back matter pages', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
     Scene::factory()->for($chapter)->create(['content' => '<p>Content.</p>', 'sort_order' => 1]);
 
-    System::shouldReceive('printToPDF')
-        ->once()
-        ->andReturn(base64_encode('%PDF-mock-content'));
+    // mPDF generates PDFs in PHP — no mocking needed
 
     $response = $this->service->export($book, [
         'format' => 'pdf',
@@ -706,7 +690,7 @@ test('pdf includes front and back matter pages', function () {
     expect($response->headers->get('content-disposition'))->toContain('.pdf');
 
     $content = file_get_contents($response->getFile()->getPathname());
-    expect($content)->toBe('%PDF-mock-content');
+    expect($content)->toStartWith('%PDF');
 });
 
 test('epub includes title page xhtml', function () {
@@ -779,9 +763,9 @@ test('export endpoint accepts front_matter and back_matter arrays', function () 
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
     Scene::factory()->for($chapter)->create(['content' => '<p>Text.</p>', 'sort_order' => 1]);
 
-    System::shouldReceive('printToPDF')
-        ->once()
-        ->andReturn(base64_encode('%PDF-mock-content'));
+    config(['nativephp-internal.running' => true]);
+
+    // mPDF generates PDFs in PHP — no mocking needed
 
     $this->postJson(route('books.settings.export.run', $book), [
         'format' => 'pdf',
@@ -879,7 +863,7 @@ test('pdf blade template renders valid html', function () {
         'book' => $book,
         'chapters' => $chapters,
         'options' => $options,
-        'fonts' => null,
+        'fontData' => null,
     ])->render();
 
     expect($html)->toContain('<!DOCTYPE html>');
@@ -897,29 +881,40 @@ test('preview endpoint returns pdf base64', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Ch 1']);
     Scene::factory()->for($chapter)->create(['content' => '<p>Content.</p>', 'sort_order' => 1]);
 
-    // Bind the NativePHP System contract so the controller doesn't return 422
-    app()->bind(\Native\Desktop\Contracts\System::class, fn () => new \stdClass);
-
-    System::shouldReceive('printToPDF')
-        ->once()
-        ->andReturn(base64_encode('%PDF-preview'));
-
-    $this->postJson(route('books.export.preview', $book), [
+    $response = $this->postJson(route('books.export.preview', $book), [
         'format' => 'pdf',
         'scope' => 'full',
         'trim_size' => '6x9',
         'font_size' => 11,
-    ])->assertOk()
-        ->assertJsonStructure(['pdf']);
+    ]);
+
+    $response->assertOk()->assertJsonStructure(['pdf']);
+
+    // Verify the response contains valid PDF data
+    $pdfBytes = base64_decode($response->json('pdf'));
+    expect($pdfBytes)->toStartWith('%PDF');
 });
 
-test('preview endpoint returns 422 without nativephp', function () {
+test('pdf export endpoint returns 422 without nativephp', function () {
     $book = Book::factory()->create();
 
-    $this->postJson(route('books.export.preview', $book), [
+    $this->postJson(route('books.settings.export.run', $book), [
         'format' => 'pdf',
         'scope' => 'full',
-    ])->assertStatus(422);
+    ])->assertStatus(422)
+        ->assertJson(['error' => 'PDF export requires the desktop app']);
+});
+
+test('non-pdf export works without nativephp', function () {
+    $book = Book::factory()->create(['author' => 'Test', 'language' => 'en']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Text.</p>', 'sort_order' => 1]);
+
+    $this->postJson(route('books.settings.export.run', $book), [
+        'format' => 'epub',
+        'scope' => 'full',
+    ])->assertOk();
 });
 
 // === Public Static Method Tests ===
