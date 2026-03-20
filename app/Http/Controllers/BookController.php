@@ -233,17 +233,8 @@ class BookController extends Controller
             foreach ($book->plotPoints as $plotPoint) {
                 $newPlotPoint = $plotPoint->replicate();
                 $newPlotPoint->book_id = $newBook->id;
-                $newPlotPoint->storyline_id = isset($plotPoint->storyline_id)
-                    ? ($storylineMap[$plotPoint->storyline_id] ?? null)
-                    : null;
                 $newPlotPoint->act_id = isset($plotPoint->act_id)
                     ? ($actMap[$plotPoint->act_id] ?? null)
-                    : null;
-                $newPlotPoint->intended_chapter_id = isset($plotPoint->intended_chapter_id)
-                    ? ($chapterMap[$plotPoint->intended_chapter_id] ?? null)
-                    : null;
-                $newPlotPoint->actual_chapter_id = isset($plotPoint->actual_chapter_id)
-                    ? ($chapterMap[$plotPoint->actual_chapter_id] ?? null)
                     : null;
                 $newPlotPoint->save();
             }

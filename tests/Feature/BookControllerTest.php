@@ -108,7 +108,7 @@ test('deletes a book and cascades related data', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
     $version = ChapterVersion::factory()->for($chapter)->create();
     $character = Character::factory()->for($book)->create();
-    PlotPoint::factory()->for($book)->create(['storyline_id' => $storyline->id]);
+    PlotPoint::factory()->for($book)->create(['act_id' => $act->id]);
 
     $this->delete(route('books.destroy', $book))
         ->assertRedirect(route('books.index'));
@@ -134,9 +134,7 @@ test('duplicates a book with all relationships', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['act_id' => $act->id]);
     ChapterVersion::factory()->for($chapter)->create();
     PlotPoint::factory()->for($book)->create([
-        'storyline_id' => $storyline->id,
         'act_id' => $act->id,
-        'intended_chapter_id' => $chapter->id,
     ]);
 
     $this->post(route('books.duplicate', $book))
@@ -157,9 +155,7 @@ test('duplicates a book with all relationships', function () {
         ->and($copyChapter->act_id)->toBe($copy->acts->first()->id);
 
     $copyPlotPoint = $copy->plotPoints->first();
-    expect($copyPlotPoint->storyline_id)->toBe($copy->storylines->first()->id)
-        ->and($copyPlotPoint->act_id)->toBe($copy->acts->first()->id)
-        ->and($copyPlotPoint->intended_chapter_id)->toBe($copyChapter->id);
+    expect($copyPlotPoint->act_id)->toBe($copy->acts->first()->id);
 });
 
 test('duplicate resets AI-derived fields', function () {

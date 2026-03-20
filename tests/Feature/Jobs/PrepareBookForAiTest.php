@@ -92,8 +92,7 @@ test('prepare book for ai runs full 7-phase pipeline', function () {
     expect($book->story_bible)->not->toBeNull()
         ->and($book->story_bible['characters'])->toBeArray();
 
-    // Verify plot points were created
-    expect($book->plotPoints()->where('is_ai_derived', true)->count())->toBeGreaterThanOrEqual(1);
+    // AI plot point extraction was removed — plot points are manual-only now
 });
 
 test('prepare book for ai tracks phase progress', function () {

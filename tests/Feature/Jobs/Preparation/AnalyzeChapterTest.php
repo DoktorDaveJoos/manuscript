@@ -127,7 +127,7 @@ test('analyze chapter performs analysis and entity extraction', function () {
         ->and($chapters[0]->information_delivery)->toBe('organic');
 
     expect($book->characters()->where('name', 'John')->exists())->toBeTrue();
-    expect($book->plotPoints()->where('is_ai_derived', true)->count())->toBe(1);
+    // AI plot point extraction was removed — plot points are manual-only now
 
     $castle = $book->wikiEntries()->where('name', 'The Castle')->first();
     expect($castle)->not->toBeNull()
