@@ -57,6 +57,20 @@
     "aiActions.beats.label": "Suggest Next Beats",
     "aiActions.beats.description": "AI-recommended plot points",
 
+    "beat.details": "Beat Details",
+    "beat.title": "Title",
+    "beat.description": "Description",
+    "beat.descriptionPlaceholder": "Describe what happens in this beat...",
+    "beat.linkedChapters": "Linked Chapters",
+    "beat.addChapter": "Add chapter",
+    "beat.contextMenu.createChapter": "Create chapter",
+    "beat.contextMenu.markFulfilled": "Mark as fulfilled",
+    "beat.contextMenu.markPlanned": "Mark as planned",
+    "beat.contextMenu.markAbandoned": "Mark as abandoned",
+    "beat.contextMenu.delete": "Delete beat",
+    "beat.type": "Type",
+    "beat.status": "Status",
+
     "timeline.chapterAbbrev": "Ch. {{number}}",
     "timeline.unassignedChapters": "Unassigned chapters",
 

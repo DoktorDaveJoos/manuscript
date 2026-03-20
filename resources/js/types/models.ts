@@ -15,6 +15,7 @@ export type PlotPointType =
     | 'resolution'
     | 'worldbuilding';
 export type PlotPointStatus = 'planned' | 'fulfilled' | 'abandoned';
+export type BeatStatus = 'planned' | 'fulfilled' | 'abandoned';
 export type ConnectionType = 'causes' | 'sets_up' | 'resolves' | 'contradicts';
 export type CharacterRole = 'protagonist' | 'supporting' | 'mentioned';
 export type AnalysisType =
@@ -256,6 +257,19 @@ export type PlotPointConnection = {
     updated_at: string;
     source?: PlotPoint;
     target?: PlotPoint;
+};
+
+export type Beat = {
+    id: number;
+    plot_point_id: number;
+    title: string;
+    description: string | null;
+    status: BeatStatus;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+    chapters?: Chapter[];
+    plot_point?: PlotPoint;
 };
 
 export type Analysis = {
