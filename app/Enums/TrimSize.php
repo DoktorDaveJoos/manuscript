@@ -47,12 +47,12 @@ enum TrimSize: string
     public function margins(): array
     {
         return match ($this) {
-            self::MassMarket => ['top' => 13, 'bottom' => 13, 'outer' => 11, 'gutter' => 16],
-            self::Pocket => ['top' => 16, 'bottom' => 16, 'outer' => 14, 'gutter' => 19],
-            self::Digest => ['top' => 16, 'bottom' => 16, 'outer' => 14, 'gutter' => 20],
-            self::SmallTrade => ['top' => 19, 'bottom' => 19, 'outer' => 16, 'gutter' => 22],
-            self::UsTrade => ['top' => 19, 'bottom' => 19, 'outer' => 16, 'gutter' => 22],
-            self::Royal => ['top' => 22, 'bottom' => 22, 'outer' => 19, 'gutter' => 25],
+            self::MassMarket => ['top' => 13, 'bottom' => 15, 'outer' => 11, 'gutter' => 16],
+            self::Pocket => ['top' => 16, 'bottom' => 18, 'outer' => 14, 'gutter' => 19],
+            self::Digest => ['top' => 16, 'bottom' => 18, 'outer' => 14, 'gutter' => 20],
+            self::SmallTrade => ['top' => 19, 'bottom' => 22, 'outer' => 16, 'gutter' => 22],
+            self::UsTrade => ['top' => 19, 'bottom' => 22, 'outer' => 16, 'gutter' => 22],
+            self::Royal => ['top' => 22, 'bottom' => 25, 'outer' => 19, 'gutter' => 25],
             self::Manuscript => ['top' => 25, 'bottom' => 25, 'outer' => 25, 'gutter' => 25],
         };
     }

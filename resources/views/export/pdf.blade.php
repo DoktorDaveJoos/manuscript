@@ -35,18 +35,16 @@
             @@top-left {
                 content: "{{ cssEscape($book->title) }}";
                 font-size: 8pt;
-                color: #B5B5B5;
-                text-transform: uppercase;
-                letter-spacing: 0.1em;
+                color: #999999;
+                font-style: italic;
             }
         }
         @@page chapter-{{ $index }} :right {
             @@top-right {
                 content: "{{ cssEscape($chapter->title) }}";
                 font-size: 8pt;
-                color: #B5B5B5;
-                text-transform: uppercase;
-                letter-spacing: 0.1em;
+                color: #999999;
+                font-style: italic;
             }
         }
         @@page chapter-{{ $index }}:first {
@@ -81,10 +79,10 @@
 <body>
     @if ($options->showPageNumbers)
     <htmlpagefooter name="footerL" style="display:none">
-        <div style="font-size: 8pt; color: #B5B5B5;">{PAGENO}</div>
+        <div style="font-size: 8pt; color: #999999;">{PAGENO}</div>
     </htmlpagefooter>
     <htmlpagefooter name="footerR" style="display:none">
-        <div style="font-size: 8pt; color: #B5B5B5; text-align: right;">{PAGENO}</div>
+        <div style="font-size: 8pt; color: #999999; text-align: right;">{PAGENO}</div>
     </htmlpagefooter>
     @endif
 

@@ -85,8 +85,9 @@ class EpubExporter implements Exporter
             return;
         }
 
-        $zip->addFile($this->fontService->regularFontPath(), 'OEBPS/Fonts/Spectral.ttf');
-        $zip->addFile($this->fontService->italicFontPath(), 'OEBPS/Fonts/Spectral-Italic.ttf');
+        foreach ($this->fontService->epubFontFiles() as $font) {
+            $zip->addFile($font['path'], 'OEBPS/Fonts/'.$font['filename']);
+        }
     }
 
     /**
@@ -403,8 +404,9 @@ class EpubExporter implements Exporter
         }
 
         if ($this->fontService->fontsAvailable()) {
-            $manifestItems .= "\n    <item id=\"font-regular\" href=\"Fonts/Spectral.ttf\" media-type=\"font/ttf\"/>";
-            $manifestItems .= "\n    <item id=\"font-italic\" href=\"Fonts/Spectral-Italic.ttf\" media-type=\"font/ttf\"/>";
+            foreach ($this->fontService->epubFontFiles() as $id => $font) {
+                $manifestItems .= "\n    <item id=\"{$id}\" href=\"Fonts/{$font['filename']}\" media-type=\"font/ttf\"/>";
+            }
         }
 
         // Front matter manifest

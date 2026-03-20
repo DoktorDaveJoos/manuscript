@@ -281,13 +281,13 @@ test('epub embeds fonts when available', function () {
     $zip->open($response->getFile()->getPathname());
 
     // Fonts should be embedded since we have them in resources/fonts
-    expect($zip->locateName('OEBPS/Fonts/Spectral.ttf'))->not->toBeFalse();
-    expect($zip->locateName('OEBPS/Fonts/Spectral-Italic.ttf'))->not->toBeFalse();
+    expect($zip->locateName('OEBPS/Fonts/CrimsonPro-Regular.ttf'))->not->toBeFalse();
+    expect($zip->locateName('OEBPS/Fonts/CrimsonPro-Italic.ttf'))->not->toBeFalse();
 
     // CSS should reference fonts
     $css = $zip->getFromName('OEBPS/Styles/stylesheet.css');
     expect($css)->toContain('@font-face');
-    expect($css)->toContain('Spectral');
+    expect($css)->toContain('Crimson Pro');
 
     $zip->close();
 });
@@ -840,11 +840,7 @@ test('pdf blade template renders valid html', function () {
             if ($sceneIndex > 0) {
                 $preparedContent .= '<p class="scene-break">*&nbsp;&nbsp;*&nbsp;&nbsp;*</p>';
             }
-            $html = $contentPreparer->toPdfHtml($scene->content ?? '');
-            if ($sceneIndex === 0) {
-                $html = $contentPreparer->addDropCap($html);
-            }
-            $preparedContent .= $html;
+            $preparedContent .= $contentPreparer->toPdfHtml($scene->content ?? '');
         }
         $chapter->prepared_content = $preparedContent;
 
@@ -870,7 +866,7 @@ test('pdf blade template renders valid html', function () {
     expect($html)->toContain('<!DOCTYPE html>');
     expect($html)->toContain('Template Test');
     expect($html)->toContain('Chapter One');
-    expect($html)->toContain('nce upon a time'); // 'O' is wrapped in drop-cap span
+    expect($html)->toContain('Once upon a time');
     expect($html)->toContain('@page');
 });
 

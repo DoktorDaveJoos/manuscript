@@ -12,19 +12,18 @@ class ClassicTemplate
     public function designTokens(): array
     {
         return [
-            'bodyColor' => '#4A4A4A',
+            'bodyColor' => '#2a2a2a',
             'headingColor' => '#1a1a1a',
-            'accentColor' => '#B5B5B5',
-            'pdfLineHeight' => 1.5,
-            'epubLineHeight' => 1.6,
-            'chapterLabelSizeEm' => 0.65,
+            'accentColor' => '#999999',
+            'pdfLineHeight' => 1.35,
+            'epubLineHeight' => 1.5,
+            'chapterLabelSizeEm' => 0.7,
             'titleSizeEm' => 1.6,
             'titleWeight' => 'normal',
-            'dropCapMultiplier' => 3.2,
-            'runningHeaderStyle' => 'uppercase',
-            'runningHeaderColor' => '#B5B5B5',
+            'runningHeaderStyle' => 'italic',
+            'runningHeaderColor' => '#999999',
             'runningHeaderSizePt' => 8,
-            'pageNumberColor' => '#B5B5B5',
+            'pageNumberColor' => '#999999',
             'pageNumberSizePt' => 8,
             'pageNumberPosition' => 'alternating',
         ];
@@ -35,23 +34,21 @@ class ClassicTemplate
      */
     public function pdfCss(int $fontSize): string
     {
-        $dropCapSize = round($fontSize * $this->designTokens()['dropCapMultiplier']);
-
         return <<<CSS
         body {
-            font-family: spectral, Georgia, serif;
+            font-family: crimsonpro, Georgia, serif;
             font-size: {$fontSize}pt;
-            line-height: 1.5; /* keep in sync with getLineHeightMultiplier() in usePreviewPages.ts */
+            line-height: 1.35; /* keep in sync with getLineHeightMultiplier() in usePreviewPages.ts */
             text-align: justify;
-            color: #4A4A4A;
+            color: #2a2a2a;
         }
         .chapter-label {
-            font-size: 0.65em;
+            font-size: 0.7em;
             font-weight: 500;
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 0.2em;
-            color: #B5B5B5;
+            color: #999999;
             margin: 2em 0 0.25em;
             text-indent: 0;
         }
@@ -81,17 +78,10 @@ class ClassicTemplate
         .act-break + p {
             text-indent: 0;
         }
-        .drop-cap {
-            float: left;
-            font-size: {$dropCapSize}pt;
-            line-height: 0.8;
-            margin: 2pt 3pt 0 0;
-            color: #1a1a1a;
-        }
         .scene-break {
             text-align: center;
             letter-spacing: 0.3em;
-            color: #B5B5B5;
+            color: #999999;
             margin: 1.5em 0;
             text-indent: 0;
         }
@@ -111,12 +101,12 @@ class ClassicTemplate
             color: inherit;
         }
         .matter-title {
-            font-size: 0.65em;
+            font-size: 0.7em;
             font-weight: 500;
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 0.2em;
-            color: #B5B5B5;
+            color: #999999;
             margin: 2em 0 1.5em;
             text-indent: 0;
         }
@@ -135,7 +125,7 @@ class ClassicTemplate
         .title-page-author {
             font-size: 0.85em;
             text-align: center;
-            color: #B5B5B5;
+            color: #999999;
             margin: 0.5em 0 0;
             text-indent: 0;
         }
@@ -149,7 +139,7 @@ class ClassicTemplate
         .dedication-text {
             font-style: italic;
             text-align: center;
-            color: #4A4A4A;
+            color: #2a2a2a;
             text-indent: 0;
         }
         .matter-section {
@@ -171,9 +161,9 @@ class ClassicTemplate
         {$fontFaceCss}
 
         body {
-            font-family: "Spectral", Georgia, serif;
+            font-family: "Crimson Pro", Georgia, serif;
             font-size: 1em;
-            line-height: 1.6; /* keep in sync with getLineHeightMultiplier() in usePreviewPages.ts */
+            line-height: 1.5; /* keep in sync with getLineHeightMultiplier() in usePreviewPages.ts */
             margin: 1em;
             text-align: justify;
             hyphens: auto;
@@ -245,7 +235,7 @@ class ClassicTemplate
         }
         .title-page .author {
             font-size: 0.85em;
-            color: #B5B5B5;
+            color: #999999;
             margin-top: 0.5em;
         }
         .copyright-page {
@@ -267,12 +257,12 @@ class ClassicTemplate
             text-indent: 0;
         }
         .matter-title {
-            font-size: 0.65em;
+            font-size: 0.7em;
             font-weight: 500;
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 0.2em;
-            color: #B5B5B5;
+            color: #999999;
             margin: 2em 0 1.5em;
         }
         .matter-body p {

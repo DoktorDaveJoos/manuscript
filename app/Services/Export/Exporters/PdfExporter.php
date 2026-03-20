@@ -107,7 +107,7 @@ class PdfExporter implements Exporter
             'margin_header' => 5,
             'margin_footer' => 5,
             'default_font_size' => $fontSize,
-            'default_font' => 'spectral',
+            'default_font' => 'crimsonpro',
             'fontDir' => $fontDirs,
             'fontdata' => $fontData,
             'tempDir' => storage_path('app/mpdf-tmp'),
@@ -134,10 +134,6 @@ class PdfExporter implements Exporter
 
                 $content = $scene->content ?? '';
                 $html = $this->contentPreparer->toPdfHtml($content);
-
-                if ($sceneIndex === 0) {
-                    $html = $this->contentPreparer->addDropCap($html);
-                }
 
                 $preparedContent .= $html;
             }
