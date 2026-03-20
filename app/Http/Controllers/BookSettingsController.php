@@ -115,7 +115,16 @@ class BookSettingsController extends Controller
                 ...$ch->only('id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count'),
                 'content' => $ch->getContentWithSceneBreaks(),
             ]),
-            'trimSizes' => collect(TrimSize::cases())->map(fn ($t) => ['value' => $t->value, 'label' => $t->label()]),
+            'trimSizes' => collect(TrimSize::cases())->map(function ($t) {
+                $dims = $t->dimensions();
+
+                return [
+                    'value' => $t->value,
+                    'label' => $t->label(),
+                    'width' => $dims['width'],
+                    'height' => $dims['height'],
+                ];
+            }),
             'acts' => $book->acts->map(fn ($a) => $a->only('id', 'number', 'title')),
             'copyrightText' => (string) AppSetting::get('copyright_text', ''),
             'acknowledgmentText' => (string) AppSetting::get('acknowledgment_text', ''),

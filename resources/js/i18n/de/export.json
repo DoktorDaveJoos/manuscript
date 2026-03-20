@@ -1,0 +1,45 @@
+{
+    "title": "Exportieren",
+    "subtitle": "Konfiguriere und exportiere dein Manuskript.",
+    "pageTitle": "Export — {{bookTitle}}",
+
+    "format": "FORMAT",
+    "template": "VORLAGE",
+    "templateHint": "Steuert Typografie, Kapitelüberschriften und Seitenformatierung.",
+    "pdfOptions": "PDF-OPTIONEN",
+    "pdfOptionsHint": "Gilt nur für PDF-Exporte.",
+    "trimSize": "Buchformat",
+    "fontSize": "Schriftgröße",
+    "options": "OPTIONEN",
+
+    "includeChapterTitles": "Kapitelüberschriften einbeziehen",
+    "includeActBreaks": "Aktumbrüche einbeziehen",
+    "showPageNumbers": "Seitenzahlen anzeigen",
+
+    "exportAs": "Als .{{format}} exportieren",
+    "exporting": "Exportiert…",
+    "previewInBrowser": "Im Browser ansehen",
+    "proRequired": "Erfordert PRO-Lizenz.",
+    "learnMore": "Mehr erfahren",
+
+    "readingOrder": "Lesereihenfolge",
+    "readingOrderSubtitle": "Ziehen zum Umordnen der Exportreihenfolge",
+    "frontMatter": "TITELEI",
+    "chapters": "KAPITEL",
+    "backMatter": "NACHSPANN",
+    "excludedHint": "Nicht angekreuzte Einträge werden vom Export ausgeschlossen",
+
+    "frontMatter.titlePage": "Titelseite",
+    "frontMatter.copyright": "Copyright",
+    "frontMatter.tableOfContents": "Inhaltsverzeichnis",
+
+    "backMatter.acknowledgments": "Danksagung",
+    "backMatter.aboutTheAuthor": "Über den Autor",
+
+    "preview": "VORSCHAU",
+    "preview.contents": "Inhalt",
+    "preview.copyright": "Copyright \u00a9 {{year}}. Alle Rechte vorbehalten.",
+    "preview.acknowledgments": "Danksagung",
+    "preview.aboutTheAuthor": "Über den Autor",
+    "preview.empty": "Kapitel auswählen für Vorschau"
+}

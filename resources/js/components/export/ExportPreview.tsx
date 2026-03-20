@@ -17,7 +17,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso } from 'react-virtuoso';
 import type { Format } from '@/components/export/ExportSettings';
-import type { MatterItem } from '@/components/export/types';
+import type { MatterItem, TrimSizeOption } from '@/components/export/types';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { jsonFetchHeaders } from '@/lib/utils';
 
@@ -29,30 +29,21 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 const PAGE_GAP = 12;
 const PAGE_PADDING = 56; // px-7 = 28px each side
 
-const TRIM_SPECS: Record<string, { w: number; h: number }> = {
-    '5x8': { w: 127, h: 203 },
-    '5.25x8': { w: 133, h: 203 },
-    '5.5x8.5': { w: 140, h: 216 },
-    '6x9': { w: 152, h: 229 },
-    '7x10': { w: 178, h: 254 },
-    '8.5x11': { w: 216, h: 279 },
-};
-
-function computePageHeight(trimSize: string, pageWidth: number): number {
-    const spec = TRIM_SPECS[trimSize] ?? TRIM_SPECS['6x9'];
-    return Math.round(pageWidth * (spec.h / spec.w));
-}
-
-function computeScaleFactor(trimSize: string, pageWidth: number): number {
-    const spec = TRIM_SPECS[trimSize] ?? TRIM_SPECS['6x9'];
-    const pageWidthPt = (spec.w / 25.4) * 72;
-    return pageWidth / pageWidthPt;
+function computePageDimensions(
+    spec: TrimSizeOption,
+    pageWidth: number,
+): { pageHeight: number; scaleFactor: number } {
+    const pageHeight = Math.round(pageWidth * (spec.height / spec.width));
+    const pageWidthPt = (spec.width / 25.4) * 72;
+    const scaleFactor = pageWidth / pageWidthPt;
+    return { pageHeight, scaleFactor };
 }
 
 interface ExportPreviewProps {
     bookId: number;
     format: Format;
     trimSize: string;
+    trimSizes: TrimSizeOption[];
     fontSize: number;
     includeChapterTitles: boolean;
     showPageNumbers: boolean;
@@ -153,6 +144,7 @@ export default function ExportPreview({
     bookId,
     format,
     trimSize,
+    trimSizes,
     fontSize,
     includeChapterTitles,
     showPageNumbers,
@@ -184,8 +176,14 @@ export default function ExportPreview({
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const pageWidth = panelWidth - PAGE_PADDING;
-    const pageHeight = computePageHeight(trimSize, pageWidth);
-    const scaleFactor = computeScaleFactor(trimSize, pageWidth);
+    const trimSpec = useMemo(
+        () => trimSizes.find((t) => t.value === trimSize) ?? trimSizes[0],
+        [trimSizes, trimSize],
+    );
+    const { pageHeight, scaleFactor } = computePageDimensions(
+        trimSpec,
+        pageWidth,
+    );
 
     const selectedIdsArray = useMemo(
         () => Array.from(selectedChapterIds),

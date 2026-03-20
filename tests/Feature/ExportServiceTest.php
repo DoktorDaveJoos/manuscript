@@ -863,7 +863,8 @@ test('pdf blade template renders valid html', function () {
         'book' => $book,
         'chapters' => $chapters,
         'options' => $options,
-        'fontData' => null,
+        'css' => (new \App\Services\Export\Templates\ClassicTemplate)->pdfCss($options->fontSize),
+        'contentPreparer' => $contentPreparer,
     ])->render();
 
     expect($html)->toContain('<!DOCTYPE html>');

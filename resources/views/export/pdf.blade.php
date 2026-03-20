@@ -5,29 +5,10 @@
     <style>
         @php
             $trimSize = $options->trimSize ?? \App\Enums\TrimSize::UsTrade;
-            $fontSize = $options->fontSize ?? 11;
+            $fontSize = $options->fontSize;
             $dimensions = $trimSize->dimensions();
             $margins = $trimSize->margins();
-            $dropCapSize = round($fontSize * 3.2);
-            $contentPreparer = new \App\Services\Export\ContentPreparer();
         @endphp
-
-        @if ($fontData ?? null)
-        @font-face {
-            font-family: "Spectral";
-            src: url("data:font/ttf;base64,{{ $fontData['regular'] }}") format("truetype");
-            font-weight: normal;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: "Spectral";
-            src: url("data:font/ttf;base64,{{ $fontData['italic'] }}") format("truetype");
-            font-weight: normal;
-            font-style: italic;
-            font-display: swap;
-        }
-        @endif
 
         @@page {
             size: {{ $dimensions['width'] }}mm {{ $dimensions['height'] }}mm;
@@ -88,145 +69,11 @@
             even-header-name: _blank;
         }
 
-        body {
-            font-family: "Spectral", Georgia, serif;
-            font-size: {{ $fontSize }}pt;
-            line-height: 1.5;
-            text-align: justify;
-            color: #4A4A4A;
-        }
-
-        .chapter-label {
-            font-size: 0.65em;
-            font-weight: 500;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            color: #B5B5B5;
-            margin: 2em 0 0.25em;
-            text-indent: 0;
-        }
-
-        h1 {
-            font-size: 1.6em;
-            font-weight: normal;
-            text-align: center;
-            margin: 0 0 1.5em;
-            color: #1a1a1a;
-        }
+        {{-- Template CSS (typography, colors, spacing) --}}
+        {!! $css !!}
 
         .act-break {
-            font-size: 1.6em;
-            font-weight: bold;
-            text-align: center;
-            margin: 3em 0 1em;
-            color: #1a1a1a;
             page: matter;
-            break-before: page;
-        }
-
-        p {
-            margin: 0;
-            text-indent: 1.5em;
-            widows: 2;
-            orphans: 2;
-        }
-
-        p:first-child,
-        .scene-break + p,
-        h1 + p,
-        .act-break + p {
-            text-indent: 0;
-        }
-
-        .drop-cap {
-            float: left;
-            font-size: {{ $dropCapSize }}pt;
-            line-height: 0.8;
-            margin: 2pt 3pt 0 0;
-            color: #1a1a1a;
-        }
-
-        .scene-break {
-            text-align: center;
-            letter-spacing: 0.3em;
-            color: #B5B5B5;
-            margin: 1.5em 0;
-            text-indent: 0;
-        }
-
-        .toc-title {
-            font-size: 1.8em;
-            font-weight: bold;
-            text-align: center;
-            margin: 2em 0 1.5em;
-            color: #1a1a1a;
-        }
-
-        .toc-entry {
-            margin: 0.3em 0;
-            text-indent: 0;
-        }
-
-        .toc-entry a {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .matter-title {
-            font-size: 0.65em;
-            font-weight: 500;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            color: #B5B5B5;
-            margin: 2em 0 1.5em;
-            text-indent: 0;
-        }
-
-        .matter-body {
-            text-indent: 0;
-            margin: 0 0 0.5em;
-        }
-
-        .title-page-title {
-            font-size: 2em;
-            font-weight: normal;
-            text-align: center;
-            color: #1a1a1a;
-            margin: 0;
-            text-indent: 0;
-        }
-
-        .title-page-author {
-            font-size: 0.85em;
-            text-align: center;
-            color: #B5B5B5;
-            margin: 0.5em 0 0;
-            text-indent: 0;
-        }
-
-        .copyright-text {
-            font-size: 0.75em;
-            text-align: center;
-            color: #999;
-            text-indent: 0;
-            margin: 0 0 0.3em;
-        }
-
-        .dedication-text {
-            font-style: italic;
-            text-align: center;
-            color: #4A4A4A;
-            text-indent: 0;
-        }
-
-        .matter-section {
-            page: matter;
-            break-before: page;
-        }
-
-        .chapter-section {
             break-before: page;
         }
     </style>

@@ -36,7 +36,12 @@ export type StorylineRef = {
     type: string;
 };
 
-export type TrimSizeOption = { value: string; label: string };
+export type TrimSizeOption = {
+    value: string;
+    label: string;
+    width: number;
+    height: number;
+};
 
 export type MatterItem = {
     id: string;

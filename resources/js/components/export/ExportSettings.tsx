@@ -134,14 +134,11 @@ export default function ExportSettings({
                     {/* Template */}
                     <div className="flex flex-col gap-2.5">
                         <SectionLabel>{t('template')}</SectionLabel>
-                        <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-white px-3.5 py-2.5 dark:border-border dark:bg-surface-card">
-                            <div className="flex items-center gap-2.5">
-                                <BookOpen className="h-4 w-4 text-ink-faint" />
-                                <span className="text-[13px] text-ink">
-                                    Classic
-                                </span>
-                            </div>
-                            <ChevronDown className="h-3.5 w-3.5 text-ink-faint" />
+                        <div className="flex items-center gap-2.5">
+                            <BookOpen className="h-4 w-4 text-ink-faint" />
+                            <span className="text-[13px] text-ink">
+                                Classic
+                            </span>
                         </div>
                         <p className="text-[11px] text-ink-faint">
                             {t('templateHint')}

@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { reorder as reorderChapters } from '@/actions/App/Http/Controllers/ChapterController';
 import Sidebar from '@/components/editor/Sidebar';
 import ExportPreview from '@/components/export/ExportPreview';
 import ExportReadingOrder from '@/components/export/ExportReadingOrder';
@@ -16,7 +17,6 @@ import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import { downloadExport } from '@/lib/export-download';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Book } from '@/types/models';
-import { reorder as reorderChapters } from '@/actions/App/Http/Controllers/ChapterController';
 
 interface Props {
     book: Book;
@@ -238,6 +238,7 @@ export default function Export({
                     bookId={book.id}
                     format={format}
                     trimSize={trimSize}
+                    trimSizes={trimSizes}
                     fontSize={fontSize}
                     includeChapterTitles={includeChapterTitles}
                     showPageNumbers={showPageNumbers}

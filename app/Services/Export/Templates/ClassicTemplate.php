@@ -35,7 +35,7 @@ class ClassicTemplate
      */
     public function pdfCss(int $fontSize): string
     {
-        $dropCapSize = round($fontSize * 3.2);
+        $dropCapSize = round($fontSize * $this->designTokens()['dropCapMultiplier']);
 
         return <<<CSS
         body {
@@ -54,10 +54,6 @@ class ClassicTemplate
             color: #B5B5B5;
             margin: 2em 0 0.25em;
             text-indent: 0;
-            page-break-before: always;
-        }
-        .chapter-label:first-child {
-            page-break-before: avoid;
         }
         h1 {
             font-size: 1.6em;
@@ -155,6 +151,13 @@ class ClassicTemplate
             text-align: center;
             color: #4A4A4A;
             text-indent: 0;
+        }
+        .matter-section {
+            page: matter;
+            break-before: page;
+        }
+        .chapter-section {
+            break-before: page;
         }
         CSS;
     }

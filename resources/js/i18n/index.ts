@@ -5,6 +5,7 @@ import deAi from './de/ai.json';
 import deCommon from './de/common.json';
 import deDashboard from './de/dashboard.json';
 import deEditor from './de/editor.json';
+import deExport from './de/export.json';
 import deOnboarding from './de/onboarding.json';
 import dePlot from './de/plot.json';
 import deSettings from './de/settings.json';
@@ -23,6 +24,7 @@ import esAi from './es/ai.json';
 import esCommon from './es/common.json';
 import esDashboard from './es/dashboard.json';
 import esEditor from './es/editor.json';
+import esExport from './es/export.json';
 import esOnboarding from './es/onboarding.json';
 import esPlot from './es/plot.json';
 import esSettings from './es/settings.json';
@@ -50,6 +52,7 @@ i18n.use(initReactI18next).init({
             plot: dePlot,
             wiki: deWiki,
             ai: deAi,
+            export: deExport,
         },
         es: {
             common: esCommon,
@@ -60,6 +63,7 @@ i18n.use(initReactI18next).init({
             plot: esPlot,
             wiki: esWiki,
             ai: esAi,
+            export: esExport,
         },
     },
     lng: 'en',

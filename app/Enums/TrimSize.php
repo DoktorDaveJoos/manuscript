@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum TrimSize: string
 {
+    case MassMarket = '4.25x6.87';
     case Pocket = '5x8';
     case Digest = '5.25x8';
     case SmallTrade = '5.5x8.5';
@@ -14,6 +15,7 @@ enum TrimSize: string
     public function label(): string
     {
         return match ($this) {
+            self::MassMarket => '4.25" × 6.87"',
             self::Pocket => '5" × 8"',
             self::Digest => '5.25" × 8"',
             self::SmallTrade => '5.5" × 8.5"',
@@ -29,6 +31,7 @@ enum TrimSize: string
     public function dimensions(): array
     {
         return match ($this) {
+            self::MassMarket => ['width' => 108, 'height' => 175],
             self::Pocket => ['width' => 127, 'height' => 203],
             self::Digest => ['width' => 133, 'height' => 203],
             self::SmallTrade => ['width' => 140, 'height' => 216],
@@ -44,6 +47,7 @@ enum TrimSize: string
     public function margins(): array
     {
         return match ($this) {
+            self::MassMarket => ['top' => 13, 'bottom' => 13, 'outer' => 11, 'gutter' => 16],
             self::Pocket => ['top' => 16, 'bottom' => 16, 'outer' => 14, 'gutter' => 19],
             self::Digest => ['top' => 16, 'bottom' => 16, 'outer' => 14, 'gutter' => 20],
             self::SmallTrade => ['top' => 19, 'bottom' => 19, 'outer' => 16, 'gutter' => 22],

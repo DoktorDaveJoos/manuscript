@@ -1,0 +1,45 @@
+{
+    "title": "Exportar",
+    "subtitle": "Configura y exporta tu manuscrito.",
+    "pageTitle": "Exportar — {{bookTitle}}",
+
+    "format": "FORMATO",
+    "template": "PLANTILLA",
+    "templateHint": "Controla la tipografía, los títulos de capítulos y el formato de página.",
+    "pdfOptions": "OPCIONES DE PDF",
+    "pdfOptionsHint": "Solo aplica a exportaciones en PDF.",
+    "trimSize": "Tamaño de corte",
+    "fontSize": "Tamaño de fuente",
+    "options": "OPCIONES",
+
+    "includeChapterTitles": "Incluir títulos de capítulos",
+    "includeActBreaks": "Incluir saltos de acto",
+    "showPageNumbers": "Mostrar números de página",
+
+    "exportAs": "Exportar como .{{format}}",
+    "exporting": "Exportando…",
+    "previewInBrowser": "Vista previa en el navegador",
+    "proRequired": "Requiere licencia PRO.",
+    "learnMore": "Más información",
+
+    "readingOrder": "Orden de lectura",
+    "readingOrderSubtitle": "Arrastra para reordenar la secuencia de exportación",
+    "frontMatter": "PÁGINAS PRELIMINARES",
+    "chapters": "CAPÍTULOS",
+    "backMatter": "PÁGINAS FINALES",
+    "excludedHint": "Los elementos no marcados se excluyen de la exportación",
+
+    "frontMatter.titlePage": "Portada",
+    "frontMatter.copyright": "Copyright",
+    "frontMatter.tableOfContents": "Índice",
+
+    "backMatter.acknowledgments": "Agradecimientos",
+    "backMatter.aboutTheAuthor": "Sobre el autor",
+
+    "preview": "VISTA PREVIA",
+    "preview.contents": "Contenido",
+    "preview.copyright": "Copyright \u00a9 {{year}}. Todos los derechos reservados.",
+    "preview.acknowledgments": "Agradecimientos",
+    "preview.aboutTheAuthor": "Sobre el autor",
+    "preview.empty": "Selecciona capítulos para vista previa"
+}

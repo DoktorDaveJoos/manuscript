@@ -9,6 +9,7 @@ use App\Services\Export\ContentPreparer;
 use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
 use App\Services\Export\FontService;
+use App\Services\Export\Templates\ClassicTemplate;
 use Illuminate\Support\Collection;
 use Mpdf\Mpdf;
 
@@ -64,11 +65,14 @@ class PdfExporter implements Exporter
     {
         $preparedChapters = $this->prepareChapters($chapters);
 
+        $fontSize = $options->fontSize;
+
         return view('export.pdf', [
             'book' => $book,
             'chapters' => $preparedChapters,
             'options' => $options,
-            'fontData' => null, // mPDF loads fonts natively, no inline embedding needed
+            'css' => (new ClassicTemplate)->pdfCss($fontSize),
+            'contentPreparer' => $this->contentPreparer,
         ])->render();
     }
 
@@ -80,7 +84,7 @@ class PdfExporter implements Exporter
         $trimSize = $options->trimSize ?? TrimSize::UsTrade;
         $dimensions = $trimSize->dimensions();
         $margins = $trimSize->margins();
-        $fontSize = $options->fontSize ?? 11;
+        $fontSize = $options->fontSize;
 
         $defaultConfig = (new \Mpdf\Config\ConfigVariables)->getDefaults();
         $defaultFontConfig = (new \Mpdf\Config\FontVariables)->getDefaults();
@@ -132,7 +136,7 @@ class PdfExporter implements Exporter
                 $html = $this->contentPreparer->toPdfHtml($content);
 
                 if ($sceneIndex === 0) {
-                    $html = $this->addDropCap($html);
+                    $html = $this->contentPreparer->addDropCap($html);
                 }
 
                 $preparedContent .= $html;
@@ -142,18 +146,5 @@ class PdfExporter implements Exporter
 
             return $chapter;
         });
-    }
-
-    /**
-     * Add a drop cap to the first character of the first paragraph.
-     */
-    private function addDropCap(string $html): string
-    {
-        return preg_replace(
-            '/(<p[^>]*>)(\s*)([a-zA-Z\x{00C0}-\x{024F}])/u',
-            '$1$2<span class="drop-cap">$3</span>',
-            $html,
-            1,
-        );
     }
 }
