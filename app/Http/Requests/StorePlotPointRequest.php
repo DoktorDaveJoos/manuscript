@@ -24,9 +24,7 @@ class StorePlotPointRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'type' => ['required', Rule::enum(PlotPointType::class)],
             'status' => ['sometimes', Rule::enum(PlotPointStatus::class)],
-            'storyline_id' => ['nullable', 'exists:storylines,id'],
             'act_id' => ['nullable', 'exists:acts,id'],
-            'intended_chapter_id' => ['nullable', 'exists:chapters,id'],
         ];
     }
 }
