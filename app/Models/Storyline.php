@@ -41,12 +41,4 @@ class Storyline extends Model
     {
         return $this->hasMany(Chapter::class);
     }
-
-    /**
-     * @return HasMany<PlotPoint, $this>
-     */
-    public function plotPoints(): HasMany
-    {
-        return $this->hasMany(PlotPoint::class);
-    }
 }

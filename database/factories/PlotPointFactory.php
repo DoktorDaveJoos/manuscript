@@ -27,7 +27,6 @@ class PlotPointFactory extends Factory
             'type' => PlotPointType::Setup,
             'status' => PlotPointStatus::Planned,
             'sort_order' => 0,
-            'is_ai_derived' => false,
         ];
     }
 

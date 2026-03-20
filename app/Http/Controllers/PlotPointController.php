@@ -23,7 +23,7 @@ class PlotPointController extends Controller
             'sort_order' => $nextOrder,
         ]);
 
-        $plotPoint->load(['storyline', 'act', 'intendedChapter']);
+        $plotPoint->load(['act']);
 
         return response()->json($plotPoint, 201);
     }
@@ -32,7 +32,7 @@ class PlotPointController extends Controller
     {
         $plotPoint->update($request->validated());
 
-        $plotPoint->load(['storyline', 'act', 'intendedChapter']);
+        $plotPoint->load(['act']);
 
         return response()->json($plotPoint);
     }
@@ -49,16 +49,12 @@ class PlotPointController extends Controller
         $validated = $request->validate([
             'items' => ['required', 'array'],
             'items.*.id' => ['required', Rule::exists('plot_points', 'id')->where('book_id', $book->id)],
-            'items.*.storyline_id' => ['nullable', 'exists:storylines,id'],
-            'items.*.intended_chapter_id' => ['nullable', 'exists:chapters,id'],
             'items.*.sort_order' => ['required', 'integer', 'min:0'],
         ]);
 
         DB::transaction(function () use ($validated) {
             foreach ($validated['items'] as $item) {
                 PlotPoint::where('id', $item['id'])->update([
-                    'storyline_id' => $item['storyline_id'] ?? null,
-                    'intended_chapter_id' => $item['intended_chapter_id'] ?? null,
                     'sort_order' => $item['sort_order'],
                 ]);
             }

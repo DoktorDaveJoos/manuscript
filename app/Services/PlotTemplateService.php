@@ -36,7 +36,6 @@ class PlotTemplateService
                         'type' => $beat['type'],
                         'status' => PlotPointStatus::Planned,
                         'sort_order' => $plotPointOrder++,
-                        'is_ai_derived' => false,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];

@@ -24,8 +24,6 @@ class PlotPoint extends Model
             'type' => PlotPointType::class,
             'status' => PlotPointStatus::class,
             'sort_order' => 'integer',
-            'is_ai_derived' => 'boolean',
-            'tension_score' => 'integer',
         ];
     }
 
@@ -38,35 +36,11 @@ class PlotPoint extends Model
     }
 
     /**
-     * @return BelongsTo<Storyline, $this>
-     */
-    public function storyline(): BelongsTo
-    {
-        return $this->belongsTo(Storyline::class);
-    }
-
-    /**
      * @return BelongsTo<Act, $this>
      */
     public function act(): BelongsTo
     {
         return $this->belongsTo(Act::class);
-    }
-
-    /**
-     * @return BelongsTo<Chapter, $this>
-     */
-    public function intendedChapter(): BelongsTo
-    {
-        return $this->belongsTo(Chapter::class, 'intended_chapter_id');
-    }
-
-    /**
-     * @return BelongsTo<Chapter, $this>
-     */
-    public function actualChapter(): BelongsTo
-    {
-        return $this->belongsTo(Chapter::class, 'actual_chapter_id');
     }
 
     /**
