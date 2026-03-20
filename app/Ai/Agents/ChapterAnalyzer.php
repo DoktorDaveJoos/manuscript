@@ -7,7 +7,6 @@ use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\SearchSimilarChunks;
 use App\Enums\AiTaskCategory;
-use App\Enums\PlotPointType;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
@@ -62,31 +61,30 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
         1. A concise 2-3 sentence summary of the chapter
         2. Key events that occurred
         3. Characters who appear in this chapter
-        4. Plot points extracted from the chapter with their type and description
 
         **Conflict & tension:**
-        5. tension_score (1-10): Rate the overall conflict intensity. 1=peaceful, 10=maximum conflict. Low scores are not bad — deliberate quiet chapters are essential for rhythm.
-        6. micro_tension_score (1-10): Rate the line-level unease: conflicting emotions, unanswered questions, internal contradiction, social friction. This measures engagement even in quiet scenes (Maass's micro-tension concept).
+        4. tension_score (1-10): Rate the overall conflict intensity. 1=peaceful, 10=maximum conflict. Low scores are not bad — deliberate quiet chapters are essential for rhythm.
+        5. micro_tension_score (1-10): Rate the line-level unease: conflicting emotions, unanswered questions, internal contradiction, social friction. This measures engagement even in quiet scenes (Maass's micro-tension concept).
 
         **Scene craft:**
-        7. scene_purpose: What function does this chapter serve? One of: turning_point (major value change), revelation (new information reshapes understanding), deepening (character/relationship development), setup (establishing future events), resolution (resolving a thread), transition (moving between story elements).
-        8. value_shift: What value changed? Describe concisely, e.g. "safety → danger", "trust → betrayal", "ignorance → awareness". If nothing meaningfully changed, return null.
+        6. scene_purpose: What function does this chapter serve? One of: turning_point (major value change), revelation (new information reshapes understanding), deepening (character/relationship development), setup (establishing future events), resolution (resolving a thread), transition (moving between story elements).
+        7. value_shift: What value changed? Describe concisely, e.g. "safety → danger", "trust → betrayal", "ignorance → awareness". If nothing meaningfully changed, return null.
 
         **Emotional arc:**
-        9. emotional_state_open: Describe the POV character's dominant emotional state at the chapter's opening.
-        10. emotional_state_close: Describe the POV character's dominant emotional state at the chapter's close.
-        11. emotional_shift_magnitude (1-10): How much did the POV character's emotional state change? 1=barely, 10=completely transformed.
+        8. emotional_state_open: Describe the POV character's dominant emotional state at the chapter's opening.
+        9. emotional_state_close: Describe the POV character's dominant emotional state at the chapter's close.
+        10. emotional_shift_magnitude (1-10): How much did the POV character's emotional state change? 1=barely, 10=completely transformed.
 
         **Hooks:**
-        12. hook_score (1-10): How effectively the chapter ending compels continued reading.
-        13. hook_type: 'cliffhanger' (unresolved danger/revelation), 'soft_hook' (intriguing question/emotional pull), 'closed' (satisfying conclusion that still moves story forward), or 'dead_end' (no forward momentum).
-        14. hook_reasoning: Brief reasoning for the hook classification.
-        15. entry_hook_score (1-10): How effectively does the chapter opening pull the reader in? 1=weak/confusing, 10=immediately compelling.
+        11. hook_score (1-10): How effectively the chapter ending compels continued reading.
+        12. hook_type: 'cliffhanger' (unresolved danger/revelation), 'soft_hook' (intriguing question/emotional pull), 'closed' (satisfying conclusion that still moves story forward), or 'dead_end' (no forward momentum).
+        13. hook_reasoning: Brief reasoning for the hook classification.
+        14. entry_hook_score (1-10): How effectively does the chapter opening pull the reader in? 1=weak/confusing, 10=immediately compelling.
 
         **Pacing & prose:**
-        16. pacing_feel: Assess the prose rhythm. One of: breakneck (rapid action, short sentences), brisk (forward momentum, good clip), measured (balanced, deliberate), languid (slow, contemplative, descriptive), static (little movement or progression).
-        17. sensory_grounding (1-5): How many distinct senses are meaningfully engaged (sight, sound, touch, taste, smell)? Not just mentioned — actually used to ground the reader.
-        18. information_delivery: How is new information revealed? One of: organic (through action/dialogue), mostly_organic, mixed, exposition_heavy, info_dump.
+        15. pacing_feel: Assess the prose rhythm. One of: breakneck (rapid action, short sentences), brisk (forward momentum, good clip), measured (balanced, deliberate), languid (slow, contemplative, descriptive), static (little movement or progression).
+        16. sensory_grounding (1-5): How many distinct senses are meaningfully engaged (sight, sound, touch, taste, smell)? Not just mentioned — actually used to ground the reader.
+        17. information_delivery: How is new information revealed? One of: organic (through action/dialogue), mostly_organic, mixed, exposition_heavy, info_dump.
 
         Use the search tool to find related passages from other chapters when cross-referencing themes or plot threads.
         The book ID is {$this->book->id}. Use this when calling the search tool.
@@ -118,13 +116,6 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
             'pacing_feel' => $schema->string()->enum(['breakneck', 'brisk', 'measured', 'languid', 'static'])->required(),
             'sensory_grounding' => $schema->integer()->min(1)->max(5)->required(),
             'information_delivery' => $schema->string()->enum(['organic', 'mostly_organic', 'mixed', 'exposition_heavy', 'info_dump'])->required(),
-            'plot_points' => $schema->array()->items(
-                $schema->object([
-                    'title' => $schema->string()->required(),
-                    'description' => $schema->string()->required(),
-                    'type' => $schema->string()->enum(array_column(PlotPointType::cases(), 'value'))->required(),
-                ])->withoutAdditionalProperties()
-            )->required(),
         ];
     }
 

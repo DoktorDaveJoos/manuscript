@@ -26,8 +26,7 @@ test('chapter analyzer returns structured chapter analysis', function () {
         ->and($response['entry_hook_score'])->toBeInt()
         ->and($response['pacing_feel'])->toBeString()
         ->and($response['sensory_grounding'])->toBeInt()
-        ->and($response['information_delivery'])->toBeString()
-        ->and($response['plot_points'])->toBeArray();
+        ->and($response['information_delivery'])->toBeString();
 
     ChapterAnalyzer::assertPrompted(fn ($prompt) => true);
 });
