@@ -110,20 +110,6 @@
             </section>
         @endif
 
-        @if ($item === 'dedication')
-            <section class="matter-section" style="text-align: center; padding-top: 30%;">
-                @php
-                    $dedicationContent = $contentPreparer->toMatterHtml($options->dedicationText);
-                    if ($dedicationContent === '') {
-                        $dedicationContent = '<p class="dedication-text"></p>';
-                    } else {
-                        $dedicationContent = str_replace('class="matter-body"', 'class="dedication-text"', $dedicationContent);
-                    }
-                @endphp
-                {!! $dedicationContent !!}
-            </section>
-        @endif
-
         @if ($item === 'toc')
             <section class="matter-section">
                 <p class="toc-title">Table of Contents</p>
@@ -165,12 +151,10 @@
     {{-- Back Matter --}}
     @php
         $backMatterHeadings = [
-            'also-by' => 'Also By',
             'acknowledgments' => 'Acknowledgments',
             'about-author' => 'About the Author',
         ];
         $backMatterTexts = [
-            'also-by' => $options->alsoByText,
             'acknowledgments' => $options->acknowledgmentText,
             'about-author' => $options->aboutAuthorText,
         ];

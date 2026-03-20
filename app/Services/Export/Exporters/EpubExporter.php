@@ -3,6 +3,7 @@
 namespace App\Services\Export\Exporters;
 
 use App\Contracts\Exporter;
+use App\Contracts\ExportTemplate;
 use App\Enums\BackMatterType;
 use App\Enums\FrontMatterType;
 use App\Models\Book;
@@ -10,7 +11,6 @@ use App\Services\Export\ContentPreparer;
 use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
 use App\Services\Export\FontService;
-use App\Services\Export\Templates\ClassicTemplate;
 use Illuminate\Support\Collection;
 use ZipArchive;
 
@@ -19,6 +19,7 @@ class EpubExporter implements Exporter
     public function __construct(
         private ContentPreparer $contentPreparer,
         private FontService $fontService,
+        private ExportTemplate $template,
     ) {}
 
     public function export(Book $book, Collection $chapters, ExportOptions $options): string
@@ -73,8 +74,7 @@ class EpubExporter implements Exporter
     private function addStylesheet(ZipArchive $zip): void
     {
         $fontFace = $this->fontService->epubFontFaceCss();
-        $template = new ClassicTemplate;
-        $css = $template->epubCss($fontFace);
+        $css = $this->template->epubCss($fontFace);
 
         $zip->addFromString('OEBPS/Styles/stylesheet.css', $css);
     }
@@ -101,7 +101,6 @@ class EpubExporter implements Exporter
             match ($item) {
                 FrontMatterType::TitlePage->value => $files[] = $this->addTitlePage($zip, $book),
                 FrontMatterType::Copyright->value => $files[] = $this->addCopyrightPage($zip, $book, $options->copyrightText),
-                FrontMatterType::Dedication->value => $files[] = $this->addDedicationPage($zip, $options->dedicationText),
                 FrontMatterType::Toc->value => $files[] = $this->addTocAsFrontMatter($zip, $chapters, $options),
                 default => null,
             };
@@ -116,7 +115,6 @@ class EpubExporter implements Exporter
     private function addBackMatter(ZipArchive $zip, ExportOptions $options): array
     {
         $matterConfig = [
-            BackMatterType::AlsoBy->value => ['epubType' => 'other-credits', 'heading' => 'Also By', 'text' => $options->alsoByText],
             BackMatterType::Acknowledgments->value => ['epubType' => 'acknowledgments', 'heading' => 'Acknowledgments', 'text' => $options->acknowledgmentText],
             BackMatterType::AboutAuthor->value => ['epubType' => 'contributors', 'heading' => 'About the Author', 'text' => $options->aboutAuthorText],
         ];
@@ -186,25 +184,6 @@ class EpubExporter implements Exporter
         $zip->addFromString('OEBPS/Text/copyright.xhtml', $xhtml);
 
         return ['id' => 'copyright', 'file' => 'copyright.xhtml', 'label' => 'Copyright'];
-    }
-
-    /**
-     * @return array{id: string, file: string, label: string}
-     */
-    private function addDedicationPage(ZipArchive $zip, string $dedicationText): array
-    {
-        $content = $this->contentPreparer->toMatterXhtml($dedicationText);
-
-        $body = <<<HTML
-        <section epub:type="dedication" class="dedication-page">
-          {$content}
-        </section>
-        HTML;
-
-        $xhtml = $this->wrapXhtml('Dedication', $body);
-        $zip->addFromString('OEBPS/Text/dedication.xhtml', $xhtml);
-
-        return ['id' => 'dedication', 'file' => 'dedication.xhtml', 'label' => 'Dedication'];
     }
 
     /**

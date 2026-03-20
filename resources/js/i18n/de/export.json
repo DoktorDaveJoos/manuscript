@@ -4,10 +4,15 @@
     "pageTitle": "Export — {{bookTitle}}",
 
     "format": "FORMAT",
+    "formatDescription.epub": "Digitales E-Book für E-Reader und Tablets. KDP-bereit.",
+    "formatDescription.pdf": "Druckfertiges Layout mit präziser Seitenformatierung.",
+    "formatDescription.docx": "Bearbeitbares Manuskript zum Teilen mit Lektoren und Agenten.",
+    "formatDescription.txt": "Nur-Text-Sicherung. Universelle Kompatibilität, keine Formatierung.",
     "template": "VORLAGE",
     "templateHint": "Steuert Typografie, Kapitelüberschriften und Seitenformatierung.",
+    "templateComingSoon": "Weitere Vorlagen sind in Arbeit — wir entwickeln aktiv neue Stile!",
     "pdfOptions": "PDF-OPTIONEN",
-    "pdfOptionsHint": "Gilt nur für PDF-Exporte.",
+    "trimSizeHint": "Das Buchformat legt die physischen Seitenmaße deines gedruckten Buches fest.",
     "trimSize": "Buchformat",
     "fontSize": "Schriftgröße",
     "options": "OPTIONEN",
@@ -41,5 +46,6 @@
     "preview.copyright": "Copyright \u00a9 {{year}}. Alle Rechte vorbehalten.",
     "preview.acknowledgments": "Danksagung",
     "preview.aboutTheAuthor": "Über den Autor",
-    "preview.empty": "Kapitel auswählen für Vorschau"
+    "preview.empty": "Kapitel auswählen für Vorschau",
+    "preview.noVisual": "Keine visuelle Vorschau für .{{format}}"
 }

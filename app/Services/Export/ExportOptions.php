@@ -20,12 +20,11 @@ final readonly class ExportOptions
         public int $fontSize = 11,
         public array $frontMatter = [],
         public array $backMatter = [],
-        public string $dedicationText = '',
         public string $copyrightText = '',
         public string $acknowledgmentText = '',
         public string $aboutAuthorText = '',
-        public string $alsoByText = '',
         public ?ExportFormat $previewFormat = null,
+        public string $template = 'classic',
     ) {}
 
     /**
@@ -42,12 +41,11 @@ final readonly class ExportOptions
             fontSize: (int) ($data['font_size'] ?? 11),
             frontMatter: (array) ($data['front_matter'] ?? []),
             backMatter: (array) ($data['back_matter'] ?? []),
-            dedicationText: (string) ($data['dedication_text'] ?? ''),
             copyrightText: (string) ($data['copyright_text'] ?? ''),
             acknowledgmentText: (string) ($data['acknowledgment_text'] ?? ''),
             aboutAuthorText: (string) ($data['about_author_text'] ?? ''),
-            alsoByText: (string) ($data['also_by_text'] ?? ''),
             previewFormat: isset($data['preview_format']) ? ExportFormat::from($data['preview_format']) : null,
+            template: (string) ($data['template'] ?? 'classic'),
         );
     }
 }

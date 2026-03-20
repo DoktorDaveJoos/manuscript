@@ -4,10 +4,15 @@
     "pageTitle": "Export — {{bookTitle}}",
 
     "format": "FORMAT",
+    "formatDescription.epub": "Digital ebook for e-readers and tablets. KDP-ready.",
+    "formatDescription.pdf": "Print-ready layout with precise page formatting.",
+    "formatDescription.docx": "Editable manuscript for sharing with editors and agents.",
+    "formatDescription.txt": "Plain text backup. Universal compatibility, no formatting.",
     "template": "TEMPLATE",
     "templateHint": "Controls typography, chapter headings, and page formatting.",
+    "templateComingSoon": "More templates are on the way — we're actively working on new styles!",
     "pdfOptions": "PDF OPTIONS",
-    "pdfOptionsHint": "Only applies to PDF exports.",
+    "trimSizeHint": "Trim size sets the physical page dimensions of your printed book.",
     "trimSize": "Trim size",
     "fontSize": "Font size",
     "options": "OPTIONS",
@@ -41,5 +46,6 @@
     "preview.copyright": "Copyright \u00a9 {{year}}. All rights reserved.",
     "preview.acknowledgments": "Acknowledgments",
     "preview.aboutTheAuthor": "About the Author",
-    "preview.empty": "Select chapters to preview"
+    "preview.empty": "Select chapters to preview",
+    "preview.noVisual": "No visual preview for .{{format}}"
 }

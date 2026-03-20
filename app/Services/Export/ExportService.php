@@ -2,6 +2,7 @@
 
 namespace App\Services\Export;
 
+use App\Contracts\ExportTemplate;
 use App\Enums\ExportFormat;
 use App\Models\AppSetting;
 use App\Models\Book;
@@ -11,6 +12,7 @@ use App\Services\Export\Exporters\EpubExporter;
 use App\Services\Export\Exporters\KdpExporter;
 use App\Services\Export\Exporters\PdfExporter;
 use App\Services\Export\Exporters\TxtExporter;
+use App\Services\Export\Templates\ClassicTemplate;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -30,8 +32,9 @@ class ExportService
         self::injectMatterText($options);
 
         $exportOptions = ExportOptions::fromArray($options);
+        $template = self::resolveTemplate($exportOptions->template);
 
-        $exporter = $this->resolveExporter($format);
+        $exporter = $this->resolveExporter($format, $template);
         $filePath = $exporter->export($book, $chapters, $exportOptions);
 
         $downloadName = Str::slug($book->title ?: 'export').'.'.$format->extension();
@@ -64,17 +67,11 @@ class ExportService
         if (in_array('copyright', $frontMatter)) {
             $options['copyright_text'] = (string) AppSetting::get('copyright_text', '');
         }
-        if (in_array('dedication', $frontMatter)) {
-            $options['dedication_text'] = (string) AppSetting::get('dedication_text', '');
-        }
         if (in_array('acknowledgments', $backMatter)) {
             $options['acknowledgment_text'] = (string) AppSetting::get('acknowledgment_text', '');
         }
         if (in_array('about-author', $backMatter)) {
             $options['about_author_text'] = (string) AppSetting::get('about_author_text', '');
-        }
-        if (in_array('also-by', $backMatter)) {
-            $options['also_by_text'] = (string) AppSetting::get('also_by_text', '');
         }
     }
 
@@ -108,7 +105,15 @@ class ExportService
         return $query->get();
     }
 
-    private function resolveExporter(ExportFormat $format): \App\Contracts\Exporter
+    public static function resolveTemplate(string $slug): ExportTemplate
+    {
+        return match ($slug) {
+            'classic' => new ClassicTemplate,
+            default => new ClassicTemplate,
+        };
+    }
+
+    private function resolveExporter(ExportFormat $format, ExportTemplate $template): \App\Contracts\Exporter
     {
         $contentPreparer = new ContentPreparer;
         $fontService = new FontService;
@@ -116,9 +121,9 @@ class ExportService
         return match ($format) {
             ExportFormat::Docx => new DocxExporter($contentPreparer),
             ExportFormat::Txt => new TxtExporter($contentPreparer),
-            ExportFormat::Epub => new EpubExporter($contentPreparer, $fontService),
-            ExportFormat::Pdf => new PdfExporter($contentPreparer, $fontService),
-            ExportFormat::Kdp => new KdpExporter(new EpubExporter($contentPreparer, $fontService)),
+            ExportFormat::Epub => new EpubExporter($contentPreparer, $fontService, $template),
+            ExportFormat::Pdf => new PdfExporter($contentPreparer, $fontService, $template),
+            ExportFormat::Kdp => new KdpExporter(new EpubExporter($contentPreparer, $fontService, $template)),
         };
     }
 }

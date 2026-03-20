@@ -1,5 +1,6 @@
 <?php
 
+use App\Contracts\ExportTemplate;
 use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\Chapter;
@@ -8,6 +9,7 @@ use App\Models\Storyline;
 use App\Services\Export\ContentPreparer;
 use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
+use App\Services\Export\Templates\ClassicTemplate;
 use Native\Desktop\Facades\System;
 
 beforeEach(function () {
@@ -682,8 +684,8 @@ test('pdf includes front and back matter pages', function () {
     $response = $this->service->export($book, [
         'format' => 'pdf',
         'scope' => 'full',
-        'front_matter' => ['title-page', 'copyright', 'dedication'],
-        'back_matter' => ['acknowledgments', 'about-author', 'also-by'],
+        'front_matter' => ['title-page', 'copyright'],
+        'back_matter' => ['acknowledgments', 'about-author'],
     ]);
 
     expect($response->getStatusCode())->toBe(200);
@@ -702,7 +704,7 @@ test('epub includes title page xhtml', function () {
     $response = $this->service->export($book, [
         'format' => 'epub',
         'scope' => 'full',
-        'front_matter' => ['title-page', 'copyright', 'dedication'],
+        'front_matter' => ['title-page', 'copyright'],
     ]);
 
     $zip = new ZipArchive;
@@ -710,7 +712,6 @@ test('epub includes title page xhtml', function () {
 
     expect($zip->locateName('OEBPS/Text/title-page.xhtml'))->not->toBeFalse();
     expect($zip->locateName('OEBPS/Text/copyright.xhtml'))->not->toBeFalse();
-    expect($zip->locateName('OEBPS/Text/dedication.xhtml'))->not->toBeFalse();
 
     $titlePage = $zip->getFromName('OEBPS/Text/title-page.xhtml');
     expect($titlePage)->toContain('EPUB Matter');
@@ -718,9 +719,6 @@ test('epub includes title page xhtml', function () {
 
     $copyrightPage = $zip->getFromName('OEBPS/Text/copyright.xhtml');
     expect($copyrightPage)->toContain('epub:type="copyright-page"');
-
-    $dedicationPage = $zip->getFromName('OEBPS/Text/dedication.xhtml');
-    expect($dedicationPage)->toContain('epub:type="dedication"');
 
     $zip->close();
 });
@@ -924,6 +922,54 @@ test('resolveChapters is accessible as public static method', function () {
     $chapters = ExportService::resolveChapters($book, ['scope' => 'full']);
 
     expect($chapters)->toHaveCount(1);
+});
+
+// === Template Resolution Tests ===
+
+test('resolveTemplate returns ClassicTemplate for classic slug', function () {
+    $template = ExportService::resolveTemplate('classic');
+
+    expect($template)->toBeInstanceOf(ClassicTemplate::class);
+    expect($template)->toBeInstanceOf(ExportTemplate::class);
+    expect($template::slug())->toBe('classic');
+    expect($template::name())->toBe('Classic');
+});
+
+test('resolveTemplate falls back to ClassicTemplate for unknown slug', function () {
+    $template = ExportService::resolveTemplate('unknown');
+
+    expect($template)->toBeInstanceOf(ClassicTemplate::class);
+});
+
+test('ExportOptions parses template from array', function () {
+    $options = ExportOptions::fromArray(['template' => 'classic']);
+    expect($options->template)->toBe('classic');
+
+    $optionsDefault = ExportOptions::fromArray([]);
+    expect($optionsDefault->template)->toBe('classic');
+});
+
+test('export endpoint accepts template parameter', function () {
+    $book = Book::factory()->create(['author' => 'Test', 'language' => 'en']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Text.</p>', 'sort_order' => 1]);
+
+    $this->postJson(route('books.settings.export.run', $book), [
+        'format' => 'epub',
+        'scope' => 'full',
+        'template' => 'classic',
+    ])->assertOk();
+});
+
+test('export endpoint rejects invalid template', function () {
+    $book = Book::factory()->create();
+
+    $this->postJson(route('books.settings.export.run', $book), [
+        'format' => 'epub',
+        'scope' => 'full',
+        'template' => 'nonexistent',
+    ])->assertUnprocessable();
 });
 
 test('injectMatterText populates options from app settings', function () {

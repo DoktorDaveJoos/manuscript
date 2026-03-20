@@ -27,10 +27,8 @@ class KdpExporter implements Exporter
             fontSize: $options->fontSize,
             frontMatter: $options->frontMatter,
             backMatter: $options->backMatter,
-            dedicationText: $options->dedicationText,
             acknowledgmentText: $options->acknowledgmentText,
             aboutAuthorText: $options->aboutAuthorText,
-            alsoByText: $options->alsoByText,
         );
 
         return $this->epubExporter->export($book, $chapters, $kdpOptions);

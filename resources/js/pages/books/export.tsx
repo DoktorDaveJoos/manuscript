@@ -6,9 +6,9 @@ import Sidebar from '@/components/editor/Sidebar';
 import ExportPreview from '@/components/export/ExportPreview';
 import ExportReadingOrder from '@/components/export/ExportReadingOrder';
 import ExportSettings from '@/components/export/ExportSettings';
-import type { Format } from '@/components/export/ExportSettings';
 import type {
     ChapterRow,
+    Format,
     MatterItem,
     StorylineRef,
     TrimSizeOption,
@@ -28,12 +28,10 @@ interface Props {
 const INITIAL_FRONT_MATTER: MatterItem[] = [
     { id: 'title-page', label: 'Title Page', checked: true },
     { id: 'copyright', label: 'Copyright', checked: true },
-    { id: 'dedication', label: 'Dedication', checked: false },
     { id: 'toc', label: 'Table of Contents', checked: false },
 ];
 
 const INITIAL_BACK_MATTER: MatterItem[] = [
-    { id: 'also-by', label: 'Also By', checked: true },
     {
         id: 'acknowledgments',
         label: 'Acknowledgments',
@@ -82,6 +80,7 @@ export default function Export({
     const [showPageNumbers, setShowPageNumbers] = useState(true);
     const [trimSize, setTrimSize] = useState('6x9');
     const [fontSize, setFontSize] = useState(11);
+    const [template, setTemplate] = useState('classic');
     const [exporting, setExporting] = useState(false);
 
     // Front/back matter (visual only)
@@ -158,6 +157,7 @@ export default function Export({
 
         const data: Record<string, unknown> = {
             format,
+            template,
             chapter_ids: checkedOrdered,
             include_chapter_titles: includeChapterTitles,
             include_act_breaks: includeActBreaks,
@@ -181,6 +181,7 @@ export default function Export({
     }, [
         book,
         format,
+        template,
         orderedChapters,
         selectedChapterIds,
         includeChapterTitles,
@@ -219,6 +220,8 @@ export default function Export({
                 <ExportSettings
                     format={format}
                     onFormatChange={setFormat}
+                    template={template}
+                    onTemplateChange={setTemplate}
                     trimSize={trimSize}
                     onTrimSizeChange={setTrimSize}
                     fontSize={fontSize}

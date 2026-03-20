@@ -3,6 +3,7 @@
 namespace App\Services\Export\Exporters;
 
 use App\Contracts\Exporter;
+use App\Contracts\ExportTemplate;
 use App\Enums\ExportFormat;
 use App\Enums\TrimSize;
 use App\Models\Book;
@@ -10,7 +11,6 @@ use App\Services\Export\ContentPreparer;
 use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
 use App\Services\Export\FontService;
-use App\Services\Export\Templates\ClassicTemplate;
 use Illuminate\Support\Collection;
 use Mpdf\Mpdf;
 
@@ -19,6 +19,7 @@ class PdfExporter implements Exporter
     public function __construct(
         private ContentPreparer $contentPreparer,
         private FontService $fontService,
+        private ExportTemplate $template,
     ) {}
 
     public function export(Book $book, Collection $chapters, ExportOptions $options): string
@@ -67,11 +68,10 @@ class PdfExporter implements Exporter
     {
         $preparedChapters = $this->prepareChapters($chapters);
 
-        $template = new ClassicTemplate;
         $fontSize = $options->fontSize;
         $css = $isEbookPreview
-            ? $template->ebookPreviewCss($fontSize)
-            : $template->pdfCss($fontSize);
+            ? $this->template->ebookPreviewCss($fontSize)
+            : $this->template->pdfCss($fontSize);
 
         return view('export.pdf', [
             'book' => $book,

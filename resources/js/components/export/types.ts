@@ -2,12 +2,10 @@
 export const FRONT_MATTER_TYPES = {
     TitlePage: 'title-page',
     Copyright: 'copyright',
-    Dedication: 'dedication',
     Toc: 'toc',
 } as const;
 
 export const BACK_MATTER_TYPES = {
-    AlsoBy: 'also-by',
     Acknowledgments: 'acknowledgments',
     AboutAuthor: 'about-author',
 } as const;
@@ -42,6 +40,10 @@ export type TrimSizeOption = {
     width: number;
     height: number;
 };
+
+export type Format = 'epub' | 'pdf' | 'docx' | 'txt';
+
+export const VISUAL_FORMATS: Set<string> = new Set(['pdf', 'epub', 'kdp']);
 
 export type MatterItem = {
     id: string;

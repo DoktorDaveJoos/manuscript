@@ -1,15 +1,17 @@
-import { BookOpen, ChevronDown, Download } from 'lucide-react';
+import { BookOpen, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { TrimSizeOption } from '@/components/export/types';
+import { VISUAL_FORMATS } from '@/components/export/types';
+import type { Format, TrimSizeOption } from '@/components/export/types';
 import SectionLabel from '@/components/ui/SectionLabel';
+import Select from '@/components/ui/Select';
 import ToggleRow from '@/components/ui/ToggleRow';
 import { cn } from '@/lib/utils';
-
-export type Format = 'epub' | 'pdf' | 'docx' | 'txt';
 
 type ExportSettingsProps = {
     format: Format;
     onFormatChange: (f: Format) => void;
+    template: string;
+    onTemplateChange: (v: string) => void;
     trimSize: string;
     onTrimSizeChange: (v: string) => void;
     fontSize: number;
@@ -26,6 +28,7 @@ type ExportSettingsProps = {
 };
 
 const FORMATS: Format[] = ['epub', 'pdf', 'docx', 'txt'];
+const TEMPLATES = [{ value: 'classic', label: 'Classic' }];
 const FONT_SIZES = [10, 11, 12, 13, 14];
 
 function FormatPill({
@@ -53,39 +56,11 @@ function FormatPill({
     );
 }
 
-function InlineDropdown({
-    value,
-    options,
-    onChange,
-}: {
-    value: string;
-    options: { value: string; label: string }[];
-    onChange: (value: string) => void;
-}) {
-    return (
-        <div className="relative inline-flex items-center gap-2 rounded-md border border-border-subtle bg-white px-3 py-2 dark:border-border dark:bg-surface-card">
-            <select
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="absolute inset-0 cursor-pointer opacity-0"
-            >
-                {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                    </option>
-                ))}
-            </select>
-            <span className="text-[12px] text-ink">
-                {options.find((o) => o.value === value)?.label ?? value}
-            </span>
-            <ChevronDown className="h-3 w-3 text-ink-faint" />
-        </div>
-    );
-}
-
 export default function ExportSettings({
     format,
     onFormatChange,
+    template,
+    onTemplateChange,
     trimSize,
     onTrimSizeChange,
     fontSize,
@@ -129,21 +104,36 @@ export default function ExportSettings({
                                 />
                             ))}
                         </div>
-                    </div>
-
-                    {/* Template */}
-                    <div className="flex flex-col gap-2.5">
-                        <SectionLabel>{t('template')}</SectionLabel>
-                        <div className="flex items-center gap-2.5">
-                            <BookOpen className="h-4 w-4 text-ink-faint" />
-                            <span className="text-[13px] text-ink">
-                                Classic
-                            </span>
-                        </div>
-                        <p className="text-[11px] text-ink-faint">
-                            {t('templateHint')}
+                        <p className="mt-1.5 text-[11px] text-ink-faint">
+                            {t(`formatDescription.${format}`)}
                         </p>
                     </div>
+
+                    {/* Template (visual formats only) */}
+                    {VISUAL_FORMATS.has(format) && (
+                        <div className="flex flex-col gap-2.5">
+                            <SectionLabel>{t('template')}</SectionLabel>
+                            <Select
+                                value={template}
+                                onChange={(e) =>
+                                    onTemplateChange(e.target.value)
+                                }
+                                icon={<BookOpen />}
+                            >
+                                {TEMPLATES.map((tmpl) => (
+                                    <option key={tmpl.value} value={tmpl.value}>
+                                        {tmpl.label}
+                                    </option>
+                                ))}
+                            </Select>
+                            <p className="text-[11px] text-ink-faint">
+                                {t('templateHint')}
+                            </p>
+                            <p className="rounded-md bg-accent/10 px-3 py-2 text-[11px] text-accent">
+                                {t('templateComingSoon')}
+                            </p>
+                        </div>
+                    )}
 
                     {/* PDF Options */}
                     {format === 'pdf' && (
@@ -154,30 +144,48 @@ export default function ExportSettings({
                                     <span className="text-[13px] text-ink-soft">
                                         {t('trimSize')}
                                     </span>
-                                    <InlineDropdown
+                                    <Select
+                                        variant="compact"
                                         value={trimSize}
-                                        options={trimSizes}
-                                        onChange={onTrimSizeChange}
-                                    />
+                                        onChange={(e) =>
+                                            onTrimSizeChange(e.target.value)
+                                        }
+                                        className="w-auto"
+                                    >
+                                        {trimSizes.map((ts) => (
+                                            <option
+                                                key={ts.value}
+                                                value={ts.value}
+                                            >
+                                                {ts.label}
+                                            </option>
+                                        ))}
+                                    </Select>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-[13px] text-ink-soft">
                                         {t('fontSize')}
                                     </span>
-                                    <InlineDropdown
+                                    <Select
+                                        variant="compact"
                                         value={String(fontSize)}
-                                        options={FONT_SIZES.map((s) => ({
-                                            value: String(s),
-                                            label: `${s}pt`,
-                                        }))}
-                                        onChange={(v) =>
-                                            onFontSizeChange(Number(v))
+                                        onChange={(e) =>
+                                            onFontSizeChange(
+                                                Number(e.target.value),
+                                            )
                                         }
-                                    />
+                                        className="w-auto"
+                                    >
+                                        {FONT_SIZES.map((s) => (
+                                            <option key={s} value={String(s)}>
+                                                {s}pt
+                                            </option>
+                                        ))}
+                                    </Select>
                                 </div>
                             </div>
                             <p className="text-[11px] text-ink-faint">
-                                {t('pdfOptionsHint')}
+                                {t('trimSizeHint')}
                             </p>
                         </div>
                     )}
@@ -220,9 +228,6 @@ export default function ExportSettings({
                         <Download className="h-3.5 w-3.5" />
                         {exporting ? t('exporting') : t('exportAs', { format })}
                     </button>
-                    <span className="text-[12px] text-ink-faint">
-                        {t('previewInBrowser')}
-                    </span>
                 </div>
             </div>
         </div>
