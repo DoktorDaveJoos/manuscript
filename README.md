@@ -23,12 +23,15 @@ Most writing tools either ignore craft entirely or try to write for you. Manuscr
 ### Without AI (always free)
 
 - **Multi-book management** — work on as many books as you want, duplicate entire books with one click
-- **DOCX import** — automatic chapter splitting on Heading 1
+- **Import** — DOCX, ODT, Markdown, and TXT with automatic chapter splitting
 - **Chapter editor** with full version history (restore any version with one click)
 - **Scenes** — break chapters into scenes, reorder with drag-and-drop
 - **Multi-storyline support** — Main, Subplot, Romance, and more — interleave storylines across chapters
 - **Story Bible (Wiki)** — Characters, Locations, Organizations, Items, and Lore — searchable with avatars and relationship notes
-- **Plot point tracking** — plan, track, and mark plot points as fulfilled or abandoned
+- **Plot Board** — acts, plot points, and beats with a visual timeline view
+  - Five templates: Three Act Structure, Five Act Structure, Save the Cat, Story Circle, Hero's Journey
+  - Link beats to chapters, assign characters to plot points with roles
+  - Track status per beat (Planned, Fulfilled, Abandoned)
 - **Story Canvas** — visual overview of your novel's structure
 - **Dashboard** — manuscript health at a glance: word count, page count, reading time, chapter stats, and progress tracking
 - **Writing Goals & Heatmap** — set daily word count goals, track streaks, and see your 365-day writing heatmap
@@ -37,9 +40,9 @@ Most writing tools either ignore craft entirely or try to write for you. Manuscr
 - **Notes Panel** — attach notes to any chapter, visible alongside the editor
 - **Chapter splitting** — split a chapter at cursor position into two
 - **Trash & Recovery** — soft-delete chapters, scenes, and storylines with full restore
-- **Normalization** — clean up formatting inconsistencies across chapters
-- **Export** to DOCX and TXT — export a full book, single chapter, or entire storyline
-- **Internationalization** — English and German UI
+- **Normalization** — clean up formatting inconsistencies (whitespace, dashes, smart quotes, ellipses)
+- **Export** to PDF, EPUB, DOCX, TXT, and KDP-optimized EPUB — full book, single chapter, or custom selection with customizable typography and trim sizes
+- **Internationalization** — English, German, and Spanish UI
 
 ### With AI (bring your own key)
 
@@ -55,7 +58,7 @@ Most writing tools either ignore craft entirely or try to write for you. Manuscr
     - **Pacing Rhythm** — word count variation revealing tempo patterns
     - **Storyline Weave** — POV distribution and storyline balance
 - **Thriller Health Dashboard** — weighted health score (hooks, pacing, tension, weave) with actionable next steps
-- **Plot AI** — plot hole detection, beat suggestions, and tension arc generation from the plot view
+- **Plot AI** — plot hole detection, beat suggestions, and tension arc generation from the plot board
 - **Scene Audit** — flags scenes without clear plot or character function
 - **Character Consistency** — flags behavior that contradicts established traits
 - **Character Extraction** — automatically identifies characters from your chapters
@@ -91,7 +94,7 @@ Anthropic, OpenAI, Google Gemini, Groq, xAI, DeepSeek, Mistral, Ollama (local), 
 
 ### Prerequisites
 
-- PHP 8.2+ with the `sodium` and `sqlite3` extensions
+- PHP 8.4+ with the `sodium` and `sqlite3` extensions
 - Node.js 18+
 - Composer
 
@@ -149,12 +152,12 @@ This is a gift to the authors out there doing great creative work. Build it your
 | ------------------------------------ | ------------------------ | --------------------- |
 | Multi-book management                | Yes                      | Yes                   |
 | Chapter editor, scenes & versioning  | Yes                      | Yes                   |
-| Storylines, story bible, plot canvas | Yes                      | Yes                   |
+| Storylines, story bible, plot board  | Yes                      | Yes                   |
 | Dashboard, writing goals & heatmap   | Yes                      | Yes                   |
-| DOCX import & export                 | Yes                      | Yes                   |
+| Import & export (PDF, EPUB, DOCX, …) | Yes                      | Yes                   |
 | AI Prose Pass, Chat & analysis       | Yes                      | Yes (with license)    |
 | AI Preparation Pipeline              | Yes                      | Yes (with license)    |
-| Pre-built native app                 | -                        | Yes                   |
+| Pre-built native app                 | —                        | Yes                   |
 | **Price**                            | **Free**                 | **One-time purchase** |
 
 AI features always require your own API key regardless of version — you pay the AI providers directly for the tokens you use.
@@ -167,14 +170,15 @@ AI features always require your own API key regardless of version — you pay th
 app/
   Ai/               # AI prompt builders and context management
   Console/Commands/  # Artisan commands
-  Enums/             # AiProvider, AnalysisType, VersionSource
+  Enums/             # AiProvider, AnalysisType, VersionSource, PlotPointType, ...
   Http/Controllers/  # Inertia page controllers
   Jobs/              # Async jobs (analysis, embeddings, character extraction)
-  Models/            # Eloquent models (Book, Chapter, Chunk, License, ...)
-  Services/          # Domain services (chunking, DOCX parsing, embeddings, export)
+  Models/            # Eloquent models (Book, Chapter, Act, Beat, PlotPoint, ...)
+  Services/          # Domain services (chunking, parsing, embeddings, export)
 resources/
-  js/pages/          # React pages (books, chapters, canvas, settings, ...)
+  js/pages/          # React pages (books, chapters, plot, canvas, settings, ...)
   js/components/     # Shared React components
+  js/i18n/           # Translation files (en, de, es)
   js/layouts/        # App and settings layouts
 database/
   migrations/        # SQLite schema including sqlite-vec virtual tables
