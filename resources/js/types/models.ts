@@ -264,6 +264,19 @@ export type PlotPointConnection = {
     target?: PlotPoint;
 };
 
+export type Beat = {
+    id: number;
+    plot_point_id: number;
+    title: string;
+    description: string | null;
+    status: BeatStatus;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+    chapters?: Chapter[];
+    plot_point?: PlotPoint;
+};
+
 export type Analysis = {
     id: number;
     book_id: number;
