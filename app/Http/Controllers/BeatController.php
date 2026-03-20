@@ -30,6 +30,7 @@ class BeatController extends Controller
 
     public function update(UpdateBeatRequest $request, Book $book, Beat $beat): JsonResponse
     {
+        abort_unless($beat->plotPoint->book_id === $book->id, 404);
         $beat->update($request->validated());
 
         return response()->json($beat);
@@ -37,6 +38,7 @@ class BeatController extends Controller
 
     public function destroy(Book $book, Beat $beat): JsonResponse
     {
+        abort_unless($beat->plotPoint->book_id === $book->id, 404);
         $beat->delete();
 
         return response()->json(null, 204);
@@ -61,6 +63,8 @@ class BeatController extends Controller
 
     public function updateStatus(Request $request, Book $book, Beat $beat): JsonResponse
     {
+        abort_unless($beat->plotPoint->book_id === $book->id, 404);
+
         $validated = $request->validate([
             'status' => ['required', Rule::enum(BeatStatus::class)],
         ]);
@@ -72,8 +76,10 @@ class BeatController extends Controller
 
     public function linkChapter(Request $request, Book $book, Beat $beat): JsonResponse
     {
+        abort_unless($beat->plotPoint->book_id === $book->id, 404);
+
         $validated = $request->validate([
-            'chapter_id' => ['required', 'exists:chapters,id'],
+            'chapter_id' => ['required', Rule::exists('chapters', 'id')->where('book_id', $book->id)],
         ]);
 
         $beat->chapters()->syncWithoutDetaching([$validated['chapter_id']]);
@@ -83,6 +89,7 @@ class BeatController extends Controller
 
     public function unlinkChapter(Book $book, Beat $beat, Chapter $chapter): JsonResponse
     {
+        abort_unless($beat->plotPoint->book_id === $book->id, 404);
         $beat->chapters()->detach($chapter->id);
 
         return response()->json(null, 204);

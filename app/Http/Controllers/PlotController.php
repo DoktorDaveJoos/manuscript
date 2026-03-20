@@ -14,7 +14,7 @@ class PlotController extends Controller
             'storylines' => fn ($q) => $q->orderBy('sort_order'),
             'acts' => fn ($q) => $q->orderBy('sort_order'),
             'plotPoints' => fn ($q) => $q->orderBy('sort_order'),
-            'plotPoints.beats' => fn ($q) => $q->orderBy('sort_order'),
+            'plotPoints.beats',
             'plotPoints.beats.chapters:id,title,reader_order',
             'plotPoints.characters',
         ]);

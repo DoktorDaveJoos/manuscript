@@ -1,5 +1,5 @@
 import { EllipsisVertical, Plus, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getActColor } from '@/lib/plot-constants';
 import type { Act, Beat, PlotPoint } from '@/types/models';
@@ -9,11 +9,13 @@ type Props = {
     act: Act;
     colorIndex: number;
     plotPoints: (PlotPoint & { beats?: Beat[] })[];
+    selectedBeatId: number | null;
     onSelectBeat: (beat: Beat) => void;
     onCreateBeat: (plotPointId: number) => void;
     onDeleteAct: (actId: number) => void;
     onCreatePlotPoint: (actId: number) => void;
     onDeletePlotPoint: (plotPointId: number) => void;
+    onBeatContextMenu: (beat: Beat, position: { x: number; y: number }) => void;
     isLast?: boolean;
 };
 
@@ -21,11 +23,13 @@ export default function ActColumn({
     act,
     colorIndex,
     plotPoints,
+    selectedBeatId,
     onSelectBeat,
     onCreateBeat,
     onDeleteAct,
     onCreatePlotPoint,
     onDeletePlotPoint,
+    onBeatContextMenu,
     isLast = false,
 }: Props) {
     const { t } = useTranslation('plot');
@@ -50,13 +54,18 @@ export default function ActColumn({
             document.removeEventListener('mousedown', handleClickOutside);
     }, [menuOpen]);
 
-    const allBeats = plotPoints.flatMap((pp) => pp.beats ?? []);
-    const fulfilledBeats = allBeats.filter(
-        (beat) => beat.status === 'fulfilled',
-    );
-    const totalBeats = allBeats.length;
-    const progressRatio =
-        totalBeats > 0 ? fulfilledBeats.length / totalBeats : 0;
+    const { fulfilledCount, totalBeats, progressRatio } = useMemo(() => {
+        const allBeats = plotPoints.flatMap((pp) => pp.beats ?? []);
+        const fulfilled = allBeats.filter(
+            (beat) => beat.status === 'fulfilled',
+        ).length;
+        const total = allBeats.length;
+        return {
+            fulfilledCount: fulfilled,
+            totalBeats: total,
+            progressRatio: total > 0 ? fulfilled / total : 0,
+        };
+    }, [plotPoints]);
 
     return (
         <div
@@ -155,7 +164,7 @@ export default function ActColumn({
                         className="shrink-0 text-[10px] font-medium"
                         style={{ color: '#C49A6C' }}
                     >
-                        {fulfilledBeats.length} / {totalBeats}
+                        {fulfilledCount} / {totalBeats}
                     </span>
                 </div>
             )}
@@ -166,9 +175,11 @@ export default function ActColumn({
                     <PlotPointSection
                         key={plotPoint.id}
                         plotPoint={plotPoint}
+                        selectedBeatId={selectedBeatId}
                         onSelectBeat={onSelectBeat}
                         onCreateBeat={onCreateBeat}
                         onDeletePlotPoint={onDeletePlotPoint}
+                        onBeatContextMenu={onBeatContextMenu}
                     />
                 ))}
             </div>

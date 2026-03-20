@@ -251,19 +251,6 @@ export type Beat = {
     plot_point?: PlotPoint;
 };
 
-export type Beat = {
-    id: number;
-    plot_point_id: number;
-    title: string;
-    description: string | null;
-    status: BeatStatus;
-    sort_order: number;
-    created_at: string;
-    updated_at: string;
-    chapters?: Chapter[];
-    plot_point?: PlotPoint;
-};
-
 export type PlotPointConnection = {
     id: number;
     book_id: number;
@@ -275,19 +262,6 @@ export type PlotPointConnection = {
     updated_at: string;
     source?: PlotPoint;
     target?: PlotPoint;
-};
-
-export type Beat = {
-    id: number;
-    plot_point_id: number;
-    title: string;
-    description: string | null;
-    status: BeatStatus;
-    sort_order: number;
-    created_at: string;
-    updated_at: string;
-    chapters?: Chapter[];
-    plot_point?: PlotPoint;
 };
 
 export type Analysis = {
@@ -308,6 +282,8 @@ export type DashboardStats = {
     chapter_count: number;
     estimated_pages: number;
     reading_time_minutes: number;
+    days_writing: number;
+    reading_time_formatted: string;
 };
 
 export type StatusCounts = {

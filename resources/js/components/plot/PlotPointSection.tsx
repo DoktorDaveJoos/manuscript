@@ -1,26 +1,28 @@
 import { EllipsisVertical, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { TYPE_STYLES } from '@/lib/plot-constants';
 import type { Beat, PlotPoint } from '@/types/models';
 import BeatCard from './BeatCard';
 
 type Props = {
     plotPoint: PlotPoint & { beats?: Beat[] };
+    selectedBeatId: number | null;
     onSelectBeat: (beat: Beat) => void;
     onCreateBeat: (plotPointId: number) => void;
     onDeletePlotPoint: (plotPointId: number) => void;
+    onBeatContextMenu: (beat: Beat, position: { x: number; y: number }) => void;
 };
 
 export default function PlotPointSection({
     plotPoint,
+    selectedBeatId,
     onSelectBeat,
     onCreateBeat,
     onDeletePlotPoint,
+    onBeatContextMenu,
 }: Props) {
     const { t } = useTranslation('plot');
     const [menuOpen, setMenuOpen] = useState(false);
-    const [selectedBeatId, setSelectedBeatId] = useState<number | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -98,7 +100,7 @@ export default function PlotPointSection({
                                         className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] font-medium text-delete transition-colors hover:bg-neutral-bg"
                                     >
                                         <Trash2 size={14} />
-                                        {t('act.deleteAct')}
+                                        {t('detailPanel.header', 'Delete')}
                                     </button>
                                 </div>
                             </div>
@@ -115,12 +117,13 @@ export default function PlotPointSection({
                             key={beat.id}
                             beat={beat}
                             isSelected={selectedBeatId === beat.id}
-                            onClick={() => {
-                                setSelectedBeatId(beat.id);
-                                onSelectBeat(beat);
-                            }}
+                            onClick={() => onSelectBeat(beat)}
                             onContextMenu={(e) => {
                                 e.preventDefault();
+                                onBeatContextMenu(beat, {
+                                    x: e.clientX,
+                                    y: e.clientY,
+                                });
                             }}
                         />
                     ))}

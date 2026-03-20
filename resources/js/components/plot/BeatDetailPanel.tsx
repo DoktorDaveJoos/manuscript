@@ -9,14 +9,13 @@ import PanelHeader from '@/components/ui/PanelHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
-import type { Beat, BeatStatus, Storyline } from '@/types/models';
+import type { Beat, BeatStatus } from '@/types/models';
 
 const STATUS_OPTIONS: BeatStatus[] = ['planned', 'fulfilled', 'abandoned'];
 
 type BeatDetailPanelProps = {
     beat: Beat;
     bookId: number;
-    storylines: Storyline[];
     onClose: () => void;
 };
 

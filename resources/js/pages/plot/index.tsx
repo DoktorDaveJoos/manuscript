@@ -10,7 +10,14 @@ import PlotEmptyState from '@/components/plot/PlotEmptyState';
 import PlotWizardModal from '@/components/plot/PlotWizardModal';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { PlotTemplate } from '@/lib/plot-templates';
-import type { Act, Beat, Book, PlotPoint, Storyline } from '@/types/models';
+import type {
+    Act,
+    Beat,
+    BeatStatus,
+    Book,
+    PlotPoint,
+    Storyline,
+} from '@/types/models';
 
 type PlotPageProps = {
     book: Book;
@@ -40,14 +47,20 @@ export default function Plot({
     } | null>(null);
     const hasActs = acts.length > 0;
 
-    const selectedBeat = useMemo(() => {
-        if (!selectedBeatId) return null;
+    // Build a beat lookup map once for O(1) access
+    const beatMap = useMemo(() => {
+        const map = new Map<number, Beat & { plot_point?: PlotPoint }>();
         for (const pp of plotPoints) {
-            const beat = pp.beats?.find((b) => b.id === selectedBeatId);
-            if (beat) return { ...beat, plot_point: pp };
+            for (const beat of pp.beats ?? []) {
+                map.set(beat.id, { ...beat, plot_point: pp });
+            }
         }
-        return null;
-    }, [selectedBeatId, plotPoints]);
+        return map;
+    }, [plotPoints]);
+
+    const selectedBeat = selectedBeatId
+        ? (beatMap.get(selectedBeatId) ?? null)
+        : null;
 
     const plotPointsByAct = useMemo(() => {
         const map = new Map<number, typeof plotPoints>();
@@ -76,11 +89,15 @@ export default function Plot({
         (actId: number) => {
             router.post(
                 `/books/${book.id}/plot-points`,
-                { title: 'New plot point', type: 'setup', act_id: actId },
+                {
+                    title: t('page.newPlotPointTitle', 'New plot point'),
+                    type: 'setup',
+                    act_id: actId,
+                },
                 { preserveScroll: true },
             );
         },
-        [book.id],
+        [book.id, t],
     );
 
     const handleDeleteAct = useCallback((_actId: number) => {
@@ -97,7 +114,7 @@ export default function Plot({
     );
 
     const handleBeatStatusChange = useCallback(
-        (beatId: number, status: string) => {
+        (beatId: number, status: BeatStatus) => {
             router.patch(
                 `/books/${book.id}/beats/${beatId}/status`,
                 { status },
@@ -118,6 +135,13 @@ export default function Plot({
         [book.id, selectedBeatId],
     );
 
+    const handleBeatContextMenu = useCallback(
+        (beat: Beat, position: { x: number; y: number }) => {
+            setContextMenu({ beatId: beat.id, position });
+        },
+        [],
+    );
+
     const handleAddAct = useCallback(() => {
         const nextNumber =
             acts.length > 0 ? Math.max(...acts.map((a) => a.number)) + 1 : 1;
@@ -127,6 +151,10 @@ export default function Plot({
             { preserveScroll: true },
         );
     }, [acts, book.id]);
+
+    const contextMenuBeat = contextMenu
+        ? (beatMap.get(contextMenu.beatId) ?? null)
+        : null;
 
     return (
         <>
@@ -173,6 +201,7 @@ export default function Plot({
                                                 plotPointsByAct.get(act.id) ??
                                                 []
                                             }
+                                            selectedBeatId={selectedBeatId}
                                             isLast={index === acts.length - 1}
                                             onSelectBeat={(beat) =>
                                                 setSelectedBeatId(beat.id)
@@ -185,15 +214,18 @@ export default function Plot({
                                             onDeletePlotPoint={
                                                 handleDeletePlotPoint
                                             }
+                                            onBeatContextMenu={
+                                                handleBeatContextMenu
+                                            }
                                         />
                                     ))}
                                 </div>
 
                                 {selectedBeat && (
                                     <BeatDetailPanel
+                                        key={selectedBeat.id}
                                         beat={selectedBeat}
                                         bookId={book.id}
-                                        storylines={storylines}
                                         onClose={() => setSelectedBeatId(null)}
                                     />
                                 )}
@@ -203,7 +235,7 @@ export default function Plot({
                         <>
                             <div className="flex h-12 items-center border-b border-border px-6">
                                 <h1 className="text-[15px] font-semibold text-ink">
-                                    Plot
+                                    {t('page.tabs.timeline', 'Plot')}
                                 </h1>
                             </div>
                             <PlotEmptyState
@@ -213,24 +245,17 @@ export default function Plot({
                     )}
                 </main>
 
-                {contextMenu &&
-                    (() => {
-                        const beat = plotPoints
-                            .flatMap((pp) => pp.beats ?? [])
-                            .find((b) => b.id === contextMenu.beatId);
-                        if (!beat) return null;
-                        return (
-                            <BeatContextMenu
-                                beat={beat}
-                                bookId={book.id}
-                                storylines={storylines}
-                                position={contextMenu.position}
-                                onClose={() => setContextMenu(null)}
-                                onStatusChange={handleBeatStatusChange}
-                                onDelete={handleDeleteBeat}
-                            />
-                        );
-                    })()}
+                {contextMenu && contextMenuBeat && (
+                    <BeatContextMenu
+                        beat={contextMenuBeat}
+                        bookId={book.id}
+                        storylines={storylines}
+                        position={contextMenu.position}
+                        onClose={() => setContextMenu(null)}
+                        onStatusChange={handleBeatStatusChange}
+                        onDelete={handleDeleteBeat}
+                    />
+                )}
 
                 {selectedTemplate && (
                     <PlotWizardModal

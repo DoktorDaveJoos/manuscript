@@ -1,8 +1,4 @@
-import type {
-    BeatStatus,
-    PlotPointStatus,
-    PlotPointType,
-} from '@/types/models';
+import type { PlotPointStatus, PlotPointType } from '@/types/models';
 
 export const TYPE_STYLES: Record<PlotPointType, string> = {
     setup: 'bg-plot-setup-bg text-plot-setup-text',
@@ -33,9 +29,3 @@ export const ACT_COLORS = [
 export function getActColor(index: number) {
     return ACT_COLORS[index % ACT_COLORS.length];
 }
-
-export const BEAT_STATUS_COLORS: Record<BeatStatus, string> = {
-    planned: 'var(--color-accent)',
-    fulfilled: 'var(--color-status-final)',
-    abandoned: 'var(--color-ink-faint)',
-};

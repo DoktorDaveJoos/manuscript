@@ -154,7 +154,8 @@ class BookSettingsController extends Controller
 
         $contentPreparer = new ContentPreparer;
         $fontService = new FontService;
-        $exporter = new PdfExporter($contentPreparer, $fontService);
+        $template = ExportService::resolveTemplate($validated['template'] ?? 'classic');
+        $exporter = new PdfExporter($contentPreparer, $fontService, $template);
 
         try {
             $pdfBytes = $exporter->generatePdfString($book, $chapters, $options);
