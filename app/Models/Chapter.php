@@ -123,6 +123,16 @@ class Chapter extends Model
     }
 
     /**
+     * @return BelongsToMany<Beat, $this>
+     */
+    public function beats(): BelongsToMany
+    {
+        return $this->belongsToMany(Beat::class, 'beat_chapter')
+            ->withPivot(['sort_order'])
+            ->withTimestamps();
+    }
+
+    /**
      * @return BelongsToMany<WikiEntry, $this>
      */
     public function wikiEntries(): BelongsToMany
