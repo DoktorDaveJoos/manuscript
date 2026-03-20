@@ -15,6 +15,7 @@ export type PlotPointType =
     | 'resolution'
     | 'worldbuilding';
 export type PlotPointStatus = 'planned' | 'fulfilled' | 'abandoned';
+export type BeatStatus = 'planned' | 'fulfilled' | 'abandoned';
 export type ConnectionType = 'causes' | 'sets_up' | 'resolves' | 'contradicts';
 export type CharacterRole = 'protagonist' | 'supporting' | 'mentioned';
 export type AnalysisType =
@@ -100,7 +101,6 @@ export type Storyline = {
     updated_at: string;
     book?: Book;
     chapters?: Chapter[];
-    plot_points?: PlotPoint[];
 };
 
 export type Act = {
@@ -114,7 +114,6 @@ export type Act = {
     created_at: string;
     updated_at: string;
     book?: Book;
-    chapters?: Chapter[];
     plot_points?: PlotPoint[];
 };
 
@@ -223,26 +222,33 @@ export type ChapterVersion = {
 export type PlotPoint = {
     id: number;
     book_id: number;
-    storyline_id: number | null;
     act_id: number | null;
     title: string;
     description: string | null;
     type: PlotPointType;
-    intended_chapter_id: number | null;
-    actual_chapter_id: number | null;
     status: PlotPointStatus;
     sort_order: number;
-    is_ai_derived: boolean;
-    tension_score: number | null;
     created_at: string;
     updated_at: string;
     book?: Book;
-    storyline?: Storyline;
     act?: Act;
-    intended_chapter?: Chapter;
-    actual_chapter?: Chapter;
+    beats?: Beat[];
     outgoing_connections?: PlotPointConnection[];
     incoming_connections?: PlotPointConnection[];
+    characters?: (Character & { pivot: CharacterPlotPointPivot })[];
+};
+
+export type Beat = {
+    id: number;
+    plot_point_id: number;
+    title: string;
+    description: string | null;
+    status: BeatStatus;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+    chapters?: Chapter[];
+    plot_point?: PlotPoint;
 };
 
 export type PlotPointConnection = {
@@ -439,6 +445,13 @@ export type AiSetting = {
 export type CharacterChapterPivot = {
     character_id: number;
     chapter_id: number;
+    role: CharacterRole;
+    notes: string | null;
+};
+
+export type CharacterPlotPointPivot = {
+    character_id: number;
+    plot_point_id: number;
     role: CharacterRole;
     notes: string | null;
 };

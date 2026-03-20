@@ -166,5 +166,22 @@
 
     "wizard.review.title": "Ready to build your plot",
     "wizard.review.summary": "We'll create {{acts}} acts with {{beats}} story beats. Each beat is a plot point you can fill in as your story develops.",
-    "wizard.review.chaptersAssigned": "{{count}} ch"
+    "wizard.review.chaptersAssigned": "{{count}} ch",
+
+    "beat.addBeat": "Add beat",
+    "beat.details": "Beat Details",
+    "beat.title": "Title",
+    "beat.description": "Description",
+    "beat.descriptionPlaceholder": "Describe what happens in this beat...",
+    "beat.linkedChapters": "Linked Chapters",
+    "beat.addChapter": "Add chapter",
+    "beat.progress": "{{fulfilled}} of {{total}} beats",
+    "beat.contextMenu.createChapter": "Create chapter",
+    "beat.contextMenu.markFulfilled": "Mark as fulfilled",
+    "beat.contextMenu.markPlanned": "Mark as planned",
+    "beat.contextMenu.markAbandoned": "Mark as abandoned",
+    "beat.contextMenu.delete": "Delete beat",
+    "act.addAct": "Add Act",
+    "act.deleteAct": "Delete act",
+    "act.progress": "{{fulfilled}} of {{total}} beats"
 }

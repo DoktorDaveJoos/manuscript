@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Act;
+use App\Models\Beat;
 use App\Models\Book;
-use App\Models\Chapter;
+use App\Models\PlotPoint;
 use App\Models\Storyline;
 
 test('plot page loads successfully', function () {
@@ -18,40 +20,21 @@ test('plot page loads successfully', function () {
         );
 });
 
-test('plot page includes flat chapters prop sorted by reader_order', function () {
+test('plot page includes plot points with nested beats', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
-
-    $chapter3 = Chapter::factory()->for($book)->create([
-        'storyline_id' => $storyline->id,
-        'reader_order' => 3,
-        'title' => 'Third',
-    ]);
-    $chapter1 = Chapter::factory()->for($book)->create([
-        'storyline_id' => $storyline->id,
-        'reader_order' => 1,
-        'title' => 'First',
-    ]);
-    $chapter2 = Chapter::factory()->for($book)->create([
-        'storyline_id' => $storyline->id,
-        'reader_order' => 2,
-        'title' => 'Second',
-    ]);
-
-    $trashedChapter = Chapter::factory()->for($book)->create([
-        'storyline_id' => $storyline->id,
-        'reader_order' => 0,
-        'title' => 'Trashed',
-    ]);
-    $trashedChapter->delete();
+    $act = Act::factory()->for($book)->create();
+    $plotPoint = PlotPoint::factory()->for($book)->create(['act_id' => $act->id]);
+    $beat = Beat::factory()->create(['plot_point_id' => $plotPoint->id, 'title' => 'Hero finds map']);
 
     $this->get(route('books.plot', $book))
         ->assertSuccessful()
         ->assertInertia(fn ($page) => $page
             ->component('plot/index')
-            ->has('chapters', 3)
-            ->where('chapters.0.id', $chapter1->id)
-            ->where('chapters.1.id', $chapter2->id)
-            ->where('chapters.2.id', $chapter3->id)
+            ->has('plotPoints', 1)
+            ->has('plotPoints.0.beats', 1)
+            ->where('plotPoints.0.beats.0.title', 'Hero finds map')
+            ->missing('chapters')
+            ->missing('connections')
         );
 });
