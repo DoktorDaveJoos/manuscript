@@ -231,6 +231,8 @@
     "beat.title": "Title",
     "beat.description": "Description",
     "beat.descriptionPlaceholder": "Describe what happens in this beat...",
+    "beat.status": "Status",
+    "beat.type": "Type",
     "beat.linkedChapters": "Linked Chapters",
     "beat.addChapter": "Add chapter",
     "beat.progress": "{{fulfilled}} of {{total}} beats",

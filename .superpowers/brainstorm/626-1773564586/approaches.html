@@ -1,0 +1,133 @@
+<h2>Plot Feature — Three Approaches</h2>
+<p class="subtitle">
+    How the empty state + wizard should work together. Click the one that feels
+    right.
+</p>
+
+<div class="options">
+    <div class="option" data-choice="a" onclick="toggleSelect(this)">
+        <div class="letter">A</div>
+        <div class="content">
+            <h3>Teach First, Then Build</h3>
+            <p>
+                <strong>Empty state:</strong> A warm, illustrated explainer
+                fills the main content area. Shows a visual diagram of what a
+                3-act structure looks like with a sample story. Explains acts,
+                beats, and how they help shape a narrative.
+            </p>
+            <p>
+                <strong>CTA:</strong> "Ready to structure your story?" → opens
+                wizard modal
+            </p>
+            <p>
+                <strong>Wizard:</strong> Step 1: Pick a template (3 cards with
+                illustrations). Step 2: Review the acts + pre-filled beats. Step
+                3: Customize names/descriptions. Done.
+            </p>
+            <p>
+                <strong>Beats:</strong> Pre-populated from template (e.g.
+                "Inciting Incident", "Midpoint Reversal"). Author edits or
+                removes what doesn't fit.
+            </p>
+            <p
+                style="
+                    margin-top: 12px;
+                    padding: 8px 12px;
+                    background: #f5f4f1;
+                    border-radius: 6px;
+                    font-size: 13px;
+                "
+            >
+                <strong>Pro:</strong> Most educational — authors learn before
+                committing.<br />
+                <strong>Con:</strong> Slower to first action. Empty state needs
+                good visual design to not feel like a wall of text.
+            </p>
+        </div>
+    </div>
+
+    <div class="option" data-choice="b" onclick="toggleSelect(this)">
+        <div class="letter">B</div>
+        <div class="content">
+            <h3>Template Cards as Empty State</h3>
+            <p>
+                <strong>Empty state:</strong> A brief warm intro ("Every great
+                story has a structure. Let's find yours.") followed by 3
+                beautiful template cards directly in the main area. Each card
+                shows the template name, a one-line description, and a mini
+                visual of the act structure.
+            </p>
+            <p>
+                <strong>CTA:</strong> Clicking a template card opens the wizard
+                modal
+            </p>
+            <p>
+                <strong>Wizard:</strong> Step 1: Confirm template (already
+                chosen). Step 2: Walk through each act one at a time — show the
+                act name, its beats, and ask "What happens in your story here?"
+                Step 3: Summary view. Done.
+            </p>
+            <p>
+                <strong>Beats:</strong> Shown per-act during the walkthrough.
+                Each beat has a brief mentor-like prompt ("This is where your
+                character's world changes...").
+            </p>
+            <p
+                style="
+                    margin-top: 12px;
+                    padding: 8px 12px;
+                    background: #f5f4f1;
+                    border-radius: 6px;
+                    font-size: 13px;
+                "
+            >
+                <strong>Pro:</strong> Combines teaching + action. Template cards
+                ARE the education. Per-act walkthrough feels personal.<br />
+                <strong>Con:</strong> Less upfront explanation of what
+                acts/beats even are.
+            </p>
+        </div>
+    </div>
+
+    <div class="option" data-choice="c" onclick="toggleSelect(this)">
+        <div class="letter">C</div>
+        <div class="content">
+            <h3>Hybrid: Intro → Cards → Wizard</h3>
+            <p>
+                <strong>Empty state:</strong> Two sections. Top: A compact
+                explainer with a warm illustration and 2-3 sentences about what
+                story structure is and why it helps. Bottom: The 3 template
+                cards to pick from.
+            </p>
+            <p>
+                <strong>CTA:</strong> "Choose a structure to get started" —
+                clicking a card opens the wizard
+            </p>
+            <p>
+                <strong>Wizard:</strong> Step 1: Template overview (acts laid
+                out visually). Step 2: Per-act customization with pre-filled
+                beats and mentor prompts. Step 3: Review & create. Done.
+            </p>
+            <p>
+                <strong>Beats:</strong> Pre-filled from template with warm
+                descriptions. Author can rename, reorder, or remove. Each beat
+                has a tooltip/helper explaining its purpose.
+            </p>
+            <p
+                style="
+                    margin-top: 12px;
+                    padding: 8px 12px;
+                    background: #f5f4f1;
+                    border-radius: 6px;
+                    font-size: 13px;
+                "
+            >
+                <strong>Pro:</strong> Best of both worlds — teaches without
+                blocking, then gets to action fast. Empty state stays
+                compact.<br />
+                <strong>Con:</strong> Slightly more UI to design. The intro
+                section needs to be brief enough to not feel like homework.
+            </p>
+        </div>
+    </div>
+</div>
