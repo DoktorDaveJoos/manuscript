@@ -34,7 +34,7 @@ test('plot page includes plot points with nested beats', function () {
             ->has('plotPoints', 1)
             ->has('plotPoints.0.beats', 1)
             ->where('plotPoints.0.beats.0.title', 'Hero finds map')
-            ->missing('chapters')
+            ->has('chapters')
             ->missing('connections')
         );
 });
