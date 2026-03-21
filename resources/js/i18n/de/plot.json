@@ -265,5 +265,10 @@
     "beat.contextMenu.delete": "Beat löschen",
     "act.addAct": "Akt hinzufügen",
     "act.deleteAct": "Akt löschen",
-    "act.progress": "{{fulfilled}} von {{total}} Beats"
+    "act.progress": "{{fulfilled}} von {{total}} Beats",
+
+    "deleteAct.title": "Akt löschen?",
+    "deleteAct.description": "Dadurch werden <1>{{title}}</1> und alle zugehörigen Handlungspunkte und Beats unwiderruflich gelöscht.",
+    "deleteAct.cancel": "Abbrechen",
+    "deleteAct.confirm": "Löschen"
 }

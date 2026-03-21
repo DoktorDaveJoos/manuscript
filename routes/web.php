@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActController;
 use App\Http\Controllers\AiController;
 use App\Http\Controllers\AiPreparationController;
 use App\Http\Controllers\AiSettingsController;
@@ -48,6 +49,10 @@ Route::patch('/books/{book}/wiki-entries/{wikiEntry}', [WikiController::class, '
 Route::delete('/books/{book}/wiki-entries/{wikiEntry}', [WikiController::class, 'destroyEntry'])->name('wikiEntries.destroy');
 Route::get('/books/{book}/plot', [PlotController::class, 'index'])->name('books.plot');
 Route::post('/books/{book}/plot/setup-structure', [PlotSetupController::class, 'store'])->name('books.plot.setupStructure');
+
+Route::post('/books/{book}/acts', [ActController::class, 'store'])->name('acts.store');
+Route::patch('/books/{book}/acts/{act}', [ActController::class, 'update'])->name('acts.update');
+Route::delete('/books/{book}/acts/{act}', [ActController::class, 'destroy'])->name('acts.destroy');
 
 Route::post('/books/{book}/plot-points', [PlotPointController::class, 'store'])->name('plotPoints.store');
 Route::patch('/books/{book}/plot-points/{plotPoint}', [PlotPointController::class, 'update'])->name('plotPoints.update');
