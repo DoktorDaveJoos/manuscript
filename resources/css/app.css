@@ -399,6 +399,16 @@ h1[contenteditable]:empty::before {
     vertical-align: -1px;
 }
 
+/* Plot detail panel slide-in */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
 /* Tiptap placeholder */
 .tiptap p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);

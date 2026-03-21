@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import type { Beat, BeatStatus } from '@/types/models';
 
 const BEAT_DOT_COLORS: Record<BeatStatus, { color: string; opacity?: number }> =
@@ -10,6 +11,7 @@ const BEAT_DOT_COLORS: Record<BeatStatus, { color: string; opacity?: number }> =
 type Props = {
     beat: Beat;
     isSelected: boolean;
+    titleOverride?: string;
     onClick: () => void;
     onContextMenu: (e: React.MouseEvent) => void;
 };
@@ -17,6 +19,7 @@ type Props = {
 export default function BeatCard({
     beat,
     isSelected,
+    titleOverride,
     onClick,
     onContextMenu,
 }: Props) {
@@ -24,24 +27,33 @@ export default function BeatCard({
 
     return (
         <div
-            className="flex cursor-pointer items-center gap-2"
+            className={cn(
+                'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 transition-colors',
+                isSelected
+                    ? 'bg-ink/[0.06] font-medium'
+                    : 'hover:bg-ink/[0.03]',
+            )}
             onClick={onClick}
             onContextMenu={onContextMenu}
         >
             <span
                 className="shrink-0 rounded-full"
                 style={{
-                    width: 6,
-                    height: 6,
+                    width: 8,
+                    height: 8,
                     backgroundColor: dot.color,
                     opacity: dot.opacity ?? 1,
                 }}
             />
             <span
-                className="text-[12px] leading-tight font-normal"
-                style={{ color: isSelected ? '#141414' : '#595959' }}
+                className={cn(
+                    'text-[12px] leading-tight',
+                    isSelected
+                        ? 'font-medium text-ink'
+                        : 'font-normal text-ink-soft',
+                )}
             >
-                {beat.title}
+                {titleOverride ?? beat.title}
             </span>
         </div>
     );

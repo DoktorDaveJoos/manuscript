@@ -10,12 +10,16 @@ type Props = {
     colorIndex: number;
     plotPoints: (PlotPoint & { beats?: Beat[] })[];
     selectedBeatId: number | null;
+    selectedPlotPointId?: number | null;
+    titleOverrides?: Record<string, string>;
     onSelectBeat: (beat: Beat) => void;
+    onSelectPlotPoint?: (plotPoint: PlotPoint) => void;
     onCreateBeat: (plotPointId: number) => void;
     onDeleteAct: (actId: number) => void;
     onCreatePlotPoint: (actId: number) => void;
     onDeletePlotPoint: (plotPointId: number) => void;
     onBeatContextMenu: (beat: Beat, position: { x: number; y: number }) => void;
+    onSelectAct?: (actId: number) => void;
     isLast?: boolean;
 };
 
@@ -24,7 +28,11 @@ export default function ActColumn({
     colorIndex,
     plotPoints,
     selectedBeatId,
+    selectedPlotPointId,
+    titleOverrides,
     onSelectBeat,
+    onSelectPlotPoint,
+    onSelectAct,
     onCreateBeat,
     onDeleteAct,
     onCreatePlotPoint,
@@ -69,7 +77,7 @@ export default function ActColumn({
 
     return (
         <div
-            className="flex flex-1 flex-col"
+            className="flex min-w-[300px] flex-1 flex-col"
             style={{
                 borderRight: isLast ? 'none' : '1px solid #E4E2DD',
             }}
@@ -79,23 +87,27 @@ export default function ActColumn({
                 className="flex items-center justify-between px-4 py-3"
                 style={{
                     backgroundColor: color.bg,
-                    borderTop: `2px solid ${color.border}`,
+                    borderTop: `3px solid ${color.border}`,
                 }}
             >
-                <div className="flex items-center gap-1.5">
+                <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-center gap-1.5 transition-opacity hover:opacity-70"
+                    onClick={() => onSelectAct?.(act.id)}
+                >
                     <span
-                        className="text-[10px] font-bold tracking-[0.08em] uppercase"
-                        style={{ color: '#C49A6C' }}
+                        className="shrink-0 text-[10px] font-bold tracking-[0.08em] uppercase"
+                        style={{ color: color.label }}
                     >
                         ACT {act.number}
                     </span>
                     <span
-                        className="text-[13px] font-medium"
+                        className="truncate text-[13px] font-medium"
                         style={{ color: '#141414' }}
                     >
-                        {act.title}
+                        {titleOverrides?.[`act-${act.id}`] ?? act.title}
                     </span>
-                </div>
+                </button>
                 <div className="flex items-center gap-2">
                     <button
                         type="button"
@@ -143,31 +155,36 @@ export default function ActColumn({
             </div>
 
             {/* Progress bar */}
-            {totalBeats > 0 && (
+            <div
+                className="flex items-center gap-2.5 px-4 pb-2"
+                style={{ paddingTop: 8 }}
+            >
                 <div
-                    className="flex items-center gap-2.5 px-4 pb-2"
-                    style={{ paddingTop: 8 }}
+                    className="h-1.5 flex-1 overflow-hidden rounded-[3px]"
+                    style={{ backgroundColor: color.track }}
                 >
-                    <div
-                        className="h-1 flex-1 overflow-hidden rounded-sm"
-                        style={{ backgroundColor: '#EDE5DA' }}
-                    >
+                    {totalBeats > 0 && (
                         <div
-                            className="h-full rounded-sm transition-all"
+                            className="h-full rounded-[3px] transition-all"
                             style={{
-                                backgroundColor: '#C49A6C',
+                                backgroundColor: color.label,
                                 width: `${progressRatio * 100}%`,
                             }}
                         />
-                    </div>
-                    <span
-                        className="shrink-0 text-[10px] font-medium"
-                        style={{ color: '#C49A6C' }}
-                    >
-                        {fulfilledCount} / {totalBeats}
-                    </span>
+                    )}
                 </div>
-            )}
+                {totalBeats > 0 && (
+                    <span
+                        className="shrink-0 text-[11px] font-medium"
+                        style={{ color: color.label }}
+                    >
+                        {t('beat.progress', {
+                            fulfilled: fulfilledCount,
+                            total: totalBeats,
+                        })}
+                    </span>
+                )}
+            </div>
 
             {/* Plot points */}
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
@@ -176,7 +193,10 @@ export default function ActColumn({
                         key={plotPoint.id}
                         plotPoint={plotPoint}
                         selectedBeatId={selectedBeatId}
+                        isSelected={selectedPlotPointId === plotPoint.id}
+                        titleOverrides={titleOverrides}
                         onSelectBeat={onSelectBeat}
+                        onSelectPlotPoint={onSelectPlotPoint}
                         onCreateBeat={onCreateBeat}
                         onDeletePlotPoint={onDeletePlotPoint}
                         onBeatContextMenu={onBeatContextMenu}
