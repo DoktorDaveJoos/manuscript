@@ -175,6 +175,50 @@ it('unlinks a chapter from a beat', function () {
     ]);
 });
 
+it('moves a beat to another plot point', function () {
+    $book = Book::factory()->create();
+    $ppA = PlotPoint::factory()->create(['book_id' => $book->id]);
+    $ppB = PlotPoint::factory()->create(['book_id' => $book->id]);
+    $beat = Beat::factory()->create(['plot_point_id' => $ppA->id, 'sort_order' => 0]);
+
+    $response = $this->patchJson(route('beats.move', [$book, $beat]), [
+        'plot_point_id' => $ppB->id,
+        'sort_order' => 0,
+    ]);
+
+    $response->assertOk();
+    $beat->refresh();
+    expect($beat->plot_point_id)->toBe($ppB->id)
+        ->and($beat->sort_order)->toBe(0);
+});
+
+it('move rejects a plot point from another book', function () {
+    $book = Book::factory()->create();
+    $otherBook = Book::factory()->create();
+    $pp = PlotPoint::factory()->create(['book_id' => $book->id]);
+    $otherPP = PlotPoint::factory()->create(['book_id' => $otherBook->id]);
+    $beat = Beat::factory()->create(['plot_point_id' => $pp->id, 'sort_order' => 0]);
+
+    $this->patchJson(route('beats.move', [$book, $beat]), [
+        'plot_point_id' => $otherPP->id,
+        'sort_order' => 0,
+    ])->assertForbidden();
+});
+
+it('move updates sort_order within the same plot point', function () {
+    $book = Book::factory()->create();
+    $pp = PlotPoint::factory()->create(['book_id' => $book->id]);
+    $beat = Beat::factory()->create(['plot_point_id' => $pp->id, 'sort_order' => 0]);
+
+    $response = $this->patchJson(route('beats.move', [$book, $beat]), [
+        'plot_point_id' => $pp->id,
+        'sort_order' => 3,
+    ]);
+
+    $response->assertOk();
+    expect($beat->fresh()->sort_order)->toBe(3);
+});
+
 it('cascade deletes beats when plot point is deleted', function () {
     $book = Book::factory()->create();
     $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);

@@ -68,6 +68,55 @@ it('reorders plot points', function () {
         ->and($b->fresh()->sort_order)->toBe(0);
 });
 
+it('reorders plot points with act_id change', function () {
+    $book = Book::factory()->create();
+    $actA = Act::factory()->create(['book_id' => $book->id]);
+    $actB = Act::factory()->create(['book_id' => $book->id]);
+
+    $pp = PlotPoint::factory()->create(['book_id' => $book->id, 'act_id' => $actA->id, 'sort_order' => 0]);
+
+    $response = $this->postJson(route('plotPoints.reorder', $book), [
+        'items' => [
+            ['id' => $pp->id, 'sort_order' => 0, 'act_id' => $actB->id],
+        ],
+    ]);
+
+    $response->assertOk();
+    $pp->refresh();
+    expect($pp->act_id)->toBe($actB->id)
+        ->and($pp->sort_order)->toBe(0);
+});
+
+it('reorder preserves act_id when not provided', function () {
+    $book = Book::factory()->create();
+    $act = Act::factory()->create(['book_id' => $book->id]);
+    $pp = PlotPoint::factory()->create(['book_id' => $book->id, 'act_id' => $act->id, 'sort_order' => 0]);
+
+    $response = $this->postJson(route('plotPoints.reorder', $book), [
+        'items' => [
+            ['id' => $pp->id, 'sort_order' => 2],
+        ],
+    ]);
+
+    $response->assertOk();
+    $pp->refresh();
+    expect($pp->act_id)->toBe($act->id)
+        ->and($pp->sort_order)->toBe(2);
+});
+
+it('reorder rejects act_id from another book', function () {
+    $book = Book::factory()->create();
+    $otherBook = Book::factory()->create();
+    $otherAct = Act::factory()->create(['book_id' => $otherBook->id]);
+    $pp = PlotPoint::factory()->create(['book_id' => $book->id, 'sort_order' => 0]);
+
+    $this->postJson(route('plotPoints.reorder', $book), [
+        'items' => [
+            ['id' => $pp->id, 'sort_order' => 0, 'act_id' => $otherAct->id],
+        ],
+    ])->assertUnprocessable();
+});
+
 it('cycles plot point status', function () {
     $book = Book::factory()->create();
     $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id, 'status' => PlotPointStatus::Planned]);

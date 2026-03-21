@@ -64,6 +64,7 @@ Route::post('/books/{book}/plot-points/{plotPoint}/beats', [BeatController::clas
 Route::patch('/books/{book}/beats/{beat}', [BeatController::class, 'update'])->name('beats.update');
 Route::delete('/books/{book}/beats/{beat}', [BeatController::class, 'destroy'])->name('beats.destroy');
 Route::post('/books/{book}/plot-points/{plotPoint}/beats/reorder', [BeatController::class, 'reorder'])->name('beats.reorder');
+Route::patch('/books/{book}/beats/{beat}/move', [BeatController::class, 'move'])->name('beats.move');
 Route::patch('/books/{book}/beats/{beat}/status', [BeatController::class, 'updateStatus'])->name('beats.updateStatus');
 Route::post('/books/{book}/beats/{beat}/chapters', [BeatController::class, 'linkChapter'])->name('beats.chapters.link');
 Route::delete('/books/{book}/beats/{beat}/chapters/{chapter}', [BeatController::class, 'unlinkChapter'])->name('beats.chapters.unlink');

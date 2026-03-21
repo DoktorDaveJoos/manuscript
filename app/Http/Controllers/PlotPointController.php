@@ -64,13 +64,18 @@ class PlotPointController extends Controller
             'items' => ['required', 'array'],
             'items.*.id' => ['required', Rule::exists('plot_points', 'id')->where('book_id', $book->id)],
             'items.*.sort_order' => ['required', 'integer', 'min:0'],
+            'items.*.act_id' => ['sometimes', 'nullable', 'integer', Rule::exists('acts', 'id')->where('book_id', $book->id)],
         ]);
 
         DB::transaction(function () use ($validated) {
             foreach ($validated['items'] as $item) {
-                PlotPoint::where('id', $item['id'])->update([
-                    'sort_order' => $item['sort_order'],
-                ]);
+                $data = ['sort_order' => $item['sort_order']];
+
+                if (array_key_exists('act_id', $item)) {
+                    $data['act_id'] = $item['act_id'];
+                }
+
+                PlotPoint::where('id', $item['id'])->update($data);
             }
         });
 
