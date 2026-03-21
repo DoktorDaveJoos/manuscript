@@ -1,6 +1,7 @@
 import { EllipsisVertical, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { stripTags } from '@/lib/ruleCheckers';
 import type { Beat, PlotPoint } from '@/types/models';
 import BeatCard from './BeatCard';
 
@@ -43,6 +44,9 @@ export default function PlotPointSection({
     }, [menuOpen]);
 
     const beats = plotPoint.beats ?? [];
+    const plainDescription = plotPoint.description
+        ? stripTags(plotPoint.description).trim()
+        : '';
 
     return (
         <div
@@ -108,6 +112,13 @@ export default function PlotPointSection({
                     </div>
                 </div>
             </div>
+
+            {/* Description preview */}
+            {plainDescription && (
+                <p className="line-clamp-2 text-[11px] text-ink-muted italic">
+                    {plainDescription}
+                </p>
+            )}
 
             {/* Beats list */}
             {beats.length > 0 && (

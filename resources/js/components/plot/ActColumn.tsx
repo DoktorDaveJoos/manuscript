@@ -2,6 +2,7 @@ import { EllipsisVertical, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getActColor } from '@/lib/plot-constants';
+import { stripTags } from '@/lib/ruleCheckers';
 import type { Act, Beat, PlotPoint } from '@/types/models';
 import PlotPointSection from './PlotPointSection';
 
@@ -53,6 +54,10 @@ export default function ActColumn({
         return () =>
             document.removeEventListener('mousedown', handleClickOutside);
     }, [menuOpen]);
+
+    const plainDescription = act.description
+        ? stripTags(act.description).trim()
+        : '';
 
     const { fulfilledCount, totalBeats, progressRatio } = useMemo(() => {
         const allBeats = plotPoints.flatMap((pp) => pp.beats ?? []);
@@ -141,6 +146,13 @@ export default function ActColumn({
                     </div>
                 </div>
             </div>
+
+            {/* Description preview */}
+            {plainDescription && (
+                <p className="line-clamp-2 px-4 pt-2 text-[11px] text-ink-muted italic">
+                    {plainDescription}
+                </p>
+            )}
 
             {/* Progress bar */}
             {totalBeats > 0 && (
