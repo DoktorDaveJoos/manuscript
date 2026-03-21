@@ -33,8 +33,8 @@ export default function BeatContextMenu({
 
     const handleCreateChapter = (storylineId: number) => {
         router.post(
-            `/books/${bookId}/storylines/${storylineId}/chapters`,
-            {},
+            `/books/${bookId}/chapters`,
+            { storyline_id: storylineId, title: 'New Chapter' },
             { preserveScroll: true },
         );
         onClose();
