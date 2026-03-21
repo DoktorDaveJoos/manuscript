@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { beautify, revise } from '@/actions/App/Http/Controllers/AiController';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import ProFeatureLock from '@/components/ui/ProFeatureLock';
 import SectionLabel from '@/components/ui/SectionLabel';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
@@ -24,8 +26,6 @@ import type {
     CharacterChapterPivot,
     InformationDelivery,
 } from '@/types/models';
-import { beautify, revise } from '@/actions/App/Http/Controllers/AiController';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 
 type ChapterCharacter = Character & { pivot: CharacterChapterPivot };
 type AnalysisWithSummary = {

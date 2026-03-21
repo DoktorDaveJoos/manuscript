@@ -3,6 +3,10 @@ import { Camera, X } from 'lucide-react';
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+    storeCharacter,
+    storeEntry,
+} from '@/actions/App/Http/Controllers/WikiController';
 import Button from '@/components/ui/Button';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
@@ -10,10 +14,6 @@ import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import type { Book, Storyline } from '@/types/models';
 import type { WikiTab } from './WikiTabBar';
-import {
-    storeCharacter,
-    storeEntry,
-} from '@/actions/App/Http/Controllers/WikiController';
 
 type Props = {
     type: WikiTab;

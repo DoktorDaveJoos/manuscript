@@ -15,7 +15,7 @@ export default function AiPreparation({
 }) {
     const { t } = useTranslation('ai');
     const pageUrl = usePage().url;
-    const { visible, usable, licensed, configured } = useAiFeatures();
+    const { visible, usable, licensed } = useAiFeatures();
     const { status, isRunning, starting, error, handleStart } =
         useAiPreparation(bookId, initialStatus);
 

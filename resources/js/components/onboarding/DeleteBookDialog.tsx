@@ -1,12 +1,12 @@
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { destroy } from '@/actions/App/Http/Controllers/BookController';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import type { Book } from '@/types/models';
-import { destroy } from '@/actions/App/Http/Controllers/BookController';
 
 export default function DeleteBookDialog({
     book,

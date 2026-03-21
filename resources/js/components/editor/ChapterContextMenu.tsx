@@ -1,13 +1,13 @@
 import { router } from '@inertiajs/react';
 import { ArrowRight, Circle, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import ContextMenu from '@/components/ui/ContextMenu';
-import { jsonFetchHeaders } from '@/lib/utils';
-import type { Chapter, ChapterStatus, Storyline } from '@/types/models';
 import {
     reorder,
     updateStatus,
 } from '@/actions/App/Http/Controllers/ChapterController';
+import ContextMenu from '@/components/ui/ContextMenu';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type { Chapter, ChapterStatus, Storyline } from '@/types/models';
 
 const statusDotClass: Record<ChapterStatus, string> = {
     draft: 'bg-status-draft',

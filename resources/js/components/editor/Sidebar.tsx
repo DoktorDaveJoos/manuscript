@@ -6,7 +6,7 @@ import {
     Settings,
     Waypoints,
 } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { index } from '@/actions/App/Http/Controllers/BookController';
 import { exportMethod } from '@/actions/App/Http/Controllers/BookSettingsController';

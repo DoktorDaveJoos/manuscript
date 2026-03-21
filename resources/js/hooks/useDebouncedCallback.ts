@@ -11,7 +11,9 @@ export function useDebouncedCallback<T extends (...args: never[]) => void>(
 ): T {
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const callbackRef = useRef(callback);
-    callbackRef.current = callback;
+    useEffect(() => {
+        callbackRef.current = callback;
+    });
 
     const pendingArgsRef = useRef<Parameters<T> | null>(null);
 

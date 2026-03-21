@@ -77,6 +77,7 @@ export default [
     },
     {
         ignores: [
+            '.claude/worktrees/**',
             'vendor',
             'node_modules',
             'public',

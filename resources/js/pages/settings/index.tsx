@@ -3,21 +3,6 @@ import { Trash2 } from 'lucide-react';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import NavItem from '@/components/ui/NavItem';
-import SectionLabel from '@/components/ui/SectionLabel';
-import Toggle from '@/components/ui/Toggle';
-import { useAutoUpdater } from '@/hooks/useAutoUpdater';
-import { useTheme } from '@/hooks/useTheme';
-import type { Theme } from '@/lib/theme';
-import { jsonFetchHeaders } from '@/lib/utils';
-import type {
-    AppSettings,
-    AiSetting,
-    License,
-    ProsePassRule,
-} from '@/types/models';
 import {
     update as updateAiProvider,
     deleteKey,
@@ -37,6 +22,21 @@ import {
     updateAboutAuthor,
     updateProsePassRules,
 } from '@/actions/App/Http/Controllers/SettingsController';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import NavItem from '@/components/ui/NavItem';
+import SectionLabel from '@/components/ui/SectionLabel';
+import Toggle from '@/components/ui/Toggle';
+import { useAutoUpdater } from '@/hooks/useAutoUpdater';
+import { useTheme } from '@/hooks/useTheme';
+import type { Theme } from '@/lib/theme';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type {
+    AppSettings,
+    AiSetting,
+    License,
+    ProsePassRule,
+} from '@/types/models';
 
 type ProviderSetting = AiSetting & {
     label: string;

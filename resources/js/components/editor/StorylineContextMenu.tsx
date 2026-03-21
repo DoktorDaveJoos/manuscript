@@ -1,10 +1,10 @@
 import { router } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
+import { update } from '@/actions/App/Http/Controllers/StorylineController';
 import ContextMenu from '@/components/ui/ContextMenu';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Storyline } from '@/types/models';
 import ColorPicker from './ColorPicker';
-import { update } from '@/actions/App/Http/Controllers/StorylineController';
 
 export default function StorylineContextMenu({
     bookId,

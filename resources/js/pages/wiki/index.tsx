@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sidebar from '@/components/editor/Sidebar';
 import AddEntryDropdown from '@/components/wiki/AddEntryDropdown';

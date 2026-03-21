@@ -192,7 +192,7 @@ export default function Plot({
                 },
             );
         },
-        [book.id, t],
+        [book.id, t, plotPoints],
     );
 
     const handleCreatePlotPoint = useCallback(
@@ -222,7 +222,7 @@ export default function Plot({
                 },
             );
         },
-        [book.id, t],
+        [book.id, t, plotPoints],
     );
 
     const handleDeleteAct = useCallback(
@@ -234,7 +234,7 @@ export default function Plot({
                 setActToDelete(act);
             }
         },
-        [acts, selectedActId],
+        [acts, selectedActId, clearSelection],
     );
 
     const handleDeletePlotPoint = useCallback(
@@ -245,7 +245,7 @@ export default function Plot({
             });
             setPlotPointContextMenu(null);
         },
-        [book.id, selectedPlotPointId],
+        [book.id, selectedPlotPointId, clearSelection],
     );
 
     const handleBeatStatusChange = useCallback(
@@ -267,7 +267,7 @@ export default function Plot({
             });
             setContextMenu(null);
         },
-        [book.id, selectedBeatId],
+        [book.id, selectedBeatId, clearSelection],
     );
 
     const handleBeatContextMenu = useCallback(
