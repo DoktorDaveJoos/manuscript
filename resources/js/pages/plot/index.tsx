@@ -261,8 +261,6 @@ export default function Plot({
                     <PlotWizardModal
                         book={book}
                         template={selectedTemplate}
-                        storylines={storylines}
-                        chapters={[]}
                         onClose={() => setSelectedTemplate(null)}
                     />
                 )}
