@@ -10,7 +10,15 @@ permissions:
 
 jobs:
   build-macos:
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            arch: arm64
+          - runner: macos-13
+            arch: x64
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Checkout code
@@ -98,7 +106,11 @@ jobs:
           VITE_SENTRY_ELECTRON_DSN: ${{ secrets.VITE_SENTRY_ELECTRON_DSN }}
         run: php artisan native:publish mac --no-interaction
 
+  publish-release:
+    needs: build-macos
+    runs-on: ubuntu-latest
+    steps:
       - name: Publish release
-        run: gh release edit ${{ github.ref_name }} --draft=false --title "Manuscript ${{ github.ref_name }}"
+        run: gh release edit ${{ github.ref_name }} --draft=false --title "Manuscript ${{ github.ref_name }}" --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
