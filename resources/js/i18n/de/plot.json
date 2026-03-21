@@ -104,6 +104,7 @@
     "emptyState.subtitle": "Hinter jedem Pageturner steckt eine Struktur, die der Leser nie sieht \u2014 aber immer sp\u00fcrt.\nW\u00e4hle eine bew\u00e4hrte Vorlage. Wir zeigen dir genau, wie sie funktioniert.",
     "emptyState.hint": "Das hier ist ein Startpunkt, kein Vertrag. Benenne um, ordne neu und forme alles sp\u00e4ter um.",
     "emptyState.fitsBadge": "PASST ZU DEN MEISTEN GESCHICHTEN",
+    "emptyState.select": "Auswählen",
     "emptyState.templateMeta": "{{acts}} Akte \u00b7 {{beats}} Beats",
     "emptyState.template.three_act.name": "Anfang \u00b7 Mitte \u00b7 Ende",
     "emptyState.template.three_act.description": "Die einfachste und beliebteste Struktur. Deine Geschichte baut sich bis zu einem Wendepunkt auf und rast dann dem Finale entgegen. Funktioniert f\u00fcr fast jedes Genre.",

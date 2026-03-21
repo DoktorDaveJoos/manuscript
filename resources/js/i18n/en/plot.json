@@ -104,6 +104,7 @@
     "emptyState.subtitle": "Behind every page-turner is a structure the reader never sees — but always feels.\nPick a proven blueprint. We'll show you exactly how it works.",
     "emptyState.hint": "This is a starting point, not a contract. Rename, rearrange, and reshape everything later.",
     "emptyState.fitsBadge": "FITS MOST STORIES",
+    "emptyState.select": "Select",
     "emptyState.templateMeta": "{{acts}} acts · {{beats}} beats",
     "emptyState.template.three_act.name": "Beginning · Middle · End",
     "emptyState.template.three_act.description": "The simplest and most popular structure. Your story builds to a turning point, then races to the finish. Works for almost any genre.",
