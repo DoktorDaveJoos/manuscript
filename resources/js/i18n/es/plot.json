@@ -265,5 +265,21 @@
     "beat.contextMenu.delete": "Eliminar beat",
     "act.addAct": "Añadir acto",
     "act.deleteAct": "Eliminar acto",
-    "act.progress": "{{fulfilled}} de {{total}} beats"
+    "act.progress": "{{fulfilled}} de {{total}} beats",
+
+    "plotPoint.header": "Punto de trama",
+    "plotPoint.title": "T\u00edtulo",
+    "plotPoint.description": "Descripci\u00f3n",
+    "plotPoint.descriptionPlaceholder": "Agrega una descripci\u00f3n\u2026",
+    "plotPoint.descriptionHelper": "Resume lo que sucede en este punto de giro.",
+    "plotPoint.type": "Tipo",
+    "plotPoint.typeHelper": "C\u00f3mo funciona este punto en el arco narrativo.",
+    "plotPoint.status": "Estado",
+    "plotPoint.statusHelper": "Rastrea si este punto de trama se ha resuelto.",
+    "plotPoint.characters": "Personajes",
+    "plotPoint.characterHelper": "Etiqueta los personajes involucrados en este punto de trama.",
+    "plotPoint.searchCharacters": "Buscar personajes\u2026",
+    "plotPoint.noAvailableCharacters": "No hay personajes disponibles",
+    "plotPoint.removeCharacter": "Eliminar personaje",
+    "plotPoint.delete": "Eliminar punto de trama"
 }

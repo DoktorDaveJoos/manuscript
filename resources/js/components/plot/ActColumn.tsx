@@ -11,6 +11,7 @@ type Props = {
     plotPoints: (PlotPoint & { beats?: Beat[] })[];
     selectedBeatId: number | null;
     onSelectBeat: (beat: Beat) => void;
+    onSelectPlotPoint: (plotPoint: PlotPoint) => void;
     onCreateBeat: (plotPointId: number) => void;
     onDeleteAct: (actId: number) => void;
     onCreatePlotPoint: (actId: number) => void;
@@ -25,6 +26,7 @@ export default function ActColumn({
     plotPoints,
     selectedBeatId,
     onSelectBeat,
+    onSelectPlotPoint,
     onCreateBeat,
     onDeleteAct,
     onCreatePlotPoint,
@@ -177,6 +179,7 @@ export default function ActColumn({
                         plotPoint={plotPoint}
                         selectedBeatId={selectedBeatId}
                         onSelectBeat={onSelectBeat}
+                        onSelectPlotPoint={onSelectPlotPoint}
                         onCreateBeat={onCreateBeat}
                         onDeletePlotPoint={onDeletePlotPoint}
                         onBeatContextMenu={onBeatContextMenu}

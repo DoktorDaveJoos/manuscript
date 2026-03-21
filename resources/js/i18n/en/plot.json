@@ -267,5 +267,21 @@
     "beat.contextMenu.delete": "Delete beat",
     "act.addAct": "Add Act",
     "act.deleteAct": "Delete act",
-    "act.progress": "{{fulfilled}} of {{total}} beats"
+    "act.progress": "{{fulfilled}} of {{total}} beats",
+
+    "plotPoint.header": "Plot Point",
+    "plotPoint.title": "Title",
+    "plotPoint.description": "Description",
+    "plotPoint.descriptionPlaceholder": "Add a description...",
+    "plotPoint.descriptionHelper": "Summarize what happens at this turning point.",
+    "plotPoint.type": "Type",
+    "plotPoint.typeHelper": "How this point functions in the narrative arc.",
+    "plotPoint.status": "Status",
+    "plotPoint.statusHelper": "Track whether this plot point has been resolved.",
+    "plotPoint.characters": "Characters",
+    "plotPoint.characterHelper": "Tag characters involved in this plot point.",
+    "plotPoint.searchCharacters": "Search characters...",
+    "plotPoint.noAvailableCharacters": "No characters available",
+    "plotPoint.removeCharacter": "Remove character",
+    "plotPoint.delete": "Delete plot point"
 }

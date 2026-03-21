@@ -8,6 +8,7 @@ type Props = {
     plotPoint: PlotPoint & { beats?: Beat[] };
     selectedBeatId: number | null;
     onSelectBeat: (beat: Beat) => void;
+    onSelectPlotPoint: (plotPoint: PlotPoint) => void;
     onCreateBeat: (plotPointId: number) => void;
     onDeletePlotPoint: (plotPointId: number) => void;
     onBeatContextMenu: (beat: Beat, position: { x: number; y: number }) => void;
@@ -17,6 +18,7 @@ export default function PlotPointSection({
     plotPoint,
     selectedBeatId,
     onSelectBeat,
+    onSelectPlotPoint,
     onCreateBeat,
     onDeletePlotPoint,
     onBeatContextMenu,
@@ -55,12 +57,14 @@ export default function PlotPointSection({
         >
             {/* Header */}
             <div className="flex items-center justify-between gap-2">
-                <span
-                    className="text-[13px] leading-tight font-semibold"
+                <button
+                    type="button"
+                    onClick={() => onSelectPlotPoint(plotPoint)}
+                    className="text-left text-[13px] leading-tight font-semibold transition-opacity hover:opacity-70"
                     style={{ color: '#141414' }}
                 >
                     {plotPoint.title}
-                </span>
+                </button>
                 <div className="flex shrink-0 items-center gap-2">
                     <span
                         className="rounded px-2 py-0.5 text-[10px] font-medium"

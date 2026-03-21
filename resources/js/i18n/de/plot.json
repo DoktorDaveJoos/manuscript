@@ -265,5 +265,21 @@
     "beat.contextMenu.delete": "Beat löschen",
     "act.addAct": "Akt hinzufügen",
     "act.deleteAct": "Akt löschen",
-    "act.progress": "{{fulfilled}} von {{total}} Beats"
+    "act.progress": "{{fulfilled}} von {{total}} Beats",
+
+    "plotPoint.header": "Handlungspunkt",
+    "plotPoint.title": "Titel",
+    "plotPoint.description": "Beschreibung",
+    "plotPoint.descriptionPlaceholder": "Beschreibung hinzuf\u00fcgen\u2026",
+    "plotPoint.descriptionHelper": "Fasse zusammen, was an diesem Wendepunkt passiert.",
+    "plotPoint.type": "Typ",
+    "plotPoint.typeHelper": "Wie dieser Punkt im Erz\u00e4hlbogen funktioniert.",
+    "plotPoint.status": "Status",
+    "plotPoint.statusHelper": "Verfolge, ob dieser Handlungspunkt aufgel\u00f6st wurde.",
+    "plotPoint.characters": "Figuren",
+    "plotPoint.characterHelper": "Figuren markieren, die an diesem Handlungspunkt beteiligt sind.",
+    "plotPoint.searchCharacters": "Figuren suchen\u2026",
+    "plotPoint.noAvailableCharacters": "Keine Figuren verf\u00fcgbar",
+    "plotPoint.removeCharacter": "Figur entfernen",
+    "plotPoint.delete": "Handlungspunkt l\u00f6schen"
 }
