@@ -2,8 +2,20 @@
 
 namespace App\Services\Export\Templates;
 
-class ClassicTemplate
+use App\Contracts\ExportTemplate;
+
+class ClassicTemplate implements ExportTemplate
 {
+    public static function slug(): string
+    {
+        return 'classic';
+    }
+
+    public static function name(): string
+    {
+        return 'Classic';
+    }
+
     /**
      * Flat array of all design tokens — serialized to frontend via Inertia.
      *
