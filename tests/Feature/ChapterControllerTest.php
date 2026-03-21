@@ -1,9 +1,11 @@
 <?php
 
 use App\Enums\VersionStatus;
+use App\Models\Beat;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
+use App\Models\PlotPoint;
 use App\Models\Scene;
 use App\Models\Storyline;
 
@@ -207,6 +209,24 @@ test('store calculates correct reader_order sequence', function () {
 
     $newChapter = $book->chapters()->where('title', 'Third Chapter')->first();
     expect($newChapter->reader_order)->toBe(2);
+});
+
+test('store links chapter to beat when beat_id is provided', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $plotPoint = PlotPoint::factory()->for($book)->create();
+    $beat = Beat::factory()->for($plotPoint)->create();
+
+    $this->post(route('chapters.store', $book), [
+        'title' => 'Beat Chapter',
+        'storyline_id' => $storyline->id,
+        'beat_id' => $beat->id,
+    ])->assertRedirect();
+
+    $chapter = $book->chapters()->where('title', 'Beat Chapter')->first();
+
+    expect($chapter)->not->toBeNull();
+    expect($beat->chapters()->where('chapter_id', $chapter->id)->exists())->toBeTrue();
 });
 
 test('store validates title is required', function () {

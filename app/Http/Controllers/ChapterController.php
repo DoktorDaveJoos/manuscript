@@ -73,6 +73,10 @@ class ChapterController extends Controller
                 'word_count' => 0,
             ]);
 
+            if ($beatId = $request->validated('beat_id')) {
+                $chapter->beats()->attach($beatId);
+            }
+
             return $chapter;
         });
 

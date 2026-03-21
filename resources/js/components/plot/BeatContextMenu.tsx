@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { CircleCheck, CircleX, Circle, FilePlus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { store } from '@/actions/App/Http/Controllers/ChapterController';
 
 import ContextMenu from '@/components/ui/ContextMenu';
 import type { Beat, BeatStatus, Storyline } from '@/types/models';
@@ -33,8 +34,12 @@ export default function BeatContextMenu({
 
     const handleCreateChapter = (storylineId: number) => {
         router.post(
-            `/books/${bookId}/chapters`,
-            { storyline_id: storylineId, title: 'New Chapter' },
+            store.url({ book: bookId }),
+            {
+                storyline_id: storylineId,
+                title: 'New Chapter',
+                beat_id: beat.id,
+            },
             { preserveScroll: true },
         );
         onClose();

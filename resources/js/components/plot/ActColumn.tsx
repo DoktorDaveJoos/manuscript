@@ -3,7 +3,7 @@ import {
     SortableContext,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Plus } from 'lucide-react';
+import { GripVertical, Plus } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getActColor } from '@/lib/plot-constants';
@@ -99,24 +99,29 @@ export default function ActColumn({
                     onActContextMenu(act, { x: e.clientX, y: e.clientY });
                 }}
             >
-                <button
-                    type="button"
-                    className="flex min-w-0 flex-1 items-center gap-1.5 transition-opacity hover:opacity-70"
-                    onClick={() => onSelectAct?.(act.id)}
-                >
-                    <span
-                        className="shrink-0 text-[10px] font-bold tracking-[0.08em] uppercase"
-                        style={{ color: color.label }}
-                    >
-                        ACT {act.number}
+                <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                    <span className="flex shrink-0 cursor-grab items-center text-ink-faint active:cursor-grabbing">
+                        <GripVertical className="h-3.5 w-3.5" />
                     </span>
-                    <span
-                        className="truncate text-[13px] font-medium"
-                        style={{ color: '#141414' }}
+                    <button
+                        type="button"
+                        className="flex min-w-0 flex-1 items-center gap-1.5 transition-opacity hover:opacity-70"
+                        onClick={() => onSelectAct?.(act.id)}
                     >
-                        {titleOverrides?.[`act-${act.id}`] ?? act.title}
-                    </span>
-                </button>
+                        <span
+                            className="shrink-0 text-[10px] font-bold tracking-[0.08em] uppercase"
+                            style={{ color: color.label }}
+                        >
+                            ACT {act.number}
+                        </span>
+                        <span
+                            className="truncate text-[13px] font-medium"
+                            style={{ color: '#141414' }}
+                        >
+                            {titleOverrides?.[`act-${act.id}`] ?? act.title}
+                        </span>
+                    </button>
+                </div>
                 <div className="flex items-center gap-2">
                     <button
                         type="button"

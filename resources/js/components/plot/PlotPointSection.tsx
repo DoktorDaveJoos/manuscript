@@ -93,26 +93,18 @@ export default function PlotPointSection({
     return (
         <div
             ref={combinedRef}
-            style={{
-                ...style,
-                backgroundColor: isOver ? '#F7F5F0' : '#FCFAF7',
-                borderColor: isSelected
-                    ? '#C49A6C'
-                    : isOver
-                      ? '#C49A6C'
-                      : '#E4E2DD',
-                borderRadius: 8,
-                borderWidth: isSelected ? 2 : 1,
-            }}
+            style={style}
             {...attributes}
             className={cn(
-                'flex flex-col gap-2.5 rounded-lg border p-3.5 transition-colors',
+                'flex flex-col overflow-hidden rounded-lg border border-[#E8E6E1]/60 bg-white pt-3 pb-2.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition-colors',
                 isDragging && 'opacity-50',
+                isSelected && 'ring-2 ring-[#C49A6C]',
+                isOver && 'bg-[#F7F5F0]',
             )}
         >
             {/* Header */}
             <div
-                className="flex items-center justify-between gap-2"
+                className="flex items-center justify-between gap-2 px-3.5"
                 onContextMenu={(e) => {
                     e.preventDefault();
                     onPlotPointContextMenu(plotPoint, {
@@ -121,7 +113,7 @@ export default function PlotPointSection({
                     });
                 }}
             >
-                <div className="flex items-center gap-1.5">
+                <div className="flex min-w-0 flex-1 items-center gap-1.5">
                     <span
                         {...listeners}
                         className="flex shrink-0 cursor-grab items-center text-ink-faint active:cursor-grabbing"
@@ -131,34 +123,34 @@ export default function PlotPointSection({
                     <button
                         type="button"
                         onClick={() => onSelectPlotPoint(plotPoint)}
-                        className="text-left text-[13px] leading-tight font-semibold transition-opacity hover:opacity-70"
+                        className="min-w-0 flex-1 text-left text-[13px] leading-tight font-semibold transition-opacity hover:opacity-70"
                         style={{ color: '#141414' }}
                     >
                         {titleOverrides?.[`plotpoint-${plotPoint.id}`] ??
                             plotPoint.title}
                     </button>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                    <span
-                        className="rounded px-2 py-0.5 text-[10px] font-medium"
-                        style={{
-                            backgroundColor:
-                                TYPE_BADGE_COLORS[plotPoint.type]?.bg ??
-                                '#F0EEEB',
-                            borderRadius: 4,
-                            color:
-                                TYPE_BADGE_COLORS[plotPoint.type]?.text ??
-                                '#737373',
-                        }}
-                    >
-                        {t(`type.${plotPoint.type}`)}
-                    </span>
-                </div>
+                <span
+                    className="shrink-0 rounded px-2 py-0.5 text-[10px] font-medium"
+                    style={{
+                        backgroundColor:
+                            TYPE_BADGE_COLORS[plotPoint.type]?.bg ?? '#F0EEEB',
+                        borderRadius: 4,
+                        color:
+                            TYPE_BADGE_COLORS[plotPoint.type]?.text ??
+                            '#737373',
+                    }}
+                >
+                    {t(`type.${plotPoint.type}`)}
+                </span>
             </div>
+
+            {/* Divider */}
+            <div className="mt-2.5 h-px w-full bg-[#E8E6E1]" />
 
             {/* Description preview */}
             {plainDescription && (
-                <p className="line-clamp-2 text-[11px] text-ink-muted italic">
+                <p className="line-clamp-2 px-3.5 pt-2.5 text-[11px] text-ink-muted italic">
                     {plainDescription}
                 </p>
             )}
@@ -169,7 +161,7 @@ export default function PlotPointSection({
                 strategy={verticalListSortingStrategy}
             >
                 {beats.length > 0 && (
-                    <div className="flex flex-col gap-2 pl-1">
+                    <div className="flex flex-col gap-2 px-3.5 pt-2.5">
                         {beats.map((beat) => (
                             <BeatCard
                                 key={beat.id}
@@ -195,7 +187,7 @@ export default function PlotPointSection({
             {/* Empty drop zone when no beats */}
             {beats.length === 0 && isOver && (
                 <div
-                    className="rounded border border-dashed py-3 text-center text-[11px] text-ink-faint"
+                    className="mx-3.5 mt-2.5 rounded border border-dashed py-3 text-center text-[11px] text-ink-faint"
                     style={{ borderColor: '#C49A6C' }}
                 >
                     {t('beat.dropHere', 'Drop here')}
@@ -206,7 +198,7 @@ export default function PlotPointSection({
             <button
                 type="button"
                 onClick={() => onCreateBeat(plotPoint.id)}
-                className="flex items-center gap-1 pt-1 transition-opacity hover:opacity-70"
+                className="flex items-center gap-1 px-3.5 pt-2 transition-opacity hover:opacity-70"
             >
                 <Plus size={12} style={{ color: '#A3A3A3' }} />
                 <span

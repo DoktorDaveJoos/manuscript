@@ -57,32 +57,32 @@ export default function BeatCard({
             style={style}
             {...attributes}
             className={cn(
-                'flex cursor-pointer items-start gap-1.5',
+                'flex cursor-pointer flex-col',
                 isDragging && 'opacity-50',
                 isSelected && 'rounded-md bg-ink/[0.06]',
             )}
             onClick={onClick}
             onContextMenu={onContextMenu}
         >
-            <span
-                {...listeners}
-                className="mt-0.5 flex shrink-0 cursor-grab items-center text-ink-faint active:cursor-grabbing"
-            >
-                <GripVertical className="h-3 w-3" />
-            </span>
-            <span
-                className="mt-1 shrink-0 rounded-full"
-                style={{
-                    width: 8,
-                    height: 8,
-                    backgroundColor: dot.color,
-                    opacity: dot.opacity ?? 1,
-                }}
-            />
-            <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+                <span
+                    {...listeners}
+                    className="flex shrink-0 cursor-grab items-center text-ink-faint active:cursor-grabbing"
+                >
+                    <GripVertical className="h-3 w-3" />
+                </span>
+                <span
+                    className="shrink-0 rounded-full"
+                    style={{
+                        width: 8,
+                        height: 8,
+                        backgroundColor: dot.color,
+                        opacity: dot.opacity ?? 1,
+                    }}
+                />
                 <span
                     className={cn(
-                        'text-[12px] leading-tight',
+                        'min-w-0 flex-1 text-[12px] leading-tight',
                         isSelected
                             ? 'font-medium text-ink'
                             : 'font-normal text-ink-soft',
@@ -90,12 +90,12 @@ export default function BeatCard({
                 >
                     {titleOverride ?? beat.title}
                 </span>
-                {plainDescription && (
-                    <p className="line-clamp-2 text-[11px] text-ink-muted italic">
-                        {plainDescription}
-                    </p>
-                )}
             </div>
+            {plainDescription && (
+                <p className="line-clamp-2 pl-[32px] text-[11px] text-ink-muted italic">
+                    {plainDescription}
+                </p>
+            )}
         </div>
     );
 }
