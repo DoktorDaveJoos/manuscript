@@ -15,11 +15,17 @@ class PlotController extends Controller
             'acts' => fn ($q) => $q->orderBy('sort_order'),
             'plotPoints' => fn ($q) => $q->orderBy('sort_order'),
             'plotPoints.beats',
-            'plotPoints.beats.chapters:id,title,reader_order',
+            'plotPoints.beats.chapters:id,title,storyline_id,reader_order',
             'plotPoints.characters',
         ]);
 
         $characters = $book->characters()->orderBy('name')->get();
+
+        $chapters = $book->chapters()
+            ->select('id', 'title', 'storyline_id', 'reader_order')
+            ->with('storyline:id,name')
+            ->orderBy('reader_order')
+            ->get();
 
         return Inertia::render('plot/index', [
             'book' => $book,
@@ -27,6 +33,7 @@ class PlotController extends Controller
             'acts' => $book->acts,
             'plotPoints' => $book->plotPoints,
             'characters' => $characters,
+            'chapters' => $chapters,
         ]);
     }
 }

@@ -19,15 +19,29 @@ import type {
     Storyline,
 } from '@/types/models';
 
+type ChapterSummary = {
+    id: number;
+    title: string;
+    storyline_id: number;
+    reader_order: number;
+    storyline?: { id: number; name: string };
+};
+
 type PlotPageProps = {
     book: Book;
     storylines: Storyline[];
     acts: Act[];
     plotPoints: (PlotPoint & {
         beats?: (Beat & {
-            chapters?: { id: number; title: string; reader_order: number }[];
+            chapters?: {
+                id: number;
+                title: string;
+                storyline_id: number;
+                reader_order: number;
+            }[];
         })[];
     })[];
+    chapters: ChapterSummary[];
 };
 
 export default function Plot({
@@ -35,6 +49,7 @@ export default function Plot({
     storylines,
     acts,
     plotPoints,
+    chapters,
 }: PlotPageProps) {
     const { t } = useTranslation('plot');
     const sidebarStorylines = useSidebarStorylines();
@@ -226,6 +241,8 @@ export default function Plot({
                                         key={selectedBeat.id}
                                         beat={selectedBeat}
                                         bookId={book.id}
+                                        chapters={chapters}
+                                        storylines={storylines}
                                         onClose={() => setSelectedBeatId(null)}
                                     />
                                 )}
