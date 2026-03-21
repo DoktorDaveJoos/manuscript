@@ -305,7 +305,7 @@ export default function ExportReadingOrder({
                 <button
                     type="button"
                     onClick={toggleCollapsed}
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-ink-faint transition-colors hover:bg-surface-hover hover:text-ink-muted"
+                    className="hover:bg-surface-hover flex h-7 w-7 items-center justify-center rounded-md text-ink-faint transition-colors hover:text-ink-muted"
                 >
                     <ChevronRight className="h-3.5 w-3.5" />
                 </button>
@@ -339,7 +339,7 @@ export default function ExportReadingOrder({
                     <button
                         type="button"
                         onClick={toggleCollapsed}
-                        className="flex h-6 w-6 items-center justify-center rounded-md text-ink-faint transition-colors hover:bg-surface-hover hover:text-ink-muted"
+                        className="hover:bg-surface-hover flex h-6 w-6 items-center justify-center rounded-md text-ink-faint transition-colors hover:text-ink-muted"
                     >
                         <ChevronDown className="h-3 w-3 rotate-90" />
                     </button>
