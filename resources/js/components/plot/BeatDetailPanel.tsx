@@ -1,17 +1,20 @@
 import { router } from '@inertiajs/react';
-import { FileText, Plus, Search, X } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { FileText, Plus, Search, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import Button from '@/components/ui/Button';
+import Drawer from '@/components/ui/Drawer';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import PanelHeader from '@/components/ui/PanelHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
+import { STATUS_PILL_OPTIONS } from '@/lib/plot-constants';
 import type { Beat, BeatStatus, Storyline } from '@/types/models';
-
-const STATUS_OPTIONS: BeatStatus[] = ['planned', 'fulfilled', 'abandoned'];
+import StatusPillGroup from './StatusPillGroup';
 
 type ChapterSummary = {
     id: number;
@@ -27,6 +30,8 @@ type BeatDetailPanelProps = {
     chapters: ChapterSummary[];
     storylines: Storyline[];
     onClose: () => void;
+    onDelete?: (beatId: number) => void;
+    onTitleChange?: (title: string) => void;
 };
 
 export default function BeatDetailPanel({
@@ -35,8 +40,11 @@ export default function BeatDetailPanel({
     chapters,
     storylines,
     onClose,
+    onDelete,
+    onTitleChange,
 }: BeatDetailPanelProps) {
     const { t } = useTranslation('plot');
+    const titleRef = useRef<HTMLInputElement>(null);
     const [title, setTitle] = useState(beat.title);
     const [description, setDescription] = useState(beat.description ?? '');
     const [showChapterPicker, setShowChapterPicker] = useState(false);
@@ -46,33 +54,51 @@ export default function BeatDetailPanel({
     );
     const searchInputRef = useRef<HTMLInputElement>(null);
 
-    const handleTitleBlur = () => {
-        if (title !== beat.title) {
-            router.patch(
-                `/books/${bookId}/beats/${beat.id}`,
-                { title },
-                { preserveScroll: true },
-            );
-        }
+    useEffect(() => {
+        titleRef.current?.focus();
+        titleRef.current?.select();
+    }, []);
+
+    const patchBeat = useCallback(
+        (data: Record<string, string | number>) => {
+            router.patch(`/books/${bookId}/beats/${beat.id}`, data, {
+                preserveScroll: true,
+            });
+        },
+        [bookId, beat.id],
+    );
+
+    const debouncedPatchTitle = useDebouncedCallback(
+        (title: string) => patchBeat({ title }),
+        500,
+    );
+
+    const debouncedPatchDescription = useDebouncedCallback(
+        (description: string) => patchBeat({ description }),
+        500,
+    );
+
+    const handleTitleChange = (value: string) => {
+        setTitle(value);
+        onTitleChange?.(value);
+        debouncedPatchTitle(value);
     };
 
-    const handleDescriptionBlur = () => {
-        if (description !== (beat.description ?? '')) {
-            router.patch(
-                `/books/${bookId}/beats/${beat.id}`,
-                { description },
-                { preserveScroll: true },
-            );
-        }
+    const handleDescriptionChange = (value: string) => {
+        setDescription(value);
+        debouncedPatchDescription(value);
     };
 
-    const handleStatusChange = (status: string) => {
-        router.patch(
-            `/books/${bookId}/beats/${beat.id}/status`,
-            { status },
-            { preserveScroll: true },
-        );
-    };
+    const handleStatusChange = useCallback(
+        (status: BeatStatus) => {
+            router.patch(
+                `/books/${bookId}/beats/${beat.id}/status`,
+                { status },
+                { preserveScroll: true },
+            );
+        },
+        [bookId, beat.id],
+    );
 
     const linkedChapterIds = useMemo(
         () => new Set((beat.chapters ?? []).map((ch) => ch.id)),
@@ -133,58 +159,59 @@ export default function BeatDetailPanel({
     const plotPointType = beat.plot_point?.type;
 
     return (
-        <aside className="flex h-full w-[320px] shrink-0 flex-col border-l border-border bg-surface-card">
+        <Drawer onClose={onClose}>
             <PanelHeader title={t('beat.details')} onClose={onClose} />
 
             <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-5">
                 {/* Title */}
-                <FormField label={t('beat.title')} className="gap-1.5">
+                <FormField label={t('beat.title')}>
                     <Input
+                        ref={titleRef}
                         type="text"
                         value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        onBlur={handleTitleBlur}
+                        onChange={(e) => handleTitleChange(e.target.value)}
                     />
                 </FormField>
 
                 {/* Description */}
-                <FormField label={t('beat.description')} className="gap-1.5">
+                <FormField label={t('beat.description')}>
                     <Textarea
                         value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        onBlur={handleDescriptionBlur}
+                        onChange={(e) =>
+                            handleDescriptionChange(e.target.value)
+                        }
                         rows={4}
                         placeholder={t('beat.descriptionPlaceholder')}
                     />
+                    <span className="text-[10px] text-ink-faint italic">
+                        {t(
+                            'beat.descriptionHelper',
+                            'What happens during this beat?',
+                        )}
+                    </span>
                 </FormField>
 
-                {/* Status + Type row */}
-                <div className="flex gap-3">
-                    <FormField
-                        label={t('beat.status')}
-                        className="flex-1 gap-1.5"
-                    >
-                        <Select
-                            value={beat.status}
-                            onChange={(e) => handleStatusChange(e.target.value)}
-                        >
-                            {STATUS_OPTIONS.map((value) => (
-                                <option key={value} value={value}>
-                                    {t(`status.${value}`)}
-                                </option>
-                            ))}
-                        </Select>
-                    </FormField>
+                {/* Status */}
+                <FormField label={t('beat.status')}>
+                    <StatusPillGroup
+                        options={STATUS_PILL_OPTIONS}
+                        value={beat.status}
+                        onChange={handleStatusChange}
+                    />
+                </FormField>
 
-                    <FormField
-                        label={t('beat.type')}
-                        className="flex-1 gap-1.5"
-                    >
-                        <div className="flex items-center rounded-md border border-border bg-surface px-3 py-2 text-[13px] text-ink-soft">
-                            {plotPointType ? t(`type.${plotPointType}`) : '—'}
-                        </div>
-                    </FormField>
-                </div>
+                {/* Type (read-only, inherited from plot point) */}
+                <FormField label={t('beat.type')}>
+                    <div className="flex items-center rounded-md border border-border bg-surface px-3 py-2 text-[13px] text-ink-soft">
+                        {plotPointType ? t(`type.${plotPointType}`) : '—'}
+                    </div>
+                    <span className="text-[10px] text-ink-faint italic">
+                        {t(
+                            'beat.typeHelper',
+                            'Inherited from the parent plot point.',
+                        )}
+                    </span>
+                </FormField>
 
                 {/* Divider */}
                 <div className="h-px bg-border" />
@@ -337,8 +364,29 @@ export default function BeatDetailPanel({
                             </button>
                         </div>
                     )}
+                    <span className="text-[10px] text-ink-faint italic">
+                        {t(
+                            'beat.chapterHelper',
+                            'Connect this beat to the chapters where it plays out.',
+                        )}
+                    </span>
                 </div>
+
+                {/* Spacer */}
+                <div className="flex-1" />
+
+                {/* Delete */}
+                {onDelete && (
+                    <Button
+                        variant="danger"
+                        onClick={() => onDelete(beat.id)}
+                        className="w-full py-2.5"
+                    >
+                        <Trash2 size={14} />
+                        {t('beat.deleteBeat')}
+                    </Button>
+                )}
             </div>
-        </aside>
+        </Drawer>
     );
 }

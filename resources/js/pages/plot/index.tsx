@@ -23,6 +23,7 @@ import { reorder as plotPointReorder } from '@/actions/App/Http/Controllers/Plot
 import Sidebar from '@/components/editor/Sidebar';
 import ActColumn from '@/components/plot/ActColumn';
 import ActContextMenu from '@/components/plot/ActContextMenu';
+import ActDetailPanel from '@/components/plot/ActDetailPanel';
 import BeatContextMenu from '@/components/plot/BeatContextMenu';
 import BeatDetailPanel from '@/components/plot/BeatDetailPanel';
 import DeleteActDialog from '@/components/plot/DeleteActDialog';
@@ -84,10 +85,13 @@ export default function Plot({
 }: PlotPageProps) {
     const { t } = useTranslation('plot');
     const sidebarStorylines = useSidebarStorylines();
-    const [selectedBeatId, setSelectedBeatId] = useState<number | null>(null);
-    const [selectedPlotPointId, setSelectedPlotPointId] = useState<
-        number | null
-    >(null);
+
+    // Unified selection state (from #20)
+    const [selection, setSelection] = useState<{
+        type: 'beat' | 'act' | 'plotPoint';
+        id: number;
+    } | null>(null);
+
     const [selectedTemplate, setSelectedTemplate] =
         useState<PlotTemplate | null>(null);
     const [actToDelete, setActToDelete] = useState<Act | null>(null);
@@ -105,6 +109,31 @@ export default function Plot({
     } | null>(null);
     const [activeItem, setActiveItem] = useState<DragItem | null>(null);
     const hasActs = acts.length > 0;
+    const [titleOverrides, setTitleOverrides] = useState<
+        Record<string, string>
+    >({});
+
+    // Derived selection IDs
+    const selectedBeatId = selection?.type === 'beat' ? selection.id : null;
+    const selectedActId = selection?.type === 'act' ? selection.id : null;
+    const selectedPlotPointId =
+        selection?.type === 'plotPoint' ? selection.id : null;
+
+    const handleTitleOverride = useCallback((key: string, title: string) => {
+        setTitleOverrides((prev) => ({ ...prev, [key]: title }));
+    }, []);
+
+    // Track existing IDs so onSuccess can find the newly created item
+    const beatIdsRef = useRef<Set<number>>(new Set());
+    const plotPointIdsRef = useRef<Set<number>>(new Set());
+    const actIdsRef = useRef<Set<number>>(new Set());
+
+    // Keep refs in sync with props
+    beatIdsRef.current = new Set(
+        plotPoints.flatMap((pp) => (pp.beats ?? []).map((b) => b.id)),
+    );
+    plotPointIdsRef.current = new Set(plotPoints.map((pp) => pp.id));
+    actIdsRef.current = new Set(acts.map((a) => a.id));
 
     const sensors = useSensors(
         useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
@@ -122,6 +151,10 @@ export default function Plot({
 
     const selectedBeat = selectedBeatId
         ? (beatMap.get(selectedBeatId) ?? null)
+        : null;
+
+    const selectedAct = selectedActId
+        ? (acts.find((a) => a.id === selectedActId) ?? null)
         : null;
 
     const selectedPlotPoint = selectedPlotPointId
@@ -150,10 +183,25 @@ export default function Plot({
 
     const handleCreateBeat = useCallback(
         (plotPointId: number) => {
+            const previousIds = new Set(beatIdsRef.current);
             router.post(
                 `/books/${book.id}/plot-points/${plotPointId}/beats`,
                 { title: t('beat.addBeat') },
-                { preserveScroll: true },
+                {
+                    preserveScroll: true,
+                    onSuccess: (page) => {
+                        const props = page.props as unknown as PlotPageProps;
+                        const allBeats = props.plotPoints.flatMap(
+                            (pp) => pp.beats ?? [],
+                        );
+                        const newBeat = allBeats.find(
+                            (b) => !previousIds.has(b.id),
+                        );
+                        if (newBeat) {
+                            setSelection({ type: 'beat', id: newBeat.id });
+                        }
+                    },
+                },
             );
         },
         [book.id, t],
@@ -161,6 +209,7 @@ export default function Plot({
 
     const handleCreatePlotPoint = useCallback(
         (actId: number) => {
+            const previousIds = new Set(plotPointIdsRef.current);
             router.post(
                 `/books/${book.id}/plot-points`,
                 {
@@ -168,7 +217,21 @@ export default function Plot({
                     type: 'setup',
                     act_id: actId,
                 },
-                { preserveScroll: true },
+                {
+                    preserveScroll: true,
+                    onSuccess: (page) => {
+                        const props = page.props as unknown as PlotPageProps;
+                        const newPlotPoint = props.plotPoints.find(
+                            (pp) => !previousIds.has(pp.id),
+                        );
+                        if (newPlotPoint) {
+                            setSelection({
+                                type: 'plotPoint',
+                                id: newPlotPoint.id,
+                            });
+                        }
+                    },
+                },
             );
         },
         [book.id, t],
@@ -177,19 +240,18 @@ export default function Plot({
     const handleDeleteAct = useCallback(
         (actId: number) => {
             setActContextMenu(null);
+            if (selectedActId === actId) setSelection(null);
             const act = acts.find((a) => a.id === actId);
             if (act) {
                 setActToDelete(act);
             }
         },
-        [acts],
+        [acts, selectedActId],
     );
 
     const handleDeletePlotPoint = useCallback(
         (plotPointId: number) => {
-            if (selectedPlotPointId === plotPointId) {
-                setSelectedPlotPointId(null);
-            }
+            if (selectedPlotPointId === plotPointId) setSelection(null);
             router.delete(`/books/${book.id}/plot-points/${plotPointId}`, {
                 preserveScroll: true,
             });
@@ -211,7 +273,7 @@ export default function Plot({
 
     const handleDeleteBeat = useCallback(
         (beatId: number) => {
-            if (selectedBeatId === beatId) setSelectedBeatId(null);
+            if (selectedBeatId === beatId) setSelection(null);
             router.delete(`/books/${book.id}/beats/${beatId}`, {
                 preserveScroll: true,
             });
@@ -244,10 +306,22 @@ export default function Plot({
     const handleAddAct = useCallback(() => {
         const nextNumber =
             acts.length > 0 ? Math.max(...acts.map((a) => a.number)) + 1 : 1;
+        const previousIds = new Set(actIdsRef.current);
         router.post(
             `/books/${book.id}/acts`,
             { number: nextNumber, title: `Act ${nextNumber}` },
-            { preserveScroll: true },
+            {
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    const props = page.props as unknown as PlotPageProps;
+                    const newAct = props.acts.find(
+                        (a) => !previousIds.has(a.id),
+                    );
+                    if (newAct) {
+                        setSelection({ type: 'act', id: newAct.id });
+                    }
+                },
+            },
         );
     }, [acts, book.id]);
 
@@ -544,21 +618,31 @@ export default function Plot({
                                                     ) ?? []
                                                 }
                                                 selectedBeatId={selectedBeatId}
+                                                selectedPlotPointId={
+                                                    selectedPlotPointId
+                                                }
+                                                titleOverrides={titleOverrides}
                                                 isLast={
                                                     index === acts.length - 1
                                                 }
-                                                onSelectBeat={(beat) => {
-                                                    setSelectedBeatId(beat.id);
-                                                    setSelectedPlotPointId(
-                                                        null,
-                                                    );
-                                                }}
-                                                onSelectPlotPoint={(pp) => {
-                                                    setSelectedPlotPointId(
-                                                        pp.id,
-                                                    );
-                                                    setSelectedBeatId(null);
-                                                }}
+                                                onSelectBeat={(beat) =>
+                                                    setSelection({
+                                                        type: 'beat',
+                                                        id: beat.id,
+                                                    })
+                                                }
+                                                onSelectAct={(actId) =>
+                                                    setSelection({
+                                                        type: 'act',
+                                                        id: actId,
+                                                    })
+                                                }
+                                                onSelectPlotPoint={(pp) =>
+                                                    setSelection({
+                                                        type: 'plotPoint',
+                                                        id: pp.id,
+                                                    })
+                                                }
                                                 onCreateBeat={handleCreateBeat}
                                                 onCreatePlotPoint={
                                                     handleCreatePlotPoint
@@ -613,7 +697,35 @@ export default function Plot({
                                         bookId={book.id}
                                         chapters={chapters}
                                         storylines={storylines}
-                                        onClose={() => setSelectedBeatId(null)}
+                                        onClose={() => setSelection(null)}
+                                        onDelete={handleDeleteBeat}
+                                        onTitleChange={(title) =>
+                                            handleTitleOverride(
+                                                `beat-${selectedBeat.id}`,
+                                                title,
+                                            )
+                                        }
+                                    />
+                                )}
+
+                                {selectedAct && (
+                                    <ActDetailPanel
+                                        key={selectedAct.id}
+                                        act={selectedAct}
+                                        bookId={book.id}
+                                        plotPoints={
+                                            plotPointsByAct.get(
+                                                selectedAct.id,
+                                            ) ?? []
+                                        }
+                                        onClose={() => setSelection(null)}
+                                        onDelete={handleDeleteAct}
+                                        onTitleChange={(title) =>
+                                            handleTitleOverride(
+                                                `act-${selectedAct.id}`,
+                                                title,
+                                            )
+                                        }
                                     />
                                 )}
 
@@ -623,25 +735,22 @@ export default function Plot({
                                         plotPoint={selectedPlotPoint}
                                         bookId={book.id}
                                         characters={characters}
-                                        onClose={() =>
-                                            setSelectedPlotPointId(null)
-                                        }
+                                        onClose={() => setSelection(null)}
                                         onDelete={handleDeletePlotPoint}
+                                        onTitleChange={(title) =>
+                                            handleTitleOverride(
+                                                `plotpoint-${selectedPlotPoint.id}`,
+                                                title,
+                                            )
+                                        }
                                     />
                                 )}
                             </div>
                         </>
                     ) : (
-                        <>
-                            <div className="flex h-12 items-center border-b border-border px-6">
-                                <h1 className="text-[15px] font-semibold text-ink">
-                                    {t('page.tabs.timeline', 'Plot')}
-                                </h1>
-                            </div>
-                            <PlotEmptyState
-                                onSelectTemplate={setSelectedTemplate}
-                            />
-                        </>
+                        <PlotEmptyState
+                            onSelectTemplate={setSelectedTemplate}
+                        />
                     )}
                 </main>
 
@@ -696,7 +805,7 @@ export default function Plot({
                                 selectedBeatId &&
                                 beatsInAct.some((b) => b.id === selectedBeatId)
                             ) {
-                                setSelectedBeatId(null);
+                                setSelection(null);
                             }
                             setActToDelete(null);
                         }}

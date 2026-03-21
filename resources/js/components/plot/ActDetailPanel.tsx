@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import Button from '@/components/ui/Button';
@@ -31,9 +31,15 @@ export default function ActDetailPanel({
     onTitleChange,
 }: Props) {
     const { t } = useTranslation('plot');
+    const titleRef = useRef<HTMLInputElement>(null);
     const [number, setNumber] = useState(String(act.number));
     const [title, setTitle] = useState(act.title);
     const [description, setDescription] = useState(act.description ?? '');
+
+    useEffect(() => {
+        titleRef.current?.focus();
+        titleRef.current?.select();
+    }, []);
 
     const summary = useMemo(() => {
         const allBeats = plotPoints.flatMap((pp) => pp.beats ?? []);
@@ -115,6 +121,7 @@ export default function ActDetailPanel({
                 {/* Title */}
                 <FormField label={t('act.title', 'Title')}>
                     <Input
+                        ref={titleRef}
                         type="text"
                         value={title}
                         onChange={(e) => handleTitleChange(e.target.value)}

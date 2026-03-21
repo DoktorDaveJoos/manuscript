@@ -77,6 +77,7 @@ export default function PlotPointDetailPanel({
     onTitleChange,
 }: Props) {
     const { t } = useTranslation('plot');
+    const titleRef = useRef<HTMLInputElement>(null);
     const [title, setTitle] = useState(plotPoint.title);
     const [description, setDescription] = useState(plotPoint.description ?? '');
     const [selectorOpen, setSelectorOpen] = useState(false);
@@ -85,6 +86,11 @@ export default function PlotPointDetailPanel({
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     const linkedCharacters = plotPoint.characters ?? [];
+
+    useEffect(() => {
+        titleRef.current?.focus();
+        titleRef.current?.select();
+    }, []);
 
     const patchPlotPoint = useCallback(
         (
@@ -229,6 +235,7 @@ export default function PlotPointDetailPanel({
                 {/* Title */}
                 <FormField label={t('plotPoint.title')}>
                     <Input
+                        ref={titleRef}
                         type="text"
                         value={title}
                         onChange={(e) => handleTitleChange(e.target.value)}

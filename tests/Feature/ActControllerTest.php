@@ -47,9 +47,11 @@ it('updates an act', function () {
 
     $this->patchJson(route('acts.update', [$book, $act]), [
         'title' => 'New title',
+        'description' => 'Updated description',
     ])->assertRedirect();
 
-    expect($act->fresh()->title)->toBe('New title');
+    expect($act->fresh()->title)->toBe('New title')
+        ->and($act->fresh()->description)->toBe('Updated description');
 });
 
 it('deletes an act', function () {
@@ -95,6 +97,16 @@ it('does not delete plot points from other acts', function () {
 
     $this->assertDatabaseMissing('plot_points', ['id' => $plotPoint1->id]);
     $this->assertDatabaseHas('plot_points', ['id' => $plotPoint2->id]);
+});
+
+it('rejects updating an act from another book', function () {
+    $book = Book::factory()->create();
+    $otherBook = Book::factory()->create();
+    $act = Act::factory()->create(['book_id' => $otherBook->id]);
+
+    $this->patchJson(route('acts.update', [$book, $act]), [
+        'title' => 'Hacked',
+    ])->assertNotFound();
 });
 
 it('rejects deleting an act from another book', function () {

@@ -10,12 +10,22 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { stripTags } from '@/lib/ruleCheckers';
 import { cn } from '@/lib/utils';
-import type { Beat, PlotPoint } from '@/types/models';
+import type { Beat, PlotPoint, PlotPointType } from '@/types/models';
 import BeatCard from './BeatCard';
+
+const TYPE_BADGE_COLORS: Record<PlotPointType, { bg: string; text: string }> = {
+    setup: { bg: '#E8EEF4', text: '#5B7B9A' },
+    conflict: { bg: '#F4E8E8', text: '#9A5B5B' },
+    turning_point: { bg: '#FAF0E4', text: '#B87333' },
+    resolution: { bg: '#E8EDE8', text: '#588258' },
+    worldbuilding: { bg: '#E8ECF2', text: '#586582' },
+};
 
 type Props = {
     plotPoint: PlotPoint & { beats?: Beat[] };
     selectedBeatId: number | null;
+    isSelected?: boolean;
+    titleOverrides?: Record<string, string>;
     onSelectBeat: (beat: Beat) => void;
     onSelectPlotPoint: (plotPoint: PlotPoint) => void;
     onCreateBeat: (plotPointId: number) => void;
@@ -29,6 +39,8 @@ type Props = {
 export default function PlotPointSection({
     plotPoint,
     selectedBeatId,
+    isSelected = false,
+    titleOverrides,
     onSelectBeat,
     onSelectPlotPoint,
     onCreateBeat,
@@ -75,8 +87,13 @@ export default function PlotPointSection({
             style={{
                 ...style,
                 backgroundColor: isOver ? '#F7F5F0' : '#FCFAF7',
-                borderColor: isOver ? '#C49A6C' : '#E4E2DD',
+                borderColor: isSelected
+                    ? '#C49A6C'
+                    : isOver
+                      ? '#C49A6C'
+                      : '#E4E2DD',
                 borderRadius: 8,
+                borderWidth: isSelected ? 2 : 1,
             }}
             {...attributes}
             className={cn(
@@ -108,16 +125,21 @@ export default function PlotPointSection({
                         className="text-left text-[13px] leading-tight font-semibold transition-opacity hover:opacity-70"
                         style={{ color: '#141414' }}
                     >
-                        {plotPoint.title}
+                        {titleOverrides?.[`plotpoint-${plotPoint.id}`] ??
+                            plotPoint.title}
                     </button>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                     <span
                         className="rounded px-2 py-0.5 text-[10px] font-medium"
                         style={{
-                            backgroundColor: '#F0EEEB',
+                            backgroundColor:
+                                TYPE_BADGE_COLORS[plotPoint.type]?.bg ??
+                                '#F0EEEB',
                             borderRadius: 4,
-                            color: '#737373',
+                            color:
+                                TYPE_BADGE_COLORS[plotPoint.type]?.text ??
+                                '#737373',
                         }}
                     >
                         {t(`type.${plotPoint.type}`)}
@@ -144,6 +166,9 @@ export default function PlotPointSection({
                                 key={beat.id}
                                 beat={beat}
                                 isSelected={selectedBeatId === beat.id}
+                                titleOverride={
+                                    titleOverrides?.[`beat-${beat.id}`]
+                                }
                                 onClick={() => onSelectBeat(beat)}
                                 onContextMenu={(e) => {
                                     e.preventDefault();

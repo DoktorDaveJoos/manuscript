@@ -25,9 +25,11 @@ export const NEXT_STATUS: Record<PlotPointStatus, PlotPointStatus> = {
 };
 
 export const ACT_COLORS = [
-    { bg: '#FAF3EB', border: '#E8D5BE' },
-    { bg: '#F8EDE2', border: '#D4B89A' },
-    { bg: '#F3ECE4', border: '#C4B8A8' },
+    { bg: '#FAF3EB', border: '#E8D5BE', label: '#C49A6C', track: '#EDE5DA' },
+    { bg: '#F8EDE2', border: '#D4B89A', label: '#B87333', track: '#EDE0D2' },
+    { bg: '#F3ECE4', border: '#C4B8A8', label: '#8B6F47', track: '#E2DCD4' },
+    { bg: '#F0E8DF', border: '#C8B8A4', label: '#8B6F47', track: '#E5DDD4' },
+    { bg: '#EBE4DB', border: '#BAA996', label: '#6B5A40', track: '#DDD6CC' },
 ] as const;
 
 export function getActColor(index: number) {
