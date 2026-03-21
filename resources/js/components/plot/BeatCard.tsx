@@ -1,6 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
+import { useMemo } from 'react';
 import { stripTags } from '@/lib/ruleCheckers';
 import { cn } from '@/lib/utils';
 import type { Beat, BeatStatus } from '@/types/models';
@@ -28,9 +29,10 @@ export default function BeatCard({
     onContextMenu,
 }: Props) {
     const dot = BEAT_DOT_COLORS[beat.status];
-    const plainDescription = beat.description
-        ? stripTags(beat.description).trim()
-        : '';
+    const plainDescription = useMemo(
+        () => (beat.description ? stripTags(beat.description).trim() : ''),
+        [beat.description],
+    );
 
     const {
         attributes,

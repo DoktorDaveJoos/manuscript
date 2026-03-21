@@ -52,9 +52,10 @@ export default function ActColumn({
     const { t } = useTranslation('plot');
     const color = getActColor(colorIndex);
 
-    const plainDescription = act.description
-        ? stripTags(act.description).trim()
-        : '';
+    const plainDescription = useMemo(
+        () => (act.description ? stripTags(act.description).trim() : ''),
+        [act.description],
+    );
 
     const { setNodeRef: setDroppableRef } = useDroppable({
         id: `act-drop-${act.id}`,

@@ -39,17 +39,10 @@ import type {
     BeatStatus,
     Book,
     Character,
+    ChapterSummary,
     PlotPoint,
     Storyline,
 } from '@/types/models';
-
-type ChapterSummary = {
-    id: number;
-    title: string;
-    storyline_id: number;
-    reader_order: number;
-    storyline?: { id: number; name: string };
-};
 
 type PlotPageProps = {
     book: Book;
@@ -119,21 +112,14 @@ export default function Plot({
     const selectedPlotPointId =
         selection?.type === 'plotPoint' ? selection.id : null;
 
+    const clearSelection = useCallback(() => {
+        clearSelection();
+        setTitleOverrides({});
+    }, []);
+
     const handleTitleOverride = useCallback((key: string, title: string) => {
         setTitleOverrides((prev) => ({ ...prev, [key]: title }));
     }, []);
-
-    // Track existing IDs so onSuccess can find the newly created item
-    const beatIdsRef = useRef<Set<number>>(new Set());
-    const plotPointIdsRef = useRef<Set<number>>(new Set());
-    const actIdsRef = useRef<Set<number>>(new Set());
-
-    // Keep refs in sync with props
-    beatIdsRef.current = new Set(
-        plotPoints.flatMap((pp) => (pp.beats ?? []).map((b) => b.id)),
-    );
-    plotPointIdsRef.current = new Set(plotPoints.map((pp) => pp.id));
-    actIdsRef.current = new Set(acts.map((a) => a.id));
 
     const sensors = useSensors(
         useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
@@ -183,7 +169,9 @@ export default function Plot({
 
     const handleCreateBeat = useCallback(
         (plotPointId: number) => {
-            const previousIds = new Set(beatIdsRef.current);
+            const previousIds = new Set(
+                plotPoints.flatMap((pp) => (pp.beats ?? []).map((b) => b.id)),
+            );
             router.post(
                 `/books/${book.id}/plot-points/${plotPointId}/beats`,
                 { title: t('beat.addBeat') },
@@ -209,7 +197,7 @@ export default function Plot({
 
     const handleCreatePlotPoint = useCallback(
         (actId: number) => {
-            const previousIds = new Set(plotPointIdsRef.current);
+            const previousIds = new Set(plotPoints.map((pp) => pp.id));
             router.post(
                 `/books/${book.id}/plot-points`,
                 {
@@ -240,7 +228,7 @@ export default function Plot({
     const handleDeleteAct = useCallback(
         (actId: number) => {
             setActContextMenu(null);
-            if (selectedActId === actId) setSelection(null);
+            if (selectedActId === actId) clearSelection();
             const act = acts.find((a) => a.id === actId);
             if (act) {
                 setActToDelete(act);
@@ -251,7 +239,7 @@ export default function Plot({
 
     const handleDeletePlotPoint = useCallback(
         (plotPointId: number) => {
-            if (selectedPlotPointId === plotPointId) setSelection(null);
+            if (selectedPlotPointId === plotPointId) clearSelection();
             router.delete(`/books/${book.id}/plot-points/${plotPointId}`, {
                 preserveScroll: true,
             });
@@ -273,7 +261,7 @@ export default function Plot({
 
     const handleDeleteBeat = useCallback(
         (beatId: number) => {
-            if (selectedBeatId === beatId) setSelection(null);
+            if (selectedBeatId === beatId) clearSelection();
             router.delete(`/books/${book.id}/beats/${beatId}`, {
                 preserveScroll: true,
             });
@@ -306,7 +294,7 @@ export default function Plot({
     const handleAddAct = useCallback(() => {
         const nextNumber =
             acts.length > 0 ? Math.max(...acts.map((a) => a.number)) + 1 : 1;
-        const previousIds = new Set(actIdsRef.current);
+        const previousIds = new Set(acts.map((a) => a.id));
         router.post(
             `/books/${book.id}/acts`,
             { number: nextNumber, title: `Act ${nextNumber}` },
@@ -697,7 +685,7 @@ export default function Plot({
                                         bookId={book.id}
                                         chapters={chapters}
                                         storylines={storylines}
-                                        onClose={() => setSelection(null)}
+                                        onClose={() => clearSelection()}
                                         onDelete={handleDeleteBeat}
                                         onTitleChange={(title) =>
                                             handleTitleOverride(
@@ -718,7 +706,7 @@ export default function Plot({
                                                 selectedAct.id,
                                             ) ?? []
                                         }
-                                        onClose={() => setSelection(null)}
+                                        onClose={() => clearSelection()}
                                         onDelete={handleDeleteAct}
                                         onTitleChange={(title) =>
                                             handleTitleOverride(
@@ -735,7 +723,7 @@ export default function Plot({
                                         plotPoint={selectedPlotPoint}
                                         bookId={book.id}
                                         characters={characters}
-                                        onClose={() => setSelection(null)}
+                                        onClose={() => clearSelection()}
                                         onDelete={handleDeletePlotPoint}
                                         onTitleChange={(title) =>
                                             handleTitleOverride(
@@ -805,7 +793,7 @@ export default function Plot({
                                 selectedBeatId &&
                                 beatsInAct.some((b) => b.id === selectedBeatId)
                             ) {
-                                setSelection(null);
+                                clearSelection();
                             }
                             setActToDelete(null);
                         }}

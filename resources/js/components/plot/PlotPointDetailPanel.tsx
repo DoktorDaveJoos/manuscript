@@ -11,7 +11,11 @@ import PanelHeader from '@/components/ui/PanelHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Textarea from '@/components/ui/Textarea';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
-import { STATUS_PILL_OPTIONS } from '@/lib/plot-constants';
+import {
+    ROLE_OPTIONS,
+    STATUS_PILL_OPTIONS,
+    TYPE_PILL_OPTIONS,
+} from '@/lib/plot-constants';
 import type {
     Character,
     CharacterPlotPointRole,
@@ -20,44 +24,6 @@ import type {
     PlotPointType,
 } from '@/types/models';
 import StatusPillGroup from './StatusPillGroup';
-
-const TYPE_OPTIONS: {
-    value: PlotPointType;
-    labelKey: string;
-    activeClass: string;
-}[] = [
-    {
-        value: 'setup',
-        labelKey: 'type.setup',
-        activeClass: 'bg-ink/10 text-ink',
-    },
-    {
-        value: 'conflict',
-        labelKey: 'type.conflict',
-        activeClass: 'bg-ink/10 text-ink',
-    },
-    {
-        value: 'turning_point',
-        labelKey: 'typeShort.turning_point',
-        activeClass: 'bg-ink/10 text-ink',
-    },
-    {
-        value: 'resolution',
-        labelKey: 'type.resolution',
-        activeClass: 'bg-ink/10 text-ink',
-    },
-    {
-        value: 'worldbuilding',
-        labelKey: 'typeShort.worldbuilding',
-        activeClass: 'bg-ink/10 text-ink',
-    },
-];
-
-const ROLE_OPTIONS: CharacterPlotPointRole[] = [
-    'key',
-    'supporting',
-    'mentioned',
-];
 
 type Props = {
     plotPoint: PlotPoint;
@@ -263,7 +229,7 @@ export default function PlotPointDetailPanel({
                 {/* Type */}
                 <FormField label={t('plotPoint.type')}>
                     <StatusPillGroup
-                        options={TYPE_OPTIONS}
+                        options={TYPE_PILL_OPTIONS}
                         value={plotPoint.type}
                         onChange={handleTypeChange}
                     />

@@ -1,5 +1,6 @@
 import type {
     BeatStatus,
+    CharacterPlotPointRole,
     PlotPointStatus,
     PlotPointType,
 } from '@/types/models';
@@ -56,4 +57,42 @@ export const STATUS_PILL_OPTIONS: {
         labelKey: 'status.abandoned',
         activeClass: 'bg-neutral-300/20 text-ink-muted line-through',
     },
+];
+
+export const TYPE_PILL_OPTIONS: {
+    value: PlotPointType;
+    labelKey: string;
+    activeClass: string;
+}[] = [
+    {
+        value: 'setup',
+        labelKey: 'type.setup',
+        activeClass: 'bg-ink/10 text-ink',
+    },
+    {
+        value: 'conflict',
+        labelKey: 'type.conflict',
+        activeClass: 'bg-ink/10 text-ink',
+    },
+    {
+        value: 'turning_point',
+        labelKey: 'typeShort.turning_point',
+        activeClass: 'bg-ink/10 text-ink',
+    },
+    {
+        value: 'resolution',
+        labelKey: 'type.resolution',
+        activeClass: 'bg-ink/10 text-ink',
+    },
+    {
+        value: 'worldbuilding',
+        labelKey: 'typeShort.worldbuilding',
+        activeClass: 'bg-ink/10 text-ink',
+    },
+];
+
+export const ROLE_OPTIONS: CharacterPlotPointRole[] = [
+    'key',
+    'supporting',
+    'mentioned',
 ];

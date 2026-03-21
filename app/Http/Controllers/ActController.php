@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreActRequest;
 use App\Http\Requests\UpdateActRequest;
 use App\Models\Act;
+use App\Models\Beat;
 use App\Models\Book;
 use Illuminate\Http\RedirectResponse;
 
@@ -34,11 +35,8 @@ class ActController extends Controller
     {
         abort_unless($act->book_id === $book->id, 404);
 
-        $act->plotPoints()->each(function ($plotPoint) {
-            $plotPoint->beats()->delete();
-            $plotPoint->delete();
-        });
-
+        Beat::whereIn('plot_point_id', $act->plotPoints()->pluck('id'))->delete();
+        $act->plotPoints()->delete();
         $act->delete();
 
         return back();

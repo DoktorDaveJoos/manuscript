@@ -6,7 +6,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Plus } from 'lucide-react';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { stripTags } from '@/lib/ruleCheckers';
 import { cn } from '@/lib/utils';
@@ -50,9 +50,13 @@ export default function PlotPointSection({
     const { t } = useTranslation('plot');
 
     const beats = plotPoint.beats ?? [];
-    const plainDescription = plotPoint.description
-        ? stripTags(plotPoint.description).trim()
-        : '';
+    const plainDescription = useMemo(
+        () =>
+            plotPoint.description
+                ? stripTags(plotPoint.description).trim()
+                : '',
+        [plotPoint.description],
+    );
 
     const {
         attributes,
@@ -78,12 +82,17 @@ export default function PlotPointSection({
 
     const beatIds = useMemo(() => beats.map((b) => `beat-${b.id}`), [beats]);
 
+    const combinedRef = useCallback(
+        (node: HTMLDivElement | null) => {
+            setSortableRef(node);
+            setDroppableRef(node);
+        },
+        [setSortableRef, setDroppableRef],
+    );
+
     return (
         <div
-            ref={(node) => {
-                setSortableRef(node);
-                setDroppableRef(node);
-            }}
+            ref={combinedRef}
             style={{
                 ...style,
                 backgroundColor: isOver ? '#F7F5F0' : '#FCFAF7',

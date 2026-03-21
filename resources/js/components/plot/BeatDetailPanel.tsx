@@ -13,16 +13,13 @@ import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { STATUS_PILL_OPTIONS } from '@/lib/plot-constants';
-import type { Beat, BeatStatus, Storyline } from '@/types/models';
+import type {
+    Beat,
+    BeatStatus,
+    ChapterSummary,
+    Storyline,
+} from '@/types/models';
 import StatusPillGroup from './StatusPillGroup';
-
-type ChapterSummary = {
-    id: number;
-    title: string;
-    storyline_id: number;
-    reader_order: number;
-    storyline?: { id: number; name: string };
-};
 
 type BeatDetailPanelProps = {
     beat: Beat;

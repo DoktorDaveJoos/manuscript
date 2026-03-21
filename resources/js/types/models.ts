@@ -196,6 +196,14 @@ export type Chapter = {
     characters?: (Character & { pivot: CharacterChapterPivot })[];
 };
 
+export type ChapterSummary = {
+    id: number;
+    title: string;
+    storyline_id: number;
+    reader_order: number;
+    storyline?: { id: number; name: string };
+};
+
 export type Scene = {
     id: number;
     chapter_id: number;
