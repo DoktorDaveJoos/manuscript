@@ -10,15 +10,7 @@ permissions:
 
 jobs:
   build-macos:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: macos-latest
-            arch: arm64
-          - runner: macos-13
-            arch: x64
-    runs-on: ${{ matrix.runner }}
+    runs-on: macos-latest
 
     steps:
       - name: Checkout code
@@ -91,7 +83,7 @@ jobs:
           sed -i '' "s/'-\${version}-\${arch}.\${ext}'/'-\${arch}.\${ext}'/g" vendor/nativephp/desktop/resources/electron/electron-builder.mjs
           sed -i '' "s/'-\${version}.\${ext}'/'.\${ext}'/g" vendor/nativephp/desktop/resources/electron/electron-builder.mjs
 
-      - name: Build and publish
+      - name: Build and publish (arm64)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NATIVEPHP_UPDATER_PROVIDER: github
@@ -104,12 +96,23 @@ jobs:
           NATIVEPHP_APPLE_TEAM_ID: ${{ secrets.NATIVEPHP_APPLE_TEAM_ID }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           VITE_SENTRY_ELECTRON_DSN: ${{ secrets.VITE_SENTRY_ELECTRON_DSN }}
-        run: php artisan native:publish mac --no-interaction
+        run: php artisan native:publish mac arm64 --no-interaction
 
-  publish-release:
-    needs: build-macos
-    runs-on: ubuntu-latest
-    steps:
+      - name: Build and publish (x64)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NATIVEPHP_UPDATER_PROVIDER: github
+          GITHUB_REPO: manuscript
+          GITHUB_OWNER: DoktorDaveJoos
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_RELEASE_TYPE: draft
+          NATIVEPHP_APPLE_ID: ${{ secrets.NATIVEPHP_APPLE_ID }}
+          NATIVEPHP_APPLE_ID_PASS: ${{ secrets.NATIVEPHP_APPLE_ID_PASS }}
+          NATIVEPHP_APPLE_TEAM_ID: ${{ secrets.NATIVEPHP_APPLE_TEAM_ID }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_SENTRY_ELECTRON_DSN: ${{ secrets.VITE_SENTRY_ELECTRON_DSN }}
+        run: php artisan native:publish mac x64 --no-interaction
+
       - name: Publish release
         run: gh release edit ${{ github.ref_name }} --draft=false --title "Manuscript ${{ github.ref_name }}" --repo ${{ github.repository }}
         env:
