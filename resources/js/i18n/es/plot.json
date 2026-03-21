@@ -267,5 +267,10 @@
     "act.deleteAct": "Eliminar acto",
     "act.contextMenu.delete": "Eliminar acto",
     "act.progress": "{{fulfilled}} de {{total}} beats",
-    "plotPoint.contextMenu.delete": "Eliminar punto de trama"
+    "plotPoint.contextMenu.delete": "Eliminar punto de trama",
+
+    "deleteAct.title": "¿Eliminar acto?",
+    "deleteAct.description": "Esto eliminará permanentemente <1>{{title}}</1> y todos sus puntos de trama y beats. Esta acción no se puede deshacer.",
+    "deleteAct.cancel": "Cancelar",
+    "deleteAct.confirm": "Eliminar"
 }

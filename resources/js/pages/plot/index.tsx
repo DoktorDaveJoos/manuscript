@@ -7,6 +7,7 @@ import ActColumn from '@/components/plot/ActColumn';
 import ActContextMenu from '@/components/plot/ActContextMenu';
 import BeatContextMenu from '@/components/plot/BeatContextMenu';
 import BeatDetailPanel from '@/components/plot/BeatDetailPanel';
+import DeleteActDialog from '@/components/plot/DeleteActDialog';
 import PlotEmptyState from '@/components/plot/PlotEmptyState';
 import PlotPointContextMenu from '@/components/plot/PlotPointContextMenu';
 import PlotWizardModal from '@/components/plot/PlotWizardModal';
@@ -43,6 +44,7 @@ export default function Plot({
     const [selectedBeatId, setSelectedBeatId] = useState<number | null>(null);
     const [selectedTemplate, setSelectedTemplate] =
         useState<PlotTemplate | null>(null);
+    const [actToDelete, setActToDelete] = useState<Act | null>(null);
     const [contextMenu, setContextMenu] = useState<{
         beatId: number;
         position: { x: number; y: number };
@@ -112,12 +114,13 @@ export default function Plot({
 
     const handleDeleteAct = useCallback(
         (actId: number) => {
-            router.delete(`/books/${book.id}/acts/${actId}`, {
-                preserveScroll: true,
-            });
             setActContextMenu(null);
+            const act = acts.find((a) => a.id === actId);
+            if (act) {
+                setActToDelete(act);
+            }
         },
-        [book.id],
+        [acts],
     );
 
     const handleDeletePlotPoint = useCallback(
@@ -313,6 +316,26 @@ export default function Plot({
                         book={book}
                         template={selectedTemplate}
                         onClose={() => setSelectedTemplate(null)}
+                    />
+                )}
+
+                {actToDelete && (
+                    <DeleteActDialog
+                        bookId={book.id}
+                        act={actToDelete}
+                        onClose={() => {
+                            const deletedActId = actToDelete.id;
+                            const beatsInAct = (
+                                plotPointsByAct.get(deletedActId) ?? []
+                            ).flatMap((pp) => pp.beats ?? []);
+                            if (
+                                selectedBeatId &&
+                                beatsInAct.some((b) => b.id === selectedBeatId)
+                            ) {
+                                setSelectedBeatId(null);
+                            }
+                            setActToDelete(null);
+                        }}
                     />
                 )}
             </div>

@@ -267,5 +267,10 @@
     "act.deleteAct": "Akt löschen",
     "act.contextMenu.delete": "Akt löschen",
     "act.progress": "{{fulfilled}} von {{total}} Beats",
-    "plotPoint.contextMenu.delete": "Handlungspunkt löschen"
+    "plotPoint.contextMenu.delete": "Handlungspunkt löschen",
+
+    "deleteAct.title": "Akt löschen?",
+    "deleteAct.description": "Dadurch werden <1>{{title}}</1> und alle zugehörigen Handlungspunkte und Beats unwiderruflich gelöscht.",
+    "deleteAct.cancel": "Abbrechen",
+    "deleteAct.confirm": "Löschen"
 }

@@ -269,5 +269,10 @@
     "act.deleteAct": "Delete act",
     "act.contextMenu.delete": "Delete act",
     "act.progress": "{{fulfilled}} of {{total}} beats",
-    "plotPoint.contextMenu.delete": "Delete plot point"
+    "plotPoint.contextMenu.delete": "Delete plot point",
+
+    "deleteAct.title": "Delete act?",
+    "deleteAct.description": "This will permanently delete <1>{{title}}</1> and all its plot points and beats. This action cannot be undone.",
+    "deleteAct.cancel": "Cancel",
+    "deleteAct.confirm": "Delete"
 }
