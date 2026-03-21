@@ -4,9 +4,11 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sidebar from '@/components/editor/Sidebar';
 import ActColumn from '@/components/plot/ActColumn';
+import ActContextMenu from '@/components/plot/ActContextMenu';
 import BeatContextMenu from '@/components/plot/BeatContextMenu';
 import BeatDetailPanel from '@/components/plot/BeatDetailPanel';
 import PlotEmptyState from '@/components/plot/PlotEmptyState';
+import PlotPointContextMenu from '@/components/plot/PlotPointContextMenu';
 import PlotWizardModal from '@/components/plot/PlotWizardModal';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { PlotTemplate } from '@/lib/plot-templates';
@@ -43,6 +45,14 @@ export default function Plot({
         useState<PlotTemplate | null>(null);
     const [contextMenu, setContextMenu] = useState<{
         beatId: number;
+        position: { x: number; y: number };
+    } | null>(null);
+    const [actContextMenu, setActContextMenu] = useState<{
+        act: Act;
+        position: { x: number; y: number };
+    } | null>(null);
+    const [plotPointContextMenu, setPlotPointContextMenu] = useState<{
+        plotPoint: PlotPoint;
         position: { x: number; y: number };
     } | null>(null);
     const hasActs = acts.length > 0;
@@ -100,15 +110,22 @@ export default function Plot({
         [book.id, t],
     );
 
-    const handleDeleteAct = useCallback((_actId: number) => {
-        // TODO: implement act deletion
-    }, []);
+    const handleDeleteAct = useCallback(
+        (actId: number) => {
+            router.delete(`/books/${book.id}/acts/${actId}`, {
+                preserveScroll: true,
+            });
+            setActContextMenu(null);
+        },
+        [book.id],
+    );
 
     const handleDeletePlotPoint = useCallback(
         (plotPointId: number) => {
             router.delete(`/books/${book.id}/plot-points/${plotPointId}`, {
                 preserveScroll: true,
             });
+            setPlotPointContextMenu(null);
         },
         [book.id],
     );
@@ -138,6 +155,20 @@ export default function Plot({
     const handleBeatContextMenu = useCallback(
         (beat: Beat, position: { x: number; y: number }) => {
             setContextMenu({ beatId: beat.id, position });
+        },
+        [],
+    );
+
+    const handleActContextMenu = useCallback(
+        (act: Act, position: { x: number; y: number }) => {
+            setActContextMenu({ act, position });
+        },
+        [],
+    );
+
+    const handlePlotPointContextMenu = useCallback(
+        (plotPoint: PlotPoint, position: { x: number; y: number }) => {
+            setPlotPointContextMenu({ plotPoint, position });
         },
         [],
     );
@@ -207,15 +238,17 @@ export default function Plot({
                                                 setSelectedBeatId(beat.id)
                                             }
                                             onCreateBeat={handleCreateBeat}
-                                            onDeleteAct={handleDeleteAct}
                                             onCreatePlotPoint={
                                                 handleCreatePlotPoint
                                             }
-                                            onDeletePlotPoint={
-                                                handleDeletePlotPoint
-                                            }
                                             onBeatContextMenu={
                                                 handleBeatContextMenu
+                                            }
+                                            onActContextMenu={
+                                                handleActContextMenu
+                                            }
+                                            onPlotPointContextMenu={
+                                                handlePlotPointContextMenu
                                             }
                                         />
                                     ))}
@@ -254,6 +287,24 @@ export default function Plot({
                         onClose={() => setContextMenu(null)}
                         onStatusChange={handleBeatStatusChange}
                         onDelete={handleDeleteBeat}
+                    />
+                )}
+
+                {actContextMenu && (
+                    <ActContextMenu
+                        act={actContextMenu.act}
+                        position={actContextMenu.position}
+                        onClose={() => setActContextMenu(null)}
+                        onDelete={handleDeleteAct}
+                    />
+                )}
+
+                {plotPointContextMenu && (
+                    <PlotPointContextMenu
+                        plotPoint={plotPointContextMenu.plotPoint}
+                        position={plotPointContextMenu.position}
+                        onClose={() => setPlotPointContextMenu(null)}
+                        onDelete={handleDeletePlotPoint}
                     />
                 )}
 
