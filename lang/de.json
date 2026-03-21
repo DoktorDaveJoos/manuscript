@@ -38,5 +38,15 @@
     "Setting updated.": "Einstellung aktualisiert.",
     "AI is not enabled or no API key configured.": "KI ist nicht aktiviert oder kein API-Schlüssel konfiguriert.",
     "Superseded by new preparation": "Durch neue Vorbereitung ersetzt",
-    "Normalization": "Normalisierung"
+    "Normalization": "Normalisierung",
+    ":provider API key removed.": "API-Schlüssel für :provider entfernt.",
+    "About the author updated.": "Über den Autor aktualisiert.",
+    "Acknowledgment updated.": "Danksagung aktualisiert.",
+    "Copyright updated.": "Copyright aktualisiert.",
+    "Could not reach the license server. Please check your internet connection and try again.": "Der Lizenzserver ist nicht erreichbar. Bitte überprüfe deine Internetverbindung und versuche es erneut.",
+    "Could not reach the license server. Please check your internet connection.": "Der Lizenzserver ist nicht erreichbar. Bitte überprüfe deine Internetverbindung.",
+    "Failed to deactivate license.": "Lizenz konnte nicht deaktiviert werden.",
+    "License server authentication failed. Please contact support.": "Authentifizierung beim Lizenzserver fehlgeschlagen. Bitte kontaktiere den Support.",
+    "No API key to remove.": "Kein API-Schlüssel zum Entfernen vorhanden.",
+    "No active license found.": "Keine aktive Lizenz gefunden."
 }

@@ -38,5 +38,15 @@
     "Setting updated.": "Setting updated.",
     "AI is not enabled or no API key configured.": "AI is not enabled or no API key configured.",
     "Superseded by new preparation": "Superseded by new preparation",
-    "Normalization": "Normalization"
+    "Normalization": "Normalization",
+    ":provider API key removed.": ":provider API key removed.",
+    "About the author updated.": "About the author updated.",
+    "Acknowledgment updated.": "Acknowledgment updated.",
+    "Copyright updated.": "Copyright updated.",
+    "Could not reach the license server. Please check your internet connection and try again.": "Could not reach the license server. Please check your internet connection and try again.",
+    "Could not reach the license server. Please check your internet connection.": "Could not reach the license server. Please check your internet connection.",
+    "Failed to deactivate license.": "Failed to deactivate license.",
+    "License server authentication failed. Please contact support.": "License server authentication failed. Please contact support.",
+    "No API key to remove.": "No API key to remove.",
+    "No active license found.": "No active license found."
 }
