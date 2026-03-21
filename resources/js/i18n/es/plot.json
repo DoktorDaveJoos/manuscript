@@ -265,5 +265,7 @@
     "beat.contextMenu.delete": "Eliminar beat",
     "act.addAct": "Añadir acto",
     "act.deleteAct": "Eliminar acto",
-    "act.progress": "{{fulfilled}} de {{total}} beats"
+    "act.contextMenu.delete": "Eliminar acto",
+    "act.progress": "{{fulfilled}} de {{total}} beats",
+    "plotPoint.contextMenu.delete": "Eliminar punto de trama"
 }

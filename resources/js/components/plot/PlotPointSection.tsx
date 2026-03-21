@@ -1,5 +1,4 @@
-import { EllipsisVertical, Plus, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { stripTags } from '@/lib/ruleCheckers';
 import type { Beat, PlotPoint } from '@/types/models';
@@ -10,8 +9,11 @@ type Props = {
     selectedBeatId: number | null;
     onSelectBeat: (beat: Beat) => void;
     onCreateBeat: (plotPointId: number) => void;
-    onDeletePlotPoint: (plotPointId: number) => void;
     onBeatContextMenu: (beat: Beat, position: { x: number; y: number }) => void;
+    onPlotPointContextMenu: (
+        plotPoint: PlotPoint,
+        position: { x: number; y: number },
+    ) => void;
 };
 
 export default function PlotPointSection({
@@ -19,29 +21,10 @@ export default function PlotPointSection({
     selectedBeatId,
     onSelectBeat,
     onCreateBeat,
-    onDeletePlotPoint,
     onBeatContextMenu,
+    onPlotPointContextMenu,
 }: Props) {
     const { t } = useTranslation('plot');
-    const [menuOpen, setMenuOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!menuOpen) return;
-
-        function handleClickOutside(e: MouseEvent) {
-            if (
-                menuRef.current &&
-                !menuRef.current.contains(e.target as Node)
-            ) {
-                setMenuOpen(false);
-            }
-        }
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () =>
-            document.removeEventListener('mousedown', handleClickOutside);
-    }, [menuOpen]);
 
     const beats = plotPoint.beats ?? [];
     const plainDescription = plotPoint.description
@@ -58,7 +41,16 @@ export default function PlotPointSection({
             }}
         >
             {/* Header */}
-            <div className="flex items-center justify-between gap-2">
+            <div
+                className="flex items-center justify-between gap-2"
+                onContextMenu={(e) => {
+                    e.preventDefault();
+                    onPlotPointContextMenu(plotPoint, {
+                        x: e.clientX,
+                        y: e.clientY,
+                    });
+                }}
+            >
                 <span
                     className="text-[13px] leading-tight font-semibold"
                     style={{ color: '#141414' }}
@@ -76,40 +68,6 @@ export default function PlotPointSection({
                     >
                         {t(`type.${plotPoint.type}`)}
                     </span>
-                    <div ref={menuRef} className="relative">
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setMenuOpen(!menuOpen);
-                            }}
-                            className="flex items-center justify-center rounded transition-colors hover:bg-black/5"
-                            style={{ width: 20, height: 20 }}
-                        >
-                            <EllipsisVertical
-                                size={14}
-                                style={{ color: '#A3A3A3' }}
-                            />
-                        </button>
-                        {menuOpen && (
-                            <div className="absolute top-full right-0 z-50 mt-1 w-[160px] rounded-lg bg-surface-card shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]">
-                                <div className="flex flex-col p-1">
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setMenuOpen(false);
-                                            onDeletePlotPoint(plotPoint.id);
-                                        }}
-                                        className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] font-medium text-delete transition-colors hover:bg-neutral-bg"
-                                    >
-                                        <Trash2 size={14} />
-                                        {t('detailPanel.header', 'Delete')}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
                 </div>
             </div>
 

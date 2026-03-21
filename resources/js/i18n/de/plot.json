@@ -265,5 +265,7 @@
     "beat.contextMenu.delete": "Beat löschen",
     "act.addAct": "Akt hinzufügen",
     "act.deleteAct": "Akt löschen",
-    "act.progress": "{{fulfilled}} von {{total}} Beats"
+    "act.contextMenu.delete": "Akt löschen",
+    "act.progress": "{{fulfilled}} von {{total}} Beats",
+    "plotPoint.contextMenu.delete": "Handlungspunkt löschen"
 }
