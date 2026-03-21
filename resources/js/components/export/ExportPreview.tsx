@@ -1,3 +1,10 @@
+// Type augmentation for ES2025 Map.getOrInsertComputed
+declare global {
+    interface Map<K, V> {
+        getOrInsertComputed(key: K, cb: (k: K) => V): V;
+    }
+}
+
 // Polyfill Map.getOrInsertComputed (ES2025) — needed for pdfjs in older Electron/Chromium
 if (!Map.prototype.getOrInsertComputed) {
     Map.prototype.getOrInsertComputed = function (
@@ -16,7 +23,7 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso } from 'react-virtuoso';
-import type { Format } from '@/components/export/ExportSettings';
+import type { Format } from '@/components/export/types';
 import type { MatterItem, TrimSizeOption } from '@/components/export/types';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { jsonFetchHeaders } from '@/lib/utils';
@@ -117,7 +124,11 @@ function PdfPageCanvas({
                 ctx.fillStyle = '#FFFEFA';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                await page.render({ canvasContext: ctx, viewport }).promise;
+                await page.render({
+                    canvas: null,
+                    canvasContext: ctx,
+                    viewport,
+                }).promise;
             } catch {
                 // Render cancelled or failed
             } finally {

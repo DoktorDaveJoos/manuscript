@@ -29,7 +29,7 @@ export function useResizablePanel({
     useEffect(() => {
         widthRef.current = width;
     });
-    const panelRef = useRef<HTMLElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
     const dragCleanupRef = useRef<(() => void) | null>(null);
 
     useEffect(() => {

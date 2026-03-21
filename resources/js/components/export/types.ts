@@ -41,9 +41,9 @@ export type TrimSizeOption = {
     height: number;
 };
 
-export type Format = 'epub' | 'pdf' | 'docx' | 'txt';
+export type Format = 'epub' | 'pdf' | 'docx' | 'txt' | 'kdp';
 
-export const VISUAL_FORMATS: Set<string> = new Set(['pdf', 'epub', 'kdp']);
+export const VISUAL_FORMATS: Set<Format> = new Set(['pdf', 'epub', 'kdp']);
 
 export type MatterItem = {
     id: string;
