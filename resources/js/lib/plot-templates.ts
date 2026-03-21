@@ -12,18 +12,13 @@ export interface TemplateAct {
     beats: TemplateBeat[];
 }
 
-export interface GenreBadge {
-    labelKey: string;
-    bgColor: string;
-    textColor: string;
-}
-
 export interface PlotTemplate {
     key: string;
     name: string;
     description: string;
     featured: boolean;
-    genres: GenreBadge[];
+    books: string;
+    actFlow: string;
     acts: TemplateAct[];
 }
 
@@ -32,7 +27,6 @@ type RawAct = { color: string; beats: RawBeat[] };
 type RawTemplate = {
     key: string;
     featured: boolean;
-    genres: GenreBadge[];
     acts: RawAct[];
 };
 
@@ -40,23 +34,6 @@ const RAW_TEMPLATES: RawTemplate[] = [
     {
         key: 'three_act',
         featured: true,
-        genres: [
-            {
-                labelKey: 'genre.literary_fiction',
-                bgColor: '#F3EDE4',
-                textColor: '#8A7B65',
-            },
-            {
-                labelKey: 'genre.romance',
-                bgColor: '#F9E8E8',
-                textColor: '#B85C5C',
-            },
-            {
-                labelKey: 'genre.memoir',
-                bgColor: '#EDE8F3',
-                textColor: '#7B6A8A',
-            },
-        ],
         acts: [
             {
                 color: '#B87333',
@@ -83,23 +60,6 @@ const RAW_TEMPLATES: RawTemplate[] = [
     {
         key: 'five_act',
         featured: false,
-        genres: [
-            {
-                labelKey: 'genre.historical',
-                bgColor: '#E8EFF3',
-                textColor: '#5A7A8A',
-            },
-            {
-                labelKey: 'genre.epic_fantasy',
-                bgColor: '#EDE8F3',
-                textColor: '#7B6A8A',
-            },
-            {
-                labelKey: 'genre.drama',
-                bgColor: '#F3EDE4',
-                textColor: '#8A7B65',
-            },
-        ],
         acts: [
             {
                 color: '#B87333',
@@ -134,19 +94,6 @@ const RAW_TEMPLATES: RawTemplate[] = [
     {
         key: 'heros_journey',
         featured: false,
-        genres: [
-            {
-                labelKey: 'genre.fantasy',
-                bgColor: '#E4F0E8',
-                textColor: '#5A8A65',
-            },
-            {
-                labelKey: 'genre.sci_fi',
-                bgColor: '#E8EFF3',
-                textColor: '#5A7A8A',
-            },
-            { labelKey: 'genre.ya', bgColor: '#FFF3E0', textColor: '#A07030' },
-        ],
         acts: [
             {
                 color: '#B87333',
@@ -180,23 +127,6 @@ const RAW_TEMPLATES: RawTemplate[] = [
     {
         key: 'save_the_cat',
         featured: false,
-        genres: [
-            {
-                labelKey: 'genre.thriller',
-                bgColor: '#FCE4E4',
-                textColor: '#C05050',
-            },
-            {
-                labelKey: 'genre.mystery',
-                bgColor: '#E4E8F0',
-                textColor: '#5A6A8A',
-            },
-            {
-                labelKey: 'genre.romance',
-                bgColor: '#F9E8E8',
-                textColor: '#B85C5C',
-            },
-        ],
         acts: [
             {
                 color: '#B87333',
@@ -233,23 +163,6 @@ const RAW_TEMPLATES: RawTemplate[] = [
     {
         key: 'story_circle',
         featured: false,
-        genres: [
-            {
-                labelKey: 'genre.literary',
-                bgColor: '#F3EDE4',
-                textColor: '#8A7B65',
-            },
-            {
-                labelKey: 'genre.coming_of_age',
-                bgColor: '#FFF3E0',
-                textColor: '#A07030',
-            },
-            {
-                labelKey: 'genre.drama',
-                bgColor: '#F3EDE4',
-                textColor: '#8A7B65',
-            },
-        ],
         acts: [
             {
                 color: '#B87333',
@@ -279,7 +192,8 @@ export function getPlotTemplates(t: TFunction): PlotTemplate[] {
         name: t(`emptyState.template.${raw.key}.name`),
         description: t(`emptyState.template.${raw.key}.description`),
         featured: raw.featured,
-        genres: raw.genres,
+        books: t(`emptyState.template.${raw.key}.books`),
+        actFlow: t(`emptyState.template.${raw.key}.actFlow`),
         acts: raw.acts.map((act, actIndex) => ({
             title: t(`template.${raw.key}.acts.${actIndex}`),
             color: act.color,
