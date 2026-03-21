@@ -86,7 +86,7 @@ export default function PlotEmptyState({
                                             : 'text-ink-faint'
                                     }`}
                                 >
-                                    {template.name}
+                                    {t('emptyState.select')}
                                 </span>
                             </button>
                         );
