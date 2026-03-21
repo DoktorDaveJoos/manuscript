@@ -61,6 +61,28 @@ class BeatController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function move(Request $request, Book $book, Beat $beat): JsonResponse
+    {
+        abort_unless($beat->plotPoint->book_id === $book->id, 404);
+
+        $validated = $request->validate([
+            'plot_point_id' => ['required', 'integer', 'exists:plot_points,id'],
+            'sort_order' => ['required', 'integer', 'min:0'],
+        ]);
+
+        $targetPlotPoint = PlotPoint::findOrFail($validated['plot_point_id']);
+        abort_unless($targetPlotPoint->book_id === $book->id, 403);
+
+        DB::transaction(function () use ($beat, $validated) {
+            $beat->update([
+                'plot_point_id' => $validated['plot_point_id'],
+                'sort_order' => $validated['sort_order'],
+            ]);
+        });
+
+        return response()->json($beat->fresh());
+    }
+
     public function updateStatus(Request $request, Book $book, Beat $beat): JsonResponse
     {
         abort_unless($beat->plotPoint->book_id === $book->id, 404);

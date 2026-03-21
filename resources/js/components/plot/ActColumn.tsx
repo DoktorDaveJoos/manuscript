@@ -1,3 +1,8 @@
+import { useDroppable } from '@dnd-kit/core';
+import {
+    SortableContext,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { EllipsisVertical, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -37,6 +42,11 @@ export default function ActColumn({
     const menuRef = useRef<HTMLDivElement>(null);
     const color = getActColor(colorIndex);
 
+    const { setNodeRef: setDroppableRef } = useDroppable({
+        id: `act-drop-${act.id}`,
+        data: { type: 'act-drop', actId: act.id },
+    });
+
     useEffect(() => {
         if (!menuOpen) return;
 
@@ -66,6 +76,11 @@ export default function ActColumn({
             progressRatio: total > 0 ? fulfilled / total : 0,
         };
     }, [plotPoints]);
+
+    const plotPointIds = useMemo(
+        () => plotPoints.map((pp) => `plotpoint-${pp.id}`),
+        [plotPoints],
+    );
 
     return (
         <div
@@ -170,18 +185,26 @@ export default function ActColumn({
             )}
 
             {/* Plot points */}
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
-                {plotPoints.map((plotPoint) => (
-                    <PlotPointSection
-                        key={plotPoint.id}
-                        plotPoint={plotPoint}
-                        selectedBeatId={selectedBeatId}
-                        onSelectBeat={onSelectBeat}
-                        onCreateBeat={onCreateBeat}
-                        onDeletePlotPoint={onDeletePlotPoint}
-                        onBeatContextMenu={onBeatContextMenu}
-                    />
-                ))}
+            <div
+                ref={setDroppableRef}
+                className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+            >
+                <SortableContext
+                    items={plotPointIds}
+                    strategy={verticalListSortingStrategy}
+                >
+                    {plotPoints.map((plotPoint) => (
+                        <PlotPointSection
+                            key={plotPoint.id}
+                            plotPoint={plotPoint}
+                            selectedBeatId={selectedBeatId}
+                            onSelectBeat={onSelectBeat}
+                            onCreateBeat={onCreateBeat}
+                            onDeletePlotPoint={onDeletePlotPoint}
+                            onBeatContextMenu={onBeatContextMenu}
+                        />
+                    ))}
+                </SortableContext>
             </div>
         </div>
     );
