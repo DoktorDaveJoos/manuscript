@@ -11,18 +11,15 @@ it('creates a beat under a plot point', function () {
     $book = Book::factory()->create();
     $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
 
-    $response = $this->postJson(route('beats.store', [$book, $plotPoint]), [
+    $this->post(route('beats.store', [$book, $plotPoint]), [
         'title' => 'The confrontation',
         'description' => 'Jonas faces his nemesis',
-    ]);
-
-    $response->assertCreated()
-        ->assertJsonPath('title', 'The confrontation')
-        ->assertJsonPath('status', 'planned');
+    ])->assertRedirect();
 
     $this->assertDatabaseHas('beats', [
         'plot_point_id' => $plotPoint->id,
         'title' => 'The confrontation',
+        'status' => 'planned',
     ]);
 });
 
@@ -31,11 +28,11 @@ it('auto-increments sort_order on create', function () {
     $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
     Beat::factory()->create(['plot_point_id' => $plotPoint->id, 'sort_order' => 0]);
 
-    $response = $this->postJson(route('beats.store', [$book, $plotPoint]), [
+    $this->post(route('beats.store', [$book, $plotPoint]), [
         'title' => 'Second beat',
-    ]);
+    ])->assertRedirect();
 
-    $response->assertCreated()->assertJsonPath('sort_order', 1);
+    expect(Beat::where('title', 'Second beat')->first()->sort_order)->toBe(1);
 });
 
 it('requires a title to create a beat', function () {
@@ -52,12 +49,11 @@ it('updates a beat', function () {
     $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
     $beat = Beat::factory()->create(['plot_point_id' => $plotPoint->id, 'title' => 'Old title']);
 
-    $response = $this->patchJson(route('beats.update', [$book, $beat]), [
+    $this->patch(route('beats.update', [$book, $beat]), [
         'title' => 'New title',
         'description' => 'Updated description',
-    ]);
+    ])->assertRedirect();
 
-    $response->assertOk()->assertJsonPath('title', 'New title');
     expect($beat->fresh()->title)->toBe('New title');
 });
 
@@ -66,8 +62,8 @@ it('deletes a beat', function () {
     $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
     $beat = Beat::factory()->create(['plot_point_id' => $plotPoint->id]);
 
-    $this->deleteJson(route('beats.destroy', [$book, $beat]))
-        ->assertNoContent();
+    $this->delete(route('beats.destroy', [$book, $beat]))
+        ->assertRedirect();
 
     $this->assertDatabaseMissing('beats', ['id' => $beat->id]);
 });
@@ -78,14 +74,13 @@ it('reorders beats within a plot point', function () {
     $a = Beat::factory()->create(['plot_point_id' => $plotPoint->id, 'sort_order' => 0]);
     $b = Beat::factory()->create(['plot_point_id' => $plotPoint->id, 'sort_order' => 1]);
 
-    $response = $this->postJson(route('beats.reorder', [$book, $plotPoint]), [
+    $this->post(route('beats.reorder', [$book, $plotPoint]), [
         'items' => [
             ['id' => $a->id, 'sort_order' => 1],
             ['id' => $b->id, 'sort_order' => 0],
         ],
-    ]);
+    ])->assertRedirect();
 
-    $response->assertOk()->assertJsonPath('success', true);
     expect($a->fresh()->sort_order)->toBe(1)
         ->and($b->fresh()->sort_order)->toBe(0);
 });
@@ -108,9 +103,9 @@ it('cycles beat status', function () {
     $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
     $beat = Beat::factory()->create(['plot_point_id' => $plotPoint->id, 'status' => BeatStatus::Planned]);
 
-    $this->patchJson(route('beats.updateStatus', [$book, $beat]), [
+    $this->patch(route('beats.updateStatus', [$book, $beat]), [
         'status' => 'fulfilled',
-    ])->assertOk();
+    ])->assertRedirect();
 
     expect($beat->fresh()->status)->toBe(BeatStatus::Fulfilled);
 });
@@ -132,9 +127,9 @@ it('links a chapter to a beat', function () {
     $beat = Beat::factory()->create(['plot_point_id' => $plotPoint->id]);
     $chapter = Chapter::factory()->create(['book_id' => $book->id, 'storyline_id' => $storyline->id]);
 
-    $this->postJson(route('beats.chapters.link', [$book, $beat]), [
+    $this->post(route('beats.chapters.link', [$book, $beat]), [
         'chapter_id' => $chapter->id,
-    ])->assertOk()->assertJsonPath('success', true);
+    ])->assertRedirect();
 
     $this->assertDatabaseHas('beat_chapter', [
         'beat_id' => $beat->id,
@@ -151,9 +146,9 @@ it('does not duplicate a chapter link', function () {
 
     $beat->chapters()->attach($chapter->id);
 
-    $this->postJson(route('beats.chapters.link', [$book, $beat]), [
+    $this->post(route('beats.chapters.link', [$book, $beat]), [
         'chapter_id' => $chapter->id,
-    ])->assertOk();
+    ])->assertRedirect();
 
     expect($beat->chapters()->count())->toBe(1);
 });
@@ -166,8 +161,8 @@ it('unlinks a chapter from a beat', function () {
     $chapter = Chapter::factory()->create(['book_id' => $book->id, 'storyline_id' => $storyline->id]);
     $beat->chapters()->attach($chapter->id);
 
-    $this->deleteJson(route('beats.chapters.unlink', [$book, $beat, $chapter]))
-        ->assertNoContent();
+    $this->delete(route('beats.chapters.unlink', [$book, $beat, $chapter]))
+        ->assertRedirect();
 
     $this->assertDatabaseMissing('beat_chapter', [
         'beat_id' => $beat->id,
@@ -181,12 +176,11 @@ it('moves a beat to another plot point', function () {
     $ppB = PlotPoint::factory()->create(['book_id' => $book->id]);
     $beat = Beat::factory()->create(['plot_point_id' => $ppA->id, 'sort_order' => 0]);
 
-    $response = $this->patchJson(route('beats.move', [$book, $beat]), [
+    $this->patch(route('beats.move', [$book, $beat]), [
         'plot_point_id' => $ppB->id,
         'sort_order' => 0,
-    ]);
+    ])->assertRedirect();
 
-    $response->assertOk();
     $beat->refresh();
     expect($beat->plot_point_id)->toBe($ppB->id)
         ->and($beat->sort_order)->toBe(0);
@@ -210,12 +204,11 @@ it('move updates sort_order within the same plot point', function () {
     $pp = PlotPoint::factory()->create(['book_id' => $book->id]);
     $beat = Beat::factory()->create(['plot_point_id' => $pp->id, 'sort_order' => 0]);
 
-    $response = $this->patchJson(route('beats.move', [$book, $beat]), [
+    $this->patch(route('beats.move', [$book, $beat]), [
         'plot_point_id' => $pp->id,
         'sort_order' => 3,
-    ]);
+    ])->assertRedirect();
 
-    $response->assertOk();
     expect($beat->fresh()->sort_order)->toBe(3);
 });
 

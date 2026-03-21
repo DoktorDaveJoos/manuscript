@@ -9,42 +9,42 @@ use App\Models\Beat;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\PlotPoint;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class BeatController extends Controller
 {
-    public function store(StoreBeatRequest $request, Book $book, PlotPoint $plotPoint): JsonResponse
+    public function store(StoreBeatRequest $request, Book $book, PlotPoint $plotPoint): RedirectResponse
     {
         $nextOrder = ($plotPoint->beats()->max('sort_order') ?? -1) + 1;
 
-        $beat = $plotPoint->beats()->create([
+        $plotPoint->beats()->create([
             ...$request->validated(),
             'sort_order' => $nextOrder,
         ]);
 
-        return response()->json($beat->refresh(), 201);
+        return back();
     }
 
-    public function update(UpdateBeatRequest $request, Book $book, Beat $beat): JsonResponse
+    public function update(UpdateBeatRequest $request, Book $book, Beat $beat): RedirectResponse
     {
         abort_unless($beat->plotPoint->book_id === $book->id, 404);
         $beat->update($request->validated());
 
-        return response()->json($beat);
+        return back();
     }
 
-    public function destroy(Book $book, Beat $beat): JsonResponse
+    public function destroy(Book $book, Beat $beat): RedirectResponse
     {
         abort_unless($beat->plotPoint->book_id === $book->id, 404);
         $beat->delete();
 
-        return response()->json(null, 204);
+        return back();
     }
 
-    public function reorder(Request $request, Book $book, PlotPoint $plotPoint): JsonResponse
+    public function reorder(Request $request, Book $book, PlotPoint $plotPoint): RedirectResponse
     {
         $validated = $request->validate([
             'items' => ['required', 'array'],
@@ -58,10 +58,10 @@ class BeatController extends Controller
             }
         });
 
-        return response()->json(['success' => true]);
+        return back();
     }
 
-    public function move(Request $request, Book $book, Beat $beat): JsonResponse
+    public function move(Request $request, Book $book, Beat $beat): RedirectResponse
     {
         abort_unless($beat->plotPoint->book_id === $book->id, 404);
 
@@ -78,10 +78,10 @@ class BeatController extends Controller
             'sort_order' => $validated['sort_order'],
         ]);
 
-        return response()->json($beat);
+        return back();
     }
 
-    public function updateStatus(Request $request, Book $book, Beat $beat): JsonResponse
+    public function updateStatus(Request $request, Book $book, Beat $beat): RedirectResponse
     {
         abort_unless($beat->plotPoint->book_id === $book->id, 404);
 
@@ -91,10 +91,10 @@ class BeatController extends Controller
 
         $beat->update($validated);
 
-        return response()->json($beat);
+        return back();
     }
 
-    public function linkChapter(Request $request, Book $book, Beat $beat): JsonResponse
+    public function linkChapter(Request $request, Book $book, Beat $beat): RedirectResponse
     {
         abort_unless($beat->plotPoint->book_id === $book->id, 404);
 
@@ -104,14 +104,14 @@ class BeatController extends Controller
 
         $beat->chapters()->syncWithoutDetaching([$validated['chapter_id']]);
 
-        return response()->json(['success' => true]);
+        return back();
     }
 
-    public function unlinkChapter(Book $book, Beat $beat, Chapter $chapter): JsonResponse
+    public function unlinkChapter(Book $book, Beat $beat, Chapter $chapter): RedirectResponse
     {
         abort_unless($beat->plotPoint->book_id === $book->id, 404);
         $beat->chapters()->detach($chapter->id);
 
-        return response()->json(null, 204);
+        return back();
     }
 }

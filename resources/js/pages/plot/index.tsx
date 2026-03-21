@@ -113,7 +113,7 @@ export default function Plot({
         selection?.type === 'plotPoint' ? selection.id : null;
 
     const clearSelection = useCallback(() => {
-        clearSelection();
+        setSelection(null);
         setTitleOverrides({});
     }, []);
 

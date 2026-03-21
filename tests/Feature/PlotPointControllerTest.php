@@ -10,20 +10,17 @@ it('creates a plot point', function () {
     $book = Book::factory()->create();
     $act = Act::factory()->create(['book_id' => $book->id]);
 
-    $response = $this->postJson(route('plotPoints.store', $book), [
+    $this->post(route('plotPoints.store', $book), [
         'title' => 'The reveal',
         'description' => 'Jonas discovers the truth',
         'type' => 'turning_point',
         'act_id' => $act->id,
-    ]);
-
-    $response->assertCreated()
-        ->assertJsonPath('title', 'The reveal')
-        ->assertJsonPath('type', 'turning_point');
+    ])->assertRedirect();
 
     $this->assertDatabaseHas('plot_points', [
         'book_id' => $book->id,
         'title' => 'The reveal',
+        'type' => 'turning_point',
     ]);
 });
 
@@ -31,21 +28,21 @@ it('updates a plot point', function () {
     $book = Book::factory()->create();
     $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id, 'title' => 'Old title']);
 
-    $response = $this->patchJson(route('plotPoints.update', [$book, $plotPoint]), [
+    $this->patch(route('plotPoints.update', [$book, $plotPoint]), [
         'title' => 'New title',
         'status' => 'fulfilled',
-    ]);
+    ])->assertRedirect();
 
-    $response->assertOk()->assertJsonPath('title', 'New title');
-    expect($plotPoint->fresh()->status)->toBe(PlotPointStatus::Fulfilled);
+    expect($plotPoint->fresh()->title)->toBe('New title')
+        ->and($plotPoint->fresh()->status)->toBe(PlotPointStatus::Fulfilled);
 });
 
 it('deletes a plot point', function () {
     $book = Book::factory()->create();
     $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
 
-    $this->deleteJson(route('plotPoints.destroy', [$book, $plotPoint]))
-        ->assertNoContent();
+    $this->delete(route('plotPoints.destroy', [$book, $plotPoint]))
+        ->assertRedirect();
 
     $this->assertDatabaseMissing('plot_points', ['id' => $plotPoint->id]);
 });
@@ -56,14 +53,13 @@ it('reorders plot points', function () {
     $a = PlotPoint::factory()->create(['book_id' => $book->id, 'sort_order' => 0]);
     $b = PlotPoint::factory()->create(['book_id' => $book->id, 'sort_order' => 1]);
 
-    $response = $this->postJson(route('plotPoints.reorder', $book), [
+    $this->post(route('plotPoints.reorder', $book), [
         'items' => [
             ['id' => $a->id, 'sort_order' => 1],
             ['id' => $b->id, 'sort_order' => 0],
         ],
-    ]);
+    ])->assertRedirect();
 
-    $response->assertOk();
     expect($a->fresh()->sort_order)->toBe(1)
         ->and($b->fresh()->sort_order)->toBe(0);
 });
@@ -75,13 +71,12 @@ it('reorders plot points with act_id change', function () {
 
     $pp = PlotPoint::factory()->create(['book_id' => $book->id, 'act_id' => $actA->id, 'sort_order' => 0]);
 
-    $response = $this->postJson(route('plotPoints.reorder', $book), [
+    $this->post(route('plotPoints.reorder', $book), [
         'items' => [
             ['id' => $pp->id, 'sort_order' => 0, 'act_id' => $actB->id],
         ],
-    ]);
+    ])->assertRedirect();
 
-    $response->assertOk();
     $pp->refresh();
     expect($pp->act_id)->toBe($actB->id)
         ->and($pp->sort_order)->toBe(0);
@@ -92,13 +87,12 @@ it('reorder preserves act_id when not provided', function () {
     $act = Act::factory()->create(['book_id' => $book->id]);
     $pp = PlotPoint::factory()->create(['book_id' => $book->id, 'act_id' => $act->id, 'sort_order' => 0]);
 
-    $response = $this->postJson(route('plotPoints.reorder', $book), [
+    $this->post(route('plotPoints.reorder', $book), [
         'items' => [
             ['id' => $pp->id, 'sort_order' => 2],
         ],
-    ]);
+    ])->assertRedirect();
 
-    $response->assertOk();
     $pp->refresh();
     expect($pp->act_id)->toBe($act->id)
         ->and($pp->sort_order)->toBe(2);
@@ -121,9 +115,9 @@ it('cycles plot point status', function () {
     $book = Book::factory()->create();
     $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id, 'status' => PlotPointStatus::Planned]);
 
-    $this->patchJson(route('plotPoints.updateStatus', [$book, $plotPoint]), [
+    $this->patch(route('plotPoints.updateStatus', [$book, $plotPoint]), [
         'status' => 'fulfilled',
-    ])->assertOk();
+    ])->assertRedirect();
 
     expect($plotPoint->fresh()->status)->toBe(PlotPointStatus::Fulfilled);
 });
@@ -146,12 +140,12 @@ it('syncs characters when updating a plot point', function () {
     $char1 = Character::factory()->create(['book_id' => $book->id]);
     $char2 = Character::factory()->create(['book_id' => $book->id]);
 
-    $this->patchJson(route('plotPoints.update', [$book, $plotPoint]), [
+    $this->patch(route('plotPoints.update', [$book, $plotPoint]), [
         'characters' => [
             ['id' => $char1->id, 'role' => 'key'],
             ['id' => $char2->id, 'role' => 'supporting'],
         ],
-    ])->assertOk();
+    ])->assertRedirect();
 
     $plotPoint->refresh();
     expect($plotPoint->characters)->toHaveCount(2);
@@ -167,11 +161,11 @@ it('replaces previous characters on sync', function () {
 
     $plotPoint->characters()->attach($char1->id, ['role' => 'key']);
 
-    $this->patchJson(route('plotPoints.update', [$book, $plotPoint]), [
+    $this->patch(route('plotPoints.update', [$book, $plotPoint]), [
         'characters' => [
             ['id' => $char2->id, 'role' => 'mentioned'],
         ],
-    ])->assertOk();
+    ])->assertRedirect();
 
     $plotPoint->refresh();
     expect($plotPoint->characters)->toHaveCount(1)
@@ -185,9 +179,9 @@ it('detaches all characters with empty array', function () {
 
     $plotPoint->characters()->attach($char->id, ['role' => 'key']);
 
-    $this->patchJson(route('plotPoints.update', [$book, $plotPoint]), [
+    $this->patch(route('plotPoints.update', [$book, $plotPoint]), [
         'characters' => [],
-    ])->assertOk();
+    ])->assertRedirect();
 
     expect($plotPoint->fresh()->characters)->toHaveCount(0);
 });

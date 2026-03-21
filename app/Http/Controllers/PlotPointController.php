@@ -7,28 +7,26 @@ use App\Http\Requests\StorePlotPointRequest;
 use App\Http\Requests\UpdatePlotPointRequest;
 use App\Models\Book;
 use App\Models\PlotPoint;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class PlotPointController extends Controller
 {
-    public function store(StorePlotPointRequest $request, Book $book): JsonResponse
+    public function store(StorePlotPointRequest $request, Book $book): RedirectResponse
     {
         $nextOrder = ($book->plotPoints()->max('sort_order') ?? -1) + 1;
 
-        $plotPoint = $book->plotPoints()->create([
+        $book->plotPoints()->create([
             ...$request->validated(),
             'sort_order' => $nextOrder,
         ]);
 
-        $plotPoint->load(['act']);
-
-        return response()->json($plotPoint, 201);
+        return back();
     }
 
-    public function update(UpdatePlotPointRequest $request, Book $book, PlotPoint $plotPoint): JsonResponse
+    public function update(UpdatePlotPointRequest $request, Book $book, PlotPoint $plotPoint): RedirectResponse
     {
         $validated = $request->validated();
         $characters = null;
@@ -46,19 +44,17 @@ class PlotPointController extends Controller
             $plotPoint->characters()->sync($characters);
         }
 
-        $plotPoint->load(['act', 'characters']);
-
-        return response()->json($plotPoint);
+        return back();
     }
 
-    public function destroy(Book $book, PlotPoint $plotPoint): JsonResponse
+    public function destroy(Book $book, PlotPoint $plotPoint): RedirectResponse
     {
         $plotPoint->delete();
 
-        return response()->json(null, 204);
+        return back();
     }
 
-    public function reorder(Request $request, Book $book): JsonResponse
+    public function reorder(Request $request, Book $book): RedirectResponse
     {
         $validated = $request->validate([
             'items' => ['required', 'array'],
@@ -79,10 +75,10 @@ class PlotPointController extends Controller
             }
         });
 
-        return response()->json(['success' => true]);
+        return back();
     }
 
-    public function updateStatus(Request $request, Book $book, PlotPoint $plotPoint): JsonResponse
+    public function updateStatus(Request $request, Book $book, PlotPoint $plotPoint): RedirectResponse
     {
         $validated = $request->validate([
             'status' => ['required', Rule::enum(PlotPointStatus::class)],
@@ -90,6 +86,6 @@ class PlotPointController extends Controller
 
         $plotPoint->update($validated);
 
-        return response()->json($plotPoint);
+        return back();
     }
 }
