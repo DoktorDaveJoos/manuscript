@@ -17,6 +17,7 @@ type Props = {
     plotPoint: PlotPoint & { beats?: Beat[] };
     selectedBeatId: number | null;
     onSelectBeat: (beat: Beat) => void;
+    onSelectPlotPoint: (plotPoint: PlotPoint) => void;
     onCreateBeat: (plotPointId: number) => void;
     onBeatContextMenu: (beat: Beat, position: { x: number; y: number }) => void;
     onPlotPointContextMenu: (
@@ -29,6 +30,7 @@ export default function PlotPointSection({
     plotPoint,
     selectedBeatId,
     onSelectBeat,
+    onSelectPlotPoint,
     onCreateBeat,
     onBeatContextMenu,
     onPlotPointContextMenu,
@@ -100,12 +102,14 @@ export default function PlotPointSection({
                     >
                         <GripVertical className="h-3.5 w-3.5" />
                     </span>
-                    <span
-                        className="text-[13px] leading-tight font-semibold"
+                    <button
+                        type="button"
+                        onClick={() => onSelectPlotPoint(plotPoint)}
+                        className="text-left text-[13px] leading-tight font-semibold transition-opacity hover:opacity-70"
                         style={{ color: '#141414' }}
                     >
                         {plotPoint.title}
-                    </span>
+                    </button>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                     <span
