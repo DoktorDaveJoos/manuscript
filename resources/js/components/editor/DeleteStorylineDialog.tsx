@@ -1,12 +1,12 @@
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { destroy } from '@/actions/App/Http/Controllers/StorylineController';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import type { Storyline } from '@/types/models';
+import { destroy } from '@/actions/App/Http/Controllers/StorylineController';
 
 export default function DeleteStorylineDialog({
     bookId,
@@ -102,7 +102,7 @@ export default function DeleteStorylineDialog({
                     {t('deleteStoryline.cancel')}
                 </Button>
                 <Button
-                    variant="danger"
+                    variant="destructive"
                     size="lg"
                     type="button"
                     disabled={!isConfirmed || processing}
