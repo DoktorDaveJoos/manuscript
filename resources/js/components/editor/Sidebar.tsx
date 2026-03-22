@@ -197,10 +197,9 @@ export default function Sidebar({
             <div
                 ref={scrollContainerRef}
                 onScroll={handleSidebarScroll}
-                className="flex-1 overflow-y-auto px-3 py-2"
+                className="flex-1 overflow-y-auto px-3 pb-2"
             >
                 <ChapterList
-                    bookTitle={book.title}
                     storylines={storylines}
                     bookId={book.id}
                     activeChapterId={activeChapterId}

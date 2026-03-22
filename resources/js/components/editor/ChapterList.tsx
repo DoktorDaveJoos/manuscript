@@ -18,7 +18,15 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { router } from '@inertiajs/react';
-import { Book, ChevronDown, GripVertical, Plus } from 'lucide-react';
+import {
+    ChevronDown,
+    Eye,
+    EyeOff,
+    GripVertical,
+    Plus,
+    UnfoldVertical,
+    FoldVertical,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -420,7 +428,6 @@ function SceneList({
 }
 
 export default function ChapterList({
-    bookTitle,
     storylines: initialStorylines,
     bookId,
     activeChapterId,
@@ -437,7 +444,6 @@ export default function ChapterList({
     scenesVisible,
     onScenesVisibleChange,
 }: {
-    bookTitle: string;
     storylines: Storyline[];
     bookId: number;
     activeChapterId?: number;
@@ -838,36 +844,18 @@ export default function ChapterList({
                 onDragEnd={handleDragEnd}
             >
                 <div className="flex flex-col">
-                    <div className="flex items-center justify-between px-2.5 py-2">
-                        <div className="flex items-center gap-2">
-                            <Book
-                                size={13}
-                                className="shrink-0 text-ink-faint"
-                            />
-                            <span className="text-[11px] font-semibold tracking-[0.06em] text-ink-muted uppercase">
-                                {bookTitle}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
+                    <div className="sticky top-0 z-10 -mx-3 flex items-center justify-end bg-neutral-bg px-4 py-2">
+                        <div className="flex items-center gap-1.5">
                             <button
                                 type="button"
                                 onClick={handleToggleCollapseAll}
                                 className="text-ink-faint transition-colors hover:text-ink"
                             >
-                                <svg
-                                    width="12"
-                                    height="12"
-                                    viewBox="0 0 14 14"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className={`transition-transform duration-200 ${isAllCollapsed ? 'rotate-180' : ''}`}
-                                >
-                                    <path d="M3.5 6L7 3L10.5 6" />
-                                    <path d="M3.5 10L7 7L10.5 10" />
-                                </svg>
+                                {isAllCollapsed ? (
+                                    <UnfoldVertical size={12} />
+                                ) : (
+                                    <FoldVertical size={12} />
+                                )}
                             </button>
                             <button
                                 type="button"
@@ -877,34 +865,9 @@ export default function ChapterList({
                                 className="text-ink-faint transition-colors hover:text-ink"
                             >
                                 {scenesVisible ? (
-                                    <svg
-                                        width="12"
-                                        height="12"
-                                        viewBox="0 0 14 14"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="1.2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    >
-                                        <path d="M1.5 7C1.5 7 3.5 3.5 7 3.5C10.5 3.5 12.5 7 12.5 7C12.5 7 10.5 10.5 7 10.5C3.5 10.5 1.5 7 1.5 7Z" />
-                                        <circle cx="7" cy="7" r="1.5" />
-                                    </svg>
+                                    <Eye size={12} />
                                 ) : (
-                                    <svg
-                                        width="12"
-                                        height="12"
-                                        viewBox="0 0 14 14"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="1.2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    >
-                                        <path d="M1.5 7C1.5 7 3.5 3.5 7 3.5C10.5 3.5 12.5 7 12.5 7C12.5 7 10.5 10.5 7 10.5C3.5 10.5 1.5 7 1.5 7Z" />
-                                        <circle cx="7" cy="7" r="1.5" />
-                                        <path d="M3 11L11 3" />
-                                    </svg>
+                                    <EyeOff size={12} />
                                 )}
                             </button>
                         </div>
