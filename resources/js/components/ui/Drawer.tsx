@@ -1,34 +1,108 @@
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { forwardRef, type ComponentPropsWithoutRef, type HTMLAttributes, type PropsWithChildren } from 'react';
 import { cn } from '@/lib/utils';
-import { type PropsWithChildren, useEffect } from 'react';
 
-type DrawerProps = PropsWithChildren<{
+const Sheet = DialogPrimitive.Root;
+const SheetTrigger = DialogPrimitive.Trigger;
+const SheetPortal = DialogPrimitive.Portal;
+const SheetClose = DialogPrimitive.Close;
+
+const SheetOverlay = forwardRef<
+    HTMLDivElement,
+    ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+    <DialogPrimitive.Overlay
+        ref={ref}
+        className={cn('fixed inset-0 z-50 bg-black/5', className)}
+        {...props}
+    />
+));
+SheetOverlay.displayName = 'SheetOverlay';
+
+const SheetContent = forwardRef<
+    HTMLDivElement,
+    ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+    <SheetPortal>
+        <SheetOverlay />
+        <DialogPrimitive.Content
+            ref={ref}
+            className={cn(
+                'fixed top-0 right-0 bottom-0 z-50 flex w-[320px] flex-col border-l border-border bg-surface-card shadow-[-4px_0_24px_rgba(0,0,0,0.06)] animate-[slideInRight_150ms_ease-out]',
+                className,
+            )}
+            {...props}
+        >
+            {children}
+        </DialogPrimitive.Content>
+    </SheetPortal>
+));
+SheetContent.displayName = 'SheetContent';
+
+function SheetHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    return <div className={cn('flex flex-col gap-2', className)} {...props} />;
+}
+SheetHeader.displayName = 'SheetHeader';
+
+function SheetFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    return (
+        <div
+            className={cn('flex items-center justify-end gap-3', className)}
+            {...props}
+        />
+    );
+}
+SheetFooter.displayName = 'SheetFooter';
+
+const SheetTitle = forwardRef<
+    HTMLHeadingElement,
+    ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
+>(({ className, ...props }, ref) => (
+    <DialogPrimitive.Title
+        ref={ref}
+        className={cn('text-sm font-semibold text-ink', className)}
+        {...props}
+    />
+));
+SheetTitle.displayName = 'SheetTitle';
+
+const SheetDescription = forwardRef<
+    HTMLParagraphElement,
+    ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
+>(({ className, ...props }, ref) => (
+    <DialogPrimitive.Description
+        ref={ref}
+        className={cn('text-sm text-ink-muted', className)}
+        {...props}
+    />
+));
+SheetDescription.displayName = 'SheetDescription';
+
+type LegacyDrawerProps = PropsWithChildren<{
     onClose: () => void;
     className?: string;
 }>;
 
-export default function Drawer({ onClose, className, children }: DrawerProps) {
-    useEffect(() => {
-        function handleEscape(e: KeyboardEvent) {
-            if (e.key === 'Escape') onClose();
-        }
-        document.addEventListener('keydown', handleEscape);
-        return () => document.removeEventListener('keydown', handleEscape);
-    }, [onClose]);
-
+function LegacyDrawer({ onClose, className, children }: LegacyDrawerProps) {
     return (
-        <div className="fixed inset-0 z-50">
-            <div
-                className="absolute inset-0 bg-black/5"
-                onClick={onClose}
-            />
-            <aside
-                className={cn(
-                    'absolute top-0 right-0 bottom-0 flex w-[320px] flex-col border-l border-border bg-surface-card shadow-[-4px_0_24px_rgba(0,0,0,0.06)] animate-[slideInRight_150ms_ease-out]',
-                    className,
-                )}
-            >
+        <DialogPrimitive.Root open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
+            <SheetContent className={className}>
                 {children}
-            </aside>
-        </div>
+            </SheetContent>
+        </DialogPrimitive.Root>
     );
 }
+
+export {
+    Sheet,
+    SheetTrigger,
+    SheetPortal,
+    SheetClose,
+    SheetOverlay,
+    SheetContent,
+    SheetHeader,
+    SheetFooter,
+    SheetTitle,
+    SheetDescription,
+};
+export default LegacyDrawer;

@@ -381,7 +381,7 @@ export default function PlotPointDetailPanel({
 
                 {/* Delete */}
                 <Button
-                    variant="danger"
+                    variant="destructive"
                     onClick={() => onDelete(plotPoint.id)}
                     className="w-full py-2.5"
                 >

@@ -78,7 +78,7 @@ export default function DeleteActDialog({
                     {t('deleteAct.cancel')}
                 </Button>
                 <Button
-                    variant="danger"
+                    variant="destructive"
                     size="lg"
                     type="button"
                     disabled={processing}

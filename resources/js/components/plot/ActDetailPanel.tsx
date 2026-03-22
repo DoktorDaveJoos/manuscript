@@ -196,7 +196,7 @@ export default function ActDetailPanel({
 
                 {/* Delete */}
                 <Button
-                    variant="danger"
+                    variant="destructive"
                     onClick={() => onDelete(act.id)}
                     className="w-full py-2.5"
                 >

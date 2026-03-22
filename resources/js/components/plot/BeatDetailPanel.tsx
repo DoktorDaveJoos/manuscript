@@ -375,7 +375,7 @@ export default function BeatDetailPanel({
                 {/* Delete */}
                 {onDelete && (
                     <Button
-                        variant="danger"
+                        variant="destructive"
                         onClick={() => onDelete(beat.id)}
                         className="w-full py-2.5"
                     >

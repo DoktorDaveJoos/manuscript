@@ -2,11 +2,11 @@ import { router } from '@inertiajs/react';
 import { BookOpen, Sparkles, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { store as setupStructure } from '@/actions/App/Http/Controllers/PlotSetupController';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import type { PlotTemplate } from '@/lib/plot-templates';
 import type { Book } from '@/types/models';
+import { store as setupStructure } from '@/actions/App/Http/Controllers/PlotSetupController';
 
 const ACT_COLORS = [
     { bg: '#FAF3EB', border: '#E8D5BE', label: '#C49A6C' },
@@ -189,7 +189,7 @@ export default function PlotWizardModal({
             {/* Footer */}
             <div className="flex items-center justify-end px-8 py-5">
                 <Button
-                    variant="primary"
+                    variant="default"
                     size="lg"
                     onClick={handleCreate}
                     disabled={submitting}
