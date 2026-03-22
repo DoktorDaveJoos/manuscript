@@ -1,3 +1,4 @@
+import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { ChevronRight } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -143,10 +144,30 @@ function Separator() {
     return <div className="mx-2 my-1 h-px bg-border" />;
 }
 
+const DropdownMenu = DropdownMenuPrimitive.Root;
+const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
+const DropdownMenuContent = DropdownMenuPrimitive.Content;
+const DropdownMenuItem = DropdownMenuPrimitive.Item;
+const DropdownMenuSeparator = DropdownMenuPrimitive.Separator;
+const DropdownMenuSub = DropdownMenuPrimitive.Sub;
+const DropdownMenuSubTrigger = DropdownMenuPrimitive.SubTrigger;
+const DropdownMenuSubContent = DropdownMenuPrimitive.SubContent;
+
 const ContextMenu = Object.assign(ContextMenuRoot, {
     Item,
     Submenu,
     Separator,
 });
+
+export {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubTrigger,
+    DropdownMenuSubContent,
+};
 
 export default ContextMenu;

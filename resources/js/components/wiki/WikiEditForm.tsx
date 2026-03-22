@@ -3,12 +3,6 @@ import { BookOpen, X } from 'lucide-react';
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    destroyCharacter,
-    destroyEntry,
-    updateCharacter,
-    updateEntry,
-} from '@/actions/App/Http/Controllers/WikiController';
 import Button from '@/components/ui/Button';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
@@ -16,6 +10,12 @@ import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import type { Book, Character, Storyline, WikiEntry } from '@/types/models';
 import type { WikiTab } from './WikiTabBar';
+import {
+    destroyCharacter,
+    destroyEntry,
+    updateCharacter,
+    updateEntry,
+} from '@/actions/App/Http/Controllers/WikiController';
 
 type Props = {
     item: Character | WikiEntry;
@@ -166,7 +166,7 @@ export default function WikiEditForm({
                         {t('create.cancel')}
                     </Button>
                     <Button
-                        variant="primary"
+                        variant="default"
                         size="sm"
                         type="submit"
                         disabled={

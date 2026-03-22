@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { update as updateWritingGoal } from '@/actions/App/Http/Controllers/WritingGoalController';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { WritingGoalData } from '@/types/models';
+import { update as updateWritingGoal } from '@/actions/App/Http/Controllers/WritingGoalController';
 
 export default function WritingGoal({
     bookId,
@@ -81,7 +81,7 @@ export default function WritingGoal({
                     {t('writingGoal.setupPrompt')}
                 </p>
                 <Button
-                    variant="primary"
+                    variant="default"
                     size="sm"
                     type="button"
                     onClick={() => setIsEditing(true)}
@@ -152,7 +152,7 @@ export default function WritingGoal({
                             {t('writingGoal.cancel')}
                         </Button>
                         <Button
-                            variant="primary"
+                            variant="default"
                             size="sm"
                             type="button"
                             onClick={handleSave}

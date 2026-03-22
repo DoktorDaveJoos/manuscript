@@ -167,7 +167,7 @@ export default function NormalizePreview({
                 </Button>
                 {preview && preview.total_changes > 0 && (
                     <Button
-                        variant="primary"
+                        variant="default"
                         type="button"
                         onClick={handleApply}
                         disabled={applying}

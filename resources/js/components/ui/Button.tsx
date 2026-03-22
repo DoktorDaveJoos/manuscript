@@ -1,34 +1,58 @@
-import { cn } from '@/lib/utils';
+import { Slot } from '@radix-ui/react-slot';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
+import { cn } from '@/lib/utils';
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-    variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'accent';
-    size?: 'sm' | 'default' | 'lg';
-};
+const buttonVariants = cva(
+    'inline-flex items-center justify-center rounded-md font-medium transition-colors disabled:opacity-50',
+    {
+        variants: {
+            variant: {
+                default: 'bg-ink text-surface hover:bg-ink/90',
+                primary: 'bg-ink text-surface hover:bg-ink/90',
+                secondary: 'border border-border text-ink-muted hover:bg-neutral-bg',
+                ghost: 'text-ink-muted hover:text-ink',
+                destructive: 'bg-delete text-surface hover:bg-delete/90',
+                danger: 'bg-delete text-surface hover:bg-delete/90',
+                accent: 'bg-accent text-surface hover:bg-accent/90',
+                outline: 'border border-border bg-transparent text-ink hover:bg-neutral-bg',
+                link: 'text-accent underline-offset-4 hover:underline',
+            },
+            size: {
+                default: 'px-4 py-2 text-[13px]',
+                sm: 'px-3 py-1.5 text-[12px]',
+                lg: 'px-6 py-2.5 text-sm',
+                icon: 'h-9 w-9',
+            },
+        },
+        defaultVariants: {
+            variant: 'default',
+            size: 'default',
+        },
+    },
+);
 
-const base =
-    'inline-flex items-center justify-center rounded-md font-medium transition-colors disabled:opacity-50';
-
-const variants: Record<NonNullable<ButtonProps['variant']>, string> = {
-    primary: 'bg-ink text-surface hover:bg-ink/90',
-    secondary: 'border border-border text-ink-muted hover:bg-neutral-bg',
-    ghost: 'text-ink-muted hover:text-ink',
-    danger: 'bg-delete text-surface hover:bg-delete/90',
-    accent: 'bg-accent text-surface hover:bg-accent/90',
-};
-
-const sizes: Record<NonNullable<ButtonProps['size']>, string> = {
-    sm: 'px-3 py-1.5 text-[12px]',
-    default: 'px-4 py-2 text-[13px]',
-    lg: 'px-6 py-2.5 text-sm',
-};
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
+    VariantProps<typeof buttonVariants> & {
+        asChild?: boolean;
+    };
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ variant = 'primary', size = 'default', className, ...props }, ref) => {
+    ({ variant, size, asChild = false, className, ...props }, ref) => {
+        if (asChild) {
+            return (
+                <Slot
+                    ref={ref}
+                    className={cn(buttonVariants({ variant, size }), className)}
+                    {...(props as React.ComponentPropsWithoutRef<typeof Slot>)}
+                />
+            );
+        }
+
         return (
             <button
                 ref={ref}
-                className={cn(base, variants[variant], sizes[size], className)}
+                className={cn(buttonVariants({ variant, size }), className)}
                 {...props}
             />
         );
@@ -37,4 +61,5 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
 Button.displayName = 'Button';
 
+export { Button, buttonVariants };
 export default Button;
