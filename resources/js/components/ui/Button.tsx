@@ -12,11 +12,8 @@ const buttonVariants = cva(
                 primary: 'bg-ink text-surface hover:bg-ink/90',
                 secondary: 'border border-border text-ink-muted hover:bg-neutral-bg',
                 ghost: 'text-ink-muted hover:text-ink',
-                destructive: 'bg-delete text-surface hover:bg-delete/90',
                 danger: 'bg-delete text-surface hover:bg-delete/90',
                 accent: 'bg-accent text-surface hover:bg-accent/90',
-                outline: 'border border-border bg-transparent text-ink hover:bg-neutral-bg',
-                link: 'text-accent underline-offset-4 hover:underline',
             },
             size: {
                 default: 'px-4 py-2 text-[13px]',
@@ -58,4 +55,3 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 Button.displayName = 'Button';
 
 export default Button;
-export { Button, buttonVariants };

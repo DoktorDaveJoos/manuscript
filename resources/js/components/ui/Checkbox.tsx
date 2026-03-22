@@ -25,5 +25,3 @@ export default function Checkbox({ checked, onChange, className }: CheckboxProps
         </CheckboxPrimitive.Root>
     );
 }
-
-export { Checkbox };

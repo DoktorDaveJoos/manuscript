@@ -10,6 +10,11 @@ import {
     useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+    acceptPartialVersion,
+    acceptVersion,
+    rejectVersion,
+} from '@/actions/App/Http/Controllers/ChapterController';
 import Button from '@/components/ui/Button';
 import { getXsrfToken } from '@/lib/csrf';
 import { ruleCheckers, RULE_THRESHOLDS, stripTags } from '@/lib/ruleCheckers';
@@ -18,11 +23,6 @@ import type {
     ProsePassRule,
     VersionSource,
 } from '@/types/models';
-import {
-    acceptPartialVersion,
-    acceptVersion,
-    rejectVersion,
-} from '@/actions/App/Http/Controllers/ChapterController';
 
 function splitParagraphs(html: string | null): string[] {
     if (!html) return [];
@@ -581,7 +581,7 @@ export default function DiffView({
                             : t('diff.rejectAll')}
                     </Button>
                     <Button
-                        variant="default"
+                        variant="primary"
                         size="sm"
                         type="button"
                         onClick={handleAccept}

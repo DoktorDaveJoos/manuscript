@@ -1,10 +1,10 @@
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { destroy } from '@/actions/App/Http/Controllers/ChapterController';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import type { Chapter } from '@/types/models';
-import { destroy } from '@/actions/App/Http/Controllers/ChapterController';
 
 export default function DeleteChapterDialog({
     bookId,
@@ -78,7 +78,7 @@ export default function DeleteChapterDialog({
                     {t('deleteChapter.cancel')}
                 </Button>
                 <Button
-                    variant="destructive"
+                    variant="danger"
                     size="lg"
                     type="button"
                     disabled={processing}

@@ -21,7 +21,4 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
     );
 }
 
-const Switch = Toggle;
-
 export default Toggle;
-export { Switch };
