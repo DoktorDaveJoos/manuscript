@@ -1,5 +1,6 @@
+import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { ChevronRight } from 'lucide-react';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { forwardRef, type ReactNode, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 const menuShadow = 'shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]';
@@ -149,4 +150,66 @@ const ContextMenu = Object.assign(ContextMenuRoot, {
     Separator,
 });
 
+const DropdownMenu = DropdownMenuPrimitive.Root;
+const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
+
+const DropdownMenuContent = forwardRef<
+    HTMLDivElement,
+    React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
+    <DropdownMenuPrimitive.Portal>
+        <DropdownMenuPrimitive.Content
+            ref={ref}
+            sideOffset={sideOffset}
+            className={cn(
+                'z-50 min-w-[200px] rounded-lg bg-surface-card p-1',
+                menuShadow,
+                className,
+            )}
+            {...props}
+        />
+    </DropdownMenuPrimitive.Portal>
+));
+DropdownMenuContent.displayName = 'DropdownMenuContent';
+
+const DropdownMenuItem = forwardRef<
+    HTMLDivElement,
+    React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
+        variant?: 'default' | 'danger';
+    }
+>(({ className, variant = 'default', ...props }, ref) => (
+    <DropdownMenuPrimitive.Item
+        ref={ref}
+        className={cn(
+            itemBase,
+            variant === 'danger'
+                ? 'font-medium text-delete hover:bg-neutral-bg'
+                : 'text-ink-soft hover:bg-neutral-bg',
+            'cursor-pointer outline-none data-[disabled]:cursor-not-allowed data-[disabled]:text-ink-faint data-[disabled]:hover:bg-transparent',
+            className,
+        )}
+        {...props}
+    />
+));
+DropdownMenuItem.displayName = 'DropdownMenuItem';
+
+const DropdownMenuSeparator = forwardRef<
+    HTMLDivElement,
+    React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Separator>
+>(({ className, ...props }, ref) => (
+    <DropdownMenuPrimitive.Separator
+        ref={ref}
+        className={cn('mx-2 my-1 h-px bg-border', className)}
+        {...props}
+    />
+));
+DropdownMenuSeparator.displayName = 'DropdownMenuSeparator';
+
+export {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+};
 export default ContextMenu;
