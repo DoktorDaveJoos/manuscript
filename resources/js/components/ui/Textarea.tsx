@@ -1,21 +1,31 @@
-import { cn } from '@/lib/utils';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { forwardRef, type TextareaHTMLAttributes } from 'react';
+import { cn } from '@/lib/utils';
 
-type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
-    variant?: 'default' | 'dialog';
-};
+const textareaVariants = cva(
+    'w-full rounded-md border border-border bg-surface text-ink placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-accent resize-none',
+    {
+        variants: {
+            variant: {
+                default: 'px-3 py-2 text-[13px]',
+                dialog: 'px-4 py-3 text-sm',
+            },
+        },
+        defaultVariants: {
+            variant: 'default',
+        },
+    },
+);
 
-const base =
-    'w-full rounded-md border border-border bg-surface text-ink placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-accent resize-none';
+type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> &
+    VariantProps<typeof textareaVariants>;
 
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-    ({ variant = 'default', className, ...props }, ref) => {
-        const size = variant === 'dialog' ? 'px-4 py-3 text-sm' : 'px-3 py-2 text-[13px]';
-
+    ({ variant, className, ...props }, ref) => {
         return (
             <textarea
                 ref={ref}
-                className={cn(base, size, className)}
+                className={cn(textareaVariants({ variant }), className)}
                 {...props}
             />
         );

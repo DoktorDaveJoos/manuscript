@@ -2,12 +2,7 @@ import { ChevronDown } from 'lucide-react';
 import { forwardRef, type ReactNode, type SelectHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
-type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
-    variant?: 'default' | 'compact' | 'dialog';
-    icon?: ReactNode;
-};
-
-const variants = {
+const selectSizeMap = {
     default: {
         select: 'rounded-lg py-2.5 pr-9 pl-3.5 text-[13px]',
         selectWithIcon: 'pl-9',
@@ -28,9 +23,17 @@ const variants = {
     },
 };
 
+const selectBase =
+    'w-full cursor-pointer appearance-none border border-border-subtle bg-white text-ink transition-colors hover:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50 dark:border-border dark:bg-surface-card';
+
+type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
+    variant?: 'default' | 'compact' | 'dialog';
+    icon?: ReactNode;
+};
+
 const Select = forwardRef<HTMLSelectElement, SelectProps>(
     ({ variant = 'default', icon, className, children, ...props }, ref) => {
-        const v = variants[variant];
+        const v = selectSizeMap[variant];
 
         return (
             <div className="relative">
@@ -47,11 +50,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 <select
                     ref={ref}
                     className={cn(
-                        'w-full cursor-pointer appearance-none border border-border-subtle bg-white text-ink transition-colors',
-                        'hover:border-border-strong',
-                        'focus:outline-none focus:ring-1 focus:ring-accent',
-                        'disabled:cursor-not-allowed disabled:opacity-50',
-                        'dark:border-border dark:bg-surface-card',
+                        selectBase,
                         v.select,
                         icon && v.selectWithIcon,
                         className,
