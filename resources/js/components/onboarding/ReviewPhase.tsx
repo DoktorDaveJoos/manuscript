@@ -137,7 +137,7 @@ export default function ReviewPhase({
                     {t('reviewPhase.back')}
                 </Button>
                 <Button
-                    variant="primary"
+                    variant="default"
                     size="lg"
                     type="button"
                     onClick={onConfirm}

@@ -1,11 +1,11 @@
 import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { update } from '@/actions/App/Http/Controllers/BookController';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import Input from '@/components/ui/Input';
 import type { Book } from '@/types/models';
+import { update } from '@/actions/App/Http/Controllers/BookController';
 
 export default function RenameBookDialog({
     book,
@@ -67,7 +67,7 @@ export default function RenameBookDialog({
                         {t('renameBook.cancel')}
                     </Button>
                     <Button
-                        variant="primary"
+                        variant="default"
                         size="lg"
                         type="submit"
                         disabled={form.processing}
