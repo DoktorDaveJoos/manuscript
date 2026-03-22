@@ -1,114 +1,340 @@
-# Manuscript
+<p align="center">
+  <img src="public/icon.png" alt="Manuscript" width="128" height="128">
+</p>
 
-**A desktop writing tool for serious authors. Offline-first. AI-assisted. You own your story.**
+<h1 align="center">Manuscript</h1>
 
-Manuscript is a local-first desktop application for novelists — especially self-publishers — who want professional-grade structural analysis, prose refinement, and version control without giving up ownership of their work. Everything runs on your machine. No cloud. No account. No subscriptions.
+<p align="center">
+  <strong>The AI-powered desktop app for writing novels.</strong><br>
+  Plot. Write. Revise. Publish. — All in one place, fully offline.
+</p>
 
-AI features are opt-in. Bring your own API key, pay the provider directly, and keep full control over every word.
-
----
-
-## Why Manuscript?
-
-Most writing tools either ignore craft entirely or try to write for you. Manuscript does neither. It's built on the belief that good authors already have the instinct for story, structure, and dialogue — what they need is a tool that catches inconsistencies, visualizes pacing, and polishes prose without overwriting their voice.
-
-- **Your data stays yours.** Everything lives in a local SQLite database on your machine. Copy it, back it up, delete it — your call.
-- **AI is a tool, not a crutch.** Every core feature works without AI. When you do enable it, AI refines your prose and analyzes your structure — it never invents content.
-- **Built for craft, not content generation.** Manuscript teaches you _why_ something is a problem, not just that it is one.
-
----
-
-## Features
-
-### Without AI (always free)
-
-- **Multi-book management** — work on as many books as you want, duplicate entire books with one click
-- **Import** — DOCX, ODT, Markdown, and TXT with automatic chapter splitting
-- **Chapter editor** with full version history (restore any version with one click)
-- **Scenes** — break chapters into scenes, reorder with drag-and-drop
-- **Multi-storyline support** — Main, Subplot, Romance, and more — interleave storylines across chapters
-- **Story Bible (Wiki)** — Characters, Locations, Organizations, Items, and Lore — searchable with avatars and relationship notes
-- **Plot Board** — acts, plot points, and beats with a visual timeline view
-  - Five templates: Three Act Structure, Five Act Structure, Save the Cat, Story Circle, Hero's Journey
-  - Link beats to chapters, assign characters to plot points with roles
-  - Track status per beat (Planned, Fulfilled, Abandoned)
-- **Story Canvas** — visual overview of your novel's structure
-- **Dashboard** — manuscript health at a glance: word count, page count, reading time, chapter stats, and progress tracking
-- **Writing Goals & Heatmap** — set daily word count goals, track streaks, and see your 365-day writing heatmap
-- **Focus Mode** — distraction-free fullscreen writing
-- **Typewriter Mode** — keeps your cursor centered on screen while you write
-- **Notes Panel** — attach notes to any chapter, visible alongside the editor
-- **Chapter splitting** — split a chapter at cursor position into two
-- **Trash & Recovery** — soft-delete chapters, scenes, and storylines with full restore
-- **Normalization** — clean up formatting inconsistencies (whitespace, dashes, smart quotes, ellipses)
-- **Export** to PDF, EPUB, DOCX, TXT, and KDP-optimized EPUB — full book, single chapter, or custom selection with customizable typography and trim sizes
-- **Internationalization** — English, German, and Spanish UI
-
-### With AI (bring your own key)
-
-- **AI Chat** — context-aware conversation about your manuscript, powered by RAG over your entire novel
-- **AI Prose Pass** — refines your writing while preserving dialogue, emotional structure, and your voice. Results shown as a diff you accept or reject.
-- **Prose Pass Rules** — configurable checks for show-don't-tell, filter words, passive voice, dialogue tags, and more
-- **Text Beautification** — grammar, clarity, and flow improvements separate from prose pass
-- **Writing Style extraction** — automatically derives your style patterns from the manuscript, editable by you
-- **AI Preparation Pipeline** — multi-phase batch indexing: chunking, embedding, analysis, entity extraction, and story bible population
-- **Story Heartbeat Canvas** — four analysis lanes visualizing your novel at a glance:
-    - **Tension Arc** — chapter-by-chapter tension curve with act blocks and plot point markers
-    - **Chapter Hook Score** — instantly see where readers might stop turning pages
-    - **Pacing Rhythm** — word count variation revealing tempo patterns
-    - **Storyline Weave** — POV distribution and storyline balance
-- **Thriller Health Dashboard** — weighted health score (hooks, pacing, tension, weave) with actionable next steps
-- **Plot AI** — plot hole detection, beat suggestions, and tension arc generation from the plot board
-- **Scene Audit** — flags scenes without clear plot or character function
-- **Character Consistency** — flags behavior that contradicts established traits
-- **Character Extraction** — automatically identifies characters from your chapters
-- **Pacing Coach** — warns about flat stretches and suggests structural fixes
-- **Chapter Ending Analysis** — classifies every chapter ending (cliffhanger, soft hook, closed, dead end)
-- **First Chapter Audit** — specialized analysis: when does conflict appear? Are stakes clear?
-- **Next Chapter Suggestion** — based on open plot threads, pacing needs, and character absence
-- **AI Usage Dashboard** — track token usage per feature, monthly cost breakdown, and per-book statistics
-- **Embeddings & Semantic Search** — RAG-powered context retrieval across your entire novel
-
-### Supported AI Providers
-
-Anthropic, OpenAI, Google Gemini, Groq, xAI, DeepSeek, Mistral, Ollama (local), Azure OpenAI, and OpenRouter. Configure any combination for text generation and embeddings.
+<p align="center">
+  <a href="#-features"><img src="https://img.shields.io/badge/features-✨_all_in_one-blue?style=flat-square" alt="Features"></a>
+  <a href="#-ai-providers"><img src="https://img.shields.io/badge/AI_providers-10+-8B5CF6?style=flat-square" alt="AI Providers"></a>
+  <img src="https://img.shields.io/badge/platform-macOS_·_Windows_·_Linux-lightgrey?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/license-MIT-22C55E?style=flat-square" alt="License">
+</p>
 
 ---
 
-## Tech Stack
+Most writing tools either ignore craft entirely or try to write for you. Manuscript does neither.
 
-| Layer    | Technology                                                                              |
-| -------- | --------------------------------------------------------------------------------------- |
-| Desktop  | [NativePHP](https://nativephp.com) — ships as a native app on macOS, Windows, and Linux |
-| Backend  | [Laravel 12](https://laravel.com) with PHP 8.4                                          |
-| Frontend | [React 19](https://react.dev) via [Inertia.js v2](https://inertiajs.com)                |
-| Styling  | [Tailwind CSS v4](https://tailwindcss.com)                                              |
-| Editor   | [Tiptap](https://tiptap.dev) rich text editor                                           |
-| Database | SQLite with [sqlite-vec](https://github.com/asg017/sqlite-vec) for local vector search  |
-| AI       | [Laravel AI](https://github.com/laravel/ai) for multi-provider support                  |
-| Testing  | [Pest v4](https://pestphp.com)                                                          |
+It's built on the belief that good authors already have the instinct for story, structure, and dialogue — what they need is a tool that **catches inconsistencies, visualizes pacing, and polishes prose** without overwriting their voice.
+
+- 🔒 **Your data stays yours.** Everything lives in a local SQLite database. Copy it, back it up, delete it — your call.
+- 🧠 **AI is a tool, not a crutch.** Every core feature works without AI. When you enable it, AI refines your prose and analyzes your structure — it never invents content.
+- ✏️ **Built for craft, not content generation.** Manuscript teaches you _why_ something is a problem, not just that it is one.
 
 ---
 
-## Getting Started
+## ✨ Features
+
+### ✍️ Writing & Editing
+
+| Feature | Description |
+|:---|:---|
+| **Rich text editor** | Full-featured TipTap editor with formatting toolbar, font selection, and keyboard shortcuts |
+| **Scenes** | Break chapters into scenes, reorder with drag-and-drop |
+| **Version history** | Save, restore, and compare chapter snapshots with visual diffs |
+| **Accept / reject changes** | Granular control over revisions with partial acceptance |
+| **Typewriter mode** | Cursor stays centered on screen for distraction-free flow |
+| **Focus mode** | Fullscreen writing — nothing but your words |
+| **Chapter notes** | Persistent sidebar notes with markdown, slash commands (`/todo`, `/heading`, `/callout`) |
+| **Chapter splitting** | Split a chapter at the cursor into two |
+| **Command palette** | `⌘P` to quickly access any action |
+| **Auto-save** | Every keystroke saved automatically with status indicator |
+
+### 📖 Story Structure
+
+| Feature | Description |
+|:---|:---|
+| **Multiple storylines** | Main plot, subplots, romance arcs, and custom storylines — interleave across chapters |
+| **Acts** | Organize your novel into color-coded act columns |
+| **Plot board** | Visual plot point and beat management with drag-and-drop |
+| **Beats** | Story beats linked to plot points, assignable to chapters |
+| **Character roles** | Assign characters to plot points as protagonist, antagonist, mentor, and more |
+| **Plot point connections** | Map relationships between story events |
+| **Status tracking** | Track beats and plot points: Planned → In Progress → Complete |
+
+#### 🗺️ Plot Templates
+
+Get started fast with proven story structures:
+
+> **Three Act Structure** · **Five Act Structure** · **Save the Cat** · **Story Circle** · **Hero's Journey**
+
+### 📚 Story Bible
+
+A built-in wiki for your fictional world:
+
+| | Entry Type | Use For |
+|:---|:---|:---|
+| 👤 | **Characters** | Full profiles with avatars, traits, roles, relationships, and first appearance tracking |
+| 📍 | **Locations** | Cities, buildings, landscapes, worlds |
+| 🏛️ | **Organizations** | Factions, guilds, governments, companies |
+| 🗡️ | **Items** | Weapons, artifacts, magical objects, plot devices |
+| 📜 | **Lore** | History, mythology, rules of magic, cultural notes |
+
+- 🔎 Global search across all entry types
+- 🎭 Character role classification — Protagonist, Antagonist, Love Interest, Mentor, Ally, Rival, Cameo, Extra
+- 🤖 AI-powered character extraction from your manuscript
+
+### 📈 Dashboard & Analytics
+
+| Feature | Description |
+|:---|:---|
+| **Writing goal tracker** | Daily targets with progress visualization |
+| **365-day writing heatmap** | GitHub-style contribution graph for your writing habits |
+| **Streak tracking** | Daily writing streaks with visual indicators |
+| **Milestone celebrations** | Achievements for word count milestones |
+| **Manuscript progress** | Visual progress bar toward your target word count |
+| **Stats at a glance** | Word count, page estimates, reading time, chapter count |
+| **Page count estimation** | Customizable trim sizes and typography settings |
+| **Health timeline** | Track manuscript health metrics over time |
+
+### 📥 Import
+
+Bring your existing work into Manuscript:
+
+| Format | Features |
+|:---|:---|
+| 📄 **DOCX** | Full Word document parsing with formatting |
+| 📄 **ODT** | OpenDocument Text support |
+| 📝 **Markdown** | `.md` file import |
+| 📝 **TXT** | Plain text with chapter auto-detection |
+
+- ✂️ Automatic chapter splitting with configurable detection
+- 👁️ Interactive chapter review — approve or skip chapters before import
+- 🔀 Merge mode for importing into existing books
+
+### 📤 Export
+
+Publish-ready output in multiple formats:
+
+| Format | Description |
+|:---|:---|
+| 📕 **PDF** | Print-ready with customizable trim sizes (6×9, 5.5×8.5, 8.5×11, custom) |
+| 📱 **EPUB** | Standard e-book format |
+| 🛒 **KDP EPUB** | Optimized for Amazon Kindle Direct Publishing |
+| 📄 **DOCX** | Microsoft Word with full formatting |
+| 📝 **TXT** | Clean plain text |
+
+- 📖 **Front matter** — Title page, copyright, dedication, acknowledgments, about the author
+- 📑 **Back matter** — Configurable end sections
+- 🔤 **Typography controls** — Font family, size, and line height
+- 👀 **Live PDF preview** — See your formatted book before downloading
+- ✅ **Chapter selection** — Export the full book, a single chapter, or a custom range
+
+### 🔍 Text Normalization
+
+Built-in formatter to clean up your manuscript in one click:
+
+| Rule | What It Does |
+|:---|:---|
+| **Smart quotes** | Straight quotes → curly quotes |
+| **Dashes** | Standardize em-dashes and en-dashes |
+| **Ellipsis** | Normalize ellipsis characters |
+| **Dialogue** | Fix dialogue formatting |
+| **Paragraphs** | Clean up paragraph spacing |
+| **Whitespace** | Remove extra whitespace |
+
+> Preview changes before applying — works on full books or individual chapters.
+
+### 🗑️ Trash & Recovery
+
+Soft-delete chapters, scenes, and storylines — browse deleted items, restore with one click, or permanently delete.
+
+### 🌍 Languages
+
+| | Language |
+|:---|:---|
+| 🇬🇧 | English |
+| 🇩🇪 | Deutsch |
+| 🇪🇸 | Español |
+
+### 🎨 Themes & Customization
+
+- ☀️ **Light** / 🌙 **Dark** / 💻 **System** theme modes
+- 🔤 Font and typography preferences
+- ↔️ Resizable panels — sidebar, wiki, AI chat
+- 🫥 Hideable formatting toolbar
+- 📝 Per-book writing style and prose pass rules
+
+---
+
+## 🤖 AI Features
+
+> **Requires a one-time Pro license + your own API key.**
+> Bring your own provider — your keys, your data, your control.
+
+### ✏️ AI Writing Tools
+
+| Feature | Description |
+|:---|:---|
+| **Prose Pass** | Contextual prose refinement shown as a diff you accept or reject |
+| **Prose Pass Rules** | Show-don't-tell · Dialogue tags · Filter words · Passive voice · Sentence variety · Prose tightening — customizable per book |
+| **Text Beautification** | Grammar, clarity, and flow improvements |
+| **Writing Style Extraction** | AI derives your style profile from your manuscript, editable by you |
+| **AI Chat** | Context-aware conversation about your novel using RAG over your entire manuscript |
+| **Character Extraction** | Automatically identify and profile characters from your chapters |
+| **Next Chapter Suggestion** | AI recommends what to write next based on open threads and pacing needs |
+| **Story Bible Generation** | Auto-populate your wiki from manuscript content |
+
+### 📊 AI Analysis & Insights
+
+| Feature | Description |
+|:---|:---|
+| **Chapter Analysis** | Tension scoring, hook quality, pacing feel, emotional shifts, sensory grounding |
+| **Story Heartbeat Canvas** | Visualize tension arcs, chapter hooks, pacing rhythm, and storyline weave |
+| **Plot Health Dashboard** | Weighted health score across hook quality, pacing, tension, and storyline balance |
+| **Plot Hole Detection** | AI identifies inconsistencies in your story |
+| **Character Consistency** | Detects behavior contradictions across chapters |
+| **Chapter Ending Analysis** | Classifies endings — cliffhanger, soft hook, closed, or dead end |
+| **First Chapter Audit** | When does conflict appear? Are stakes clear? |
+| **Scene Audit** | Flags scenes without clear plot or character function |
+| **Next Chapter Suggestion** | Based on open plot threads, pacing needs, and character absence |
+
+### 📉 AI Usage Tracking
+
+- 📊 Token counts (input / output) per feature
+- 💰 Monthly cost breakdown
+- 📚 Per-book statistics
+- 🏷️ Feature-level usage attribution
+- 🔄 Per-book usage reset
+
+### 🧠 AI Preparation Pipeline
+
+Before AI features can analyze your manuscript, a multi-phase pipeline prepares your book:
+
+1. **Chunking** — Splits your manuscript into semantic chunks with overlap
+2. **Embedding** — Generates vector embeddings for semantic search
+3. **Analysis** — Analyzes each chapter for tension, pacing, hooks, and more
+4. **Entity Extraction** — Identifies characters, locations, and items
+5. **Story Bible Population** — Auto-fills your wiki from extracted entities
+6. **Writing Style Extraction** — Derives your prose style profile
+
+> Progress is tracked per-phase with error recovery and circuit breaker protection.
+
+---
+
+## 🔌 AI Providers
+
+Manuscript supports **10 AI providers** — use whichever fits your workflow and budget:
+
+| Provider | Type | API Key |
+|:---|:---|:---:|
+| **Anthropic** (Claude) | ☁️ Cloud | Required |
+| **OpenAI** (GPT) | ☁️ Cloud | Required |
+| **Google Gemini** | ☁️ Cloud | Required |
+| **Groq** | ☁️ Cloud | Required |
+| **xAI** (Grok) | ☁️ Cloud | Required |
+| **DeepSeek** | ☁️ Cloud | Required |
+| **Mistral** | ☁️ Cloud | Required |
+| **OpenRouter** | ☁️ Multi-model proxy | Required |
+| **Azure OpenAI** | ☁️ Enterprise | Required |
+| **Ollama** | 🖥️ Local | Not needed |
+
+> 💡 **Ollama** runs entirely on your machine — no API key, no cost, full privacy.
+
+Configure different models for different tasks:
+
+| Task Category | Used For |
+|:---|:---|
+| ✏️ **Writing** | Prose pass, text beautification |
+| 📊 **Analysis** | Manuscript analysis, chapter insights |
+| 🔍 **Extraction** | Character and entity extraction |
+
+---
+
+## 📚 Supported Genres
+
+<p align="center">
+
+`Thriller` · `Mystery` · `Romance` · `Science Fiction` · `Fantasy` · `Horror` · `Literary Fiction` · `Historical Fiction` · `Crime` · `Adventure` · `Drama` · `Young Adult` · `Non-Fiction` · `Memoir` · `Poetry` · `Western` · `Dystopian`
+
+</p>
+
+---
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+|:---|:---|
+| 🖥️ **Desktop** | [NativePHP](https://nativephp.com) — ships as a native app on macOS, Windows, and Linux |
+| ⚙️ **Backend** | [Laravel 12](https://laravel.com) · PHP 8.4 |
+| ⚛️ **Frontend** | [React 19](https://react.dev) · TypeScript · [Tailwind CSS v4](https://tailwindcss.com) |
+| 🔗 **Bridge** | [Inertia.js v2](https://inertiajs.com) · [Wayfinder](https://github.com/laravel/wayfinder) |
+| 🗄️ **Database** | SQLite · [sqlite-vec](https://github.com/asg017/sqlite-vec) for local vector search |
+| 🧠 **AI** | [Laravel AI](https://github.com/laravel/ai) · RAG with local embeddings |
+| ✏️ **Editor** | [TipTap](https://tiptap.dev) rich text editor |
+| 🧪 **Testing** | [Pest v4](https://pestphp.com) · PHPUnit 12 |
+| 🧹 **Code Quality** | [Laravel Pint](https://laravel.com/docs/pint) · ESLint · Prettier |
+| 🐛 **Error Tracking** | [Sentry](https://sentry.io) (optional, off by default) |
+
+---
+
+## 🔐 Privacy First
+
+| | |
+|:---|:---|
+| 🗄️ **100% local** | All data stored in SQLite on your machine |
+| 🚫 **No cloud sync** | Your manuscript never leaves your computer |
+| ✈️ **Offline capable** | Write anywhere, no internet required |
+| 🔑 **Bring your own AI keys** | API keys stored locally, used only for your requests |
+| 📡 **Optional error reporting** | Sentry integration, off by default |
+
+---
+
+## 💰 Open Source & Licensing
+
+**Manuscript is fully open source.** The complete source code is available here — build it, run it, modify it, and use it for free. Forever.
+
+If you download a **pre-built, ready-to-run desktop app**, that's the Pro version. A one-time purchase unlocks AI features in the bundled app. The license is perpetual, works offline, and never phones home.
+
+|  | 🆓 Open Source (self-built) | ⭐ Pro (pre-built app) |
+|:---|:---:|:---:|
+| Multi-book management | ✅ | ✅ |
+| Chapter editor, scenes & versioning | ✅ | ✅ |
+| Storylines, story bible, plot board | ✅ | ✅ |
+| Dashboard, writing goals & heatmap | ✅ | ✅ |
+| Import & export (PDF, EPUB, DOCX, …) | ✅ | ✅ |
+| Text normalization & formatting | ✅ | ✅ |
+| AI Prose Pass, chat & analysis | ✅ | ✅ |
+| AI Preparation Pipeline | ✅ | ✅ |
+| Pre-built native app | — | ✅ |
+| **Price** | **Free** | **One-time purchase** |
+
+> AI features always require your own API key — you pay the AI providers directly for the tokens you use.
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- PHP 8.4+ with the `sodium` and `sqlite3` extensions
+- PHP 8.4+ with `sodium` and `sqlite3` extensions
 - Node.js 18+
 - Composer
 
 ### Installation
 
 ```bash
+# Clone the repository
 git clone https://github.com/DoktorDaveJoos/manuscript.git
 cd manuscript
 
+# Install dependencies
 composer install
+npm install
+
+# Set up environment
 cp .env.example .env
 php artisan key:generate
-php artisan migrate
-npm install
+
+# Run migrations
+php artisan migrate --no-interaction
+
+# Build frontend assets
 npm run build
 ```
 
@@ -125,70 +351,47 @@ composer run native:dev
 ### Running Tests
 
 ```bash
-php artisan test
+php artisan test --compact
 ```
 
 ### Code Style
 
 ```bash
-# Check
-vendor/bin/pint --test
-
-# Fix
+# Fix formatting
 vendor/bin/pint
+
+# Check formatting
+vendor/bin/pint --test
 ```
 
 ---
 
-## Open Source & Licensing
-
-**Manuscript is fully open source.** The complete source code is available here — you can build it, run it, modify it, and use it for free. Forever. No restrictions on the free tier.
-
-If you download a **pre-built, ready-to-run desktop app**, that's the Pro version. A one-time purchase of the Pro license unlocks the AI features in the bundled app. The license is perpetual, works offline, and never phones home.
-
-This is a gift to the authors out there doing great creative work. Build it yourself and enjoy everything for free. Or grab the bundled app to support development and get going in seconds.
-
-|                                      | Open Source (self-built) | Pro (pre-built app)   |
-| ------------------------------------ | ------------------------ | --------------------- |
-| Multi-book management                | Yes                      | Yes                   |
-| Chapter editor, scenes & versioning  | Yes                      | Yes                   |
-| Storylines, story bible, plot board  | Yes                      | Yes                   |
-| Dashboard, writing goals & heatmap   | Yes                      | Yes                   |
-| Import & export (PDF, EPUB, DOCX, …) | Yes                      | Yes                   |
-| AI Prose Pass, Chat & analysis       | Yes                      | Yes (with license)    |
-| AI Preparation Pipeline              | Yes                      | Yes (with license)    |
-| Pre-built native app                 | —                        | Yes                   |
-| **Price**                            | **Free**                 | **One-time purchase** |
-
-AI features always require your own API key regardless of version — you pay the AI providers directly for the tokens you use.
-
----
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 app/
-  Ai/               # AI prompt builders and context management
-  Console/Commands/  # Artisan commands
-  Enums/             # AiProvider, AnalysisType, VersionSource, PlotPointType, ...
-  Http/Controllers/  # Inertia page controllers
-  Jobs/              # Async jobs (analysis, embeddings, character extraction)
-  Models/            # Eloquent models (Book, Chapter, Act, Beat, PlotPoint, ...)
-  Services/          # Domain services (chunking, parsing, embeddings, export)
+  Ai/                 # AI agents, prompt builders, and context management
+  Console/Commands/    # Artisan commands
+  Enums/               # AiProvider, AnalysisType, VersionSource, Genre, ...
+  Http/Controllers/    # Inertia page controllers
+  Jobs/                # Async jobs (analysis, embeddings, entity extraction)
+  Models/              # Eloquent models (Book, Chapter, Act, Beat, PlotPoint, ...)
+  Services/            # Domain services (chunking, parsing, embeddings, export)
 resources/
-  js/pages/          # React pages (books, chapters, plot, canvas, settings, ...)
-  js/components/     # Shared React components
-  js/i18n/           # Translation files (en, de, es)
-  js/layouts/        # App and settings layouts
+  js/pages/            # React pages (books, chapters, plot, canvas, settings, ...)
+  js/components/       # Shared React components
+  js/hooks/            # Custom React hooks
+  js/i18n/             # Translation files (en, de, es)
+  js/layouts/          # App and settings layouts
 database/
-  migrations/        # SQLite schema including sqlite-vec virtual tables
+  migrations/          # SQLite schema including sqlite-vec virtual tables
 ```
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
-Contributions are welcome. If you're fixing a bug or adding a feature, please:
+Contributions are welcome! If you're fixing a bug or adding a feature:
 
 1. Fork the repository
 2. Create a feature branch
@@ -198,10 +401,13 @@ Contributions are welcome. If you're fixing a bug or adding a feature, please:
 
 ---
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
-Built with love in the Allgau, Germany. Made possible by the incredible open source ecosystems of Laravel, React, NativePHP, and the many libraries this project depends on.
+Built with love in the Allgäu, Germany. Made possible by the incredible open source ecosystems of Laravel, React, NativePHP, and the many libraries this project depends on.
 
 ---
 
-_Manuscript — because your story deserves better tools._
+<p align="center">
+  <sub>Built with ❤️ for writers who take their craft seriously.</sub><br>
+  <sub><em>Manuscript — because your story deserves better tools.</em></sub>
+</p>
