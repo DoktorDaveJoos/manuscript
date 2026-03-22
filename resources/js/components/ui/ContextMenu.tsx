@@ -1,3 +1,4 @@
+import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { ChevronRight } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -150,3 +151,11 @@ const ContextMenu = Object.assign(ContextMenuRoot, {
 });
 
 export default ContextMenu;
+export {
+    ContextMenu,
+    ContextMenuRoot,
+    Item as ContextMenuItem,
+    Submenu as ContextMenuSubmenu,
+    Separator as ContextMenuSeparator,
+    DropdownMenuPrimitive,
+};
