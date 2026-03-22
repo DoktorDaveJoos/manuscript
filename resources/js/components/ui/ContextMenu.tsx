@@ -1,10 +1,11 @@
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { ChevronRight } from 'lucide-react';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 const menuShadow = 'shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]';
 const itemBase =
-    'flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] transition-colors';
+    'flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] outline-none transition-colors';
 
 type Position = { x: number; y: number };
 
@@ -19,32 +20,35 @@ function ContextMenuRoot({
     className?: string;
     children: ReactNode;
 }) {
-    const ref = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        function handleClickOutside(e: MouseEvent) {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                onClose();
-            }
-        }
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () =>
-            document.removeEventListener('mousedown', handleClickOutside);
-    }, [onClose]);
+        triggerRef.current?.click();
+    }, []);
 
     return (
-        <div
-            ref={ref}
-            className={cn(
-                'fixed z-50 w-[200px] rounded-lg bg-surface-card',
-                menuShadow,
-                className,
-            )}
-            style={{ left: position.x, top: position.y }}
-        >
-            <div className="flex flex-col p-1">{children}</div>
-        </div>
+        <DropdownMenu.Root open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
+            <DropdownMenu.Trigger asChild>
+                <div
+                    ref={triggerRef}
+                    className="invisible fixed h-0 w-0"
+                    style={{ left: position.x, top: position.y }}
+                />
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                    side="bottom"
+                    align="start"
+                    className={cn(
+                        'z-50 w-[200px] rounded-lg bg-surface-card p-1',
+                        menuShadow,
+                        className,
+                    )}
+                >
+                    {children}
+                </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+        </DropdownMenu.Root>
     );
 }
 
@@ -67,19 +71,19 @@ function Item({
 }) {
     const variantStyles =
         variant === 'danger'
-            ? disabled
-                ? 'cursor-not-allowed text-ink-faint'
-                : 'font-medium text-delete hover:bg-neutral-bg'
-            : disabled
-              ? 'cursor-not-allowed text-ink-faint'
-              : 'text-ink-soft hover:bg-neutral-bg';
+            ? 'font-medium text-delete data-[highlighted]:bg-neutral-bg'
+            : 'text-ink-soft data-[highlighted]:bg-neutral-bg';
 
     return (
-        <button
-            type="button"
+        <DropdownMenu.Item
             disabled={disabled}
-            onClick={onClick}
-            className={cn(itemBase, variantStyles, className)}
+            onSelect={onClick}
+            className={cn(
+                itemBase,
+                variantStyles,
+                disabled && 'cursor-not-allowed text-ink-faint',
+                className,
+            )}
         >
             {children ?? (
                 <>
@@ -87,7 +91,7 @@ function Item({
                     {label}
                 </>
             )}
-        </button>
+        </DropdownMenu.Item>
     );
 }
 
@@ -102,17 +106,10 @@ function Submenu({
     width?: string;
     children: ReactNode;
 }) {
-    const [open, setOpen] = useState(false);
-
     return (
-        <div
-            className="relative"
-            onMouseEnter={() => setOpen(true)}
-            onMouseLeave={() => setOpen(false)}
-        >
-            <button
-                type="button"
-                className={cn(itemBase, 'justify-between text-ink-soft hover:bg-neutral-bg')}
+        <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger
+                className={cn(itemBase, 'justify-between text-ink-soft data-[highlighted]:bg-neutral-bg')}
             >
                 <span className="flex items-center gap-2.5">
                     {icon}
@@ -123,24 +120,24 @@ function Submenu({
                     strokeWidth={2.5}
                     className="text-ink-faint"
                 />
-            </button>
-            {open && (
-                <div
+            </DropdownMenu.SubTrigger>
+            <DropdownMenu.Portal>
+                <DropdownMenu.SubContent
                     className={cn(
-                        'absolute top-0 left-full ml-1 rounded-lg bg-surface-card',
+                        'z-50 rounded-lg bg-surface-card p-1',
                         menuShadow,
                         width,
                     )}
                 >
-                    <div className="flex flex-col p-1">{children}</div>
-                </div>
-            )}
-        </div>
+                    {children}
+                </DropdownMenu.SubContent>
+            </DropdownMenu.Portal>
+        </DropdownMenu.Sub>
     );
 }
 
 function Separator() {
-    return <div className="mx-2 my-1 h-px bg-border" />;
+    return <DropdownMenu.Separator className="mx-2 my-1 h-px bg-border" />;
 }
 
 const ContextMenu = Object.assign(ContextMenuRoot, {
