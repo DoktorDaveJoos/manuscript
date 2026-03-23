@@ -23,7 +23,6 @@ import {
 import type { PropsWithChildren } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import type {
     ChapterRow,
     MatterItem,
@@ -33,6 +32,7 @@ import Checkbox from '@/components/ui/Checkbox';
 import SectionLabel from '@/components/ui/SectionLabel';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { cn } from '@/lib/utils';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 
 type ExportReadingOrderProps = {
     storylines: StorylineRef[];
@@ -116,7 +116,7 @@ function SortableChapterRow({
                     {chapter.title}
                 </div>
                 {storyline && (
-                    <div className="text-[10px] font-light text-ink-faint">
+                    <div className="text-[11px] font-light text-ink-faint">
                         {storyline.name}
                     </div>
                 )}
@@ -187,7 +187,7 @@ function SectionHeader({
             />
             <SectionLabel>{children}</SectionLabel>
             {count !== undefined && (
-                <span className="text-[10px] text-ink-faint">{count}</span>
+                <span className="text-[11px] text-ink-faint">{count}</span>
             )}
         </button>
     );
