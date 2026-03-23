@@ -47,7 +47,7 @@ export default function AddEntryDropdown({
                 onClick={() => setOpen(!open)}
                 className="flex h-[26px] w-[26px] items-center justify-center rounded-md border border-border bg-neutral-bg transition-colors hover:bg-border"
             >
-                <Plus size={13} className="text-ink-soft" />
+                <Plus size={14} className="text-ink-soft" />
             </button>
 
             {open && (

@@ -12,7 +12,7 @@ export default function WikiAvatar({
 }) {
     const sizeClasses = {
         sm: 'h-8 w-8 text-[13px]',
-        md: 'h-10 w-10 text-[15px]',
+        md: 'h-10 w-10 text-sm',
         lg: 'h-14 w-14 text-[20px]',
     };
 
