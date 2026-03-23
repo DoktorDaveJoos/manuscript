@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 
 const menuShadow = 'shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]';
 const itemBase =
-    'flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] leading-[18px] outline-none transition-colors';
+    'flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] leading-[18px] outline-none transition-colors';
 
 type Position = { x: number; y: number };
 

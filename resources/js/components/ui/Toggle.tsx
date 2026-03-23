@@ -8,7 +8,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
             onCheckedChange={onChange}
             className={cn(
                 'relative inline-flex h-[20px] w-[34px] shrink-0 items-center rounded-full transition-colors',
-                checked ? 'bg-ink' : 'bg-[#E8E8E8] dark:bg-[#3d3a35]',
+                checked ? 'bg-ink' : 'bg-neutral-bg',
             )}
         >
             <SwitchPrimitive.Thumb

@@ -14,13 +14,13 @@ export default function Checkbox({ checked, onChange, className }: CheckboxProps
             checked={checked}
             onCheckedChange={onChange}
             className={cn(
-                'flex h-[14px] w-[14px] shrink-0 items-center justify-center rounded-[3px]',
+                'flex h-[14px] w-[14px] shrink-0 items-center justify-center rounded',
                 checked ? 'bg-ink' : 'border border-border',
                 className,
             )}
         >
             <CheckboxPrimitive.Indicator>
-                <Check className="h-[10px] w-[10px] text-surface" strokeWidth={3} />
+                <Check className="h-3 w-3 text-surface" strokeWidth={3} />
             </CheckboxPrimitive.Indicator>
         </CheckboxPrimitive.Root>
     );
