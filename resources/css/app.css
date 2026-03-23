@@ -110,6 +110,32 @@ html.dark {
     --color-surface-sidebar: var(--color-surface-card);
 }
 
+@keyframes collapsible-down {
+    from {
+        height: 0;
+    }
+    to {
+        height: var(--radix-collapsible-content-height);
+    }
+}
+
+@keyframes collapsible-up {
+    from {
+        height: var(--radix-collapsible-content-height);
+    }
+    to {
+        height: 0;
+    }
+}
+
+@utility animate-collapsible-down {
+    animation: collapsible-down 200ms ease-out;
+}
+
+@utility animate-collapsible-up {
+    animation: collapsible-up 200ms ease-out;
+}
+
 @layer base {
     button:not(:disabled),
     [role='button']:not(:disabled) {

@@ -194,11 +194,7 @@ export default function Sidebar({
             </div>
 
             {/* Chapter list */}
-            <div
-                ref={scrollContainerRef}
-                onScroll={handleSidebarScroll}
-                className="flex-1 overflow-y-auto px-3 pb-2"
-            >
+            <div className="flex min-h-0 flex-1 flex-col px-3 pb-2">
                 <ChapterList
                     storylines={storylines}
                     bookId={book.id}
@@ -215,6 +211,8 @@ export default function Sidebar({
                     onSceneAdd={onSceneAdd}
                     scenesVisible={scenesVisible}
                     onScenesVisibleChange={onScenesVisibleChange}
+                    scrollContainerRef={scrollContainerRef}
+                    onScroll={handleSidebarScroll}
                 />
             </div>
 

@@ -43,6 +43,8 @@ import {
     reorder as reorderStorylines,
     update as updateStoryline,
 } from '@/actions/App/Http/Controllers/StorylineController';
+import { Collapsible, CollapsibleTrigger } from '@/components/ui/Collapsible';
+import { typedClosestCenter } from '@/lib/dnd';
 import { formatCompactCount, jsonFetchHeaders } from '@/lib/utils';
 import type { Chapter, Scene, Storyline } from '@/types/models';
 import ChapterContextMenu from './ChapterContextMenu';
@@ -87,6 +89,7 @@ function SortableChapterItem({
     wordCount,
     onBeforeNavigate,
     onContextMenu,
+    isInCollapsedStoryline,
 }: {
     chapter: Chapter;
     bookId: number;
@@ -96,6 +99,7 @@ function SortableChapterItem({
     wordCount?: number;
     onBeforeNavigate?: () => Promise<void>;
     onContextMenu: (e: React.MouseEvent) => void;
+    isInCollapsedStoryline?: boolean;
 }) {
     const {
         attributes,
@@ -108,6 +112,9 @@ function SortableChapterItem({
     } = useSortable({
         id: `chapter-${chapter.id}`,
         data: { type: 'chapter', chapter },
+        disabled: isInCollapsedStoryline
+            ? { draggable: true, droppable: true }
+            : false,
     });
 
     const style = {
@@ -176,49 +183,54 @@ function SortableStorylineGroup({
     };
 
     return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            className={`flex flex-col gap-px ${isDragging ? 'opacity-50' : ''}`}
+        <Collapsible
+            asChild
+            open={!isCollapsed}
+            onOpenChange={() => onToggleCollapse?.()}
         >
-            {showHeader && (
-                <span
-                    onContextMenu={onContextMenu}
-                    className={`flex items-center justify-between px-2.5 pb-1 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase ${isFirst ? 'pt-2.5' : 'pt-3.5'}`}
-                >
-                    <span
-                        {...listeners}
-                        className="flex cursor-grab items-center gap-1.5 active:cursor-grabbing"
-                    >
-                        {storyline.color && (
-                            <span
-                                className="inline-block size-[6px] rounded-full"
-                                style={{ backgroundColor: storyline.color }}
-                            />
-                        )}
-                        {storyline.name}
-                    </span>
-                    <span
-                        role="button"
-                        tabIndex={-1}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleCollapse?.();
-                        }}
-                        className={`flex items-center text-ink-faint transition-transform duration-150 ${isCollapsed ? '-rotate-90' : ''}`}
-                    >
-                        <ChevronDown size={12} />
-                    </span>
-                </span>
-            )}
             <div
-                className="grid transition-[grid-template-rows] duration-200 ease-out"
-                style={{ gridTemplateRows: isCollapsed ? '0fr' : '1fr' }}
+                ref={setNodeRef}
+                style={style}
+                {...attributes}
+                className={`flex flex-col gap-px ${isDragging ? 'opacity-50' : ''}`}
             >
-                <div className="overflow-hidden">{children}</div>
+                {showHeader && (
+                    <span
+                        onContextMenu={onContextMenu}
+                        className={`flex items-center justify-between px-2.5 pb-1 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase ${isFirst ? 'pt-2.5' : 'pt-3.5'}`}
+                    >
+                        <span
+                            {...listeners}
+                            className="flex cursor-grab items-center gap-1.5 active:cursor-grabbing"
+                        >
+                            {storyline.color && (
+                                <span
+                                    className="inline-block size-[6px] rounded-full"
+                                    style={{ backgroundColor: storyline.color }}
+                                />
+                            )}
+                            {storyline.name}
+                        </span>
+                        <CollapsibleTrigger asChild>
+                            <button
+                                type="button"
+                                className={`flex items-center text-ink-faint transition-transform duration-150 ${isCollapsed ? '-rotate-90' : ''}`}
+                            >
+                                <ChevronDown size={12} />
+                            </button>
+                        </CollapsibleTrigger>
+                    </span>
+                )}
+                <div
+                    className="grid transition-[grid-template-rows] duration-200 ease-out"
+                    style={{
+                        gridTemplateRows: isCollapsed ? '0fr' : '1fr',
+                    }}
+                >
+                    <div className="overflow-hidden">{children}</div>
+                </div>
             </div>
-        </div>
+        </Collapsible>
     );
 }
 
@@ -443,6 +455,8 @@ export default function ChapterList({
     onSceneAdd,
     scenesVisible,
     onScenesVisibleChange,
+    scrollContainerRef,
+    onScroll,
 }: {
     storylines: Storyline[];
     bookId: number;
@@ -459,6 +473,8 @@ export default function ChapterList({
     onSceneAdd?: (afterPosition: number) => Promise<void>;
     scenesVisible: boolean;
     onScenesVisibleChange: (v: boolean) => void;
+    scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
+    onScroll?: () => void;
 }) {
     const { t } = useTranslation('editor');
     const [storylines, setStorylines] = useState(initialStorylines);
@@ -620,11 +636,11 @@ export default function ChapterList({
             setActiveItem(null);
 
             const { active, over } = event;
-            if (!over || active.id === over.id) return;
-
             const activeData = active.data.current;
 
             if (activeData?.type === 'storyline') {
+                if (!over || active.id === over.id) return;
+
                 const oldIndex = storylines.findIndex(
                     (s) => `storyline-${s.id}` === active.id,
                 );
@@ -650,6 +666,10 @@ export default function ChapterList({
             }
 
             if (activeData?.type === 'chapter') {
+                // handleDragOver already did the optimistic reorder in state.
+                // Skip if nothing changed (no drag-over occurred).
+                if (storylines === storylinesRef.current) return;
+
                 const order = storylines.flatMap((s) =>
                     (s.chapters ?? []).map((ch) => ({
                         id: ch.id,
@@ -667,6 +687,11 @@ export default function ChapterList({
         },
         [storylines, bookId],
     );
+
+    const handleDragCancel = useCallback(() => {
+        setActiveItem(null);
+        setStorylines(storylinesRef.current);
+    }, []);
 
     const handleChapterContextMenu = useCallback(
         (e: React.MouseEvent, chapter: Chapter) => {
@@ -838,14 +863,15 @@ export default function ChapterList({
         <>
             <DndContext
                 sensors={sensors}
-                collisionDetection={closestCenter}
+                collisionDetection={typedClosestCenter}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
+                onDragCancel={handleDragCancel}
             >
-                <div className="flex flex-col">
-                    <div className="sticky top-0 z-10 -mx-3 flex items-center justify-end bg-neutral-bg px-4 py-2">
-                        <div className="flex items-center gap-1.5">
+                <div className="flex min-h-0 flex-1 flex-col">
+                    <div className="-mx-3 flex items-center justify-end bg-neutral-bg px-4 py-2">
+                        <div className="flex items-center gap-2">
                             <button
                                 type="button"
                                 onClick={handleToggleCollapseAll}
@@ -857,6 +883,7 @@ export default function ChapterList({
                                     <FoldVertical size={12} />
                                 )}
                             </button>
+                            <div className="h-3 w-px bg-border" />
                             <button
                                 type="button"
                                 onClick={() =>
@@ -872,258 +899,291 @@ export default function ChapterList({
                             </button>
                         </div>
                     </div>
-                    <SortableContext
-                        items={storylineIds}
-                        strategy={verticalListSortingStrategy}
+                    <div
+                        ref={scrollContainerRef}
+                        onScroll={onScroll}
+                        className="min-h-0 flex-1 overflow-y-auto"
                     >
-                        {storylines.map((storyline, i) => (
-                            <SortableStorylineGroup
-                                key={storyline.id}
-                                storyline={storyline}
-                                showHeader={showHeaders}
-                                isFirst={i === 0}
-                                onContextMenu={(e) =>
-                                    handleStorylineContextMenu(e, storyline)
-                                }
-                                isCollapsed={collapsedStorylineIds.has(
-                                    storyline.id,
-                                )}
-                                onToggleCollapse={() =>
-                                    toggleStorylineCollapse(storyline.id)
-                                }
-                            >
-                                <SortableContext
-                                    items={(storyline.chapters ?? []).map(
-                                        (ch) => `chapter-${ch.id}`,
+                        <SortableContext
+                            items={storylineIds}
+                            strategy={verticalListSortingStrategy}
+                        >
+                            {storylines.map((storyline, i) => (
+                                <SortableStorylineGroup
+                                    key={storyline.id}
+                                    storyline={storyline}
+                                    showHeader={showHeaders}
+                                    isFirst={i === 0}
+                                    onContextMenu={(e) =>
+                                        handleStorylineContextMenu(e, storyline)
+                                    }
+                                    isCollapsed={collapsedStorylineIds.has(
+                                        storyline.id,
                                     )}
-                                    strategy={verticalListSortingStrategy}
+                                    onToggleCollapse={() =>
+                                        toggleStorylineCollapse(storyline.id)
+                                    }
                                 >
-                                    {storyline.chapters?.map((chapter) => {
-                                        const index = chapterIndex++;
+                                    <SortableContext
+                                        items={(storyline.chapters ?? []).map(
+                                            (ch) => `chapter-${ch.id}`,
+                                        )}
+                                        strategy={verticalListSortingStrategy}
+                                    >
+                                        {storyline.chapters?.map((chapter) => {
+                                            const index = chapterIndex++;
 
-                                        if (renamingChapterId === chapter.id) {
-                                            return (
-                                                <input
-                                                    key={chapter.id}
-                                                    ref={chapterRenameRef}
-                                                    type="text"
-                                                    defaultValue={
-                                                        chapter.id ===
-                                                            activeChapterId &&
-                                                        activeChapterTitle
-                                                            ? activeChapterTitle
-                                                            : chapter.title
-                                                    }
-                                                    className="mx-1 rounded-md border border-border bg-surface px-2 py-1.5 text-[13px] leading-4 text-ink outline-none"
-                                                    onBlur={(e) =>
-                                                        handleRenameChapterSubmit(
-                                                            chapter,
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter')
+                                            if (
+                                                renamingChapterId === chapter.id
+                                            ) {
+                                                return (
+                                                    <input
+                                                        key={chapter.id}
+                                                        ref={chapterRenameRef}
+                                                        type="text"
+                                                        defaultValue={
+                                                            chapter.id ===
+                                                                activeChapterId &&
+                                                            activeChapterTitle
+                                                                ? activeChapterTitle
+                                                                : chapter.title
+                                                        }
+                                                        className="mx-1 rounded-md border border-border bg-surface px-2 py-1.5 text-[13px] leading-4 text-ink outline-none"
+                                                        onBlur={(e) =>
                                                             handleRenameChapterSubmit(
                                                                 chapter,
-                                                                e.currentTarget
-                                                                    .value,
-                                                            );
-                                                        if (e.key === 'Escape')
-                                                            setRenamingChapterId(
-                                                                null,
-                                                            );
-                                                    }}
-                                                />
-                                            );
-                                        }
-
-                                        const isActiveChapter =
-                                            chapter.id === activeChapterId;
-                                        const liveScenes =
-                                            isActiveChapter && activeScenes
-                                                ? activeScenes
-                                                : chapter.scenes;
-                                        const hasScenes =
-                                            (liveScenes?.length ?? 0) >= 1;
-                                        const isExpanded =
-                                            expandedChapterIds.has(chapter.id);
-                                        const liveWordCount = isActiveChapter
-                                            ? activeChapterWordCount
-                                            : undefined;
-
-                                        return (
-                                            <div key={chapter.id}>
-                                                <SortableChapterItem
-                                                    chapter={chapter}
-                                                    bookId={bookId}
-                                                    index={index}
-                                                    isActive={isActiveChapter}
-                                                    displayTitle={
-                                                        isActiveChapter
-                                                            ? activeChapterTitle
-                                                            : undefined
-                                                    }
-                                                    wordCount={liveWordCount}
-                                                    onBeforeNavigate={
-                                                        onBeforeNavigate
-                                                    }
-                                                    onContextMenu={(e) =>
-                                                        handleChapterContextMenu(
-                                                            e,
-                                                            chapter,
-                                                        )
-                                                    }
-                                                />
-                                                {scenesVisible && hasScenes && (
-                                                    <div
-                                                        className="grid transition-[grid-template-rows] duration-200 ease-out"
-                                                        style={{
-                                                            gridTemplateRows:
-                                                                isExpanded
-                                                                    ? '1fr'
-                                                                    : '0fr',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        onKeyDown={(e) => {
+                                                            if (
+                                                                e.key ===
+                                                                'Enter'
+                                                            )
+                                                                handleRenameChapterSubmit(
+                                                                    chapter,
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value,
+                                                                );
+                                                            if (
+                                                                e.key ===
+                                                                'Escape'
+                                                            )
+                                                                setRenamingChapterId(
+                                                                    null,
+                                                                );
                                                         }}
-                                                    >
-                                                        <div className="overflow-hidden">
-                                                            <SceneList
-                                                                scenes={
-                                                                    liveScenes!
-                                                                }
-                                                                bookId={bookId}
-                                                                chapterId={
-                                                                    chapter.id
-                                                                }
-                                                                onSceneContextMenu={(
-                                                                    e,
-                                                                    scene,
-                                                                ) =>
-                                                                    handleSceneContextMenu(
-                                                                        e,
-                                                                        scene,
-                                                                        chapter.id,
-                                                                        liveScenes!
-                                                                            .length,
-                                                                    )
-                                                                }
-                                                                renamingSceneId={
-                                                                    renamingSceneId
-                                                                }
-                                                                sceneRenameRef={
-                                                                    sceneRenameRef
-                                                                }
-                                                                onRenameSceneSubmit={(
-                                                                    scene,
-                                                                    newTitle,
-                                                                ) =>
-                                                                    handleRenameSceneSubmit(
-                                                                        scene,
-                                                                        chapter.id,
-                                                                        newTitle,
-                                                                    )
-                                                                }
-                                                                onCancelRename={() =>
-                                                                    setRenamingSceneId(
-                                                                        null,
-                                                                    )
-                                                                }
-                                                                onReorder={
-                                                                    isActiveChapter
-                                                                        ? onSceneReorder
-                                                                        : undefined
-                                                                }
-                                                            />
-                                                            {isActiveChapter &&
-                                                                isExpanded && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            if (
-                                                                                onSceneAdd
-                                                                            ) {
-                                                                                onSceneAdd(
-                                                                                    liveScenes!
-                                                                                        .length,
-                                                                                );
-                                                                            } else {
-                                                                                handleAddScene(
-                                                                                    chapter.id,
-                                                                                    liveScenes!
-                                                                                        .length,
-                                                                                );
-                                                                            }
-                                                                        }}
-                                                                        className="w-full rounded-md py-1 pr-2.5 pl-[42px] text-left text-[12px] text-ink-faint transition-colors hover:bg-ink/5"
-                                                                    >
-                                                                        {t(
-                                                                            'chapterList.addScene',
-                                                                        )}
-                                                                    </button>
-                                                                )}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </SortableContext>
-
-                                {showHeaders &&
-                                    renamingStorylineId === storyline.id && (
-                                        <input
-                                            ref={storylineRenameRef}
-                                            type="text"
-                                            defaultValue={storyline.name}
-                                            className="mx-1 -mt-1 mb-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-medium tracking-[0.08em] text-ink uppercase outline-none"
-                                            onBlur={(e) =>
-                                                handleRenameStorylineSubmit(
-                                                    storyline,
-                                                    e.target.value,
-                                                )
+                                                    />
+                                                );
                                             }
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter')
+
+                                            const isActiveChapter =
+                                                chapter.id === activeChapterId;
+                                            const liveScenes =
+                                                isActiveChapter && activeScenes
+                                                    ? activeScenes
+                                                    : chapter.scenes;
+                                            const hasScenes =
+                                                (liveScenes?.length ?? 0) >= 1;
+                                            const isExpanded =
+                                                expandedChapterIds.has(
+                                                    chapter.id,
+                                                );
+                                            const liveWordCount =
+                                                isActiveChapter
+                                                    ? activeChapterWordCount
+                                                    : undefined;
+
+                                            return (
+                                                <div key={chapter.id}>
+                                                    <SortableChapterItem
+                                                        chapter={chapter}
+                                                        bookId={bookId}
+                                                        index={index}
+                                                        isActive={
+                                                            isActiveChapter
+                                                        }
+                                                        displayTitle={
+                                                            isActiveChapter
+                                                                ? activeChapterTitle
+                                                                : undefined
+                                                        }
+                                                        wordCount={
+                                                            liveWordCount
+                                                        }
+                                                        isInCollapsedStoryline={
+                                                            showHeaders &&
+                                                            collapsedStorylineIds.has(
+                                                                storyline.id,
+                                                            )
+                                                        }
+                                                        onBeforeNavigate={
+                                                            onBeforeNavigate
+                                                        }
+                                                        onContextMenu={(e) =>
+                                                            handleChapterContextMenu(
+                                                                e,
+                                                                chapter,
+                                                            )
+                                                        }
+                                                    />
+                                                    {scenesVisible &&
+                                                        hasScenes && (
+                                                            <div
+                                                                className="grid transition-[grid-template-rows] duration-200 ease-out"
+                                                                style={{
+                                                                    gridTemplateRows:
+                                                                        isExpanded
+                                                                            ? '1fr'
+                                                                            : '0fr',
+                                                                }}
+                                                            >
+                                                                <div className="overflow-hidden">
+                                                                    <SceneList
+                                                                        scenes={
+                                                                            liveScenes!
+                                                                        }
+                                                                        bookId={
+                                                                            bookId
+                                                                        }
+                                                                        chapterId={
+                                                                            chapter.id
+                                                                        }
+                                                                        onSceneContextMenu={(
+                                                                            e,
+                                                                            scene,
+                                                                        ) =>
+                                                                            handleSceneContextMenu(
+                                                                                e,
+                                                                                scene,
+                                                                                chapter.id,
+                                                                                liveScenes!
+                                                                                    .length,
+                                                                            )
+                                                                        }
+                                                                        renamingSceneId={
+                                                                            renamingSceneId
+                                                                        }
+                                                                        sceneRenameRef={
+                                                                            sceneRenameRef
+                                                                        }
+                                                                        onRenameSceneSubmit={(
+                                                                            scene,
+                                                                            newTitle,
+                                                                        ) =>
+                                                                            handleRenameSceneSubmit(
+                                                                                scene,
+                                                                                chapter.id,
+                                                                                newTitle,
+                                                                            )
+                                                                        }
+                                                                        onCancelRename={() =>
+                                                                            setRenamingSceneId(
+                                                                                null,
+                                                                            )
+                                                                        }
+                                                                        onReorder={
+                                                                            isActiveChapter
+                                                                                ? onSceneReorder
+                                                                                : undefined
+                                                                        }
+                                                                    />
+                                                                    {isActiveChapter &&
+                                                                        isExpanded && (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    if (
+                                                                                        onSceneAdd
+                                                                                    ) {
+                                                                                        onSceneAdd(
+                                                                                            liveScenes!
+                                                                                                .length,
+                                                                                        );
+                                                                                    } else {
+                                                                                        handleAddScene(
+                                                                                            chapter.id,
+                                                                                            liveScenes!
+                                                                                                .length,
+                                                                                        );
+                                                                                    }
+                                                                                }}
+                                                                                className="w-full rounded-md py-1 pr-2.5 pl-[42px] text-left text-[12px] text-ink-faint transition-colors hover:bg-ink/5"
+                                                                            >
+                                                                                {t(
+                                                                                    'chapterList.addScene',
+                                                                                )}
+                                                                            </button>
+                                                                        )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                </div>
+                                            );
+                                        })}
+                                    </SortableContext>
+
+                                    {showHeaders &&
+                                        renamingStorylineId ===
+                                            storyline.id && (
+                                            <input
+                                                ref={storylineRenameRef}
+                                                type="text"
+                                                defaultValue={storyline.name}
+                                                className="mx-1 -mt-1 mb-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-medium tracking-[0.08em] text-ink uppercase outline-none"
+                                                onBlur={(e) =>
                                                     handleRenameStorylineSubmit(
                                                         storyline,
-                                                        e.currentTarget.value,
-                                                    );
-                                                if (e.key === 'Escape')
-                                                    setRenamingStorylineId(
-                                                        null,
-                                                    );
-                                            }}
-                                        />
-                                    )}
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter')
+                                                        handleRenameStorylineSubmit(
+                                                            storyline,
+                                                            e.currentTarget
+                                                                .value,
+                                                        );
+                                                    if (e.key === 'Escape')
+                                                        setRenamingStorylineId(
+                                                            null,
+                                                        );
+                                                }}
+                                            />
+                                        )}
 
-                                {onAddChapter && (
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            onAddChapter(storyline.id)
-                                        }
-                                        className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-[7px] text-ink-faint hover:bg-ink/5"
-                                    >
-                                        <Plus
-                                            size={12}
-                                            className="text-ink-faint"
-                                        />
-                                        <span className="text-[13px] text-ink-faint">
-                                            {t('chapterList.addChapter')}
-                                        </span>
-                                    </button>
-                                )}
-                            </SortableStorylineGroup>
-                        ))}
-                    </SortableContext>
-                    {onAddStoryline && (
-                        <button
-                            type="button"
-                            onClick={onAddStoryline}
-                            className="flex w-full items-center gap-1.5 px-2.5 pt-3.5 pb-1 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase transition-colors hover:text-ink"
-                        >
-                            <Plus size={12} className="text-ink-faint" />
-                            <span>{t('chapterList.addStoryline')}</span>
-                        </button>
-                    )}
+                                    {onAddChapter && (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                onAddChapter(storyline.id)
+                                            }
+                                            className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-[7px] text-ink-faint hover:bg-ink/5"
+                                        >
+                                            <Plus
+                                                size={12}
+                                                className="text-ink-faint"
+                                            />
+                                            <span className="text-[13px] text-ink-faint">
+                                                {t('chapterList.addChapter')}
+                                            </span>
+                                        </button>
+                                    )}
+                                </SortableStorylineGroup>
+                            ))}
+                        </SortableContext>
+                        {onAddStoryline && (
+                            <button
+                                type="button"
+                                onClick={onAddStoryline}
+                                className="flex w-full items-center gap-1.5 px-2.5 pt-3.5 pb-1 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase transition-colors hover:text-ink"
+                            >
+                                <Plus size={12} className="text-ink-faint" />
+                                <span>{t('chapterList.addStoryline')}</span>
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <DragOverlay>
