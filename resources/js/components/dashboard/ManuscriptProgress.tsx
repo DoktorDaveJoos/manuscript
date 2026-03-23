@@ -11,9 +11,9 @@ export default function ManuscriptProgress({
 
     return (
         <div>
-            <div className="h-[3px] overflow-hidden rounded-[2px] bg-neutral-bg">
+            <div className="h-[3px] overflow-hidden rounded bg-neutral-bg">
                 <div
-                    className="h-full rounded-[2px] bg-gradient-to-r from-accent to-accent-dark transition-all duration-700"
+                    className="h-full rounded bg-gradient-to-r from-accent to-accent-dark transition-all duration-700"
                     style={{ width: `${target.progress_percent}%` }}
                 />
             </div>

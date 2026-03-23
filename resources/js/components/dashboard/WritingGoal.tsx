@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { update as updateWritingGoal } from '@/actions/App/Http/Controllers/WritingGoalController';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { WritingGoalData } from '@/types/models';
+import { update as updateWritingGoal } from '@/actions/App/Http/Controllers/WritingGoalController';
 
 export default function WritingGoal({
     bookId,
@@ -208,9 +208,9 @@ export default function WritingGoal({
             </div>
 
             {/* Progress bar */}
-            <div className="h-1.5 overflow-hidden rounded-[3px] bg-neutral-bg">
+            <div className="h-1.5 overflow-hidden rounded bg-neutral-bg">
                 <div
-                    className="h-full rounded-[3px] bg-gradient-to-r from-accent to-accent-dark transition-all duration-500"
+                    className="h-full rounded bg-gradient-to-r from-accent to-accent-dark transition-all duration-500"
                     style={{ width: `${progress}%` }}
                 />
             </div>

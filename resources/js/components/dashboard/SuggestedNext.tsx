@@ -1,8 +1,8 @@
 import { Link } from '@inertiajs/react';
 import { Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { show as showChapter } from '@/actions/App/Http/Controllers/ChapterController';
 import type { SuggestedNext as SuggestedNextType } from '@/types/models';
+import { show as showChapter } from '@/actions/App/Http/Controllers/ChapterController';
 
 export default function SuggestedNext({
     suggestion,
@@ -16,13 +16,13 @@ export default function SuggestedNext({
     return (
         <div className="rounded-xl border border-border-light bg-surface-card p-6">
             <div className="flex items-start gap-4">
-                <Check size={18} className="mt-0.5 shrink-0 text-accent" />
+                <Check size={20} className="mt-0.5 shrink-0 text-accent" />
 
                 <div className="flex flex-col gap-1.5">
                     <span className="text-[11px] font-medium tracking-[0.08em] text-accent uppercase">
                         {t('suggestedNext.label')}
                     </span>
-                    <h3 className="font-serif text-[18px] font-semibold text-ink">
+                    <h3 className="font-serif text-lg font-semibold text-ink">
                         {suggestion.title}
                     </h3>
                     <p className="text-[13px] leading-[1.4] text-ink-soft">

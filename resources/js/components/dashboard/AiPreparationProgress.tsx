@@ -29,7 +29,7 @@ export default function AiPreparationProgress({
             >
                 <Lock size={14} className="shrink-0" />
                 {t('preparationProgress.prepareForAi')}
-                <span className="rounded bg-ink-faint/10 px-1 py-0.5 text-[10px] font-medium">
+                <span className="rounded bg-ink-faint/10 px-1 py-0.5 text-[11px] font-medium">
                     PRO
                 </span>
             </button>
