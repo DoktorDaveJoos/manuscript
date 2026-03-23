@@ -66,7 +66,7 @@ The feature builds on Manuscript's existing AI infrastructure (chapter analyses,
 | `id` | bigint (PK) | |
 | `editorial_review_id` | foreignId | Belongs to EditorialReview |
 | `chapter_id` | foreignId | Belongs to Chapter |
-| `notes` | json | Keyed by editorial dimension: `narrative_voice`, `themes`, `scene_craft`, `prose_style_patterns`. Only these 4 dimensions — Plot, Characters, and Pacing are already covered by existing chapter analyses. |
+| `notes` | json | Keyed by editorial dimension: `narrative_voice`, `themes`, `scene_craft`, `prose_style_patterns`. Only these 4 dimensions because: Plot is covered by `CharacterConsistency` and `PlotDeviation` analyses in the `analyses` table; Characters by `CharacterConsistency` analysis; Pacing data lives on chapter columns (`tension_score`, `pacing_feel`, `micro_tension_score`) from `ChapterAnalyzer`. |
 | `timestamps` | | |
 
 ### Relationships
@@ -102,10 +102,14 @@ Eight cases (TitleCase):
 
 1. Validate: AI configured, PRO license active, book has chapters (minimum 1; no hard minimum enforced, but the empty state guidance steers users toward completed drafts)
 2. Check no other editorial review is currently in progress for this book
-3. Check existing chapter analyses — identify stale ones via `Chapter::needsAiPreparation()` (compares `content_hash` vs `prepared_content_hash`)
-4. If stale chapters exist, re-run only the `ChapterAnalyzer` agent synchronously for each stale chapter (not the full `AnalyzeChapterJob` pipeline, which triggers manuscript-wide analyses and would blow the timeout budget). This is a lightweight refresh that only updates chapter-level analysis data needed by the editorial review.
-5. Create `editorial_reviews` row with status `pending`
-6. Dispatch `RunEditorialReviewJob`
+3. Create `editorial_reviews` row with status `pending`
+4. Dispatch `RunEditorialReviewJob`
+
+**Inside the job (Phase 0 — Refresh Stale Analyses):**
+- Check existing chapter analyses via `Chapter::needsAiPreparation()` (compares `content_hash` vs `prepared_content_hash`)
+- If stale chapters exist, re-run only the `ChapterAnalyzer` agent synchronously for each stale chapter (not the full `AnalyzeChapterJob` pipeline, which triggers manuscript-wide analyses and would blow the timeout budget)
+- This runs inside the job's 1800-second timeout budget, not during the HTTP request
+- Progress updates: status `analyzing`, progress `{ phase: "refreshing", current_chapter: 1, total_chapters: 3 }`
 
 ### Phase 2 — Gap Fill (chapter-by-chapter)
 
@@ -128,7 +132,7 @@ Progress updates: status `analyzing`, progress `{ phase: "analyzing", current_ch
 ### Phase 3 — Synthesis (per section)
 
 For each of the 8 editorial sections, run `EditorialSynthesisAgent` with:
-- All chapter analyses relevant to that section (from existing `analyses` table)
+- All chapter analyses relevant to that section (from existing `analyses` table for Plot/Characters; from chapter columns `tension_score`, `pacing_feel`, `micro_tension_score` for Pacing)
 - All editorial chapter notes relevant to that section (from Phase 2)
 - Character/entity data where relevant (for Characters, Plot sections)
 
@@ -169,7 +173,7 @@ For a 12-chapter book: ~12 (gap fill) + 8 (synthesis) + 1 (executive summary) = 
 
 ## AI Agents
 
-All agents implement `HasMiddleware` (for `InjectProviderCredentials`) and `BelongsToBook` (for usage tracking). Non-chat agents additionally implement `HasStructuredOutput` with a `schema()` method defining their JSON output shape.
+All agents implement `HasMiddleware` (for `InjectProviderCredentials`) and `BelongsToBook` (for usage tracking). Non-chat agents additionally implement `HasStructuredOutput` with a `schema()` method defining their JSON output shape. Temperature and MaxTokens values below are PHP attributes (`#[Temperature(0.3)]`, `#[MaxTokens(4096)]`) from `Laravel\Ai\Attributes`.
 
 ### `EditorialNotesAgent`
 
@@ -230,7 +234,7 @@ All agents implement `HasMiddleware` (for `InjectProviderCredentials`) and `Belo
 ### `EditorialChatAgent`
 
 - **Purpose:** Conversational agent for discussing editorial findings (used by the "Discuss" button)
-- **Implements:** `Conversational`, `HasTools`, `HasMiddleware`, `BelongsToBook`
+- **Implements:** `Agent`, `Conversational`, `HasTools`, `HasMiddleware`, `BelongsToBook` (uses `Promptable` trait, matching `BookChatAgent` pattern)
 - **Temperature:** 0.5
 - **MaxTokens:** 4096
 - **Task Category:** `AiTaskCategory::Analysis`
@@ -261,6 +265,19 @@ The existing `AiChatDrawer` component requires a `chapter` prop and cannot opera
 | `chat` | POST | `/books/{book}/ai/editorial-review/{review}/chat` | Chat with editorial context |
 
 All routes nested under existing AI route group with `license` middleware. The `chat` endpoint is the sole endpoint for editorial review chat — it is separate from the existing `AiController@chat`. The frontend sends chat requests to this endpoint (not the existing `/books/{book}/ai/chat`) when in editorial review context.
+
+**`show` response:** The Inertia page props include the full `EditorialReview` with sections, chapter notes, and a `chapters` array (id, title, reader_order) for resolving `chapter_references` in findings to human-readable chapter titles.
+
+**`chat` request body:**
+```json
+{
+  "message": "string (required)",
+  "history": "array (optional, previous messages)",
+  "section_type": "string (optional, EditorialSectionType value — which section the finding belongs to)",
+  "finding_index": "integer (optional, index into the section's findings array)"
+}
+```
+The backend constructs the `EditorialChatAgent` system prompt from the review + section + finding context. Returns a `StreamedResponse` (same as existing `AiController@chat`).
 
 ### Job: `RunEditorialReviewJob`
 
@@ -299,7 +316,7 @@ Currently, AI features live on the book dashboard page (components like `AiPrepa
 The Editorial Review introduces a new Inertia page:
 - **New controller action:** `EditorialReviewController@index` renders an Inertia page at `resources/js/pages/books/editorial-review.tsx`
 - **Route:** `GET /books/{book}/ai/editorial-review` — renders the full editorial review page
-- **Sidebar navigation:** Add an "Editorial Review" item under the existing "AI" sidebar item (the sidebar already exists in the Pencil design as `AI — Pro`)
+- **Sidebar navigation:** The current sidebar (`Sidebar.tsx`) has 4 nav items: Dashboard, Wiki, Plot, Export. The Pencil design (`AI — Pro`) shows an "AI" nav item that does not yet exist in code. Implementation must: (1) add a new "AI" sidebar nav item, and (2) make "Editorial Review" a sub-item or the primary destination of that nav item. The existing AI dashboard components (preparation, insights, usage) may later move under this nav item, but for v1 they stay on the Dashboard.
 - The existing dashboard AI components (preparation, insights, usage) stay on the dashboard — they are the "overview"
 - The Editorial Review gets its own dedicated page, linked from the sidebar
 
