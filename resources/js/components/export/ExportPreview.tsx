@@ -72,7 +72,7 @@ function SkeletonPage({ width, height }: { width: number; height: number }) {
     return (
         <div className="flex justify-center px-7 pb-3">
             <div
-                className="animate-pulse rounded-[3px] bg-neutral-bg shadow-[0_6px_20px_#00000014] dark:shadow-[0_6px_20px_#00000040]"
+                className="animate-pulse rounded bg-neutral-bg shadow-[0_6px_20px_#00000014] dark:shadow-[0_6px_20px_#00000040]"
                 style={{ width, height }}
             />
         </div>
@@ -145,7 +145,7 @@ function PdfPageCanvas({
         <div className="flex justify-center px-7 pb-3">
             <canvas
                 ref={canvasRef}
-                className="rounded-[3px] shadow-[0_6px_20px_#00000014] dark:shadow-[0_6px_20px_#00000040]"
+                className="rounded shadow-[0_6px_20px_#00000014] dark:shadow-[0_6px_20px_#00000040]"
                 style={{
                     width: pageWidth,
                     height: pageHeight,
@@ -355,7 +355,7 @@ export default function ExportPreview({
     const VirtuosoHeader = useCallback(
         () => (
             <div className="flex items-center justify-between px-7 pt-6 pb-3">
-                <span className="text-[10px] font-semibold tracking-[0.01em] text-ink-faint uppercase">
+                <span className="text-[11px] font-semibold tracking-[0.01em] text-ink-faint uppercase">
                     {previewLabel}
                 </span>
                 <div className="flex items-center gap-2">

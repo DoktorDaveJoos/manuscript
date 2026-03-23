@@ -82,7 +82,7 @@ export default function ExportSettings({
             <div className="flex flex-1 flex-col px-11 pt-10 pb-10">
                 {/* Header */}
                 <div className="flex flex-col gap-1.5">
-                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">
+                    <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
                         {t('title')}
                     </h1>
                     <p className="text-[13px] text-ink-faint">
