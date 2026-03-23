@@ -26,7 +26,8 @@ The feature builds on Manuscript's existing AI infrastructure (chapter analyses,
 | `id` | bigint (PK) | |
 | `book_id` | foreignId | Belongs to Book |
 | `status` | string (enum) | `pending`, `analyzing`, `synthesizing`, `completed`, `failed` |
-| `progress` | json, nullable | `{ phase, current_chapter, total_chapters, current_section }` |
+| `progress` | json, nullable | `{ phase, current_chapter, total_chapters, current_section, error }` |
+| `error_message` | text, nullable | Error details if status is `failed` |
 | `overall_score` | integer, nullable | 0-100, set on completion |
 | `executive_summary` | text, nullable | 2-3 paragraph summary, set on completion |
 | `top_strengths` | json, nullable | Array of top 3 strengths |
@@ -53,7 +54,7 @@ The feature builds on Manuscript's existing AI infrastructure (chapter analyses,
 {
   "severity": "critical|warning|suggestion",
   "description": "The antagonist's motivation shifts without explanation between chapters 4 and 7.",
-  "chapter_references": [4, 7],
+  "chapter_references": [4, 7],  // chapter IDs (database PKs), not reader order
   "recommendation": "Establish a turning point or internal conflict that explains the shift."
 }
 ```
@@ -65,7 +66,7 @@ The feature builds on Manuscript's existing AI infrastructure (chapter analyses,
 | `id` | bigint (PK) | |
 | `editorial_review_id` | foreignId | Belongs to EditorialReview |
 | `chapter_id` | foreignId | Belongs to Chapter |
-| `notes` | json | Keyed by editorial dimension: `narrative_voice`, `themes`, `scene_craft`, `prose_style_patterns` |
+| `notes` | json | Keyed by editorial dimension: `narrative_voice`, `themes`, `scene_craft`, `prose_style_patterns`. Only these 4 dimensions — Plot, Characters, and Pacing are already covered by existing chapter analyses. |
 | `timestamps` | | |
 
 ### Relationships
@@ -86,7 +87,7 @@ Eight cases (TitleCase):
 - `Themes` — Thematic coherence, recurring motifs, whether themes land
 - `SceneCraft` — Scene purpose, show vs. tell, sensory detail, dialogue quality
 - `ProseStyle` — Repetitions, filter words, sentence variety, readability
-- `ChapterNotes` — Specific per-chapter observations and suggestions
+- `ChapterNotes` — Cross-chapter pattern synthesis from per-chapter observations (the raw per-chapter notes live in `editorial_review_chapter_notes`; this section summarizes recurring patterns, chapter-to-chapter progression, and standout moments)
 
 ---
 
@@ -94,10 +95,10 @@ Eight cases (TitleCase):
 
 ### Phase 1 — Preflight
 
-1. Validate: AI configured, PRO license active, book has chapters
+1. Validate: AI configured, PRO license active, book has chapters (minimum 1; no hard minimum enforced, but the empty state guidance steers users toward completed drafts)
 2. Check no other editorial review is currently in progress for this book
-3. Check existing chapter analyses — identify stale ones (content hash changed since last analysis)
-4. If stale analyses exist, re-run them first via existing `AnalyzeChapterJob`
+3. Check existing chapter analyses — identify stale ones via `Chapter::needsAiPreparation()` (compares `content_hash` vs `prepared_content_hash`)
+4. If stale analyses exist, re-run them synchronously within the job (dispatch `AnalyzeChapterJob` with `dispatchSync`) before proceeding
 5. Create `editorial_reviews` row with status `pending`
 6. Dispatch `RunEditorialReviewJob`
 
@@ -191,15 +192,24 @@ For a 12-chapter book: ~12 (gap fill) + 8 (synthesis) + 1 (executive summary) = 
 - **Input:** All 8 section scores and summaries
 - **Output:** Overall score, executive summary, top 3 strengths, top 3 improvements
 
+### `EditorialChatAgent`
+
+- **Purpose:** Conversational agent for discussing editorial findings (used by the "Discuss" button)
+- **Temperature:** 0.5
+- **MaxTokens:** 4096
+- **Task Category:** `AiTaskCategory::Analysis`
+- **Implements:** `Conversational`, `HasTools` (like `BookChatAgent`)
+- **System prompt context:** Executive summary, the specific section, the finding, relevant chapter references
+- **Tools:** `SearchSimilarChunks`, `RetrieveManuscriptContext` (reused from `BookChatAgent`)
+- **Note:** This is a distinct agent from `BookChatAgent` — it does not require a current chapter and uses the editorial report as its primary context
+
 ### Chat Integration
 
-When the user clicks "Discuss" on a finding, the existing `AiChatDrawer` opens with a Lektorat-specific system prompt containing:
-- The full editorial review executive summary
-- The specific section the finding belongs to
-- The finding itself
-- Relevant chapter references
-
-This is a different system prompt from the regular book chat — it does not assume a current chapter is open and has the editorial report as its primary context.
+The existing `AiChatDrawer` component requires a `chapter` prop and cannot operate without one. To support editorial review chat:
+- Refactor `AiChatDrawer` to make `chapter` optional
+- When `chapter` is null, skip `chapter_id` in the request body
+- Add an optional `editorialReview` prop that passes the review ID and finding context to the backend
+- The backend routes to `EditorialChatAgent` instead of `BookChatAgent` when editorial review context is present
 
 ---
 
@@ -220,9 +230,18 @@ All routes nested under existing AI route group with `license` middleware.
 ### Job: `RunEditorialReviewJob`
 
 - Dispatched by `EditorialReviewController@store`
+- **Timeout:** 1800 seconds (30 minutes) — a 12-chapter book may take 10-20 minutes with ~21 sequential API calls
 - Orchestrates the 4 phases sequentially
 - Updates `editorial_reviews.progress` JSON after each step
-- Catches failures, marks status as `failed`
+- Catches failures, marks status as `failed`, stores error in `error_message`
+
+### AI Usage Tracking
+
+Update `RecordAiTokenUsage::resolveFeature()` to map the new agents:
+- `EditorialNotesAgent` → `'editorial_review'`
+- `EditorialSynthesisAgent` → `'editorial_review'`
+- `EditorialSummaryAgent` → `'editorial_review'`
+- `EditorialChatAgent` → `'editorial_review_chat'`
 
 ### Models
 
@@ -275,8 +294,8 @@ Add sub-tabs at the top of the AI main content area:
 
 ### Chat Integration
 
-"Discuss" button on any finding opens `AiChatDrawer` with:
-- Lektorat-specific system prompt (not the regular book chat prompt)
+"Discuss" button on any finding opens `AiChatDrawer` (with `chapter` as null, `editorialReview` prop set) with:
+- Lektorat-specific system prompt via `EditorialChatAgent` (not `BookChatAgent`)
 - Editorial review context pre-loaded (executive summary, section, finding)
 - No assumption of a current chapter being open
 
@@ -307,3 +326,23 @@ Add sub-tabs at the top of the AI main content area:
 - Verify individual chapter failures are handled gracefully
 
 Agent output quality tests are out of scope — AI output is non-deterministic and best validated manually.
+
+---
+
+## Implementation Notes
+
+### Scoring
+
+Editorial Review uses a 0-100 scale (not the 1-10 scale used by existing `ManuscriptAnalyzer`). This is intentional for finer granularity in editorial assessment.
+
+### i18n
+
+All user-facing strings must use translation keys in `resources/js/i18n/{locale}/`. Add an `editorial-review.json` translation file for `en`, `de`, and `es` locales. Section names, severity labels, button text, guidance text — all translatable.
+
+### Polling
+
+Reuse the same 2-second polling interval as `useAiPreparation`. Create a `useEditorialReview` hook following the same pattern.
+
+### No Cancellation (v1)
+
+First version does not support cancelling a running review. The user must wait for it to complete or fail. Cancellation can be added later if needed.
