@@ -218,7 +218,7 @@ export default function PlotPointDetailPanel({
                         rows={4}
                         placeholder={t('plotPoint.descriptionPlaceholder')}
                     />
-                    <span className="text-[10px] text-ink-faint italic">
+                    <span className="text-[11px] text-ink-faint italic">
                         {t(
                             'plotPoint.descriptionHelper',
                             'Summarize what happens at this turning point.',
@@ -233,7 +233,7 @@ export default function PlotPointDetailPanel({
                         value={plotPoint.type}
                         onChange={handleTypeChange}
                     />
-                    <span className="text-[10px] text-ink-faint italic">
+                    <span className="text-[11px] text-ink-faint italic">
                         {t(
                             'plotPoint.typeHelper',
                             'How this point functions in the narrative arc.',
@@ -248,7 +248,7 @@ export default function PlotPointDetailPanel({
                         value={plotPoint.status}
                         onChange={handleStatusChange}
                     />
-                    <span className="text-[10px] text-ink-faint italic">
+                    <span className="text-[11px] text-ink-faint italic">
                         {t(
                             'plotPoint.statusHelper',
                             'Track whether this plot point has been resolved.',
@@ -300,7 +300,7 @@ export default function PlotPointDetailPanel({
                                                             char.id,
                                                         )
                                                     }
-                                                    className="flex w-full items-center gap-2 rounded-[5px] px-2.5 py-2 text-left text-[12px] font-medium text-ink transition-colors hover:bg-neutral-bg"
+                                                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[12px] font-medium text-ink transition-colors hover:bg-neutral-bg"
                                                 >
                                                     {char.name}
                                                 </button>
@@ -335,7 +335,7 @@ export default function PlotPointDetailPanel({
                                                     .value as CharacterPlotPointRole,
                                             )
                                         }
-                                        className="ml-0.5 cursor-pointer appearance-none border-none bg-transparent p-0 text-[10px] text-ink-muted underline decoration-dotted outline-none"
+                                        className="ml-0.5 cursor-pointer appearance-none border-none bg-transparent p-0 text-[11px] text-ink-muted underline decoration-dotted outline-none"
                                     >
                                         {ROLE_OPTIONS.map((role) => (
                                             <option key={role} value={role}>
@@ -356,7 +356,7 @@ export default function PlotPointDetailPanel({
                                         )}
                                     >
                                         <X
-                                            size={10}
+                                            size={12}
                                             className="text-ink-muted hover:text-delete"
                                         />
                                     </button>
@@ -368,7 +368,7 @@ export default function PlotPointDetailPanel({
                             {t('detailPanel.noCharacters')}
                         </span>
                     )}
-                    <span className="text-[10px] text-ink-faint italic">
+                    <span className="text-[11px] text-ink-faint italic">
                         {t(
                             'plotPoint.characterHelper',
                             'Tag characters involved in this plot point.',

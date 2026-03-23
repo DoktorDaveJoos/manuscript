@@ -8,18 +8,11 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Plus } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TYPE_STYLES } from '@/lib/plot-constants';
 import { stripTags } from '@/lib/ruleCheckers';
 import { cn } from '@/lib/utils';
-import type { Beat, PlotPoint, PlotPointType } from '@/types/models';
+import type { Beat, PlotPoint } from '@/types/models';
 import BeatCard from './BeatCard';
-
-const TYPE_BADGE_COLORS: Record<PlotPointType, { bg: string; text: string }> = {
-    setup: { bg: '#E8EEF4', text: '#5B7B9A' },
-    conflict: { bg: '#F4E8E8', text: '#9A5B5B' },
-    turning_point: { bg: '#FAF0E4', text: '#B87333' },
-    resolution: { bg: '#E8EDE8', text: '#588258' },
-    worldbuilding: { bg: '#E8ECF2', text: '#586582' },
-};
 
 type Props = {
     plotPoint: PlotPoint & { beats?: Beat[] };
@@ -96,10 +89,10 @@ export default function PlotPointSection({
             style={style}
             {...attributes}
             className={cn(
-                'flex flex-col overflow-hidden rounded-lg border border-[#E8E6E1]/60 bg-white pt-3 pb-2.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition-colors',
+                'flex flex-col overflow-hidden rounded-lg border border-border/60 bg-white pt-3 pb-2.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition-colors dark:bg-surface-card',
                 isDragging && 'opacity-50',
-                isSelected && 'ring-2 ring-[#C49A6C]',
-                isOver && 'bg-[#F7F5F0]',
+                isSelected && 'ring-2 ring-accent',
+                isOver && 'bg-surface-warm',
             )}
         >
             {/* Header */}
@@ -123,30 +116,25 @@ export default function PlotPointSection({
                     <button
                         type="button"
                         onClick={() => onSelectPlotPoint(plotPoint)}
-                        className="min-w-0 flex-1 text-left text-[13px] leading-tight font-semibold transition-opacity hover:opacity-70"
-                        style={{ color: '#141414' }}
+                        className="min-w-0 flex-1 text-left text-[13px] leading-tight font-semibold text-ink transition-opacity hover:opacity-70"
                     >
                         {titleOverrides?.[`plotpoint-${plotPoint.id}`] ??
                             plotPoint.title}
                     </button>
                 </div>
                 <span
-                    className="shrink-0 rounded px-2 py-0.5 text-[10px] font-medium"
-                    style={{
-                        backgroundColor:
-                            TYPE_BADGE_COLORS[plotPoint.type]?.bg ?? '#F0EEEB',
-                        borderRadius: 4,
-                        color:
-                            TYPE_BADGE_COLORS[plotPoint.type]?.text ??
-                            '#737373',
-                    }}
+                    className={cn(
+                        'shrink-0 rounded px-2 py-0.5 text-[11px] font-medium',
+                        TYPE_STYLES[plotPoint.type] ??
+                            'bg-neutral-bg text-ink-muted',
+                    )}
                 >
                     {t(`type.${plotPoint.type}`)}
                 </span>
             </div>
 
             {/* Divider */}
-            <div className="mt-2.5 h-px w-full bg-[#E8E6E1]" />
+            <div className="mt-2.5 h-px w-full bg-border" />
 
             {/* Description preview */}
             {plainDescription && (
@@ -186,10 +174,7 @@ export default function PlotPointSection({
 
             {/* Empty drop zone when no beats */}
             {beats.length === 0 && isOver && (
-                <div
-                    className="mx-3.5 mt-2.5 rounded border border-dashed py-3 text-center text-[11px] text-ink-faint"
-                    style={{ borderColor: '#C49A6C' }}
-                >
+                <div className="mx-3.5 mt-2.5 rounded border border-dashed border-accent py-3 text-center text-[11px] text-ink-faint">
                     {t('beat.dropHere', 'Drop here')}
                 </div>
             )}
@@ -200,11 +185,8 @@ export default function PlotPointSection({
                 onClick={() => onCreateBeat(plotPoint.id)}
                 className="flex items-center gap-1 px-3.5 pt-2 transition-opacity hover:opacity-70"
             >
-                <Plus size={12} style={{ color: '#A3A3A3' }} />
-                <span
-                    className="text-[11px] font-normal"
-                    style={{ color: '#A3A3A3' }}
-                >
+                <Plus size={12} className="text-ink-faint" />
+                <span className="text-[11px] font-normal text-ink-faint">
                     {t('beat.addBeat')}
                 </span>
             </button>

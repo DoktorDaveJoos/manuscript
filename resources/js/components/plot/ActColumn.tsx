@@ -84,7 +84,7 @@ export default function ActColumn({
         <div
             className="flex min-w-[300px] flex-1 flex-col"
             style={{
-                borderRight: isLast ? 'none' : '1px solid #E4E2DD',
+                borderRight: isLast ? 'none' : '1px solid var(--color-border)',
             }}
         >
             {/* Header */}
@@ -109,15 +109,12 @@ export default function ActColumn({
                         onClick={() => onSelectAct?.(act.id)}
                     >
                         <span
-                            className="shrink-0 text-[10px] font-bold tracking-[0.08em] uppercase"
+                            className="shrink-0 text-[11px] font-bold tracking-[0.08em] uppercase"
                             style={{ color: color.label }}
                         >
                             ACT {act.number}
                         </span>
-                        <span
-                            className="truncate text-[13px] font-medium"
-                            style={{ color: '#141414' }}
-                        >
+                        <span className="truncate text-[13px] font-medium text-ink">
                             {titleOverrides?.[`act-${act.id}`] ?? act.title}
                         </span>
                     </button>
@@ -129,7 +126,7 @@ export default function ActColumn({
                         className="flex items-center justify-center rounded transition-colors hover:bg-black/5"
                         style={{ width: 20, height: 20 }}
                     >
-                        <Plus size={14} style={{ color: '#A3A3A3' }} />
+                        <Plus size={14} className="text-ink-faint" />
                     </button>
                 </div>
             </div>
@@ -147,12 +144,12 @@ export default function ActColumn({
                 style={{ paddingTop: 8 }}
             >
                 <div
-                    className="h-1.5 flex-1 overflow-hidden rounded-[3px]"
+                    className="h-1.5 flex-1 overflow-hidden rounded"
                     style={{ backgroundColor: color.track }}
                 >
                     {totalBeats > 0 && (
                         <div
-                            className="h-full rounded-[3px] transition-all"
+                            className="h-full rounded transition-all"
                             style={{
                                 backgroundColor: color.label,
                                 width: `${progressRatio * 100}%`,

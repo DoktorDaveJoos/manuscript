@@ -6,12 +6,11 @@ import { stripTags } from '@/lib/ruleCheckers';
 import { cn } from '@/lib/utils';
 import type { Beat, BeatStatus } from '@/types/models';
 
-const BEAT_DOT_COLORS: Record<BeatStatus, { color: string; opacity?: number }> =
-    {
-        planned: { color: '#D5D2CC' },
-        fulfilled: { color: '#5A8F5C' },
-        abandoned: { color: '#D5D2CC', opacity: 0.5 },
-    };
+const BEAT_DOT_CLASSES: Record<BeatStatus, string> = {
+    planned: 'bg-border-dashed',
+    fulfilled: 'bg-status-final',
+    abandoned: 'bg-border-dashed opacity-50',
+};
 
 type Props = {
     beat: Beat;
@@ -28,7 +27,7 @@ export default function BeatCard({
     onClick,
     onContextMenu,
 }: Props) {
-    const dot = BEAT_DOT_COLORS[beat.status];
+    const dotClass = BEAT_DOT_CLASSES[beat.status];
     const plainDescription = useMemo(
         () => (beat.description ? stripTags(beat.description).trim() : ''),
         [beat.description],
@@ -72,13 +71,7 @@ export default function BeatCard({
                     <GripVertical className="h-3 w-3" />
                 </span>
                 <span
-                    className="shrink-0 rounded-full"
-                    style={{
-                        width: 8,
-                        height: 8,
-                        backgroundColor: dot.color,
-                        opacity: dot.opacity ?? 1,
-                    }}
+                    className={cn('h-2 w-2 shrink-0 rounded-full', dotClass)}
                 />
                 <span
                     className={cn(

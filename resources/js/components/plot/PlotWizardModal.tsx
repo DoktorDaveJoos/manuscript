@@ -2,12 +2,14 @@ import { router } from '@inertiajs/react';
 import { BookOpen, Sparkles, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { store as setupStructure } from '@/actions/App/Http/Controllers/PlotSetupController';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import type { PlotTemplate } from '@/lib/plot-templates';
 import type { Book } from '@/types/models';
+import { store as setupStructure } from '@/actions/App/Http/Controllers/PlotSetupController';
 
+// TODO: These decorative act-specific color gradations have no direct token matches.
+// Consider defining CSS variables (--color-act-1-bg, etc.) if they need dark mode support.
 const ACT_COLORS = [
     { bg: '#FAF3EB', border: '#E8D5BE', label: '#C49A6C' },
     { bg: '#F8EDE2', border: '#D4B89A', label: '#B87333' },
@@ -79,12 +81,12 @@ export default function PlotWizardModal({
                     }}
                 >
                     <span
-                        className="text-[10px] font-bold tracking-[0.04em]"
+                        className="text-[11px] font-bold tracking-[0.04em]"
                         style={{ color: colors.label }}
                     >
                         {t('wizard.actPrefix')} {index + 1} — {act.title}
                     </span>
-                    <span className="text-[10px] leading-[1.7] whitespace-pre-line text-ink-muted">
+                    <span className="text-[11px] leading-[1.7] whitespace-pre-line text-ink-muted">
                         {act.beats.map((b) => `\u25B8 ${b.title}`).join('\n')}
                     </span>
                     <div
@@ -92,12 +94,12 @@ export default function PlotWizardModal({
                         style={{ backgroundColor: colors.border }}
                     />
                     <span
-                        className="text-[9px] font-bold tracking-[0.04em]"
+                        className="text-[11px] font-bold tracking-[0.04em]"
                         style={{ color: colors.label }}
                     >
                         {t(`wizard.bookLabel.${template.key}`)}
                     </span>
-                    <span className="text-[10px] leading-[1.5] text-[#595959] italic">
+                    <span className="text-[11px] leading-[1.5] text-ink-soft italic">
                         {t(`wizard.example.${template.key}.act${index + 1}`)}
                     </span>
                 </div>
@@ -128,7 +130,7 @@ export default function PlotWizardModal({
                     <span className="text-[11px] font-semibold tracking-[2px] text-ink-faint uppercase">
                         {t(`wizard.typeLabel.${template.key}`)}
                     </span>
-                    <h2 className="font-serif text-[22px] leading-8 text-ink">
+                    <h2 className="font-serif text-xl leading-8 text-ink">
                         {template.name}
                     </h2>
                 </div>
@@ -136,7 +138,7 @@ export default function PlotWizardModal({
                     onClick={onClose}
                     className="flex h-8 w-8 items-center justify-center rounded-md text-ink-muted hover:bg-neutral-bg hover:text-ink"
                 >
-                    <X size={18} />
+                    <X size={20} />
                 </button>
             </div>
 
@@ -148,15 +150,15 @@ export default function PlotWizardModal({
                     {t(`wizard.tagline.${template.key}`)}
                 </p>
 
-                <div className="flex w-full items-center gap-2 rounded-md bg-[#F5EDE3] px-3 py-2">
+                <div className="flex w-full items-center gap-2 rounded-md bg-accent-light px-3 py-2">
                     <BookOpen size={14} className="shrink-0 text-accent" />
-                    <span className="text-[12px] font-medium text-[#6B6560]">
+                    <span className="text-[12px] font-medium text-ink-warm">
                         {t(`wizard.provenIn.${template.key}`)}
                     </span>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                    <span className="text-[10px] font-semibold tracking-[0.1em] text-ink-faint uppercase">
+                    <span className="text-[11px] font-semibold tracking-[0.1em] text-ink-faint uppercase">
                         {t('wizard.howTheActsWork')}
                     </span>
                     {renderActCards()}
