@@ -138,11 +138,7 @@ export default function CommandPalette({
                 shortcut: '\u2318B',
                 sectionId: 'textStyle',
                 section: t('palette.section.textStyle'),
-                icon: (
-                    <span className="text-[15px] leading-none font-bold">
-                        B
-                    </span>
-                ),
+                icon: <span className="text-sm leading-none font-bold">B</span>,
                 action: run(() => editor!.chain().focus().toggleBold().run()),
             },
             {
@@ -151,7 +147,7 @@ export default function CommandPalette({
                 shortcut: '\u2318I',
                 sectionId: 'textStyle',
                 section: t('palette.section.textStyle'),
-                icon: <span className="text-[15px] leading-none">I</span>,
+                icon: <span className="text-sm leading-none">I</span>,
                 action: run(() => editor!.chain().focus().toggleItalic().run()),
             },
             {
@@ -307,13 +303,13 @@ export default function CommandPalette({
             onClick={onClose}
         >
             <div
-                className="w-[420px] overflow-hidden rounded-[12px] bg-surface-card shadow-[0_8px_32px_#1A1A1A18,0_2px_8px_#1A1A1A0A]"
+                className="w-[420px] overflow-hidden rounded-xl bg-surface-card shadow-[0_8px_32px_#1A1A1A18,0_2px_8px_#1A1A1A0A]"
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={handleKeyDown}
             >
                 {/* Search input */}
                 <div className="flex items-center gap-2.5 border-b border-border px-4 py-3.5">
-                    <Search size={18} className="shrink-0 text-ink-faint" />
+                    <Search size={16} className="shrink-0 text-ink-faint" />
                     <input
                         ref={inputRef}
                         type="text"
@@ -326,10 +322,10 @@ export default function CommandPalette({
                         className="min-w-0 flex-1 bg-transparent text-sm text-ink placeholder:text-ink-faint focus:outline-none"
                     />
                     <span className="flex items-center gap-1">
-                        <span className="inline-flex items-center justify-center rounded-[5px] border border-border bg-surface-card px-[5px] py-[3px]">
+                        <span className="inline-flex items-center justify-center rounded-md border border-border bg-surface-card px-[5px] py-[3px]">
                             <Command size={12} className="text-ink-muted" />
                         </span>
-                        <span className="inline-flex items-center justify-center rounded-[5px] border border-border bg-surface-card px-[7px] py-[3px] text-[11px] font-medium text-ink-muted">
+                        <span className="inline-flex items-center justify-center rounded-md border border-border bg-surface-card px-[7px] py-[3px] text-[11px] font-medium text-ink-muted">
                             P
                         </span>
                     </span>
@@ -404,8 +400,8 @@ export default function CommandPalette({
                                                     item.id.startsWith(
                                                         'ai-',
                                                     ) && (
-                                                        <span className="flex items-center gap-0.5 rounded bg-ink-faint/10 px-1 py-0.5 text-[10px] font-medium text-ink-faint">
-                                                            <Lock size={10} />
+                                                        <span className="flex items-center gap-0.5 rounded bg-ink-faint/10 px-1 py-0.5 text-[11px] font-medium text-ink-faint">
+                                                            <Lock size={12} />
                                                             PRO
                                                         </span>
                                                     )}

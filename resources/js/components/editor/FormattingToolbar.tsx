@@ -190,7 +190,7 @@ export default function FormattingToolbar({
                     }
                     title={t('toolbar.orderedList')}
                 >
-                    <ListOrdered size={15} />
+                    <ListOrdered size={14} />
                 </ToolbarButton>
                 <ToolbarButton
                     active={editorState.isBulletList}
@@ -201,7 +201,7 @@ export default function FormattingToolbar({
                     }
                     title={t('toolbar.bulletList')}
                 >
-                    <List size={15} />
+                    <List size={14} />
                 </ToolbarButton>
 
                 <ToolbarDivider />
@@ -209,7 +209,7 @@ export default function FormattingToolbar({
                 <button
                     type="button"
                     onClick={onToggleFocusMode}
-                    className="flex items-center gap-[5px] rounded-[5px] bg-neutral-bg px-3 py-[5px] text-xs text-ink-muted transition-colors hover:text-ink"
+                    className="flex items-center gap-[5px] rounded-md bg-neutral-bg px-3 py-[5px] text-xs text-ink-muted transition-colors hover:text-ink"
                 >
                     <Maximize2 size={12} />
                     {t('toolbar.focus')}
@@ -217,7 +217,7 @@ export default function FormattingToolbar({
                 <button
                     type="button"
                     onClick={onToggleNotes}
-                    className="flex items-center gap-[5px] rounded-[5px] bg-neutral-bg px-3 py-[5px] text-xs text-ink-muted transition-colors hover:text-ink"
+                    className="flex items-center gap-[5px] rounded-md bg-neutral-bg px-3 py-[5px] text-xs text-ink-muted transition-colors hover:text-ink"
                 >
                     <StickyNote size={12} />
                     {t('toolbar.notes')}
