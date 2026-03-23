@@ -2,18 +2,18 @@ import { router } from '@inertiajs/react';
 import { AlignLeft, ChevronRight, Circle, File, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type { TrashItem } from '@/types/models';
 import {
     index as trashIndex,
     restore as trashRestore,
     empty as trashEmpty,
 } from '@/actions/App/Http/Controllers/TrashController';
-import { jsonFetchHeaders } from '@/lib/utils';
-import type { TrashItem } from '@/types/models';
 
 const typeIcon: Record<TrashItem['type'], React.ReactNode> = {
-    storyline: <Circle size={8} className="shrink-0" />,
-    chapter: <File size={10} className="shrink-0" />,
-    scene: <AlignLeft size={10} className="shrink-0" />,
+    storyline: <Circle size={12} className="shrink-0" />,
+    chapter: <File size={12} className="shrink-0" />,
+    scene: <AlignLeft size={12} className="shrink-0" />,
 };
 
 export default function TrashBin({ bookId }: { bookId: number }) {
@@ -92,21 +92,21 @@ export default function TrashBin({ bookId }: { bookId: number }) {
                 className="flex w-full items-center justify-between px-2.5 pt-2.5 pb-1.5 transition-colors hover:text-ink-muted"
             >
                 <span className="flex items-center gap-1.5">
-                    <Trash2 size={11} className="shrink-0 text-ink-faint" />
-                    <span className="text-[10px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                    <Trash2 size={12} className="shrink-0 text-ink-faint" />
+                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                         {t('trash.title')}
                     </span>
                 </span>
                 <span className="flex items-center gap-1.5">
                     {items.length > 0 && (
-                        <span className="text-[10px] text-ink-faint tabular-nums">
+                        <span className="text-[11px] text-ink-faint tabular-nums">
                             {items.length}
                         </span>
                     )}
                     <span
                         className={`flex shrink-0 items-center text-ink-faint transition-transform ${isOpen ? 'rotate-90' : ''}`}
                     >
-                        <ChevronRight size={10} />
+                        <ChevronRight size={12} />
                     </span>
                 </span>
             </button>
@@ -148,14 +148,14 @@ export default function TrashBin({ bookId }: { bookId: number }) {
                             <button
                                 type="button"
                                 onClick={handleRestoreAll}
-                                className="text-[10px] text-ink-faint hover:text-ink"
+                                className="text-[11px] text-ink-faint hover:text-ink"
                             >
                                 {t('trash.restoreAll')}
                             </button>
                             <button
                                 type="button"
                                 onClick={handleEmpty}
-                                className="text-[10px] text-ink-faint hover:text-delete"
+                                className="text-[11px] text-ink-faint hover:text-delete"
                             >
                                 {t('trash.emptyTrash')}
                             </button>
