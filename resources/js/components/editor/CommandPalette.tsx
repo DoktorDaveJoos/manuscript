@@ -5,6 +5,7 @@ import {
     Command,
     CornerDownLeft,
     GitBranch,
+    Keyboard,
     Lock,
     Maximize,
     Menu,
@@ -79,6 +80,8 @@ export default function CommandPalette({
     onEnterFocusMode,
     isFocusMode,
     onToggleNotes,
+    isTypewriterMode,
+    onToggleTypewriterMode,
     licensed,
 }: {
     editor: Editor | null;
@@ -91,6 +94,8 @@ export default function CommandPalette({
     onEnterFocusMode?: () => void;
     isFocusMode?: boolean;
     onToggleNotes?: () => void;
+    isTypewriterMode?: boolean;
+    onToggleTypewriterMode?: () => void;
     licensed?: boolean;
 }) {
     const { t } = useTranslation('editor');
@@ -129,6 +134,19 @@ export default function CommandPalette({
                 icon: <StickyNote size={16} />,
                 action: () => {
                     onToggleNotes?.();
+                    onClose();
+                },
+            },
+            {
+                id: 'typewriter-mode',
+                label: isTypewriterMode
+                    ? t('palette.disableTypewriterMode')
+                    : t('palette.enableTypewriterMode'),
+                sectionId: 'focus',
+                section: t('palette.section.focus'),
+                icon: <Keyboard size={16} />,
+                action: () => {
+                    onToggleTypewriterMode?.();
                     onClose();
                 },
             },
@@ -223,6 +241,8 @@ export default function CommandPalette({
         onEnterFocusMode,
         isFocusMode,
         onToggleNotes,
+        isTypewriterMode,
+        onToggleTypewriterMode,
         licensed,
         t,
     ]);

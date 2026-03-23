@@ -895,7 +895,7 @@ export default function ChapterList({
                 onDragCancel={handleDragCancel}
             >
                 <div className="flex min-h-0 flex-1 flex-col">
-                    <div className="flex items-center justify-end bg-neutral-bg px-4 py-2">
+                    <div className="flex items-center justify-end bg-neutral-bg px-4 py-0.5">
                         <div className="flex items-center gap-2">
                             <span className="group relative">
                                 <button
