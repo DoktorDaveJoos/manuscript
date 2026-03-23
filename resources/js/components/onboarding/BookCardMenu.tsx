@@ -54,7 +54,7 @@ export default function BookCardMenu({
                                 setOpen(false);
                                 onRename();
                             }}
-                            className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] text-ink-soft transition-colors hover:bg-neutral-bg"
+                            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] text-ink-soft transition-colors hover:bg-neutral-bg"
                         >
                             <Pencil
                                 size={14}
@@ -70,7 +70,7 @@ export default function BookCardMenu({
                                 setOpen(false);
                                 onDuplicate();
                             }}
-                            className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] text-ink-soft transition-colors hover:bg-neutral-bg"
+                            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] text-ink-soft transition-colors hover:bg-neutral-bg"
                         >
                             <Copy
                                 size={14}
@@ -88,7 +88,7 @@ export default function BookCardMenu({
                                 setOpen(false);
                                 onDelete();
                             }}
-                            className="flex w-full items-center gap-2.5 rounded-[5px] px-3 py-2 text-left text-[13px] font-medium text-delete transition-colors hover:bg-neutral-bg"
+                            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] font-medium text-delete transition-colors hover:bg-neutral-bg"
                         >
                             <Trash2 size={14} />
                             {t('bookCardMenu.delete')}

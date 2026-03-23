@@ -19,7 +19,7 @@ export default function ImportChapterRow({
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                         <path
                             d="M2.5 6l2.5 2.5 4.5-5"
-                            stroke="#FCFAF7"
+                            stroke="var(--color-surface)"
                             strokeWidth="1.5"
                             strokeLinecap="round"
                             strokeLinejoin="round"

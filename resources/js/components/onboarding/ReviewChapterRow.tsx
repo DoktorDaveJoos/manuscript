@@ -42,11 +42,13 @@ export default function ReviewChapterRow({
             <button
                 type="button"
                 onClick={onToggle}
-                className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border-[1.5px] transition-colors"
+                className="flex h-4 w-4 shrink-0 items-center justify-center rounded border-[1.5px] transition-colors"
                 style={{
-                    borderColor: chapter.included ? '#141414' : '#C5C1B8',
+                    borderColor: chapter.included
+                        ? 'var(--color-ink)'
+                        : 'var(--color-border-dashed)',
                     backgroundColor: chapter.included
-                        ? '#141414'
+                        ? 'var(--color-ink)'
                         : 'transparent',
                 }}
             >
@@ -54,7 +56,7 @@ export default function ReviewChapterRow({
                     <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
                         <path
                             d="M1 4L3.5 6.5L9 1"
-                            stroke="#FCFAF7"
+                            stroke="var(--color-surface)"
                             strokeWidth="1.5"
                             strokeLinecap="round"
                             strokeLinejoin="round"

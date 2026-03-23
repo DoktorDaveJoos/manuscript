@@ -1,12 +1,12 @@
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { destroy } from '@/actions/App/Http/Controllers/BookController';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import type { Book } from '@/types/models';
+import { destroy } from '@/actions/App/Http/Controllers/BookController';
 
 export default function DeleteBookDialog({
     book,
@@ -34,7 +34,7 @@ export default function DeleteBookDialog({
     return (
         <Dialog onClose={onClose} backdrop="dark" className="gap-6">
             <div className="flex flex-col gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-delete-bg">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-delete-bg">
                     <svg
                         className="h-5 w-5 text-delete"
                         fill="none"

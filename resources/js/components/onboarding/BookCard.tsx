@@ -1,10 +1,10 @@
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 import type { Book } from '@/types/models';
 import BookCardMenu from './BookCardMenu';
 import ProgressBar from './ProgressBar';
+import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 
 type BookWithCounts = Book & {
     chapters_count: number;
@@ -62,7 +62,7 @@ export default function BookCard({
     return (
         <div
             onClick={() => router.visit(editor.url(book))}
-            className="relative flex w-[400px] shrink-0 cursor-pointer flex-col gap-5 rounded-[10px] border border-border bg-surface-card p-8 transition-shadow hover:shadow-md"
+            className="relative flex w-[400px] shrink-0 cursor-pointer flex-col gap-5 rounded-lg border border-border bg-surface-card p-8 transition-shadow hover:shadow-md"
         >
             <div className="absolute top-4 right-4">
                 <BookCardMenu

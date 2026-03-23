@@ -17,7 +17,7 @@ export default function FileRow({
                 height="18"
                 viewBox="0 0 18 18"
                 fill="none"
-                className="shrink-0"
+                className="shrink-0 text-ink-faint"
             >
                 <rect
                     x="3"
@@ -25,12 +25,12 @@ export default function FileRow({
                     width="12"
                     height="14"
                     rx="1.5"
-                    stroke="#A3A3A3"
+                    stroke="currentColor"
                     strokeWidth="1.2"
                 />
                 <path
                     d="M6 6h6M6 9h6M6 12h3"
-                    stroke="#A3A3A3"
+                    stroke="currentColor"
                     strokeWidth="1.2"
                     strokeLinecap="round"
                 />
