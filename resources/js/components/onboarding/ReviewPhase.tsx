@@ -13,9 +13,9 @@ export type ReviewStoryline = {
 };
 
 const STORYLINE_COLORS: Record<StorylineType, string> = {
-    main: '#4A7C59',
-    backstory: '#B87333',
-    parallel: '#7B8EA8',
+    main: 'var(--color-drop)',
+    backstory: 'var(--color-accent)',
+    parallel: 'var(--color-ink-muted)',
 };
 
 export default function ReviewPhase({

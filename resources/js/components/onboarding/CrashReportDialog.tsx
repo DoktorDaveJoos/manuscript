@@ -2,9 +2,9 @@ import { router } from '@inertiajs/react';
 import { Check, ShieldCheck, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import Dialog from '@/components/ui/Dialog';
 import { jsonFetchHeaders } from '@/lib/utils';
+import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 
 function saveSetting(key: string, value: boolean) {
     return fetch(update.url(), {
@@ -41,7 +41,7 @@ export default function CrashReportDialog() {
         >
             {/* Header */}
             <div className="flex flex-col items-center gap-4 px-10 pt-8">
-                <div className="flex h-14 w-14 items-center justify-center rounded-[14px] bg-gradient-to-b from-accent-light to-surface-warm">
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-b from-accent-light to-surface-warm">
                     <ShieldCheck className="h-7 w-7 text-accent" />
                 </div>
                 <h2 className="text-[22px] font-semibold tracking-[-0.3px] text-ink">
@@ -85,7 +85,7 @@ export default function CrashReportDialog() {
                         type="button"
                         disabled={submitting}
                         onClick={() => dismiss(true)}
-                        className="flex h-11 w-full items-center justify-center rounded-[10px] bg-ink text-[14px] font-semibold text-surface shadow-[0_1px_3px_rgba(0,0,0,0.1)] disabled:opacity-50"
+                        className="flex h-11 w-full items-center justify-center rounded-lg bg-ink text-[14px] font-semibold text-surface shadow-[0_1px_3px_rgba(0,0,0,0.1)] disabled:opacity-50"
                     >
                         {t('crashReport.enable')}
                     </button>
@@ -93,7 +93,7 @@ export default function CrashReportDialog() {
                         type="button"
                         disabled={submitting}
                         onClick={() => dismiss(false)}
-                        className="flex h-11 w-full items-center justify-center rounded-[10px] border border-border bg-surface-card text-[14px] font-medium text-ink-muted disabled:opacity-50"
+                        className="flex h-11 w-full items-center justify-center rounded-lg border border-border bg-surface-card text-[14px] font-medium text-ink-muted disabled:opacity-50"
                     >
                         {t('crashReport.notNow')}
                     </button>

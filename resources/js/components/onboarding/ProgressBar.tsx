@@ -41,7 +41,7 @@ export default function ProgressBar({ counts }: { counts: StatusCounts }) {
                 {segments.map((s) => (
                     <div
                         key={s.label}
-                        className={`h-2 rounded-sm ${s.color}`}
+                        className={`h-2 rounded ${s.color}`}
                         style={{
                             flexGrow: s.count,
                             flexShrink: 1,
