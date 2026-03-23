@@ -26,7 +26,7 @@ The feature builds on Manuscript's existing AI infrastructure (chapter analyses,
 | `id` | bigint (PK) | |
 | `book_id` | foreignId | Belongs to Book |
 | `status` | string (enum) | `pending`, `analyzing`, `synthesizing`, `completed`, `failed` |
-| `progress` | json, nullable | `{ phase, current_chapter, total_chapters, current_section, error }` |
+| `progress` | json, nullable | `{ phase, current_chapter, total_chapters, current_section }` |
 | `error_message` | text, nullable | Error details if status is `failed` |
 | `overall_score` | integer, nullable | 0-100, set on completion |
 | `executive_summary` | text, nullable | 2-3 paragraph summary, set on completion |
@@ -77,6 +77,11 @@ The feature builds on Manuscript's existing AI infrastructure (chapter analyses,
 - `EditorialReview` hasMany `EditorialReviewChapterNote`
 - `EditorialReviewChapterNote` belongsTo `Chapter`
 
+### Cascade Behavior
+
+- `editorial_review_sections` and `editorial_review_chapter_notes` use `cascadeOnDelete()` on their `editorial_review_id` foreign key
+- Review deletion is not a v1 feature but the cascade ensures clean data if added later
+
 ### Enum: `EditorialSectionType`
 
 Eight cases (TitleCase):
@@ -98,7 +103,7 @@ Eight cases (TitleCase):
 1. Validate: AI configured, PRO license active, book has chapters (minimum 1; no hard minimum enforced, but the empty state guidance steers users toward completed drafts)
 2. Check no other editorial review is currently in progress for this book
 3. Check existing chapter analyses — identify stale ones via `Chapter::needsAiPreparation()` (compares `content_hash` vs `prepared_content_hash`)
-4. If stale analyses exist, re-run them synchronously within the job (dispatch `AnalyzeChapterJob` with `dispatchSync`) before proceeding
+4. If stale chapters exist, re-run only the `ChapterAnalyzer` agent synchronously for each stale chapter (not the full `AnalyzeChapterJob` pipeline, which triggers manuscript-wide analyses and would blow the timeout budget). This is a lightweight refresh that only updates chapter-level analysis data needed by the editorial review.
 5. Create `editorial_reviews` row with status `pending`
 6. Dispatch `RunEditorialReviewJob`
 
@@ -152,7 +157,7 @@ Updates `editorial_reviews` row: status `completed`, `completed_at` timestamp.
 
 ### Failure Handling
 
-- If any phase fails, mark the review as `failed` with error context in progress JSON
+- If any phase fails, mark the review as `failed` and store the error in `error_message` (the `progress` JSON retains the last known phase/step for debugging context)
 - Individual chapter failures don't fail the whole review — skip and note in the report
 - User can retry a failed review
 
@@ -164,28 +169,58 @@ For a 12-chapter book: ~12 (gap fill) + 8 (synthesis) + 1 (executive summary) = 
 
 ## AI Agents
 
+All agents implement `HasMiddleware` (for `InjectProviderCredentials`) and `BelongsToBook` (for usage tracking). Non-chat agents additionally implement `HasStructuredOutput` with a `schema()` method defining their JSON output shape.
+
 ### `EditorialNotesAgent`
 
 - **Purpose:** Per-chapter editorial observations that complement existing chapter analyses
+- **Implements:** `HasStructuredOutput`, `HasMiddleware`, `BelongsToBook`
 - **Temperature:** 0.3 (analytical, consistent)
 - **MaxTokens:** 4096
 - **Task Category:** `AiTaskCategory::Analysis`
 - **Input:** Chapter text, existing analysis results, writing style profile, character data
 - **Output:** Structured JSON with keys: `narrative_voice`, `themes`, `scene_craft`, `prose_style_patterns`
+- **Schema example:**
+  ```json
+  {
+    "narrative_voice": {
+      "pov": "third-person limited",
+      "tense": "past",
+      "observations": ["Shifts to omniscient in paragraph 3", "..."],
+      "tone_notes": "Consistently dark, breaks in the dialogue scene"
+    },
+    "themes": {
+      "motifs": ["isolation", "decay"],
+      "observations": ["The mirror motif introduced here connects to ch.2", "..."]
+    },
+    "scene_craft": {
+      "scene_purposes": ["setup", "character reveal"],
+      "show_vs_tell": ["The grief description in para 5 is told, not shown"],
+      "sensory_detail": "Heavy on visual, lacks auditory/tactile"
+    },
+    "prose_style_patterns": {
+      "sentence_rhythm": "Monotonous mid-length sentences in action scenes",
+      "repetitions": ["'suddenly' appears 4 times"],
+      "vocabulary_notes": "Vocabulary narrows in emotional scenes"
+    }
+  }
+  ```
 
 ### `EditorialSynthesisAgent`
 
 - **Purpose:** Manuscript-wide synthesis for one editorial section
+- **Implements:** `HasStructuredOutput`, `HasMiddleware`, `BelongsToBook`
 - **Temperature:** 0.4 (needs some creativity for recommendations)
 - **MaxTokens:** 8192
 - **Task Category:** `AiTaskCategory::Analysis`
 - **Input:** Aggregated chapter-level data for that section, section type context
 - **Output:** Score (0-100), findings array, section summary, recommendations
-- **Note:** One prompt template per section type (plot synthesis has different instructions than prose style synthesis)
+- **Note:** One prompt template per section type — use a `match` on `EditorialSectionType` in the agent's `instructions()` method (same pattern as `ManuscriptAnalyzer`)
 
 ### `EditorialSummaryAgent`
 
 - **Purpose:** Produce the overall score and executive summary
+- **Implements:** `HasStructuredOutput`, `HasMiddleware`, `BelongsToBook`
 - **Temperature:** 0.3
 - **MaxTokens:** 2048
 - **Task Category:** `AiTaskCategory::Analysis`
@@ -195,10 +230,10 @@ For a 12-chapter book: ~12 (gap fill) + 8 (synthesis) + 1 (executive summary) = 
 ### `EditorialChatAgent`
 
 - **Purpose:** Conversational agent for discussing editorial findings (used by the "Discuss" button)
+- **Implements:** `Conversational`, `HasTools`, `HasMiddleware`, `BelongsToBook`
 - **Temperature:** 0.5
 - **MaxTokens:** 4096
 - **Task Category:** `AiTaskCategory::Analysis`
-- **Implements:** `Conversational`, `HasTools` (like `BookChatAgent`)
 - **System prompt context:** Executive summary, the specific section, the finding, relevant chapter references
 - **Tools:** `SearchSimilarChunks`, `RetrieveManuscriptContext` (reused from `BookChatAgent`)
 - **Note:** This is a distinct agent from `BookChatAgent` — it does not require a current chapter and uses the editorial report as its primary context
@@ -225,7 +260,7 @@ The existing `AiChatDrawer` component requires a `chapter` prop and cannot opera
 | `progress` | GET | `/books/{book}/ai/editorial-review/{review}/progress` | Polling endpoint |
 | `chat` | POST | `/books/{book}/ai/editorial-review/{review}/chat` | Chat with editorial context |
 
-All routes nested under existing AI route group with `license` middleware.
+All routes nested under existing AI route group with `license` middleware. The `chat` endpoint is the sole endpoint for editorial review chat — it is separate from the existing `AiController@chat`. The frontend sends chat requests to this endpoint (not the existing `/books/{book}/ai/chat`) when in editorial review context.
 
 ### Job: `RunEditorialReviewJob`
 
@@ -257,11 +292,16 @@ PHP backed enum with 8 cases as described in Data Model section.
 
 ## Frontend
 
-### Navigation
+### Navigation & Page Structure
 
-Add sub-tabs at the top of the AI main content area:
-- **"Overview"** — Current AI dashboard (existing content)
-- **"Editorial Review"** — New editorial review page
+Currently, AI features live on the book dashboard page (components like `AiPreparation`, `AiInsights`, `AiUsageStats`). There is no standalone AI page.
+
+The Editorial Review introduces a new Inertia page:
+- **New controller action:** `EditorialReviewController@index` renders an Inertia page at `resources/js/pages/books/editorial-review.tsx`
+- **Route:** `GET /books/{book}/ai/editorial-review` — renders the full editorial review page
+- **Sidebar navigation:** Add an "Editorial Review" item under the existing "AI" sidebar item (the sidebar already exists in the Pencil design as `AI — Pro`)
+- The existing dashboard AI components (preparation, insights, usage) stay on the dashboard — they are the "overview"
+- The Editorial Review gets its own dedicated page, linked from the sidebar
 
 ### Editorial Review Page States
 
