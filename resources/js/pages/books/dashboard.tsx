@@ -39,7 +39,7 @@ function StatCard({
 }) {
     return (
         <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-5 text-center">
-            <span className="text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
+            <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                 {label}
             </span>
             <div className="flex items-end gap-1">
@@ -85,7 +85,7 @@ function ChapterStatusBar({ counts }: { counts: StatusCounts }) {
 
     return (
         <div className="flex flex-col gap-2.5">
-            <div className="flex items-center overflow-hidden rounded-[2px]">
+            <div className="flex items-center overflow-hidden rounded">
                 {segments.map((s) => (
                     <div
                         key={s.label}
@@ -167,7 +167,7 @@ export default function Dashboard({
 
                         {/* Book Header */}
                         <div className="flex flex-col gap-1">
-                            <h1 className="font-serif text-[26px] leading-[1.2] font-bold text-ink">
+                            <h1 className="font-serif text-2xl leading-[1.2] font-bold text-ink">
                                 {book.title}
                             </h1>
                             {book.author && (
