@@ -34,7 +34,7 @@ export default function DeleteActDialog({
             className="gap-7"
         >
             <div className="flex flex-col gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-delete-bg">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-delete-bg">
                     <svg
                         className="h-5 w-5 text-delete"
                         fill="none"

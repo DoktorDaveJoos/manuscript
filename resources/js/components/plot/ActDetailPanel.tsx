@@ -110,7 +110,7 @@ export default function ActDetailPanel({
                         className="w-20"
                         min={1}
                     />
-                    <span className="text-[10px] text-ink-faint italic">
+                    <span className="text-[11px] text-ink-faint italic">
                         {t(
                             'act.numberHelper',
                             'Controls the display order across the timeline.',
@@ -126,7 +126,7 @@ export default function ActDetailPanel({
                         value={title}
                         onChange={(e) => handleTitleChange(e.target.value)}
                     />
-                    <span className="text-[10px] text-ink-faint italic">
+                    <span className="text-[11px] text-ink-faint italic">
                         {t(
                             'act.titleHelper',
                             'Give this act a name that captures its role in the story.',
@@ -143,7 +143,7 @@ export default function ActDetailPanel({
                         }
                         rows={3}
                     />
-                    <span className="text-[10px] text-ink-faint italic">
+                    <span className="text-[11px] text-ink-faint italic">
                         {t(
                             'act.descriptionHelper',
                             "Optional. Notes about this act's purpose in the overall arc.",
@@ -178,12 +178,12 @@ export default function ActDetailPanel({
                             <span className="text-[12px] text-ink-soft">
                                 {t('act.fulfilled', 'Fulfilled')}
                             </span>
-                            <span className="text-[12px] font-semibold text-[#5A8F5C]">
+                            <span className="text-[12px] font-semibold text-status-final">
                                 {summary.fulfilledCount} of {summary.beatCount}
                             </span>
                         </div>
                     </div>
-                    <span className="text-[10px] text-ink-faint italic">
+                    <span className="text-[11px] text-ink-faint italic">
                         {t(
                             'act.summaryHelper',
                             'A snapshot of progress within this act.',

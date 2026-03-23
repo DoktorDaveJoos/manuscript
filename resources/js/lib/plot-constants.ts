@@ -25,6 +25,8 @@ export const NEXT_STATUS: Record<PlotPointStatus, PlotPointStatus> = {
     abandoned: 'planned',
 };
 
+// TODO: These decorative act-specific color gradations have no direct token matches.
+// Consider defining CSS variables (--color-act-1-bg, etc.) if they need dark mode support.
 export const ACT_COLORS = [
     { bg: '#FAF3EB', border: '#E8D5BE', label: '#C49A6C', track: '#EDE5DA' },
     { bg: '#F8EDE2', border: '#D4B89A', label: '#B87333', track: '#EDE0D2' },
@@ -50,7 +52,7 @@ export const STATUS_PILL_OPTIONS: {
     {
         value: 'fulfilled',
         labelKey: 'status.fulfilled',
-        activeClass: 'bg-[#5A8F5C]/15 text-[#5A8F5C]',
+        activeClass: 'bg-status-final/15 text-status-final',
     },
     {
         value: 'abandoned',

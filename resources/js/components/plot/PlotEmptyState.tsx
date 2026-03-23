@@ -19,7 +19,7 @@ export default function PlotEmptyState({
                 <div className="flex flex-col items-center gap-3">
                     <Feather size={36} className="text-accent" />
 
-                    <h2 className="text-center font-serif text-[28px] leading-[1.2] font-medium text-ink">
+                    <h2 className="text-center font-serif text-2xl leading-[1.2] font-medium text-ink">
                         {t('emptyState.title')}
                     </h2>
 
@@ -45,7 +45,7 @@ export default function PlotEmptyState({
                                 }`}
                             >
                                 {template.featured && (
-                                    <span className="text-[9px] font-bold tracking-[0.06em] text-accent uppercase">
+                                    <span className="text-[11px] font-bold tracking-[0.06em] text-accent uppercase">
                                         {t('emptyState.fitsBadge')}
                                     </span>
                                 )}
@@ -60,15 +60,15 @@ export default function PlotEmptyState({
 
                                 <div className="flex items-center gap-1.5">
                                     <BookOpen
-                                        size={11}
+                                        size={12}
                                         className="shrink-0 text-accent"
                                     />
-                                    <span className="text-[10px] font-medium text-ink-muted">
+                                    <span className="text-[11px] font-medium text-ink-muted">
                                         {template.books}
                                     </span>
                                 </div>
 
-                                <span className="text-[10px] text-ink-faint">
+                                <span className="text-[11px] text-ink-faint">
                                     {template.actFlow}
                                 </span>
 

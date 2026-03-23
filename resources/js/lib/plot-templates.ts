@@ -30,6 +30,8 @@ type RawTemplate = {
     acts: RawAct[];
 };
 
+// TODO: Template act colors are decorative gradations with no direct token matches.
+// Consider defining CSS variables if they need dark mode support.
 const RAW_TEMPLATES: RawTemplate[] = [
     {
         key: 'three_act',

@@ -180,7 +180,7 @@ export default function BeatDetailPanel({
                         rows={4}
                         placeholder={t('beat.descriptionPlaceholder')}
                     />
-                    <span className="text-[10px] text-ink-faint italic">
+                    <span className="text-[11px] text-ink-faint italic">
                         {t(
                             'beat.descriptionHelper',
                             'What happens during this beat?',
@@ -202,7 +202,7 @@ export default function BeatDetailPanel({
                     <div className="flex items-center rounded-md border border-border bg-surface px-3 py-2 text-[13px] text-ink-soft">
                         {plotPointType ? t(`type.${plotPointType}`) : '—'}
                     </div>
-                    <span className="text-[10px] text-ink-faint italic">
+                    <span className="text-[11px] text-ink-faint italic">
                         {t(
                             'beat.typeHelper',
                             'Inherited from the parent plot point.',
@@ -266,7 +266,7 @@ export default function BeatDetailPanel({
                             {/* Search */}
                             <div className="relative">
                                 <Search
-                                    size={13}
+                                    size={14}
                                     className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-ink-faint"
                                 />
                                 <input
@@ -325,7 +325,7 @@ export default function BeatDetailPanel({
                                                 className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[12px] text-ink transition-colors hover:bg-neutral-bg"
                                             >
                                                 <FileText
-                                                    size={13}
+                                                    size={14}
                                                     className="shrink-0 text-ink-muted"
                                                 />
                                                 <span className="min-w-0 flex-1 truncate">
@@ -361,7 +361,7 @@ export default function BeatDetailPanel({
                             </button>
                         </div>
                     )}
-                    <span className="text-[10px] text-ink-faint italic">
+                    <span className="text-[11px] text-ink-faint italic">
                         {t(
                             'beat.chapterHelper',
                             'Connect this beat to the chapters where it plays out.',
