@@ -73,9 +73,9 @@ function MetricBar({ label, score }: { label: string; score: number }) {
         <div className="flex items-center gap-2">
             <span className="w-[130px] text-[12px] text-ink-soft">{label}</span>
             <div className="flex-1">
-                <div className="h-[4px] overflow-hidden rounded-[2px] bg-neutral-bg">
+                <div className="h-[4px] overflow-hidden rounded bg-neutral-bg">
                     <div
-                        className="h-full rounded-[2px] bg-accent"
+                        className="h-full rounded bg-accent"
                         style={{
                             width: `${Math.min(100, Math.max(0, score))}%`,
                         }}

@@ -1,10 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
 import { Brain, Crown, RefreshCw, Sparkle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useAiPreparation, TOTAL_PHASES } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 
 export default function AiPreparation({
     bookId,
@@ -50,14 +50,14 @@ export default function AiPreparation({
         if (!licensed) {
             return (
                 <div className="flex items-center gap-4">
-                    <div className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-[#1A1A1A]/[0.06]">
-                        <Brain size={20} className="text-[#737373]" />
+                    <div className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-ink/[0.06]">
+                        <Brain size={20} className="text-ink-muted" />
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="text-[14px] font-medium text-ink">
+                        <span className="text-sm font-medium text-ink">
                             {t('preparation.title')}
                         </span>
-                        <p className="text-[12px] text-[#A3A3A3]">
+                        <p className="text-xs text-ink-faint">
                             {t(
                                 'preparation.unlockAiDescription',
                                 'Unlock AI-powered manuscript analysis',
@@ -68,7 +68,7 @@ export default function AiPreparation({
                         href="https://getmanuscript.app"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#141414] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#2D2D2D]"
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-ink px-4 py-2 text-[13px] font-medium text-surface transition-colors hover:bg-ink/80"
                     >
                         <Crown size={14} />
                         {t('preparation.upgradeToPro', 'Upgrade to PRO')}
@@ -80,20 +80,20 @@ export default function AiPreparation({
         // Licensed but not configured
         return (
             <div className="flex items-center gap-4">
-                <div className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-[#1A1A1A]/[0.06]">
-                    <Brain size={20} className="text-[#737373]" />
+                <div className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-ink/[0.06]">
+                    <Brain size={20} className="text-ink-muted" />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="text-[14px] font-medium text-ink">
+                    <span className="text-sm font-medium text-ink">
                         {t('preparation.setupProvider')}
                     </span>
-                    <p className="text-[12px] text-[#A3A3A3]">
+                    <p className="text-xs text-ink-faint">
                         {t('preparation.addApiKey')}
                     </p>
                 </div>
                 <Link
                     href={settingsIndex.url({ query: { from: pageUrl } })}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#141414] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#2D2D2D]"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-ink px-4 py-2 text-[13px] font-medium text-surface transition-colors hover:bg-ink/80"
                 >
                     {t('preparation.goToSettings')}
                 </Link>
@@ -114,15 +114,15 @@ export default function AiPreparation({
 
         return (
             <div className="flex items-center gap-4">
-                <div className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-[#1A1A1A]/[0.06]">
-                    <span className="inline-block size-5 animate-spin rounded-full border-2 border-[#A3A3A3] border-t-ink" />
+                <div className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-ink/[0.06]">
+                    <span className="inline-block size-5 animate-spin rounded-full border-2 border-ink-faint border-t-ink" />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                     <div className="flex flex-col gap-0.5">
-                        <span className="text-[14px] font-medium text-ink">
+                        <span className="text-sm font-medium text-ink">
                             {phaseLabel}...
                         </span>
-                        <span className="text-[12px] text-[#A3A3A3]">
+                        <span className="text-xs text-ink-faint">
                             {t('preparation.phaseProgress', {
                                 current: completedCount + 1,
                                 total: TOTAL_PHASES,
@@ -130,12 +130,11 @@ export default function AiPreparation({
                             })}
                         </span>
                     </div>
-                    <div className="h-1.5 overflow-hidden rounded-[3px] bg-[#EEEEEE]">
+                    <div className="h-1.5 overflow-hidden rounded bg-neutral-bg">
                         <div
-                            className="h-full rounded-[3px] transition-all duration-500"
+                            className="h-full rounded bg-accent transition-all duration-500"
                             style={{
                                 width: `${overallProgress}%`,
-                                backgroundColor: '#B87333',
                             }}
                         />
                     </div>
@@ -151,20 +150,20 @@ export default function AiPreparation({
 
         return (
             <div className="flex items-center gap-4">
-                <div className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-[#1A1A1A]/[0.06]">
-                    <Brain size={20} className="text-[#737373]" />
+                <div className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-ink/[0.06]">
+                    <Brain size={20} className="text-ink-muted" />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="text-[14px] font-medium text-ink">
+                    <span className="text-sm font-medium text-ink">
                         {t('preparation.title')}
                     </span>
-                    <span className="text-[12px] text-[#A3A3A3]">
+                    <span className="text-xs text-ink-faint">
                         {chaptersAnalyzed}{' '}
                         {t('preparation.chaptersAnalyzed', 'chapters analyzed')}
                         {' · '}
                         {findingsCount} {t('preparation.findings', 'findings')}
                     </span>
-                    <span className="text-[11px] text-[#A3A3A3] italic">
+                    <span className="text-[11px] text-ink-faint italic">
                         {t('preparation.lastAnalyzed', 'Last analyzed')}{' '}
                         {formatTimeAgo(status.updated_at)}
                     </span>
@@ -172,7 +171,7 @@ export default function AiPreparation({
                 <button
                     type="button"
                     onClick={handleStart}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#141414] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#2D2D2D]"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-ink px-4 py-2 text-[13px] font-medium text-surface transition-colors hover:bg-ink/80"
                 >
                     <RefreshCw size={14} />
                     {t('preparation.reRunAnalysis', 'Re-run Analysis')}
@@ -184,14 +183,14 @@ export default function AiPreparation({
     // Not prepared / failed state
     return (
         <div className="flex items-center gap-4">
-            <div className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-[#1A1A1A]/[0.06]">
-                <Sparkle size={20} className="text-[#737373]" />
+            <div className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-ink/[0.06]">
+                <Sparkle size={20} className="text-ink-muted" />
             </div>
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="text-[14px] font-medium text-ink">
+                <span className="text-sm font-medium text-ink">
                     {t('preparation.unlockInsights')}
                 </span>
-                <p className="text-[12px] text-[#A3A3A3]">
+                <p className="text-xs text-ink-faint">
                     {t('preparation.unlockDescription')}
                 </p>
                 {error && (
@@ -207,7 +206,7 @@ export default function AiPreparation({
                 type="button"
                 onClick={handleStart}
                 disabled={starting}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#141414] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#2D2D2D] disabled:opacity-50"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-ink px-4 py-2 text-[13px] font-medium text-surface transition-colors hover:bg-ink/80 disabled:opacity-50"
             >
                 <Sparkle size={14} />
                 {starting

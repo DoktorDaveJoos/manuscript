@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { dismissMilestone } from '@/actions/App/Http/Controllers/DashboardController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { ManuscriptTarget } from '@/types/models';
+import { dismissMilestone } from '@/actions/App/Http/Controllers/DashboardController';
 
 export default function MilestoneCelebration({
     bookId,
@@ -73,7 +73,7 @@ export default function MilestoneCelebration({
                         <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                             {t('milestone.totalWords')}
                         </span>
-                        <span className="font-serif text-[22px] leading-[1] font-semibold text-ink">
+                        <span className="font-serif text-xl leading-[1] font-semibold text-ink">
                             {target.target_word_count?.toLocaleString(
                                 i18n.language,
                             ) ?? '—'}
@@ -83,7 +83,7 @@ export default function MilestoneCelebration({
                         <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                             {t('milestone.wordCount')}
                         </span>
-                        <span className="font-serif text-[22px] leading-[1] font-semibold text-ink">
+                        <span className="font-serif text-xl leading-[1] font-semibold text-ink">
                             {target.total_words.toLocaleString(i18n.language)}
                         </span>
                     </div>
@@ -91,7 +91,7 @@ export default function MilestoneCelebration({
                         <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                             {t('milestone.dailyAvg')}
                         </span>
-                        <span className="font-serif text-[22px] leading-[1] font-semibold text-ink">
+                        <span className="font-serif text-xl leading-[1] font-semibold text-ink">
                             {target.days_writing > 0
                                 ? Math.round(
                                       target.total_words / target.days_writing,
@@ -103,7 +103,7 @@ export default function MilestoneCelebration({
                         <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                             {t('milestone.lastEdit')}
                         </span>
-                        <span className="font-serif text-[22px] leading-[1] font-semibold text-ink">
+                        <span className="font-serif text-xl leading-[1] font-semibold text-ink">
                             {reachedDate ?? '—'}
                         </span>
                     </div>

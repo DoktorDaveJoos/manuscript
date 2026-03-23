@@ -110,7 +110,7 @@ export default function WritingHeatmap({
                     {t('heatmap.title', 'Writing Activity')}
                 </span>
                 <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-ink-faint">
+                    <span className="text-[11px] text-ink-faint">
                         {t('heatmap.legendLess', 'Less')}
                     </span>
                     <svg width="10" height="10">
@@ -145,7 +145,7 @@ export default function WritingHeatmap({
                             className="fill-accent"
                         />
                     </svg>
-                    <span className="text-[10px] text-ink-faint">
+                    <span className="text-[11px] text-ink-faint">
                         {t('heatmap.legendMore', 'More')}
                     </span>
                 </div>
@@ -162,7 +162,7 @@ export default function WritingHeatmap({
                         key={i}
                         x={leftPad + m.col * (CELL + GAP)}
                         y={10}
-                        className="fill-ink-faint text-[10px]"
+                        className="fill-ink-faint text-[11px]"
                     >
                         {m.label}
                     </text>
@@ -176,7 +176,7 @@ export default function WritingHeatmap({
                                 key={i}
                                 x={0}
                                 y={topPad + i * (CELL + GAP) + CELL - 2}
-                                className="fill-ink-faint text-[10px]"
+                                className="fill-ink-faint text-[11px]"
                             >
                                 {t(key)}
                             </text>

@@ -143,7 +143,7 @@ export default function HealthTimeline({
                                 x={PAD.left - 6}
                                 y={y + 3}
                                 textAnchor="end"
-                                className="fill-ink-faint text-[10px]"
+                                className="fill-ink-faint text-[11px]"
                             >
                                 {v}
                             </text>
@@ -213,7 +213,7 @@ export default function HealthTimeline({
                         x={d.x}
                         y={VIEW_H - 4}
                         textAnchor="middle"
-                        className="fill-ink-faint text-[10px]"
+                        className="fill-ink-faint text-[11px]"
                     >
                         {d.label}
                     </text>

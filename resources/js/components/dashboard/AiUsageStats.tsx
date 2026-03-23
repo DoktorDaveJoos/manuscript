@@ -1,13 +1,13 @@
 import { router } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { resetUsage } from '@/actions/App/Http/Controllers/AiController';
 import { formatCompactCount, jsonFetchHeaders } from '@/lib/utils';
 import type {
     AiUsage,
     AiUsageFeatureBreakdown,
     AiUsageMonthly,
 } from '@/types/models';
+import { resetUsage } from '@/actions/App/Http/Controllers/AiController';
 
 const FEATURE_LABELS: Record<string, string> = {
     chat: 'AI Chat',
@@ -36,12 +36,12 @@ function CostBreakdownTable({
 
     return (
         <div className="rounded-xl border border-border-light bg-surface-card p-6">
-            <span className="mb-4 block text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
+            <span className="mb-4 block text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                 {t('aiUsage.costBreakdown', 'Cost Breakdown')}
             </span>
             <table className="w-full text-[13px]">
                 <thead>
-                    <tr className="border-b border-border-light text-left text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
+                    <tr className="border-b border-border-light text-left text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         <th className="pb-3 font-medium">
                             {t('aiUsage.feature', 'Feature')}
                         </th>
@@ -79,9 +79,9 @@ function CostBreakdownTable({
                                 </td>
                                 <td className="py-3">
                                     <div className="flex items-center justify-end gap-2">
-                                        <div className="h-[4px] w-[55px] overflow-hidden rounded-[2px] bg-neutral-bg">
+                                        <div className="h-[4px] w-[55px] overflow-hidden rounded bg-neutral-bg">
                                             <div
-                                                className="h-full rounded-[2px] bg-accent"
+                                                className="h-full rounded bg-accent"
                                                 style={{ width: `${share}%` }}
                                             />
                                         </div>
@@ -139,7 +139,7 @@ function TokenUsageChart({ monthly }: { monthly: AiUsageMonthly[] }) {
 
     return (
         <div className="rounded-xl border border-border-light bg-surface-card p-6">
-            <span className="mb-4 block text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
+            <span className="mb-4 block text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                 {t('aiUsage.tokenUsage', 'Token Usage')}
             </span>
             <svg
@@ -206,7 +206,7 @@ function TokenUsageChart({ monthly }: { monthly: AiUsageMonthly[] }) {
                                 x={x + barW / 2}
                                 y={chartH + 16}
                                 textAnchor="middle"
-                                className="fill-ink-faint text-[10px]"
+                                className="fill-ink-faint text-[11px]"
                             >
                                 {m.month.slice(5)}
                             </text>
@@ -267,7 +267,7 @@ export default function AiUsageStats({
             {/* Summary cards */}
             <div className="flex gap-4">
                 <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-6">
-                    <span className="text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
+                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.tokensUsed', 'Tokens Used')}
                     </span>
                     <span className="font-serif text-[32px] font-bold text-ink">
@@ -280,7 +280,7 @@ export default function AiUsageStats({
                     </span>
                 </div>
                 <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-6">
-                    <span className="text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
+                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.estCost')}
                     </span>
                     <span className="font-serif text-[32px] font-bold text-ink">
@@ -291,7 +291,7 @@ export default function AiUsageStats({
                     </span>
                 </div>
                 <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-6">
-                    <span className="text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
+                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.apiRequests', 'API Requests')}
                     </span>
                     <span className="font-serif text-[32px] font-bold text-ink">
@@ -302,7 +302,7 @@ export default function AiUsageStats({
                     </span>
                 </div>
                 <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-6">
-                    <span className="text-[10px] font-medium tracking-[0.08em] text-ink-muted uppercase">
+                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.avgCost', 'Avg. Cost')}
                     </span>
                     <span className="font-serif text-[32px] font-bold text-ink">
