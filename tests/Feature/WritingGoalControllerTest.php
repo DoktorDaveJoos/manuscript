@@ -3,8 +3,11 @@
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
+use App\Models\License;
 use App\Models\Storyline;
 use App\Models\WritingSession;
+
+beforeEach(fn () => License::factory()->create());
 
 test('update sets daily writing goal on book', function () {
     $book = Book::factory()->create(['daily_word_count_goal' => null]);

@@ -4,6 +4,7 @@ use App\Contracts\ExportTemplate;
 use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\License;
 use App\Models\Scene;
 use App\Models\Storyline;
 use App\Services\Export\ContentPreparer;
@@ -13,6 +14,7 @@ use App\Services\Export\Templates\ClassicTemplate;
 use Native\Desktop\Facades\System;
 
 beforeEach(function () {
+    License::factory()->create();
     $this->service = new ExportService;
 });
 

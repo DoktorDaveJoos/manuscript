@@ -3,8 +3,11 @@
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\HealthSnapshot;
+use App\Models\License;
 use App\Models\Storyline;
 use App\Models\WritingSession;
+
+beforeEach(fn () => License::factory()->create());
 
 test('dashboard shows health metrics from chapter analysis data', function () {
     $book = Book::factory()->create();

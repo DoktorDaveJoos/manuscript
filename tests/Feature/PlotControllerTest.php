@@ -4,8 +4,11 @@ use App\Models\Act;
 use App\Models\Beat;
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\License;
 use App\Models\PlotPoint;
 use App\Models\Storyline;
+
+beforeEach(fn () => License::factory()->create());
 
 it('returns chapters with storyline_id and storyline name', function () {
     $book = Book::factory()->create();

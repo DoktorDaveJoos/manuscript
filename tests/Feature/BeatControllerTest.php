@@ -4,8 +4,11 @@ use App\Enums\BeatStatus;
 use App\Models\Beat;
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\License;
 use App\Models\PlotPoint;
 use App\Models\Storyline;
+
+beforeEach(fn () => License::factory()->create());
 
 it('creates a beat under a plot point', function () {
     $book = Book::factory()->create();

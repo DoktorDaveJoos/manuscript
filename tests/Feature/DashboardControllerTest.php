@@ -4,7 +4,10 @@ use App\Enums\AnalysisType;
 use App\Models\Analysis;
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\License;
 use App\Models\Storyline;
+
+beforeEach(fn () => License::factory()->create());
 
 test('dashboard returns correct stats', function () {
     $book = Book::factory()->create();

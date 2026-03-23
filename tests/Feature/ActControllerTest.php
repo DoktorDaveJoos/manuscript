@@ -3,7 +3,10 @@
 use App\Models\Act;
 use App\Models\Beat;
 use App\Models\Book;
+use App\Models\License;
 use App\Models\PlotPoint;
+
+beforeEach(fn () => License::factory()->create());
 
 it('creates an act', function () {
     $book = Book::factory()->create();

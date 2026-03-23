@@ -3,8 +3,11 @@
 use App\Models\Act;
 use App\Models\Beat;
 use App\Models\Book;
+use App\Models\License;
 use App\Models\PlotPoint;
 use App\Models\Storyline;
+
+beforeEach(fn () => License::factory()->create());
 
 test('plot page loads successfully', function () {
     $book = Book::factory()->create();

@@ -11,6 +11,7 @@ use App\Http\Requests\UpdateStorylineRequest;
 use App\Models\Book;
 use App\Models\Scene;
 use App\Models\Storyline;
+use App\Services\FreeTierLimits;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,11 @@ class StorylineController extends Controller
 {
     public function store(StoreStorylineRequest $request, Book $book): RedirectResponse
     {
+        if (! FreeTierLimits::canCreateStoryline($book)) {
+            return redirect()->route('books.editor', $book)
+                ->with('error', __('Upgrade to Manuscript Pro to add more storylines.'));
+        }
+
         $chapter = DB::transaction(function () use ($request, $book) {
             $nextOrder = ($book->storylines()->max('sort_order') ?? -1) + 1;
 

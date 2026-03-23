@@ -48,30 +48,7 @@ Route::delete('/books/{book}/characters/{character}', [WikiController::class, 'd
 Route::post('/books/{book}/wiki-entries', [WikiController::class, 'storeEntry'])->name('wikiEntries.store');
 Route::patch('/books/{book}/wiki-entries/{wikiEntry}', [WikiController::class, 'updateEntry'])->name('wikiEntries.update');
 Route::delete('/books/{book}/wiki-entries/{wikiEntry}', [WikiController::class, 'destroyEntry'])->name('wikiEntries.destroy');
-Route::get('/books/{book}/plot', [PlotController::class, 'index'])->name('books.plot');
-Route::post('/books/{book}/plot/setup-structure', [PlotSetupController::class, 'store'])->name('books.plot.setupStructure');
-
-Route::post('/books/{book}/acts', [ActController::class, 'store'])->name('acts.store');
-Route::patch('/books/{book}/acts/{act}', [ActController::class, 'update'])->name('acts.update');
-Route::delete('/books/{book}/acts/{act}', [ActController::class, 'destroy'])->name('acts.destroy');
-
-Route::post('/books/{book}/plot-points', [PlotPointController::class, 'store'])->name('plotPoints.store');
-Route::patch('/books/{book}/plot-points/{plotPoint}', [PlotPointController::class, 'update'])->name('plotPoints.update');
-Route::delete('/books/{book}/plot-points/{plotPoint}', [PlotPointController::class, 'destroy'])->name('plotPoints.destroy');
-Route::post('/books/{book}/plot-points/reorder', [PlotPointController::class, 'reorder'])->name('plotPoints.reorder');
-Route::patch('/books/{book}/plot-points/{plotPoint}/status', [PlotPointController::class, 'updateStatus'])->name('plotPoints.updateStatus');
-
-Route::post('/books/{book}/plot-points/{plotPoint}/beats', [BeatController::class, 'store'])->name('beats.store');
-Route::patch('/books/{book}/beats/{beat}', [BeatController::class, 'update'])->name('beats.update');
-Route::delete('/books/{book}/beats/{beat}', [BeatController::class, 'destroy'])->name('beats.destroy');
-Route::post('/books/{book}/plot-points/{plotPoint}/beats/reorder', [BeatController::class, 'reorder'])->name('beats.reorder');
-Route::patch('/books/{book}/beats/{beat}/move', [BeatController::class, 'move'])->name('beats.move');
-Route::patch('/books/{book}/beats/{beat}/status', [BeatController::class, 'updateStatus'])->name('beats.updateStatus');
-Route::post('/books/{book}/beats/{beat}/chapters', [BeatController::class, 'linkChapter'])->name('beats.chapters.link');
-Route::delete('/books/{book}/beats/{beat}/chapters/{chapter}', [BeatController::class, 'unlinkChapter'])->name('beats.chapters.unlink');
-
-Route::post('/books/{book}/plot-connections', [PlotPointConnectionController::class, 'store'])->name('plotConnections.store');
-Route::delete('/books/{book}/plot-connections/{plotPointConnection}', [PlotPointConnectionController::class, 'destroy'])->name('plotConnections.destroy');
+// Plot board routes are gated behind Pro (see license middleware group below)
 
 Route::get('/books/{book}/editor', [ChapterController::class, 'editor'])->name('books.editor');
 Route::post('/books/{book}/chapters', [ChapterController::class, 'store'])->name('chapters.store');
@@ -141,6 +118,32 @@ Route::post('/license/revalidate', [LicenseController::class, 'revalidate'])->na
 // Pro features — require active licence
 Route::middleware('license')->group(function () {
     Route::get('/books/{book}/canvas', [CanvasController::class, 'index'])->name('books.canvas');
+
+    // Plot board
+    Route::get('/books/{book}/plot', [PlotController::class, 'index'])->name('books.plot');
+    Route::post('/books/{book}/plot/setup-structure', [PlotSetupController::class, 'store'])->name('books.plot.setupStructure');
+
+    Route::post('/books/{book}/acts', [ActController::class, 'store'])->name('acts.store');
+    Route::patch('/books/{book}/acts/{act}', [ActController::class, 'update'])->name('acts.update');
+    Route::delete('/books/{book}/acts/{act}', [ActController::class, 'destroy'])->name('acts.destroy');
+
+    Route::post('/books/{book}/plot-points', [PlotPointController::class, 'store'])->name('plotPoints.store');
+    Route::patch('/books/{book}/plot-points/{plotPoint}', [PlotPointController::class, 'update'])->name('plotPoints.update');
+    Route::delete('/books/{book}/plot-points/{plotPoint}', [PlotPointController::class, 'destroy'])->name('plotPoints.destroy');
+    Route::post('/books/{book}/plot-points/reorder', [PlotPointController::class, 'reorder'])->name('plotPoints.reorder');
+    Route::patch('/books/{book}/plot-points/{plotPoint}/status', [PlotPointController::class, 'updateStatus'])->name('plotPoints.updateStatus');
+
+    Route::post('/books/{book}/plot-points/{plotPoint}/beats', [BeatController::class, 'store'])->name('beats.store');
+    Route::patch('/books/{book}/beats/{beat}', [BeatController::class, 'update'])->name('beats.update');
+    Route::delete('/books/{book}/beats/{beat}', [BeatController::class, 'destroy'])->name('beats.destroy');
+    Route::post('/books/{book}/plot-points/{plotPoint}/beats/reorder', [BeatController::class, 'reorder'])->name('beats.reorder');
+    Route::patch('/books/{book}/beats/{beat}/move', [BeatController::class, 'move'])->name('beats.move');
+    Route::patch('/books/{book}/beats/{beat}/status', [BeatController::class, 'updateStatus'])->name('beats.updateStatus');
+    Route::post('/books/{book}/beats/{beat}/chapters', [BeatController::class, 'linkChapter'])->name('beats.chapters.link');
+    Route::delete('/books/{book}/beats/{beat}/chapters/{chapter}', [BeatController::class, 'unlinkChapter'])->name('beats.chapters.unlink');
+
+    Route::post('/books/{book}/plot-connections', [PlotPointConnectionController::class, 'store'])->name('plotConnections.store');
+    Route::delete('/books/{book}/plot-connections/{plotPointConnection}', [PlotPointConnectionController::class, 'destroy'])->name('plotConnections.destroy');
 
     Route::post('/books/{book}/ai/prepare', [AiPreparationController::class, 'start'])->name('books.ai.prepare');
     Route::get('/books/{book}/ai/prepare/status', [AiPreparationController::class, 'status'])->name('books.ai.prepare.status');

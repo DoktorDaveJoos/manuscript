@@ -1,10 +1,11 @@
-import { BookOpen, Download } from 'lucide-react';
+import { BookOpen, Download, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { VISUAL_FORMATS } from '@/components/export/types';
 import type { Format, TrimSizeOption } from '@/components/export/types';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
 import ToggleRow from '@/components/ui/ToggleRow';
+import { useFreeTier } from '@/hooks/useFreeTier';
 import { cn } from '@/lib/utils';
 
 type ExportSettingsProps = {
@@ -35,11 +36,25 @@ function FormatPill({
     label,
     active,
     onClick,
+    locked,
 }: {
     label: string;
     active: boolean;
     onClick: () => void;
+    locked?: boolean;
 }) {
+    if (locked) {
+        return (
+            <span
+                className="flex items-center gap-1.5 rounded-md bg-neutral-bg px-4 py-[7px] text-[12px] text-ink-faint opacity-60"
+                title="Upgrade to Pro"
+            >
+                .{label}
+                <Lock size={10} />
+            </span>
+        );
+    }
+
     return (
         <button
             type="button"
@@ -76,6 +91,7 @@ export default function ExportSettings({
     onExport,
 }: ExportSettingsProps) {
     const { t } = useTranslation('export');
+    const { canExportFormat } = useFreeTier();
 
     return (
         <div className="flex flex-1 flex-col overflow-y-auto bg-surface">
@@ -101,6 +117,7 @@ export default function ExportSettings({
                                     label={f}
                                     active={format === f}
                                     onClick={() => onFormatChange(f)}
+                                    locked={!canExportFormat(f)}
                                 />
                             ))}
                         </div>

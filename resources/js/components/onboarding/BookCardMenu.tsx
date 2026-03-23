@@ -8,7 +8,7 @@ export default function BookCardMenu({
     onDelete,
 }: {
     onRename: () => void;
-    onDuplicate: () => void;
+    onDuplicate?: () => void;
     onDelete: () => void;
 }) {
     const { t } = useTranslation('onboarding');
@@ -63,21 +63,23 @@ export default function BookCardMenu({
                             {t('bookCardMenu.rename')}
                         </button>
 
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setOpen(false);
-                                onDuplicate();
-                            }}
-                            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] text-ink-soft transition-colors hover:bg-neutral-bg"
-                        >
-                            <Copy
-                                size={14}
-                                className="shrink-0 text-ink-muted"
-                            />
-                            {t('bookCardMenu.duplicate')}
-                        </button>
+                        {onDuplicate && (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpen(false);
+                                    onDuplicate();
+                                }}
+                                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] text-ink-soft transition-colors hover:bg-neutral-bg"
+                            >
+                                <Copy
+                                    size={14}
+                                    className="shrink-0 text-ink-muted"
+                                />
+                                {t('bookCardMenu.duplicate')}
+                            </button>
+                        )}
 
                         <div className="mx-2 my-1 h-px bg-border" />
 

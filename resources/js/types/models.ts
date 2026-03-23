@@ -60,6 +60,18 @@ export type License = {
     masked_key: string | null;
 };
 
+export type FreeTierResource = {
+    count: number;
+    limit: number;
+};
+
+export type FreeTier = {
+    books: FreeTierResource;
+    storylines: FreeTierResource | null;
+    wiki_entries: FreeTierResource | null;
+    export_free_formats: string[];
+} | null;
+
 export type AppSettings = {
     show_ai_features: boolean;
     hide_formatting_toolbar: boolean;

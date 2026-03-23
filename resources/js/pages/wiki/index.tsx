@@ -13,6 +13,7 @@ import WikiSearchInput from '@/components/wiki/WikiSearchInput';
 import WikiSearchResults from '@/components/wiki/WikiSearchResults';
 import WikiTabBar from '@/components/wiki/WikiTabBar';
 import type { WikiTab } from '@/components/wiki/WikiTabBar';
+import { useFreeTier } from '@/hooks/useFreeTier';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { Book, Character, WikiEntry } from '@/types/models';
@@ -45,6 +46,7 @@ export default function WikiIndex({
     tab,
 }: Props) {
     const { t } = useTranslation('wiki');
+    const { canCreateWikiEntry, wikiEntries: wikiLimits } = useFreeTier();
     const storylines = useSidebarStorylines();
     const initialTab = validTabs.includes(tab as WikiTab)
         ? (tab as WikiTab)
@@ -215,10 +217,15 @@ export default function WikiIndex({
                                     ? t('search.results', {
                                           count: totalResults,
                                       })
-                                    : count}
+                                    : wikiLimits
+                                      ? `${wikiLimits.count}/${wikiLimits.limit}`
+                                      : count}
                             </span>
                         </div>
-                        <AddEntryDropdown onSelect={handleAddEntry} />
+                        <AddEntryDropdown
+                            onSelect={handleAddEntry}
+                            disabled={!canCreateWikiEntry}
+                        />
                     </div>
 
                     {/* Search */}

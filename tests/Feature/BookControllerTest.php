@@ -5,8 +5,11 @@ use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
 use App\Models\Character;
+use App\Models\License;
 use App\Models\PlotPoint;
 use App\Models\Storyline;
+
+beforeEach(fn () => License::factory()->create());
 
 test('shows empty state when no books exist', function () {
     $this->get(route('books.index'))

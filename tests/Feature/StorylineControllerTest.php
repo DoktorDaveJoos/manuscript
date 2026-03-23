@@ -5,7 +5,10 @@ use App\Enums\StorylineType;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
+use App\Models\License;
 use App\Models\Storyline;
+
+beforeEach(fn () => License::factory()->create());
 
 test('store creates storyline with chapter and scene', function () {
     $book = Book::factory()->create();

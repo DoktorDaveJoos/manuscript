@@ -6,6 +6,7 @@ use App\Models\AiSetting;
 use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\License;
+use App\Services\FreeTierLimits;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -67,6 +68,30 @@ class HandleInertiaRequests extends Middleware
             ],
             'ai_configured' => fn () => AiSetting::activeProvider()?->isConfigured() ?? false,
             'locale' => fn () => app()->getLocale(),
+            'free_tier' => function () use ($request) {
+                if (License::isActive()) {
+                    return null;
+                }
+
+                $book = $request->route('book');
+                $bookInstance = $book instanceof Book ? $book : null;
+
+                return [
+                    'books' => [
+                        'count' => FreeTierLimits::bookCount(),
+                        'limit' => FreeTierLimits::MAX_BOOKS,
+                    ],
+                    'storylines' => $bookInstance ? [
+                        'count' => FreeTierLimits::storylineCount($bookInstance),
+                        'limit' => FreeTierLimits::MAX_STORYLINES,
+                    ] : null,
+                    'wiki_entries' => $bookInstance ? [
+                        'count' => FreeTierLimits::wikiEntryCount($bookInstance),
+                        'limit' => FreeTierLimits::MAX_WIKI_ENTRIES,
+                    ] : null,
+                    'export_free_formats' => FreeTierLimits::FREE_EXPORT_FORMATS,
+                ];
+            },
             'sidebar_storylines' => function () use ($request) {
                 $book = $request->route('book');
                 if (! $book instanceof Book) {

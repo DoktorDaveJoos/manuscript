@@ -3,7 +3,10 @@
 use App\Models\Act;
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\License;
 use App\Models\Storyline;
+
+beforeEach(fn () => License::factory()->create());
 
 test('interleave produces correct round-robin order across acts and storylines', function () {
     $book = Book::factory()->create();

@@ -10,7 +10,9 @@ import SuggestedNext from '@/components/dashboard/SuggestedNext';
 import WritingGoal from '@/components/dashboard/WritingGoal';
 import WritingHeatmap from '@/components/dashboard/WritingHeatmap';
 import Sidebar from '@/components/editor/Sidebar';
+import ProFeatureLock from '@/components/ui/ProFeatureLock';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
+import { useFreeTier } from '@/hooks/useFreeTier';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type {
     AiPreparationStatus,
@@ -138,15 +140,16 @@ export default function Dashboard({
     health_metrics: HealthMetrics | null;
     suggested_next: SuggestedNextType | null;
     ai_preparation?: AiPreparationStatus | null;
-    writing_goal: WritingGoalData;
+    writing_goal: WritingGoalData | null;
     writing_heatmap: HeatmapDay[];
     health_history: HealthSnapshot[];
-    manuscript_target: ManuscriptTarget;
-    ai_usage: AiUsage;
+    manuscript_target: ManuscriptTarget | null;
+    ai_usage: AiUsage | null;
 }) {
     const { t, i18n } = useTranslation('dashboard');
     const storylines = useSidebarStorylines();
     const { visible: aiVisible } = useAiFeatures();
+    const { isFree } = useFreeTier();
 
     return (
         <>
@@ -157,7 +160,7 @@ export default function Dashboard({
                 <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-10 py-8">
                     <div className="flex w-full flex-col gap-7">
                         {/* Milestone Celebration */}
-                        {manuscript_target.milestone_reached &&
+                        {manuscript_target?.milestone_reached &&
                             !manuscript_target.milestone_dismissed && (
                                 <MilestoneCelebration
                                     bookId={book.id}
@@ -178,28 +181,43 @@ export default function Dashboard({
                         </div>
 
                         {/* Today's Writing + Heatmap */}
-                        <div className="flex gap-6">
-                            <div className="w-[360px] shrink-0">
-                                <WritingGoal
-                                    bookId={book.id}
-                                    writingGoal={writing_goal}
-                                    targetWordCount={
-                                        manuscript_target.target_word_count
-                                    }
-                                />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <WritingHeatmap
-                                    heatmap={writing_heatmap}
-                                    dailyGoal={
-                                        writing_goal.daily_word_count_goal
-                                    }
-                                />
-                            </div>
-                        </div>
+                        {isFree ? (
+                            <ProFeatureLock feature="dashboard">
+                                <div className="flex h-[200px] gap-6 opacity-50">
+                                    <div className="w-[360px] shrink-0 rounded-xl border border-border-light bg-surface-card" />
+                                    <div className="min-w-0 flex-1 rounded-xl border border-border-light bg-surface-card" />
+                                </div>
+                            </ProFeatureLock>
+                        ) : (
+                            <>
+                                <div className="flex gap-6">
+                                    <div className="w-[360px] shrink-0">
+                                        <WritingGoal
+                                            bookId={book.id}
+                                            writingGoal={writing_goal!}
+                                            targetWordCount={
+                                                manuscript_target!
+                                                    .target_word_count
+                                            }
+                                        />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <WritingHeatmap
+                                            heatmap={writing_heatmap}
+                                            dailyGoal={
+                                                writing_goal!
+                                                    .daily_word_count_goal
+                                            }
+                                        />
+                                    </div>
+                                </div>
 
-                        {/* Manuscript Progress */}
-                        <ManuscriptProgress target={manuscript_target} />
+                                {/* Manuscript Progress */}
+                                <ManuscriptProgress
+                                    target={manuscript_target!}
+                                />
+                            </>
+                        )}
 
                         {/* AI Preparation */}
                         <AiPreparation
@@ -283,7 +301,7 @@ export default function Dashboard({
                         </div>
 
                         {/* AI Usage Stats */}
-                        {aiVisible && (
+                        {aiVisible && ai_usage && (
                             <div className="flex flex-col gap-3">
                                 <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                                     {t('sections.aiUsage', 'AI Usage & Costs')}

@@ -5,7 +5,10 @@ use App\Enums\PlotPointType;
 use App\Models\Act;
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\License;
 use App\Models\Storyline;
+
+beforeEach(fn () => License::factory()->create());
 
 test('it creates three-act structure with acts and plot points', function () {
     $book = Book::factory()->create();

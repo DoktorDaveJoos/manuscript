@@ -1,6 +1,15 @@
-import { Building2, BookOpen, MapPin, Package, Plus, User } from 'lucide-react';
+import {
+    Building2,
+    BookOpen,
+    Lock,
+    MapPin,
+    Package,
+    Plus,
+    User,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
 import type { WikiTab } from './WikiTabBar';
 
 const options: { type: WikiTab; icon: typeof User }[] = [
@@ -13,8 +22,10 @@ const options: { type: WikiTab; icon: typeof User }[] = [
 
 export default function AddEntryDropdown({
     onSelect,
+    disabled,
 }: {
     onSelect: (type: WikiTab) => void;
+    disabled?: boolean;
 }) {
     const { t } = useTranslation('wiki');
     const [open, setOpen] = useState(false);
@@ -44,10 +55,18 @@ export default function AddEntryDropdown({
     return (
         <div ref={ref} className="relative">
             <button
-                onClick={() => setOpen(!open)}
-                className="flex h-[26px] w-[26px] items-center justify-center rounded-md border border-border bg-neutral-bg transition-colors hover:bg-border"
+                onClick={() => !disabled && setOpen(!open)}
+                className={cn(
+                    'flex h-[26px] w-[26px] items-center justify-center rounded-md border border-border bg-neutral-bg transition-colors',
+                    disabled ? 'cursor-default opacity-50' : 'hover:bg-border',
+                )}
+                title={disabled ? 'Upgrade to Pro' : undefined}
             >
-                <Plus size={14} className="text-ink-soft" />
+                {disabled ? (
+                    <Lock size={12} className="text-ink-faint" />
+                ) : (
+                    <Plus size={14} className="text-ink-soft" />
+                )}
             </button>
 
             {open && (

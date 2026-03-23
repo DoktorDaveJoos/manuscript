@@ -2,8 +2,11 @@
 
 use App\Enums\ConnectionType;
 use App\Models\Book;
+use App\Models\License;
 use App\Models\PlotPoint;
 use App\Models\PlotPointConnection;
+
+beforeEach(fn () => License::factory()->create());
 
 it('creates a connection between plot points', function () {
     $book = Book::factory()->create();

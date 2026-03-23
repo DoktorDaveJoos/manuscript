@@ -28,7 +28,7 @@ export default function BookCard({
 }: {
     book: BookWithCounts;
     onRename: () => void;
-    onDuplicate: () => void;
+    onDuplicate?: () => void;
     onDelete: () => void;
 }) {
     const { t, i18n } = useTranslation('onboarding');

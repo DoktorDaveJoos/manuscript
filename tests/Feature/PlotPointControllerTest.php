@@ -4,7 +4,10 @@ use App\Enums\PlotPointStatus;
 use App\Models\Act;
 use App\Models\Book;
 use App\Models\Character;
+use App\Models\License;
 use App\Models\PlotPoint;
+
+beforeEach(fn () => License::factory()->create());
 
 it('creates a plot point', function () {
     $book = Book::factory()->create();

@@ -6,6 +6,7 @@ use App\Enums\AnalysisType;
 use App\Enums\ChapterStatus;
 use App\Models\AiUsageLog;
 use App\Models\Book;
+use App\Models\License;
 use App\Models\WritingSession;
 use App\Services\HealthScoreCalculator;
 use Illuminate\Http\JsonResponse;
@@ -33,18 +34,20 @@ class DashboardController extends Controller
             'final' => $chapters->where('status', ChapterStatus::Final)->count(),
         ];
 
-        $aiPreparation = $book->aiPreparations()->latest()->first();
+        $isLicensed = License::isActive();
 
-        $todaySession = $book->writingSessions()
-            ->whereDate('date', now()->toDateString())
-            ->first();
+        $aiPreparation = $isLicensed ? $book->aiPreparations()->latest()->first() : null;
 
-        $streak = $this->calculateStreak($book, $todaySession);
+        $todaySession = $isLicensed
+            ? $book->writingSessions()->whereDate('date', now()->toDateString())->first()
+            : null;
 
-        $healthMetrics = $this->buildHealthMetrics($book, $chapters);
+        $streak = $isLicensed ? $this->calculateStreak($book, $todaySession) : 0;
+
+        $healthMetrics = $isLicensed ? $this->buildHealthMetrics($book, $chapters) : null;
 
         // Auto-detect milestone
-        if ($book->target_word_count && $totalWords >= $book->target_word_count && ! $book->milestone_reached_at) {
+        if ($isLicensed && $book->target_word_count && $totalWords >= $book->target_word_count && ! $book->milestone_reached_at) {
             $book->update(['milestone_reached_at' => now()]);
         }
 
@@ -58,19 +61,19 @@ class DashboardController extends Controller
             ],
             'status_counts' => $statusCounts,
             'health_metrics' => $healthMetrics,
-            'suggested_next' => $this->buildSuggestedNext($book),
+            'suggested_next' => $isLicensed ? $this->buildSuggestedNext($book) : null,
             'ai_preparation' => $aiPreparation,
             'story_bible' => $book->story_bible,
-            'writing_goal' => [
+            'writing_goal' => $isLicensed ? [
                 'daily_word_count_goal' => $book->daily_word_count_goal,
                 'today_words' => $todaySession?->words_written ?? 0,
                 'goal_met_today' => (bool) $todaySession?->goal_met,
                 'streak' => $streak,
-            ],
-            'writing_heatmap' => $this->buildWritingHeatmap($book),
-            'health_history' => $this->buildHealthHistory($book),
-            'manuscript_target' => $this->buildManuscriptTarget($book, $totalWords),
-            'ai_usage' => [
+            ] : null,
+            'writing_heatmap' => $isLicensed ? $this->buildWritingHeatmap($book) : [],
+            'health_history' => $isLicensed ? $this->buildHealthHistory($book) : [],
+            'manuscript_target' => $isLicensed ? $this->buildManuscriptTarget($book, $totalWords) : null,
+            'ai_usage' => $isLicensed ? [
                 'input_tokens' => $book->ai_input_tokens,
                 'output_tokens' => $book->ai_output_tokens,
                 'cost_display' => $book->ai_cost_display,
@@ -79,7 +82,7 @@ class DashboardController extends Controller
                 'avg_cost_display' => $book->ai_avg_cost_display,
                 'features_breakdown' => AiUsageLog::featureBreakdown($book->id, $book->ai_usage_reset_at),
                 'monthly_usage' => AiUsageLog::monthlyUsage($book->id, $book->ai_usage_reset_at),
-            ],
+            ] : null,
         ]);
     }
 

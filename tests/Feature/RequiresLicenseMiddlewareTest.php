@@ -53,7 +53,6 @@ test('free routes remain accessible without licence', function () {
 
     $this->get(route('books.dashboard', $book))->assertOk();
     $this->get(route('books.wiki', $book))->assertOk();
-    $this->get(route('books.plot', $book))->assertOk();
 });
 
 test('writing style regenerate requires licence', function () {
