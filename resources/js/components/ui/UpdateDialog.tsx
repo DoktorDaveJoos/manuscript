@@ -49,7 +49,7 @@ export default function UpdateDialog({ currentVersion }: Props) {
             </div>
 
             {/* Version info card */}
-            <div className="mt-6 flex items-center gap-3 rounded-[10px] bg-surface-warm px-5 py-4">
+            <div className="mt-6 flex items-center gap-3 rounded-lg bg-surface-warm px-5 py-4">
                 <Package className="h-[18px] w-[18px] shrink-0 text-accent" />
                 <div className="flex flex-col gap-0.5">
                     <span className="text-[14px] font-medium text-ink">

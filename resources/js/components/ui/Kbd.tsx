@@ -32,7 +32,7 @@ export default function Kbd({ keys, className }: { keys: string; className?: str
             {tokens.map((token, i) => (
                 <kbd
                     key={i}
-                    className="inline-flex min-w-[20px] items-center justify-center rounded-[4px] border border-border bg-kbd-bg px-1 font-sans text-[10px] leading-[18px] text-ink-muted"
+                    className="inline-flex min-w-[20px] items-center justify-center rounded border border-border bg-kbd-bg px-1 font-sans text-[11px] leading-[18px] text-ink-muted"
                 >
                     {token}
                 </kbd>
