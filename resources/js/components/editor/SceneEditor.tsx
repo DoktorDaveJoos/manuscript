@@ -3,6 +3,8 @@ import { EditorContent } from '@tiptap/react';
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
 import type { SaveStatus } from '@/components/editor/EditorBar';
+import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
+import { updateSearchHighlight } from '@/extensions/SearchHighlightExtension';
 import useChapterEditor from '@/hooks/useChapterEditor';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Scene } from '@/types/models';
@@ -22,6 +24,7 @@ export default function SceneEditor({
     scrollContainerRef,
     typewriterEnabledRef,
     scenesVisible = true,
+    searchHighlight,
 }: {
     scene: Scene;
     bookId: number;
@@ -36,6 +39,7 @@ export default function SceneEditor({
     scrollContainerRef: RefObject<HTMLDivElement | null>;
     typewriterEnabledRef: RefObject<boolean>;
     scenesVisible?: boolean;
+    searchHighlight?: SearchHighlight | null;
 }) {
     // Stable refs for cross-scene navigation callbacks (avoids editor re-creation)
     const onExitUpRef = useRef<(() => void) | null>(onExitUp ?? null);
@@ -161,6 +165,22 @@ export default function SceneEditor({
         if (!editor || !onEditorReady) return;
         onEditorReady(scene.id, editor);
     }, [editor, scene.id, onEditorReady]);
+
+    useEffect(() => {
+        if (!editor) return;
+        updateSearchHighlight(editor, {
+            query: searchHighlight?.query ?? '',
+            caseSensitive: searchHighlight?.caseSensitive ?? false,
+            wholeWord: searchHighlight?.wholeWord ?? false,
+            regex: searchHighlight?.regex ?? false,
+        });
+    }, [
+        editor,
+        searchHighlight?.query,
+        searchHighlight?.caseSensitive,
+        searchHighlight?.wholeWord,
+        searchHighlight?.regex,
+    ]);
 
     return (
         <div ref={containerRef} id={`scene-${scene.id}`}>

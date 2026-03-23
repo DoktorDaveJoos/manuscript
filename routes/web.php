@@ -19,6 +19,7 @@ use App\Http\Controllers\PlotPointConnectionController;
 use App\Http\Controllers\PlotPointController;
 use App\Http\Controllers\PlotSetupController;
 use App\Http\Controllers\SceneController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StorylineController;
 use App\Http\Controllers\TrashController;
@@ -97,6 +98,9 @@ Route::put('/books/{book}/chapters/{chapter}/scenes/{scene}/content', [SceneCont
 Route::patch('/books/{book}/chapters/{chapter}/scenes/{scene}/title', [SceneController::class, 'updateTitle'])->name('scenes.updateTitle');
 Route::post('/books/{book}/chapters/{chapter}/scenes/reorder', [SceneController::class, 'reorder'])->name('scenes.reorder');
 Route::delete('/books/{book}/chapters/{chapter}/scenes/{scene}', [SceneController::class, 'destroy'])->name('scenes.destroy');
+
+Route::post('/books/{book}/search', [SearchController::class, 'search'])->name('books.search');
+Route::post('/books/{book}/search/replace-all', [SearchController::class, 'replaceAll'])->name('books.search.replaceAll');
 
 Route::post('/books/{book}/storylines', [StorylineController::class, 'store'])->name('storylines.store');
 Route::patch('/books/{book}/storylines/{storyline}', [StorylineController::class, 'update'])->name('storylines.update');

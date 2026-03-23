@@ -4,6 +4,7 @@ import type { Editor } from '@tiptap/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+    show,
     split,
     updateTitle,
 } from '@/actions/App/Http/Controllers/ChapterController';
@@ -16,11 +17,13 @@ import DiffView from '@/components/editor/DiffView';
 import EditorBar from '@/components/editor/EditorBar';
 import type { SaveStatus } from '@/components/editor/EditorBar';
 import FormattingToolbar from '@/components/editor/FormattingToolbar';
+import GlobalFindDrawer from '@/components/editor/GlobalFindDrawer';
 import NotesPanel from '@/components/editor/NotesPanel';
 import Sidebar from '@/components/editor/Sidebar';
 import VersionHistoryOverlay from '@/components/editor/VersionHistoryOverlay';
 import WritingSurface from '@/components/editor/WritingSurface';
 import Kbd from '@/components/ui/Kbd';
+import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import { getXsrfToken } from '@/lib/csrf';
@@ -105,6 +108,12 @@ export default function ChapterShow({
     const [showVersions, setShowVersions] = useState(false);
     const [showNormalize, setShowNormalize] = useState(false);
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+    const [isFindOpen, setIsFindOpen] = useState(false);
+    const [findShowReplace, setFindShowReplace] = useState(false);
+    const [searchHighlight, setSearchHighlight] =
+        useState<SearchHighlight | null>(null);
+    const [isLocalFindOpen, setIsLocalFindOpen] = useState(false);
+    const [localFindShowReplace, setLocalFindShowReplace] = useState(false);
     const [isNotesOpen, setIsNotesOpen] = useState(() => {
         try {
             return localStorage.getItem('manuscript:notes-open') === 'true';
@@ -396,6 +405,44 @@ export default function ChapterShow({
             if (e.key === 'p' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
                 setIsPaletteOpen((prev) => !prev);
+            } else if (
+                e.key === 'f' &&
+                (e.metaKey || e.ctrlKey) &&
+                e.shiftKey
+            ) {
+                e.preventDefault();
+                setIsLocalFindOpen(false);
+                setIsFindOpen(true);
+                setFindShowReplace(false);
+            } else if (
+                e.key === 'f' &&
+                (e.metaKey || e.ctrlKey) &&
+                !e.shiftKey
+            ) {
+                e.preventDefault();
+                setIsFindOpen(false);
+                setSearchHighlight(null);
+                setIsLocalFindOpen(true);
+                setLocalFindShowReplace(false);
+            } else if (
+                e.key === 'r' &&
+                (e.metaKey || e.ctrlKey) &&
+                e.shiftKey
+            ) {
+                e.preventDefault();
+                setIsLocalFindOpen(false);
+                setIsFindOpen(true);
+                setFindShowReplace(true);
+            } else if (
+                e.key === 'h' &&
+                (e.metaKey || e.ctrlKey) &&
+                !e.shiftKey
+            ) {
+                e.preventDefault();
+                setIsFindOpen(false);
+                setSearchHighlight(null);
+                setIsLocalFindOpen(true);
+                setLocalFindShowReplace(true);
             } else if (e.key === 'Escape' && isFocusMode && !isPaletteOpen) {
                 e.preventDefault();
                 exitFocusMode();
@@ -519,6 +566,19 @@ export default function ChapterShow({
     }, []);
 
     const closePalette = useCallback(() => setIsPaletteOpen(false), []);
+
+    const handleFindNavigate = useCallback(
+        async (chapterId: number, sceneId: number) => {
+            if (chapterId === chapter.id) {
+                setPendingFocusSceneId(sceneId);
+            } else {
+                await handleBeforeNavigate();
+                router.visit(show.url({ book: book.id, chapter: chapterId }));
+            }
+        },
+        [book.id, chapter.id, handleBeforeNavigate],
+    );
+
     const handlePaletteAddScene = useCallback(
         () => handleAddScene(scenes.length),
         [handleAddScene, scenes.length],
@@ -624,6 +684,12 @@ export default function ChapterShow({
                                 }
                                 onActiveSceneIdChange={setActiveSceneId}
                                 scenesVisible={scenesVisible}
+                                searchHighlight={searchHighlight}
+                                isLocalFindOpen={isLocalFindOpen}
+                                localFindShowReplace={localFindShowReplace}
+                                onLocalFindClose={() =>
+                                    setIsLocalFindOpen(false)
+                                }
                             />
 
                             <CommandPalette
@@ -650,6 +716,20 @@ export default function ChapterShow({
                         initialNotes={chapterNotes}
                         onNotesChange={setChapterNotes}
                         onClose={closeNotes}
+                    />
+                )}
+
+                {isFindOpen && !isFocusMode && !pendingVersion && (
+                    <GlobalFindDrawer
+                        bookId={book.id}
+                        currentChapterId={chapter.id}
+                        onClose={() => {
+                            setIsFindOpen(false);
+                            setSearchHighlight(null);
+                        }}
+                        onNavigate={handleFindNavigate}
+                        onSearchChange={setSearchHighlight}
+                        showReplace={findShowReplace}
                     />
                 )}
 

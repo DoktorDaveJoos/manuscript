@@ -8,6 +8,7 @@ import type { RefObject } from 'react';
 import { useEffect, useRef } from 'react';
 import { ParagraphEnterExtension } from '@/extensions/ParagraphEnterExtension';
 import { SceneBridgeExtension } from '@/extensions/SceneBridgeExtension';
+import { SearchHighlightExtension } from '@/extensions/SearchHighlightExtension';
 import { TypewriterScrollExtension } from '@/extensions/TypewriterScrollExtension';
 
 export default function useChapterEditor({
@@ -47,6 +48,7 @@ export default function useChapterEditor({
                     onExitUp: onExitUpRef,
                     onExitDown: onExitDownRef,
                 }),
+                SearchHighlightExtension,
             ],
             content,
             editorProps: {

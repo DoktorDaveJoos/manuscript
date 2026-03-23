@@ -136,6 +136,21 @@ html.dark {
     animation: collapsible-up 200ms ease-out;
 }
 
+@keyframes slideDownFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@utility animate-slide-down {
+    animation: slideDownFromTop 150ms ease-out;
+}
+
 @layer base {
     button:not(:disabled),
     [role='button']:not(:disabled) {
@@ -250,6 +265,27 @@ html.dark {
 
 .editor-prose em {
     font-style: italic;
+}
+
+/* Search match highlighting */
+.search-highlight {
+    background-color: #fef3c7;
+    border-radius: 2px;
+}
+
+.search-highlight-active {
+    background-color: #fb923c;
+    color: #fff;
+    border-radius: 2px;
+}
+
+html.dark .search-highlight {
+    background-color: #854d0e40;
+}
+
+html.dark .search-highlight-active {
+    background-color: #ea580c;
+    color: #fff;
 }
 
 /* Chapter title placeholder */

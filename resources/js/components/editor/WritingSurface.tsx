@@ -2,11 +2,13 @@ import type { Editor } from '@tiptap/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SaveStatus } from '@/components/editor/EditorBar';
+import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import {
     cancelTypewriterAnimation,
     centerCursorInContainer,
 } from '@/extensions/TypewriterScrollExtension';
 import type { Scene } from '@/types/models';
+import ChapterFindBar from './ChapterFindBar';
 import { DEFAULT_FONT_ID, FONTS } from './FontSelector';
 import { DEFAULT_FONT_SIZE } from './FontSizeSelector';
 import SceneEditor from './SceneEditor';
@@ -40,6 +42,10 @@ export default function WritingSurface({
     onFocusHandled,
     onActiveSceneIdChange,
     scenesVisible = true,
+    searchHighlight,
+    isLocalFindOpen = false,
+    localFindShowReplace = false,
+    onLocalFindClose,
 }: {
     scenes: Scene[];
     bookId: number;
@@ -59,6 +65,10 @@ export default function WritingSurface({
     onFocusHandled?: () => void;
     onActiveSceneIdChange?: (sceneId: number) => void;
     scenesVisible?: boolean;
+    searchHighlight?: SearchHighlight | null;
+    isLocalFindOpen?: boolean;
+    localFindShowReplace?: boolean;
+    onLocalFindClose?: () => void;
 }) {
     const { t } = useTranslation('editor');
 
@@ -250,94 +260,108 @@ export default function WritingSurface({
         );
 
     return (
-        <div
-            ref={scrollContainerRef}
-            className="flex flex-1 items-start justify-center overflow-y-auto"
-            style={
-                {
-                    '--font-serif': fontFamily,
-                    '--editor-font-size': `${editorFontSize}px`,
-                } as React.CSSProperties
-            }
-        >
-            <div
-                className="w-full max-w-[660px] px-[30px]"
-                style={{
-                    paddingTop: isTypewriterMode
-                        ? halfContainer
-                        : NORMAL_PADDING_TOP,
-                    paddingBottom: halfContainer,
-                    minHeight: containerHeight + halfContainer,
-                }}
-            >
-                <h1
-                    ref={titleRef}
-                    contentEditable
-                    suppressContentEditableWarning
-                    onKeyDown={handleTitleKeyDown}
-                    onInput={handleTitleInput}
-                    onPaste={handleTitlePaste}
-                    className="mb-0 font-serif text-[32px] leading-[1.3] font-semibold tracking-[-0.01em] text-ink outline-none"
+        <div className="relative flex-1 overflow-hidden">
+            {isLocalFindOpen && (
+                <ChapterFindBar
+                    editorRegistry={editorRegistry}
+                    scenes={scenes}
+                    scrollContainerRef={scrollContainerRef}
+                    showReplace={localFindShowReplace}
+                    onClose={onLocalFindClose ?? (() => {})}
                 />
-                {metadataParts.length > 0 && (
-                    <p className="mt-2 mb-0 font-sans text-sm tracking-wide text-ink-muted">
-                        {metadataParts.join(' · ')}
-                    </p>
-                )}
-                <div className="mt-8">
-                    {scenes.map((scene, i) => (
-                        <SceneEditor
-                            key={scene.id}
-                            scene={scene}
-                            bookId={bookId}
-                            chapterId={chapterId}
-                            isFirst={i === 0}
-                            onFocus={(editor) => {
-                                onActiveEditorChange(editor);
-                                onActiveSceneIdChange?.(scene.id);
-                            }}
-                            onEditorReady={handleEditorReady}
-                            onExitUp={
-                                i === 0
-                                    ? () => {
-                                          const el = titleRef.current;
-                                          if (!el) return;
-                                          el.focus();
-                                          // Place cursor at end of title
-                                          const sel = window.getSelection();
-                                          if (sel) {
-                                              const range =
-                                                  document.createRange();
-                                              range.selectNodeContents(el);
-                                              range.collapse(false);
-                                              sel.removeAllRanges();
-                                              sel.addRange(range);
+            )}
+            <div
+                ref={scrollContainerRef}
+                className="flex size-full items-start justify-center overflow-y-auto"
+                style={
+                    {
+                        '--font-serif': fontFamily,
+                        '--editor-font-size': `${editorFontSize}px`,
+                    } as React.CSSProperties
+                }
+            >
+                <div
+                    className="w-full max-w-[660px] px-[30px]"
+                    style={{
+                        paddingTop: isTypewriterMode
+                            ? halfContainer
+                            : NORMAL_PADDING_TOP,
+                        paddingBottom: halfContainer,
+                        minHeight: containerHeight + halfContainer,
+                    }}
+                >
+                    <h1
+                        ref={titleRef}
+                        contentEditable
+                        suppressContentEditableWarning
+                        onKeyDown={handleTitleKeyDown}
+                        onInput={handleTitleInput}
+                        onPaste={handleTitlePaste}
+                        className="mb-0 font-serif text-[32px] leading-[1.3] font-semibold tracking-[-0.01em] text-ink outline-none"
+                    />
+                    {metadataParts.length > 0 && (
+                        <p className="mt-2 mb-0 font-sans text-sm tracking-wide text-ink-muted">
+                            {metadataParts.join(' · ')}
+                        </p>
+                    )}
+                    <div className="mt-8">
+                        {scenes.map((scene, i) => (
+                            <SceneEditor
+                                key={scene.id}
+                                scene={scene}
+                                bookId={bookId}
+                                chapterId={chapterId}
+                                isFirst={i === 0}
+                                onFocus={(editor) => {
+                                    onActiveEditorChange(editor);
+                                    onActiveSceneIdChange?.(scene.id);
+                                }}
+                                onEditorReady={handleEditorReady}
+                                onExitUp={
+                                    i === 0
+                                        ? () => {
+                                              const el = titleRef.current;
+                                              if (!el) return;
+                                              el.focus();
+                                              // Place cursor at end of title
+                                              const sel = window.getSelection();
+                                              if (sel) {
+                                                  const range =
+                                                      document.createRange();
+                                                  range.selectNodeContents(el);
+                                                  range.collapse(false);
+                                                  sel.removeAllRanges();
+                                                  sel.addRange(range);
+                                              }
                                           }
-                                      }
-                                    : () => {
-                                          const prevId = scenes[i - 1].id;
-                                          editorRegistry.current
-                                              .get(prevId)
-                                              ?.commands.focus('end');
-                                      }
-                            }
-                            onExitDown={
-                                i < scenes.length - 1
-                                    ? () => {
-                                          const nextId = scenes[i + 1].id;
-                                          editorRegistry.current
-                                              .get(nextId)
-                                              ?.commands.focus('start');
-                                      }
-                                    : undefined
-                            }
-                            onWordCountChange={onWordCountChange}
-                            onSaveStatusChange={onSaveStatusChange}
-                            scrollContainerRef={scrollContainerRef}
-                            typewriterEnabledRef={typewriterEnabledRef}
-                            scenesVisible={scenesVisible}
-                        />
-                    ))}
+                                        : () => {
+                                              const prevId = scenes[i - 1].id;
+                                              editorRegistry.current
+                                                  .get(prevId)
+                                                  ?.commands.focus('end');
+                                          }
+                                }
+                                onExitDown={
+                                    i < scenes.length - 1
+                                        ? () => {
+                                              const nextId = scenes[i + 1].id;
+                                              editorRegistry.current
+                                                  .get(nextId)
+                                                  ?.commands.focus('start');
+                                          }
+                                        : undefined
+                                }
+                                onWordCountChange={onWordCountChange}
+                                onSaveStatusChange={onSaveStatusChange}
+                                scrollContainerRef={scrollContainerRef}
+                                typewriterEnabledRef={typewriterEnabledRef}
+                                scenesVisible={scenesVisible}
+                                searchHighlight={
+                                    isLocalFindOpen ? null : searchHighlight
+                                }
+                            />
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
