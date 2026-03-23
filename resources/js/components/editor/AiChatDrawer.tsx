@@ -2,7 +2,6 @@ import { ArrowUp, BookOpen, Loader, Sparkles, X } from 'lucide-react';
 import MarkdownIt from 'markdown-it';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { chat } from '@/actions/App/Http/Controllers/AiController';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type {
@@ -11,6 +10,7 @@ import type {
     Character,
     CharacterChapterPivot,
 } from '@/types/models';
+import { chat } from '@/actions/App/Http/Controllers/AiController';
 
 const md = new MarkdownIt({ linkify: true, breaks: true });
 
@@ -240,11 +240,11 @@ export default function AiChatDrawer({
             <div className="flex flex-col gap-1 border-b border-border-light px-5 py-2.5">
                 <div className="flex items-center gap-2">
                     <span className="size-[5px] shrink-0 rounded-full bg-ai-green" />
-                    <BookOpen size={13} className="shrink-0 text-accent" />
+                    <BookOpen size={14} className="shrink-0 text-accent" />
                     <span className="truncate text-xs font-medium text-ink">
                         {chapter.title || 'Untitled'}
                     </span>
-                    <span className="shrink-0 rounded-[3px] bg-neutral-bg px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
+                    <span className="shrink-0 rounded bg-neutral-bg px-1.5 py-0.5 text-[11px] font-medium text-ink-muted">
                         {t('chat.chapter', {
                             number: chapter.reader_order + 1,
                         })}
@@ -262,13 +262,13 @@ export default function AiChatDrawer({
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1">
                         <span className="size-1 rounded-full bg-ai-green" />
-                        <span className="text-[10px] text-ink-muted">
+                        <span className="text-[11px] text-ink-muted">
                             {t('chat.chapterLoaded')}
                         </span>
                     </div>
                     <div className="flex items-center gap-1">
                         <span className="size-1 rounded-full bg-ai-green" />
-                        <span className="text-[10px] text-ink-muted">
+                        <span className="text-[11px] text-ink-muted">
                             {t('chat.bookContext')}
                         </span>
                     </div>

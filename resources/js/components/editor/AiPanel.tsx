@@ -10,8 +10,6 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { beautify, revise } from '@/actions/App/Http/Controllers/AiController';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import ProFeatureLock from '@/components/ui/ProFeatureLock';
 import SectionLabel from '@/components/ui/SectionLabel';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
@@ -26,6 +24,8 @@ import type {
     CharacterChapterPivot,
     InformationDelivery,
 } from '@/types/models';
+import { beautify, revise } from '@/actions/App/Http/Controllers/AiController';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 
 type ChapterCharacter = Character & { pivot: CharacterChapterPivot };
 type AnalysisWithSummary = {
@@ -192,7 +192,7 @@ function CharacterRow({
     return (
         <div className="flex items-center gap-2">
             <div className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-neutral-bg">
-                <span className="text-[10px] font-semibold text-ink-muted">
+                <span className="text-[11px] font-semibold text-ink-muted">
                     {initial}
                 </span>
             </div>
@@ -502,7 +502,7 @@ export default function AiPanel({
                                                 className={actionButtonClass}
                                             >
                                                 <Sparkles
-                                                    size={13}
+                                                    size={14}
                                                     strokeWidth={2.5}
                                                 />
                                                 {isAnalyzing
@@ -526,7 +526,7 @@ export default function AiPanel({
                                                 className={actionButtonClass}
                                             >
                                                 <Pilcrow
-                                                    size={13}
+                                                    size={14}
                                                     strokeWidth={2.5}
                                                 />
                                                 {isBeautifying
@@ -567,7 +567,7 @@ export default function AiPanel({
                                             className={actionButtonClass}
                                         >
                                             <PenTool
-                                                size={13}
+                                                size={14}
                                                 strokeWidth={2.5}
                                             />
                                             {isRunningProse
@@ -817,7 +817,7 @@ export default function AiPanel({
                                     className="flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-[9px] text-[13px] text-ink-soft transition-colors hover:bg-surface hover:text-ink"
                                 >
                                     <MessageCircle
-                                        size={13}
+                                        size={14}
                                         className="text-ink-muted"
                                     />
                                     {t('askAi')}
