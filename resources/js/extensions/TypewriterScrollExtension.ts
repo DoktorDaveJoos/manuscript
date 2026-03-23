@@ -6,10 +6,15 @@ import type { RefObject } from 'react';
 const DEAD_ZONE = 2;
 const LERP_SPEED = 0.18;
 
-// Module-level animation state — shared across all editor instances
+// Module-level state — shared across all editor instances
 // since they all scroll the same container.
 let animationId: number | null = null;
 let targetScrollTop: number | null = null;
+let isMouseDriven = false;
+let mouseUpTimerId: ReturnType<typeof setTimeout> | null = null;
+let pendingUpdateRaf: number | null = null;
+const activeInstances = 0;
+
 export function cancelTypewriterAnimation(): void {
     if (animationId !== null) {
         cancelAnimationFrame(animationId);
@@ -23,10 +28,11 @@ export function centerCursorInContainer(
     container: HTMLElement,
     instant: boolean,
 ): void {
-    const { from } = view.state.selection;
+    // Track the moving end of the selection, not the anchor.
+    const { head } = view.state.selection;
     let coords: { top: number };
     try {
-        coords = view.coordsAtPos(from);
+        coords = view.coordsAtPos(head);
     } catch {
         return;
     }
@@ -42,6 +48,9 @@ export function centerCursorInContainer(
         0,
         Math.min(container.scrollTop + delta, maxScroll),
     );
+
+    // Avoid starting a no-op animation on sub-pixel rounding differences
+    if (Math.abs(desired - container.scrollTop) < 0.5) return;
 
     if (instant) {
         cancelTypewriterAnimation();
@@ -96,38 +105,31 @@ export const TypewriterScrollExtension = Extension.create<{
                 props: {
                     handleScrollToSelection() {
                         if (!enabledRef.current) return false;
-                        // Suppress ProseMirror's built-in scrollIntoView;
-                        // centering is handled by the view() lifecycle below.
                         return true;
                     },
+                    handleDOMEvents: {
+                        mousedown() {
+                            isMouseDriven = true;
+                            return false;
+                        },
+                        mouseup() {
+                            if (mouseUpTimerId !== null)
+                                clearTimeout(mouseUpTimerId);
+                            mouseUpTimerId = setTimeout(() => {
+                                isMouseDriven = false;
+                                mouseUpTimerId = null;
+                            }, 50);
+                            return false;
+                        },
+                    },
                 },
-                view(editorView) {
-                    const onSelectionChange = () => {
-                        if (!enabledRef.current || !editorView.hasFocus())
-                            return;
-                        requestAnimationFrame(() => {
-                            if (!enabledRef.current || !editorView.hasFocus())
-                                return;
-                            const container = scrollContainerRef.current;
-                            if (!container) return;
-                            centerCursorInContainer(
-                                editorView,
-                                container,
-                                false,
-                            );
-                        });
-                    };
-
-                    document.addEventListener(
-                        'selectionchange',
-                        onSelectionChange,
-                    );
-
+                view() {
+                    activeInstances++;
                     return {
                         update(view, prevState) {
                             if (!enabledRef.current) return;
+                            if (isMouseDriven) return;
 
-                            // Only center when selection or document changed
                             if (
                                 view.state.selection.eq(prevState.selection) &&
                                 view.state.doc.eq(prevState.doc)
@@ -135,21 +137,35 @@ export const TypewriterScrollExtension = Extension.create<{
                                 return;
                             }
 
-                            // Defer to next frame so DOM coordinates are settled
-                            // after native cursor movement
-                            requestAnimationFrame(() => {
+                            // Deduplicate rapid transactions within the same frame
+                            if (pendingUpdateRaf !== null)
+                                cancelAnimationFrame(pendingUpdateRaf);
+                            pendingUpdateRaf = requestAnimationFrame(() => {
+                                pendingUpdateRaf = null;
                                 if (!enabledRef.current) return;
+                                // Re-check: mouse click may have occurred between
+                                // the synchronous check above and this rAF callback.
+                                if (isMouseDriven) return;
                                 const container = scrollContainerRef.current;
                                 if (!container) return;
                                 centerCursorInContainer(view, container, false);
                             });
                         },
                         destroy() {
-                            document.removeEventListener(
-                                'selectionchange',
-                                onSelectionChange,
-                            );
-                            cancelTypewriterAnimation();
+                            activeInstances--;
+                            if (activeInstances <= 0) {
+                                activeInstances = 0;
+                                if (pendingUpdateRaf !== null) {
+                                    cancelAnimationFrame(pendingUpdateRaf);
+                                    pendingUpdateRaf = null;
+                                }
+                                if (mouseUpTimerId !== null) {
+                                    clearTimeout(mouseUpTimerId);
+                                    mouseUpTimerId = null;
+                                }
+                                isMouseDriven = false;
+                                cancelTypewriterAnimation();
+                            }
                         },
                     };
                 },

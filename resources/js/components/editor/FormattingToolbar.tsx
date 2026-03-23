@@ -1,6 +1,12 @@
 import type { Editor } from '@tiptap/react';
 import { useEditorState } from '@tiptap/react';
-import { List, ListOrdered, Maximize2, StickyNote } from 'lucide-react';
+import {
+    Keyboard,
+    List,
+    ListOrdered,
+    Maximize2,
+    StickyNote,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import FontSelector from './FontSelector';
@@ -24,21 +30,25 @@ function ToolbarButton({
     children: React.ReactNode;
 }) {
     return (
-        <button
-            type="button"
-            onClick={onClick}
-            disabled={disabled}
-            title={title}
-            className={cn(
-                'flex h-7 w-7 items-center justify-center rounded text-xs transition-colors',
-                active
-                    ? 'bg-neutral-bg text-ink'
-                    : 'text-ink-muted hover:bg-neutral-bg hover:text-ink',
-                disabled && 'cursor-not-allowed opacity-40',
-            )}
-        >
-            {children}
-        </button>
+        <div className="group relative">
+            <button
+                type="button"
+                onClick={onClick}
+                disabled={disabled}
+                className={cn(
+                    'flex h-7 w-7 items-center justify-center rounded text-xs transition-colors',
+                    active
+                        ? 'bg-neutral-bg text-ink'
+                        : 'text-ink-muted hover:bg-neutral-bg hover:text-ink',
+                    disabled && 'cursor-not-allowed opacity-40',
+                )}
+            >
+                {children}
+            </button>
+            <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-ink px-2 py-1 text-[11px] whitespace-nowrap text-surface opacity-0 transition-opacity group-hover:opacity-100">
+                {title}
+            </span>
+        </div>
     );
 }
 
@@ -50,6 +60,8 @@ export default function FormattingToolbar({
     onFontSizeChange,
     onToggleFocusMode,
     onToggleNotes,
+    isTypewriterMode,
+    onToggleTypewriterMode,
 }: {
     editor: Editor | null;
     editorFont: string;
@@ -58,6 +70,8 @@ export default function FormattingToolbar({
     onFontSizeChange: (size: number) => void;
     onToggleFocusMode: () => void;
     onToggleNotes: () => void;
+    isTypewriterMode?: boolean;
+    onToggleTypewriterMode?: () => void;
 }) {
     const { t } = useTranslation('editor');
     const defaultState = {
@@ -206,22 +220,25 @@ export default function FormattingToolbar({
 
                 <ToolbarDivider />
 
-                <button
-                    type="button"
+                <ToolbarButton
+                    active={isTypewriterMode}
+                    onClick={() => onToggleTypewriterMode?.()}
+                    title={t('toolbar.typewriterMode')}
+                >
+                    <Keyboard size={15} />
+                </ToolbarButton>
+                <ToolbarButton
                     onClick={onToggleFocusMode}
-                    className="flex items-center gap-[5px] rounded-md bg-neutral-bg px-3 py-[5px] text-xs text-ink-muted transition-colors hover:text-ink"
+                    title={t('toolbar.focus')}
                 >
-                    <Maximize2 size={12} />
-                    {t('toolbar.focus')}
-                </button>
-                <button
-                    type="button"
+                    <Maximize2 size={14} />
+                </ToolbarButton>
+                <ToolbarButton
                     onClick={onToggleNotes}
-                    className="flex items-center gap-[5px] rounded-md bg-neutral-bg px-3 py-[5px] text-xs text-ink-muted transition-colors hover:text-ink"
+                    title={t('toolbar.notes')}
                 >
-                    <StickyNote size={12} />
-                    {t('toolbar.notes')}
-                </button>
+                    <StickyNote size={15} />
+                </ToolbarButton>
             </div>
         </div>
     );

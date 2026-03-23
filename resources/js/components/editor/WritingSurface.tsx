@@ -84,9 +84,6 @@ export default function WritingSurface({
     // Track scroll container height for dynamic padding
     const [containerHeight, setContainerHeight] = useState(0);
     const halfContainer = containerHeight / 2;
-    const halfContainerRef = useRef(halfContainer);
-    halfContainerRef.current = halfContainer;
-
     useEffect(() => {
         const el = scrollContainerRef.current;
         if (!el) return;
@@ -95,11 +92,11 @@ export default function WritingSurface({
                 const height =
                     entry.contentBoxSize?.[0]?.blockSize ??
                     entry.contentRect.height;
-                setContainerHeight(height);
+                setContainerHeight(Math.round(height));
             }
         });
         observer.observe(el);
-        setContainerHeight(el.clientHeight);
+        setContainerHeight(Math.round(el.clientHeight));
         return () => observer.disconnect();
     }, []);
 
@@ -176,52 +173,29 @@ export default function WritingSurface({
         typewriterEnabledRef.current = isTypewriterMode;
     }, [isTypewriterMode]);
 
-    // Previous typewriter state for detecting transitions
+    // Instant-center when typewriter mode is toggled on, or cancel when off
     const prevTypewriterRef = useRef(isTypewriterMode);
-
-    // Initial centering when typewriter mode activates or active editor changes
     useEffect(() => {
         const justEnabled = isTypewriterMode && !prevTypewriterRef.current;
-        const justDisabled = !isTypewriterMode && prevTypewriterRef.current;
         prevTypewriterRef.current = isTypewriterMode;
 
-        if (justDisabled) {
+        if (!isTypewriterMode) {
             cancelTypewriterAnimation();
-            const container = scrollContainerRef.current;
-            if (container) {
-                container.scrollTop = Math.max(
-                    0,
-                    container.scrollTop -
-                        (halfContainerRef.current - NORMAL_PADDING_TOP),
-                );
-            }
             return;
         }
 
-        if (!isTypewriterMode || !activeEditor) {
-            if (!isTypewriterMode) {
-                cancelTypewriterAnimation();
-            }
-            return;
-        }
+        if (!activeEditor?.view || !scrollContainerRef.current) return;
 
         if (justEnabled) {
-            const container = scrollContainerRef.current;
-            if (container) {
-                container.scrollTop +=
-                    halfContainerRef.current - NORMAL_PADDING_TOP;
-            }
+            requestAnimationFrame(() => {
+                if (!activeEditor?.view || !scrollContainerRef.current) return;
+                centerCursorInContainer(
+                    activeEditor.view,
+                    scrollContainerRef.current,
+                    true,
+                );
+            });
         }
-
-        // Center the cursor (instant on mode activation)
-        requestAnimationFrame(() => {
-            if (!activeEditor?.view || !scrollContainerRef.current) return;
-            centerCursorInContainer(
-                activeEditor.view,
-                scrollContainerRef.current,
-                justEnabled,
-            );
-        });
     }, [isTypewriterMode, activeEditor]);
 
     // Re-center cursor when container resizes (focus mode toggle, window resize)
@@ -277,17 +251,16 @@ export default function WritingSurface({
                     {
                         '--font-serif': fontFamily,
                         '--editor-font-size': `${editorFontSize}px`,
+                        overflowAnchor: 'none',
                     } as React.CSSProperties
                 }
             >
                 <div
                     className="w-full max-w-[660px] px-[30px]"
                     style={{
-                        paddingTop: isTypewriterMode
-                            ? halfContainer
-                            : NORMAL_PADDING_TOP,
+                        paddingTop: NORMAL_PADDING_TOP,
                         paddingBottom: halfContainer,
-                        minHeight: containerHeight + halfContainer,
+                        minHeight: containerHeight,
                     }}
                 >
                     <h1

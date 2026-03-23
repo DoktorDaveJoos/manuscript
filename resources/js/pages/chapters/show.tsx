@@ -26,7 +26,6 @@ import Kbd from '@/components/ui/Kbd';
 import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
-import { getXsrfToken } from '@/lib/csrf';
 import { createChapter, jsonFetchHeaders } from '@/lib/utils';
 import type {
     Analysis,
@@ -152,16 +151,24 @@ export default function ChapterShow({
         setScenesVisible(v);
         fetch('/settings', {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-XSRF-TOKEN': getXsrfToken(),
-                Accept: 'application/json',
-            },
+            headers: jsonFetchHeaders(),
             body: JSON.stringify({ key: 'show_scenes', value: v }),
-        }).then(() => router.reload({ only: ['app_settings'] }));
+        });
     }, []);
 
-    const isTypewriterMode = app_settings.typewriter_mode;
+    const [isTypewriterMode, setIsTypewriterMode] = useState(
+        app_settings.typewriter_mode,
+    );
+
+    const toggleTypewriterMode = useCallback(() => {
+        const next = !isTypewriterMode;
+        setIsTypewriterMode(next);
+        fetch('/settings', {
+            method: 'PUT',
+            headers: jsonFetchHeaders(),
+            body: JSON.stringify({ key: 'typewriter_mode', value: next }),
+        });
+    }, [isTypewriterMode]);
 
     const [isFocusMode, setIsFocusMode] = useState(() => {
         try {
@@ -660,6 +667,10 @@ export default function ChapterShow({
                                     onFontSizeChange={handleFontSizeChange}
                                     onToggleFocusMode={toggleFocusMode}
                                     onToggleNotes={toggleNotes}
+                                    isTypewriterMode={isTypewriterMode}
+                                    onToggleTypewriterMode={
+                                        toggleTypewriterMode
+                                    }
                                 />
                             </div>
 
@@ -703,6 +714,8 @@ export default function ChapterShow({
                                 onEnterFocusMode={toggleFocusMode}
                                 isFocusMode={isFocusMode}
                                 onToggleNotes={toggleNotes}
+                                isTypewriterMode={isTypewriterMode}
+                                onToggleTypewriterMode={toggleTypewriterMode}
                                 licensed={isLicensed}
                             />
                         </>
