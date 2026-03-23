@@ -115,7 +115,7 @@ function SortableChapterItem({
             className="relative"
         >
             {isOver && (
-                <div className="absolute -top-px right-2.5 left-2.5 h-0.5 rounded-sm bg-drop" />
+                <div className="absolute -top-px right-2.5 left-2.5 h-0.5 rounded bg-drop" />
             )}
             <ChapterListItem
                 chapter={chapter}
@@ -177,7 +177,7 @@ function SortableStorylineGroup({
             {showHeader && (
                 <span
                     onContextMenu={onContextMenu}
-                    className={`flex items-center justify-between px-2.5 pb-1 text-[10px] font-medium tracking-[0.08em] text-ink-faint uppercase ${isFirst ? 'pt-2.5' : 'pt-3.5'}`}
+                    className={`flex items-center justify-between px-2.5 pb-1 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase ${isFirst ? 'pt-2.5' : 'pt-3.5'}`}
                 >
                     <span
                         {...listeners}
@@ -200,7 +200,7 @@ function SortableStorylineGroup({
                         }}
                         className={`flex items-center text-ink-faint transition-transform duration-150 ${isCollapsed ? '-rotate-90' : ''}`}
                     >
-                        <ChevronDown size={10} />
+                        <ChevronDown size={12} />
                     </span>
                 </span>
             )}
@@ -352,7 +352,7 @@ function SceneList({
                                 ref={sceneRenameRef}
                                 type="text"
                                 defaultValue={scene.title}
-                                className="mx-1 rounded-[5px] border border-border bg-surface px-2 py-1 text-[12px] text-ink outline-none"
+                                className="mx-1 rounded-md border border-border bg-surface px-2 py-1 text-[12px] text-ink outline-none"
                                 onBlur={(e) =>
                                     onRenameSceneSubmit?.(scene, e.target.value)
                                 }
@@ -390,7 +390,7 @@ function SceneList({
             </SortableContext>
             <DragOverlay>
                 {activeScene && (
-                    <div className="flex items-center gap-1.5 rounded-[5px] bg-surface-card px-2.5 py-1 text-[12px] opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
+                    <div className="flex items-center gap-1.5 rounded-md bg-surface-card px-2.5 py-1 text-[12px] opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
                         <span className="flex shrink-0 items-center text-ink-faint">
                             <svg
                                 width="8"
@@ -844,7 +844,7 @@ export default function ChapterList({
                                 size={13}
                                 className="shrink-0 text-ink-faint"
                             />
-                            <span className="text-[10px] font-semibold tracking-[0.06em] text-ink-muted uppercase">
+                            <span className="text-[11px] font-semibold tracking-[0.06em] text-ink-muted uppercase">
                                 {bookTitle}
                             </span>
                         </div>
@@ -951,7 +951,7 @@ export default function ChapterList({
                                                             ? activeChapterTitle
                                                             : chapter.title
                                                     }
-                                                    className="mx-1 rounded-[5px] border border-border bg-surface px-2 py-1.5 text-[13px] leading-4 text-ink outline-none"
+                                                    className="mx-1 rounded-md border border-border bg-surface px-2 py-1.5 text-[13px] leading-4 text-ink outline-none"
                                                     onBlur={(e) =>
                                                         handleRenameChapterSubmit(
                                                             chapter,
@@ -1089,7 +1089,7 @@ export default function ChapterList({
                                                                                 );
                                                                             }
                                                                         }}
-                                                                        className="w-full rounded-[5px] py-1 pr-2.5 pl-[42px] text-left text-[12px] text-ink-faint transition-colors hover:bg-ink/5"
+                                                                        className="w-full rounded-md py-1 pr-2.5 pl-[42px] text-left text-[12px] text-ink-faint transition-colors hover:bg-ink/5"
                                                                     >
                                                                         {t(
                                                                             'chapterList.addScene',
@@ -1110,7 +1110,7 @@ export default function ChapterList({
                                             ref={storylineRenameRef}
                                             type="text"
                                             defaultValue={storyline.name}
-                                            className="mx-1 -mt-1 mb-1 rounded-[5px] border border-border bg-surface px-2 py-1 text-[11px] font-medium tracking-[0.08em] text-ink uppercase outline-none"
+                                            className="mx-1 -mt-1 mb-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-medium tracking-[0.08em] text-ink uppercase outline-none"
                                             onBlur={(e) =>
                                                 handleRenameStorylineSubmit(
                                                     storyline,
@@ -1137,7 +1137,7 @@ export default function ChapterList({
                                         onClick={() =>
                                             onAddChapter(storyline.id)
                                         }
-                                        className="flex w-full items-center gap-1.5 rounded-[5px] px-2.5 py-[7px] text-ink-faint hover:bg-ink/5"
+                                        className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-[7px] text-ink-faint hover:bg-ink/5"
                                     >
                                         <Plus
                                             size={12}
@@ -1155,9 +1155,9 @@ export default function ChapterList({
                         <button
                             type="button"
                             onClick={onAddStoryline}
-                            className="flex w-full items-center gap-1.5 px-2.5 pt-3.5 pb-1 text-[10px] font-medium tracking-[0.08em] text-ink-faint uppercase transition-colors hover:text-ink"
+                            className="flex w-full items-center gap-1.5 px-2.5 pt-3.5 pb-1 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase transition-colors hover:text-ink"
                         >
-                            <Plus size={10} className="text-ink-faint" />
+                            <Plus size={12} className="text-ink-faint" />
                             <span>{t('chapterList.addStoryline')}</span>
                         </button>
                     )}
@@ -1180,7 +1180,7 @@ export default function ChapterList({
                         </div>
                     )}
                     {activeItem?.type === 'storyline' && (
-                        <div className="rounded-[5px] bg-surface-card px-2.5 py-1.5 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
+                        <div className="rounded-md bg-surface-card px-2.5 py-1.5 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
                             {activeItem.storyline.name}
                         </div>
                     )}
