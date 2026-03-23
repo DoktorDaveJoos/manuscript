@@ -8,6 +8,12 @@ import {
 } from 'lucide-react';
 import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import NavItem from '@/components/ui/NavItem';
+import { useResizablePanel } from '@/hooks/useResizablePanel';
+import { createChapter, formatCompactCount } from '@/lib/utils';
+import type { Book, Scene, Storyline } from '@/types/models';
+import ChapterList from './ChapterList';
+import TrashBin from './TrashBin';
 import { index } from '@/actions/App/Http/Controllers/BookController';
 import { exportMethod } from '@/actions/App/Http/Controllers/BookSettingsController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
@@ -15,12 +21,6 @@ import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotControlle
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
 import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
-import NavItem from '@/components/ui/NavItem';
-import { useResizablePanel } from '@/hooks/useResizablePanel';
-import { createChapter, formatCompactCount } from '@/lib/utils';
-import type { Book, Scene, Storyline } from '@/types/models';
-import ChapterList from './ChapterList';
-import TrashBin from './TrashBin';
 
 let savedScrollTop = 0;
 
@@ -136,7 +136,7 @@ export default function Sidebar({
                     href={settingsIndex.url({ query: { from: currentUrl } })}
                     className="text-ink-faint transition-colors hover:text-ink"
                 >
-                    <Settings size={18} />
+                    <Settings size={16} />
                 </Link>
             </div>
 
@@ -186,7 +186,7 @@ export default function Sidebar({
                         />
                     }
                     suffix={
-                        <span className="ml-auto rounded-full bg-ink px-1.5 py-1 text-[10px] leading-none font-medium text-surface">
+                        <span className="ml-auto rounded-full bg-ink px-1.5 py-1 text-[11px] leading-none font-medium text-surface">
                             {t('preview')}
                         </span>
                     }
