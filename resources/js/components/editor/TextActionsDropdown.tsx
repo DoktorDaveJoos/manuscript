@@ -52,7 +52,7 @@ export default function TextActionsDropdown({
                                 setOpen(false);
                                 onNormalizeClick();
                             }}
-                            className="w-full rounded-[5px] px-3 py-2 text-left transition-colors hover:bg-neutral-bg"
+                            className="w-full rounded-md px-3 py-2 text-left transition-colors hover:bg-neutral-bg"
                         >
                             <span className="block text-xs font-medium text-ink">
                                 {t('textActions.normalize')}
@@ -70,16 +70,16 @@ export default function TextActionsDropdown({
                                     setOpen(false);
                                     onBeautifyClick();
                                 }}
-                                className="w-full rounded-[5px] px-3 py-2 text-left transition-colors hover:bg-neutral-bg disabled:opacity-50"
+                                className="w-full rounded-md px-3 py-2 text-left transition-colors hover:bg-neutral-bg disabled:opacity-50"
                             >
                                 <span className="flex items-center gap-1.5 text-xs font-medium text-ink">
                                     {t('textActions.beautify')}
-                                    <span className="rounded bg-status-revised/15 px-1 py-0.5 text-[10px] font-medium text-status-revised">
+                                    <span className="rounded bg-status-revised/15 px-1 py-0.5 text-[11px] font-medium text-status-revised">
                                         AI
                                     </span>
                                     {!licensed && (
-                                        <span className="flex items-center gap-0.5 rounded bg-ink-faint/10 px-1 py-0.5 text-[10px] font-medium text-ink-faint">
-                                            <Lock size={10} />
+                                        <span className="flex items-center gap-0.5 rounded bg-ink-faint/10 px-1 py-0.5 text-[11px] font-medium text-ink-faint">
+                                            <Lock size={12} />
                                             PRO
                                         </span>
                                     )}

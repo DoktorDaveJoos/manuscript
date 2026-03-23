@@ -2,11 +2,11 @@ import type { Editor } from '@tiptap/react';
 import { EditorContent } from '@tiptap/react';
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
-import { updateContent } from '@/actions/App/Http/Controllers/SceneController';
 import type { SaveStatus } from '@/components/editor/EditorBar';
 import useChapterEditor from '@/hooks/useChapterEditor';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Scene } from '@/types/models';
+import { updateContent } from '@/actions/App/Http/Controllers/SceneController';
 
 export default function SceneEditor({
     scene,
@@ -176,7 +176,7 @@ export default function SceneEditor({
             {/* Scene header */}
             {scenesVisible && (
                 <div className="mb-2">
-                    <span className="text-[10px] tracking-[0.04em] text-ink-faint/50 select-none">
+                    <span className="text-[11px] tracking-[0.04em] text-ink-faint/50 select-none">
                         {scene.title}
                     </span>
                 </div>

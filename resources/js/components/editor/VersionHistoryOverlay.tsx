@@ -2,16 +2,16 @@ import { router } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import { getXsrfToken } from '@/lib/csrf';
+import type { ChapterVersion, VersionSource } from '@/types/models';
 import {
     createSnapshot,
     destroyVersion,
     restoreVersion,
     versions,
 } from '@/actions/App/Http/Controllers/ChapterController';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import { getXsrfToken } from '@/lib/csrf';
-import type { ChapterVersion, VersionSource } from '@/types/models';
 
 const sourceBadgeClass: Record<VersionSource, string> = {
     original: 'bg-neutral-bg text-ink-muted',
@@ -176,7 +176,7 @@ export default function VersionHistoryOverlay({
                     className="border-b border-border px-4 py-3"
                 >
                     <div className="mb-2 flex items-center gap-2">
-                        <span className="rounded-full bg-status-final/15 px-1.5 py-0.5 text-[10px] font-medium text-status-final">
+                        <span className="rounded-full bg-status-final/15 px-1.5 py-0.5 text-[11px] font-medium text-status-final">
                             {t('versionHistory.snapshot')}
                         </span>
                         <span className="text-xs text-ink-muted">
@@ -240,17 +240,17 @@ export default function VersionHistoryOverlay({
                                             v{version.version_number}
                                         </span>
                                         <span
-                                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${sourceBadgeClass[version.source]}`}
+                                            className={`rounded-full px-1.5 py-0.5 text-[11px] font-medium ${sourceBadgeClass[version.source]}`}
                                         >
                                             {sourceLabel(version.source)}
                                         </span>
                                         {version.is_current && (
-                                            <span className="text-[10px] font-medium text-status-final">
+                                            <span className="text-[11px] font-medium text-status-final">
                                                 {t('versionHistory.current')}
                                             </span>
                                         )}
                                         {version.status === 'pending' && (
-                                            <span className="text-[10px] font-medium text-accent">
+                                            <span className="text-[11px] font-medium text-accent">
                                                 {t(
                                                     'versionHistory.pendingReview',
                                                 )}
