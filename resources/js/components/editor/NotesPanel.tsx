@@ -1,10 +1,10 @@
 import MarkdownIt from 'markdown-it';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { updateNotes } from '@/actions/App/Http/Controllers/ChapterController';
 import NotesSlashMenu from '@/components/editor/NotesSlashMenu';
 import Kbd from '@/components/ui/Kbd';
 import { jsonFetchHeaders } from '@/lib/utils';
+import { updateNotes } from '@/actions/App/Http/Controllers/ChapterController';
 
 const md = new MarkdownIt({ linkify: true });
 
@@ -570,7 +570,7 @@ export default function NotesPanel({
                 </span>
                 <div className="flex items-center gap-1.5">
                     {saveStatus !== 'idle' && (
-                        <span className="text-[10px] text-ink-faint">
+                        <span className="text-[11px] text-ink-faint">
                             {saveStatus === 'saving'
                                 ? t('notes.saving')
                                 : t('notes.saved')}
@@ -615,7 +615,7 @@ export default function NotesPanel({
                                 e.stopPropagation();
                                 toggleCheck(i);
                             }}
-                            className={`mt-[3px] flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm border-[1.5px] transition-colors ${
+                            className={`mt-[3px] flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border-[1.5px] transition-colors ${
                                 line.checked
                                     ? 'border-accent bg-accent text-white'
                                     : 'border-ink-muted hover:border-ink-soft'
@@ -644,7 +644,7 @@ export default function NotesPanel({
                     const textClass = [
                         'min-w-0 flex-1 leading-5',
                         line.type === 'heading'
-                            ? 'font-semibold text-[15px]'
+                            ? 'font-semibold text-sm'
                             : 'text-[13px]',
                         line.type === 'todo' &&
                             line.checked &&

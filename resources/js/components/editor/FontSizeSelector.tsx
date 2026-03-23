@@ -66,7 +66,7 @@ export default function FontSizeSelector({
                                     setOpen(false);
                                 }}
                                 className={cn(
-                                    'flex w-full items-center gap-2 rounded-[5px] px-2 py-1.5 text-left text-[13px] leading-4 hover:bg-neutral-bg',
+                                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] leading-4 hover:bg-neutral-bg',
                                 )}
                             >
                                 <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center text-ink-muted">

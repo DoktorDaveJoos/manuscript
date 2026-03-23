@@ -91,13 +91,13 @@ export default function FontSelector({
                 >
                     {selected.label}
                 </span>
-                <ChevronDown size={10} strokeWidth={2.5} className="shrink-0" />
+                <ChevronDown size={12} strokeWidth={2.5} className="shrink-0" />
             </button>
 
             {open && (
                 <div className="absolute top-full left-0 z-50 mt-1 w-[200px] overflow-hidden rounded-lg border border-border bg-surface-card shadow-[0_4px_6px_#1414140F,0_12px_32px_#1414141A]">
                     <div className="px-1 pt-2 pb-1">
-                        <div className="px-2 py-1 text-[10px] leading-3 font-medium tracking-[0.08em] text-section-header uppercase">
+                        <div className="px-2 py-1 text-[11px] leading-3 font-medium tracking-[0.08em] text-section-header uppercase">
                             {t('font.favorites')}
                         </div>
                         {favorites.map((font) => (
@@ -113,7 +113,7 @@ export default function FontSelector({
                         ))}
                     </div>
                     <div className="border-t border-border-subtle px-1 py-1 pb-2">
-                        <div className="px-2 py-1 text-[10px] leading-3 font-medium tracking-[0.08em] text-section-header uppercase">
+                        <div className="px-2 py-1 text-[11px] leading-3 font-medium tracking-[0.08em] text-section-header uppercase">
                             {t('font.more')}
                         </div>
                         {more.map((font) => (
@@ -148,7 +148,7 @@ function FontItem({
             type="button"
             onClick={onSelect}
             className={cn(
-                'flex w-full items-center gap-2 rounded-[5px] px-2 py-1.5 text-left text-[13px] leading-4 hover:bg-neutral-bg',
+                'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] leading-4 hover:bg-neutral-bg',
             )}
         >
             <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center text-ink-muted">

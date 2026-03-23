@@ -19,7 +19,7 @@ export default function SceneListItem({
             type="button"
             onClick={onClick}
             onContextMenu={onContextMenu}
-            className="group flex w-full items-center gap-1.5 rounded-[5px] py-1 pr-2.5 pl-[42px] text-left text-[12px] text-ink-faint transition-colors hover:bg-ink/5 hover:text-ink-soft"
+            className="group flex w-full items-center gap-1.5 rounded-md py-1 pr-2.5 pl-[42px] text-left text-[12px] text-ink-faint transition-colors hover:bg-ink/5 hover:text-ink-soft"
         >
             <span
                 {...dragListeners}
