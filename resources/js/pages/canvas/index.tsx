@@ -14,7 +14,7 @@ export default function Canvas({ book }: { book: Book }) {
 
                 <main className="flex min-w-0 flex-1 flex-col items-center overflow-y-auto px-10 py-12">
                     <div className="flex w-[720px] flex-col gap-10">
-                        <h1 className="font-serif text-[34px] leading-[40px] tracking-[-0.01em] text-ink">
+                        <h1 className="font-serif text-[32px] leading-[40px] tracking-[-0.01em] text-ink">
                             Canvas
                         </h1>
                     </div>

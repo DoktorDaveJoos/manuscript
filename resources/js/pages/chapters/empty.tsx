@@ -1,9 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
-import { importMethod } from '@/actions/App/Http/Controllers/BookController';
-import { store } from '@/actions/App/Http/Controllers/ChapterController';
 import Button from '@/components/ui/Button';
 import type { Book, Storyline } from '@/types/models';
+import { importMethod } from '@/actions/App/Http/Controllers/BookController';
+import { store } from '@/actions/App/Http/Controllers/ChapterController';
 
 export default function ChapterEmpty({
     book,
@@ -30,7 +30,7 @@ export default function ChapterEmpty({
                     <h1 className="font-serif text-4xl leading-[44px] tracking-[-0.01em] text-ink">
                         {t('empty.title')}
                     </h1>
-                    <p className="text-[15px] leading-6 text-ink-muted">
+                    <p className="text-sm leading-6 text-ink-muted">
                         {t('empty.description')}
                     </p>
                 </div>

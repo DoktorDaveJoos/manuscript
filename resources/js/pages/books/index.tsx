@@ -1,7 +1,6 @@
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { duplicate } from '@/actions/App/Http/Controllers/BookController';
 import BookCard from '@/components/onboarding/BookCard';
 import type { BookWithCounts } from '@/components/onboarding/BookCard';
 import CreateBookDialog from '@/components/onboarding/CreateBookDialog';
@@ -10,6 +9,7 @@ import NewBookCard from '@/components/onboarding/NewBookCard';
 import RenameBookDialog from '@/components/onboarding/RenameBookDialog';
 import Button from '@/components/ui/Button';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
+import { duplicate } from '@/actions/App/Http/Controllers/BookController';
 
 type DialogState =
     | { type: 'create' }
@@ -26,7 +26,7 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
                 <h1 className="font-serif text-5xl leading-[58px] tracking-[-0.02em] text-ink">
                     {t('emptyState.title')}
                 </h1>
-                <p className="text-[15px] leading-6 text-ink-muted">
+                <p className="text-sm leading-6 text-ink-muted">
                     {t('emptyState.description')}
                 </p>
             </div>
