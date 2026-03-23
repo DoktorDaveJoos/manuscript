@@ -3,10 +3,6 @@ import { Camera, X } from 'lucide-react';
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    storeCharacter,
-    storeEntry,
-} from '@/actions/App/Http/Controllers/WikiController';
 import Button from '@/components/ui/Button';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
@@ -14,6 +10,10 @@ import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import type { Book, Storyline } from '@/types/models';
 import type { WikiTab } from './WikiTabBar';
+import {
+    storeCharacter,
+    storeEntry,
+} from '@/actions/App/Http/Controllers/WikiController';
 
 type Props = {
     type: WikiTab;
@@ -103,7 +103,7 @@ export default function WikiCreateForm({
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <h2 className="font-serif text-[30px] leading-[1.2] text-ink">
+                <h2 className="font-serif text-[32px] leading-[1.2] text-ink">
                     {t(titleKey)}
                 </h2>
                 <Button variant="ghost" type="button" onClick={onCancel}>
@@ -167,7 +167,7 @@ export default function WikiCreateForm({
                                     type="button"
                                     onClick={() => removeAlias(alias)}
                                 >
-                                    <X size={10} className="text-ink-faint" />
+                                    <X size={12} className="text-ink-faint" />
                                 </button>
                             </span>
                         ))}
