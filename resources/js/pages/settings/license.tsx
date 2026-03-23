@@ -2,16 +2,16 @@ import { router, usePage } from '@inertiajs/react';
 import { useState, useCallback, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    activate,
-    deactivate,
-    revalidate,
-} from '@/actions/App/Http/Controllers/LicenseController';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import SettingsLayout from '@/layouts/SettingsLayout';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { License } from '@/types/models';
+import {
+    activate,
+    deactivate,
+    revalidate,
+} from '@/actions/App/Http/Controllers/LicenseController';
 
 interface Props {
     book?: { id: number; title: string } | null;
@@ -102,7 +102,7 @@ export default function LicensePage({ book }: Props) {
         >
             <div className="flex flex-col gap-6">
                 <div>
-                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">
+                    <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
                         {t('license.title')}
                     </h1>
                     <p className="mt-1 text-[14px] text-ink-muted">
@@ -114,7 +114,7 @@ export default function LicensePage({ book }: Props) {
                     <div className="rounded-lg border border-border bg-surface-card p-6">
                         <div className="flex items-center gap-3">
                             <span className="text-status-final">●</span>
-                            <span className="text-[15px] font-medium text-ink">
+                            <span className="text-sm font-medium text-ink">
                                 {t('license.active')}
                             </span>
                             <span className="text-[13px] text-ink-muted">
@@ -136,7 +136,7 @@ export default function LicensePage({ book }: Props) {
                     </div>
                 ) : (
                     <div className="rounded-lg border border-border bg-surface-card p-6">
-                        <h2 className="text-[15px] font-medium text-ink">
+                        <h2 className="text-sm font-medium text-ink">
                             {t('license.formTitle')}
                         </h2>
                         <p className="mt-1 text-[13px] text-ink-muted">
