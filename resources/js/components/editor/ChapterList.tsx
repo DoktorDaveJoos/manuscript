@@ -57,7 +57,21 @@ import StorylineContextMenu from './StorylineContextMenu';
 
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } };
 
-let savedCollapsedStorylineIds = new Set<number>();
+const COLLAPSED_STORYLINES_KEY = 'collapsedStorylineIds';
+
+function loadCollapsedStorylineIds(): Set<number> {
+    try {
+        const raw = localStorage.getItem(COLLAPSED_STORYLINES_KEY);
+        if (raw) {
+            return new Set(JSON.parse(raw) as number[]);
+        }
+    } catch {
+        // ignore corrupt data
+    }
+    return new Set();
+}
+
+let savedCollapsedStorylineIds = loadCollapsedStorylineIds();
 
 type ContextMenuState =
     | { type: 'chapter'; chapter: Chapter; position: { x: number; y: number } }
@@ -156,6 +170,7 @@ function SortableStorylineGroup({
     onContextMenu,
     isCollapsed,
     onToggleCollapse,
+    chapterCount,
 }: {
     storyline: Storyline;
     showHeader: boolean;
@@ -164,6 +179,7 @@ function SortableStorylineGroup({
     onContextMenu: (e: React.MouseEvent) => void;
     isCollapsed?: boolean;
     onToggleCollapse?: () => void;
+    chapterCount: number;
 }) {
     const {
         attributes,
@@ -186,7 +202,7 @@ function SortableStorylineGroup({
         <Collapsible
             asChild
             open={!isCollapsed}
-            onOpenChange={() => onToggleCollapse?.()}
+            onOpenChange={onToggleCollapse}
         >
             <div
                 ref={setNodeRef}
@@ -197,27 +213,25 @@ function SortableStorylineGroup({
                 {showHeader && (
                     <span
                         onContextMenu={onContextMenu}
-                        className={`flex items-center justify-between px-2.5 pb-1 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase ${isFirst ? 'pt-2.5' : 'pt-3.5'}`}
+                        className={`flex items-center justify-between px-2.5 py-[7px] text-[13px] text-ink ${isFirst ? '' : 'mt-1'}`}
                     >
-                        <span
-                            {...listeners}
-                            className="flex cursor-grab items-center gap-1.5 active:cursor-grabbing"
-                        >
-                            {storyline.color && (
-                                <span
-                                    className="inline-block size-[6px] rounded-full"
-                                    style={{ backgroundColor: storyline.color }}
-                                />
-                            )}
-                            {storyline.name}
-                        </span>
-                        <CollapsibleTrigger asChild>
-                            <button
-                                type="button"
-                                className={`flex items-center text-ink-faint transition-transform duration-150 ${isCollapsed ? '-rotate-90' : ''}`}
+                        <span className="flex items-center gap-1.5">
+                            <span
+                                {...listeners}
+                                className="flex shrink-0 cursor-grab items-center text-ink-faint active:cursor-grabbing"
                             >
-                                <ChevronDown size={12} />
-                            </button>
+                                <GripVertical size={12} />
+                            </span>
+                            <CollapsibleTrigger className="cursor-pointer">
+                                {storyline.name}
+                            </CollapsibleTrigger>
+                        </span>
+                        <CollapsibleTrigger className="flex items-center gap-1 text-ink-faint">
+                            <span className="text-[11px]">{chapterCount}</span>
+                            <ChevronDown
+                                size={12}
+                                className={`transition-transform duration-150 ${isCollapsed ? '-rotate-90' : ''}`}
+                            />
                         </CollapsibleTrigger>
                     </span>
                 )}
@@ -503,6 +517,7 @@ export default function ChapterList({
     const sceneRenameRef = useRef<HTMLInputElement>(null);
     const storylinesRef = useRef(initialStorylines);
     storylinesRef.current = initialStorylines;
+    const prevActiveChapterIdRef = useRef(activeChapterId);
 
     useEffect(() => {
         setStorylines(initialStorylines);
@@ -510,6 +525,10 @@ export default function ChapterList({
 
     useEffect(() => {
         savedCollapsedStorylineIds = new Set(collapsedStorylineIds);
+        localStorage.setItem(
+            COLLAPSED_STORYLINES_KEY,
+            JSON.stringify([...collapsedStorylineIds]),
+        );
     }, [collapsedStorylineIds]);
 
     useEffect(() => {
@@ -517,7 +536,12 @@ export default function ChapterList({
             activeChapterId ? new Set([activeChapterId]) : new Set(),
         );
 
-        if (activeChapterId) {
+        // Only auto-expand the storyline when the active chapter actually changes,
+        // not on initial mount where we want to respect the persisted state.
+        if (
+            activeChapterId &&
+            activeChapterId !== prevActiveChapterIdRef.current
+        ) {
             const parentStoryline = storylinesRef.current.find((s) =>
                 s.chapters?.some((ch) => ch.id === activeChapterId),
             );
@@ -530,6 +554,7 @@ export default function ChapterList({
                 });
             }
         }
+        prevActiveChapterIdRef.current = activeChapterId;
     }, [activeChapterId]);
 
     const toggleStorylineCollapse = useCallback((storylineId: number) => {
@@ -870,39 +895,57 @@ export default function ChapterList({
                 onDragCancel={handleDragCancel}
             >
                 <div className="flex min-h-0 flex-1 flex-col">
-                    <div className="-mx-3 flex items-center justify-end bg-neutral-bg px-4 py-2">
+                    <div className="flex items-center justify-end bg-neutral-bg px-4 py-2">
                         <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={handleToggleCollapseAll}
-                                className="text-ink-faint transition-colors hover:text-ink"
-                            >
-                                {isAllCollapsed ? (
-                                    <UnfoldVertical size={12} />
-                                ) : (
-                                    <FoldVertical size={12} />
-                                )}
-                            </button>
+                            <span className="group relative">
+                                <button
+                                    type="button"
+                                    onClick={handleToggleCollapseAll}
+                                    className="text-ink-faint transition-colors hover:text-ink"
+                                >
+                                    {isAllCollapsed ? (
+                                        <UnfoldVertical size={12} />
+                                    ) : (
+                                        <FoldVertical size={12} />
+                                    )}
+                                </button>
+                                <span className="pointer-events-none absolute top-full right-0 z-50 mt-1.5 rounded bg-ink px-2 py-1 text-[11px] whitespace-nowrap text-surface opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                                    {t(
+                                        isAllCollapsed
+                                            ? 'chapterList.expandAll'
+                                            : 'chapterList.collapseAll',
+                                    )}
+                                </span>
+                            </span>
                             <div className="h-3 w-px bg-border" />
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    onScenesVisibleChange(!scenesVisible)
-                                }
-                                className="text-ink-faint transition-colors hover:text-ink"
-                            >
-                                {scenesVisible ? (
-                                    <Eye size={12} />
-                                ) : (
-                                    <EyeOff size={12} />
-                                )}
-                            </button>
+                            <span className="group relative">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        onScenesVisibleChange(!scenesVisible)
+                                    }
+                                    className="text-ink-faint transition-colors hover:text-ink"
+                                >
+                                    {scenesVisible ? (
+                                        <Eye size={12} />
+                                    ) : (
+                                        <EyeOff size={12} />
+                                    )}
+                                </button>
+                                <span className="pointer-events-none absolute top-full right-0 z-50 mt-1.5 rounded bg-ink px-2 py-1 text-[11px] whitespace-nowrap text-surface opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                                    {t(
+                                        scenesVisible
+                                            ? 'chapterList.hideScenes'
+                                            : 'chapterList.showScenes',
+                                    )}
+                                </span>
+                            </span>
                         </div>
                     </div>
                     <div
                         ref={scrollContainerRef}
                         onScroll={onScroll}
-                        className="min-h-0 flex-1 overflow-y-auto"
+                        className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2"
                     >
                         <SortableContext
                             items={storylineIds}
@@ -922,6 +965,9 @@ export default function ChapterList({
                                     )}
                                     onToggleCollapse={() =>
                                         toggleStorylineCollapse(storyline.id)
+                                    }
+                                    chapterCount={
+                                        storyline.chapters?.length ?? 0
                                     }
                                 >
                                     <SortableContext
@@ -1203,7 +1249,7 @@ export default function ChapterList({
                         </div>
                     )}
                     {activeItem?.type === 'storyline' && (
-                        <div className="rounded-md bg-surface-card px-2.5 py-1.5 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
+                        <div className="rounded-md bg-surface-card px-2.5 py-[7px] text-[13px] text-ink-muted opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
                             {activeItem.storyline.name}
                         </div>
                     )}
