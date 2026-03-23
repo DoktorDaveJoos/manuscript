@@ -3,6 +3,21 @@ import { Trash2 } from 'lucide-react';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import NavItem from '@/components/ui/NavItem';
+import SectionLabel from '@/components/ui/SectionLabel';
+import Toggle from '@/components/ui/Toggle';
+import { useAutoUpdater } from '@/hooks/useAutoUpdater';
+import { useTheme } from '@/hooks/useTheme';
+import type { Theme } from '@/lib/theme';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type {
+    AppSettings,
+    AiSetting,
+    License,
+    ProsePassRule,
+} from '@/types/models';
 import {
     update as updateAiProvider,
     deleteKey,
@@ -22,21 +37,6 @@ import {
     updateAboutAuthor,
     updateProsePassRules,
 } from '@/actions/App/Http/Controllers/SettingsController';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import NavItem from '@/components/ui/NavItem';
-import SectionLabel from '@/components/ui/SectionLabel';
-import Toggle from '@/components/ui/Toggle';
-import { useAutoUpdater } from '@/hooks/useAutoUpdater';
-import { useTheme } from '@/hooks/useTheme';
-import type { Theme } from '@/lib/theme';
-import { jsonFetchHeaders } from '@/lib/utils';
-import type {
-    AppSettings,
-    AiSetting,
-    License,
-    ProsePassRule,
-} from '@/types/models';
 
 type ProviderSetting = AiSetting & {
     label: string;
@@ -189,7 +189,7 @@ function LicenseSection() {
                     </>
                 ) : (
                     <div className="p-6">
-                        <h2 className="text-[15px] font-medium text-ink">
+                        <h2 className="text-sm font-medium text-ink">
                             {t('license.formTitle')}
                         </h2>
                         <p className="mt-1 text-[13px] text-ink-muted">
@@ -260,7 +260,7 @@ function LanguageSection() {
             <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
                 <div className="flex flex-col gap-4">
                     <div>
-                        <span className="text-[15px] font-medium text-ink">
+                        <span className="text-sm font-medium text-ink">
                             {t('language.title')}
                         </span>
                         <p className="mt-1 text-[13px] text-ink-muted">
@@ -309,7 +309,7 @@ function AppearanceSection() {
             <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
                 <div className="flex flex-col gap-4">
                     <div>
-                        <span className="text-[15px] font-medium text-ink">
+                        <span className="text-sm font-medium text-ink">
                             {t('appearance.theme.title')}
                         </span>
                         <p className="mt-1 text-[13px] text-ink-muted">
@@ -837,7 +837,7 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
                                     </span>
                                 )}
                                 <span
-                                    className={`text-[15px] ${isSelected ? 'font-medium' : ''} text-ink`}
+                                    className={`text-sm ${isSelected ? 'font-medium' : ''} text-ink`}
                                 >
                                     {setting.label}
                                 </span>
@@ -929,7 +929,7 @@ function MarkdownTextareaSection({
             <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
                 <div className="flex flex-col gap-4">
                     <div>
-                        <span className="text-[15px] font-medium text-ink">
+                        <span className="text-sm font-medium text-ink">
                             {t(`${i18nPrefix}.title`)}
                         </span>
                         <p className="mt-1 text-[13px] text-ink-muted">
@@ -1014,7 +1014,7 @@ function RevisionRulesSection({
             </SectionLabel>
             <div className="mt-3 rounded-lg border border-border bg-surface-card">
                 <div className="px-6 pt-5 pb-4">
-                    <span className="text-[15px] font-medium text-ink">
+                    <span className="text-sm font-medium text-ink">
                         {t('prosePassRules.title')}
                     </span>
                     <p className="mt-1 text-[13px] text-ink-muted">
@@ -1197,7 +1197,7 @@ function UpdatesSection({
                         </span>
                     )}
                     {updateState.status === 'error' && (
-                        <span className="text-[12px] text-red-500">
+                        <span className="text-[12px] text-delete">
                             {updateState.error}
                         </span>
                     )}

@@ -1,7 +1,6 @@
 import { router } from '@inertiajs/react';
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import Button from '@/components/ui/Button';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
@@ -9,6 +8,7 @@ import SettingsLayout from '@/layouts/SettingsLayout';
 import type { Theme } from '@/lib/theme';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { AppSettings } from '@/types/models';
+import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 
 interface Props {
     settings: AppSettings;
@@ -124,7 +124,7 @@ export default function Appearance({ settings, book, version }: Props) {
         >
             <div className="flex flex-col gap-6">
                 <div>
-                    <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">
+                    <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
                         {t('appearance.title')}
                     </h1>
                     <p className="mt-1 text-[14px] text-ink-muted">
@@ -136,7 +136,7 @@ export default function Appearance({ settings, book, version }: Props) {
                 <div className="rounded-lg border border-border bg-surface-card p-6">
                     <div className="flex flex-col gap-4">
                         <div>
-                            <span className="text-[15px] font-medium text-ink">
+                            <span className="text-sm font-medium text-ink">
                                 {t('appearance.theme.title')}
                             </span>
                             <p className="mt-0.5 text-[13px] text-ink-muted">
@@ -233,7 +233,7 @@ export default function Appearance({ settings, book, version }: Props) {
                             <span className="text-[13px] font-medium text-ink-muted">
                                 {t('appearance.version')}
                             </span>
-                            <p className="text-[15px] text-ink">{version}</p>
+                            <p className="text-sm text-ink">{version}</p>
                             {updateState.status === 'checking' && (
                                 <p className="text-[13px] text-ink-muted">
                                     {t('appearance.update.checking')}
@@ -254,7 +254,7 @@ export default function Appearance({ settings, book, version }: Props) {
                                 </p>
                             )}
                             {updateState.status === 'error' && (
-                                <p className="text-[13px] text-red-500">
+                                <p className="text-[13px] text-delete">
                                     {updateState.error}
                                 </p>
                             )}
