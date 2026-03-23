@@ -37,6 +37,7 @@ This project has domain-specific skills available. You MUST activate the relevan
 - `pest-testing` — Tests applications using the Pest 4 PHP framework. Activates when writing tests, creating unit or feature tests, adding assertions, testing Livewire components, browser testing, debugging test failures, working with datasets or mocking; or when the user mentions test, spec, TDD, expects, assertion, coverage, or needs to verify functionality works.
 - `inertia-react-development` — Develops Inertia.js v2 React client-side applications. Activates when creating React pages, forms, or navigation; using &lt;Link&gt;, &lt;Form&gt;, useForm, or router; working with deferred props, prefetching, or polling; or when user mentions React with Inertia, React pages, React forms, or React navigation.
 - `tailwindcss-development` — Styles applications using Tailwind CSS v4 utilities. Activates when adding styles, restyling components, working with gradients, spacing, layout, flex, grid, responsive design, dark mode, colors, typography, or borders; or when the user mentions CSS, styling, classes, Tailwind, restyle, hero section, cards, buttons, or any visual/UI changes.
+- `design-system` — Enforces the Manuscript design system (docs/design-system.md). Activates when creating pages, styling components, choosing colors, adding icons, building layouts, creating panels, or working with any visual element. Read `docs/design-system.md` before making UI changes.
 
 ## Conventions
 
@@ -123,7 +124,6 @@ This project has domain-specific skills available. You MUST activate the relevan
 - Use appropriate PHP type hints for method parameters.
 
 <!-- Explicit Return Types and Method Params -->
-
 ```php
 protected function isAccessible(User $user, ?string $path = null): bool
 {

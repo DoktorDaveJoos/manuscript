@@ -1,5 +1,10 @@
 {
-    "agents": ["claude_code", "codex", "opencode", "gemini"],
+    "agents": [
+        "claude_code",
+        "codex",
+        "opencode",
+        "gemini"
+    ],
     "guidelines": true,
     "herd_mcp": true,
     "mcp": true,
