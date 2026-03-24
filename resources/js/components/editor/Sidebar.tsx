@@ -13,10 +13,10 @@ import {
 } from 'lucide-react';
 import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { index as aiDashboardIndex } from '@/actions/App/Http/Controllers/AiDashboardController';
 import { index } from '@/actions/App/Http/Controllers/BookController';
 import { exportMethod } from '@/actions/App/Http/Controllers/BookSettingsController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
-import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
 import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
@@ -99,7 +99,7 @@ export default function Sidebar({
     const isDashboard = currentUrl.endsWith('/dashboard');
     const isWiki = currentUrl.includes('/wiki');
     const isPlot = currentUrl.endsWith('/plot');
-    const isAi = currentUrl.includes('/ai/editorial-review');
+    const isAi = currentUrl.includes('/ai/');
     const isExport = currentUrl.includes('/settings/export');
 
     const totalWords = storylines.reduce(
@@ -288,7 +288,7 @@ export default function Sidebar({
                     />
                     <NavItem
                         label={t('nav.ai')}
-                        href={editorialReviewIndex.url(book)}
+                        href={aiDashboardIndex.url(book)}
                         isActive={isAi}
                         iconOnly={isCollapsed}
                         icon={
