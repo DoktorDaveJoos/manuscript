@@ -13,8 +13,8 @@
     "writingGoal.wordsToday": "words today",
     "writingGoal.wordsToGo": "{{value}} words to go",
     "writingGoal.goalReached": "Goal reached!",
-    "writingGoal.streak_one": "{{count}} day",
-    "writingGoal.streak_other": "{{count}} days",
+    "writingGoal.streak_one": "{{count}} day streak",
+    "writingGoal.streak_other": "{{count}} day streak",
 
     "heatmap.title": "Writing Activity",
     "heatmap.legendLess": "Less",
@@ -37,6 +37,7 @@
     "heatmap.monthLabels.dec": "Dec",
 
     "manuscriptProgress.towardFirstDraft": "toward your first draft",
+    "manuscriptProgress.greatProgress": "great progress!",
 
     "milestone.words": "{{value}} words.",
     "milestone.days_one": "{{count}} day.",
@@ -116,8 +117,10 @@
     "aiUsage.total": "Total",
     "aiUsage.tokenUsage": "Token Usage Over Time",
 
-    "suggestedNext.label": "Suggested Next",
+    "suggestedNext.label": "Pick Up Where You Left Off",
     "suggestedNext.openInEditor": "Open in editor",
+    "suggestedNext.continueWriting": "Continue Writing",
+    "suggestedNext.pickUpMessage": "Pick up where you left off!",
 
     "actions.normalize": "Normalize",
     "actions.export": "Export",

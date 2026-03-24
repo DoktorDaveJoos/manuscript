@@ -191,7 +191,7 @@ export default function WritingGoal({
                 <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="text-[12px] font-medium text-accent transition-colors hover:text-accent/80"
+                    className="text-[12px] font-medium text-ink-muted transition-colors hover:text-ink"
                 >
                     {t('writingGoal.editGoal')}
                 </button>
@@ -210,7 +210,7 @@ export default function WritingGoal({
             {/* Progress bar */}
             <div className="h-1.5 overflow-hidden rounded bg-neutral-bg">
                 <div
-                    className="h-full rounded bg-gradient-to-r from-accent to-accent-dark transition-all duration-500"
+                    className="h-full rounded bg-ink transition-all duration-500"
                     style={{ width: `${progress}%` }}
                 />
             </div>
@@ -226,8 +226,7 @@ export default function WritingGoal({
                 </span>
 
                 {writingGoal.streak > 0 && (
-                    <span className="flex items-center gap-1 text-[12px] font-semibold text-accent">
-                        🔥
+                    <span className="rounded-full bg-neutral-bg px-2.5 py-0.5 text-[11px] font-medium text-ink-soft">
                         {t('writingGoal.streak', { count: writingGoal.streak })}
                     </span>
                 )}
