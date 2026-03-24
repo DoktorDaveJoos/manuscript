@@ -277,4 +277,12 @@ class Book extends Model
     {
         return $this->hasMany(AiUsageLog::class);
     }
+
+    /**
+     * @return HasMany<EditorialReview, $this>
+     */
+    public function editorialReviews(): HasMany
+    {
+        return $this->hasMany(EditorialReview::class);
+    }
 }
