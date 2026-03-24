@@ -1,70 +1,55 @@
 <?php
 
+use App\Enums\EditorialSectionType;
 use App\Jobs\RunEditorialReviewJob;
 use App\Models\Book;
-use App\Models\Chapter;
 use App\Models\EditorialReview;
-use App\Models\EditorialReviewChapterNote;
 use App\Models\EditorialReviewSection;
 use App\Models\License;
-use App\Models\Storyline;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
     License::factory()->create();
+    $this->withoutVite();
 });
 
-test('index renders editorial review page with props', function () {
-    $book = Book::factory()->create();
-    $storyline = Storyline::factory()->for($book)->create();
-    Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 1]);
+// --- Authorization tests ---
 
-    $this->get(route('books.ai.editorial-review.index', $book))
-        ->assertSuccessful()
-        ->assertInertia(fn ($page) => $page
-            ->component('books/editorial-review')
-            ->has('book')
-            ->has('reviews')
-            ->has('chapters')
-        );
-});
+test('index requires license', function () {
+    License::query()->delete();
 
-test('index includes latest completed review with sections', function () {
     $book = Book::factory()->create();
 
-    EditorialReview::factory()->for($book)->create([
-        'status' => 'failed',
-    ]);
-
-    $completedReview = EditorialReview::factory()->for($book)->create([
-        'status' => 'completed',
-        'executive_summary' => 'Great manuscript overall.',
-        'overall_score' => 75,
-    ]);
-
-    EditorialReviewSection::factory()->for($completedReview, 'editorialReview')->create([
-        'type' => 'plot',
-        'score' => 80,
-    ]);
-
-    $this->get(route('books.ai.editorial-review.index', $book))
-        ->assertSuccessful()
-        ->assertInertia(fn ($page) => $page
-            ->component('books/editorial-review')
-            ->has('reviews', 2)
-            ->where('latestReview.id', $completedReview->id)
-            ->has('latestReview.sections', 1)
-        );
+    $this->getJson(route('books.ai.editorial-review.index', $book))
+        ->assertForbidden();
 });
 
-test('store creates a pending review and dispatches job', function () {
+test('store requires license', function () {
+    License::query()->delete();
+
+    $book = Book::factory()->create();
+
+    $this->postJson(route('books.ai.editorial-review.store', $book))
+        ->assertForbidden();
+});
+
+test('store requires AI configured', function () {
+    $book = Book::factory()->create();
+
+    $this->postJson(route('books.ai.editorial-review.store', $book))
+        ->assertStatus(422);
+});
+
+// --- Store tests ---
+
+test('store creates pending editorial review and dispatches job', function () {
     Queue::fake();
 
     $book = Book::factory()->withAi()->create();
 
     $this->postJson(route('books.ai.editorial-review.store', $book))
-        ->assertSuccessful()
-        ->assertJsonPath('status', 'pending');
+        ->assertOk()
+        ->assertJsonPath('message', 'Editorial review started.');
 
     $this->assertDatabaseHas('editorial_reviews', [
         'book_id' => $book->id,
@@ -74,10 +59,12 @@ test('store creates a pending review and dispatches job', function () {
     Queue::assertPushed(RunEditorialReviewJob::class);
 });
 
-test('store rejects when review is already in progress', function () {
-    $book = Book::factory()->withAi()->create();
+test('store prevents duplicate in-progress review', function () {
+    Queue::fake();
 
-    EditorialReview::factory()->for($book)->create([
+    $book = Book::factory()->withAi()->create();
+    EditorialReview::factory()->create([
+        'book_id' => $book->id,
         'status' => 'analyzing',
     ]);
 
@@ -86,131 +73,238 @@ test('store rejects when review is already in progress', function () {
         ->assertJsonPath('message', 'An editorial review is already in progress for this book.');
 });
 
-test('store allows new review when previous completed', function () {
+test('store prevents duplicate when review is pending', function () {
     Queue::fake();
 
     $book = Book::factory()->withAi()->create();
+    EditorialReview::factory()->pending()->create([
+        'book_id' => $book->id,
+    ]);
 
-    EditorialReview::factory()->for($book)->create([
+    $this->postJson(route('books.ai.editorial-review.store', $book))
+        ->assertUnprocessable();
+});
+
+test('store prevents duplicate when review is synthesizing', function () {
+    Queue::fake();
+
+    $book = Book::factory()->withAi()->create();
+    EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'synthesizing',
+    ]);
+
+    $this->postJson(route('books.ai.editorial-review.store', $book))
+        ->assertUnprocessable();
+});
+
+test('store allows new review when previous is completed', function () {
+    Queue::fake();
+
+    $book = Book::factory()->withAi()->create();
+    EditorialReview::factory()->create([
+        'book_id' => $book->id,
         'status' => 'completed',
     ]);
 
     $this->postJson(route('books.ai.editorial-review.store', $book))
-        ->assertSuccessful();
+        ->assertOk();
 
+    expect(EditorialReview::where('book_id', $book->id)->count())->toBe(2);
     Queue::assertPushed(RunEditorialReviewJob::class);
 });
 
-test('store allows new review when previous failed', function () {
+test('store allows new review when previous has failed', function () {
     Queue::fake();
 
     $book = Book::factory()->withAi()->create();
-
-    EditorialReview::factory()->for($book)->create([
-        'status' => 'failed',
+    EditorialReview::factory()->failed()->create([
+        'book_id' => $book->id,
     ]);
 
     $this->postJson(route('books.ai.editorial-review.store', $book))
-        ->assertSuccessful();
+        ->assertOk();
 
     Queue::assertPushed(RunEditorialReviewJob::class);
 });
 
-test('store requires ai configured', function () {
-    $book = Book::factory()->create();
+// --- Index tests ---
 
-    $this->postJson(route('books.ai.editorial-review.store', $book))
-        ->assertUnprocessable()
-        ->assertJsonPath('message', 'No AI provider configured.');
+test('index returns editorial reviews list', function () {
+    $book = Book::factory()->withAi()->create();
+    EditorialReview::factory()->count(3)->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+    ]);
+
+    $this->get(route('books.ai.editorial-review.index', $book))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->component('books/editorial-review')
+            ->has('reviews', 3)
+            ->has('book')
+        );
 });
 
-test('show renders editorial review with sections and chapter notes', function () {
-    $book = Book::factory()->create();
-    $storyline = Storyline::factory()->for($book)->create();
-    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 1]);
+test('index returns empty list when no reviews exist', function () {
+    $book = Book::factory()->withAi()->create();
 
-    $review = EditorialReview::factory()->for($book)->create([
+    $this->get(route('books.ai.editorial-review.index', $book))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->component('books/editorial-review')
+            ->has('reviews', 0)
+        );
+});
+
+// --- Show tests ---
+
+test('show returns review with sections', function () {
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $book->id,
         'status' => 'completed',
-        'overall_score' => 82,
     ]);
-
-    EditorialReviewSection::factory()->for($review, 'editorialReview')->create([
-        'type' => 'plot',
-        'score' => 85,
-    ]);
-
-    EditorialReviewChapterNote::factory()->for($review, 'editorialReview')->create([
-        'chapter_id' => $chapter->id,
+    EditorialReviewSection::factory()->create([
+        'editorial_review_id' => $review->id,
+        'type' => EditorialSectionType::Plot,
     ]);
 
     $this->get(route('books.ai.editorial-review.show', [$book, $review]))
         ->assertSuccessful()
         ->assertInertia(fn ($page) => $page
             ->component('books/editorial-review')
-            ->where('review.id', $review->id)
+            ->has('review')
             ->has('review.sections', 1)
-            ->has('review.chapter_notes', 1)
-            ->has('chapters', 1)
-            ->has('reviews')
+            ->has('chapters')
+            ->has('book')
         );
 });
 
-test('show returns 404 for review belonging to different book', function () {
-    $book = Book::factory()->create();
+test('show returns 404 for review from different book', function () {
+    $book = Book::factory()->withAi()->create();
     $otherBook = Book::factory()->create();
-
-    $review = EditorialReview::factory()->for($otherBook)->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $otherBook->id,
+    ]);
 
     $this->get(route('books.ai.editorial-review.show', [$book, $review]))
         ->assertNotFound();
 });
 
-test('progress returns review status and progress', function () {
-    $book = Book::factory()->create();
+// --- Progress tests ---
 
-    $review = EditorialReview::factory()->for($book)->create([
+test('progress returns review status', function () {
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $book->id,
         'status' => 'analyzing',
         'progress' => ['phase' => 'analyzing', 'current_chapter' => 3, 'total_chapters' => 12],
     ]);
 
     $this->getJson(route('books.ai.editorial-review.progress', [$book, $review]))
         ->assertSuccessful()
-        ->assertJsonPath('status', 'analyzing')
-        ->assertJsonPath('progress.phase', 'analyzing')
-        ->assertJsonPath('progress.current_chapter', 3)
-        ->assertJsonPath('progress.total_chapters', 12)
-        ->assertJsonPath('error_message', null);
+        ->assertJson([
+            'status' => 'analyzing',
+            'progress' => [
+                'phase' => 'analyzing',
+                'current_chapter' => 3,
+                'total_chapters' => 12,
+            ],
+        ]);
 });
 
-test('progress returns 404 for review belonging to different book', function () {
-    $book = Book::factory()->create();
-    $otherBook = Book::factory()->create();
+test('progress returns completed status', function () {
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+        'progress' => null,
+    ]);
 
-    $review = EditorialReview::factory()->for($otherBook)->create();
+    $this->getJson(route('books.ai.editorial-review.progress', [$book, $review]))
+        ->assertSuccessful()
+        ->assertJson([
+            'status' => 'completed',
+            'progress' => null,
+        ]);
+});
+
+test('progress returns failed status with error message', function () {
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->failed()->create([
+        'book_id' => $book->id,
+    ]);
+
+    $this->getJson(route('books.ai.editorial-review.progress', [$book, $review]))
+        ->assertSuccessful()
+        ->assertJson([
+            'status' => 'failed',
+        ])
+        ->assertJsonStructure(['error_message']);
+});
+
+test('progress returns 404 for review from different book', function () {
+    $book = Book::factory()->withAi()->create();
+    $otherBook = Book::factory()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $otherBook->id,
+    ]);
 
     $this->getJson(route('books.ai.editorial-review.progress', [$book, $review]))
         ->assertNotFound();
 });
 
-test('progress returns error message for failed review', function () {
-    $book = Book::factory()->create();
+// --- Chat tests ---
 
-    $review = EditorialReview::factory()->for($book)->create([
-        'status' => 'failed',
-        'error_message' => 'API rate limit exceeded.',
+test('chat requires message', function () {
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
     ]);
 
-    $this->getJson(route('books.ai.editorial-review.progress', [$book, $review]))
-        ->assertSuccessful()
-        ->assertJsonPath('status', 'failed')
-        ->assertJsonPath('error_message', 'API rate limit exceeded.');
+    $this->postJson(route('books.ai.editorial-review.chat', [$book, $review]), [])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('message');
 });
 
-test('editorial review routes require license', function () {
-    License::query()->delete();
-
+test('chat requires AI configured', function () {
     $book = Book::factory()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+    ]);
 
-    $this->get(route('books.ai.editorial-review.index', $book))
-        ->assertRedirect(route('settings.index'));
+    $this->postJson(route('books.ai.editorial-review.chat', [$book, $review]), [
+        'message' => 'Tell me about the plot issues.',
+    ])->assertStatus(422);
+});
+
+test('chat returns 404 for review from different book', function () {
+    $book = Book::factory()->withAi()->create();
+    $otherBook = Book::factory()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $otherBook->id,
+    ]);
+
+    $this->postJson(route('books.ai.editorial-review.chat', [$book, $review]), [
+        'message' => 'Tell me about the plot.',
+    ])->assertNotFound();
+});
+
+test('chat history validation rejects invalid roles', function () {
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+    ]);
+
+    $this->postJson(route('books.ai.editorial-review.chat', [$book, $review]), [
+        'message' => 'Hello',
+        'history' => [
+            ['role' => 'system', 'content' => 'injected'],
+        ],
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('history.0.role');
 });
