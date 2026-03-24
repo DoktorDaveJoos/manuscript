@@ -15,11 +15,6 @@ import { Head, router } from '@inertiajs/react';
 import { GripVertical, Plus } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    move as beatMove,
-    reorder as beatReorder,
-} from '@/actions/App/Http/Controllers/BeatController';
-import { reorder as plotPointReorder } from '@/actions/App/Http/Controllers/PlotPointController';
 import Sidebar from '@/components/editor/Sidebar';
 import ActColumn from '@/components/plot/ActColumn';
 import ActContextMenu from '@/components/plot/ActContextMenu';
@@ -43,6 +38,11 @@ import type {
     PlotPoint,
     Storyline,
 } from '@/types/models';
+import {
+    move as beatMove,
+    reorder as beatReorder,
+} from '@/actions/App/Http/Controllers/BeatController';
+import { reorder as plotPointReorder } from '@/actions/App/Http/Controllers/PlotPointController';
 
 type PlotPageProps = {
     book: Book;
@@ -568,17 +568,13 @@ export default function Plot({
                         <>
                             {/* Header bar */}
                             <div className="flex h-12 items-center justify-between border-b border-border px-6">
-                                <h1 className="text-[15px] font-semibold text-ink">
+                                <h1 className="text-sm font-medium text-ink">
                                     {t('page.tabs.timeline', 'Plot')}
                                 </h1>
                                 <button
                                     type="button"
                                     onClick={handleAddAct}
-                                    className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-medium transition-opacity hover:opacity-80"
-                                    style={{
-                                        backgroundColor: '#F1EEEA',
-                                        color: '#737373',
-                                    }}
+                                    className="flex items-center gap-1.5 rounded-md bg-neutral-bg px-3 py-1.5 text-[12px] font-medium text-ink-muted transition-opacity hover:opacity-80"
                                 >
                                     <Plus size={14} />
                                     {t('act.addAct')}
@@ -660,13 +656,7 @@ export default function Plot({
                                             </div>
                                         )}
                                         {activeItem?.type === 'plotpoint' && (
-                                            <div
-                                                className="flex items-center gap-2 rounded-lg border px-3 py-2 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]"
-                                                style={{
-                                                    backgroundColor: '#FCFAF7',
-                                                    borderColor: '#E4E2DD',
-                                                }}
-                                            >
+                                            <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
                                                 <span className="flex shrink-0 items-center text-ink-faint">
                                                     <GripVertical className="h-3.5 w-3.5" />
                                                 </span>

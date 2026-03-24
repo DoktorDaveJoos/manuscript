@@ -130,7 +130,7 @@ export default function PlotWizardModal({
                     <span className="text-[11px] font-semibold tracking-[2px] text-ink-faint uppercase">
                         {t(`wizard.typeLabel.${template.key}`)}
                     </span>
-                    <h2 className="font-serif text-xl leading-8 text-ink">
+                    <h2 className="font-serif text-2xl leading-8 font-normal tracking-[-0.01em] text-ink">
                         {template.name}
                     </h2>
                 </div>
