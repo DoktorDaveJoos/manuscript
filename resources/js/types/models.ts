@@ -1,3 +1,63 @@
+export type EditorialSectionType =
+    | 'plot'
+    | 'characters'
+    | 'pacing'
+    | 'narrative_voice'
+    | 'themes'
+    | 'scene_craft'
+    | 'prose_style'
+    | 'chapter_notes';
+export type EditorialReviewStatus =
+    | 'pending'
+    | 'analyzing'
+    | 'synthesizing'
+    | 'completed'
+    | 'failed';
+export type FindingSeverity = 'critical' | 'warning' | 'suggestion';
+
+export type EditorialReviewFinding = {
+    severity: FindingSeverity;
+    description: string;
+    chapter_references: number[];
+    recommendation: string;
+};
+
+export type EditorialReviewSection = {
+    id: number;
+    type: EditorialSectionType;
+    score: number | null;
+    summary: string | null;
+    findings: EditorialReviewFinding[] | null;
+    recommendations: string[] | null;
+};
+
+export type EditorialReviewChapterNote = {
+    id: number;
+    chapter_id: number;
+    notes: Record<string, unknown>;
+};
+
+export type EditorialReview = {
+    id: number;
+    book_id: number;
+    status: EditorialReviewStatus;
+    progress: {
+        phase: string;
+        current_chapter?: number;
+        total_chapters?: number;
+        current_section?: string;
+    } | null;
+    error_message: string | null;
+    overall_score: number | null;
+    executive_summary: string | null;
+    top_strengths: string[] | null;
+    top_improvements: string[] | null;
+    started_at: string | null;
+    completed_at: string | null;
+    sections: EditorialReviewSection[];
+    chapter_notes: EditorialReviewChapterNote[];
+};
+
 export type StorylineType = 'main' | 'backstory' | 'parallel';
 export type ChapterStatus = 'draft' | 'revised' | 'final';
 export type VersionSource =

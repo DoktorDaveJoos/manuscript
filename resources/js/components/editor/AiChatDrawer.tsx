@@ -41,10 +41,16 @@ export default function AiChatDrawer({
     book,
     chapter,
     onClose,
+    editorialReview,
 }: {
     book: Book;
-    chapter: ChapterWithCharacters;
+    chapter?: ChapterWithCharacters;
     onClose: () => void;
+    editorialReview?: {
+        reviewId: number;
+        sectionType?: string;
+        findingIndex?: number;
+    };
 }) {
     const { t } = useTranslation('ai');
     const [messages, setMessages] = useState<Message[]>([]);
@@ -92,17 +98,33 @@ export default function AiChatDrawer({
         setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
         try {
-            const response = await fetch(chat.url(book.id), {
+            const chatUrl = editorialReview
+                ? `/books/${book.id}/ai/editorial-review/${editorialReview.reviewId}/chat`
+                : chat.url(book.id);
+
+            const body: Record<string, unknown> = {
+                message: trimmed,
+                history: history.length > 0 ? history : undefined,
+            };
+
+            if (editorialReview) {
+                if (editorialReview.sectionType) {
+                    body.section_type = editorialReview.sectionType;
+                }
+                if (editorialReview.findingIndex !== undefined) {
+                    body.finding_index = editorialReview.findingIndex;
+                }
+            } else if (chapter) {
+                body.chapter_id = chapter.id;
+            }
+
+            const response = await fetch(chatUrl, {
                 method: 'POST',
                 headers: {
                     ...jsonFetchHeaders(),
                     Accept: 'text/event-stream',
                 },
-                body: JSON.stringify({
-                    message: trimmed,
-                    chapter_id: chapter.id,
-                    history: history.length > 0 ? history : undefined,
-                }),
+                body: JSON.stringify(body),
             });
 
             if (!response.ok) {
@@ -188,7 +210,7 @@ export default function AiChatDrawer({
         } finally {
             setIsStreaming(false);
         }
-    }, [book.id, chapter.id, isStreaming, t]);
+    }, [book.id, chapter?.id, editorialReview, isStreaming, t]);
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
@@ -200,10 +222,10 @@ export default function AiChatDrawer({
         [handleSend],
     );
 
-    const characterNames = (chapter.characters ?? [])
-        .map((c) => c.name)
-        .slice(0, 3);
-    const wordCount = chapter.word_count ?? 0;
+    const characterNames = chapter
+        ? (chapter.characters ?? []).map((c) => c.name).slice(0, 3)
+        : [];
+    const wordCount = chapter?.word_count ?? 0;
 
     return (
         <aside
@@ -237,33 +259,54 @@ export default function AiChatDrawer({
             </div>
 
             {/* Chapter Context */}
-            <div className="flex flex-col gap-1 border-b border-border-light px-5 py-2.5">
-                <div className="flex items-center gap-2">
-                    <span className="size-[5px] shrink-0 rounded-full bg-ai-green" />
-                    <BookOpen size={14} className="shrink-0 text-accent" />
-                    <span className="truncate text-xs font-medium text-ink">
-                        {chapter.title || 'Untitled'}
-                    </span>
-                    <span className="shrink-0 rounded bg-neutral-bg px-1.5 py-0.5 text-[11px] font-medium text-ink-muted">
-                        {t('chat.chapter', {
-                            number: chapter.reader_order + 1,
-                        })}
-                    </span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <span className="truncate text-[11px] text-ink-faint">
-                        {t('chat.fullContext')}
-                        {characterNames.length > 0 &&
-                            ` · ${characterNames.join(', ')}`}
-                        {wordCount > 0 &&
-                            ` · ${t('chat.words', { count: wordCount, formattedCount: wordCount.toLocaleString() })}`}
-                    </span>
-                </div>
-                <div className="flex items-center gap-3">
+            {chapter && (
+                <div className="flex flex-col gap-1 border-b border-border-light px-5 py-2.5">
+                    <div className="flex items-center gap-2">
+                        <span className="size-[5px] shrink-0 rounded-full bg-ai-green" />
+                        <BookOpen size={14} className="shrink-0 text-accent" />
+                        <span className="truncate text-xs font-medium text-ink">
+                            {chapter.title || 'Untitled'}
+                        </span>
+                        <span className="shrink-0 rounded bg-neutral-bg px-1.5 py-0.5 text-[11px] font-medium text-ink-muted">
+                            {t('chat.chapter', {
+                                number: chapter.reader_order + 1,
+                            })}
+                        </span>
+                    </div>
                     <div className="flex items-center gap-1">
-                        <span className="size-1 rounded-full bg-ai-green" />
-                        <span className="text-[11px] text-ink-muted">
-                            {t('chat.chapterLoaded')}
+                        <span className="truncate text-[11px] text-ink-faint">
+                            {t('chat.fullContext')}
+                            {characterNames.length > 0 &&
+                                ` · ${characterNames.join(', ')}`}
+                            {wordCount > 0 &&
+                                ` · ${t('chat.words', { count: wordCount, formattedCount: wordCount.toLocaleString() })}`}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1">
+                            <span className="size-1 rounded-full bg-ai-green" />
+                            <span className="text-[11px] text-ink-muted">
+                                {t('chat.chapterLoaded')}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="size-1 rounded-full bg-ai-green" />
+                            <span className="text-[11px] text-ink-muted">
+                                {t('chat.bookContext')}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Editorial Review Context */}
+            {editorialReview && !chapter && (
+                <div className="flex flex-col gap-1 border-b border-border-light px-5 py-2.5">
+                    <div className="flex items-center gap-2">
+                        <span className="size-[5px] shrink-0 rounded-full bg-ai-green" />
+                        <Sparkles size={14} className="shrink-0 text-accent" />
+                        <span className="truncate text-xs font-medium text-ink">
+                            {t('editorial-review:sectionLabel.editorialReview')}
                         </span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -273,7 +316,7 @@ export default function AiChatDrawer({
                         </span>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Messages */}
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-5">
