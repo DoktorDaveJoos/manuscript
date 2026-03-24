@@ -19,24 +19,32 @@
     font-display: swap;
 }
 
+@font-face {
+    font-family: 'Playfair Display';
+    src: url('../fonts/PlayfairDisplay-Regular.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
 @theme {
     --font-sans:
         'Geist', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
         'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --font-serif:
-        'Literata', 'Playfair Display', ui-serif, Georgia, Cambria,
-        'Times New Roman', Times, serif;
+        'Playfair Display', ui-serif, Georgia, Cambria, 'Times New Roman',
+        Times, serif;
 
-    --color-surface: #fcfaf7;
-    --color-surface-card: #fcfaf7;
+    --color-surface: #fafafa;
+    --color-surface-card: #ffffff;
     --color-ink: #141414;
     --color-ink-muted: #737373;
     --color-ink-faint: #a3a3a3;
-    --color-border: #e4e2dd;
-    --color-border-light: #e4e2dd;
-    --color-border-dashed: #d5d2cc;
-    --color-border-drop: #d5d2cc;
-    --color-neutral-bg: #f1eeea;
+    --color-border: #e5e5e5;
+    --color-border-light: #ebebeb;
+    --color-border-dashed: #d4d4d4;
+    --color-border-drop: #d4d4d4;
+    --color-neutral-bg: #f5f5f5;
     --color-accent: #b87333;
     --color-accent-dark: #9a6229;
     --color-accent-light: #f5ede3;
@@ -44,14 +52,14 @@
     --color-status-final: #6dbb7b;
     --color-status-revised: #8ab0c8;
     --color-status-draft: #b87333;
-    --color-border-subtle: #eeece8;
+    --color-border-subtle: #f0f0f0;
     --color-ai-green: #6dbb7b;
     --color-delete: #dc2828;
     --color-delete-bg: #fdf2f0;
     --color-drop: #4a7c59;
     --color-ink-soft: #595959;
-    --color-section-header: #d5d2cc;
-    --color-kbd-bg: #f5f3ef;
+    --color-section-header: #d4d4d4;
+    --color-kbd-bg: #f5f5f5;
     --color-ink-whisper: #1414144d;
     --color-surface-warm: #f5ede3;
     --color-ink-warm: #6b6358;
@@ -69,18 +77,18 @@
 }
 
 html.dark {
-    --color-surface: #161514;
-    --color-surface-card: #1c1b1a;
+    --color-surface: #161616;
+    --color-surface-card: #1c1c1c;
     --color-ink: #e8e5df;
     --color-ink-muted: #9a958e;
     --color-ink-faint: #6b665e;
     --color-ink-soft: #c8c3ba;
-    --color-border: #2e2d2b;
-    --color-border-light: #2a2722;
-    --color-border-subtle: #242220;
-    --color-border-dashed: #3d3a35;
-    --color-border-drop: #3d3a35;
-    --color-neutral-bg: #242322;
+    --color-border: #2e2e2e;
+    --color-border-light: #2a2a2a;
+    --color-border-subtle: #242424;
+    --color-border-dashed: #3d3d3d;
+    --color-border-drop: #3d3d3d;
+    --color-neutral-bg: #242424;
     --color-accent: #d4956a;
     --color-accent-dark: #b87333;
     --color-accent-light: #2a2620;
@@ -92,8 +100,8 @@ html.dark {
     --color-delete: #d34545;
     --color-delete-bg: #3a2520;
     --color-drop: #5a8f5c;
-    --color-section-header: #3d3a35;
-    --color-kbd-bg: #242220;
+    --color-section-header: #3d3d3d;
+    --color-kbd-bg: #242424;
     --color-ink-whisper: #e8e5df4d;
     --color-surface-warm: #2a2620;
     --color-ink-warm: #6b6560;
