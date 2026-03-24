@@ -455,6 +455,18 @@ export type ManuscriptTarget = {
     days_writing: number;
 };
 
+export type NanowrimoData = {
+    year: number;
+    is_active: boolean;
+    target: number;
+    total_words: number;
+    progress_percent: number;
+    days_remaining: number;
+    days_elapsed: number;
+    daily_pace: number;
+    on_track: boolean;
+};
+
 export type TrashItem = {
     id: number;
     type: 'storyline' | 'chapter' | 'scene';

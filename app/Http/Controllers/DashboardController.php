@@ -9,6 +9,7 @@ use App\Models\Book;
 use App\Models\License;
 use App\Models\WritingSession;
 use App\Services\HealthScoreCalculator;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -83,6 +84,8 @@ class DashboardController extends Controller
                 'features_breakdown' => AiUsageLog::featureBreakdown($book->id, $book->ai_usage_reset_at),
                 'monthly_usage' => AiUsageLog::monthlyUsage($book->id, $book->ai_usage_reset_at),
             ] : null,
+            'nanowrimo' => $isLicensed ? $this->buildNanowrimoData($book, $totalWords) : null,
+            'streak' => $streak,
         ]);
     }
 
@@ -370,6 +373,38 @@ class DashboardController extends Controller
             'milestone_reached_at' => $book->milestone_reached_at?->toISOString(),
             'milestone_dismissed' => (bool) $book->milestone_dismissed,
             'days_writing' => $daysWriting,
+        ];
+    }
+
+    /**
+     * @return array{year: int, is_active: bool, target: int, total_words: int, progress_percent: int|float, days_remaining: int, days_elapsed: int, daily_pace: int, on_track: bool}|null
+     */
+    private function buildNanowrimoData(Book $book, int $totalWords): ?array
+    {
+        if (! $book->nanowrimo_year) {
+            return null;
+        }
+
+        $nanoStart = Carbon::create($book->nanowrimo_year, 11, 1);
+        $nanoEnd = Carbon::create($book->nanowrimo_year, 11, 30)->endOfDay();
+        $target = 50000;
+        $isActive = now()->between($nanoStart, $nanoEnd);
+        $daysElapsed = $isActive ? (int) $nanoStart->diffInDays(now()) + 1 : 0;
+        $daysRemaining = $isActive ? (int) now()->diffInDays($nanoEnd) : 0;
+        $progressPercent = $target > 0 ? min(100, round(($totalWords / $target) * 100, 1)) : 0;
+        $dailyPace = $daysElapsed > 0 ? (int) round($totalWords / $daysElapsed) : 0;
+        $onTrack = $daysElapsed > 0 && ($totalWords / $daysElapsed) >= ($target / 30);
+
+        return [
+            'year' => $book->nanowrimo_year,
+            'is_active' => $isActive,
+            'target' => $target,
+            'total_words' => $totalWords,
+            'progress_percent' => $progressPercent,
+            'days_remaining' => $daysRemaining,
+            'days_elapsed' => $daysElapsed,
+            'daily_pace' => $dailyPace,
+            'on_track' => $onTrack,
         ];
     }
 }

@@ -34,6 +34,7 @@ class Book extends Model
             'ai_usage_reset_at' => 'datetime',
             'genre' => Genre::class,
             'secondary_genres' => 'array',
+            'nanowrimo_year' => 'integer',
         ];
     }
 
