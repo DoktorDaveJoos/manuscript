@@ -46,6 +46,7 @@ class RecordAiTokenUsage
             'TextBeautifier' => 'beautify',
             'StoryBibleBuilder' => 'story_bible',
             'EntityExtractor', 'EntityConsolidator' => 'entity_extraction',
+            'EditorialNotesAgent', 'EditorialSynthesisAgent', 'EditorialSummaryAgent' => 'editorial_review',
             default => 'other',
         };
     }
