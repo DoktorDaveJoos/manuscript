@@ -19,5 +19,6 @@
     "nav.plot": "Plot",
     "nav.canvas": "Canvas",
     "nav.export": "Export",
+    "nav.ai": "AI",
     "preview": "Preview"
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Ai\Agents\BookChatAgent;
+use App\Ai\Agents\EditorialChatAgent;
 use App\Ai\Contracts\BelongsToBook;
 use App\Listeners\RecordAiTokenUsage;
 use App\Models\Book;
@@ -199,6 +200,31 @@ test('reset-usage endpoint zeros counters', function () {
 test('event listener records usage when agent implements BelongsToBook', function () {
     $book = Book::factory()->create();
     $agent = new BookChatAgent($book);
+
+    expect($agent)->toBeInstanceOf(BelongsToBook::class);
+
+    $usage = new Usage(promptTokens: 500, completionTokens: 200);
+    $meta = new Meta(model: 'gpt-4o-mini', provider: 'openai');
+    $response = new AgentResponse('inv-1', 'Hello', $usage, $meta);
+
+    $provider = Mockery::mock(TextProvider::class);
+    $prompt = new AgentPrompt($agent, 'test', [], $provider, 'gpt-4o-mini');
+
+    $event = new AgentPrompted('inv-1', $prompt, $response);
+
+    $listener = app(RecordAiTokenUsage::class);
+    $listener->handle($event);
+
+    $book->refresh();
+
+    expect($book->ai_input_tokens)->toBe(500)
+        ->and($book->ai_output_tokens)->toBe(200)
+        ->and($book->ai_cost_microdollars)->toBeGreaterThan(0);
+});
+
+test('event listener resolves EditorialChatAgent to editorial_review_chat feature', function () {
+    $book = Book::factory()->create();
+    $agent = new EditorialChatAgent($book, 'Test editorial context');
 
     expect($agent)->toBeInstanceOf(BelongsToBook::class);
 

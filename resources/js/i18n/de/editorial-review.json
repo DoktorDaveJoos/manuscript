@@ -1,0 +1,54 @@
+{
+    "title": "KI-Assistent",
+    "subtitle": "Der Lektoratspartner für Ihr Manuskript",
+
+    "tabs.dashboard": "KI-Dashboard",
+    "tabs.editorialReview": "Lektorat",
+
+    "emptyState.heading": "Umfassendes redaktionelles Feedback für Ihr Manuskript.",
+    "emptyState.description": "Das Lektorat ist für fertige Erstentwürfe konzipiert. Es analysiert Ihr gesamtes Manuskript in acht redaktionellen Dimensionen und ist token-intensiv. Für laufendes Feedback während des Schreibens nutzen Sie stattdessen die Kapitelanalyse.",
+    "emptyState.button": "Lektorat starten",
+
+    "confirm.title": "Lektorat starten?",
+    "confirm.description": "Dies wird Ihr gesamtes Manuskript analysieren. Das Lektorat funktioniert am besten mit fertigen Erstentwürfen. Fortfahren?",
+
+    "progress.refreshing": "Kapitelanalysen werden aktualisiert...",
+    "progress.analyzing": "Kapitel {{current}} von {{total}} wird analysiert...",
+    "progress.synthesizing": "{{section}} wird zusammengefasst...",
+    "progress.pending": "Lektorat wird gestartet...",
+
+    "report.overallScore": "Gesamtbewertung",
+    "report.quality.good": "Gut",
+    "report.quality.fair": "Befriedigend",
+    "report.quality.needsWork": "Verbesserungsbedarf",
+    "report.executiveSummary": "Zusammenfassung",
+    "report.strengths": "Stärken",
+    "report.improvements": "Verbesserungspotenzial",
+    "report.startNew": "Neues Lektorat starten",
+    "report.reviewFrom": "Lektorat vom {{date}}",
+    "report.manuscriptPreview": "Manuskript-Vorschau",
+
+    "section.plot": "Handlung",
+    "section.characters": "Figuren",
+    "section.pacing": "Erzähltempo",
+    "section.narrative_voice": "Erzählstimme",
+    "section.themes": "Themen",
+    "section.scene_craft": "Szenengestaltung",
+    "section.prose_style": "Prosastil",
+    "section.chapter_notes": "Kapitelnotizen",
+
+    "section.summary": "Zusammenfassung",
+    "section.findings": "Befunde",
+    "section.recommendations": "Empfehlungen",
+    "section.discuss": "Besprechen",
+    "section.chapters": "Kap. {{chapters}}",
+
+    "severity.critical": "Kritisch",
+    "severity.warning": "Warnung",
+    "severity.suggestion": "Vorschlag",
+
+    "failed.title": "Lektorat fehlgeschlagen",
+    "failed.retry": "Erneut versuchen",
+
+    "sectionLabel.editorialReview": "Lektorat"
+}

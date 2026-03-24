@@ -5,6 +5,7 @@ import deAi from './de/ai.json';
 import deCommon from './de/common.json';
 import deDashboard from './de/dashboard.json';
 import deEditor from './de/editor.json';
+import deEditorialReview from './de/editorial-review.json';
 import deExport from './de/export.json';
 import deOnboarding from './de/onboarding.json';
 import dePlot from './de/plot.json';
@@ -14,6 +15,7 @@ import enAi from './en/ai.json';
 import enCommon from './en/common.json';
 import enDashboard from './en/dashboard.json';
 import enEditor from './en/editor.json';
+import enEditorialReview from './en/editorial-review.json';
 import enExport from './en/export.json';
 import enOnboarding from './en/onboarding.json';
 import enPlot from './en/plot.json';
@@ -24,6 +26,7 @@ import esAi from './es/ai.json';
 import esCommon from './es/common.json';
 import esDashboard from './es/dashboard.json';
 import esEditor from './es/editor.json';
+import esEditorialReview from './es/editorial-review.json';
 import esExport from './es/export.json';
 import esOnboarding from './es/onboarding.json';
 import esPlot from './es/plot.json';
@@ -42,6 +45,7 @@ i18n.use(initReactI18next).init({
             wiki: enWiki,
             ai: enAi,
             export: enExport,
+            'editorial-review': enEditorialReview,
         },
         de: {
             common: deCommon,
@@ -53,6 +57,7 @@ i18n.use(initReactI18next).init({
             wiki: deWiki,
             ai: deAi,
             export: deExport,
+            'editorial-review': deEditorialReview,
         },
         es: {
             common: esCommon,
@@ -64,6 +69,7 @@ i18n.use(initReactI18next).init({
             wiki: esWiki,
             ai: esAi,
             export: esExport,
+            'editorial-review': esEditorialReview,
         },
     },
     lng: 'en',
@@ -79,6 +85,7 @@ i18n.use(initReactI18next).init({
         'wiki',
         'ai',
         'export',
+        'editorial-review',
     ],
     interpolation: {
         escapeValue: false,

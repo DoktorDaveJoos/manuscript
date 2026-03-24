@@ -1,0 +1,243 @@
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
+import SectionLabel from '@/components/ui/SectionLabel';
+import type { Chapter, EditorialReview } from '@/types/models';
+import EditorialReviewSection from './EditorialReviewSection';
+
+function ScoreDisplay({
+    score,
+    qualityLabel,
+}: {
+    score: number;
+    qualityLabel: { good: string; fair: string; needsWork: string };
+}) {
+    return (
+        <div className="flex flex-col items-center gap-1">
+            <span className="font-serif text-[32px] leading-[1] font-normal text-ink">
+                {score}
+            </span>
+            <span className="text-[11px] font-medium text-ink-faint">
+                {score >= 70
+                    ? qualityLabel.good
+                    : score >= 50
+                      ? qualityLabel.fair
+                      : qualityLabel.needsWork}
+            </span>
+        </div>
+    );
+}
+
+function StrengthsAndImprovements({
+    strengths,
+    improvements,
+}: {
+    strengths: string[];
+    improvements: string[];
+}) {
+    const { t } = useTranslation('editorial-review');
+
+    return (
+        <div className="flex gap-8">
+            {/* Strengths */}
+            <div className="flex flex-1 flex-col gap-2">
+                <SectionLabel>{t('report.strengths')}</SectionLabel>
+                <div className="flex flex-col gap-2">
+                    {strengths.map((s, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                            <span className="mt-[6px] size-2 shrink-0 rounded-full bg-status-final" />
+                            <span className="text-[13px] leading-relaxed text-ink-muted">
+                                {s}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Improvements */}
+            <div className="flex flex-1 flex-col gap-2">
+                <SectionLabel>{t('report.improvements')}</SectionLabel>
+                <div className="flex flex-col gap-2">
+                    {improvements.map((imp, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                            <span className="mt-[6px] size-2 shrink-0 rounded-full bg-accent" />
+                            <span className="text-[13px] leading-relaxed text-ink-muted">
+                                {imp}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default function EditorialReviewReport({
+    review,
+    reviews,
+    chapters,
+    onSelectReview,
+    onStartNew,
+    starting,
+    onDiscussFinding,
+}: {
+    review: EditorialReview;
+    reviews: EditorialReview[];
+    chapters: Chapter[];
+    onSelectReview: (review: EditorialReview) => void;
+    onStartNew: () => void;
+    starting: boolean;
+    onDiscussFinding: (sectionType: string, findingIndex: number) => void;
+}) {
+    const { t, i18n } = useTranslation('editorial-review');
+    const [showConfirm, setShowConfirm] = useState(false);
+
+    const formatDate = (dateStr: string | null) =>
+        dateStr
+            ? new Date(dateStr).toLocaleDateString(i18n.language, {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+              })
+            : '';
+
+    const sectionOrder = [
+        'plot',
+        'characters',
+        'pacing',
+        'narrative_voice',
+        'themes',
+        'scene_craft',
+        'prose_style',
+        'chapter_notes',
+    ] as const;
+
+    const orderedSections = sectionOrder
+        .map((type) => review.sections.find((s) => s.type === type))
+        .filter(Boolean);
+
+    return (
+        <>
+            <div className="flex flex-col gap-6">
+                {/* Header card */}
+                <div className="flex flex-col gap-6 rounded-lg border border-border-light bg-surface-card p-6">
+                    <div className="flex items-start gap-6">
+                        {review.overall_score !== null && (
+                            <ScoreDisplay
+                                score={review.overall_score}
+                                qualityLabel={{
+                                    good: t('report.quality.good'),
+                                    fair: t('report.quality.fair'),
+                                    needsWork: t('report.quality.needsWork'),
+                                }}
+                            />
+                        )}
+                        <div className="flex min-w-0 flex-1 flex-col gap-2">
+                            {review.executive_summary && (
+                                <p className="text-[13px] leading-relaxed text-ink-muted">
+                                    {review.executive_summary}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Strengths & Improvements */}
+                    {review.top_strengths &&
+                        review.top_improvements &&
+                        review.top_strengths.length > 0 &&
+                        review.top_improvements.length > 0 && (
+                            <StrengthsAndImprovements
+                                strengths={review.top_strengths}
+                                improvements={review.top_improvements}
+                            />
+                        )}
+                </div>
+
+                {/* History bar */}
+                <div className="flex items-center justify-between">
+                    <select
+                        value={review.id}
+                        onChange={(e) => {
+                            const selected = reviews.find(
+                                (r) => r.id === Number(e.target.value),
+                            );
+                            if (selected) onSelectReview(selected);
+                        }}
+                        className="rounded-md border border-border bg-surface px-3 py-1.5 text-[13px] text-ink"
+                    >
+                        {reviews.map((r) => (
+                            <option key={r.id} value={r.id}>
+                                {t('report.reviewFrom', {
+                                    date:
+                                        formatDate(r.completed_at) ||
+                                        `#${r.id}`,
+                                })}
+                            </option>
+                        ))}
+                    </select>
+
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => setShowConfirm(true)}
+                        disabled={starting}
+                    >
+                        {t('report.startNew')}
+                    </Button>
+                </div>
+
+                {/* Section Label */}
+                <SectionLabel>{t('sectionLabel.editorialReview')}</SectionLabel>
+
+                {/* Accordion sections */}
+                <div className="flex flex-col divide-y divide-border-subtle rounded-lg border border-border-light bg-surface-card">
+                    {orderedSections.map(
+                        (section) =>
+                            section && (
+                                <EditorialReviewSection
+                                    key={section.id}
+                                    section={section}
+                                    chapters={chapters}
+                                    onDiscussFinding={onDiscussFinding}
+                                />
+                            ),
+                    )}
+                </div>
+            </div>
+
+            {showConfirm && (
+                <Dialog onClose={() => setShowConfirm(false)} width={420}>
+                    <div className="flex flex-col gap-6">
+                        <div className="flex flex-col gap-2">
+                            <h2 className="font-serif text-2xl leading-8 font-normal tracking-[-0.01em] text-ink">
+                                {t('confirm.title')}
+                            </h2>
+                            <p className="text-sm leading-relaxed text-ink-muted">
+                                {t('confirm.description')}
+                            </p>
+                        </div>
+                        <div className="flex items-center justify-end gap-3">
+                            <Button
+                                variant="secondary"
+                                onClick={() => setShowConfirm(false)}
+                            >
+                                {t('common:cancel')}
+                            </Button>
+                            <Button
+                                variant="primary"
+                                onClick={() => {
+                                    setShowConfirm(false);
+                                    onStartNew();
+                                }}
+                                disabled={starting}
+                            >
+                                {t('common:confirm')}
+                            </Button>
+                        </div>
+                    </div>
+                </Dialog>
+            )}
+        </>
+    );
+}

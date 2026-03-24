@@ -1,0 +1,54 @@
+{
+    "title": "AI Assistant",
+    "subtitle": "Your manuscript's editorial partner",
+
+    "tabs.dashboard": "AI Dashboard",
+    "tabs.editorialReview": "Editorial Review",
+
+    "emptyState.heading": "Get comprehensive editorial feedback on your manuscript.",
+    "emptyState.description": "Editorial Review is designed for completed first drafts. It analyzes your entire manuscript across eight editorial dimensions and is token-intensive. For ongoing feedback while writing, use Chapter Analysis instead.",
+    "emptyState.button": "Start Editorial Review",
+
+    "confirm.title": "Start Editorial Review?",
+    "confirm.description": "This will analyze your entire manuscript. Editorial Review works best on completed first drafts. Continue?",
+
+    "progress.refreshing": "Refreshing chapter analyses...",
+    "progress.analyzing": "Analyzing chapter {{current}} of {{total}}...",
+    "progress.synthesizing": "Synthesizing {{section}}...",
+    "progress.pending": "Starting editorial review...",
+
+    "report.overallScore": "Overall Score",
+    "report.quality.good": "Good",
+    "report.quality.fair": "Fair",
+    "report.quality.needsWork": "Needs Work",
+    "report.executiveSummary": "Executive Summary",
+    "report.strengths": "Strengths",
+    "report.improvements": "Areas for Improvement",
+    "report.startNew": "Start New Review",
+    "report.reviewFrom": "Review from {{date}}",
+    "report.manuscriptPreview": "Manuscript Preview",
+
+    "section.plot": "Plot",
+    "section.characters": "Characters",
+    "section.pacing": "Pacing",
+    "section.narrative_voice": "Narrative Voice",
+    "section.themes": "Themes",
+    "section.scene_craft": "Scene Craft",
+    "section.prose_style": "Prose Style",
+    "section.chapter_notes": "Chapter Notes",
+
+    "section.summary": "Summary",
+    "section.findings": "Findings",
+    "section.recommendations": "Recommendations",
+    "section.discuss": "Discuss",
+    "section.chapters": "Ch. {{chapters}}",
+
+    "severity.critical": "Critical",
+    "severity.warning": "Warning",
+    "severity.suggestion": "Suggestion",
+
+    "failed.title": "Editorial Review Failed",
+    "failed.retry": "Retry",
+
+    "sectionLabel.editorialReview": "Editorial Review"
+}
