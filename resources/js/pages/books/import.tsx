@@ -9,6 +9,7 @@ import type { ChapterItem } from '@/components/onboarding/ImportChapterRow';
 import ReviewPhase from '@/components/onboarding/ReviewPhase';
 import type { ReviewStoryline } from '@/components/onboarding/ReviewPhase';
 import Button from '@/components/ui/Button';
+import Checkbox from '@/components/ui/Checkbox';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
 import type { Book, Storyline, StorylineType } from '@/types/models';
 import {
@@ -99,17 +100,15 @@ function UploadPhase({
                 )}
 
                 {files.length >= 2 && (
-                    <label className="flex cursor-pointer items-center gap-3 px-4 py-3">
-                        <input
-                            type="checkbox"
+                    <div className="flex items-center gap-3 px-4 py-3">
+                        <Checkbox
                             checked={mergeMode}
-                            onChange={(e) => setMergeMode(e.target.checked)}
-                            className="h-4 w-4 rounded border-border text-ink accent-ink"
+                            onChange={() => setMergeMode(!mergeMode)}
                         />
                         <span className="text-[13px] leading-4 text-ink-soft">
                             {t('uploadPhase.mergeFiles')}
                         </span>
-                    </label>
+                    </div>
                 )}
             </div>
 
