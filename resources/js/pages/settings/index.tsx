@@ -1478,11 +1478,11 @@ export default function Settings({
                         onNavigate={handleNavigate}
                     />
                     <main ref={mainRef} className="flex-1 overflow-y-auto">
-                        <div className="mx-auto w-full max-w-[760px] px-[60px] pt-12 pb-[80vh]">
+                        <div className="mx-auto w-full max-w-[760px] px-12 pt-12 pb-[80vh]">
                             <div className="flex flex-col gap-9">
                                 {/* Page header */}
                                 <div>
-                                    <h1 className="text-[24px] font-semibold tracking-[-0.02em] text-ink">
+                                    <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
                                         {t('title')}
                                     </h1>
                                     <p className="mt-1 text-[14px] text-ink-muted">
