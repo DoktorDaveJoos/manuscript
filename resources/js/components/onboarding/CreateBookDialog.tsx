@@ -55,7 +55,7 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
         <Dialog onClose={onClose} backdrop="none" className="!p-0">
             <form onSubmit={handleSubmit} className="flex flex-col gap-8 p-10">
                 <div className="flex flex-col gap-2">
-                    <h2 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">
+                    <h2 className="font-serif text-2xl leading-8 font-normal tracking-[-0.01em] text-ink">
                         {t('createBook.title')}
                     </h2>
                     <p className="text-sm leading-[22px] text-ink-muted">

@@ -1,12 +1,12 @@
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { destroy } from '@/actions/App/Http/Controllers/StorylineController';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import type { Storyline } from '@/types/models';
+import { destroy } from '@/actions/App/Http/Controllers/StorylineController';
 
 export default function DeleteStorylineDialog({
     bookId,
@@ -53,7 +53,7 @@ export default function DeleteStorylineDialog({
                         />
                     </svg>
                 </div>
-                <h2 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">
+                <h2 className="font-serif text-2xl leading-8 font-normal tracking-[-0.01em] text-ink">
                     {t('deleteStoryline.title')}
                 </h2>
                 <p className="text-sm leading-[22px] text-ink-muted">
