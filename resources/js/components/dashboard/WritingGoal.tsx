@@ -199,10 +199,10 @@ export default function WritingGoal({
 
             {/* Large number display */}
             <div className="flex items-end gap-1.5">
-                <span className="font-serif text-[48px] leading-[0.95] font-extrabold text-ink">
+                <span className="font-serif text-[32px] leading-[0.95] font-semibold text-ink">
                     {writingGoal.today_words.toLocaleString(i18n.language)}
                 </span>
-                <span className="font-serif text-[24px] leading-[0.95] font-light text-ink-faint">
+                <span className="font-serif text-[24px] leading-[0.95] font-normal text-ink-faint">
                     / {effectiveGoal.toLocaleString(i18n.language)}
                 </span>
             </div>
