@@ -49,7 +49,7 @@ export default function DeleteChapterDialog({
                         />
                     </svg>
                 </div>
-                <h2 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">
+                <h2 className="font-serif text-2xl leading-8 font-normal tracking-[-0.01em] text-ink">
                     {t('deleteChapter.title')}
                 </h2>
                 <p className="text-sm leading-[22px] text-ink-muted">
