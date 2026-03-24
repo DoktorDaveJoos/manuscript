@@ -22,6 +22,8 @@ class AppSettingsController extends Controller
         'send_error_reports',
         'crash_report_prompted',
         'auto_update',
+        'editor_font',
+        'editor_font_size',
     ];
 
     public function appearance(): Response

@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { cn } from '@/lib/utils';
 
 const ACTIVE_STYLES = {
     default: 'bg-neutral-bg font-medium text-ink',
@@ -16,6 +17,7 @@ export default function NavItem({
     onClick,
     suffix,
     activeVariant = 'default',
+    iconOnly = false,
 }: {
     label: string;
     icon?: React.ReactNode;
@@ -25,16 +27,25 @@ export default function NavItem({
     onClick?: () => void;
     suffix?: React.ReactNode;
     activeVariant?: ActiveVariant;
+    iconOnly?: boolean;
 }) {
-    const classes = `flex items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] transition-colors ${
-        isActive
-            ? ACTIVE_STYLES[activeVariant]
-            : disabled
-              ? 'cursor-default text-ink-faint'
-              : 'text-ink-muted hover:bg-neutral-bg hover:text-ink'
-    }`;
+    const stateClasses = isActive
+        ? ACTIVE_STYLES[activeVariant]
+        : disabled
+          ? 'cursor-default text-ink-faint'
+          : 'text-ink-muted hover:bg-neutral-bg hover:text-ink';
 
-    const content = (
+    const classes = cn(
+        'flex items-center rounded-md transition-colors',
+        iconOnly
+            ? 'justify-center size-8'
+            : 'gap-2.5 px-2.5 py-[7px] text-[13px]',
+        stateClasses,
+    );
+
+    const content = iconOnly ? (
+        <>{icon}</>
+    ) : (
         <>
             {icon}
             {label}
@@ -42,20 +53,22 @@ export default function NavItem({
         </>
     );
 
+    const titleAttr = iconOnly ? label : undefined;
+
     if (onClick) {
         return (
-            <button type="button" onClick={onClick} className={`${classes} w-full text-left`}>
+            <button type="button" onClick={onClick} title={titleAttr} className={cn(classes, !iconOnly && 'w-full text-left')}>
                 {content}
             </button>
         );
     }
 
     if (disabled || !href) {
-        return <span className={classes}>{content}</span>;
+        return <span title={titleAttr} className={classes}>{content}</span>;
     }
 
     return (
-        <Link href={href} className={classes}>
+        <Link href={href} title={titleAttr} className={classes}>
             {content}
         </Link>
     );

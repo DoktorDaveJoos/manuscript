@@ -190,31 +190,21 @@ html.dark {
     }
 }
 
-/* Tiptap editor prose styles — book-like typography */
+/* Tiptap editor prose styles */
 .editor-prose {
     font-family: var(--font-serif);
     font-size: var(--editor-font-size, 18px);
-    line-height: 1.45;
+    line-height: 1.55;
     color: var(--color-ink);
     outline: none;
-    text-align: justify;
-    hyphens: auto;
-    -webkit-hyphens: auto;
 }
 
 .editor-prose p {
-    margin: 0;
-    text-indent: 1em;
+    margin-bottom: 0.85em;
 }
 
-/* First paragraph of scene / after headings / after breaks: flush left */
-.editor-prose > p:first-child,
-.editor-prose h1 + p,
-.editor-prose h2 + p,
-.editor-prose h3 + p,
-.editor-prose hr + p,
-.editor-prose blockquote + p {
-    text-indent: 0;
+.editor-prose > *:last-child {
+    margin-bottom: 0;
 }
 
 .editor-prose h1 {
@@ -488,5 +478,4 @@ h1[contenteditable]:empty::before {
     height: 0;
     font-family: var(--font-serif);
     font-size: 18px;
-    text-indent: 0;
 }

@@ -10,6 +10,11 @@ import {
     useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+    acceptPartialVersion,
+    acceptVersion,
+    rejectVersion,
+} from '@/actions/App/Http/Controllers/ChapterController';
 import Button from '@/components/ui/Button';
 import { getXsrfToken } from '@/lib/csrf';
 import { ruleCheckers, RULE_THRESHOLDS, stripTags } from '@/lib/ruleCheckers';
@@ -19,11 +24,6 @@ import type {
     VersionSource,
 } from '@/types/models';
 import { getFontFamily } from './FontSelector';
-import {
-    acceptPartialVersion,
-    acceptVersion,
-    rejectVersion,
-} from '@/actions/App/Http/Controllers/ChapterController';
 
 function splitParagraphs(html: string | null): string[] {
     if (!html) return [];
@@ -622,7 +622,14 @@ export default function DiffView({
             )}
 
             {/* Side-by-side diff */}
-            <div className="flex flex-1 overflow-hidden">
+            <div
+                className="flex flex-1 overflow-hidden"
+                style={
+                    {
+                        '--font-serif': fontFamily,
+                    } as React.CSSProperties
+                }
+            >
                 {/* Left: Original */}
                 <div
                     ref={leftPanelRef}
@@ -641,11 +648,6 @@ export default function DiffView({
                     <div
                         ref={leftContentRef}
                         className="max-w-prose space-y-4 font-serif text-base leading-relaxed text-ink"
-                        style={
-                            {
-                                '--font-serif': fontFamily,
-                            } as React.CSSProperties
-                        }
                     >
                         {diff.aligned.map((para) =>
                             para.left ? (
@@ -698,11 +700,6 @@ export default function DiffView({
                     <div
                         ref={rightContentRef}
                         className="max-w-prose space-y-4 font-serif text-base leading-relaxed text-ink"
-                        style={
-                            {
-                                '--font-serif': fontFamily,
-                            } as React.CSSProperties
-                        }
                     >
                         {diff.aligned.map((para) =>
                             para.right ? (

@@ -1,12 +1,10 @@
 import CharacterCount from '@tiptap/extension-character-count';
 import Placeholder from '@tiptap/extension-placeholder';
-import TextAlign from '@tiptap/extension-text-align';
 import Typography from '@tiptap/extension-typography';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type { RefObject } from 'react';
 import { useEffect, useRef } from 'react';
-import { ParagraphEnterExtension } from '@/extensions/ParagraphEnterExtension';
 import { SceneBridgeExtension } from '@/extensions/SceneBridgeExtension';
 import { SearchHighlightExtension } from '@/extensions/SearchHighlightExtension';
 import { TypewriterScrollExtension } from '@/extensions/TypewriterScrollExtension';
@@ -38,8 +36,6 @@ export default function useChapterEditor({
                 Placeholder.configure({ placeholder: 'Start writing...' }),
                 CharacterCount,
                 Typography,
-                TextAlign.configure({ types: ['heading', 'paragraph'] }),
-                ParagraphEnterExtension,
                 TypewriterScrollExtension.configure({
                     scrollContainerRef,
                     enabledRef: typewriterEnabledRef,

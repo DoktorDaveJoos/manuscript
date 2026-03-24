@@ -3,6 +3,12 @@ import { DOMSerializer } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+    show,
+    split,
+    updateTitle,
+} from '@/actions/App/Http/Controllers/ChapterController';
+import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
 import AiChatDrawer from '@/components/editor/AiChatDrawer';
 import AiPanel from '@/components/editor/AiPanel';
@@ -31,12 +37,6 @@ import type {
     ProsePassRule,
     Scene,
 } from '@/types/models';
-import {
-    show,
-    split,
-    updateTitle,
-} from '@/actions/App/Http/Controllers/ChapterController';
-import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 
 type ChapterWithRelations = Chapter & {
     characters?: (Character & { pivot: CharacterChapterPivot })[];
@@ -207,42 +207,8 @@ export default function ChapterShow({
             document.exitFullscreen?.().catch(() => {});
     }, []);
 
-    const [editorFont, setEditorFont] = useState(() => {
-        try {
-            return (
-                localStorage.getItem('manuscript:editor-font') || 'eb-garamond'
-            );
-        } catch {
-            return 'eb-garamond';
-        }
-    });
-
-    const handleFontChange = useCallback((fontId: string) => {
-        setEditorFont(fontId);
-        try {
-            localStorage.setItem('manuscript:editor-font', fontId);
-        } catch {
-            // Ignore storage errors
-        }
-    }, []);
-
-    const [editorFontSize, setEditorFontSize] = useState(() => {
-        try {
-            const stored = localStorage.getItem('manuscript:editor-font-size');
-            return stored ? Number(stored) : 18;
-        } catch {
-            return 18;
-        }
-    });
-
-    const handleFontSizeChange = useCallback((size: number) => {
-        setEditorFontSize(size);
-        try {
-            localStorage.setItem('manuscript:editor-font-size', String(size));
-        } catch {
-            // Ignore storage errors
-        }
-    }, []);
+    const editorFont = app_settings.editor_font;
+    const editorFontSize = app_settings.editor_font_size;
 
     const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -662,10 +628,6 @@ export default function ChapterShow({
                             >
                                 <FormattingToolbar
                                     editor={activeEditor}
-                                    editorFont={editorFont}
-                                    onFontChange={handleFontChange}
-                                    editorFontSize={editorFontSize}
-                                    onFontSizeChange={handleFontSizeChange}
                                     onToggleFocusMode={toggleFocusMode}
                                     onToggleNotes={toggleNotes}
                                     isTypewriterMode={isTypewriterMode}

@@ -2,6 +2,12 @@ import { router } from '@inertiajs/react';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+    confirmImport,
+    parse,
+    skipImport,
+} from '@/actions/App/Http/Controllers/BookController';
+import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 import DropZone from '@/components/onboarding/DropZone';
 import FileRow from '@/components/onboarding/FileRow';
 import ImportChapterRow from '@/components/onboarding/ImportChapterRow';
@@ -12,12 +18,6 @@ import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
 import type { Book, Storyline, StorylineType } from '@/types/models';
-import {
-    confirmImport,
-    parse,
-    skipImport,
-} from '@/actions/App/Http/Controllers/BookController';
-import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 
 function normalizeFilenameToStorylineName(filename: string): string {
     return filename
@@ -100,7 +100,7 @@ function UploadPhase({
                 )}
 
                 {files.length >= 2 && (
-                    <div className="flex items-center gap-3 px-4 py-3">
+                    <label className="flex items-center gap-3 px-4 py-3">
                         <Checkbox
                             checked={mergeMode}
                             onChange={() => setMergeMode(!mergeMode)}
@@ -108,7 +108,7 @@ function UploadPhase({
                         <span className="text-[13px] leading-4 text-ink-soft">
                             {t('uploadPhase.mergeFiles')}
                         </span>
-                    </div>
+                    </label>
                 )}
             </div>
 

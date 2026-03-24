@@ -3,21 +3,6 @@ import { Trash2 } from 'lucide-react';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import NavItem from '@/components/ui/NavItem';
-import SectionLabel from '@/components/ui/SectionLabel';
-import Toggle from '@/components/ui/Toggle';
-import { useAutoUpdater } from '@/hooks/useAutoUpdater';
-import { useTheme } from '@/hooks/useTheme';
-import type { Theme } from '@/lib/theme';
-import { jsonFetchHeaders } from '@/lib/utils';
-import type {
-    AppSettings,
-    AiSetting,
-    License,
-    ProsePassRule,
-} from '@/types/models';
 import {
     update as updateAiProvider,
     deleteKey,
@@ -37,6 +22,26 @@ import {
     updateAboutAuthor,
     updateProsePassRules,
 } from '@/actions/App/Http/Controllers/SettingsController';
+import { DEFAULT_FONT_ID, FONTS } from '@/components/editor/FontSelector';
+import {
+    DEFAULT_FONT_SIZE,
+    FONT_SIZES,
+} from '@/components/editor/FontSizeSelector';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import NavItem from '@/components/ui/NavItem';
+import SectionLabel from '@/components/ui/SectionLabel';
+import Toggle from '@/components/ui/Toggle';
+import { useAutoUpdater } from '@/hooks/useAutoUpdater';
+import { useTheme } from '@/hooks/useTheme';
+import type { Theme } from '@/lib/theme';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type {
+    AppSettings,
+    AiSetting,
+    License,
+    ProsePassRule,
+} from '@/types/models';
 
 type ProviderSetting = AiSetting & {
     label: string;
@@ -350,13 +355,19 @@ function EditorSection({
     saveSetting,
 }: {
     settings: AppSettings;
-    saveSetting: (key: string, value: boolean) => void;
+    saveSetting: (key: string, value: boolean | string | number) => void;
 }) {
     const { t } = useTranslation('settings');
     const [hideToolbar, setHideToolbar] = useState(
         settings.hide_formatting_toolbar,
     );
     const [showAi, setShowAi] = useState(settings.show_ai_features);
+    const [editorFont, setEditorFont] = useState(
+        settings.editor_font ?? DEFAULT_FONT_ID,
+    );
+    const [editorFontSize, setEditorFontSize] = useState(
+        Number(settings.editor_font_size) || DEFAULT_FONT_SIZE,
+    );
 
     return (
         <div>
@@ -364,6 +375,71 @@ function EditorSection({
                 {t('appearance.editor').toUpperCase()}
             </SectionLabel>
             <div className="mt-3 flex flex-col gap-3">
+                {/* Font */}
+                <div className="rounded-lg border border-border bg-surface-card px-6 py-3.5">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <span className="text-[14px] font-medium text-ink">
+                                {t('appearance.editorFont.label')}
+                            </span>
+                            <p className="mt-0.5 text-[13px] text-ink-muted">
+                                {t('appearance.editorFont.description')}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                        {FONTS.map((font) => (
+                            <button
+                                key={font.id}
+                                type="button"
+                                onClick={() => {
+                                    setEditorFont(font.id);
+                                    saveSetting('editor_font', font.id);
+                                }}
+                                className={`rounded-md border px-3 py-1.5 text-[13px] transition-colors ${
+                                    editorFont === font.id
+                                        ? 'border-accent bg-accent/10 text-ink'
+                                        : 'border-border text-ink-muted hover:border-border-dashed hover:text-ink'
+                                }`}
+                                style={{ fontFamily: font.family }}
+                            >
+                                {font.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Font size */}
+                <div className="flex items-center justify-between rounded-lg border border-border bg-surface-card px-6 py-3.5">
+                    <div>
+                        <span className="text-[14px] font-medium text-ink">
+                            {t('appearance.editorFontSize.label')}
+                        </span>
+                        <p className="mt-0.5 text-[13px] text-ink-muted">
+                            {t('appearance.editorFontSize.description')}
+                        </p>
+                    </div>
+                    <div className="flex gap-1">
+                        {FONT_SIZES.map((size) => (
+                            <button
+                                key={size}
+                                type="button"
+                                onClick={() => {
+                                    setEditorFontSize(size);
+                                    saveSetting('editor_font_size', size);
+                                }}
+                                className={`flex h-8 w-8 items-center justify-center rounded-md border text-[13px] transition-colors ${
+                                    editorFontSize === size
+                                        ? 'border-accent bg-accent/10 text-ink'
+                                        : 'border-border text-ink-muted hover:border-border-dashed hover:text-ink'
+                                }`}
+                            >
+                                {size}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 <div className="flex items-center justify-between rounded-lg border border-border bg-surface-card px-6 py-3.5">
                     <div>
                         <span className="text-[14px] font-medium text-ink">
@@ -1458,15 +1534,18 @@ export default function Settings({
         });
     }, []);
 
-    const saveSetting = useCallback((key: string, value: boolean) => {
-        fetch(update.url(), {
-            method: 'PUT',
-            headers: jsonFetchHeaders(),
-            body: JSON.stringify({ key, value }),
-        }).then(() => {
-            router.reload({ only: ['settings'] });
-        });
-    }, []);
+    const saveSetting = useCallback(
+        (key: string, value: boolean | string | number) => {
+            fetch(update.url(), {
+                method: 'PUT',
+                headers: jsonFetchHeaders(),
+                body: JSON.stringify({ key, value }),
+            }).then(() => {
+                router.reload({ only: ['settings'] });
+            });
+        },
+        [],
+    );
 
     return (
         <>

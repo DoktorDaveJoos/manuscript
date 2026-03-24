@@ -18,6 +18,10 @@
     "nav.wiki": "Wiki",
     "nav.plot": "Handlung",
     "nav.canvas": "Leinwand",
+    "nav.settings": "Einstellungen",
+    "nav.library": "Bibliothek",
     "nav.export": "Export",
-    "preview": "Vorschau"
+    "preview": "Vorschau",
+    "sidebar.expand": "Seitenleiste ausklappen",
+    "sidebar.collapse": "Seitenleiste einklappen"
 }

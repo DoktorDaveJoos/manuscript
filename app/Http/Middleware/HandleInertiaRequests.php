@@ -65,6 +65,8 @@ class HandleInertiaRequests extends Middleware
                 'show_scenes' => AppSetting::get('show_scenes', true),
                 'send_error_reports' => AppSetting::get('send_error_reports', false),
                 'crash_report_prompted' => AppSetting::get('crash_report_prompted', false),
+                'editor_font' => AppSetting::get('editor_font', 'eb-garamond'),
+                'editor_font_size' => (int) AppSetting::get('editor_font_size', 18),
             ],
             'ai_configured' => fn () => AiSetting::activeProvider()?->isConfigured() ?? false,
             'locale' => fn () => app()->getLocale(),

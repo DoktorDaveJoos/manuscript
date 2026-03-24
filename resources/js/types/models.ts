@@ -79,6 +79,8 @@ export type AppSettings = {
     show_scenes: boolean;
     send_error_reports: boolean;
     crash_report_prompted: boolean;
+    editor_font: string;
+    editor_font_size: number;
 };
 
 export type Book = {

@@ -18,6 +18,10 @@
     "nav.wiki": "Wiki",
     "nav.plot": "Plot",
     "nav.canvas": "Canvas",
+    "nav.settings": "Settings",
+    "nav.library": "Library",
     "nav.export": "Export",
-    "preview": "Preview"
+    "preview": "Preview",
+    "sidebar.expand": "Expand sidebar",
+    "sidebar.collapse": "Collapse sidebar"
 }

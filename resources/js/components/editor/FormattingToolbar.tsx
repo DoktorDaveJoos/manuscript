@@ -6,11 +6,11 @@ import {
     ListOrdered,
     Maximize2,
     StickyNote,
+    Strikethrough,
+    TextQuote,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import FontSelector from './FontSelector';
-import FontSizeSelector from './FontSizeSelector';
 
 function ToolbarDivider() {
     return <div className="h-4 w-px bg-border" />;
@@ -54,20 +54,12 @@ function ToolbarButton({
 
 export default function FormattingToolbar({
     editor,
-    editorFont,
-    onFontChange,
-    editorFontSize,
-    onFontSizeChange,
     onToggleFocusMode,
     onToggleNotes,
     isTypewriterMode,
     onToggleTypewriterMode,
 }: {
     editor: Editor | null;
-    editorFont: string;
-    onFontChange: (fontId: string) => void;
-    editorFontSize: number;
-    onFontSizeChange: (size: number) => void;
     onToggleFocusMode: () => void;
     onToggleNotes: () => void;
     isTypewriterMode?: boolean;
@@ -77,9 +69,10 @@ export default function FormattingToolbar({
     const defaultState = {
         isBold: false,
         isItalic: false,
-        isUnderline: false,
+        isStrike: false,
         isBulletList: false,
         isOrderedList: false,
+        isBlockquote: false,
         isH1: false,
         isH2: false,
     };
@@ -93,9 +86,10 @@ export default function FormattingToolbar({
                 return {
                     isBold: e.isActive('bold'),
                     isItalic: e.isActive('italic'),
-                    isUnderline: e.isActive('underline'),
+                    isStrike: e.isActive('strike'),
                     isBulletList: e.isActive('bulletList'),
                     isOrderedList: e.isActive('orderedList'),
+                    isBlockquote: e.isActive('blockquote'),
                     isH1: e.isActive('heading', { level: 1 }),
                     isH2: e.isActive('heading', { level: 2 }),
                 };
@@ -110,15 +104,6 @@ export default function FormattingToolbar({
     return (
         <div className="flex h-[38px] shrink-0 items-center justify-between border-b border-border-subtle px-8">
             <div className="flex items-center gap-1">
-                <FontSelector value={editorFont} onChange={onFontChange} />
-
-                <FontSizeSelector
-                    value={editorFontSize}
-                    onChange={onFontSizeChange}
-                />
-
-                <ToolbarDivider />
-
                 {/* Text style */}
                 <div className="flex items-center gap-[6px]">
                     <ToolbarButton
@@ -144,15 +129,15 @@ export default function FormattingToolbar({
                         <span className="italic">I</span>
                     </ToolbarButton>
                     <ToolbarButton
-                        active={editorState.isUnderline}
+                        active={editorState.isStrike}
                         onClick={() =>
                             run(() =>
-                                editor!.chain().focus().toggleUnderline().run(),
+                                editor!.chain().focus().toggleStrike().run(),
                             )
                         }
-                        title={t('toolbar.underline')}
+                        title={t('toolbar.strikethrough')}
                     >
-                        <span className="underline">U</span>
+                        <Strikethrough size={14} />
                     </ToolbarButton>
                 </div>
 
@@ -195,6 +180,17 @@ export default function FormattingToolbar({
 
             {/* Right side */}
             <div className="flex items-center gap-1">
+                <ToolbarButton
+                    active={editorState.isBlockquote}
+                    onClick={() =>
+                        run(() =>
+                            editor!.chain().focus().toggleBlockquote().run(),
+                        )
+                    }
+                    title={t('toolbar.blockquote')}
+                >
+                    <TextQuote size={14} />
+                </ToolbarButton>
                 <ToolbarButton
                     active={editorState.isOrderedList}
                     onClick={() =>

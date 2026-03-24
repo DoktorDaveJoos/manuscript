@@ -64,11 +64,11 @@ Defined in `resources/css/app.css` via `@theme` (light) and `html.dark` (dark ov
 
 | Token | Light | Dark | Class | When to use |
 |---|---|---|---|---|
-| `accent` | `#B87333` | `#D4956A` | `bg-accent` / `text-accent` | Active nav item, primary CTA, links, focus rings |
+| `accent` | `#B87333` | `#D4956A` | `bg-accent` / `text-accent` | Primary CTA, links, focus rings, status indicators |
 | `accent-dark` | `#9A6229` | `#B87333` | `hover:bg-accent-dark` | Hover state for accent buttons |
 | `accent-light` | `#F5EDE3` | `#2A2620` | `bg-accent-light` | Accent-tinted badge backgrounds, selected row highlights |
 
-> **Accent restraint:** The copper accent should appear on <10% of UI surface area (benchmarked against Linear). If accent is everywhere, nothing stands out. Use it only for: active sidebar item, primary buttons, focus rings, links, and status indicators.
+> **Accent restraint:** The copper accent should appear on <10% of UI surface area (benchmarked against Linear). If accent is everywhere, nothing stands out. Use it only for: primary buttons, focus rings, links, and status indicators. Active sidebar items use `bg-ink` (dark) instead.
 
 ### Semantic Colors
 
@@ -171,7 +171,7 @@ The editor uses `.editor-prose` (defined in `app.css`):
 - Size: 18px (customizable via `--editor-font-size`)
 - Line-height: 1.45
 - Alignment: justified with auto-hyphens
-- Paragraphs: `text-indent: 1em` (flush after headings/breaks)
+- Paragraphs: `margin-bottom: 0.6em` (vertical spacing, no indentation)
 - **Max width**: Editor content should be capped at ~65–75 characters per line for readability
 
 ---
@@ -308,7 +308,7 @@ Always check `resources/js/components/ui/` before creating new elements:
 
 ### Sidebar Navigation
 
-- **Active item**: `bg-accent text-surface rounded-md` — the ONE place accent is a background
+- **Active item**: `bg-ink text-surface font-medium rounded-md` — dark inverted background for clear focus
 - **Default item**: `text-ink-muted hover:text-ink hover:bg-neutral-bg`
 - **Section labels**: `text-[11px] uppercase font-medium tracking-wide text-ink-muted`
 - **Chapter abbreviation**: First two letters of storyline + chapter number (e.g., "Ma1", "Ba2")

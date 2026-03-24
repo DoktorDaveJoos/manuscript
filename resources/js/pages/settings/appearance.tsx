@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import Button from '@/components/ui/Button';
 import Toggle from '@/components/ui/Toggle';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
@@ -9,7 +10,6 @@ import SettingsLayout from '@/layouts/SettingsLayout';
 import type { Theme } from '@/lib/theme';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { AppSettings } from '@/types/models';
-import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 
 interface Props {
     settings: AppSettings;
