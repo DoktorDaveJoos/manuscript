@@ -1,10 +1,10 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
-import { index as booksIndex } from '@/actions/App/Http/Controllers/BookController';
 import BookSwitcher from '@/components/settings/BookSwitcher';
 import NavItem from '@/components/ui/NavItem';
 import UpdateBanner from '@/components/ui/UpdateBanner';
+import { index as booksIndex } from '@/actions/App/Http/Controllers/BookController';
 
 type ActiveSection =
     | 'appearance'
@@ -37,7 +37,7 @@ export default function SettingsLayout({
                 <UpdateBanner />
                 <div className="flex min-h-0 flex-1">
                     {/* Sidebar */}
-                    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border bg-surface">
+                    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border-light bg-surface-sidebar">
                         {/* Header — Back link */}
                         <div className="px-5 py-4">
                             <Link
@@ -124,7 +124,7 @@ export default function SettingsLayout({
                     </aside>
 
                     {/* Main content */}
-                    <main className="flex flex-1 flex-col items-center overflow-y-auto px-10 py-12">
+                    <main className="flex flex-1 flex-col items-center overflow-y-auto px-12 py-10">
                         <div className="w-full max-w-[640px]">{children}</div>
                     </main>
                 </div>
