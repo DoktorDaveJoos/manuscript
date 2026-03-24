@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
+import deAiDashboard from './de/ai-dashboard.json';
 import deAi from './de/ai.json';
 import deCommon from './de/common.json';
 import deDashboard from './de/dashboard.json';
@@ -11,6 +12,7 @@ import deOnboarding from './de/onboarding.json';
 import dePlot from './de/plot.json';
 import deSettings from './de/settings.json';
 import deWiki from './de/wiki.json';
+import enAiDashboard from './en/ai-dashboard.json';
 import enAi from './en/ai.json';
 import enCommon from './en/common.json';
 import enDashboard from './en/dashboard.json';
@@ -22,6 +24,7 @@ import enPlot from './en/plot.json';
 import enSettings from './en/settings.json';
 import enWiki from './en/wiki.json';
 
+import esAiDashboard from './es/ai-dashboard.json';
 import esAi from './es/ai.json';
 import esCommon from './es/common.json';
 import esDashboard from './es/dashboard.json';
@@ -46,6 +49,7 @@ i18n.use(initReactI18next).init({
             ai: enAi,
             export: enExport,
             'editorial-review': enEditorialReview,
+            'ai-dashboard': enAiDashboard,
         },
         de: {
             common: deCommon,
@@ -58,6 +62,7 @@ i18n.use(initReactI18next).init({
             ai: deAi,
             export: deExport,
             'editorial-review': deEditorialReview,
+            'ai-dashboard': deAiDashboard,
         },
         es: {
             common: esCommon,
@@ -70,6 +75,7 @@ i18n.use(initReactI18next).init({
             ai: esAi,
             export: esExport,
             'editorial-review': esEditorialReview,
+            'ai-dashboard': esAiDashboard,
         },
     },
     lng: 'en',
@@ -86,6 +92,7 @@ i18n.use(initReactI18next).init({
         'ai',
         'export',
         'editorial-review',
+        'ai-dashboard',
     ],
     interpolation: {
         escapeValue: false,

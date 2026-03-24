@@ -10,13 +10,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import NavItem from '@/components/ui/NavItem';
-import { useFreeTier } from '@/hooks/useFreeTier';
-import { useResizablePanel } from '@/hooks/useResizablePanel';
-import { createChapter, formatCompactCount } from '@/lib/utils';
-import type { Book, Scene, Storyline } from '@/types/models';
-import ChapterList from './ChapterList';
-import TrashBin from './TrashBin';
+import { index as aiDashboardIndex } from '@/actions/App/Http/Controllers/AiDashboardController';
 import { index } from '@/actions/App/Http/Controllers/BookController';
 import { exportMethod } from '@/actions/App/Http/Controllers/BookSettingsController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
@@ -24,6 +18,13 @@ import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotControlle
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
 import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
+import NavItem from '@/components/ui/NavItem';
+import { useFreeTier } from '@/hooks/useFreeTier';
+import { useResizablePanel } from '@/hooks/useResizablePanel';
+import { createChapter, formatCompactCount } from '@/lib/utils';
+import type { Book, Scene, Storyline } from '@/types/models';
+import ChapterList from './ChapterList';
+import TrashBin from './TrashBin';
 
 let savedScrollTop = 0;
 
@@ -90,7 +91,7 @@ export default function Sidebar({
     const isDashboard = currentUrl.endsWith('/dashboard');
     const isWiki = currentUrl.includes('/wiki');
     const isPlot = currentUrl.endsWith('/plot');
-    const isAi = currentUrl.includes('/ai/editorial-review');
+    const isAi = currentUrl.includes('/ai/');
     const isExport = currentUrl.includes('/settings/export');
 
     const totalWords = storylines.reduce(
@@ -191,11 +192,7 @@ export default function Sidebar({
                 />
                 <NavItem
                     label={t('nav.ai')}
-                    href={
-                        isFree
-                            ? undefined
-                            : `/books/${book.id}/ai/editorial-review`
-                    }
+                    href={isFree ? undefined : aiDashboardIndex.url(book)}
                     isActive={isAi}
                     disabled={isFree}
                     icon={

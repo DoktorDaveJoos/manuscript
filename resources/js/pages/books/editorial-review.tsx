@@ -11,7 +11,7 @@ import Button from '@/components/ui/Button';
 import { useEditorialReview } from '@/hooks/useEditorialReview';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { Book, Chapter, EditorialReview } from '@/types/models';
-import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
+import { index as aiDashboardIndex } from '@/actions/App/Http/Controllers/AiDashboardController';
 
 export default function EditorialReviewPage({
     book,
@@ -86,7 +86,7 @@ export default function EditorialReviewPage({
                         {/* Tab nav */}
                         <div className="flex gap-1 border-b border-border-light">
                             <Link
-                                href={showDashboard.url(book)}
+                                href={aiDashboardIndex.url(book)}
                                 className="border-b-2 border-transparent px-3 pb-2 text-[13px] font-medium text-ink-muted transition-colors hover:text-ink"
                             >
                                 {t('tabs.dashboard')}
