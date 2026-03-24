@@ -157,5 +157,23 @@
     "sections.stats": "Stats",
     "sections.aiUsage": "AI Usage & Costs",
 
-    "header.by": "by {{author}}"
+    "header.by": "by {{author}}",
+
+    "nanowrimo.tag": "NaNoWriMo {{year}}",
+    "nanowrimo.heading": "50,000 Words in 30 Days",
+    "nanowrimo.description": "National Novel Writing Month is the perfect time to push through your first draft. Every word counts.",
+    "nanowrimo.progress": "{{current}} of {{target}} words",
+    "nanowrimo.daysRemaining_one": "{{count}} day remaining",
+    "nanowrimo.daysRemaining_other": "{{count}} days remaining",
+    "nanowrimo.onTrack": "on track!",
+    "nanowrimo.behindPace": "behind pace",
+    "nanowrimo.complete": "complete",
+
+    "feedback.heading": "Help us improve Manuscript",
+    "feedback.description": "We would love to hear how we can make your writing experience even better. Your feedback shapes what we build next.",
+    "feedback.cta": "Give us feedback",
+
+    "greeting.streak": "You have been writing consistently for {{count}} days. Keep the momentum going!",
+
+    "sections.chapterProgress": "Chapter Progress"
 }

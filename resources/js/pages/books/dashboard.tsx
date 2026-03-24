@@ -1,27 +1,23 @@
 import { Head } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
-import AiInsights from '@/components/dashboard/AiInsights';
 import AiPreparation from '@/components/dashboard/AiPreparation';
-import AiUsageStats from '@/components/dashboard/AiUsageStats';
-import HealthTimeline from '@/components/dashboard/HealthTimeline';
+import FeedbackSection from '@/components/dashboard/FeedbackSection';
 import ManuscriptProgress from '@/components/dashboard/ManuscriptProgress';
 import MilestoneCelebration from '@/components/dashboard/MilestoneCelebration';
+import NaNoWriMoCard from '@/components/dashboard/NaNoWriMoCard';
+import type { NanowrimoData } from '@/components/dashboard/NaNoWriMoCard';
 import SuggestedNext from '@/components/dashboard/SuggestedNext';
 import WritingGoal from '@/components/dashboard/WritingGoal';
 import WritingHeatmap from '@/components/dashboard/WritingHeatmap';
 import Sidebar from '@/components/editor/Sidebar';
 import ProFeatureLock from '@/components/ui/ProFeatureLock';
-import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useFreeTier } from '@/hooks/useFreeTier';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type {
     AiPreparationStatus,
-    AiUsage,
     Book,
     DashboardStats,
     HeatmapDay,
-    HealthMetrics,
-    HealthSnapshot,
     ManuscriptTarget,
     StatusCounts,
     SuggestedNext as SuggestedNextType,
@@ -40,7 +36,7 @@ function StatCard({
     locale: string;
 }) {
     return (
-        <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-5 text-center">
+        <div className="flex flex-1 flex-col items-center gap-2 rounded-lg border border-border-light bg-surface-card p-5 text-center">
             <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                 {label}
             </span>
@@ -125,30 +121,27 @@ export default function Dashboard({
     book,
     stats,
     status_counts,
-    health_metrics,
     suggested_next,
     ai_preparation,
     writing_goal,
     writing_heatmap,
-    health_history,
     manuscript_target,
-    ai_usage,
+    nanowrimo,
+    streak,
 }: {
     book: Book;
     stats: DashboardStats;
     status_counts: StatusCounts;
-    health_metrics: HealthMetrics | null;
     suggested_next: SuggestedNextType | null;
     ai_preparation?: AiPreparationStatus | null;
     writing_goal: WritingGoalData | null;
     writing_heatmap: HeatmapDay[];
-    health_history: HealthSnapshot[];
     manuscript_target: ManuscriptTarget | null;
-    ai_usage: AiUsage | null;
+    nanowrimo?: NanowrimoData | null;
+    streak?: number;
 }) {
     const { t, i18n } = useTranslation('dashboard');
     const storylines = useSidebarStorylines();
-    const { visible: aiVisible } = useAiFeatures();
     const { isFree } = useFreeTier();
 
     return (
@@ -158,7 +151,7 @@ export default function Dashboard({
                 <Sidebar book={book} storylines={storylines} />
 
                 <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-12 py-10">
-                    <div className="flex w-full flex-col gap-7">
+                    <div className="flex w-full flex-col gap-8">
                         {/* Milestone Celebration */}
                         {manuscript_target?.milestone_reached &&
                             !manuscript_target.milestone_dismissed && (
@@ -168,112 +161,27 @@ export default function Dashboard({
                                 />
                             )}
 
-                        {/* Book Header */}
-                        <div className="flex flex-col gap-1">
-                            <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
-                                {book.title}
-                            </h1>
-                            {book.author && (
-                                <p className="text-[13px] text-ink-muted">
-                                    {t('header.by', { author: book.author })}
+                        {/* ===== GROUP 1: Identity & Stats ===== */}
+                        <div className="flex flex-col gap-4">
+                            <div className="flex flex-col gap-1">
+                                <h1 className="font-serif text-2xl font-normal tracking-[-0.01em] text-ink">
+                                    {book.title}
+                                </h1>
+                                {book.author && (
+                                    <p className="text-[13px] text-ink-muted">
+                                        {t('header.by', {
+                                            author: book.author,
+                                        })}
+                                    </p>
+                                )}
+                            </div>
+
+                            {(streak ?? 0) >= 3 && (
+                                <p className="text-sm text-ink-soft">
+                                    {t('greeting.streak', { count: streak })}
                                 </p>
                             )}
-                        </div>
 
-                        {/* Today's Writing + Heatmap */}
-                        {isFree ? (
-                            <ProFeatureLock feature="dashboard">
-                                <div className="flex h-[200px] gap-6 opacity-50">
-                                    <div className="w-[360px] shrink-0 rounded-xl border border-border-light bg-surface-card" />
-                                    <div className="min-w-0 flex-1 rounded-xl border border-border-light bg-surface-card" />
-                                </div>
-                            </ProFeatureLock>
-                        ) : (
-                            <>
-                                <div className="flex gap-6">
-                                    <div className="w-[360px] shrink-0">
-                                        <WritingGoal
-                                            bookId={book.id}
-                                            writingGoal={writing_goal!}
-                                            targetWordCount={
-                                                manuscript_target!
-                                                    .target_word_count
-                                            }
-                                        />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <WritingHeatmap
-                                            heatmap={writing_heatmap}
-                                            dailyGoal={
-                                                writing_goal!
-                                                    .daily_word_count_goal
-                                            }
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Manuscript Progress */}
-                                <ManuscriptProgress
-                                    target={manuscript_target!}
-                                />
-                            </>
-                        )}
-
-                        {/* AI Preparation */}
-                        <AiPreparation
-                            bookId={book.id}
-                            initialStatus={ai_preparation ?? null}
-                        />
-
-                        {/* Chapter Status */}
-                        {stats.chapter_count > 0 && (
-                            <div className="flex flex-col gap-3">
-                                <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                                    {t(
-                                        'sections.chapterStatus',
-                                        'Chapter Status',
-                                    )}
-                                </span>
-                                <ChapterStatusBar counts={status_counts} />
-                            </div>
-                        )}
-
-                        {/* AI Insights */}
-                        {aiVisible && health_metrics && (
-                            <div className="flex flex-col gap-3">
-                                <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                                    {t('sections.aiInsights', 'AI Insights')}
-                                </span>
-                                <AiInsights healthMetrics={health_metrics} />
-                            </div>
-                        )}
-
-                        {/* Health Timeline */}
-                        {aiVisible && (
-                            <div className="flex flex-col gap-3">
-                                <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                                    {t(
-                                        'sections.healthTimeline',
-                                        'Health Timeline',
-                                    )}
-                                </span>
-                                <HealthTimeline history={health_history} />
-                            </div>
-                        )}
-
-                        {/* Suggested Next */}
-                        {aiVisible && suggested_next && (
-                            <SuggestedNext
-                                suggestion={suggested_next}
-                                bookId={book.id}
-                            />
-                        )}
-
-                        {/* Stats */}
-                        <div className="flex flex-col gap-3">
-                            <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                                {t('sections.stats', 'Stats')}
-                            </span>
                             <div className="flex gap-4">
                                 <StatCard
                                     label={t('stats.words')}
@@ -300,18 +208,86 @@ export default function Dashboard({
                             </div>
                         </div>
 
-                        {/* AI Usage Stats */}
-                        {aiVisible && ai_usage && (
-                            <div className="flex flex-col gap-3">
-                                <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                                    {t('sections.aiUsage', 'AI Usage & Costs')}
-                                </span>
-                                <AiUsageStats
-                                    bookId={book.id}
-                                    usage={ai_usage}
+                        <div className="border-t border-border-subtle" />
+
+                        {/* ===== GROUP 2: Today's Writing ===== */}
+                        {isFree ? (
+                            <ProFeatureLock feature="dashboard">
+                                <div className="flex h-[200px] gap-6 opacity-50">
+                                    <div className="w-[340px] shrink-0 rounded-lg border border-border-light bg-surface-card" />
+                                    <div className="min-w-0 flex-1 rounded-lg border border-border-light bg-surface-card" />
+                                </div>
+                            </ProFeatureLock>
+                        ) : (
+                            <div className="flex flex-col gap-6">
+                                <div className="flex gap-6">
+                                    <div className="w-[340px] shrink-0">
+                                        <WritingGoal
+                                            bookId={book.id}
+                                            writingGoal={writing_goal!}
+                                            targetWordCount={
+                                                manuscript_target!
+                                                    .target_word_count
+                                            }
+                                        />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <WritingHeatmap
+                                            heatmap={writing_heatmap}
+                                            dailyGoal={
+                                                writing_goal!
+                                                    .daily_word_count_goal
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                                <ManuscriptProgress
+                                    target={manuscript_target!}
                                 />
                             </div>
                         )}
+
+                        <div className="border-t border-border-subtle" />
+
+                        {/* ===== GROUP 3: Events & Progress ===== */}
+                        <div className="flex flex-col gap-6">
+                            {nanowrimo?.is_active && (
+                                <NaNoWriMoCard
+                                    nanowrimo={nanowrimo}
+                                    locale={i18n.language}
+                                />
+                            )}
+
+                            {stats.chapter_count > 0 && (
+                                <div className="flex flex-col gap-3">
+                                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
+                                        {t(
+                                            'sections.chapterProgress',
+                                            'Chapter Progress',
+                                        )}
+                                    </span>
+                                    <ChapterStatusBar counts={status_counts} />
+                                </div>
+                            )}
+
+                            <AiPreparation
+                                bookId={book.id}
+                                initialStatus={ai_preparation ?? null}
+                            />
+                        </div>
+
+                        <div className="border-t border-border-subtle" />
+
+                        {/* ===== GROUP 4: Next Steps & Feedback ===== */}
+                        <div className="flex flex-col gap-6">
+                            {suggested_next && (
+                                <SuggestedNext
+                                    suggestion={suggested_next}
+                                    bookId={book.id}
+                                />
+                            )}
+                            <FeedbackSection />
+                        </div>
                     </div>
                 </main>
             </div>
