@@ -209,7 +209,7 @@ export default function WikiIndex({
                     {/* Header */}
                     <div className="flex items-center justify-between px-5 pt-5 pb-0">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-lg font-semibold text-ink">
+                            <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
                                 {t('heading')}
                             </h1>
                             <span className="text-[13px] text-ink-faint">

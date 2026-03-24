@@ -103,7 +103,7 @@ export default function WikiCreateForm({
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <h2 className="font-serif text-[32px] leading-[1.2] text-ink">
+                <h2 className="font-serif text-2xl leading-8 font-normal tracking-[-0.01em] text-ink">
                     {t(titleKey)}
                 </h2>
                 <Button variant="ghost" type="button" onClick={onCancel}>
