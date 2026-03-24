@@ -10,10 +10,10 @@
 ## Design Principles
 
 1. **Content is the hero** — The editor area is the brightest, most spacious region. UI chrome is muted and recedes. Typography IS the design.
-2. **Warm & literary** — Warm-tinted grays (not cool/neutral), cream surfaces, serif prose. Evokes a physical manuscript, not a code editor.
+2. **Clean & literary** — Neutral surfaces (white chrome, #fafafa content), Playfair Display display headings. Evokes a refined manuscript, not a code editor.
 3. **Restraint over decoration** — One accent color. Three text tiers. No gradients, no shadows on content. Complexity lives in the writing, not the UI.
-4. **Compact chrome, generous prose** — Sidebars and panels are dense. The editor breathes with wide margins and comfortable line height.
-5. **Dark mode preserves warmth** — Dark surfaces are warm (#161514), never pure black. The copper accent shifts lighter for contrast.
+4. **8pt grid rhythm** — All spacing derives from an 8px base: 4, 8, 12, 16, 24, 32, 48, 64. This creates subconscious visual alignment and harmony.
+5. **Breathing room** — Generous page margins (48px), outer spacing >= 2x inner spacing. White space signals quality and gives content room to breathe.
 
 ---
 
@@ -27,13 +27,11 @@ Defined in `resources/css/app.css` via `@theme` (light) and `html.dark` (dark ov
 
 | Token | Light | Dark | Class | When to use |
 |---|---|---|---|---|
-| `surface` | `#FCFAF7` | `#161514` | `bg-surface` | Page background, main content area |
-| `surface-card` | `#FCFAF7` | `#1C1B1A` | `bg-surface-card` | Elevated cards, panels (diverges from surface in dark mode) |
-| `surface-sidebar` | `#FFFFFF` | = surface-card | `bg-surface-sidebar` | Sidebar background — pure white in light, card-tone in dark |
-| `neutral-bg` | `#F1EEEA` | `#242322` | `bg-neutral-bg` | Button fills, hover states, input backgrounds, code blocks |
+| `surface` | `#fafafa` | `#161616` | `bg-surface` | Content area background |
+| `surface-card` | `#ffffff` | `#1c1c1c` | `bg-surface-card` | Cards, panels, menus, overlays |
+| `surface-sidebar` | `#ffffff` | = surface-card | `bg-surface-sidebar` | Sidebar background |
+| `neutral-bg` | `#f5f5f5` | `#242424` | `bg-neutral-bg` | Button fills, hover states |
 | `surface-warm` | `#F5EDE3` | `#2A2620` | `bg-surface-warm` | Accent-tinted backgrounds, selected highlights |
-
-> **Note:** `surface` and `surface-card` are identical in light mode but diverge in dark mode. This is intentional — keep them semantically distinct.
 
 ### Text (4 active tiers + 2 specialty)
 
@@ -56,11 +54,11 @@ Defined in `resources/css/app.css` via `@theme` (light) and `html.dark` (dark ov
 
 | Token | Light | Dark | Class | When to use |
 |---|---|---|---|---|
-| `border` | `#E4E2DD` | `#2E2D2B` | `border-border` | Default: dividers, input borders, card outlines |
-| `border-subtle` | `#EEECE8` | `#242220` | `border-border-subtle` | Lighter: between sections within a panel, inner dividers |
-| `border-dashed` | `#D5D2CC` | `#3D3A35` | `border-border-dashed` | Dashed: drop zones, placeholder outlines |
-| `border-light` | `#E4E2DD` | `#2A2722` | `border-border-light` | Same as `border` in light; slightly warmer in dark. Use for panel header borders |
-| `section-header` | `#D5D2CC` | `#3D3A35` | `bg-section-header` | Section divider lines in sidebar |
+| `border` | `#e5e5e5` | `#2e2e2e` | `border-border` | Default: dividers, input borders, card outlines |
+| `border-light` | `#ebebeb` | `#2a2a2a` | `border-border-light` | Panel header borders, lighter dividers |
+| `border-subtle` | `#f0f0f0` | `#242424` | `border-border-subtle` | Between sections within a panel, inner dividers |
+| `border-dashed` | `#d4d4d4` | `#3d3d3d` | `border-border-dashed` | Dashed: drop zones, placeholder outlines |
+| `section-header` | `#d4d4d4` | `#3d3d3d` | `bg-section-header` | Section divider lines in sidebar |
 
 ### Accent (3 tokens — use sparingly)
 
@@ -96,6 +94,20 @@ Defined in `resources/css/app.css` via `@theme` (light) and `html.dark` (dark ov
 
 **Always use these tokens for plot point colors** — never hardcode hex values. The tokens have dark mode variants.
 
+### Color Psychology
+
+- White (#ffffff) for UI chrome = clarity, openness, trust
+- Neutral #fafafa for content = calm, focused reading environment
+- Warm copper accent = craftsmanship, authenticity, warmth — used on <10% of surface
+- The accent warmth against neutral whites creates a "premium handcrafted" feel
+
+### Mathematical Spacing (8pt Grid)
+
+- Base unit: 4px (micro adjustments), 8px (standard unit)
+- All spacing should be multiples: 4, 8, 12, 16, 24, 32, 48, 64
+- Standard content area padding: `px-12 py-10` (48px/40px)
+- Rule: outer spacing >= 2x inner spacing for clear visual grouping
+
 ---
 
 ## Typography
@@ -104,8 +116,10 @@ Defined in `resources/css/app.css` via `@theme` (light) and `html.dark` (dark ov
 
 | Stack | Class | Usage | Rule |
 |---|---|---|---|
-| Geist, ui-sans-serif, system-ui | `font-sans` (default) | All UI: buttons, labels, nav, panels, metadata | Default — no class needed |
-| Literata, ui-serif | `font-serif` | Editor prose only | **Only inside `.editor-prose`** — never for UI elements |
+| Playfair Display, ui-serif | `font-serif` | Display headings (H1), dialog titles | **Only for Display and Dialog headings** — never for body text, section labels, or UI elements |
+| Geist, ui-sans-serif, system-ui | `font-sans` (default) | All UI: buttons, labels, nav, panels, metadata, H2+, subheadings | Default — no class needed |
+
+Note: Literata is loaded separately for the editor prose area (user-selectable via settings).
 
 ### Font Size Scale (8 steps)
 
@@ -127,6 +141,18 @@ The scale follows a ~1.15–1.2 ratio, which suits dense editor UIs.
 - **Section labels** (sidebar headers, panel section dividers): `text-[11px] uppercase font-medium tracking-wide text-ink-muted`
 - **No font sizes outside this scale** in new code. If you need 10px, use 11px. If you need 15px, use 14px or 16px. If you need 18px, that belongs in `.editor-prose` only.
 - 13px (`text-[13px]`) is the standard "compact" size — use for buttons, toolbar text, sidebar nav items. 14px (`text-sm`) is the standard "comfortable" size — use for body text and form inputs.
+
+### Standard Heading Sizes
+
+| Level | Classes | When |
+|---|---|---|
+| Display | `font-serif text-[32px] leading-10 font-normal tracking-[-0.01em] text-ink` | Hero headlines, empty states, onboarding |
+| H1 Page | `text-xl font-semibold tracking-[-0.01em] text-ink` | Page titles inside the app chrome |
+| H2 Dialog | `font-serif text-2xl leading-8 font-normal tracking-[-0.01em] text-ink` | Dialog/modal titles |
+| H2 Section | `text-base font-semibold text-ink` | Section headers within a page |
+| H3 Card | `text-sm font-medium text-ink` | Card titles, list items |
+
+Rule: `font-serif` (Playfair Display) ONLY for Display and Dialog headings. `font-bold`/`font-extrabold` never used for UI headings — max is `font-semibold`.
 
 ### Font Weights (3 tiers)
 
@@ -296,9 +322,9 @@ Toggled via `html.dark` class. All tokens have dark variants in `app.css`.
 ### Rules
 
 1. **Never use `bg-white` alone** — always pair: `bg-white dark:bg-surface-card` or use `bg-surface-sidebar`
-2. **Surfaces are warm dark** (#161514, #1C1B1A) — never pure black (#000000)
+2. **Surfaces are neutral dark** (#161616, #1c1c1c) — never pure black (#000000)
 3. **Accent shifts lighter** (#B87333 → #D4956A) for contrast on dark backgrounds
-4. **Borders get darker** (#E4E2DD → #2E2D2B) but stay warm-tinted
+4. **Borders get darker** (#e5e5e5 → #2e2e2e) in dark mode
 5. **Book preview pages are exempt** — they use hardcoded colors to represent printed output
 
 ---
@@ -334,7 +360,7 @@ Before submitting any UI change:
 - [ ] **Font sizes from the scale**: 11, 12, 13, 14, 16, 20, 24, or 32px only
 - [ ] **Icon sizes from the scale**: 12, 14, 16, 20, or 24px only
 - [ ] **Border radius from the scale**: `rounded`, `rounded-md`, `rounded-lg`, `rounded-xl`, or `rounded-full` only
-- [ ] **Typography**: `font-sans` for UI, `font-serif` only in `.editor-prose`
+- [ ] **Typography**: `font-sans` for UI, `font-serif` only for Display and Dialog headings
 - [ ] **Font weights**: 400/500/600 only (700 only inside prose `<strong>`)
 - [ ] **Dark mode works**: uses tokens, no bare `bg-white` or hardcoded colors
 - [ ] **Reuses UI components**: no ad-hoc `<button>`, `<input>`, or modal markup
