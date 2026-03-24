@@ -142,6 +142,14 @@ class Chapter extends Model
             ->withTimestamps();
     }
 
+    /**
+     * @return HasMany<EditorialReviewChapterNote, $this>
+     */
+    public function editorialReviewChapterNotes(): HasMany
+    {
+        return $this->hasMany(EditorialReviewChapterNote::class);
+    }
+
     public function refreshContentHash(): void
     {
         $this->load('scenes');
