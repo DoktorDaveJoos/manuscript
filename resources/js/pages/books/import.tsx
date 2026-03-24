@@ -2,12 +2,6 @@ import { router } from '@inertiajs/react';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    confirmImport,
-    parse,
-    skipImport,
-} from '@/actions/App/Http/Controllers/BookController';
-import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 import DropZone from '@/components/onboarding/DropZone';
 import FileRow from '@/components/onboarding/FileRow';
 import ImportChapterRow from '@/components/onboarding/ImportChapterRow';
@@ -17,6 +11,12 @@ import type { ReviewStoryline } from '@/components/onboarding/ReviewPhase';
 import Button from '@/components/ui/Button';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
 import type { Book, Storyline, StorylineType } from '@/types/models';
+import {
+    confirmImport,
+    parse,
+    skipImport,
+} from '@/actions/App/Http/Controllers/BookController';
+import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 
 function normalizeFilenameToStorylineName(filename: string): string {
     return filename
@@ -71,7 +71,7 @@ function UploadPhase({
     return (
         <div className="flex flex-1 flex-col items-center gap-8 px-10 pt-20 pb-16">
             <div className="flex flex-col items-center gap-2">
-                <h1 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">
+                <h1 className="font-serif text-[32px] leading-10 font-normal tracking-[-0.01em] text-ink">
                     {book.title}
                 </h1>
                 <p className="text-sm leading-[18px] text-ink-muted">
@@ -194,7 +194,7 @@ function ParsingPhase({
     return (
         <div className="flex flex-1 flex-col items-center gap-10 px-10 pt-20 pb-16">
             <div className="flex flex-col items-center gap-2">
-                <h1 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink">
+                <h1 className="font-serif text-[32px] leading-10 font-normal tracking-[-0.01em] text-ink">
                     {book.title}
                 </h1>
                 <p className="text-sm leading-[18px] text-ink-muted">

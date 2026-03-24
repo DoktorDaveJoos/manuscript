@@ -24,7 +24,7 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
     return (
         <div className="flex flex-1 flex-col items-center justify-center pb-20">
             <div className="flex flex-col items-center gap-4">
-                <h1 className="font-serif text-5xl leading-[58px] tracking-[-0.02em] text-ink">
+                <h1 className="font-serif text-[32px] leading-10 font-normal tracking-[-0.01em] text-ink">
                     {t('emptyState.title')}
                 </h1>
                 <p className="text-sm leading-6 text-ink-muted">
@@ -63,7 +63,7 @@ function BookLibrary({
 
     return (
         <div className="flex flex-1 flex-col items-center gap-12 px-10 py-20">
-            <h1 className="font-serif text-4xl leading-[44px] tracking-[-0.01em] text-ink">
+            <h1 className="font-serif text-[32px] leading-10 font-normal tracking-[-0.01em] text-ink">
                 {t('bookLibrary.title')}
             </h1>
             <div className="flex flex-wrap justify-center gap-6">
