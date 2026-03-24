@@ -73,7 +73,7 @@ export default function BookCard({
             </div>
 
             <div className="flex flex-col gap-1.5 pr-8">
-                <h3 className="font-serif text-2xl leading-8 tracking-[-0.01em] text-ink">
+                <h3 className="font-serif text-xl leading-7 font-normal tracking-[-0.01em] text-ink">
                     {book.title}
                 </h3>
                 <p className="text-[13px] leading-[18px] text-ink-muted">
