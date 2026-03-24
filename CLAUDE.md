@@ -38,6 +38,7 @@ This project has domain-specific skills available. You MUST activate the relevan
 - `inertia-react-development` — Develops Inertia.js v2 React client-side applications. Activates when creating React pages, forms, or navigation; using &lt;Link&gt;, &lt;Form&gt;, useForm, or router; working with deferred props, prefetching, or polling; or when user mentions React with Inertia, React pages, React forms, or React navigation.
 - `tailwindcss-development` — Styles applications using Tailwind CSS v4 utilities. Activates when adding styles, restyling components, working with gradients, spacing, layout, flex, grid, responsive design, dark mode, colors, typography, or borders; or when the user mentions CSS, styling, classes, Tailwind, restyle, hero section, cards, buttons, or any visual/UI changes.
 - `design-system` — Enforces the Manuscript design system (docs/design-system.md). Activates when creating pages, styling components, choosing colors, adding icons, building layouts, creating panels, or working with any visual element. Read `docs/design-system.md` before making UI changes.
+- `nativephp-development` — Enforces dual-database migration workflow and NativePHP desktop patterns. Activates when creating or running migrations, touching NativePHP config or providers, modifying the publish workflow, adding desktop-gated features, or working with the SQLite database setup.
 
 ## Conventions
 
