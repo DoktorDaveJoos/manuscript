@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import SectionLabel from '@/components/ui/SectionLabel';
+import Select from '@/components/ui/Select';
 import type { Chapter, EditorialReview } from '@/types/models';
 import EditorialReviewSection from './EditorialReviewSection';
 
@@ -40,7 +41,6 @@ function StrengthsAndImprovements({
 
     return (
         <div className="flex gap-8">
-            {/* Strengths */}
             <div className="flex flex-1 flex-col gap-2">
                 <SectionLabel>{t('report.strengths')}</SectionLabel>
                 <div className="flex flex-col gap-2">
@@ -55,7 +55,6 @@ function StrengthsAndImprovements({
                 </div>
             </div>
 
-            {/* Improvements */}
             <div className="flex flex-1 flex-col gap-2">
                 <SectionLabel>{t('report.improvements')}</SectionLabel>
                 <div className="flex flex-col gap-2">
@@ -120,7 +119,6 @@ export default function EditorialReviewReport({
     return (
         <>
             <div className="flex flex-col gap-6">
-                {/* Header card */}
                 <div className="flex flex-col gap-6 rounded-lg border border-border-light bg-surface-card p-6">
                     <div className="flex items-start gap-6">
                         {review.overall_score !== null && (
@@ -142,7 +140,6 @@ export default function EditorialReviewReport({
                         </div>
                     </div>
 
-                    {/* Strengths & Improvements */}
                     {review.top_strengths &&
                         review.top_improvements &&
                         review.top_strengths.length > 0 &&
@@ -154,9 +151,9 @@ export default function EditorialReviewReport({
                         )}
                 </div>
 
-                {/* History bar */}
                 <div className="flex items-center justify-between">
-                    <select
+                    <Select
+                        variant="compact"
                         value={review.id}
                         onChange={(e) => {
                             const selected = reviews.find(
@@ -164,7 +161,6 @@ export default function EditorialReviewReport({
                             );
                             if (selected) onSelectReview(selected);
                         }}
-                        className="rounded-md border border-border bg-surface px-3 py-1.5 text-[13px] text-ink"
                     >
                         {reviews.map((r) => (
                             <option key={r.id} value={r.id}>
@@ -175,7 +171,7 @@ export default function EditorialReviewReport({
                                 })}
                             </option>
                         ))}
-                    </select>
+                    </Select>
 
                     <Button
                         variant="primary"
@@ -187,10 +183,8 @@ export default function EditorialReviewReport({
                     </Button>
                 </div>
 
-                {/* Section Label */}
                 <SectionLabel>{t('sectionLabel.editorialReview')}</SectionLabel>
 
-                {/* Accordion sections */}
                 <div className="flex flex-col divide-y divide-border-subtle rounded-lg border border-border-light bg-surface-card">
                     {orderedSections.map(
                         (section) =>

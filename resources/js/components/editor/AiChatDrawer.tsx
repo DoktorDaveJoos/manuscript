@@ -2,6 +2,8 @@ import { ArrowUp, BookOpen, Loader, Sparkles, X } from 'lucide-react';
 import MarkdownIt from 'markdown-it';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { chat } from '@/actions/App/Http/Controllers/AiController';
+import { chat as editorialChat } from '@/actions/App/Http/Controllers/EditorialReviewController';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type {
@@ -10,7 +12,6 @@ import type {
     Character,
     CharacterChapterPivot,
 } from '@/types/models';
-import { chat } from '@/actions/App/Http/Controllers/AiController';
 
 const md = new MarkdownIt({ linkify: true, breaks: true });
 
@@ -99,7 +100,10 @@ export default function AiChatDrawer({
 
         try {
             const chatUrl = editorialReview
-                ? `/books/${book.id}/ai/editorial-review/${editorialReview.reviewId}/chat`
+                ? editorialChat.url({
+                      book: book.id,
+                      review: editorialReview.reviewId,
+                  })
                 : chat.url(book.id);
 
             const body: Record<string, unknown> = {
