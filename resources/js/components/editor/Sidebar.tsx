@@ -10,6 +10,14 @@ import {
 } from 'lucide-react';
 import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { index } from '@/actions/App/Http/Controllers/BookController';
+import { exportMethod } from '@/actions/App/Http/Controllers/BookSettingsController';
+import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
+import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
+import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
+import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
+import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
 import NavItem from '@/components/ui/NavItem';
 import { useFreeTier } from '@/hooks/useFreeTier';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
@@ -17,13 +25,6 @@ import { createChapter, formatCompactCount } from '@/lib/utils';
 import type { Book, Scene, Storyline } from '@/types/models';
 import ChapterList from './ChapterList';
 import TrashBin from './TrashBin';
-import { index } from '@/actions/App/Http/Controllers/BookController';
-import { exportMethod } from '@/actions/App/Http/Controllers/BookSettingsController';
-import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
-import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
-import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
-import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
 
 let savedScrollTop = 0;
 
@@ -191,11 +192,7 @@ export default function Sidebar({
                 />
                 <NavItem
                     label={t('nav.ai')}
-                    href={
-                        isFree
-                            ? undefined
-                            : `/books/${book.id}/ai/editorial-review`
-                    }
+                    href={isFree ? undefined : editorialReviewIndex.url(book)}
                     isActive={isAi}
                     disabled={isFree}
                     icon={

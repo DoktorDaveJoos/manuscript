@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
 import AiChatDrawer from '@/components/editor/AiChatDrawer';
 import Sidebar from '@/components/editor/Sidebar';
 import EditorialReviewEmptyState from '@/components/editorial-review/EditorialReviewEmptyState';
@@ -11,7 +12,6 @@ import Button from '@/components/ui/Button';
 import { useEditorialReview } from '@/hooks/useEditorialReview';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { Book, Chapter, EditorialReview } from '@/types/models';
-import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
 
 export default function EditorialReviewPage({
     book,
@@ -53,10 +53,6 @@ export default function EditorialReviewPage({
         [reviews],
     );
 
-    const isCompleted = review?.status === 'completed';
-    const isFailed = review?.status === 'failed';
-    const isEmpty = !review;
-
     return (
         <>
             <Head title={`Editorial Review — ${book.title}`} />
@@ -64,7 +60,6 @@ export default function EditorialReviewPage({
                 <Sidebar book={book} storylines={storylines} />
 
                 <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-                    {/* Page header */}
                     <div className="flex flex-col gap-4 px-12 pt-10">
                         <div className="flex items-start justify-between">
                             <div className="flex flex-col gap-1">
@@ -83,7 +78,6 @@ export default function EditorialReviewPage({
                             </div>
                         </div>
 
-                        {/* Tab nav */}
                         <div className="flex gap-1 border-b border-border-light">
                             <Link
                                 href={showDashboard.url(book)}
@@ -97,17 +91,14 @@ export default function EditorialReviewPage({
                         </div>
                     </div>
 
-                    {/* Content area */}
                     <div className="flex flex-1 flex-col px-12 py-6">
-                        {/* Error */}
                         {error && (
                             <div className="mb-4 rounded-lg bg-delete-bg px-4 py-3 text-[13px] text-delete">
                                 {error}
                             </div>
                         )}
 
-                        {/* Failed state */}
-                        {isFailed && review && (
+                        {review?.status === 'failed' && review && (
                             <div className="flex flex-1 flex-col items-center justify-center gap-4">
                                 <p className="text-sm font-medium text-delete">
                                     {t('failed.title')}
@@ -127,21 +118,18 @@ export default function EditorialReviewPage({
                             </div>
                         )}
 
-                        {/* Empty state */}
-                        {isEmpty && (
+                        {!review && (
                             <EditorialReviewEmptyState
                                 onStart={handleStart}
                                 starting={starting}
                             />
                         )}
 
-                        {/* In-progress state */}
                         {isRunning && review && (
                             <EditorialReviewProgress review={review} />
                         )}
 
-                        {/* Report state */}
-                        {isCompleted && review && (
+                        {review?.status === 'completed' && review && (
                             <EditorialReviewReport
                                 review={review}
                                 reviews={completedReviews}
@@ -155,7 +143,6 @@ export default function EditorialReviewPage({
                     </div>
                 </main>
 
-                {/* AI Chat Drawer */}
                 {chatContext && (
                     <AiChatDrawer
                         book={book}

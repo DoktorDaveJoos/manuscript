@@ -7,7 +7,6 @@ use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Enums\AiTaskCategory;
 use App\Models\Book;
-use App\Models\Chapter;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
@@ -32,8 +31,7 @@ class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasStr
 
     public function __construct(
         public Book $book,
-        public Chapter $chapter,
-        public ?array $existingAnalysis = null,
+        public ?string $existingAnalysis = null,
         public ?string $writingStyle = null,
         public ?string $characterData = null,
     ) {}
@@ -52,11 +50,8 @@ class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasStr
             $context .= ' '.$genreSnippet;
         }
 
-        $context .= "\n\nChapter: \"{$this->chapter->title}\"";
-
         if ($this->existingAnalysis) {
-            $analysisJson = json_encode($this->existingAnalysis, JSON_PRETTY_PRINT);
-            $context .= "\n\nExisting chapter analysis (for reference — do not repeat these findings, complement them):\n{$analysisJson}";
+            $context .= "\n\nExisting chapter analysis (for reference — do not repeat these findings, complement them):\n{$this->existingAnalysis}";
         }
 
         if ($this->writingStyle) {

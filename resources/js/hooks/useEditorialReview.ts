@@ -1,4 +1,9 @@
+import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    progress,
+    store,
+} from '@/actions/App/Http/Controllers/EditorialReviewController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { EditorialReview } from '@/types/models';
 
@@ -28,12 +33,26 @@ export function useEditorialReview(
         pollRef.current = setInterval(async () => {
             try {
                 const res = await fetch(
-                    `/books/${bookId}/ai/editorial-review/${review.id}/progress`,
+                    progress.url({ book: bookId, review: review.id }),
                     { headers: { Accept: 'application/json' } },
                 );
                 if (!res.ok) throw new Error();
                 const data = await res.json();
-                setReview(data);
+
+                setReview((prev) =>
+                    prev
+                        ? {
+                              ...prev,
+                              status: data.status,
+                              progress: data.progress,
+                              error_message: data.error_message,
+                          }
+                        : prev,
+                );
+
+                if (data.status === 'completed' || data.status === 'failed') {
+                    router.reload();
+                }
             } catch {
                 // Silently retry on next interval
             }
@@ -49,7 +68,7 @@ export function useEditorialReview(
         setError(null);
 
         try {
-            const res = await fetch(`/books/${bookId}/ai/editorial-review`, {
+            const res = await fetch(store.url(bookId), {
                 method: 'POST',
                 headers: jsonFetchHeaders(),
             });
