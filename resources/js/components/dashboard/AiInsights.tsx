@@ -47,7 +47,7 @@ function ScoreGauge({
                 y={size / 2 - 2}
                 textAnchor="middle"
                 dominantBaseline="central"
-                className="fill-ink font-serif text-[32px] font-bold"
+                className="fill-ink font-serif text-[32px] font-normal"
             >
                 {score}
             </text>

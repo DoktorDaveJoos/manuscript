@@ -22,7 +22,7 @@ export default function SuggestedNext({
                     <span className="text-[11px] font-medium tracking-[0.08em] text-accent uppercase">
                         {t('suggestedNext.label')}
                     </span>
-                    <h3 className="font-serif text-lg font-semibold text-ink">
+                    <h3 className="text-base font-semibold text-ink">
                         {suggestion.title}
                     </h3>
                     <p className="text-[13px] leading-[1.4] text-ink-soft">

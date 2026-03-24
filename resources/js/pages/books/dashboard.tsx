@@ -45,7 +45,7 @@ function StatCard({
                 {label}
             </span>
             <div className="flex items-end gap-1">
-                <span className="font-serif text-[32px] leading-[1] font-bold text-ink">
+                <span className="font-serif text-[32px] leading-[1] font-normal text-ink">
                     {typeof value === 'number'
                         ? value.toLocaleString(locale)
                         : value}
@@ -157,7 +157,7 @@ export default function Dashboard({
             <div className="flex h-screen overflow-hidden bg-surface">
                 <Sidebar book={book} storylines={storylines} />
 
-                <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-10 py-8">
+                <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-12 py-10">
                     <div className="flex w-full flex-col gap-7">
                         {/* Milestone Celebration */}
                         {manuscript_target?.milestone_reached &&
@@ -170,7 +170,7 @@ export default function Dashboard({
 
                         {/* Book Header */}
                         <div className="flex flex-col gap-1">
-                            <h1 className="font-serif text-2xl leading-[1.2] font-bold text-ink">
+                            <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
                                 {book.title}
                             </h1>
                             {book.author && (

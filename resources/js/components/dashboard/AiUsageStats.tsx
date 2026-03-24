@@ -270,7 +270,7 @@ export default function AiUsageStats({
                     <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.tokensUsed', 'Tokens Used')}
                     </span>
-                    <span className="font-serif text-[32px] font-bold text-ink">
+                    <span className="font-serif text-[32px] font-normal text-ink">
                         {formatCompactCount(
                             usage.input_tokens + usage.output_tokens,
                         )}
@@ -283,7 +283,7 @@ export default function AiUsageStats({
                     <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.estCost')}
                     </span>
-                    <span className="font-serif text-[32px] font-bold text-ink">
+                    <span className="font-serif text-[32px] font-normal text-ink">
                         {usage.cost_display}
                     </span>
                     <span className="text-[12px] text-ink-muted">
@@ -294,7 +294,7 @@ export default function AiUsageStats({
                     <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.apiRequests', 'API Requests')}
                     </span>
-                    <span className="font-serif text-[32px] font-bold text-ink">
+                    <span className="font-serif text-[32px] font-normal text-ink">
                         {usage.request_count.toLocaleString(i18n.language)}
                     </span>
                     <span className="text-[12px] text-ink-muted">
@@ -305,7 +305,7 @@ export default function AiUsageStats({
                     <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.avgCost', 'Avg. Cost')}
                     </span>
-                    <span className="font-serif text-[32px] font-bold text-ink">
+                    <span className="font-serif text-[32px] font-normal text-ink">
                         {usage.avg_cost_display}
                     </span>
                     <span className="text-[12px] text-ink-muted">

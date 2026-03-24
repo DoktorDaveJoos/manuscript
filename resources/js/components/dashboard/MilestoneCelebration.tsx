@@ -56,14 +56,14 @@ export default function MilestoneCelebration({
         >
             <div className="flex items-end justify-between">
                 <div>
-                    <p className="font-serif text-[44px] leading-[1] font-extrabold text-ink">
+                    <p className="font-serif text-[32px] leading-[1] font-semibold text-ink">
                         {t('milestone.words', {
                             value: target.total_words.toLocaleString(
                                 i18n.language,
                             ),
                         })}
                     </p>
-                    <p className="mt-1 font-serif text-[44px] leading-[1] font-light text-ink-faint">
+                    <p className="mt-1 font-serif text-[32px] leading-[1] font-normal text-ink-faint">
                         {t('milestone.days', { count: target.days_writing })}
                     </p>
                 </div>
