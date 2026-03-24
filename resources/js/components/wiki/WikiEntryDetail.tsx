@@ -22,7 +22,7 @@ export default function WikiEntryDetail({
                 <div className="flex items-start gap-4">
                     <WikiAvatar name={entry.name} tab={tab} size="lg" />
                     <div>
-                        <h2 className="font-serif text-2xl leading-tight tracking-[-0.01em] text-ink">
+                        <h2 className="text-xl font-semibold tracking-[-0.01em] text-ink">
                             {entry.name}
                         </h2>
                         {entry.type && (

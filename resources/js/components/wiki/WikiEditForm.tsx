@@ -147,7 +147,7 @@ export default function WikiEditForm({
                                 entryForm.setData('name', e.target.value);
                             }
                         }}
-                        className="font-serif text-2xl"
+                        className="text-xl font-semibold text-ink"
                     />
                     {isDirty && (
                         <span className="flex items-center gap-1.5 text-[12px] text-ink-muted">
