@@ -3,7 +3,10 @@ import {
     ArrowUpFromLine,
     BookOpen,
     LayoutGrid,
+    LibraryBig,
     Lock,
+    PanelLeftClose,
+    PanelLeftOpen,
     Settings,
     Sparkles,
     Waypoints,
@@ -65,6 +68,8 @@ export default function Sidebar({
 
     const {
         width,
+        isCollapsed,
+        toggleCollapsed,
         panelRef: sidebarRef,
         handleMouseDown,
     } = useResizablePanel({
@@ -72,6 +77,9 @@ export default function Sidebar({
         minWidth: 200,
         maxWidth: 400,
         defaultWidth: 232,
+        collapsible: true,
+        collapsedWidth: 48,
+        collapseThreshold: 160,
     });
 
     useLayoutEffect(() => {
@@ -127,147 +135,228 @@ export default function Sidebar({
     return (
         <aside
             ref={sidebarRef}
+            data-state={isCollapsed ? 'collapsed' : 'expanded'}
             className={`relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border-light bg-surface-sidebar transition-[width,opacity] duration-300 ${isFocusMode ? 'opacity-0' : ''}`}
             style={{ width: isFocusMode ? 0 : width }}
         >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-[18px]">
-                <Link
-                    href={index.url()}
-                    className="text-[13px] font-semibold tracking-[0.06em] text-ink uppercase"
-                >
-                    Manuscript
-                </Link>
-                <Link
-                    href={settingsIndex.url({ query: { from: currentUrl } })}
-                    className="text-ink-faint transition-colors hover:text-ink"
-                >
-                    <Settings size={16} />
-                </Link>
-            </div>
+            {isCollapsed ? (
+                <div className="flex items-center justify-center py-[18px]">
+                    <button
+                        type="button"
+                        onClick={toggleCollapsed}
+                        title={t('sidebar.expand')}
+                        className="text-ink-faint transition-colors hover:text-ink"
+                    >
+                        <PanelLeftOpen size={16} />
+                    </button>
+                </div>
+            ) : (
+                <div className="flex items-center justify-between px-5 py-[18px]">
+                    <Link
+                        href={index.url()}
+                        className="text-[13px] font-semibold tracking-[0.06em] text-ink uppercase"
+                    >
+                        Manuscript
+                    </Link>
+                    <button
+                        type="button"
+                        onClick={toggleCollapsed}
+                        title={t('sidebar.collapse')}
+                        className="text-ink-faint transition-colors hover:text-ink"
+                    >
+                        <PanelLeftClose size={16} />
+                    </button>
+                </div>
+            )}
 
             {/* Nav */}
-            <div className="flex flex-col gap-0.5 p-3">
-                <NavItem
-                    label={t('nav.dashboard')}
-                    isActive={isDashboard}
-                    href={showDashboard.url(book)}
-                    icon={
-                        <LayoutGrid
-                            size={16}
-                            className="shrink-0 text-ink-faint"
+            <div
+                className={
+                    isCollapsed
+                        ? 'flex flex-col items-center gap-3 px-2 py-1'
+                        : 'flex flex-col gap-3 p-3'
+                }
+            >
+                {/* Global Menu */}
+                {isCollapsed ? (
+                    <div className="flex flex-col items-center gap-1">
+                        <NavItem
+                            label={t('nav.settings')}
+                            href={settingsIndex.url({
+                                query: { from: currentUrl },
+                            })}
+                            iconOnly
+                            icon={
+                                <Settings
+                                    size={16}
+                                    className="shrink-0 text-ink-faint"
+                                />
+                            }
                         />
-                    }
-                />
-                <NavItem
-                    label={t('nav.wiki')}
-                    href={indexWiki.url(book)}
-                    isActive={isWiki}
-                    icon={
-                        <BookOpen
-                            size={16}
-                            className="shrink-0 text-ink-faint"
+                        <NavItem
+                            label={t('nav.library')}
+                            href={index.url()}
+                            iconOnly
+                            icon={
+                                <LibraryBig
+                                    size={16}
+                                    className="shrink-0 text-ink-faint"
+                                />
+                            }
                         />
-                    }
-                />
-                <NavItem
-                    label={t('nav.plot')}
-                    href={isFree ? undefined : indexPlot.url(book)}
-                    isActive={isPlot}
-                    disabled={isFree}
-                    icon={
-                        <Waypoints
-                            size={16}
-                            className="shrink-0 text-ink-faint"
-                        />
-                    }
-                    suffix={
-                        isFree ? (
-                            <Lock
-                                size={12}
-                                className="ml-auto text-ink-faint"
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-px rounded-lg bg-neutral-bg p-1">
+                        <Link
+                            href={settingsIndex.url({
+                                query: { from: currentUrl },
+                            })}
+                            className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] text-ink-muted transition-colors hover:bg-surface-sidebar hover:text-ink"
+                        >
+                            <Settings
+                                size={16}
+                                className="shrink-0 text-ink-faint"
                             />
-                        ) : undefined
-                    }
-                />
-                <NavItem
-                    label={t('nav.ai')}
-                    href={isFree ? undefined : editorialReviewIndex.url(book)}
-                    isActive={isAi}
-                    disabled={isFree}
-                    icon={
-                        <Sparkles
-                            size={16}
-                            className="shrink-0 text-ink-faint"
-                        />
-                    }
-                    suffix={
-                        isFree ? (
-                            <Lock
-                                size={12}
-                                className="ml-auto text-ink-faint"
+                            {t('nav.settings')}
+                        </Link>
+                        <Link
+                            href={index.url()}
+                            className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] text-ink-muted transition-colors hover:bg-surface-sidebar hover:text-ink"
+                        >
+                            <LibraryBig
+                                size={16}
+                                className="shrink-0 text-ink-faint"
                             />
-                        ) : undefined
+                            {t('nav.library')}
+                        </Link>
+                    </div>
+                )}
+
+                {/* Page Nav */}
+                <div
+                    className={
+                        isCollapsed
+                            ? 'flex flex-col items-center gap-0.5'
+                            : 'flex flex-col gap-0.5'
                     }
-                />
-                <NavItem
-                    label={t('nav.export')}
-                    href={exportMethod.url(book)}
-                    isActive={isExport}
-                    icon={
-                        <ArrowUpFromLine
-                            size={16}
-                            className="shrink-0 text-ink-faint"
-                        />
-                    }
-                    suffix={
-                        <span className="ml-auto rounded-full bg-ink px-1.5 py-1 text-[11px] leading-none font-medium text-surface">
-                            {t('preview')}
-                        </span>
-                    }
-                />
+                >
+                    <NavItem
+                        label={t('nav.dashboard')}
+                        isActive={isDashboard}
+                        href={showDashboard.url(book)}
+                        iconOnly={isCollapsed}
+                        icon={
+                            <LayoutGrid
+                                size={16}
+                                className="shrink-0 text-ink-faint"
+                            />
+                        }
+                    />
+                    <NavItem
+                        label={t('nav.wiki')}
+                        href={indexWiki.url(book)}
+                        isActive={isWiki}
+                        iconOnly={isCollapsed}
+                        icon={
+                            <BookOpen
+                                size={16}
+                                className="shrink-0 text-ink-faint"
+                            />
+                        }
+                    />
+                    <NavItem
+                        label={t('nav.plot')}
+                        href={isFree ? undefined : indexPlot.url(book)}
+                        isActive={isPlot}
+                        disabled={isFree}
+                        iconOnly={isCollapsed}
+                        icon={
+                            <Waypoints
+                                size={16}
+                                className="shrink-0 text-ink-faint"
+                            />
+                        }
+                        suffix={
+                            isFree ? (
+                                <Lock
+                                    size={12}
+                                    className="ml-auto text-ink-faint"
+                                />
+                            ) : undefined
+                        }
+                    />
+                    <NavItem
+                        label={t('nav.ai')}
+                        href={editorialReviewIndex.url(book)}
+                        isActive={isAi}
+                        iconOnly={isCollapsed}
+                        icon={
+                            <Sparkles
+                                size={16}
+                                className="shrink-0 text-ink-faint"
+                            />
+                        }
+                    />
+                    <NavItem
+                        label={t('nav.export')}
+                        href={exportMethod.url(book)}
+                        isActive={isExport}
+                        iconOnly={isCollapsed}
+                        icon={
+                            <ArrowUpFromLine
+                                size={16}
+                                className="shrink-0 text-ink-faint"
+                            />
+                        }
+                    />
+                </div>
             </div>
 
             {/* Chapter list */}
-            <div className="flex min-h-0 flex-1 flex-col">
-                <ChapterList
-                    storylines={storylines}
-                    bookId={book.id}
-                    activeChapterId={activeChapterId}
-                    activeChapterTitle={activeChapterTitle}
-                    activeChapterWordCount={activeChapterWordCount}
-                    onBeforeNavigate={onBeforeNavigate}
-                    onAddChapter={handleAddChapter}
-                    onAddStoryline={
-                        canCreateStoryline ? handleAddStoryline : undefined
-                    }
-                    activeScenes={activeScenes}
-                    onSceneRename={onSceneRename}
-                    onSceneDelete={onSceneDelete}
-                    onSceneReorder={onSceneReorder}
-                    onSceneAdd={onSceneAdd}
-                    scenesVisible={scenesVisible}
-                    onScenesVisibleChange={onScenesVisibleChange}
-                    scrollContainerRef={scrollContainerRef}
-                    onScroll={handleSidebarScroll}
-                />
-            </div>
+            {!isCollapsed && (
+                <div className="flex min-h-0 flex-1 flex-col">
+                    <ChapterList
+                        storylines={storylines}
+                        bookId={book.id}
+                        activeChapterId={activeChapterId}
+                        activeChapterTitle={activeChapterTitle}
+                        activeChapterWordCount={activeChapterWordCount}
+                        onBeforeNavigate={onBeforeNavigate}
+                        onAddChapter={handleAddChapter}
+                        onAddStoryline={
+                            canCreateStoryline ? handleAddStoryline : undefined
+                        }
+                        activeScenes={activeScenes}
+                        onSceneRename={onSceneRename}
+                        onSceneDelete={onSceneDelete}
+                        onSceneReorder={onSceneReorder}
+                        onSceneAdd={onSceneAdd}
+                        scenesVisible={scenesVisible}
+                        onScenesVisibleChange={onScenesVisibleChange}
+                        scrollContainerRef={scrollContainerRef}
+                        onScroll={handleSidebarScroll}
+                    />
+                </div>
+            )}
 
             {/* Trash */}
-            <TrashBin bookId={book.id} />
+            {!isCollapsed && <TrashBin bookId={book.id} />}
 
             {/* Footer */}
-            <div className="flex items-center gap-3 px-5 py-3.5">
-                <span className="text-[11px] text-ink-faint">
-                    {t('wordsCompact', {
-                        formatted: formatCompactCount(totalWords),
-                    })}
-                </span>
-                <span className="text-[11px] text-ink-faint">·</span>
-                <span className="text-[11px] text-ink-faint">
-                    {t('chapters', { count: totalChapters })}
-                </span>
-            </div>
+            {!isCollapsed && (
+                <div className="flex items-center gap-3 px-5 py-3.5">
+                    <span className="text-[11px] text-ink-faint">
+                        {t('wordsCompact', {
+                            formatted: formatCompactCount(totalWords),
+                        })}
+                    </span>
+                    <span className="text-[11px] text-ink-faint">·</span>
+                    <span className="text-[11px] text-ink-faint">
+                        {t('chapters', { count: totalChapters })}
+                    </span>
+                </div>
+            )}
 
             {/* Resize handle */}
             {!isFocusMode && (
