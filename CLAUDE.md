@@ -317,6 +317,30 @@ Wayfinder generates TypeScript functions for Laravel routes. Import from `@/acti
 
 - Always use Pencil (.pen files) for mockups and visual design work. Never use browser-based visual companions.
 
+## Git Workflow
+
+### Branch Rules
+- The working branch is `dev`. All work happens on `dev` or feature branches off `dev`.
+- PRs MUST target `dev`, never `main`.
+- Feature branches MUST be created from `dev`.
+
+### NEVER Switch Branches
+- NEVER run `git checkout`, `git switch`, or any command that changes the current branch without explicit user permission. This is a hard rule — no exceptions for "just checking something".
+- To inspect another branch's files: use `git show other-branch:path/to/file`.
+- To compare branches: use `git diff main...dev` (three-dot syntax) or `git log --oneline --graph`.
+- To check branch topology: use `git log --oneline --all --graph`.
+
+### After Merging PRs
+- After any merge (PR merge, rebase, or manual merge), ALWAYS verify the result:
+  1. Run `git diff dev~1 --stat` to see what changed.
+  2. For each file that was part of the merged work, verify the expected changes are present (grep for key identifiers, not just file existence).
+  3. If any changes were silently dropped by the merge, restore them immediately.
+- Common causes of silent merge loss: squash-merge flattening intermediate fixes, auto-conflict resolution picking the wrong side, stale base branches.
+
+### Before Starting Work
+- Confirm the current branch with `git branch --show-current`.
+- If not on `dev` or a feature branch off `dev`, ask the user before proceeding.
+
 ## Workflow Preferences
 
 - When the user asks for implementation, prioritize code changes over planning documents. Only produce a plan if explicitly asked for one.
