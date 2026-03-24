@@ -18,6 +18,7 @@ import type {
     ProsePassRule,
     VersionSource,
 } from '@/types/models';
+import { getFontFamily } from './FontSelector';
 import {
     acceptPartialVersion,
     acceptVersion,
@@ -265,6 +266,7 @@ export default function DiffView({
     currentVersion,
     pendingVersion,
     prosePassRules,
+    editorFont,
 }: {
     bookId: number;
     chapterId: number;
@@ -272,11 +274,14 @@ export default function DiffView({
     currentVersion: ChapterVersion;
     pendingVersion: ChapterVersion;
     prosePassRules?: ProsePassRule[];
+    editorFont?: string;
 }) {
     const { t, i18n } = useTranslation('editor');
     const [isAccepting, setIsAccepting] = useState(false);
     const [isRejecting, setIsRejecting] = useState(false);
     const [rulesExpanded, setRulesExpanded] = useState(false);
+
+    const fontFamily = useMemo(() => getFontFamily(editorFont), [editorFont]);
 
     const diff = useMemo(
         () => computeDiff(currentVersion.content, pendingVersion.content),
@@ -636,6 +641,11 @@ export default function DiffView({
                     <div
                         ref={leftContentRef}
                         className="max-w-prose space-y-4 font-serif text-base leading-relaxed text-ink"
+                        style={
+                            {
+                                '--font-serif': fontFamily,
+                            } as React.CSSProperties
+                        }
                     >
                         {diff.aligned.map((para) =>
                             para.left ? (
@@ -688,6 +698,11 @@ export default function DiffView({
                     <div
                         ref={rightContentRef}
                         className="max-w-prose space-y-4 font-serif text-base leading-relaxed text-ink"
+                        style={
+                            {
+                                '--font-serif': fontFamily,
+                            } as React.CSSProperties
+                        }
                     >
                         {diff.aligned.map((para) =>
                             para.right ? (

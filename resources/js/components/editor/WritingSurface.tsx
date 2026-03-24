@@ -9,7 +9,7 @@ import {
 } from '@/extensions/TypewriterScrollExtension';
 import type { Scene } from '@/types/models';
 import ChapterFindBar from './ChapterFindBar';
-import { DEFAULT_FONT_ID, FONTS } from './FontSelector';
+import { DEFAULT_FONT_ID, getFontFamily } from './FontSelector';
 import { DEFAULT_FONT_SIZE } from './FontSizeSelector';
 import SceneEditor from './SceneEditor';
 
@@ -72,11 +72,7 @@ export default function WritingSurface({
 }) {
     const { t } = useTranslation('editor');
 
-    const fontFamily = useMemo(() => {
-        return (
-            FONTS.find((f) => f.id === editorFont)?.family ?? FONTS[0].family
-        );
-    }, [editorFont]);
+    const fontFamily = useMemo(() => getFontFamily(editorFont), [editorFont]);
 
     const titleRef = useRef<HTMLHeadingElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
