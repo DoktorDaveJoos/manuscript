@@ -3,12 +3,6 @@ import { DOMSerializer } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    show,
-    split,
-    updateTitle,
-} from '@/actions/App/Http/Controllers/ChapterController';
-import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
 import AiChatDrawer from '@/components/editor/AiChatDrawer';
 import AiPanel from '@/components/editor/AiPanel';
@@ -37,6 +31,12 @@ import type {
     ProsePassRule,
     Scene,
 } from '@/types/models';
+import {
+    show,
+    split,
+    updateTitle,
+} from '@/actions/App/Http/Controllers/ChapterController';
+import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 
 type ChapterWithRelations = Chapter & {
     characters?: (Character & { pivot: CharacterChapterPivot })[];
@@ -653,6 +653,7 @@ export default function ChapterShow({
                             currentVersion={chapter.current_version}
                             pendingVersion={pendingVersion}
                             prosePassRules={prosePassRules}
+                            editorFont={editorFont}
                         />
                     ) : (
                         <>

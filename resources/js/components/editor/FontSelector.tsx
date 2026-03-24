@@ -38,6 +38,10 @@ export const FONTS = [
 
 export const DEFAULT_FONT_ID = 'eb-garamond';
 
+export function getFontFamily(fontId?: string): string {
+    return FONTS.find((f) => f.id === fontId)?.family ?? FONTS[0].family;
+}
+
 export default function FontSelector({
     value,
     onChange,
