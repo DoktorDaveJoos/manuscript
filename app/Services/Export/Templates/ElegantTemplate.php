@@ -6,16 +6,16 @@ use App\Contracts\ExportTemplate;
 use App\Enums\FontPairing;
 use App\Enums\SceneBreakStyle;
 
-class RomanceTemplate implements ExportTemplate
+class ElegantTemplate implements ExportTemplate
 {
     public function slug(): string
     {
-        return 'romance';
+        return 'elegant';
     }
 
     public function name(): string
     {
-        return 'Romance';
+        return 'Elegant';
     }
 
     /**

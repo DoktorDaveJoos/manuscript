@@ -35,7 +35,7 @@ class ExportBookRequest extends FormRequest
             'front_matter.*' => ['string', Rule::enum(FrontMatterType::class)],
             'back_matter' => ['nullable', 'array'],
             'back_matter.*' => ['string', Rule::enum(BackMatterType::class)],
-            'template' => ['nullable', 'string', 'in:classic,modern,romance'],
+            'template' => ['nullable', 'string', 'in:classic,modern,elegant,romance'],
             'font_pairing' => ['nullable', 'string', Rule::enum(FontPairing::class)],
             'scene_break_style' => ['nullable', 'string', Rule::enum(SceneBreakStyle::class)],
             'drop_caps' => ['nullable', 'boolean'],

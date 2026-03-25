@@ -14,8 +14,8 @@ use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
 use App\Services\Export\FontService;
 use App\Services\Export\Templates\ClassicTemplate;
+use App\Services\Export\Templates\ElegantTemplate;
 use App\Services\Export\Templates\ModernTemplate;
-use App\Services\Export\Templates\RomanceTemplate;
 use App\Services\FreeTierLimits;
 use App\Services\WritingStyleService;
 use Illuminate\Http\JsonResponse;
@@ -135,7 +135,7 @@ class BookSettingsController extends Controller
             'copyrightText' => $book->copyright_text ?? '',
             'acknowledgmentText' => $book->acknowledgment_text ?? '',
             'aboutAuthorText' => $book->about_author_text ?? '',
-            'templates' => collect([new ClassicTemplate, new ModernTemplate, new RomanceTemplate])
+            'templates' => collect([new ClassicTemplate, new ModernTemplate, new ElegantTemplate])
                 ->map(function ($t) {
                     $pairing = $t->defaultFontPairing();
 

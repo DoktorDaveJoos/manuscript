@@ -65,11 +65,11 @@ it('exports EPUB with modern template and custom font pairing', function () {
     expect($response->headers->get('content-disposition'))->toContain('test-novel.epub');
 });
 
-it('exports EPUB with romance template and drop caps', function () {
+it('exports EPUB with elegant template and drop caps', function () {
     $response = $this->postJson(route('books.settings.export.run', $this->book), [
         'format' => 'epub',
         'scope' => 'full',
-        'template' => 'romance',
+        'template' => 'elegant',
         'drop_caps' => true,
         'scene_break_style' => 'flourish',
         'front_matter' => ['title-page', 'epigraph'],

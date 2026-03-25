@@ -2,6 +2,7 @@
 
 namespace App\Services\Export;
 
+use App\Contracts\Exporter;
 use App\Contracts\ExportTemplate;
 use App\Enums\ExportFormat;
 use App\Models\Book;
@@ -12,8 +13,8 @@ use App\Services\Export\Exporters\KdpExporter;
 use App\Services\Export\Exporters\PdfExporter;
 use App\Services\Export\Exporters\TxtExporter;
 use App\Services\Export\Templates\ClassicTemplate;
+use App\Services\Export\Templates\ElegantTemplate;
 use App\Services\Export\Templates\ModernTemplate;
-use App\Services\Export\Templates\RomanceTemplate;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -132,12 +133,12 @@ class ExportService
     {
         return match ($slug) {
             'modern' => new ModernTemplate,
-            'romance' => new RomanceTemplate,
+            'elegant', 'romance' => new ElegantTemplate,
             default => new ClassicTemplate,
         };
     }
 
-    private function resolveExporter(ExportFormat $format, ExportTemplate $template): \App\Contracts\Exporter
+    private function resolveExporter(ExportFormat $format, ExportTemplate $template): Exporter
     {
         $contentPreparer = new ContentPreparer;
         $fontService = new FontService;
