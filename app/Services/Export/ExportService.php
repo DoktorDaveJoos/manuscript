@@ -13,6 +13,8 @@ use App\Services\Export\Exporters\KdpExporter;
 use App\Services\Export\Exporters\PdfExporter;
 use App\Services\Export\Exporters\TxtExporter;
 use App\Services\Export\Templates\ClassicTemplate;
+use App\Services\Export\Templates\ModernTemplate;
+use App\Services\Export\Templates\RomanceTemplate;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -108,7 +110,8 @@ class ExportService
     public static function resolveTemplate(string $slug): ExportTemplate
     {
         return match ($slug) {
-            'classic' => new ClassicTemplate,
+            'modern' => new ModernTemplate,
+            'romance' => new RomanceTemplate,
             default => new ClassicTemplate,
         };
     }
