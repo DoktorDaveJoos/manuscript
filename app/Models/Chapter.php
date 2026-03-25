@@ -37,6 +37,7 @@ class Chapter extends Model
             'sensory_grounding' => 'integer',
             'analyzed_at' => 'datetime',
             'ai_prepared_at' => 'datetime',
+            'is_epilogue' => 'boolean',
         ];
     }
 
