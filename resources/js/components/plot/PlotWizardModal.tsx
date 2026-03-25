@@ -120,7 +120,7 @@ export default function PlotWizardModal({
                     {renderActCards()}
                 </div>
 
-                <div className="h-px bg-border" />
+                <div className="border-t border-border" />
 
                 <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-4">
