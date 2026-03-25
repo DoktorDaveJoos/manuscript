@@ -93,6 +93,8 @@ class ClassicTemplate implements ExportTemplate
             line-height: {$lineHeight};
             text-align: justify;
             color: #2a2a2a;
+            hyphens: auto;
+            -webkit-hyphens: auto;
         }
         .chapter-label {
             font-size: 0.7em;
@@ -200,6 +202,22 @@ class ClassicTemplate implements ExportTemplate
         }
         .chapter-section {
             break-before: page;
+        }
+        blockquote {
+            margin: 1em 0 1em 2em;
+            font-size: 0.95em;
+            font-style: italic;
+        }
+        blockquote p {
+            text-indent: 0;
+        }
+        ul, ol {
+            margin: 0.8em 0 0.8em 2em;
+            padding: 0;
+        }
+        li {
+            margin: 0.2em 0;
+            text-indent: 0;
         }
         CSS;
     }
@@ -326,6 +344,22 @@ class ClassicTemplate implements ExportTemplate
         .matter-body p {
             text-indent: 0;
             margin: 0 0 0.5em;
+        }
+        blockquote {
+            margin: 1em 0 1em 2em;
+            font-size: 0.95em;
+            font-style: italic;
+        }
+        blockquote p {
+            text-indent: 0;
+        }
+        ul, ol {
+            margin: 0.8em 0 0.8em 2em;
+            padding: 0;
+        }
+        li {
+            margin: 0.2em 0;
+            text-indent: 0;
         }
         CSS;
     }
