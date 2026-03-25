@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import Dialog from '@/components/ui/Dialog';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
@@ -19,7 +20,7 @@ function ScoreDisplay({
     qualityLabel: { good: string; fair: string; needsWork: string };
 }) {
     return (
-        <div className="flex flex-col items-center gap-1">
+        <div className="flex flex-col items-center gap-1 rounded-lg bg-neutral-bg px-5 py-3">
             <span className="font-serif text-[32px] leading-[1] font-semibold text-ink">
                 {score}
             </span>
@@ -44,7 +45,7 @@ function StrengthsAndImprovements({
     const { t } = useTranslation('editorial-review');
 
     return (
-        <div className="flex gap-8">
+        <div className="flex gap-8 border-t border-border-subtle pt-6">
             <div className="flex flex-1 flex-col gap-2">
                 <SectionLabel>{t('report.strengths')}</SectionLabel>
                 <div className="flex flex-col gap-2">
@@ -123,7 +124,9 @@ export default function EditorialReviewReport({
     return (
         <>
             <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-6 rounded-lg border border-border-light bg-surface-card p-6">
+                <Card className="flex flex-col gap-6 p-6">
+                    <SectionLabel>{t('report.summary')}</SectionLabel>
+
                     <div className="flex items-start gap-6">
                         {review.overall_score !== null && (
                             <ScoreDisplay
@@ -153,7 +156,7 @@ export default function EditorialReviewReport({
                                 improvements={review.top_improvements}
                             />
                         )}
-                </div>
+                </Card>
 
                 <div className="flex items-center justify-between">
                     <Select
@@ -189,7 +192,7 @@ export default function EditorialReviewReport({
 
                 <SectionLabel>{t('sectionLabel.editorialReview')}</SectionLabel>
 
-                <div className="flex flex-col divide-y divide-border-subtle rounded-lg border border-border-light bg-surface-card">
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                     {orderedSections.map(
                         (section) =>
                             section && (

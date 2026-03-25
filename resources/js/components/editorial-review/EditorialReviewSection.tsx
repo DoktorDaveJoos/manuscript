@@ -93,8 +93,12 @@ export default function EditorialReviewSection({
     const [open, setOpen] = useState(false);
 
     return (
-        <Collapsible open={open} onOpenChange={setOpen}>
-            <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-lg px-4 py-3 transition-colors hover:bg-neutral-bg">
+        <Collapsible
+            open={open}
+            onOpenChange={setOpen}
+            className="overflow-hidden rounded-lg border border-border-light bg-surface-card"
+        >
+            <CollapsibleTrigger className="flex w-full items-center gap-2 px-4 py-3 transition-colors hover:bg-neutral-bg">
                 <ChevronRight
                     size={14}
                     className={`shrink-0 text-ink-faint transition-transform duration-200 ${open ? 'rotate-90' : ''}`}

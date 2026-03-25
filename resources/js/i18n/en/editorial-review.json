@@ -17,6 +17,7 @@
     "progress.synthesizing": "Synthesizing {{section}}...",
     "progress.pending": "Starting editorial review...",
 
+    "report.summary": "Summary",
     "report.overallScore": "Overall Score",
     "report.quality.good": "Good",
     "report.quality.fair": "Fair",
