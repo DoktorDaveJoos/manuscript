@@ -3,6 +3,8 @@
 namespace App\Services\Export;
 
 use App\Enums\ExportFormat;
+use App\Enums\FontPairing;
+use App\Enums\SceneBreakStyle;
 use App\Enums\TrimSize;
 
 final readonly class ExportOptions
@@ -25,6 +27,15 @@ final readonly class ExportOptions
         public string $aboutAuthorText = '',
         public ?ExportFormat $previewFormat = null,
         public string $template = 'classic',
+        public ?FontPairing $fontPairing = null,
+        public ?SceneBreakStyle $sceneBreakStyle = null,
+        public bool $dropCaps = false,
+        public bool $includeCover = true,
+        public string $dedicationText = '',
+        public string $epigraphText = '',
+        public string $epigraphAttribution = '',
+        public string $alsoByText = '',
+        public ?string $coverImagePath = null,
     ) {}
 
     /**
@@ -46,6 +57,15 @@ final readonly class ExportOptions
             aboutAuthorText: (string) ($data['about_author_text'] ?? ''),
             previewFormat: isset($data['preview_format']) ? ExportFormat::from($data['preview_format']) : null,
             template: (string) ($data['template'] ?? 'classic'),
+            fontPairing: isset($data['font_pairing']) ? FontPairing::from($data['font_pairing']) : null,
+            sceneBreakStyle: isset($data['scene_break_style']) ? SceneBreakStyle::from($data['scene_break_style']) : null,
+            dropCaps: (bool) ($data['drop_caps'] ?? false),
+            includeCover: (bool) ($data['include_cover'] ?? true),
+            dedicationText: (string) ($data['dedication_text'] ?? ''),
+            epigraphText: (string) ($data['epigraph_text'] ?? ''),
+            epigraphAttribution: (string) ($data['epigraph_attribution'] ?? ''),
+            alsoByText: (string) ($data['also_by_text'] ?? ''),
+            coverImagePath: isset($data['cover_image_path']) ? (string) $data['cover_image_path'] : null,
         );
     }
 }

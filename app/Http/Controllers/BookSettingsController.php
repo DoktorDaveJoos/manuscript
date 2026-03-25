@@ -161,7 +161,7 @@ class BookSettingsController extends Controller
         $validated = $request->validated();
         $validated['preview_format'] = ExportFormat::from($validated['format'] ?? 'pdf')->value;
         $chapters = ExportService::resolveChapters($book, $validated);
-        ExportService::injectMatterText($validated);
+        ExportService::injectMatterText($validated, $book);
         $options = ExportOptions::fromArray($validated);
 
         $contentPreparer = new ContentPreparer;

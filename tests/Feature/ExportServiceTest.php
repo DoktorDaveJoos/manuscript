@@ -1,7 +1,6 @@
 <?php
 
 use App\Contracts\ExportTemplate;
-use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\License;
@@ -974,14 +973,17 @@ test('export endpoint rejects invalid template', function () {
     ])->assertUnprocessable();
 });
 
-test('injectMatterText populates options from app settings', function () {
-    AppSetting::set('copyright_text', 'Test Copyright');
+test('injectMatterText populates options from book fields', function () {
+    $book = Book::factory()->create([
+        'copyright_text' => 'Test Copyright',
+        'author' => 'Jane Doe',
+    ]);
 
     $options = [
         'front_matter' => ['copyright'],
     ];
 
-    ExportService::injectMatterText($options);
+    ExportService::injectMatterText($options, $book);
 
     expect($options['copyright_text'])->toBe('Test Copyright');
 });
