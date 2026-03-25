@@ -60,13 +60,26 @@ class ContentPreparer
     }
 
     /**
-     * Add a drop cap to the first letter of the first paragraph.
+     * Add a drop cap to the first letter of the first non-empty paragraph,
+     * capturing any leading punctuation (quotes, brackets) into the drop cap span.
      */
     public function addDropCap(string $html): string
     {
-        return preg_replace(
-            '/(<p[^>]*>)(\s*)([a-zA-Z\x{00C0}-\x{024F}])/u',
-            '$1$2<span class="drop-cap">$3</span>',
+        // Match first <p> with content, capturing leading punctuation + first letter
+        $pattern = '/(<p[^>]*>)([\s]*)(["\'"\'\x{201C}\x{201D}\x{2018}\x{2019}\x{00AB}\x{00BF}\x{00A1}\(\[]*)([\p{L}\p{N}])/u';
+
+        return preg_replace_callback(
+            $pattern,
+            function ($matches) {
+                $openTag = $matches[1];
+                $whitespace = $matches[2];
+                $punctuation = $matches[3];
+                $letter = $matches[4];
+
+                $dropCapContent = $punctuation.$letter;
+
+                return "{$openTag}{$whitespace}<span class=\"drop-cap\">{$dropCapContent}</span>";
+            },
             $html,
             1,
         );
