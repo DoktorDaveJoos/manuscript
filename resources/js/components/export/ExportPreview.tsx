@@ -379,7 +379,7 @@ export default function ExportPreview({
     const VirtuosoHeader = useCallback(
         () => (
             <div className="flex items-center justify-between px-7 pt-6 pb-3">
-                <span className="text-[11px] font-semibold tracking-[0.01em] text-ink-faint uppercase">
+                <span className="text-[11px] font-semibold tracking-[0.08em] text-ink-faint uppercase">
                     {previewLabel}
                 </span>
                 <div className="flex items-center gap-2">
@@ -460,7 +460,7 @@ export default function ExportPreview({
             ) : showPdf ? (
                 <div className="relative flex w-full flex-1 flex-col">
                     {loading && (
-                        <div className="pointer-events-none absolute inset-0 z-10 bg-white/40 dark:bg-black/20" />
+                        <div className="pointer-events-none absolute inset-0 z-10 bg-surface/40" />
                     )}
                     <Virtuoso
                         className="w-full flex-1"
