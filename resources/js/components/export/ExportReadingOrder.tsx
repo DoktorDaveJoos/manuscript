@@ -333,7 +333,7 @@ export default function ExportReadingOrder({
                                 </SectionHeader>
                             </CollapsibleTrigger>
                         </div>
-                        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-[collapsible-up_200ms_ease-out] data-[state=open]:animate-[collapsible-down_200ms_ease-out]">
+                        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
                             <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
                                 {frontMatter.map((item) => (
                                     <MatterRow
@@ -361,7 +361,7 @@ export default function ExportReadingOrder({
                                 </SectionHeader>
                             </CollapsibleTrigger>
                         </div>
-                        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-[collapsible-up_200ms_ease-out] data-[state=open]:animate-[collapsible-down_200ms_ease-out]">
+                        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
                             <div className="flex flex-col px-4 pt-1 pb-3.5">
                                 <DndContext
                                     sensors={sensors}
@@ -431,7 +431,7 @@ export default function ExportReadingOrder({
                                 <SectionHeader>{t('backMatter')}</SectionHeader>
                             </CollapsibleTrigger>
                         </div>
-                        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-[collapsible-up_200ms_ease-out] data-[state=open]:animate-[collapsible-down_200ms_ease-out]">
+                        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
                             <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
                                 {backMatter.map((item) => (
                                     <MatterRow
