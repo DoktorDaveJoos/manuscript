@@ -73,6 +73,50 @@ class ContentPreparer
     }
 
     /**
+     * Parse HTML into structured segments with formatting metadata for PhpWord.
+     *
+     * @return array<int, array{type: string, text?: string, bold?: bool, italic?: bool, strikethrough?: bool}>
+     */
+    public function toFormattedSegments(string $html): array
+    {
+        $segments = [];
+        $dom = new \DOMDocument;
+        @$dom->loadHTML('<body>'.mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8').'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+        $body = $dom->getElementsByTagName('body')->item(0);
+        if (! $body) {
+            return $segments;
+        }
+
+        foreach ($body->childNodes as $child) {
+            if ($child->nodeType !== XML_ELEMENT_NODE) {
+                continue;
+            }
+
+            if ($child->nodeName === 'hr') {
+                $segments[] = ['type' => 'scene-break'];
+
+                continue;
+            }
+
+            if (in_array($child->nodeName, ['p', 'blockquote'])) {
+                if (trim($child->textContent) === '') {
+                    continue;
+                }
+
+                $segments[] = ['type' => 'paragraph-start'];
+                $this->extractTextSegments($child, $segments, [
+                    'bold' => false,
+                    'italic' => $child->nodeName === 'blockquote',
+                    'strikethrough' => false,
+                ]);
+            }
+        }
+
+        return $segments;
+    }
+
+    /**
      * Convert plain text (from AppSetting) to <p> tags for mPDF.
      */
     public function toMatterHtml(string $plainText, string $class = 'matter-body'): string
@@ -104,6 +148,34 @@ class ContentPreparer
             fn (string $line) => "<p{$classAttr}>".htmlspecialchars($line, $encoding, 'UTF-8').'</p>',
             array_filter($lines, fn (string $line) => trim($line) !== ''),
         ));
+    }
+
+    /**
+     * Recursively extract text segments with formatting from a DOM node.
+     *
+     * @param  array<int, array{type: string, text?: string, bold?: bool, italic?: bool, strikethrough?: bool}>  $segments
+     * @param  array{bold: bool, italic: bool, strikethrough: bool}  $formatting
+     */
+    private function extractTextSegments(\DOMNode $node, array &$segments, array $formatting): void
+    {
+        foreach ($node->childNodes as $child) {
+            if ($child->nodeType === XML_TEXT_NODE) {
+                $text = $child->textContent;
+                if ($text !== '') {
+                    $segments[] = array_merge(['type' => 'text', 'text' => $text], $formatting);
+                }
+            } elseif ($child->nodeType === XML_ELEMENT_NODE) {
+                $childFormatting = $formatting;
+                match ($child->nodeName) {
+                    'strong', 'b' => $childFormatting['bold'] = true,
+                    'em', 'i' => $childFormatting['italic'] = true,
+                    's', 'del' => $childFormatting['strikethrough'] = true,
+                    'p' => null,
+                    default => null,
+                };
+                $this->extractTextSegments($child, $segments, $childFormatting);
+            }
+        }
     }
 
     /**
