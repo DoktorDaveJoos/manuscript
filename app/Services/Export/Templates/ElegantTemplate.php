@@ -55,7 +55,7 @@ class ElegantTemplate implements ExportTemplate
 
     public function defaultDropCaps(): bool
     {
-        return true;
+        return false;
     }
 
     /**

@@ -55,7 +55,7 @@ class ClassicTemplate implements ExportTemplate
 
     public function defaultDropCaps(): bool
     {
-        return true;
+        return false;
     }
 
     /**
