@@ -9,9 +9,17 @@ import EditorialReviewEmptyState from '@/components/editorial-review/EditorialRe
 import EditorialReviewProgress from '@/components/editorial-review/EditorialReviewProgress';
 import EditorialReviewReport from '@/components/editorial-review/EditorialReviewReport';
 import Button from '@/components/ui/Button';
+import SlidePanel from '@/components/ui/SlidePanel';
 import { useEditorialReview } from '@/hooks/useEditorialReview';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
-import type { Book, Chapter, EditorialReview } from '@/types/models';
+import type {
+    Book,
+    Chapter,
+    EditorialReview,
+    EditorialSectionType,
+    FindingSeverity,
+    OnDiscussFinding,
+} from '@/types/models';
 
 export default function EditorialReviewPage({
     book,
@@ -31,19 +39,26 @@ export default function EditorialReviewPage({
 
     const [chatContext, setChatContext] = useState<{
         reviewId: number;
-        sectionType?: string;
+        sectionType?: EditorialSectionType;
         findingIndex?: number;
+        findingDescription?: string;
+        findingSeverity?: FindingSeverity;
+        sectionLabel?: string;
     } | null>(null);
 
-    const handleDiscussFinding = (
-        sectionType: string,
-        findingIndex: number,
+    const handleDiscussFinding: OnDiscussFinding = (
+        sectionType,
+        findingIndex,
+        finding,
     ) => {
         if (review) {
             setChatContext({
                 reviewId: review.id,
                 sectionType,
                 findingIndex,
+                findingDescription: finding.description,
+                findingSeverity: finding.severity,
+                sectionLabel: finding.sectionLabel,
             });
         }
     };
@@ -143,13 +158,23 @@ export default function EditorialReviewPage({
                     </div>
                 </main>
 
-                {chatContext && (
-                    <AiChatDrawer
-                        book={book}
-                        onClose={() => setChatContext(null)}
-                        editorialReview={chatContext}
-                    />
-                )}
+                <SlidePanel
+                    open={chatContext !== null}
+                    onClose={() => setChatContext(null)}
+                    storageKey="manuscript:editorial-chat-width"
+                    defaultWidth={320}
+                    maxWidth={700}
+                >
+                    {chatContext && (
+                        <AiChatDrawer
+                            key={`${chatContext.reviewId}-${chatContext.sectionType ?? 'general'}-${chatContext.findingIndex ?? 'none'}`}
+                            book={book}
+                            title={t('ai:discussWithAi')}
+                            onClose={() => setChatContext(null)}
+                            editorialReview={chatContext}
+                        />
+                    )}
+                </SlidePanel>
             </div>
         </>
     );
