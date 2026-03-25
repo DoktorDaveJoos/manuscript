@@ -1,6 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowUpFromLine,
+    BookMarked,
     BookOpen,
     LayoutGrid,
     LibraryBig,
@@ -18,6 +19,7 @@ import { index } from '@/actions/App/Http/Controllers/BookController';
 import { exportMethod } from '@/actions/App/Http/Controllers/BookSettingsController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
 import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
+import { show as showPublish } from '@/actions/App/Http/Controllers/PublishController';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
 import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
@@ -96,10 +98,12 @@ export default function Sidebar({
 
     const page = usePage();
     const currentUrl = page.url;
-    const isDashboard = currentUrl.endsWith('/dashboard');
+    const isDashboard =
+        currentUrl.endsWith('/dashboard') && !currentUrl.includes('/ai/');
     const isWiki = currentUrl.includes('/wiki');
     const isPlot = currentUrl.endsWith('/plot');
     const isAi = currentUrl.includes('/ai/');
+    const isPublish = currentUrl.includes('/publish');
     const isExport = currentUrl.includes('/settings/export');
 
     const totalWords = storylines.reduce(
@@ -178,62 +182,7 @@ export default function Sidebar({
                         : 'flex flex-col gap-3 p-3'
                 }
             >
-                {/* Global Menu */}
-                {isCollapsed ? (
-                    <div className="flex flex-col items-center gap-1">
-                        <NavItem
-                            label={t('nav.settings')}
-                            href={settingsIndex.url({
-                                query: { from: currentUrl },
-                            })}
-                            iconOnly
-                            icon={
-                                <Settings
-                                    size={16}
-                                    className="shrink-0 text-ink-faint"
-                                />
-                            }
-                        />
-                        <NavItem
-                            label={t('nav.library')}
-                            href={index.url()}
-                            iconOnly
-                            icon={
-                                <LibraryBig
-                                    size={16}
-                                    className="shrink-0 text-ink-faint"
-                                />
-                            }
-                        />
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-px rounded-lg bg-neutral-bg p-1">
-                        <Link
-                            href={settingsIndex.url({
-                                query: { from: currentUrl },
-                            })}
-                            className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] text-ink-muted transition-colors hover:bg-surface-sidebar hover:text-ink"
-                        >
-                            <Settings
-                                size={16}
-                                className="shrink-0 text-ink-faint"
-                            />
-                            {t('nav.settings')}
-                        </Link>
-                        <Link
-                            href={index.url()}
-                            className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] text-ink-muted transition-colors hover:bg-surface-sidebar hover:text-ink"
-                        >
-                            <LibraryBig
-                                size={16}
-                                className="shrink-0 text-ink-faint"
-                            />
-                            {t('nav.library')}
-                        </Link>
-                    </div>
-                )}
-
-                {/* Page Nav */}
+                {/* General Nav */}
                 <div
                     className={
                         isCollapsed
@@ -241,6 +190,50 @@ export default function Sidebar({
                             : 'flex flex-col gap-0.5'
                     }
                 >
+                    {!isCollapsed && (
+                        <span className="px-2 pb-0.5 text-[10px] font-medium tracking-widest text-ink-faint uppercase">
+                            {t('nav.general')}
+                        </span>
+                    )}
+                    <NavItem
+                        label={t('nav.settings')}
+                        href={settingsIndex.url({
+                            query: { from: currentUrl },
+                        })}
+                        iconOnly={isCollapsed}
+                        icon={
+                            <Settings
+                                size={16}
+                                className="shrink-0 text-ink-faint"
+                            />
+                        }
+                    />
+                    <NavItem
+                        label={t('nav.library')}
+                        href={index.url()}
+                        iconOnly={isCollapsed}
+                        icon={
+                            <LibraryBig
+                                size={16}
+                                className="shrink-0 text-ink-faint"
+                            />
+                        }
+                    />
+                </div>
+
+                {/* Book Nav */}
+                <div
+                    className={
+                        isCollapsed
+                            ? 'flex flex-col items-center gap-0.5'
+                            : 'flex flex-col gap-0.5'
+                    }
+                >
+                    {!isCollapsed && (
+                        <span className="px-2 pb-0.5 text-[10px] font-medium tracking-widest text-ink-faint uppercase">
+                            {t('nav.book')}
+                        </span>
+                    )}
                     <NavItem
                         label={t('nav.dashboard')}
                         isActive={isDashboard}
@@ -293,6 +286,18 @@ export default function Sidebar({
                         iconOnly={isCollapsed}
                         icon={
                             <Sparkles
+                                size={16}
+                                className="shrink-0 text-ink-faint"
+                            />
+                        }
+                    />
+                    <NavItem
+                        label={t('nav.publish')}
+                        href={showPublish.url(book)}
+                        isActive={isPublish}
+                        iconOnly={isCollapsed}
+                        icon={
+                            <BookMarked
                                 size={16}
                                 className="shrink-0 text-ink-faint"
                             />

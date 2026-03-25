@@ -196,3 +196,4 @@ Route::put('/books/{book}/publish', [PublishController::class, 'update'])->name(
 Route::post('/books/{book}/publish/cover', [PublishController::class, 'uploadCover'])->name('books.publish.cover');
 Route::delete('/books/{book}/publish/cover', [PublishController::class, 'deleteCover'])->name('books.publish.cover.delete');
 Route::put('/books/{book}/publish/epilogue', [PublishController::class, 'updateEpilogue'])->name('books.publish.epilogue');
+Route::get('/books/{book}/publish/cover', [PublishController::class, 'serveCover'])->name('books.publish.cover.serve');

@@ -15,6 +15,16 @@ export type EditorialReviewStatus =
     | 'failed';
 export type FindingSeverity = 'critical' | 'warning' | 'suggestion';
 
+export type OnDiscussFinding = (
+    sectionType: EditorialSectionType,
+    findingIndex: number,
+    finding: {
+        description: string;
+        severity: FindingSeverity;
+        sectionLabel: string;
+    },
+) => void;
+
 export type EditorialReviewFinding = {
     severity: FindingSeverity;
     description: string;
@@ -153,6 +163,16 @@ export type Book = {
     prose_pass_rules: ProsePassRule[] | null;
     writing_style_text: string | null;
     story_bible?: StoryBible | null;
+    copyright_text?: string | null;
+    dedication_text?: string | null;
+    epigraph_text?: string | null;
+    epigraph_attribution?: string | null;
+    acknowledgment_text?: string | null;
+    about_author_text?: string | null;
+    also_by_text?: string | null;
+    publisher_name?: string | null;
+    isbn?: string | null;
+    cover_image_path?: string | null;
     created_at: string;
     updated_at: string;
     storylines?: Storyline[];
@@ -257,6 +277,7 @@ export type Chapter = {
     analysis_status: 'pending' | 'running' | 'completed' | 'failed' | null;
     analysis_error: string | null;
     analyzed_at: string | null;
+    is_epilogue?: boolean;
     created_at: string;
     updated_at: string;
     book?: Book;
@@ -397,6 +418,7 @@ export type SuggestedNext = {
     title: string;
     description: string;
     chapter_id?: number;
+    last_edited_at?: string;
 };
 
 export type WritingGoalData = {

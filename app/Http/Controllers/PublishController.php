@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class PublishController extends Controller
 {
@@ -16,13 +17,19 @@ class PublishController extends Controller
     {
         $book->load(['chapters' => fn ($q) => $q->orderBy('reader_order'), 'storylines']);
 
+        $bookData = $book->only(
+            'id', 'title', 'author', 'language',
+            'copyright_text', 'dedication_text', 'epigraph_text', 'epigraph_attribution',
+            'acknowledgment_text', 'about_author_text', 'also_by_text',
+            'publisher_name', 'isbn', 'cover_image_path',
+        );
+
+        $bookData['cover_image_url'] = $book->cover_image_path
+            ? route('books.publish.cover.serve', $book)
+            : null;
+
         return Inertia::render('books/publish', [
-            'book' => $book->only(
-                'id', 'title', 'author', 'language',
-                'copyright_text', 'dedication_text', 'epigraph_text', 'epigraph_attribution',
-                'acknowledgment_text', 'about_author_text', 'also_by_text',
-                'publisher_name', 'isbn', 'cover_image_path',
-            ),
+            'book' => $bookData,
             'chapters' => $book->chapters->map(fn ($ch) => [
                 'id' => $ch->id,
                 'title' => $ch->title,
@@ -72,5 +79,12 @@ class PublishController extends Controller
         }
 
         return back();
+    }
+
+    public function serveCover(Book $book): BinaryFileResponse
+    {
+        abort_unless($book->cover_image_path && Storage::disk('local')->exists($book->cover_image_path), 404);
+
+        return response()->file(Storage::disk('local')->path($book->cover_image_path));
     }
 }

@@ -86,6 +86,34 @@ it('marks a chapter as epilogue', function () {
     expect($chapter->is_epilogue)->toBeTrue();
 });
 
+it('serves a cover image', function () {
+    Storage::fake('local');
+    Storage::disk('local')->put('covers/test.jpg', 'fake-image-data');
+    $this->book->update(['cover_image_path' => 'covers/test.jpg']);
+
+    $response = $this->get(route('books.publish.cover.serve', $this->book));
+
+    $response->assertOk();
+});
+
+it('returns 404 for missing cover image', function () {
+    $response = $this->get(route('books.publish.cover.serve', $this->book));
+
+    $response->assertNotFound();
+});
+
+it('includes cover_image_url in publish page props', function () {
+    $this->book->update(['cover_image_path' => 'covers/test.jpg']);
+
+    $response = $this->get(route('books.publish', $this->book));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('books/publish')
+        ->where('book.cover_image_url', route('books.publish.cover.serve', $this->book))
+    );
+});
+
 it('unmarks epilogue when null chapter_id sent', function () {
     $chapter = Chapter::factory()->create([
         'book_id' => $this->book->id,

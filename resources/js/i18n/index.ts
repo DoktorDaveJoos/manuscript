@@ -21,6 +21,7 @@ import enEditorialReview from './en/editorial-review.json';
 import enExport from './en/export.json';
 import enOnboarding from './en/onboarding.json';
 import enPlot from './en/plot.json';
+import enPublish from './en/publish.json';
 import enSettings from './en/settings.json';
 import enWiki from './en/wiki.json';
 
@@ -45,6 +46,7 @@ i18n.use(initReactI18next).init({
             settings: enSettings,
             onboarding: enOnboarding,
             plot: enPlot,
+            publish: enPublish,
             wiki: enWiki,
             ai: enAi,
             export: enExport,
@@ -88,6 +90,7 @@ i18n.use(initReactI18next).init({
         'settings',
         'onboarding',
         'plot',
+        'publish',
         'wiki',
         'ai',
         'export',
