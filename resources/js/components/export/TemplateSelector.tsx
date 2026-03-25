@@ -13,7 +13,7 @@ export default function TemplateSelector({
     onChange,
 }: TemplateSelectorProps) {
     return (
-        <div className="flex gap-2.5 overflow-x-auto pb-1">
+        <div className="flex gap-2.5 overflow-x-auto pb-2">
             {templates.map((template) => (
                 <TemplateCard
                     key={template.slug}
