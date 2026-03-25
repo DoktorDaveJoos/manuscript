@@ -3,15 +3,17 @@
 namespace App\Services\Export\Templates;
 
 use App\Contracts\ExportTemplate;
+use App\Enums\FontPairing;
+use App\Enums\SceneBreakStyle;
 
 class ClassicTemplate implements ExportTemplate
 {
-    public static function slug(): string
+    public function slug(): string
     {
         return 'classic';
     }
 
-    public static function name(): string
+    public function name(): string
     {
         return 'Classic';
     }
@@ -41,32 +43,53 @@ class ClassicTemplate implements ExportTemplate
         ];
     }
 
+    public function defaultFontPairing(): FontPairing
+    {
+        return FontPairing::ClassicSerif;
+    }
+
+    public function defaultSceneBreakStyle(): SceneBreakStyle
+    {
+        return SceneBreakStyle::Asterisks;
+    }
+
+    public function defaultDropCaps(): bool
+    {
+        return true;
+    }
+
     /**
      * Complete CSS for mPDF rendering.
      */
-    public function pdfCss(int $fontSize): string
+    public function pdfCss(int $fontSize, ?FontPairing $fontPairing = null): string
     {
-        return $this->baseCss($fontSize, 1.35);
+        return $this->baseCss($fontSize, 1.35, fontPairing: $fontPairing);
     }
 
     /**
      * CSS for e-book preview PDF — reflowable look, no running headers or page numbers.
      */
-    public function ebookPreviewCss(int $fontSize): string
+    public function ebookPreviewCss(int $fontSize, ?FontPairing $fontPairing = null): string
     {
-        return $this->baseCss($fontSize, 1.5, pagedMedia: false);
+        return $this->baseCss($fontSize, 1.5, pagedMedia: false, fontPairing: $fontPairing);
     }
 
     /**
      * Shared CSS for both PDF and e-book preview rendering.
      */
-    private function baseCss(int $fontSize, float $lineHeight, bool $pagedMedia = true): string
+    private function baseCss(int $fontSize, float $lineHeight, bool $pagedMedia = true, ?FontPairing $fontPairing = null): string
     {
+        $pairing = $fontPairing ?? $this->defaultFontPairing();
+        $bodyFontKey = strtolower(str_replace(' ', '', $pairing->bodyFont()));
+        $headingFontKey = strtolower(str_replace(' ', '', $pairing->headingFont()));
+        $bodyFontFamily = "{$bodyFontKey}, Georgia, serif";
+        $headingFontFamily = "{$headingFontKey}, Georgia, serif";
+
         $matterSectionPage = $pagedMedia ? "\n            page: matter;" : '';
 
         return <<<CSS
         body {
-            font-family: crimsonpro, Georgia, serif;
+            font-family: {$bodyFontFamily};
             font-size: {$fontSize}pt;
             line-height: {$lineHeight};
             text-align: justify;
@@ -83,6 +106,7 @@ class ClassicTemplate implements ExportTemplate
             text-indent: 0;
         }
         h1 {
+            font-family: {$headingFontFamily};
             font-size: 1.6em;
             font-weight: normal;
             text-align: center;
@@ -184,13 +208,17 @@ class ClassicTemplate implements ExportTemplate
     /**
      * Complete CSS for EPUB rendering.
      */
-    public function epubCss(string $fontFaceCss): string
+    public function epubCss(string $fontFaceCss, ?FontPairing $fontPairing = null): string
     {
+        $pairing = $fontPairing ?? $this->defaultFontPairing();
+        $bodyFamily = $pairing->bodyFontFamily();
+        $headingFamily = $pairing->headingFontFamily();
+
         return <<<CSS
         {$fontFaceCss}
 
         body {
-            font-family: "Crimson Pro", Georgia, serif;
+            font-family: {$bodyFamily};
             font-size: 1em;
             line-height: 1.5; /* keep in sync with getLineHeightMultiplier() in usePreviewPages.ts */
             margin: 1em;
@@ -199,6 +227,7 @@ class ClassicTemplate implements ExportTemplate
             -webkit-hyphens: auto;
         }
         h1 {
+            font-family: {$headingFamily};
             font-size: 1.8em;
             font-weight: 700;
             margin: 2em 0 1em;
@@ -209,6 +238,7 @@ class ClassicTemplate implements ExportTemplate
             page-break-before: avoid;
         }
         h2 {
+            font-family: {$headingFamily};
             font-size: 1.4em;
             font-weight: 700;
             margin: 2em 0 0.5em;
@@ -297,6 +327,45 @@ class ClassicTemplate implements ExportTemplate
         .matter-body p {
             text-indent: 0;
             margin: 0 0 0.5em;
+        }
+        CSS;
+    }
+
+    public function sceneBreakCss(): string
+    {
+        return <<<'CSS'
+        .scene-break {
+            text-align: center;
+            margin: 1.5em 0;
+            font-size: 1em;
+            color: #999999;
+            page-break-before: avoid;
+            page-break-after: avoid;
+            text-indent: 0;
+        }
+        .scene-break--rule {
+            border: none;
+            border-top: 1px solid #cccccc;
+            width: 30%;
+            margin: 1.5em auto;
+        }
+        .scene-break--blank {
+            height: 2em;
+        }
+        CSS;
+    }
+
+    public function dropCapCss(): string
+    {
+        return <<<'CSS'
+        .drop-cap {
+            float: left;
+            font-size: 3.2em;
+            line-height: 0.8;
+            padding-right: 0.08em;
+            margin-top: 0.05em;
+            font-weight: bold;
+            color: #1a1a1a;
         }
         CSS;
     }

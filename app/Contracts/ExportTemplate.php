@@ -2,20 +2,33 @@
 
 namespace App\Contracts;
 
+use App\Enums\FontPairing;
+use App\Enums\SceneBreakStyle;
+
 interface ExportTemplate
 {
-    public static function slug(): string;
+    public function slug(): string;
 
-    public static function name(): string;
+    public function name(): string;
 
     /**
      * @return array<string, mixed>
      */
     public function designTokens(): array;
 
-    public function pdfCss(int $fontSize): string;
+    public function defaultFontPairing(): FontPairing;
 
-    public function ebookPreviewCss(int $fontSize): string;
+    public function defaultSceneBreakStyle(): SceneBreakStyle;
 
-    public function epubCss(string $fontFaceCss): string;
+    public function defaultDropCaps(): bool;
+
+    public function pdfCss(int $fontSize, ?FontPairing $fontPairing = null): string;
+
+    public function ebookPreviewCss(int $fontSize, ?FontPairing $fontPairing = null): string;
+
+    public function epubCss(string $fontFaceCss, ?FontPairing $fontPairing = null): string;
+
+    public function sceneBreakCss(): string;
+
+    public function dropCapCss(): string;
 }

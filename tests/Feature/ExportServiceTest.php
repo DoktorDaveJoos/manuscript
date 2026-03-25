@@ -933,8 +933,8 @@ test('resolveTemplate returns ClassicTemplate for classic slug', function () {
 
     expect($template)->toBeInstanceOf(ClassicTemplate::class);
     expect($template)->toBeInstanceOf(ExportTemplate::class);
-    expect($template::slug())->toBe('classic');
-    expect($template::name())->toBe('Classic');
+    expect($template->slug())->toBe('classic');
+    expect($template->name())->toBe('Classic');
 });
 
 test('resolveTemplate falls back to ClassicTemplate for unknown slug', function () {
