@@ -366,6 +366,8 @@ class ModernTemplate implements ExportTemplate
         .scene-break {
             margin: 1.5em 0;
             text-indent: 0;
+            page-break-before: avoid;
+            page-break-after: avoid;
         }
         .scene-break--rule {
             border: none;
