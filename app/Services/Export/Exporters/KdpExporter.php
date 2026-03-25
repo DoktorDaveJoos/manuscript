@@ -66,5 +66,9 @@ class KdpExporter implements Exporter
                 'KDP export requires: '.implode(', ', $missing).'. Please update your book settings.',
             );
         }
+
+        if (! $book->cover_image_path) {
+            logger()->info("KDP export for book {$book->id} missing cover image");
+        }
     }
 }
