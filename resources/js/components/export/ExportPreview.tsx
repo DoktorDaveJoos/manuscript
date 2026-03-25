@@ -119,7 +119,8 @@ function PdfPageCanvas({
                     return;
                 }
 
-                const viewport = page.getViewport({ scale: scaleFactor });
+                const dpr = window.devicePixelRatio || 1;
+                const viewport = page.getViewport({ scale: scaleFactor * dpr });
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
 
