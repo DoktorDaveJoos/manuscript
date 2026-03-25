@@ -10,6 +10,7 @@ import type {
     TemplateDef,
     TrimSizeOption,
 } from '@/components/export/types';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import SectionLabel from '@/components/ui/SectionLabel';
@@ -149,9 +150,14 @@ export default function ExportSettings({
                                 selectedTemplate={template}
                                 onChange={onTemplateChange}
                             />
-                            <p className="text-[11px] text-ink-faint">
-                                {t('templateHint')}
-                            </p>
+                            <Alert variant="info">
+                                <AlertTitle>
+                                    {t('templateAlertTitle')}
+                                </AlertTitle>
+                                <AlertDescription>
+                                    {t('templateAlertDescription')}
+                                </AlertDescription>
+                            </Alert>
 
                             {/* Customize Panel */}
                             <CustomizePanel
