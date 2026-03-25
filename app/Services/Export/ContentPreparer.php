@@ -2,16 +2,21 @@
 
 namespace App\Services\Export;
 
+use App\Enums\SceneBreakStyle;
+
 class ContentPreparer
 {
     /**
      * Convert HTML content to plain text, preserving paragraph and scene breaks.
      */
-    public function toPlainText(string $html): string
+    public function toPlainText(string $html, ?SceneBreakStyle $sceneBreak = null): string
     {
+        $sceneBreak = $sceneBreak ?? SceneBreakStyle::Asterisks;
+        $plainBreak = $sceneBreak->plainText();
+
         return strip_tags(str_replace(
             ['<p>', '</p>', '<br>', '<br/>', '<br />', '<hr>', '<hr/>', '<hr />'],
-            ["\n", "\n", "\n", "\n", "\n", "\n* * *\n", "\n* * *\n", "\n* * *\n"],
+            ["\n", "\n", "\n", "\n", "\n", "\n{$plainBreak}\n", "\n{$plainBreak}\n", "\n{$plainBreak}\n"],
             $html,
         ));
     }
@@ -19,12 +24,13 @@ class ContentPreparer
     /**
      * Convert TipTap HTML to valid XHTML for EPUB.
      */
-    public function toXhtml(string $html): string
+    public function toXhtml(string $html, ?SceneBreakStyle $sceneBreak = null): string
     {
+        $sceneBreak = $sceneBreak ?? SceneBreakStyle::Asterisks;
         $html = $this->normalizeHtml($html);
 
-        // Convert <hr> variants to self-closing XHTML
-        $html = preg_replace('/<hr\s*\/?>/', '<hr class="scene-break" />', $html);
+        // Convert <hr> variants using the chosen scene break style
+        $html = preg_replace('/<hr\s*\/?>/', $sceneBreak->xhtml(), $html);
 
         // Convert <br> variants to self-closing XHTML
         $html = preg_replace('/<br\s*\/?>/', '<br />', $html);
@@ -37,16 +43,13 @@ class ContentPreparer
     /**
      * Prepare HTML for chapter rendering (PDF and Chromium-based exports).
      */
-    public function toChapterHtml(string $html): string
+    public function toChapterHtml(string $html, ?SceneBreakStyle $sceneBreak = null): string
     {
+        $sceneBreak = $sceneBreak ?? SceneBreakStyle::Asterisks;
         $html = $this->normalizeHtml($html);
 
-        // Convert <hr> to styled scene break (spaced asterisks matching preview)
-        $html = preg_replace(
-            '/<hr\s*\/?>/',
-            '<p class="scene-break">*&nbsp;&nbsp;*&nbsp;&nbsp;*</p>',
-            $html,
-        );
+        // Convert <hr> using the chosen scene break style
+        $html = preg_replace('/<hr\s*\/?>/', $sceneBreak->html(), $html);
 
         return $html;
     }
@@ -54,9 +57,9 @@ class ContentPreparer
     /**
      * Backward-compatible alias for toChapterHtml().
      */
-    public function toPdfHtml(string $html): string
+    public function toPdfHtml(string $html, ?SceneBreakStyle $sceneBreak = null): string
     {
-        return $this->toChapterHtml($html);
+        return $this->toChapterHtml($html, $sceneBreak);
     }
 
     /**
