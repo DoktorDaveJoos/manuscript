@@ -35,6 +35,16 @@ enum FontPairing: string
         };
     }
 
+    public function bodyFontKey(): string
+    {
+        return strtolower(str_replace(' ', '', $this->bodyFont()));
+    }
+
+    public function headingFontKey(): string
+    {
+        return strtolower(str_replace(' ', '', $this->headingFont()));
+    }
+
     public function headingFontFamily(): string
     {
         return match ($this) {

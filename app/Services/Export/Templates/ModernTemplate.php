@@ -80,8 +80,8 @@ class ModernTemplate implements ExportTemplate
     private function baseCss(int $fontSize, float $lineHeight, bool $pagedMedia = true, ?FontPairing $fontPairing = null): string
     {
         $pairing = $fontPairing ?? $this->defaultFontPairing();
-        $bodyFontKey = strtolower(str_replace(' ', '', $pairing->bodyFont()));
-        $headingFontKey = strtolower(str_replace(' ', '', $pairing->headingFont()));
+        $bodyFontKey = $pairing->bodyFontKey();
+        $headingFontKey = $pairing->headingFontKey();
         $bodyFontFamily = "{$bodyFontKey}, Georgia, serif";
         $headingFontFamily = "{$headingFontKey}, 'Helvetica Neue', sans-serif";
 

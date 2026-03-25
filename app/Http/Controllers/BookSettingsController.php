@@ -7,7 +7,6 @@ use App\Enums\FontPairing;
 use App\Enums\SceneBreakStyle;
 use App\Enums\TrimSize;
 use App\Http\Requests\ExportBookRequest;
-use App\Models\AppSetting;
 use App\Models\Book;
 use App\Services\Export\ContentPreparer;
 use App\Services\Export\Exporters\PdfExporter;
@@ -133,20 +132,24 @@ class BookSettingsController extends Controller
                 ];
             }),
             'acts' => $book->acts->map(fn ($a) => $a->only('id', 'number', 'title')),
-            'copyrightText' => (string) AppSetting::get('copyright_text', ''),
-            'acknowledgmentText' => (string) AppSetting::get('acknowledgment_text', ''),
-            'aboutAuthorText' => (string) AppSetting::get('about_author_text', ''),
+            'copyrightText' => $book->copyright_text ?? '',
+            'acknowledgmentText' => $book->acknowledgment_text ?? '',
+            'aboutAuthorText' => $book->about_author_text ?? '',
             'templates' => collect([new ClassicTemplate, new ModernTemplate, new RomanceTemplate])
-                ->map(fn ($t) => [
-                    'slug' => $t->slug(),
-                    'name' => $t->name(),
-                    'pack' => 'Basic',
-                    'defaultFontPairing' => $t->defaultFontPairing()->value,
-                    'defaultSceneBreakStyle' => $t->defaultSceneBreakStyle()->value,
-                    'defaultDropCaps' => $t->defaultDropCaps(),
-                    'headingFont' => $t->defaultFontPairing()->headingFont(),
-                    'bodyFont' => $t->defaultFontPairing()->bodyFont(),
-                ]),
+                ->map(function ($t) {
+                    $pairing = $t->defaultFontPairing();
+
+                    return [
+                        'slug' => $t->slug(),
+                        'name' => $t->name(),
+                        'pack' => 'Basic',
+                        'defaultFontPairing' => $pairing->value,
+                        'defaultSceneBreakStyle' => $t->defaultSceneBreakStyle()->value,
+                        'defaultDropCaps' => $t->defaultDropCaps(),
+                        'headingFont' => $pairing->headingFont(),
+                        'bodyFont' => $pairing->bodyFont(),
+                    ];
+                }),
             'fontPairings' => collect(FontPairing::cases())->map(fn ($fp) => [
                 'value' => $fp->value,
                 'label' => $fp->label(),

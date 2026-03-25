@@ -345,19 +345,29 @@ class EpubExporter implements Exporter
      */
     private function addEpilogueChapter(ZipArchive $zip, Chapter $chapter, ExportOptions $options): array
     {
+        $title = htmlspecialchars($chapter->title, ENT_XML1, 'UTF-8');
+        $body = "<h1>{$title}</h1>\n";
+        $body .= $this->renderChapterBody($chapter, $options);
+
+        $xhtml = $this->wrapXhtml($title, $body, isChapter: true);
+        $zip->addFromString('OEBPS/Text/epilogue.xhtml', $xhtml);
+
+        return ['id' => 'epilogue', 'file' => 'epilogue.xhtml', 'label' => $title];
+    }
+
+    /**
+     * Render the body content for a chapter: scenes joined by scene breaks, with optional drop cap.
+     */
+    private function renderChapterBody(mixed $chapter, ExportOptions $options): string
+    {
         $sceneBreak = $options->sceneBreakStyle ?? $this->template->defaultSceneBreakStyle();
         $body = '';
-
-        $title = htmlspecialchars($chapter->title, ENT_XML1, 'UTF-8');
-        $body .= "<h1>{$title}</h1>\n";
-
         $scenes = $chapter->scenes ?? collect();
 
         foreach ($scenes as $sceneIndex => $scene) {
             if ($sceneIndex > 0) {
                 $body .= $sceneBreak->xhtml()."\n";
             }
-
             $content = $scene->content ?? '';
             $body .= $this->contentPreparer->toXhtml($content, $sceneBreak);
         }
@@ -366,10 +376,7 @@ class EpubExporter implements Exporter
             $body = $this->contentPreparer->addDropCap($body);
         }
 
-        $xhtml = $this->wrapXhtml($title, $body, isChapter: true);
-        $zip->addFromString('OEBPS/Text/epilogue.xhtml', $xhtml);
-
-        return ['id' => 'epilogue', 'file' => 'epilogue.xhtml', 'label' => $title];
+        return $body;
     }
 
     /**
@@ -379,7 +386,6 @@ class EpubExporter implements Exporter
     {
         $chapterFiles = [];
         $currentActId = null;
-        $sceneBreak = $options->sceneBreakStyle ?? $this->template->defaultSceneBreakStyle();
 
         foreach ($chapters as $index => $chapter) {
             $num = $this->chapterNum($index);
@@ -399,19 +405,7 @@ class EpubExporter implements Exporter
                 $body .= "<h1>{$title}</h1>\n";
             }
 
-            $scenes = $chapter->scenes ?? collect();
-            foreach ($scenes as $sceneIndex => $scene) {
-                if ($sceneIndex > 0) {
-                    $body .= $sceneBreak->xhtml()."\n";
-                }
-
-                $content = $scene->content ?? '';
-                $body .= $this->contentPreparer->toXhtml($content, $sceneBreak);
-            }
-
-            if ($options->dropCaps) {
-                $body = $this->contentPreparer->addDropCap($body);
-            }
+            $body .= $this->renderChapterBody($chapter, $options);
 
             $chapterTitle = htmlspecialchars($chapter->title, ENT_XML1, 'UTF-8');
             $xhtml = $this->wrapXhtml($chapterTitle, $body, isChapter: true);

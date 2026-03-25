@@ -115,7 +115,7 @@ class PdfExporter implements Exporter
         $fontData = $defaultFontConfig['fontdata'];
 
         $pairing = $options->fontPairing ?? $this->template->defaultFontPairing();
-        $bodyFontKey = strtolower(str_replace(' ', '', $pairing->bodyFont()));
+        $bodyFontKey = $pairing->bodyFontKey();
 
         if ($this->fontService->fontsAvailableForPairing($pairing)) {
             $fontDirs = array_merge($fontDirs, $this->fontService->mPdfFontDirectories());
@@ -161,7 +161,7 @@ class PdfExporter implements Exporter
                 }
 
                 $content = $scene->content ?? '';
-                $html = $this->contentPreparer->toPdfHtml($content, $sceneBreak);
+                $html = $this->contentPreparer->toChapterHtml($content, $sceneBreak);
 
                 $preparedContent .= $html;
             }

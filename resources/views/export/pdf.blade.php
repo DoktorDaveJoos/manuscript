@@ -210,7 +210,7 @@
                             if ($si > 0) {
                                 $epilogueContent .= $sceneBreak->html();
                             }
-                            $epilogueContent .= $contentPreparer->toPdfHtml($scene->content ?? '', $sceneBreak);
+                            $epilogueContent .= $contentPreparer->toChapterHtml($scene->content ?? '', $sceneBreak);
                         }
                         if ($options->dropCaps) {
                             $epilogueContent = $contentPreparer->addDropCap($epilogueContent);

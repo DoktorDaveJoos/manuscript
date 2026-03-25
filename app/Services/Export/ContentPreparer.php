@@ -55,14 +55,6 @@ class ContentPreparer
     }
 
     /**
-     * Backward-compatible alias for toChapterHtml().
-     */
-    public function toPdfHtml(string $html, ?SceneBreakStyle $sceneBreak = null): string
-    {
-        return $this->toChapterHtml($html, $sceneBreak);
-    }
-
-    /**
      * Add a drop cap to the first letter of the first non-empty paragraph,
      * capturing any leading punctuation (quotes, brackets) into the drop cap span.
      */

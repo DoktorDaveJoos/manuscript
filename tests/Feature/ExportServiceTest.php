@@ -839,7 +839,7 @@ test('pdf blade template renders valid html', function () {
             if ($sceneIndex > 0) {
                 $preparedContent .= '<p class="scene-break">*&nbsp;&nbsp;*&nbsp;&nbsp;*</p>';
             }
-            $preparedContent .= $contentPreparer->toPdfHtml($scene->content ?? '');
+            $preparedContent .= $contentPreparer->toChapterHtml($scene->content ?? '');
         }
         $chapter->prepared_content = $preparedContent;
 

@@ -23,8 +23,12 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso } from 'react-virtuoso';
-import type { Format } from '@/components/export/types';
-import type { MatterItem, TrimSizeOption } from '@/components/export/types';
+import type {
+    Format,
+    MatterItem,
+    TrimSizeOption,
+} from '@/components/export/types';
+import { VISUAL_FORMATS } from '@/components/export/types';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { jsonFetchHeaders } from '@/lib/utils';
 
@@ -41,8 +45,6 @@ const EBOOK_SPEC: TrimSizeOption = {
     width: 90,
     height: 122,
 };
-const VISUAL_FORMATS: Set<Format> = new Set(['pdf', 'epub', 'kdp' as Format]);
-
 function computePageDimensions(
     spec: TrimSizeOption,
     pageWidth: number,
