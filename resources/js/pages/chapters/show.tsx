@@ -251,7 +251,7 @@ export default function ChapterShow({
         const items: AccessBarItemConfig[] = [
             {
                 id: 'notes',
-                icon: <NotebookPen size={18} />,
+                icon: NotebookPen,
                 label: t('toolbar.notes'),
             },
         ];
@@ -259,12 +259,12 @@ export default function ChapterShow({
             items.push(
                 {
                     id: 'ai',
-                    icon: <Sparkles size={18} />,
+                    icon: Sparkles,
                     label: tAi('headerTitle'),
                 },
                 {
                     id: 'chat',
-                    icon: <MessageCircle size={18} />,
+                    icon: MessageCircle,
                     label: tAi('askAi'),
                 },
             );
