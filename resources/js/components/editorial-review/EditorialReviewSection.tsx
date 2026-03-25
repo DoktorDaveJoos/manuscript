@@ -1,38 +1,32 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/Collapsible';
 import SectionLabel from '@/components/ui/SectionLabel';
+import {
+    severityBadgeVariant,
+    severityTextColor,
+} from '@/lib/editorial-constants';
 import type {
     Chapter,
     EditorialReviewFinding,
     EditorialReviewSection as EditorialReviewSectionType,
-    FindingSeverity,
+    OnDiscussFinding,
 } from '@/types/models';
-
-const severityColor: Record<FindingSeverity, string> = {
-    critical: 'bg-delete',
-    warning: 'bg-accent',
-    suggestion: 'bg-ink-faint',
-};
-
-const severityTextColor: Record<FindingSeverity, string> = {
-    critical: 'text-delete',
-    warning: 'text-accent',
-    suggestion: 'text-ink-faint',
-};
 
 function ScoreBadge({ score }: { score: number | null }) {
     if (score === null) return null;
 
     return (
-        <span className="ml-auto rounded-full bg-neutral-bg px-2 py-0.5 text-[11px] font-medium text-ink-muted">
+        <Badge variant="secondary" className="ml-auto">
             {score} / 100
-        </span>
+        </Badge>
     );
 }
 
@@ -55,38 +49,33 @@ function FindingItem({
         .filter(Boolean);
 
     return (
-        <div className="flex gap-3 py-2">
-            <span
-                className={`mt-[6px] size-2 shrink-0 rounded-full ${severityColor[finding.severity]}`}
-            />
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <p className="text-[13px] leading-relaxed text-ink">
-                    {finding.description}
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                    {chapterLabels.length > 0 && (
-                        <span
-                            className={`text-[11px] font-medium ${severityTextColor[finding.severity]}`}
-                        >
-                            {t('section.chapters', {
-                                chapters: chapterLabels.join(', '),
-                            })}
-                        </span>
-                    )}
-                    <button
-                        type="button"
-                        onClick={onDiscuss}
-                        className="text-[11px] font-medium text-accent transition-colors hover:text-accent-dark"
+        <div className="flex flex-col gap-1 py-2">
+            <div className="flex items-center gap-2">
+                <Badge variant={severityBadgeVariant[finding.severity]}>
+                    {t(`severity.${finding.severity}`)}
+                </Badge>
+                {chapterLabels.length > 0 && (
+                    <span
+                        className={`text-[11px] font-medium ${severityTextColor[finding.severity]}`}
                     >
-                        {t('section.discuss')}
-                    </button>
-                </div>
-                {finding.recommendation && (
-                    <p className="text-xs leading-relaxed text-ink-muted">
-                        {finding.recommendation}
-                    </p>
+                        {t('section.chapters', {
+                            chapters: chapterLabels.join(', '),
+                        })}
+                    </span>
                 )}
             </div>
+            <p className="text-[13px] leading-relaxed text-ink">
+                {finding.description}
+            </p>
+            <Button variant="secondary" size="sm" onClick={onDiscuss}>
+                <MessageCircle size={12} />
+                {t('section.discuss')}
+            </Button>
+            {finding.recommendation && (
+                <p className="text-xs leading-relaxed text-ink-muted">
+                    {finding.recommendation}
+                </p>
+            )}
         </div>
     );
 }
@@ -98,7 +87,7 @@ export default function EditorialReviewSection({
 }: {
     section: EditorialReviewSectionType;
     chapters: Chapter[];
-    onDiscussFinding: (sectionType: string, findingIndex: number) => void;
+    onDiscussFinding: OnDiscussFinding;
 }) {
     const { t } = useTranslation('editorial-review');
     const [open, setOpen] = useState(false);
@@ -135,7 +124,14 @@ export default function EditorialReviewSection({
                                         finding={finding}
                                         chapters={chapters}
                                         onDiscuss={() =>
-                                            onDiscussFinding(section.type, i)
+                                            onDiscussFinding(section.type, i, {
+                                                description:
+                                                    finding.description,
+                                                severity: finding.severity,
+                                                sectionLabel: t(
+                                                    `section.${section.type}`,
+                                                ),
+                                            })
                                         }
                                     />
                                 ))}
