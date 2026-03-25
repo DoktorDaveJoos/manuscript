@@ -28,7 +28,6 @@ class ClassicTemplate implements ExportTemplate
         return [
             'bodyColor' => '#2a2a2a',
             'headingColor' => '#1a1a1a',
-            'accentColor' => '#999999',
             'pdfLineHeight' => 1.35,
             'epubLineHeight' => 1.5,
             'chapterLabelSizeEm' => 0.7,

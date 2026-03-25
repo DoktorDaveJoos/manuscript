@@ -28,16 +28,15 @@ class ElegantTemplate implements ExportTemplate
         return [
             'bodyColor' => '#2a2a2a',
             'headingColor' => '#1a1a1a',
-            'accentColor' => '#8b7355',
             'pdfLineHeight' => 1.4,
             'epubLineHeight' => 1.55,
             'chapterLabelSizeEm' => 0.65,
             'titleSizeEm' => 2.0,
             'titleWeight' => 'normal',
             'runningHeaderStyle' => 'italic',
-            'runningHeaderColor' => '#8b7355',
+            'runningHeaderColor' => '#999999',
             'runningHeaderSizePt' => 8,
-            'pageNumberColor' => '#8b7355',
+            'pageNumberColor' => '#999999',
             'pageNumberSizePt' => 8,
             'pageNumberPosition' => 'alternating',
         ];
@@ -101,7 +100,7 @@ class ElegantTemplate implements ExportTemplate
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 0.2em;
-            color: #8b7355;
+            color: #999999;
             margin: 2em 0 0.25em;
             text-indent: 0;
         }
@@ -135,7 +134,7 @@ class ElegantTemplate implements ExportTemplate
         .scene-break {
             text-align: center;
             letter-spacing: 0.3em;
-            color: #8b7355;
+            color: #999999;
             margin: 1.5em 0;
             text-indent: 0;
         }
@@ -160,7 +159,7 @@ class ElegantTemplate implements ExportTemplate
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 0.2em;
-            color: #8b7355;
+            color: #999999;
             margin: 2em 0 1.5em;
             text-indent: 0;
         }
@@ -179,14 +178,14 @@ class ElegantTemplate implements ExportTemplate
         .title-page-author {
             font-size: 0.85em;
             text-align: center;
-            color: #8b7355;
+            color: #999999;
             margin: 0.5em 0 0;
             text-indent: 0;
         }
         .copyright-text {
             font-size: 0.75em;
             text-align: center;
-            color: #8b7355;
+            color: #999;
             text-indent: 0;
             margin: 0 0 0.3em;
         }
@@ -263,7 +262,7 @@ class ElegantTemplate implements ExportTemplate
         }
         hr.scene-break::after {
             content: "~❋~";
-            color: #8b7355;
+            color: #999999;
         }
         .act-break {
             font-size: 2.0em;
@@ -294,14 +293,14 @@ class ElegantTemplate implements ExportTemplate
         }
         .title-page .author {
             font-size: 0.85em;
-            color: #8b7355;
+            color: #999999;
             margin-top: 0.5em;
         }
         .copyright-page {
             margin-top: 60%;
             text-align: center;
             font-size: 0.75em;
-            color: #8b7355;
+            color: #999;
         }
         .copyright-page p {
             text-indent: 0;
@@ -321,7 +320,7 @@ class ElegantTemplate implements ExportTemplate
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 0.2em;
-            color: #8b7355;
+            color: #999999;
             margin: 2em 0 1.5em;
         }
         .matter-body p {
@@ -338,14 +337,14 @@ class ElegantTemplate implements ExportTemplate
             text-align: center;
             margin: 1.5em 0;
             font-size: 1em;
-            color: #8b7355;
+            color: #999999;
             page-break-before: avoid;
             page-break-after: avoid;
             text-indent: 0;
         }
         .scene-break--rule {
             border: none;
-            border-top: 1px solid #8b7355;
+            border-top: 1px solid #cccccc;
             width: 30%;
             margin: 1.5em auto;
         }
@@ -365,7 +364,7 @@ class ElegantTemplate implements ExportTemplate
             padding-right: 0.08em;
             margin-top: 0.05em;
             font-weight: bold;
-            color: #8b7355;
+            color: #1a1a1a;
         }
         CSS;
     }

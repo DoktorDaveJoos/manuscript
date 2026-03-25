@@ -28,7 +28,6 @@ class ModernTemplate implements ExportTemplate
         return [
             'bodyColor' => '#333333',
             'headingColor' => '#111111',
-            'accentColor' => '#888888',
             'pdfLineHeight' => 1.4,
             'epubLineHeight' => 1.6,
             'chapterLabelSizeEm' => 0.65,
