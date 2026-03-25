@@ -854,12 +854,15 @@ test('pdf blade template renders valid html', function () {
         'front_matter' => ['title-page'],
     ]);
 
+    $template = new \App\Services\Export\Templates\ClassicTemplate;
+
     $html = view('export.pdf', [
         'book' => $book,
         'chapters' => $chapters,
         'options' => $options,
-        'css' => (new \App\Services\Export\Templates\ClassicTemplate)->pdfCss($options->fontSize),
+        'css' => $template->pdfCss($options->fontSize),
         'contentPreparer' => $contentPreparer,
+        'template' => $template,
     ])->render();
 
     expect($html)->toContain('<!DOCTYPE html>');
