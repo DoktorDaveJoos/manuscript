@@ -7,11 +7,13 @@ use App\Contracts\ExportTemplate;
 use App\Enums\BackMatterType;
 use App\Enums\FrontMatterType;
 use App\Models\Book;
+use App\Models\Chapter;
 use App\Services\Export\ContentPreparer;
 use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
 use App\Services\Export\FontService;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 
 class EpubExporter implements Exporter
@@ -35,8 +37,10 @@ class EpubExporter implements Exporter
         $zip->setCompressionName('mimetype', ZipArchive::CM_STORE);
 
         $this->addContainerXml($zip);
-        $this->addStylesheet($zip);
-        $this->addFonts($zip);
+        $this->addStylesheet($zip, $options);
+        $this->addFonts($zip, $options);
+
+        $coverInfo = $this->addCoverImage($zip, $options);
 
         // Front matter files
         $frontMatterFiles = $this->addFrontMatter($zip, $book, $chapters, $options);
@@ -44,13 +48,13 @@ class EpubExporter implements Exporter
         $chapterFiles = $this->addChapters($zip, $chapters, $options);
 
         // Back matter files
-        $backMatterFiles = $this->addBackMatter($zip, $options);
+        $backMatterFiles = $this->addBackMatter($zip, $book, $options);
 
         if ($options->includeTableOfContents && ! in_array(FrontMatterType::Toc->value, $options->frontMatter)) {
             $this->addTocXhtml($zip, $chapters, $frontMatterFiles, $backMatterFiles);
         }
-        $this->addTocNcx($zip, $book, $chapters, $frontMatterFiles, $backMatterFiles, $uuid);
-        $this->addContentOpf($zip, $book, $chapters, $frontMatterFiles, $chapterFiles, $backMatterFiles, $options, $uuid);
+        $this->addTocNcx($zip, $book, $chapters, $frontMatterFiles, $backMatterFiles, $uuid, $coverInfo);
+        $this->addContentOpf($zip, $book, $chapters, $frontMatterFiles, $chapterFiles, $backMatterFiles, $options, $uuid, $coverInfo);
 
         $zip->close();
 
@@ -71,23 +75,74 @@ class EpubExporter implements Exporter
         $zip->addFromString('META-INF/container.xml', $xml);
     }
 
-    private function addStylesheet(ZipArchive $zip): void
+    private function addStylesheet(ZipArchive $zip, ExportOptions $options): void
     {
-        $fontFace = $this->fontService->epubFontFaceCss();
-        $css = $this->template->epubCss($fontFace);
+        $pairing = $options->fontPairing ?? $this->template->defaultFontPairing();
+        $fontFace = $this->fontService->epubFontFaceCssForPairing($pairing);
+        $css = $this->template->epubCss($fontFace, $pairing);
+        $css .= "\n".$this->template->sceneBreakCss();
+
+        if ($options->dropCaps) {
+            $css .= "\n".$this->template->dropCapCss();
+        }
 
         $zip->addFromString('OEBPS/Styles/stylesheet.css', $css);
     }
 
-    private function addFonts(ZipArchive $zip): void
+    private function addFonts(ZipArchive $zip, ExportOptions $options): void
     {
-        if (! $this->fontService->fontsAvailable()) {
+        $pairing = $options->fontPairing ?? $this->template->defaultFontPairing();
+
+        if (! $this->fontService->fontsAvailableForPairing($pairing)) {
             return;
         }
 
-        foreach ($this->fontService->epubFontFiles() as $font) {
+        foreach ($this->fontService->epubFontFilesForPairing($pairing) as $font) {
             $zip->addFile($font['path'], 'OEBPS/Fonts/'.$font['filename']);
         }
+    }
+
+    /**
+     * Embed the cover image and create a cover XHTML page.
+     *
+     * @return array{imageFile: string, mimeType: string, xhtmlId: string, xhtmlFile: string}|null
+     */
+    private function addCoverImage(ZipArchive $zip, ExportOptions $options): ?array
+    {
+        if (! $options->includeCover || empty($options->coverImagePath)) {
+            return null;
+        }
+
+        $absolutePath = Storage::disk('local')->path($options->coverImagePath);
+
+        if (! file_exists($absolutePath)) {
+            return null;
+        }
+
+        $ext = strtolower(pathinfo($absolutePath, PATHINFO_EXTENSION));
+        $mimeType = match ($ext) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            default => 'image/jpeg',
+        };
+
+        $zip->addFile($absolutePath, "OEBPS/Images/cover.{$ext}");
+
+        $body = <<<HTML
+        <div style="text-align: center; height: 100%;">
+          <img src="../Images/cover.{$ext}" alt="Cover" style="max-width: 100%; max-height: 100%;" />
+        </div>
+        HTML;
+
+        $xhtml = $this->wrapXhtml('Cover', $body);
+        $zip->addFromString('OEBPS/Text/cover.xhtml', $xhtml);
+
+        return [
+            'imageFile' => "cover.{$ext}",
+            'mimeType' => $mimeType,
+            'xhtmlId' => 'cover',
+            'xhtmlFile' => 'cover.xhtml',
+        ];
     }
 
     /**
@@ -101,6 +156,8 @@ class EpubExporter implements Exporter
             match ($item) {
                 FrontMatterType::TitlePage->value => $files[] = $this->addTitlePage($zip, $book),
                 FrontMatterType::Copyright->value => $files[] = $this->addCopyrightPage($zip, $book, $options->copyrightText),
+                FrontMatterType::Dedication->value => $files[] = $this->addDedicationPage($zip, $options->dedicationText),
+                FrontMatterType::Epigraph->value => $files[] = $this->addEpigraphPage($zip, $options->epigraphText, $options->epigraphAttribution),
                 FrontMatterType::Toc->value => $files[] = $this->addTocAsFrontMatter($zip, $chapters, $options),
                 default => null,
             };
@@ -112,11 +169,12 @@ class EpubExporter implements Exporter
     /**
      * @return array<int, array{id: string, file: string, label: string}>
      */
-    private function addBackMatter(ZipArchive $zip, ExportOptions $options): array
+    private function addBackMatter(ZipArchive $zip, Book $book, ExportOptions $options): array
     {
         $matterConfig = [
             BackMatterType::Acknowledgments->value => ['epubType' => 'acknowledgments', 'heading' => 'Acknowledgments', 'text' => $options->acknowledgmentText],
             BackMatterType::AboutAuthor->value => ['epubType' => 'contributors', 'heading' => 'About the Author', 'text' => $options->aboutAuthorText],
+            BackMatterType::AlsoBy->value => ['epubType' => 'appendix', 'heading' => 'Also By '.$book->author, 'text' => $options->alsoByText],
         ];
 
         $files = [];
@@ -128,7 +186,16 @@ class EpubExporter implements Exporter
             }
         }
 
-        return $files;
+        // Handle epilogue separately — it's a chapter rendered as back matter
+        if (in_array(BackMatterType::Epilogue->value, $options->backMatter)) {
+            $epilogueChapter = ExportService::resolveEpilogueChapter($book);
+
+            if ($epilogueChapter) {
+                $files[] = $this->addEpilogueChapter($zip, $epilogueChapter, $options);
+            }
+        }
+
+        return array_filter($files);
     }
 
     /**
@@ -189,6 +256,55 @@ class EpubExporter implements Exporter
     /**
      * @return array{id: string, file: string, label: string}|null
      */
+    private function addDedicationPage(ZipArchive $zip, string $text): ?array
+    {
+        if ($text === '') {
+            return null;
+        }
+
+        $content = htmlspecialchars($text, ENT_XML1, 'UTF-8');
+
+        $body = <<<HTML
+        <section epub:type="dedication" class="dedication-page">
+          <p>{$content}</p>
+        </section>
+        HTML;
+
+        $xhtml = $this->wrapXhtml('Dedication', $body);
+        $zip->addFromString('OEBPS/Text/dedication.xhtml', $xhtml);
+
+        return ['id' => 'dedication', 'file' => 'dedication.xhtml', 'label' => 'Dedication'];
+    }
+
+    /**
+     * @return array{id: string, file: string, label: string}|null
+     */
+    private function addEpigraphPage(ZipArchive $zip, string $text, string $attribution): ?array
+    {
+        if ($text === '') {
+            return null;
+        }
+
+        $content = htmlspecialchars($text, ENT_XML1, 'UTF-8');
+
+        $body = "<section epub:type=\"epigraph\" class=\"epigraph-page\">\n  <p class=\"epigraph-text\">{$content}</p>\n";
+
+        if ($attribution !== '') {
+            $attr = htmlspecialchars($attribution, ENT_XML1, 'UTF-8');
+            $body .= "  <p class=\"epigraph-attribution\">{$attr}</p>\n";
+        }
+
+        $body .= '</section>';
+
+        $xhtml = $this->wrapXhtml('Epigraph', $body);
+        $zip->addFromString('OEBPS/Text/epigraph.xhtml', $xhtml);
+
+        return ['id' => 'epigraph', 'file' => 'epigraph.xhtml', 'label' => 'Epigraph'];
+    }
+
+    /**
+     * @return array{id: string, file: string, label: string}|null
+     */
     private function addTocAsFrontMatter(ZipArchive $zip, Collection $chapters, ExportOptions $options): ?array
     {
         if ($chapters->isEmpty()) {
@@ -223,12 +339,47 @@ class EpubExporter implements Exporter
     }
 
     /**
+     * Render an epilogue chapter as a back matter page.
+     *
+     * @return array{id: string, file: string, label: string}
+     */
+    private function addEpilogueChapter(ZipArchive $zip, Chapter $chapter, ExportOptions $options): array
+    {
+        $sceneBreak = $options->sceneBreakStyle ?? $this->template->defaultSceneBreakStyle();
+        $body = '';
+
+        $title = htmlspecialchars($chapter->title, ENT_XML1, 'UTF-8');
+        $body .= "<h1>{$title}</h1>\n";
+
+        $scenes = $chapter->scenes ?? collect();
+
+        foreach ($scenes as $sceneIndex => $scene) {
+            if ($sceneIndex > 0) {
+                $body .= $sceneBreak->xhtml()."\n";
+            }
+
+            $content = $scene->content ?? '';
+            $body .= $this->contentPreparer->toXhtml($content, $sceneBreak);
+        }
+
+        if ($options->dropCaps) {
+            $body = $this->contentPreparer->addDropCap($body);
+        }
+
+        $xhtml = $this->wrapXhtml($title, $body, isChapter: true);
+        $zip->addFromString('OEBPS/Text/epilogue.xhtml', $xhtml);
+
+        return ['id' => 'epilogue', 'file' => 'epilogue.xhtml', 'label' => $title];
+    }
+
+    /**
      * @return array<int, string>
      */
     private function addChapters(ZipArchive $zip, Collection $chapters, ExportOptions $options): array
     {
         $chapterFiles = [];
         $currentActId = null;
+        $sceneBreak = $options->sceneBreakStyle ?? $this->template->defaultSceneBreakStyle();
 
         foreach ($chapters as $index => $chapter) {
             $num = $this->chapterNum($index);
@@ -251,11 +402,15 @@ class EpubExporter implements Exporter
             $scenes = $chapter->scenes ?? collect();
             foreach ($scenes as $sceneIndex => $scene) {
                 if ($sceneIndex > 0) {
-                    $body .= "<hr class=\"scene-break\" />\n";
+                    $body .= $sceneBreak->xhtml()."\n";
                 }
 
                 $content = $scene->content ?? '';
-                $body .= $this->contentPreparer->toXhtml($content);
+                $body .= $this->contentPreparer->toXhtml($content, $sceneBreak);
+            }
+
+            if ($options->dropCaps) {
+                $body = $this->contentPreparer->addDropCap($body);
             }
 
             $chapterTitle = htmlspecialchars($chapter->title, ENT_XML1, 'UTF-8');
@@ -298,12 +453,24 @@ class EpubExporter implements Exporter
     /**
      * @param  array<int, array{id: string, file: string, label: string}>  $frontMatterFiles
      * @param  array<int, array{id: string, file: string, label: string}>  $backMatterFiles
+     * @param  array{imageFile: string, mimeType: string, xhtmlId: string, xhtmlFile: string}|null  $coverInfo
      */
-    private function addTocNcx(ZipArchive $zip, Book $book, Collection $chapters, array $frontMatterFiles, array $backMatterFiles, string $uuid): void
+    private function addTocNcx(ZipArchive $zip, Book $book, Collection $chapters, array $frontMatterFiles, array $backMatterFiles, string $uuid, ?array $coverInfo = null): void
     {
         $bookTitle = htmlspecialchars($book->title, ENT_XML1, 'UTF-8');
         $navPoints = '';
         $playOrder = 1;
+
+        if ($coverInfo) {
+            $navPoints .= <<<XML
+                <navPoint id="cover" playOrder="{$playOrder}">
+                  <navLabel><text>Cover</text></navLabel>
+                  <content src="Text/{$coverInfo['xhtmlFile']}"/>
+                </navPoint>
+
+            XML;
+            $playOrder++;
+        }
 
         foreach ($frontMatterFiles as $matter) {
             if ($matter['id'] === 'toc') {
@@ -363,8 +530,9 @@ class EpubExporter implements Exporter
      * @param  array<int, array{id: string, file: string, label: string}>  $frontMatterFiles
      * @param  array<int, string>  $chapterFiles
      * @param  array<int, array{id: string, file: string, label: string}>  $backMatterFiles
+     * @param  array{imageFile: string, mimeType: string, xhtmlId: string, xhtmlFile: string}|null  $coverInfo
      */
-    private function addContentOpf(ZipArchive $zip, Book $book, Collection $chapters, array $frontMatterFiles, array $chapterFiles, array $backMatterFiles, ExportOptions $options, string $uuid): void
+    private function addContentOpf(ZipArchive $zip, Book $book, Collection $chapters, array $frontMatterFiles, array $chapterFiles, array $backMatterFiles, ExportOptions $options, string $uuid, ?array $coverInfo = null): void
     {
         $title = htmlspecialchars($book->title, ENT_XML1, 'UTF-8');
         $author = htmlspecialchars($book->author ?? 'Unknown', ENT_XML1, 'UTF-8');
@@ -382,9 +550,18 @@ class EpubExporter implements Exporter
             $manifestItems .= "\n    <item id=\"toc\" href=\"toc.xhtml\" media-type=\"application/xhtml+xml\" properties=\"nav\"/>";
         }
 
-        if ($this->fontService->fontsAvailable()) {
-            foreach ($this->fontService->epubFontFiles() as $id => $font) {
-                $manifestItems .= "\n    <item id=\"{$id}\" href=\"Fonts/{$font['filename']}\" media-type=\"font/ttf\"/>";
+        // Cover image and XHTML page
+        if ($coverInfo) {
+            $manifestItems .= "\n    <item id=\"cover-image\" href=\"Images/{$coverInfo['imageFile']}\" media-type=\"{$coverInfo['mimeType']}\" properties=\"cover-image\"/>";
+            $manifestItems .= "\n    <item id=\"cover\" href=\"Text/{$coverInfo['xhtmlFile']}\" media-type=\"application/xhtml+xml\"/>";
+        }
+
+        // Font manifest using pairing-aware method
+        $pairing = $options->fontPairing ?? $this->template->defaultFontPairing();
+        if ($this->fontService->fontsAvailableForPairing($pairing)) {
+            foreach ($this->fontService->epubFontFilesForPairing($pairing) as $index => $font) {
+                $fontId = 'font-'.$index;
+                $manifestItems .= "\n    <item id=\"{$fontId}\" href=\"Fonts/{$font['filename']}\" media-type=\"font/ttf\"/>";
             }
         }
 
@@ -406,8 +583,12 @@ class EpubExporter implements Exporter
             $manifestItems .= "\n    <item id=\"{$matter['id']}\" href=\"Text/{$matter['file']}\" media-type=\"application/xhtml+xml\"/>";
         }
 
-        // Build spine — front matter, then TOC, then chapters, then back matter
+        // Build spine — cover, then front matter, then TOC, then chapters, then back matter
         $spineItems = '';
+
+        if ($coverInfo) {
+            $spineItems .= "    <itemref idref=\"cover\"/>\n";
+        }
 
         foreach ($frontMatterFiles as $matter) {
             if ($matter['id'] === 'toc') {

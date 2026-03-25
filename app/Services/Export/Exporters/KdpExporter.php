@@ -27,8 +27,19 @@ class KdpExporter implements Exporter
             fontSize: $options->fontSize,
             frontMatter: $options->frontMatter,
             backMatter: $options->backMatter,
+            copyrightText: $options->copyrightText,
             acknowledgmentText: $options->acknowledgmentText,
             aboutAuthorText: $options->aboutAuthorText,
+            template: $options->template,
+            fontPairing: $options->fontPairing,
+            sceneBreakStyle: $options->sceneBreakStyle,
+            dropCaps: $options->dropCaps,
+            includeCover: $options->includeCover,
+            dedicationText: $options->dedicationText,
+            epigraphText: $options->epigraphText,
+            epigraphAttribution: $options->epigraphAttribution,
+            alsoByText: $options->alsoByText,
+            coverImagePath: $options->coverImagePath,
         );
 
         return $this->epubExporter->export($book, $chapters, $kdpOptions);
