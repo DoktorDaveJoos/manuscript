@@ -1,9 +1,9 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import Button from '@/components/ui/Button';
 import { useAiPreparation } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 
 const FEATURE_CARDS = [
     {
@@ -39,7 +39,7 @@ export default function AiDashboardEmptyState({
         <div className="flex flex-1 flex-col items-center gap-12 py-16">
             {/* Hero */}
             <div className="flex max-w-md flex-col items-center gap-4 text-center">
-                <h2 className="font-serif text-[32px] leading-[1.2] tracking-[-0.32px] text-ink">
+                <h2 className="font-serif text-[32px] leading-[1.2] font-semibold tracking-[-0.01em] text-ink">
                     {t('emptyState.heading')}
                 </h2>
                 <p className="text-[14px] leading-[1.6] text-ink-muted">

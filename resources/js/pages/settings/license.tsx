@@ -2,16 +2,17 @@ import { router, usePage } from '@inertiajs/react';
 import { useState, useCallback, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import SettingsLayout from '@/layouts/SettingsLayout';
-import { jsonFetchHeaders } from '@/lib/utils';
-import type { License } from '@/types/models';
 import {
     activate,
     deactivate,
     revalidate,
 } from '@/actions/App/Http/Controllers/LicenseController';
+import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import SettingsLayout from '@/layouts/SettingsLayout';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type { License } from '@/types/models';
 
 interface Props {
     book?: { id: number; title: string } | null;
@@ -111,7 +112,7 @@ export default function LicensePage({ book }: Props) {
                 </div>
 
                 {license.active ? (
-                    <div className="rounded-lg border border-border bg-surface-card p-6">
+                    <Card className="p-6">
                         <div className="flex items-center gap-3">
                             <span className="text-status-final">●</span>
                             <span className="text-sm font-medium text-ink">
@@ -133,9 +134,9 @@ export default function LicensePage({ book }: Props) {
                                 {error}
                             </span>
                         )}
-                    </div>
+                    </Card>
                 ) : (
-                    <div className="rounded-lg border border-border bg-surface-card p-6">
+                    <Card className="p-6">
                         <h2 className="text-sm font-medium text-ink">
                             {t('license.formTitle')}
                         </h2>
@@ -175,7 +176,7 @@ export default function LicensePage({ book }: Props) {
                                 </Button>
                             </div>
                         </form>
-                    </div>
+                    </Card>
                 )}
             </div>
         </SettingsLayout>

@@ -2,11 +2,11 @@ import { router } from '@inertiajs/react';
 import { BookOpen, Sparkles, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { store as setupStructure } from '@/actions/App/Http/Controllers/PlotSetupController';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import type { PlotTemplate } from '@/lib/plot-templates';
 import type { Book } from '@/types/models';
-import { store as setupStructure } from '@/actions/App/Http/Controllers/PlotSetupController';
 
 // TODO: These decorative act-specific color gradations have no direct token matches.
 // Consider defining CSS variables (--color-act-1-bg, etc.) if they need dark mode support.
@@ -130,7 +130,7 @@ export default function PlotWizardModal({
                     <span className="text-[11px] font-semibold tracking-[2px] text-ink-faint uppercase">
                         {t(`wizard.typeLabel.${template.key}`)}
                     </span>
-                    <h2 className="font-serif text-2xl leading-8 font-normal tracking-[-0.01em] text-ink">
+                    <h2 className="font-serif text-2xl leading-8 font-semibold tracking-[-0.01em] text-ink">
                         {template.name}
                     </h2>
                 </div>

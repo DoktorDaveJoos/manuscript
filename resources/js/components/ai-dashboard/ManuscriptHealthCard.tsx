@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { Card } from '@/components/ui/Card';
 import SectionLabel from '@/components/ui/SectionLabel';
 import type { HealthMetric } from '@/types/models';
 
@@ -21,10 +22,10 @@ export default function ManuscriptHealthCard({
     return (
         <div className="flex flex-col gap-3">
             <SectionLabel>{t('health.label')}</SectionLabel>
-            <div className="flex gap-6 rounded-lg bg-surface-card p-6">
+            <Card className="flex gap-6 p-6">
                 {/* Score */}
                 <div className="flex w-[160px] shrink-0 flex-col items-center justify-center gap-1">
-                    <span className="font-serif text-[32px] text-ink">
+                    <span className="font-serif text-[32px] font-semibold text-ink">
                         {compositeScore}
                     </span>
                     <span className="text-[12px] text-ink-muted">
@@ -56,7 +57,7 @@ export default function ManuscriptHealthCard({
                         ))}
                     </div>
                 </div>
-            </div>
+            </Card>
         </div>
     );
 }

@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { CheckCircle, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
 import AiDashboardEmptyState from '@/components/ai-dashboard/AiDashboardEmptyState';
 import AiUsageSummary from '@/components/ai-dashboard/AiUsageSummary';
 import AnalyzedChaptersTable from '@/components/ai-dashboard/AnalyzedChaptersTable';
@@ -9,7 +10,6 @@ import ManuscriptHealthCard from '@/components/ai-dashboard/ManuscriptHealthCard
 import Sidebar from '@/components/editor/Sidebar';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { AiPreparationStatus, Book, HealthMetric } from '@/types/models';
-import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
 
 type AiUsageData = {
     input_tokens: number;
@@ -70,7 +70,7 @@ export default function AiDashboardPage({
                                         size={16}
                                         className="text-ink-muted"
                                     />
-                                    <h1 className="font-serif text-[24px] text-ink">
+                                    <h1 className="font-serif text-[24px] font-semibold text-ink">
                                         {t('title')}
                                     </h1>
                                 </div>

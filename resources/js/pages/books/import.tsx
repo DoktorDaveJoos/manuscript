@@ -72,7 +72,7 @@ function UploadPhase({
     return (
         <div className="flex flex-1 flex-col items-center gap-8 px-10 pt-20 pb-16">
             <div className="flex flex-col items-center gap-2">
-                <h1 className="font-serif text-[32px] leading-10 font-normal tracking-[-0.01em] text-ink">
+                <h1 className="font-serif text-[32px] leading-10 font-semibold tracking-[-0.01em] text-ink">
                     {book.title}
                 </h1>
                 <p className="text-sm leading-[18px] text-ink-muted">
@@ -193,7 +193,7 @@ function ParsingPhase({
     return (
         <div className="flex flex-1 flex-col items-center gap-10 px-10 pt-20 pb-16">
             <div className="flex flex-col items-center gap-2">
-                <h1 className="font-serif text-[32px] leading-10 font-normal tracking-[-0.01em] text-ink">
+                <h1 className="font-serif text-[32px] leading-10 font-semibold tracking-[-0.01em] text-ink">
                     {book.title}
                 </h1>
                 <p className="text-sm leading-[18px] text-ink-muted">

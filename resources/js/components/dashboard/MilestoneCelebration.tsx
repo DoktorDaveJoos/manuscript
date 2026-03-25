@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { dismissMilestone } from '@/actions/App/Http/Controllers/DashboardController';
+import { Card } from '@/components/ui/Card';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { ManuscriptTarget } from '@/types/models';
-import { dismissMilestone } from '@/actions/App/Http/Controllers/DashboardController';
 
 export default function MilestoneCelebration({
     bookId,
@@ -47,8 +48,8 @@ export default function MilestoneCelebration({
         : null;
 
     return (
-        <div
-            className={`rounded-xl border border-border-light bg-surface-card px-9 py-8 transition-all duration-700 ${
+        <Card
+            className={`px-9 py-8 transition-all duration-700 ${
                 visible
                     ? 'translate-y-0 opacity-100'
                     : 'translate-y-2 opacity-0'
@@ -117,6 +118,6 @@ export default function MilestoneCelebration({
                     {t('milestone.dismiss')}
                 </button>
             </div>
-        </div>
+        </Card>
     );
 }

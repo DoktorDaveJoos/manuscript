@@ -146,13 +146,13 @@ The scale follows a ~1.15–1.2 ratio, which suits dense editor UIs.
 
 | Level | Classes | When |
 |---|---|---|
-| Display | `font-serif text-[32px] leading-10 font-normal tracking-[-0.01em] text-ink` | Hero headlines, empty states, onboarding |
+| Display | `font-serif text-[32px] leading-10 font-semibold tracking-[-0.01em] text-ink` | Hero headlines, empty states, onboarding |
 | H1 Page | `text-xl font-semibold tracking-[-0.01em] text-ink` | Page titles inside the app chrome |
-| H2 Dialog | `font-serif text-2xl leading-8 font-normal tracking-[-0.01em] text-ink` | Dialog/modal titles |
+| H2 Dialog | `font-serif text-2xl leading-8 font-semibold tracking-[-0.01em] text-ink` | Dialog/modal titles |
 | H2 Section | `text-base font-semibold text-ink` | Section headers within a page |
 | H3 Card | `text-sm font-medium text-ink` | Card titles, list items |
 
-Rule: `font-serif` (Playfair Display) ONLY for Display and Dialog headings. `font-bold`/`font-extrabold` never used for UI headings — max is `font-semibold`.
+Rule: `font-serif` (Playfair Display) ONLY for Display and Dialog headings — always `font-semibold`. `font-bold`/`font-extrabold` never used for UI headings — max is `font-semibold`.
 
 ### Font Weights (3 tiers)
 
@@ -212,13 +212,14 @@ Uses Tailwind's default 4px-based spacing scale.
 |---|---|---|---|
 | xs | 4px | `rounded` | Progress bars, inline tags, micro elements |
 | sm | 6px | `rounded-md` | Buttons, inputs, selects, menu items, sidebar items |
-| md | 8px | `rounded-lg` | Cards, panels, dropdowns, popovers |
-| lg | 12px | `rounded-xl` | Dialogs, large cards, command palette |
+| md | 8px | `rounded-lg` | Panels, dropdowns, popovers |
+| lg | 12px | `rounded-xl` | Cards, dialogs, command palette |
 | full | 9999px | `rounded-full` | Pills, badges, avatars, toggles |
 
 **Rules:**
 - Buttons and inputs always use `rounded-md`
-- Cards and panels always use `rounded-lg`
+- Cards always use `rounded-xl`
+- Panels and dropdowns always use `rounded-lg`
 - Dialogs always use `rounded-xl`
 - **No arbitrary radius values** (`rounded-[5px]`, `rounded-[10px]`, `rounded-[14px]`). Map to the nearest step.
 
@@ -275,6 +276,10 @@ All icons use **Lucide React** (`lucide-react`). Default stroke width is 2; use 
 
 ## Components
 
+### shadcn First
+
+Always try to solve a UI problem with a shadcn component before building custom markup. Use `npx shadcn@latest search` to check registries. If a shadcn component exists for the pattern, install and adapt it to the project's design tokens.
+
 ### Reuse First
 
 Always check `resources/js/components/ui/` before creating new elements:
@@ -291,6 +296,8 @@ Always check `resources/js/components/ui/` before creating new elements:
 | `SectionLabel` | Uppercase labels | `as: span\|label`, `className?` |
 | `ContextMenu` | Right-click menus | `.Item`, `.Submenu`, `.Separator` |
 | `FormField` | Label + input + error | `label`, `error?`, `children` |
+| `Card` | Content containers | `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter` |
+| `ToggleGroup` | Option selection (2–7 choices) | `type: single\|multiple`, `ToggleGroupItem` |
 | `Toggle` / `ToggleRow` | Boolean settings | `checked`, `onChange` |
 | `Checkbox` | Multi-select | `checked`, `onChange` |
 | `Collapsible` | Expandable sections | Animated open/close |
@@ -305,6 +312,26 @@ Always check `resources/js/components/ui/` before creating new elements:
 | `ghost` | `text-ink-muted` (no bg/border) | Toolbar, minimal actions |
 | `danger` | `bg-delete text-surface` | Destructive (Delete) |
 | `accent` | `bg-accent text-surface` | Brand CTA (Upgrade, AI features) |
+
+### Card
+
+All content containers use the `Card` component from `@/components/ui/Card`.
+
+**Rules:**
+- **Always has a border** — `border border-border-light` is baked into the base component
+- **Always `rounded-xl`** — no exceptions
+- **Default padding**: `p-6` (24px) via `CardContent`. Use `className="p-4"` for compact cards
+- For simple cards (stat cards), use `<Card className="p-6">` without sub-components
+- For structured cards, use the full anatomy: `CardHeader` → `CardTitle` / `CardDescription` → `CardContent` → `CardFooter`
+- For interactive cards (clickable), add `cursor-pointer hover:shadow-md transition-shadow` via `className`
+- No shadows by default — the border provides sufficient separation
+
+### ToggleGroup
+
+Use `ToggleGroup` + `ToggleGroupItem` for option selection with 2–7 mutually exclusive choices (format pickers, font selectors, theme selectors). Never loop `Button` with manual active state.
+
+**Active state:** `bg-ink text-surface font-semibold` (dark fill — high contrast, unambiguous)
+**Inactive state:** `bg-neutral-bg text-ink-muted` (subtle, recedes)
 
 ### Sidebar Navigation
 

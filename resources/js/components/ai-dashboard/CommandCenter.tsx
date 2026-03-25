@@ -1,6 +1,7 @@
 import { BookOpen, RefreshCw, Sparkles, Wand2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Card } from '@/components/ui/Card';
 import SectionLabel from '@/components/ui/SectionLabel';
 import { useAiPreparation } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
@@ -30,7 +31,7 @@ function CommandCard({
     footer: ReactNode;
 }) {
     return (
-        <div className="flex flex-1 flex-col justify-between rounded-lg bg-surface-card p-5">
+        <Card className="flex flex-1 flex-col justify-between p-5">
             <div className="flex flex-col gap-3">
                 <div className="flex size-10 items-center justify-center rounded-xl bg-neutral-bg">
                     {icon}
@@ -47,7 +48,7 @@ function CommandCard({
             <div className="mt-4 border-t border-border-subtle pt-3">
                 {footer}
             </div>
-        </div>
+        </Card>
     );
 }
 

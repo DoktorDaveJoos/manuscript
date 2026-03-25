@@ -3,7 +3,9 @@ import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import Toggle from '@/components/ui/Toggle';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
 import SettingsLayout from '@/layouts/SettingsLayout';
@@ -108,7 +110,7 @@ export default function Appearance({ settings, book, version }: Props) {
                 </div>
 
                 {/* Theme */}
-                <div className="rounded-lg border border-border bg-surface-card p-6">
+                <Card className="p-6">
                     <div className="flex flex-col gap-4">
                         <div>
                             <span className="text-sm font-medium text-ink">
@@ -118,32 +120,33 @@ export default function Appearance({ settings, book, version }: Props) {
                                 {t('appearance.theme.description')}
                             </p>
                         </div>
-                        <div className="flex gap-3">
+                        <ToggleGroup
+                            type="single"
+                            value={theme}
+                            onValueChange={(val) => {
+                                if (val) setTheme(val as typeof theme);
+                            }}
+                        >
                             {THEME_OPTIONS.map((option) => (
-                                <button
+                                <ToggleGroupItem
                                     key={option.value}
-                                    type="button"
-                                    onClick={() => setTheme(option.value)}
-                                    className={`flex flex-1 flex-col rounded-lg border px-4 py-3 text-left transition-colors ${
-                                        theme === option.value
-                                            ? 'border-accent bg-accent/10 text-ink'
-                                            : 'border-border text-ink-muted hover:border-border-dashed hover:text-ink'
-                                    }`}
+                                    value={option.value}
+                                    className="flex flex-1 flex-col items-start rounded-lg px-4 py-3 text-left"
                                 >
                                     <span className="text-[14px] font-medium">
                                         {t(option.labelKey)}
                                     </span>
-                                    <span className="mt-0.5 text-[12px] text-ink-muted">
+                                    <span className="mt-0.5 text-[12px] opacity-70">
                                         {t(option.descriptionKey)}
                                     </span>
-                                </button>
+                                </ToggleGroupItem>
                             ))}
-                        </div>
+                        </ToggleGroup>
                     </div>
-                </div>
+                </Card>
 
                 {/* Show AI Features */}
-                <div className="rounded-lg border border-border bg-surface-card px-6">
+                <Card className="px-6">
                     <SettingRow
                         label={t('appearance.showAi.label')}
                         description={t('appearance.showAi.description')}
@@ -155,14 +158,14 @@ export default function Appearance({ settings, book, version }: Props) {
                         }}
                         border={false}
                     />
-                </div>
+                </Card>
 
                 {/* Editor section */}
                 <div>
                     <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                         {t('appearance.editor')}
                     </span>
-                    <div className="mt-3 rounded-lg border border-border bg-surface-card px-6">
+                    <Card className="mt-3 px-6">
                         <SettingRow
                             label={t('appearance.hideToolbar.label')}
                             description={t(
@@ -176,7 +179,7 @@ export default function Appearance({ settings, book, version }: Props) {
                             }}
                             border={false}
                         />
-                    </div>
+                    </Card>
                 </div>
 
                 {/* Privacy */}
@@ -184,7 +187,7 @@ export default function Appearance({ settings, book, version }: Props) {
                     <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
                         {t('appearance.privacy')}
                     </span>
-                    <div className="mt-3 rounded-lg border border-border bg-surface-card px-6">
+                    <Card className="mt-3 px-6">
                         <SettingRow
                             label={t('appearance.sendErrorReports.label')}
                             description={t(
@@ -198,11 +201,11 @@ export default function Appearance({ settings, book, version }: Props) {
                             }}
                             border={false}
                         />
-                    </div>
+                    </Card>
                 </div>
 
                 {/* Version info */}
-                <div className="rounded-lg border border-border bg-surface-card p-6">
+                <Card className="p-6">
                     <div className="flex items-start justify-between">
                         <div className="flex flex-col gap-2">
                             <span className="text-[13px] font-medium text-ink-muted">
@@ -260,7 +263,7 @@ export default function Appearance({ settings, book, version }: Props) {
                             )}
                         </div>
                     </div>
-                </div>
+                </Card>
             </div>
         </SettingsLayout>
     );

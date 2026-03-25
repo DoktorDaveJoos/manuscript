@@ -41,7 +41,7 @@ export default function EditorialReviewEmptyState({
                 <Dialog onClose={() => setShowConfirm(false)} width={420}>
                     <div className="flex flex-col gap-6">
                         <div className="flex flex-col gap-2">
-                            <h2 className="font-serif text-2xl leading-8 font-normal tracking-[-0.01em] text-ink">
+                            <h2 className="font-serif text-2xl leading-8 font-semibold tracking-[-0.01em] text-ink">
                                 {t('confirm.title')}
                             </h2>
                             <p className="text-sm leading-relaxed text-ink-muted">

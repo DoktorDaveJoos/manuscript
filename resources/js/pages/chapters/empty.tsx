@@ -1,9 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
-import Button from '@/components/ui/Button';
-import type { Book, Storyline } from '@/types/models';
 import { importMethod } from '@/actions/App/Http/Controllers/BookController';
 import { store } from '@/actions/App/Http/Controllers/ChapterController';
+import Button from '@/components/ui/Button';
+import type { Book, Storyline } from '@/types/models';
 
 export default function ChapterEmpty({
     book,
@@ -27,7 +27,7 @@ export default function ChapterEmpty({
             <Head title={`${book.title} — ${t('empty.noChapters')}`} />
             <div className="flex min-h-screen flex-col items-center justify-center bg-surface pb-20">
                 <div className="flex flex-col items-center gap-4">
-                    <h1 className="font-serif text-[32px] leading-10 font-normal tracking-[-0.01em] text-ink">
+                    <h1 className="font-serif text-[32px] leading-10 font-semibold tracking-[-0.01em] text-ink">
                         {t('empty.title')}
                     </h1>
                     <p className="text-sm leading-6 text-ink-muted">

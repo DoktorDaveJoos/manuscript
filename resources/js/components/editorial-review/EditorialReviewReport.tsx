@@ -4,7 +4,11 @@ import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
-import type { Chapter, EditorialReview } from '@/types/models';
+import type {
+    Chapter,
+    EditorialReview,
+    OnDiscussFinding,
+} from '@/types/models';
 import EditorialReviewSection from './EditorialReviewSection';
 
 function ScoreDisplay({
@@ -16,7 +20,7 @@ function ScoreDisplay({
 }) {
     return (
         <div className="flex flex-col items-center gap-1">
-            <span className="font-serif text-[32px] leading-[1] font-normal text-ink">
+            <span className="font-serif text-[32px] leading-[1] font-semibold text-ink">
                 {score}
             </span>
             <span className="text-[11px] font-medium text-ink-faint">
@@ -87,7 +91,7 @@ export default function EditorialReviewReport({
     onSelectReview: (review: EditorialReview) => void;
     onStartNew: () => void;
     starting: boolean;
-    onDiscussFinding: (sectionType: string, findingIndex: number) => void;
+    onDiscussFinding: OnDiscussFinding;
 }) {
     const { t, i18n } = useTranslation('editorial-review');
     const [showConfirm, setShowConfirm] = useState(false);
@@ -204,7 +208,7 @@ export default function EditorialReviewReport({
                 <Dialog onClose={() => setShowConfirm(false)} width={420}>
                     <div className="flex flex-col gap-6">
                         <div className="flex flex-col gap-2">
-                            <h2 className="font-serif text-2xl leading-8 font-normal tracking-[-0.01em] text-ink">
+                            <h2 className="font-serif text-2xl leading-8 font-semibold tracking-[-0.01em] text-ink">
                                 {t('confirm.title')}
                             </h2>
                             <p className="text-sm leading-relaxed text-ink-muted">

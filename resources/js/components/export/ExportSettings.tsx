@@ -2,11 +2,12 @@ import { BookOpen, Download, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { VISUAL_FORMATS } from '@/components/export/types';
 import type { Format, TrimSizeOption } from '@/components/export/types';
+import Button from '@/components/ui/Button';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import ToggleRow from '@/components/ui/ToggleRow';
 import { useFreeTier } from '@/hooks/useFreeTier';
-import { cn } from '@/lib/utils';
 
 type ExportSettingsProps = {
     format: Format;
@@ -31,45 +32,6 @@ type ExportSettingsProps = {
 const FORMATS: Format[] = ['epub', 'pdf', 'docx', 'txt'];
 const TEMPLATES = [{ value: 'classic', label: 'Classic' }];
 const FONT_SIZES = [10, 11, 12, 13, 14];
-
-function FormatPill({
-    label,
-    active,
-    onClick,
-    locked,
-}: {
-    label: string;
-    active: boolean;
-    onClick: () => void;
-    locked?: boolean;
-}) {
-    if (locked) {
-        return (
-            <span
-                className="flex items-center gap-1.5 rounded-md bg-neutral-bg px-4 py-[7px] text-[12px] text-ink-faint opacity-60"
-                title="Upgrade to Pro"
-            >
-                .{label}
-                <Lock size={10} />
-            </span>
-        );
-    }
-
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className={cn(
-                'rounded-md px-4 py-[7px] text-[12px] transition-colors',
-                active
-                    ? 'bg-ink font-semibold text-white dark:bg-ink dark:text-surface'
-                    : 'bg-neutral-bg text-ink-muted hover:text-ink',
-            )}
-        >
-            .{label}
-        </button>
-    );
-}
 
 export default function ExportSettings({
     format,
@@ -110,17 +72,24 @@ export default function ExportSettings({
                     {/* Format */}
                     <div className="flex flex-col gap-2.5">
                         <SectionLabel>{t('format')}</SectionLabel>
-                        <div className="flex gap-1.5">
+                        <ToggleGroup
+                            type="single"
+                            value={format}
+                            onValueChange={(val) => {
+                                if (val) onFormatChange(val as Format);
+                            }}
+                        >
                             {FORMATS.map((f) => (
-                                <FormatPill
+                                <ToggleGroupItem
                                     key={f}
-                                    label={f}
-                                    active={format === f}
-                                    onClick={() => onFormatChange(f)}
-                                    locked={!canExportFormat(f)}
-                                />
+                                    value={f}
+                                    disabled={!canExportFormat(f)}
+                                >
+                                    .{f}
+                                    {!canExportFormat(f) && <Lock size={10} />}
+                                </ToggleGroupItem>
                             ))}
-                        </div>
+                        </ToggleGroup>
                         <p className="mt-1.5 text-[11px] text-ink-faint">
                             {t(`formatDescription.${format}`)}
                         </p>
@@ -236,15 +205,15 @@ export default function ExportSettings({
 
                 {/* Export button + preview link */}
                 <div className="flex items-center gap-3 pt-4">
-                    <button
-                        type="button"
+                    <Button
+                        variant="primary"
+                        size="lg"
                         onClick={onExport}
                         disabled={exporting}
-                        className="flex items-center gap-2 rounded-lg bg-ink px-6 py-[11px] text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-ink dark:text-surface"
                     >
                         <Download className="h-3.5 w-3.5" />
                         {exporting ? t('exporting') : t('exportAs', { format })}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

@@ -28,10 +28,12 @@ import {
     FONT_SIZES,
 } from '@/components/editor/FontSizeSelector';
 import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import NavItem from '@/components/ui/NavItem';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Toggle from '@/components/ui/Toggle';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
 import type { Theme } from '@/lib/theme';
@@ -154,7 +156,7 @@ function LicenseSection() {
             <SectionLabel className="text-[11px] font-medium text-ink-faint">
                 {t('section.license').toUpperCase()}
             </SectionLabel>
-            <div className="mt-3 rounded-lg border border-border bg-surface-card">
+            <Card className="mt-3">
                 {license.active ? (
                     <>
                         <div className="flex items-center justify-between px-6 py-[18px]">
@@ -235,7 +237,7 @@ function LicenseSection() {
                         </form>
                     </div>
                 )}
-            </div>
+            </Card>
         </div>
     );
 }
@@ -262,7 +264,7 @@ function LanguageSection() {
             <SectionLabel className="text-[11px] font-medium text-ink-faint">
                 {t('language.sectionLabel')}
             </SectionLabel>
-            <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
+            <Card className="mt-3 p-6">
                 <div className="flex flex-col gap-4">
                     <div>
                         <span className="text-sm font-medium text-ink">
@@ -272,18 +274,15 @@ function LanguageSection() {
                             {t('language.description')}
                         </p>
                     </div>
-                    <div className="flex gap-2">
+                    <ToggleGroup
+                        type="single"
+                        value={activeLocale}
+                        onValueChange={(val) => {
+                            if (val) switchLocale(val);
+                        }}
+                    >
                         {LOCALES.map((locale) => (
-                            <button
-                                key={locale}
-                                type="button"
-                                onClick={() => switchLocale(locale)}
-                                className={`rounded-md px-5 py-2 text-[13px] font-medium transition-colors ${
-                                    activeLocale === locale
-                                        ? 'bg-ink text-surface'
-                                        : 'border border-border text-ink-muted hover:border-ink hover:text-ink'
-                                }`}
-                            >
+                            <ToggleGroupItem key={locale} value={locale}>
                                 {
                                     {
                                         en: 'English',
@@ -291,11 +290,11 @@ function LanguageSection() {
                                         es: 'Español',
                                     }[locale]
                                 }
-                            </button>
+                            </ToggleGroupItem>
                         ))}
-                    </div>
+                    </ToggleGroup>
                 </div>
-            </div>
+            </Card>
         </div>
     );
 }
@@ -311,7 +310,7 @@ function AppearanceSection() {
             <SectionLabel className="text-[11px] font-medium text-ink-faint">
                 {t('appearance.title').toUpperCase()}
             </SectionLabel>
-            <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
+            <Card className="mt-3 p-6">
                 <div className="flex flex-col gap-4">
                     <div>
                         <span className="text-sm font-medium text-ink">
@@ -321,29 +320,30 @@ function AppearanceSection() {
                             {t('appearance.theme.description')}
                         </p>
                     </div>
-                    <div className="flex gap-3">
+                    <ToggleGroup
+                        type="single"
+                        value={theme}
+                        onValueChange={(val) => {
+                            if (val) setTheme(val as Theme);
+                        }}
+                    >
                         {THEME_OPTIONS.map((option) => (
-                            <button
+                            <ToggleGroupItem
                                 key={option.value}
-                                type="button"
-                                onClick={() => setTheme(option.value)}
-                                className={`flex flex-1 flex-col rounded-lg border px-4 py-3 text-left transition-colors ${
-                                    theme === option.value
-                                        ? 'border-accent bg-accent/10 text-ink'
-                                        : 'border-border text-ink-muted hover:border-border-dashed hover:text-ink'
-                                }`}
+                                value={option.value}
+                                className="flex flex-1 flex-col items-start rounded-lg px-4 py-3 text-left"
                             >
                                 <span className="text-[14px] font-medium">
                                     {t(option.labelKey)}
                                 </span>
-                                <span className="mt-0.5 text-[12px] text-ink-muted">
+                                <span className="mt-0.5 text-[12px] opacity-70">
                                     {t(option.descriptionKey)}
                                 </span>
-                            </button>
+                            </ToggleGroupItem>
                         ))}
-                    </div>
+                    </ToggleGroup>
                 </div>
-            </div>
+            </Card>
         </div>
     );
 }
@@ -376,7 +376,7 @@ function EditorSection({
             </SectionLabel>
             <div className="mt-3 flex flex-col gap-3">
                 {/* Font */}
-                <div className="rounded-lg border border-border bg-surface-card px-6 py-3.5">
+                <Card className="px-6 py-3.5">
                     <div className="flex items-center justify-between">
                         <div>
                             <span className="text-[14px] font-medium text-ink">
@@ -387,30 +387,31 @@ function EditorSection({
                             </p>
                         </div>
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-1.5">
+                    <ToggleGroup
+                        className="mt-3"
+                        type="single"
+                        value={editorFont}
+                        onValueChange={(val) => {
+                            if (val) {
+                                setEditorFont(val);
+                                saveSetting('editor_font', val);
+                            }
+                        }}
+                    >
                         {FONTS.map((font) => (
-                            <button
+                            <ToggleGroupItem
                                 key={font.id}
-                                type="button"
-                                onClick={() => {
-                                    setEditorFont(font.id);
-                                    saveSetting('editor_font', font.id);
-                                }}
-                                className={`rounded-md border px-3 py-1.5 text-[13px] transition-colors ${
-                                    editorFont === font.id
-                                        ? 'border-accent bg-accent/10 text-ink'
-                                        : 'border-border text-ink-muted hover:border-border-dashed hover:text-ink'
-                                }`}
+                                value={font.id}
                                 style={{ fontFamily: font.family }}
                             >
                                 {font.label}
-                            </button>
+                            </ToggleGroupItem>
                         ))}
-                    </div>
-                </div>
+                    </ToggleGroup>
+                </Card>
 
                 {/* Font size */}
-                <div className="flex items-center justify-between rounded-lg border border-border bg-surface-card px-6 py-3.5">
+                <Card className="flex items-center justify-between px-6 py-3.5">
                     <div>
                         <span className="text-[14px] font-medium text-ink">
                             {t('appearance.editorFontSize.label')}
@@ -419,28 +420,30 @@ function EditorSection({
                             {t('appearance.editorFontSize.description')}
                         </p>
                     </div>
-                    <div className="flex gap-1">
+                    <ToggleGroup
+                        type="single"
+                        value={String(editorFontSize)}
+                        onValueChange={(val) => {
+                            if (val) {
+                                const size = Number(val);
+                                setEditorFontSize(size);
+                                saveSetting('editor_font_size', size);
+                            }
+                        }}
+                    >
                         {FONT_SIZES.map((size) => (
-                            <button
+                            <ToggleGroupItem
                                 key={size}
-                                type="button"
-                                onClick={() => {
-                                    setEditorFontSize(size);
-                                    saveSetting('editor_font_size', size);
-                                }}
-                                className={`flex h-8 w-8 items-center justify-center rounded-md border text-[13px] transition-colors ${
-                                    editorFontSize === size
-                                        ? 'border-accent bg-accent/10 text-ink'
-                                        : 'border-border text-ink-muted hover:border-border-dashed hover:text-ink'
-                                }`}
+                                value={String(size)}
+                                className="flex size-8 items-center justify-center"
                             >
                                 {size}
-                            </button>
+                            </ToggleGroupItem>
                         ))}
-                    </div>
-                </div>
+                    </ToggleGroup>
+                </Card>
 
-                <div className="flex items-center justify-between rounded-lg border border-border bg-surface-card px-6 py-3.5">
+                <Card className="flex items-center justify-between px-6 py-3.5">
                     <div>
                         <span className="text-[14px] font-medium text-ink">
                             {t('appearance.hideToolbar.label')}
@@ -457,8 +460,8 @@ function EditorSection({
                             saveSetting('hide_formatting_toolbar', next);
                         }}
                     />
-                </div>
-                <div className="flex items-center justify-between rounded-lg border border-border bg-surface-card px-6 py-3.5">
+                </Card>
+                <Card className="flex items-center justify-between px-6 py-3.5">
                     <div>
                         <span className="text-[14px] font-medium text-ink">
                             {t('appearance.showAi.label')}
@@ -475,7 +478,7 @@ function EditorSection({
                             saveSetting('show_ai_features', next);
                         }}
                     />
-                </div>
+                </Card>
             </div>
         </div>
     );
@@ -1002,7 +1005,7 @@ function MarkdownTextareaSection({
             <SectionLabel className="text-[11px] font-medium text-ink-faint">
                 {t(sectionLabelKey ?? `${i18nPrefix}.title`).toUpperCase()}
             </SectionLabel>
-            <div className="mt-3 rounded-lg border border-border bg-surface-card p-6">
+            <Card className="mt-3 p-6">
                 <div className="flex flex-col gap-4">
                     <div>
                         <span className="text-sm font-medium text-ink">
@@ -1050,7 +1053,7 @@ function MarkdownTextareaSection({
                         />
                     </div>
                 </div>
-            </div>
+            </Card>
         </div>
     );
 }
@@ -1088,7 +1091,7 @@ function RevisionRulesSection({
             <SectionLabel className="text-[11px] font-medium text-ink-faint">
                 {t('prosePassRules.title').toUpperCase()}
             </SectionLabel>
-            <div className="mt-3 rounded-lg border border-border bg-surface-card">
+            <Card className="mt-3">
                 <div className="px-6 pt-5 pb-4">
                     <span className="text-sm font-medium text-ink">
                         {t('prosePassRules.title')}
@@ -1119,7 +1122,7 @@ function RevisionRulesSection({
                         )}
                     </div>
                 ))}
-            </div>
+            </Card>
         </div>
     );
 }
@@ -1143,7 +1146,7 @@ function PrivacySection({
             <SectionLabel className="text-[11px] font-medium text-ink-faint">
                 {t('privacy.sectionLabel')}
             </SectionLabel>
-            <div className="mt-3 flex items-center justify-between rounded-lg border border-border bg-surface-card px-6 py-3.5">
+            <Card className="mt-3 flex items-center justify-between px-6 py-3.5">
                 <div>
                     <span className="text-[14px] font-medium text-ink">
                         {t('appearance.sendErrorReports.label')}
@@ -1160,7 +1163,7 @@ function PrivacySection({
                         saveSetting('send_error_reports', next);
                     }}
                 />
-            </div>
+            </Card>
         </div>
     );
 }
@@ -1191,7 +1194,7 @@ function UpdatesSection({
             <SectionLabel className="text-[11px] font-medium text-ink-faint">
                 {t('updates.sectionLabel')}
             </SectionLabel>
-            <div className="mt-3 rounded-lg border border-border bg-surface-card">
+            <Card className="mt-3">
                 {/* Version row */}
                 <div className="flex items-center justify-between px-6 py-[18px]">
                     <div className="flex flex-col gap-1">
@@ -1289,7 +1292,7 @@ function UpdatesSection({
                         </>
                     )}
                 </div>
-            </div>
+            </Card>
         </div>
     );
 }

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Card } from '@/components/ui/Card';
 import type { HealthSnapshot } from '@/types/models';
 
 const VIEW_W = 720;
@@ -120,7 +121,7 @@ export default function HealthTimeline({
     }
 
     return (
-        <div className="overflow-hidden rounded-xl border border-border-light bg-surface-card">
+        <Card className="overflow-hidden">
             <svg
                 viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
                 preserveAspectRatio="xMidYMid meet"
@@ -219,6 +220,6 @@ export default function HealthTimeline({
                     </text>
                 ))}
             </svg>
-        </div>
+        </Card>
     );
 }

@@ -1,9 +1,10 @@
 import { router } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { resetUsage } from '@/actions/App/Http/Controllers/AiController';
+import { Card } from '@/components/ui/Card';
 import SectionLabel from '@/components/ui/SectionLabel';
 import { formatCompactCount, jsonFetchHeaders } from '@/lib/utils';
-import { resetUsage } from '@/actions/App/Http/Controllers/AiController';
 
 type AiUsageSummary = {
     input_tokens: number;
@@ -67,7 +68,7 @@ export default function AiUsageSummary({
             </div>
             <div className="flex gap-4">
                 {/* Tokens */}
-                <div className="flex flex-1 flex-col gap-2 rounded-lg bg-surface-card p-4">
+                <Card className="flex flex-1 flex-col gap-2 p-4">
                     <span className="font-sans text-[24px] font-semibold text-ink">
                         {formatCompactCount(totalTokens)}
                     </span>
@@ -77,10 +78,10 @@ export default function AiUsageSummary({
                     <span className="text-[11px] text-ink-faint">
                         {t('usage.wordsProcessed', { count: wordsProcessed })}
                     </span>
-                </div>
+                </Card>
 
                 {/* Cost */}
-                <div className="flex flex-1 flex-col gap-2 rounded-lg bg-surface-card p-4">
+                <Card className="flex flex-1 flex-col gap-2 p-4">
                     <span className="font-sans text-[24px] font-semibold text-ink">
                         {usage.cost_display}
                     </span>
@@ -90,10 +91,10 @@ export default function AiUsageSummary({
                     <span className="text-[11px] text-ai-green">
                         {t('usage.withinBudget')}
                     </span>
-                </div>
+                </Card>
 
                 {/* Requests */}
-                <div className="flex flex-1 flex-col gap-2 rounded-lg bg-surface-card p-4">
+                <Card className="flex flex-1 flex-col gap-2 p-4">
                     <span className="font-sans text-[24px] font-semibold text-ink">
                         {usage.request_count.toLocaleString(i18n.language)}
                     </span>
@@ -105,7 +106,7 @@ export default function AiUsageSummary({
                             {t('usage.since', { date: sinceDate })}
                         </span>
                     )}
-                </div>
+                </Card>
             </div>
         </div>
     );

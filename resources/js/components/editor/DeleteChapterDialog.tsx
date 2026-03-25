@@ -1,10 +1,10 @@
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { destroy } from '@/actions/App/Http/Controllers/ChapterController';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import type { Chapter } from '@/types/models';
-import { destroy } from '@/actions/App/Http/Controllers/ChapterController';
 
 export default function DeleteChapterDialog({
     bookId,
@@ -49,7 +49,7 @@ export default function DeleteChapterDialog({
                         />
                     </svg>
                 </div>
-                <h2 className="font-serif text-2xl leading-8 font-normal tracking-[-0.01em] text-ink">
+                <h2 className="font-serif text-2xl leading-8 font-semibold tracking-[-0.01em] text-ink">
                     {t('deleteChapter.title')}
                 </h2>
                 <p className="text-sm leading-[22px] text-ink-muted">

@@ -19,7 +19,7 @@ export default function PlotEmptyState({
                 <div className="flex flex-col items-center gap-3">
                     <Feather size={36} className="text-accent" />
 
-                    <h2 className="text-center font-serif text-2xl leading-[1.2] font-normal text-ink">
+                    <h2 className="text-center font-serif text-2xl leading-[1.2] font-semibold text-ink">
                         {t('emptyState.title')}
                     </h2>
 

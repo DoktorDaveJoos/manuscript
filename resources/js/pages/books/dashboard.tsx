@@ -1,27 +1,20 @@
 import { Head } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
-import AiInsights from '@/components/dashboard/AiInsights';
-import AiPreparation from '@/components/dashboard/AiPreparation';
-import AiUsageStats from '@/components/dashboard/AiUsageStats';
-import HealthTimeline from '@/components/dashboard/HealthTimeline';
 import ManuscriptProgress from '@/components/dashboard/ManuscriptProgress';
-import MilestoneCelebration from '@/components/dashboard/MilestoneCelebration';
 import SuggestedNext from '@/components/dashboard/SuggestedNext';
 import WritingGoal from '@/components/dashboard/WritingGoal';
 import WritingHeatmap from '@/components/dashboard/WritingHeatmap';
 import Sidebar from '@/components/editor/Sidebar';
+import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import ProFeatureLock from '@/components/ui/ProFeatureLock';
-import { useAiFeatures } from '@/hooks/useAiFeatures';
+import SectionLabel from '@/components/ui/SectionLabel';
 import { useFreeTier } from '@/hooks/useFreeTier';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type {
-    AiPreparationStatus,
-    AiUsage,
     Book,
     DashboardStats,
     HeatmapDay,
-    HealthMetrics,
-    HealthSnapshot,
     ManuscriptTarget,
     StatusCounts,
     SuggestedNext as SuggestedNextType,
@@ -32,22 +25,19 @@ function StatCard({
     label,
     value,
     suffix,
-    locale,
 }: {
     label: string;
     value: string | number;
     suffix?: string;
-    locale: string;
 }) {
+    const { i18n } = useTranslation();
     return (
-        <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-5 text-center">
-            <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                {label}
-            </span>
+        <Card className="flex flex-1 flex-col items-center gap-2 p-6 text-center">
+            <SectionLabel>{label}</SectionLabel>
             <div className="flex items-end gap-1">
-                <span className="font-serif text-[32px] leading-[1] font-normal text-ink">
+                <span className="font-serif text-[32px] leading-[1] font-semibold text-ink">
                     {typeof value === 'number'
-                        ? value.toLocaleString(locale)
+                        ? value.toLocaleString(i18n.language)
                         : value}
                 </span>
                 {suffix && (
@@ -56,7 +46,7 @@ function StatCard({
                     </span>
                 )}
             </div>
-        </div>
+        </Card>
     );
 }
 
@@ -86,12 +76,12 @@ function ChapterStatusBar({ counts }: { counts: StatusCounts }) {
         });
 
     return (
-        <div className="flex flex-col gap-2.5">
-            <div className="flex items-center overflow-hidden rounded">
+        <div className="flex flex-col gap-3">
+            <div className="flex items-center overflow-hidden rounded-sm">
                 {segments.map((s) => (
                     <div
                         key={s.label}
-                        className={`h-[3px] ${s.color}`}
+                        className={`h-1 ${s.color}`}
                         style={{
                             flexGrow: s.count,
                             flexShrink: 1,
@@ -125,30 +115,21 @@ export default function Dashboard({
     book,
     stats,
     status_counts,
-    health_metrics,
     suggested_next,
-    ai_preparation,
     writing_goal,
     writing_heatmap,
-    health_history,
     manuscript_target,
-    ai_usage,
 }: {
     book: Book;
     stats: DashboardStats;
     status_counts: StatusCounts;
-    health_metrics: HealthMetrics | null;
     suggested_next: SuggestedNextType | null;
-    ai_preparation?: AiPreparationStatus | null;
     writing_goal: WritingGoalData | null;
     writing_heatmap: HeatmapDay[];
-    health_history: HealthSnapshot[];
     manuscript_target: ManuscriptTarget | null;
-    ai_usage: AiUsage | null;
 }) {
     const { t, i18n } = useTranslation('dashboard');
     const storylines = useSidebarStorylines();
-    const { visible: aiVisible } = useAiFeatures();
     const { isFree } = useFreeTier();
 
     return (
@@ -157,41 +138,63 @@ export default function Dashboard({
             <div className="flex h-screen overflow-hidden bg-surface">
                 <Sidebar book={book} storylines={storylines} />
 
-                <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-12 py-10">
-                    <div className="flex w-full flex-col gap-7">
-                        {/* Milestone Celebration */}
-                        {manuscript_target?.milestone_reached &&
-                            !manuscript_target.milestone_dismissed && (
-                                <MilestoneCelebration
-                                    bookId={book.id}
-                                    target={manuscript_target}
-                                />
-                            )}
-
+                <main className="flex min-w-0 flex-1 flex-col overflow-y-auto p-12">
+                    <div className="flex w-full flex-col gap-8">
                         {/* Book Header */}
-                        <div className="flex flex-col gap-1">
-                            <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
+                        <div className="flex flex-col gap-1.5">
+                            <h1 className="font-serif text-2xl font-semibold tracking-[-0.01em] text-ink">
                                 {book.title}
                             </h1>
                             {book.author && (
-                                <p className="text-[13px] text-ink-muted">
+                                <p className="text-sm text-ink-muted">
                                     {t('header.by', { author: book.author })}
+                                </p>
+                            )}
+                            {writing_goal && writing_goal.streak > 0 && (
+                                <p className="text-sm text-ink-soft">
+                                    {t('header.greeting', {
+                                        count: writing_goal.streak,
+                                    })}
                                 </p>
                             )}
                         </div>
 
-                        {/* Today's Writing + Heatmap */}
+                        {/* Stats Row */}
+                        <div className="flex gap-4">
+                            <StatCard
+                                label={t('stats.words')}
+                                value={stats.total_words}
+                            />
+                            <StatCard
+                                label={t('stats.pages')}
+                                value={stats.estimated_pages}
+                                suffix={t('stats.pagesEst')}
+                            />
+                            <StatCard
+                                label={t('stats.readingTime')}
+                                value={stats.reading_time_minutes}
+                                suffix={t('stats.readingTimeMin')}
+                            />
+                            <StatCard
+                                label={t('stats.chapters')}
+                                value={stats.chapter_count}
+                            />
+                        </div>
+
+                        <div className="h-px bg-border-light" />
+
+                        {/* Today's Writing + Heatmap + Manuscript Progress */}
                         {isFree ? (
                             <ProFeatureLock feature="dashboard">
                                 <div className="flex h-[200px] gap-6 opacity-50">
-                                    <div className="w-[360px] shrink-0 rounded-xl border border-border-light bg-surface-card" />
-                                    <div className="min-w-0 flex-1 rounded-xl border border-border-light bg-surface-card" />
+                                    <Card className="w-[340px] shrink-0" />
+                                    <Card className="min-w-0 flex-1" />
                                 </div>
                             </ProFeatureLock>
                         ) : (
                             <>
                                 <div className="flex gap-6">
-                                    <div className="w-[360px] shrink-0">
+                                    <div className="w-[340px] shrink-0">
                                         <WritingGoal
                                             bookId={book.id}
                                             writingGoal={writing_goal!}
@@ -212,106 +215,53 @@ export default function Dashboard({
                                     </div>
                                 </div>
 
-                                {/* Manuscript Progress */}
                                 <ManuscriptProgress
                                     target={manuscript_target!}
                                 />
                             </>
                         )}
 
-                        {/* AI Preparation */}
-                        <AiPreparation
-                            bookId={book.id}
-                            initialStatus={ai_preparation ?? null}
-                        />
+                        <div className="h-px bg-border-light" />
 
-                        {/* Chapter Status */}
+                        {/* Chapter Progress */}
                         {stats.chapter_count > 0 && (
-                            <div className="flex flex-col gap-3">
-                                <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                                    {t(
-                                        'sections.chapterStatus',
-                                        'Chapter Status',
-                                    )}
-                                </span>
-                                <ChapterStatusBar counts={status_counts} />
-                            </div>
-                        )}
-
-                        {/* AI Insights */}
-                        {aiVisible && health_metrics && (
-                            <div className="flex flex-col gap-3">
-                                <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                                    {t('sections.aiInsights', 'AI Insights')}
-                                </span>
-                                <AiInsights healthMetrics={health_metrics} />
-                            </div>
-                        )}
-
-                        {/* Health Timeline */}
-                        {aiVisible && (
-                            <div className="flex flex-col gap-3">
-                                <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                                    {t(
-                                        'sections.healthTimeline',
-                                        'Health Timeline',
-                                    )}
-                                </span>
-                                <HealthTimeline history={health_history} />
-                            </div>
+                            <>
+                                <div className="flex flex-col gap-3">
+                                    <SectionLabel>
+                                        {t('sections.chapterProgress')}
+                                    </SectionLabel>
+                                    <ChapterStatusBar counts={status_counts} />
+                                </div>
+                                <div className="h-px bg-border-light" />
+                            </>
                         )}
 
                         {/* Suggested Next */}
-                        {aiVisible && suggested_next && (
+                        {suggested_next && (
                             <SuggestedNext
                                 suggestion={suggested_next}
                                 bookId={book.id}
                             />
                         )}
 
-                        {/* Stats */}
-                        <div className="flex flex-col gap-3">
-                            <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                                {t('sections.stats', 'Stats')}
-                            </span>
-                            <div className="flex gap-4">
-                                <StatCard
-                                    label={t('stats.words')}
-                                    value={stats.total_words}
-                                    locale={i18n.language}
-                                />
-                                <StatCard
-                                    label={t('stats.pages')}
-                                    value={stats.estimated_pages}
-                                    suffix={t('stats.pagesEst')}
-                                    locale={i18n.language}
-                                />
-                                <StatCard
-                                    label={t('stats.readingTime')}
-                                    value={stats.reading_time_minutes}
-                                    suffix={t('stats.readingTimeMin')}
-                                    locale={i18n.language}
-                                />
-                                <StatCard
-                                    label={t('stats.chapters')}
-                                    value={stats.chapter_count}
-                                    locale={i18n.language}
-                                />
-                            </div>
+                        {/* Feedback Section */}
+                        <div className="flex flex-col items-center gap-4 rounded-lg bg-surface p-6">
+                            <h2 className="font-serif text-xl font-semibold text-ink">
+                                {t('feedback.title')}
+                            </h2>
+                            <p className="text-center text-sm text-ink-soft">
+                                {t('feedback.description')}
+                            </p>
+                            <Button asChild>
+                                <a
+                                    href="https://getmanuscript.app/app/feedback"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    {t('feedback.button')}
+                                </a>
+                            </Button>
                         </div>
-
-                        {/* AI Usage Stats */}
-                        {aiVisible && ai_usage && (
-                            <div className="flex flex-col gap-3">
-                                <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                                    {t('sections.aiUsage', 'AI Usage & Costs')}
-                                </span>
-                                <AiUsageStats
-                                    bookId={book.id}
-                                    usage={ai_usage}
-                                />
-                            </div>
-                        )}
                     </div>
                 </main>
             </div>

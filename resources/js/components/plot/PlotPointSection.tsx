@@ -8,6 +8,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Plus } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Card } from '@/components/ui/Card';
 import { TYPE_STYLES } from '@/lib/plot-constants';
 import { stripTags } from '@/lib/ruleCheckers';
 import { cn } from '@/lib/utils';
@@ -84,12 +85,12 @@ export default function PlotPointSection({
     );
 
     return (
-        <div
+        <Card
             ref={combinedRef}
             style={style}
             {...attributes}
             className={cn(
-                'flex flex-col overflow-hidden rounded-lg border border-border/60 bg-white pt-3 pb-2.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition-colors dark:bg-surface-card',
+                'flex flex-col overflow-hidden pt-3 pb-2.5 transition-colors',
                 isDragging && 'opacity-50',
                 isSelected && 'ring-2 ring-accent',
                 isOver && 'bg-surface-warm',
@@ -190,6 +191,6 @@ export default function PlotPointSection({
                     {t('beat.addBeat')}
                 </span>
             </button>
-        </div>
+        </Card>
     );
 }
