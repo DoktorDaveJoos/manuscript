@@ -66,6 +66,11 @@ interface ExportPreviewProps {
     orderedChapters: Array<{ id: number }>;
     frontMatter: MatterItem[];
     backMatter: MatterItem[];
+    template?: string;
+    fontPairing?: string;
+    sceneBreakStyle?: string;
+    dropCaps?: boolean;
+    includeCover?: boolean;
 }
 
 function SkeletonPage({ width, height }: { width: number; height: number }) {
@@ -171,6 +176,11 @@ export default function ExportPreview({
     orderedChapters,
     frontMatter,
     backMatter,
+    template = 'classic',
+    fontPairing = 'classic-serif',
+    sceneBreakStyle = 'asterisks',
+    dropCaps = true,
+    includeCover = false,
 }: ExportPreviewProps) {
     const { t } = useTranslation('export');
 
@@ -255,6 +265,7 @@ export default function ExportPreview({
                 signal: controller.signal,
                 body: JSON.stringify({
                     format,
+                    template,
                     trim_size: trimSize,
                     font_size: fontSize,
                     include_chapter_titles: includeChapterTitles,
@@ -263,6 +274,10 @@ export default function ExportPreview({
                     chapter_ids: orderedSelectedIds,
                     front_matter: checkedFrontMatter,
                     back_matter: checkedBackMatter,
+                    font_pairing: fontPairing,
+                    scene_break_style: sceneBreakStyle,
+                    drop_caps: dropCaps,
+                    include_cover: includeCover,
                 }),
             })
                 .then(async (res) => {
@@ -327,6 +342,7 @@ export default function ExportPreview({
         hasSelectedChapters,
         hasVisualPreview,
         format,
+        template,
         trimSize,
         fontSize,
         includeChapterTitles,
@@ -336,6 +352,10 @@ export default function ExportPreview({
         orderedChapterIds,
         checkedFrontMatter,
         checkedBackMatter,
+        fontPairing,
+        sceneBreakStyle,
+        dropCaps,
+        includeCover,
     ]);
 
     useEffect(() => {
@@ -352,6 +372,8 @@ export default function ExportPreview({
 
     const previewLabel = t('preview');
 
+    const templateLabel = template.charAt(0).toUpperCase() + template.slice(1);
+
     const VirtuosoHeader = useCallback(
         () => (
             <div className="flex items-center justify-between px-7 pt-6 pb-3">
@@ -362,11 +384,13 @@ export default function ExportPreview({
                     {loading && pdfDoc && (
                         <span className="inline-block size-3 animate-spin rounded-full border-2 border-ink-faint border-t-ink" />
                     )}
-                    <span className="text-[11px] text-ink-faint">Classic</span>
+                    <span className="text-[11px] text-ink-faint">
+                        {templateLabel}
+                    </span>
                 </div>
             </div>
         ),
-        [previewLabel, loading, pdfDoc],
+        [previewLabel, loading, pdfDoc, templateLabel],
     );
 
     const virtuosoComponents = useMemo(

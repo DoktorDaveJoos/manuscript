@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ExportFormat;
+use App\Enums\FontPairing;
+use App\Enums\SceneBreakStyle;
 use App\Enums\TrimSize;
 use App\Http\Requests\ExportBookRequest;
 use App\Models\AppSetting;
@@ -12,6 +14,9 @@ use App\Services\Export\Exporters\PdfExporter;
 use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
 use App\Services\Export\FontService;
+use App\Services\Export\Templates\ClassicTemplate;
+use App\Services\Export\Templates\ModernTemplate;
+use App\Services\Export\Templates\RomanceTemplate;
 use App\Services\FreeTierLimits;
 use App\Services\WritingStyleService;
 use Illuminate\Http\JsonResponse;
@@ -105,16 +110,16 @@ class BookSettingsController extends Controller
         $book->load('storylines', 'acts');
 
         $chapters = $book->chapters()
-            ->select('id', 'book_id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count')
+            ->select('id', 'book_id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count', 'is_epilogue')
             ->with(['scenes' => fn ($q) => $q->orderBy('sort_order')->select('id', 'chapter_id', 'content')])
             ->orderBy('reader_order')
             ->get();
 
         return Inertia::render('books/export', [
-            'book' => $book->only('id', 'title', 'author'),
+            'book' => $book->only('id', 'title', 'author', 'cover_image_path'),
             'storylines' => $book->storylines->map(fn ($s) => $s->only('id', 'name', 'color', 'type')),
             'chapters' => $chapters->map(fn ($ch) => [
-                ...$ch->only('id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count'),
+                ...$ch->only('id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count', 'is_epilogue'),
                 'content' => $ch->getContentWithSceneBreaks(),
             ]),
             'trimSizes' => collect(TrimSize::cases())->map(function ($t) {
@@ -131,6 +136,27 @@ class BookSettingsController extends Controller
             'copyrightText' => (string) AppSetting::get('copyright_text', ''),
             'acknowledgmentText' => (string) AppSetting::get('acknowledgment_text', ''),
             'aboutAuthorText' => (string) AppSetting::get('about_author_text', ''),
+            'templates' => collect([new ClassicTemplate, new ModernTemplate, new RomanceTemplate])
+                ->map(fn ($t) => [
+                    'slug' => $t->slug(),
+                    'name' => $t->name(),
+                    'pack' => 'Basic',
+                    'defaultFontPairing' => $t->defaultFontPairing()->value,
+                    'defaultSceneBreakStyle' => $t->defaultSceneBreakStyle()->value,
+                    'defaultDropCaps' => $t->defaultDropCaps(),
+                    'headingFont' => $t->defaultFontPairing()->headingFont(),
+                    'bodyFont' => $t->defaultFontPairing()->bodyFont(),
+                ]),
+            'fontPairings' => collect(FontPairing::cases())->map(fn ($fp) => [
+                'value' => $fp->value,
+                'label' => $fp->label(),
+                'headingFont' => $fp->headingFont(),
+                'bodyFont' => $fp->bodyFont(),
+            ]),
+            'sceneBreakStyles' => collect(SceneBreakStyle::cases())->map(fn ($s) => [
+                'value' => $s->value,
+                'label' => $s->label(),
+            ]),
         ]);
     }
 

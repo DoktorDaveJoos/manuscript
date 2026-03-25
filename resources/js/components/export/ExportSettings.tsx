@@ -1,7 +1,16 @@
-import { BookOpen, Download, Lock } from 'lucide-react';
+import { Download, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import CustomizePanel from '@/components/export/CustomizePanel';
+import TemplateSelector from '@/components/export/TemplateSelector';
 import { VISUAL_FORMATS } from '@/components/export/types';
-import type { Format, TrimSizeOption } from '@/components/export/types';
+import type {
+    FontPairingDef,
+    Format,
+    SceneBreakStyleDef,
+    TemplateDef,
+    TrimSizeOption,
+} from '@/components/export/types';
+import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
@@ -27,10 +36,22 @@ type ExportSettingsProps = {
     onShowPageNumbersChange: () => void;
     exporting: boolean;
     onExport: () => void;
+    templates: TemplateDef[];
+    fontPairings: FontPairingDef[];
+    sceneBreakStyles: SceneBreakStyleDef[];
+    fontPairing: string;
+    onFontPairingChange: (v: string) => void;
+    sceneBreakStyle: string;
+    onSceneBreakStyleChange: (v: string) => void;
+    dropCaps: boolean;
+    onDropCapsChange: (v: boolean) => void;
+    isCustomized: boolean;
+    includeCover: boolean;
+    onIncludeCoverChange: (v: boolean) => void;
+    hasCover: boolean;
 };
 
 const FORMATS: Format[] = ['epub', 'pdf', 'docx', 'txt'];
-const TEMPLATES = [{ value: 'classic', label: 'Classic' }];
 const FONT_SIZES = [10, 11, 12, 13, 14];
 
 export default function ExportSettings({
@@ -51,9 +72,23 @@ export default function ExportSettings({
     onShowPageNumbersChange,
     exporting,
     onExport,
+    templates,
+    fontPairings,
+    sceneBreakStyles,
+    fontPairing,
+    onFontPairingChange,
+    sceneBreakStyle,
+    onSceneBreakStyleChange,
+    dropCaps,
+    onDropCapsChange,
+    isCustomized,
+    includeCover,
+    onIncludeCoverChange,
+    hasCover,
 }: ExportSettingsProps) {
     const { t } = useTranslation('export');
     const { canExportFormat } = useFreeTier();
+    const isVisual = VISUAL_FORMATS.has(format);
 
     return (
         <div className="flex flex-1 flex-col overflow-y-auto bg-surface">
@@ -96,28 +131,42 @@ export default function ExportSettings({
                     </div>
 
                     {/* Template (visual formats only) */}
-                    {VISUAL_FORMATS.has(format) && (
+                    {isVisual && (
                         <div className="flex flex-col gap-2.5">
-                            <SectionLabel>{t('template')}</SectionLabel>
-                            <Select
-                                value={template}
-                                onChange={(e) =>
-                                    onTemplateChange(e.target.value)
-                                }
-                                icon={<BookOpen />}
-                            >
-                                {TEMPLATES.map((tmpl) => (
-                                    <option key={tmpl.value} value={tmpl.value}>
-                                        {tmpl.label}
-                                    </option>
-                                ))}
-                            </Select>
+                            <div className="flex items-center gap-2">
+                                <SectionLabel>{t('template')}</SectionLabel>
+                                {isCustomized && (
+                                    <Badge
+                                        variant="warning"
+                                        className="text-[10px]"
+                                    >
+                                        {t('customLabel')}
+                                    </Badge>
+                                )}
+                            </div>
+                            <TemplateSelector
+                                templates={templates}
+                                selectedTemplate={template}
+                                onChange={onTemplateChange}
+                            />
                             <p className="text-[11px] text-ink-faint">
                                 {t('templateHint')}
                             </p>
-                            <p className="rounded-md bg-accent/10 px-3 py-2 text-[11px] text-accent">
-                                {t('templateComingSoon')}
-                            </p>
+
+                            {/* Customize Panel */}
+                            <CustomizePanel
+                                fontPairings={fontPairings}
+                                sceneBreakStyles={sceneBreakStyles}
+                                selectedFontPairing={fontPairing}
+                                selectedSceneBreakStyle={sceneBreakStyle}
+                                dropCaps={dropCaps}
+                                onFontPairingChange={onFontPairingChange}
+                                onSceneBreakStyleChange={
+                                    onSceneBreakStyleChange
+                                }
+                                onDropCapsChange={onDropCapsChange}
+                                isCustomized={isCustomized}
+                            />
                         </div>
                     )}
 
@@ -195,8 +244,24 @@ export default function ExportSettings({
                             label={t('showPageNumbers')}
                             checked={showPageNumbers}
                             onChange={onShowPageNumbersChange}
-                            border={false}
                         />
+                        {isVisual && (
+                            <ToggleRow
+                                label={
+                                    hasCover
+                                        ? t('includeCover')
+                                        : t('noCoverUploaded')
+                                }
+                                checked={includeCover}
+                                onChange={() =>
+                                    onIncludeCoverChange(!includeCover)
+                                }
+                                border={false}
+                            />
+                        )}
+                        {!isVisual && (
+                            <div className="h-0" /> // spacer for non-visual last row
+                        )}
                     </div>
                 </div>
 

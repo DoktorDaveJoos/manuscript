@@ -17,6 +17,16 @@
     "fontSize": "Font size",
     "options": "OPTIONS",
 
+    "customize": "Customize",
+    "customizeDescription": "Override template defaults",
+    "customLabel": "Custom",
+    "fontPairing": "Font Pairing",
+    "sceneBreakStyle": "Scene Break",
+    "dropCaps": "Drop Caps",
+    "includeCover": "Include Cover",
+    "noCoverUploaded": "No cover — upload in Publish",
+    "editInPublish": "Edit in Publish",
+
     "includeChapterTitles": "Include chapter titles",
     "includeActBreaks": "Include act breaks",
     "showPageNumbers": "Show page numbers",
@@ -36,10 +46,14 @@
 
     "frontMatter.titlePage": "Title Page",
     "frontMatter.copyright": "Copyright",
+    "frontMatter.dedication": "Dedication",
+    "frontMatter.epigraph": "Epigraph",
     "frontMatter.tableOfContents": "Table of Contents",
 
+    "backMatter.epilogue": "Epilogue",
     "backMatter.acknowledgments": "Acknowledgments",
     "backMatter.aboutTheAuthor": "About the Author",
+    "backMatter.alsoBy": "Also By",
 
     "preview": "PREVIEW",
     "preview.contents": "Contents",

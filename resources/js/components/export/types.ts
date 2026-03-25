@@ -1,19 +1,20 @@
 // Front/back matter type constants — keep in sync with PHP enums
-export const FRONT_MATTER_TYPES = {
-    TitlePage: 'title-page',
-    Copyright: 'copyright',
-    Toc: 'toc',
-} as const;
+export const FRONT_MATTER_TYPES = [
+    'title-page',
+    'copyright',
+    'dedication',
+    'epigraph',
+    'toc',
+] as const;
+export const BACK_MATTER_TYPES = [
+    'epilogue',
+    'acknowledgments',
+    'about-author',
+    'also-by',
+] as const;
 
-export const BACK_MATTER_TYPES = {
-    Acknowledgments: 'acknowledgments',
-    AboutAuthor: 'about-author',
-} as const;
-
-export type FrontMatterType =
-    (typeof FRONT_MATTER_TYPES)[keyof typeof FRONT_MATTER_TYPES];
-export type BackMatterType =
-    (typeof BACK_MATTER_TYPES)[keyof typeof BACK_MATTER_TYPES];
+export type FrontMatterType = (typeof FRONT_MATTER_TYPES)[number];
+export type BackMatterType = (typeof BACK_MATTER_TYPES)[number];
 
 export type ActRef = { id: number; number: number; title: string | null };
 
@@ -25,6 +26,7 @@ export type ChapterRow = {
     reader_order: number;
     word_count: number;
     content: string | null;
+    is_epilogue?: boolean;
 };
 
 export type StorylineRef = {
@@ -50,4 +52,27 @@ export type MatterItem = {
     label: string;
     checked: boolean;
     settingsSection?: string;
+};
+
+export type TemplateDef = {
+    slug: string;
+    name: string;
+    pack: string;
+    defaultFontPairing: string;
+    defaultSceneBreakStyle: string;
+    defaultDropCaps: boolean;
+    headingFont: string;
+    bodyFont: string;
+};
+
+export type FontPairingDef = {
+    value: string;
+    label: string;
+    headingFont: string;
+    bodyFont: string;
+};
+
+export type SceneBreakStyleDef = {
+    value: string;
+    label: string;
 };

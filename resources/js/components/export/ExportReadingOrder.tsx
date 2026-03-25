@@ -23,6 +23,8 @@ import {
 import type { PropsWithChildren } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { show as publishShow } from '@/actions/App/Http/Controllers/PublishController';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import type {
     ChapterRow,
     MatterItem,
@@ -32,9 +34,9 @@ import Checkbox from '@/components/ui/Checkbox';
 import SectionLabel from '@/components/ui/SectionLabel';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { cn } from '@/lib/utils';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 
 type ExportReadingOrderProps = {
+    bookId: number;
     storylines: StorylineRef[];
     selectedChapterIds: Set<number>;
     onToggleChapter: (id: number) => void;
@@ -129,11 +131,19 @@ function MatterRow({
     item,
     onToggle,
     fromUrl,
+    publishUrl,
 }: {
     item: MatterItem;
     onToggle: () => void;
     fromUrl: string;
+    publishUrl?: string;
 }) {
+    const linkHref = item.settingsSection
+        ? settingsIndex.url({
+              query: { section: item.settingsSection, from: fromUrl },
+          })
+        : publishUrl;
+
     return (
         <div className="flex items-center gap-2">
             <span className="flex shrink-0 items-center text-ink-faint">
@@ -148,11 +158,9 @@ function MatterRow({
             >
                 {item.label}
             </span>
-            {item.settingsSection && (
+            {linkHref && (
                 <Link
-                    href={settingsIndex.url({
-                        query: { section: item.settingsSection, from: fromUrl },
-                    })}
+                    href={linkHref}
                     className="shrink-0 text-ink-faint transition-colors hover:text-ink-muted dark:hover:text-ink-soft"
                 >
                     <ArrowUpRight className="h-3 w-3" />
@@ -212,6 +220,7 @@ function CollapsibleSection({
 const COLLAPSED_KEY = 'export-reading-order-collapsed';
 
 export default function ExportReadingOrder({
+    bookId,
     storylines,
     selectedChapterIds,
     onToggleChapter,
@@ -224,6 +233,7 @@ export default function ExportReadingOrder({
 }: ExportReadingOrderProps) {
     const { t } = useTranslation('export');
     const pageUrl = usePage().url;
+    const bookPublishUrl = publishShow.url(bookId);
     const [activeChapter, setActiveChapter] = useState<ChapterRow | null>(null);
     const [collapsed, setCollapsed] = useState(
         () => localStorage.getItem(COLLAPSED_KEY) === '1',
@@ -373,6 +383,7 @@ export default function ExportReadingOrder({
                                         onToggleFrontMatter(item.id)
                                     }
                                     fromUrl={pageUrl}
+                                    publishUrl={bookPublishUrl}
                                 />
                             ))}
                         </div>
@@ -469,6 +480,7 @@ export default function ExportReadingOrder({
                                     item={item}
                                     onToggle={() => onToggleBackMatter(item.id)}
                                     fromUrl={pageUrl}
+                                    publishUrl={bookPublishUrl}
                                 />
                             ))}
                         </div>
