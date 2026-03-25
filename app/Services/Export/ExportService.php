@@ -143,7 +143,7 @@ class ExportService
         $fontService = new FontService;
 
         return match ($format) {
-            ExportFormat::Docx => new DocxExporter($contentPreparer),
+            ExportFormat::Docx => new DocxExporter($contentPreparer, $template),
             ExportFormat::Txt => new TxtExporter($contentPreparer),
             ExportFormat::Epub => new EpubExporter($contentPreparer, $fontService, $template),
             ExportFormat::Pdf => new PdfExporter($contentPreparer, $fontService, $template),
