@@ -57,23 +57,31 @@ class ContentPreparer
     /**
      * Add a drop cap to the first letter of the first non-empty paragraph,
      * capturing any leading punctuation (quotes, brackets) into the drop cap span.
+     * Handles inline tags (em, strong, span) wrapping the first letter.
      */
     public function addDropCap(string $html): string
     {
-        // Match first <p> with content, capturing leading punctuation + first letter
-        $pattern = '/(<p[^>]*>)([\s]*)(["\'"\'\x{201C}\x{201D}\x{2018}\x{2019}\x{00AB}\x{00BF}\x{00A1}\(\[]*)([\p{L}\p{N}])/u';
+        // Match first <p> tag, then any number of opening inline tags, then optional
+        // punctuation, then the first letter. Captures:
+        // 1: <p...>
+        // 2: optional whitespace
+        // 3: zero or more opening inline tags like <em>, <strong>, <span class="...">
+        // 4: leading punctuation (quotes, brackets)
+        // 5: first letter
+        $pattern = '/(<p[^>]*>)([\s]*)((?:<[^\/][^>]*>)*)(["\'"\'\x{201C}\x{201D}\x{2018}\x{2019}\x{00AB}\x{00BF}\x{00A1}\(\[]*)([\p{L}\p{N}])/u';
 
         return preg_replace_callback(
             $pattern,
             function ($matches) {
                 $openTag = $matches[1];
                 $whitespace = $matches[2];
-                $punctuation = $matches[3];
-                $letter = $matches[4];
+                $inlineTags = $matches[3];
+                $punctuation = $matches[4];
+                $letter = $matches[5];
 
                 $dropCapContent = $punctuation.$letter;
 
-                return "{$openTag}{$whitespace}<span class=\"drop-cap\">{$dropCapContent}</span>";
+                return "{$openTag}{$whitespace}{$inlineTags}<span class=\"drop-cap\">{$dropCapContent}</span>";
             },
             $html,
             1,
