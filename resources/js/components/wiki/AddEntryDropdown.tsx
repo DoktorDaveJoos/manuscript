@@ -7,8 +7,13 @@ import {
     Plus,
     User,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/DropdownMenu';
 import { cn } from '@/lib/utils';
 import type { WikiTab } from './WikiTabBar';
 
@@ -28,69 +33,41 @@ export default function AddEntryDropdown({
     disabled?: boolean;
 }) {
     const { t } = useTranslation('wiki');
-    const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!open) return;
-
-        const handleClick = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                setOpen(false);
-            }
-        };
-
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setOpen(false);
-        };
-
-        document.addEventListener('mousedown', handleClick);
-        document.addEventListener('keydown', handleEscape);
-        return () => {
-            document.removeEventListener('mousedown', handleClick);
-            document.removeEventListener('keydown', handleEscape);
-        };
-    }, [open]);
 
     return (
-        <div ref={ref} className="relative">
-            <button
-                onClick={() => !disabled && setOpen(!open)}
-                className={cn(
-                    'flex h-[26px] w-[26px] items-center justify-center rounded-md border border-border bg-neutral-bg transition-colors',
-                    disabled ? 'cursor-default opacity-50' : 'hover:bg-border',
-                )}
-                title={disabled ? 'Upgrade to Pro' : undefined}
-            >
-                {disabled ? (
-                    <Lock size={12} className="text-ink-faint" />
-                ) : (
-                    <Plus size={14} className="text-ink-soft" />
-                )}
-            </button>
-
-            {open && (
-                <div className="absolute top-full right-0 z-20 mt-1 w-[184px] rounded-lg border border-border bg-surface-card py-1.5 shadow-[0_4px_12px_rgba(0,0,0,0.1)]">
-                    {options.map(({ type, icon: Icon }) => (
-                        <button
-                            key={type}
-                            onClick={() => {
-                                onSelect(type);
-                                setOpen(false);
-                            }}
-                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[14px] text-ink transition-colors hover:bg-neutral-bg"
-                        >
-                            <Icon
-                                size={16}
-                                className="shrink-0 text-ink-soft"
-                            />
-                            {t(
-                                `dropdown.${type === 'characters' ? 'character' : type}`,
-                            )}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button
+                    disabled={disabled}
+                    className={cn(
+                        'flex h-[26px] w-[26px] items-center justify-center rounded-md border border-border bg-neutral-bg transition-colors',
+                        disabled
+                            ? 'cursor-default opacity-50'
+                            : 'hover:bg-border',
+                    )}
+                    title={disabled ? 'Upgrade to Pro' : undefined}
+                >
+                    {disabled ? (
+                        <Lock size={12} className="text-ink-faint" />
+                    ) : (
+                        <Plus size={14} className="text-ink-soft" />
+                    )}
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-[184px]">
+                {options.map(({ type, icon: Icon }) => (
+                    <DropdownMenuItem
+                        key={type}
+                        className="text-[14px] text-ink"
+                        onSelect={() => onSelect(type)}
+                    >
+                        <Icon size={16} className="shrink-0 text-ink-soft" />
+                        {t(
+                            `dropdown.${type === 'characters' ? 'character' : type}`,
+                        )}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }
