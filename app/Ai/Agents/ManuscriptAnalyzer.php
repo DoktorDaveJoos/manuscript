@@ -9,8 +9,10 @@ use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Ai\Tools\SearchSimilarChunks;
 use App\Enums\AiTaskCategory;
 use App\Enums\AnalysisType;
+use App\Enums\EditorialPersona;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
@@ -43,6 +45,8 @@ class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStru
 
     public function instructions(): Stringable|string
     {
+        $persona = EditorialPersona::Lektor;
+
         $bookContext = "You are analyzing the manuscript '{$this->book->title}' by {$this->book->author}. The manuscript is written in {$this->book->language}.";
 
         $genreSnippet = $this->book->genreSnippet();
@@ -54,23 +58,25 @@ class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStru
 
         $summaryRule = 'The summary field should be a brief one-line overall assessment. Findings should list specific issues only — do not repeat the summary content.';
 
+        $personaRules = $persona->instructions()."\n\n".$persona->antiPatternRules();
+
         return match ($this->analysisType) {
-            AnalysisType::Pacing => "{$bookContext} Analyze the pacing of the manuscript. Evaluate chapter lengths, scene transitions, tension arcs, and narrative momentum. Identify sections that feel rushed or drag. {$qualityRules}",
-            AnalysisType::Plothole => "{$bookContext} Identify plot holes and inconsistencies in the manuscript. Look for contradictions, unresolved threads, timeline issues, and logical gaps in the story. {$qualityRules}",
-            AnalysisType::CharacterConsistency => "{$bookContext} Analyze character consistency across the manuscript. Check for voice consistency, behavioral contradictions, knowledge inconsistencies, and character arc coherence. {$qualityRules} {$summaryRule}",
-            AnalysisType::Density => "{$bookContext} Analyze the prose density of the manuscript. Evaluate the balance of dialogue, description, action, and exposition. Identify sections that are too dense or too sparse. {$qualityRules}",
-            AnalysisType::PlotDeviation => "{$bookContext} Compare the manuscript's actual plot progression against the planned plot points. Identify deviations, abandoned threads, and unplanned developments. {$qualityRules} {$summaryRule}",
-            AnalysisType::NextChapterSuggestion => "{$bookContext} Based on the current state of the manuscript, suggest what should happen in the next chapter. Consider open plot threads, character arcs, and pacing.",
-            AnalysisType::ChapterHook => "{$bookContext} Analyze the chapter endings (hooks) across the manuscript. Evaluate how effectively each chapter ending compels the reader to continue. Score the overall hook quality. {$qualityRules}",
-            AnalysisType::SceneAudit => "{$bookContext} Audit individual scenes for purpose, conflict, and contribution to the overall narrative. Identify scenes that lack tension or purpose. {$qualityRules}",
+            AnalysisType::Pacing => "{$personaRules}\n\n{$bookContext} Analyze the pacing of the manuscript. Evaluate chapter lengths, scene transitions, tension arcs, and narrative momentum. Identify sections that feel rushed or drag. {$qualityRules}",
+            AnalysisType::Plothole => "{$personaRules}\n\n{$bookContext} Identify plot holes and inconsistencies in the manuscript. Look for contradictions, unresolved threads, timeline issues, and logical gaps in the story. {$qualityRules}",
+            AnalysisType::CharacterConsistency => "{$personaRules}\n\n{$bookContext} Analyze character consistency across the manuscript. Check for voice consistency, behavioral contradictions, knowledge inconsistencies, and character arc coherence. {$qualityRules} {$summaryRule}",
+            AnalysisType::Density => "{$personaRules}\n\n{$bookContext} Analyze the prose density of the manuscript. Evaluate the balance of dialogue, description, action, and exposition. Identify sections that are too dense or too sparse. {$qualityRules}",
+            AnalysisType::PlotDeviation => "{$personaRules}\n\n{$bookContext} Compare the manuscript's actual plot progression against the planned plot points. Identify deviations, abandoned threads, and unplanned developments. {$qualityRules} {$summaryRule}",
+            AnalysisType::NextChapterSuggestion => "{$personaRules}\n\n{$bookContext} Based on the current state of the manuscript, suggest what should happen in the next chapter. Consider open plot threads, character arcs, and pacing.",
+            AnalysisType::ChapterHook => "{$personaRules}\n\n{$bookContext} Analyze the chapter endings (hooks) across the manuscript. Evaluate how effectively each chapter ending compels the reader to continue. Score the overall hook quality. {$qualityRules}",
+            AnalysisType::SceneAudit => "{$personaRules}\n\n{$bookContext} Audit individual scenes for purpose, conflict, and contribution to the overall narrative. Identify scenes that lack tension or purpose. {$qualityRules}",
             AnalysisType::GenreHealth => $this->book->genre
-                ? "{$bookContext} Evaluate the overall health of the manuscript as a {$this->book->genre->label()}. Assess how well it fulfills genre expectations, conventions, and reader satisfaction. {$qualityRules}"
-                : "{$bookContext} Evaluate the overall narrative health of the manuscript. Assess suspense, stakes, antagonist presence, and reader tension throughout. {$qualityRules}",
+                ? "{$personaRules}\n\n{$bookContext} Evaluate the overall health of the manuscript as a {$this->book->genre->label()}. Assess how well it fulfills genre expectations, conventions, and reader satisfaction. {$qualityRules}"
+                : "{$personaRules}\n\n{$bookContext} Evaluate the overall narrative health of the manuscript. Assess suspense, stakes, antagonist presence, and reader tension throughout. {$qualityRules}",
         };
     }
 
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {

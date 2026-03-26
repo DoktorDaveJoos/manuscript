@@ -121,3 +121,17 @@ it('chapter analyzer instructions include persona', function () {
     expect($instructions)
         ->toContain('serve the work, not the author\'s ego');
 });
+
+use App\Ai\Agents\ManuscriptAnalyzer;
+use App\Enums\AnalysisType;
+
+it('manuscript analyzer instructions include persona and anti-patterns', function () {
+    $book = Book::factory()->create();
+    $agent = new ManuscriptAnalyzer(book: $book, analysisType: AnalysisType::Plothole);
+
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)
+        ->toContain('serve the work, not the author\'s ego')
+        ->toContain('DO NOT use compliment sandwiches');
+});
