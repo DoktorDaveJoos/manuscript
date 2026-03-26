@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{ $book->language ?? config('app.fallback_locale', 'en') }}">
 <head>
     <meta charset="UTF-8">
     <style>
@@ -173,7 +173,7 @@
 
         <section class="chapter-section"@unless ($isEbook) style="page: chapter-{{ $index }};"@endunless>
             @if ($options->includeChapterTitles)
-                <p class="chapter-label" id="chapter-{{ $index }}">Chapter {{ $index + 1 }}</p>
+                <p class="chapter-label" id="chapter-{{ $index }}">{{ __('Chapter :number', ['number' => $index + 1]) }}</p>
                 <h1>{{ $chapter->title }}</h1>
             @endif
 

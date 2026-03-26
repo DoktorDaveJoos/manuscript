@@ -12,7 +12,10 @@ use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
 use App\Services\Export\FontService;
 use Illuminate\Support\Collection;
+use Mpdf\Config\ConfigVariables;
+use Mpdf\Config\FontVariables;
 use Mpdf\Mpdf;
+use Mpdf\Output\Destination;
 
 class PdfExporter implements Exporter
 {
@@ -36,7 +39,7 @@ class PdfExporter implements Exporter
     public function generatePdf(Book $book, Collection $chapters, ExportOptions $options, string $outputPath): void
     {
         $this->buildMpdf($book, $chapters, $options)
-            ->Output($outputPath, \Mpdf\Output\Destination::FILE);
+            ->Output($outputPath, Destination::FILE);
     }
 
     /**
@@ -45,7 +48,7 @@ class PdfExporter implements Exporter
     public function generatePdfString(Book $book, Collection $chapters, ExportOptions $options): string
     {
         return $this->buildMpdf($book, $chapters, $options)
-            ->Output('', \Mpdf\Output\Destination::STRING_RETURN);
+            ->Output('', Destination::STRING_RETURN);
     }
 
     /**
@@ -80,15 +83,22 @@ class PdfExporter implements Exporter
             $css .= "\n".$this->template->dropCapCss();
         }
 
-        return view('export.pdf', [
-            'book' => $book,
-            'chapters' => $preparedChapters,
-            'options' => $options,
-            'css' => $css,
-            'isEbookPreview' => $isEbookPreview,
-            'contentPreparer' => $this->contentPreparer,
-            'template' => $this->template,
-        ])->render();
+        $previousLocale = app()->getLocale();
+        app()->setLocale($book->language ?? config('app.fallback_locale', 'en'));
+
+        try {
+            return view('export.pdf', [
+                'book' => $book,
+                'chapters' => $preparedChapters,
+                'options' => $options,
+                'css' => $css,
+                'isEbookPreview' => $isEbookPreview,
+                'contentPreparer' => $this->contentPreparer,
+                'template' => $this->template,
+            ])->render();
+        } finally {
+            app()->setLocale($previousLocale);
+        }
     }
 
     /**
@@ -108,8 +118,8 @@ class PdfExporter implements Exporter
             $margins = $trimSize->margins();
         }
 
-        $defaultConfig = (new \Mpdf\Config\ConfigVariables)->getDefaults();
-        $defaultFontConfig = (new \Mpdf\Config\FontVariables)->getDefaults();
+        $defaultConfig = (new ConfigVariables)->getDefaults();
+        $defaultFontConfig = (new FontVariables)->getDefaults();
 
         $fontDirs = $defaultConfig['fontDir'];
         $fontData = $defaultFontConfig['fontdata'];

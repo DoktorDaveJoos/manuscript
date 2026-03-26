@@ -34,6 +34,7 @@
     "Only pending versions can be rejected.": "Only pending versions can be rejected.",
     "Cannot delete the last scene": "Cannot delete the last scene",
     "Chapter 1": "Chapter 1",
+    "Chapter :number": "Chapter :number",
     "Cannot delete the last storyline.": "Cannot delete the last storyline.",
     "Setting updated.": "Setting updated.",
     "AI is not enabled or no API key configured.": "AI is not enabled or no API key configured.",

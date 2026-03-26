@@ -200,6 +200,7 @@ class ModernTemplate implements ExportTemplate
             break-before: page;
         }
         .chapter-section {
+            page-break-before: always;
             break-before: page;
         }
         blockquote {
