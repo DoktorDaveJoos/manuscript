@@ -7,6 +7,7 @@ use App\Enums\EditorialSectionType;
 use App\Jobs\RunEditorialReviewJob;
 use App\Models\AiSetting;
 use App\Models\Book;
+use App\Models\Chapter;
 use App\Models\EditorialReview;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -29,6 +30,7 @@ class EditorialReviewController extends Controller
             ->first();
 
         $latestReview?->load(['sections', 'chapterNotes']);
+        $latestReview?->sections->each->ensureFindingKeys();
 
         return Inertia::render('books/editorial-review', [
             'book' => $book->only('id', 'title', 'author', 'language'),
@@ -57,7 +59,10 @@ class EditorialReviewController extends Controller
 
         RunEditorialReviewJob::dispatch($book, $review);
 
-        return response()->json($review);
+        return response()->json([
+            'message' => __('Editorial review started.'),
+            'review' => $review,
+        ]);
     }
 
     public function show(Book $book, EditorialReview $review): Response
@@ -65,6 +70,7 @@ class EditorialReviewController extends Controller
         abort_if($review->book_id !== $book->id, 404);
 
         $review->load(['sections', 'chapterNotes']);
+        $review->sections->each->ensureFindingKeys();
 
         return Inertia::render('books/editorial-review', [
             'book' => $book->only('id', 'title', 'author', 'language'),
@@ -83,6 +89,28 @@ class EditorialReviewController extends Controller
             'progress' => $review->progress,
             'error_message' => $review->error_message,
         ]);
+    }
+
+    public function toggleFinding(Request $request, Book $book, EditorialReview $review): JsonResponse
+    {
+        abort_if($review->book_id !== $book->id, 404);
+
+        $request->validate([
+            'key' => ['required', 'string', 'max:32'],
+        ]);
+
+        $key = $request->input('key');
+        $resolved = $review->resolved_findings ?? [];
+
+        if (in_array($key, $resolved, true)) {
+            $resolved = array_values(array_filter($resolved, fn ($k) => $k !== $key));
+        } else {
+            $resolved[] = $key;
+        }
+
+        $review->update(['resolved_findings' => $resolved]);
+
+        return response()->json(['resolved_findings' => $resolved]);
     }
 
     public function chat(Request $request, Book $book, EditorialReview $review): StreamableAgentResponse
@@ -112,7 +140,7 @@ class EditorialReviewController extends Controller
     }
 
     /**
-     * @return Collection<int, \App\Models\Chapter>
+     * @return Collection<int, Chapter>
      */
     private function chapterList(Book $book): Collection
     {
@@ -145,7 +173,7 @@ class EditorialReviewController extends Controller
                     $parts[] = "Specific finding being discussed:\n"
                         ."Severity: {$finding['severity']}\n"
                         ."Description: {$finding['description']}\n"
-                        ."Recommendation: ".($finding['recommendation'] ?? 'N/A');
+                        .'Recommendation: '.($finding['recommendation'] ?? 'N/A');
                 }
             }
         }

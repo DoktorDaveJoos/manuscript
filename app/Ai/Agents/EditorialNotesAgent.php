@@ -8,6 +8,7 @@ use App\Ai\Middleware\InjectProviderCredentials;
 use App\Enums\AiTaskCategory;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
@@ -71,6 +72,7 @@ class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasStr
         2. **Themes:** Note recurring motifs, thematic throughlines, and how they connect to other parts of the manuscript.
         3. **Scene craft:** Assess scene purposes, identify show-vs-tell moments, and evaluate sensory detail usage.
         4. **Prose style patterns:** Analyze sentence rhythm, word repetitions, and vocabulary patterns.
+        5. **Chapter note:** Write a concise editor's note (1-2 short paragraphs) as if you were a professional editor writing chapter-by-chapter notes for the author. Be direct and conversational — highlight what works, what needs attention, and why. This is the note the author will see when editing this chapter.
 
         Be specific and reference concrete passages. Provide actionable observations, not generic praise.
         Respond in the same language as the manuscript ({$this->book->language}).
@@ -78,7 +80,7 @@ class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasStr
     }
 
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {
@@ -88,21 +90,22 @@ class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasStr
                 'tense' => $schema->string()->required(),
                 'observations' => $schema->array()->items($schema->string())->required(),
                 'tone_notes' => $schema->string()->required(),
-            ])->required(),
+            ])->withoutAdditionalProperties()->required(),
             'themes' => $schema->object([
                 'motifs' => $schema->array()->items($schema->string())->required(),
                 'observations' => $schema->array()->items($schema->string())->required(),
-            ])->required(),
+            ])->withoutAdditionalProperties()->required(),
             'scene_craft' => $schema->object([
                 'scene_purposes' => $schema->array()->items($schema->string())->required(),
                 'show_vs_tell' => $schema->array()->items($schema->string())->required(),
                 'sensory_detail' => $schema->string()->required(),
-            ])->required(),
+            ])->withoutAdditionalProperties()->required(),
             'prose_style_patterns' => $schema->object([
                 'sentence_rhythm' => $schema->string()->required(),
                 'repetitions' => $schema->array()->items($schema->string())->required(),
                 'vocabulary_notes' => $schema->string()->required(),
-            ])->required(),
+            ])->withoutAdditionalProperties()->required(),
+            'chapter_note' => $schema->string()->required(),
         ];
     }
 

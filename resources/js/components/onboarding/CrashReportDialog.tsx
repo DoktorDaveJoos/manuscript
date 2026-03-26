@@ -2,9 +2,9 @@ import { router } from '@inertiajs/react';
 import { Check, ShieldCheck, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import Dialog from '@/components/ui/Dialog';
 import { jsonFetchHeaders } from '@/lib/utils';
-import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 
 function saveSetting(key: string, value: boolean) {
     return fetch(update.url(), {

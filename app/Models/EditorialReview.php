@@ -23,6 +23,7 @@ class EditorialReview extends Model
             'overall_score' => 'integer',
             'top_strengths' => 'array',
             'top_improvements' => 'array',
+            'resolved_findings' => 'array',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
         ];

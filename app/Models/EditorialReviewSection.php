@@ -27,6 +27,39 @@ class EditorialReviewSection extends Model
     }
 
     /**
+     * Generate a deterministic key for a finding.
+     */
+    public static function findingKey(string $sectionType, string $description): string
+    {
+        return hash('xxh32', $sectionType.':'.mb_substr($description, 0, 100));
+    }
+
+    /**
+     * Ensure all findings have a key field, adding keys where missing.
+     */
+    public function ensureFindingKeys(): void
+    {
+        $findings = $this->findings;
+
+        if (empty($findings)) {
+            return;
+        }
+
+        $changed = false;
+
+        foreach ($findings as &$finding) {
+            if (empty($finding['key'])) {
+                $finding['key'] = self::findingKey($this->type->value, $finding['description'] ?? '');
+                $changed = true;
+            }
+        }
+
+        if ($changed) {
+            $this->update(['findings' => $findings]);
+        }
+    }
+
+    /**
      * @return BelongsTo<EditorialReview, $this>
      */
     public function editorialReview(): BelongsTo

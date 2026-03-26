@@ -1,12 +1,6 @@
 import { BookOpen, Loader2, RefreshCw, Sparkles, Wand2 } from 'lucide-react';
-import {
-    
-    useCallback,
-    useEffect,
-    useRef,
-    useState
-} from 'react';
-import type {ReactNode} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     beautifyAll,

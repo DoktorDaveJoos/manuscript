@@ -41,6 +41,8 @@
     "section.summary": "Summary",
     "section.findings": "Findings",
     "section.recommendations": "Recommendations",
+    "section.remaining": "{{count}} remaining",
+    "section.allResolved": "All resolved",
     "section.discuss": "Discuss",
     "section.chapters": "Ch. {{chapters}}",
 
@@ -51,5 +53,16 @@
     "failed.title": "Editorial Review Failed",
     "failed.retry": "Retry",
 
-    "sectionLabel.editorialReview": "Editorial Review"
+    "sectionLabel.editorialReview": "Editorial Review",
+
+    "experimentalAlert": "This is an experimental feature. Results may vary in quality and accuracy.",
+
+    "finding.recommendation": "Recommendation",
+
+    "chapterStrip.title": "Chapter Progress",
+
+    "panel.title": "Editor's Note",
+    "panel.emptyChapter": "No editor's note for this chapter",
+    "panel.noReview": "No editorial review yet",
+    "panel.viewReview": "Run an editorial review"
 }

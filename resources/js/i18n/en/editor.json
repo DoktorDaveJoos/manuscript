@@ -21,6 +21,7 @@
     "palette.enterFocusMode": "Enter Focus Mode",
     "palette.leaveFocusMode": "Leave Focus Mode",
     "palette.openNotes": "Open Notes",
+    "palette.openChat": "Open Chat",
     "palette.enableTypewriterMode": "Enable Typewriter Mode",
     "palette.disableTypewriterMode": "Disable Typewriter Mode",
     "palette.bold": "Bold",

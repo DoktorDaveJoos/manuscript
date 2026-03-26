@@ -14,6 +14,7 @@ import {
     split,
     updateTitle,
 } from '@/actions/App/Http/Controllers/ChapterController';
+import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
 import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
 import AccessBar from '@/components/editor/AccessBar';
@@ -40,6 +41,7 @@ import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 
+import { getChapterNote } from '@/lib/editorial-constants';
 import { createChapter, jsonFetchHeaders } from '@/lib/utils';
 import type {
     Analysis,
@@ -113,7 +115,7 @@ export default function ChapterShow({
     const { t } = useTranslation('editor');
     const pendingVersion = chapter.pending_version ?? null;
     const sidebarStorylines = useSidebarStorylines();
-    const { visible: aiVisible, licensed: isLicensed } = useAiFeatures();
+    const { visible: aiVisible } = useAiFeatures();
     const { app_settings } = usePage<{ app_settings: AppSettings }>().props;
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
     const [chapterTitle, setChapterTitle] = useState(chapter.title);
@@ -280,13 +282,10 @@ export default function ChapterShow({
     const { t: tAi } = useTranslation('ai');
     const { t: tEditorial } = useTranslation('editorial-review');
 
-    const hasChapterNote = useMemo(() => {
-        if (!editorialReview?.chapter_notes) return false;
-        const note = editorialReview.chapter_notes.find(
-            (n) => n.chapter_id === chapter.id,
-        );
-        return !!note?.notes?.chapter_note;
-    }, [editorialReview, chapter.id]);
+    const chapterNote = getChapterNote(
+        editorialReview?.chapter_notes,
+        chapter.id,
+    );
 
     const accessBarItems = useMemo(() => {
         const items: AccessBarItemConfig[] = [
@@ -312,12 +311,12 @@ export default function ChapterShow({
                     id: 'editorial',
                     icon: NotebookText,
                     label: tEditorial('panel.title'),
-                    badge: hasChapterNote ? 1 : 0,
+                    badge: chapterNote ? 1 : 0,
                 },
             );
         }
         return items;
-    }, [aiVisible, t, tAi, tEditorial, hasChapterNote]);
+    }, [aiVisible, t, tAi, tEditorial, chapterNote]);
 
     // Reset scenes and title when chapter changes (e.g. after version restore)
     useEffect(() => {
@@ -852,9 +851,10 @@ export default function ChapterShow({
                             defaultWidth={280}
                         >
                             <EditorialReviewPanel
-                                book={book}
-                                chapterId={chapter.id}
-                                editorialReview={editorialReview}
+                                chapterNote={chapterNote}
+                                editorialReviewUrl={editorialReviewIndex.url(
+                                    book,
+                                )}
                                 onClose={closeEditorial}
                             />
                         </SlidePanel>

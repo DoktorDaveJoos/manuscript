@@ -21,6 +21,7 @@ use App\Models\WritingSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -116,6 +117,13 @@ class ChapterController extends Controller
             'chapterAnalyses' => Inertia::defer(fn () => $chapter->analyses()
                 ->get()
                 ->keyBy(fn ($a) => $a->type->value)),
+            'editorialReview' => Inertia::defer(function () use ($book, $chapter) {
+                return $book->editorialReviews()
+                    ->where('status', 'completed')
+                    ->latest()
+                    ->with(['chapterNotes' => fn ($q) => $q->where('chapter_id', $chapter->id)])
+                    ->first();
+            }),
         ]);
     }
 
@@ -499,11 +507,11 @@ class ChapterController extends Controller
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, Chapter>  $chapters
-     * @param  \Illuminate\Support\Collection<int, int>  $storylineSortOrders
-     * @return \Illuminate\Support\Collection<int, Chapter>
+     * @param  Collection<int, Chapter>  $chapters
+     * @param  Collection<int, int>  $storylineSortOrders
+     * @return Collection<int, Chapter>
      */
-    private function roundRobinByStoryline($chapters, $storylineSortOrders): \Illuminate\Support\Collection
+    private function roundRobinByStoryline($chapters, $storylineSortOrders): Collection
     {
         $byStoryline = $chapters->groupBy('storyline_id');
 

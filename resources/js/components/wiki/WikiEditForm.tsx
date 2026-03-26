@@ -3,19 +3,20 @@ import { BookOpen, X } from 'lucide-react';
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import Button from '@/components/ui/Button';
-import FormField from '@/components/ui/FormField';
-import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
-import Textarea from '@/components/ui/Textarea';
-import type { Book, Character, Storyline, WikiEntry } from '@/types/models';
-import type { WikiTab } from './WikiTabBar';
 import {
     destroyCharacter,
     destroyEntry,
     updateCharacter,
     updateEntry,
 } from '@/actions/App/Http/Controllers/WikiController';
+import Button from '@/components/ui/Button';
+import FormField from '@/components/ui/FormField';
+import Input from '@/components/ui/Input';
+import SectionLabel from '@/components/ui/SectionLabel';
+import Select from '@/components/ui/Select';
+import Textarea from '@/components/ui/Textarea';
+import type { Book, Character, Storyline, WikiEntry } from '@/types/models';
+import type { WikiTab } from './WikiTabBar';
 
 type Props = {
     item: Character | WikiEntry;
@@ -335,9 +336,9 @@ export default function WikiEditForm({
 
             {/* Appears In — empty state */}
             <div>
-                <h3 className="mb-3 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                <SectionLabel variant="section" className="mb-3">
                     {t('appearsIn')}
-                </h3>
+                </SectionLabel>
                 {item.chapters && item.chapters.length > 0 ? (
                     <div className="flex flex-col">
                         {item.chapters.map((chapter) => (

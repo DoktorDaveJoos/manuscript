@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dismissMilestone } from '@/actions/App/Http/Controllers/DashboardController';
 import { Card } from '@/components/ui/Card';
+import SectionLabel from '@/components/ui/SectionLabel';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { ManuscriptTarget } from '@/types/models';
 
@@ -71,9 +72,9 @@ export default function MilestoneCelebration({
 
                 <div className="flex items-end gap-8">
                     <div className="flex flex-col gap-0.5">
-                        <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                        <SectionLabel variant="section">
                             {t('milestone.totalWords')}
-                        </span>
+                        </SectionLabel>
                         <span className="font-serif text-xl leading-[1] font-semibold text-ink">
                             {target.target_word_count?.toLocaleString(
                                 i18n.language,
@@ -81,17 +82,17 @@ export default function MilestoneCelebration({
                         </span>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                        <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                        <SectionLabel variant="section">
                             {t('milestone.wordCount')}
-                        </span>
+                        </SectionLabel>
                         <span className="font-serif text-xl leading-[1] font-semibold text-ink">
                             {target.total_words.toLocaleString(i18n.language)}
                         </span>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                        <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                        <SectionLabel variant="section">
                             {t('milestone.dailyAvg')}
-                        </span>
+                        </SectionLabel>
                         <span className="font-serif text-xl leading-[1] font-semibold text-ink">
                             {target.days_writing > 0
                                 ? Math.round(
@@ -101,9 +102,9 @@ export default function MilestoneCelebration({
                         </span>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                        <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                        <SectionLabel variant="section">
                             {t('milestone.lastEdit')}
-                        </span>
+                        </SectionLabel>
                         <span className="font-serif text-xl leading-[1] font-semibold text-ink">
                             {reachedDate ?? '—'}
                         </span>

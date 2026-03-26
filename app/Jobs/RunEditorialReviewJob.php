@@ -14,6 +14,7 @@ use App\Models\AiSetting;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\EditorialReview;
+use App\Models\EditorialReviewChapterNote;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -179,13 +180,15 @@ class RunEditorialReviewJob implements ShouldQueue
             $response = $agent->prompt('Synthesize the editorial review for this section.');
             $result = $response->toArray();
 
-            $this->review->sections()->create([
+            $section = $this->review->sections()->create([
                 'type' => $sectionType,
                 'score' => $result['score'] ?? null,
                 'summary' => $result['summary'] ?? null,
                 'findings' => $result['findings'] ?? [],
                 'recommendations' => $result['recommendations'] ?? [],
             ]);
+
+            $section->ensureFindingKeys();
         }
     }
 
@@ -282,7 +285,7 @@ class RunEditorialReviewJob implements ShouldQueue
      * Build aggregated data for a specific editorial section type.
      *
      * @param  Collection<int, Chapter>  $chapters
-     * @param  Collection<int, \App\Models\EditorialReviewChapterNote>  $chapterNotes
+     * @param  Collection<int, EditorialReviewChapterNote>  $chapterNotes
      */
     private function buildAggregatedDataForSection(EditorialSectionType $sectionType, Collection $chapters, Collection $chapterNotes): string
     {
@@ -302,7 +305,7 @@ class RunEditorialReviewJob implements ShouldQueue
      *
      * @param  list<string>  $parts
      * @param  Collection<int, Chapter>  $chapters
-     * @param  Collection<int, \App\Models\EditorialReviewChapterNote>  $chapterNotes
+     * @param  Collection<int, EditorialReviewChapterNote>  $chapterNotes
      */
     private function appendAnalysisData(array &$parts, EditorialSectionType $sectionType, Collection $chapters, Collection $chapterNotes): void
     {
@@ -333,7 +336,7 @@ class RunEditorialReviewJob implements ShouldQueue
      *
      * @param  list<string>  $parts
      * @param  Collection<int, Chapter>  $chapters
-     * @param  Collection<int, \App\Models\EditorialReviewChapterNote>  $chapterNotes
+     * @param  Collection<int, EditorialReviewChapterNote>  $chapterNotes
      */
     private function appendPacingData(array &$parts, Collection $chapters, Collection $chapterNotes): void
     {
@@ -357,7 +360,7 @@ class RunEditorialReviewJob implements ShouldQueue
      * Append editorial notes relevant to a section type.
      *
      * @param  list<string>  $parts
-     * @param  Collection<int, \App\Models\EditorialReviewChapterNote>  $chapterNotes
+     * @param  Collection<int, EditorialReviewChapterNote>  $chapterNotes
      */
     private function appendEditorialNotesData(array &$parts, EditorialSectionType $sectionType, Collection $chapterNotes): void
     {
@@ -403,7 +406,7 @@ class RunEditorialReviewJob implements ShouldQueue
     /**
      * Build a human-readable label for a chapter note.
      */
-    private function chapterNoteLabel(\App\Models\EditorialReviewChapterNote $note): string
+    private function chapterNoteLabel(EditorialReviewChapterNote $note): string
     {
         $chapter = $note->chapter;
 

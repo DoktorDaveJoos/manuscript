@@ -19,25 +19,10 @@ import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
+import type { Book } from '@/types/models';
 
 interface PublishPageProps {
-    book: {
-        id: number;
-        title: string;
-        author: string;
-        language: string;
-        copyright_text: string | null;
-        dedication_text: string | null;
-        epigraph_text: string | null;
-        epigraph_attribution: string | null;
-        acknowledgment_text: string | null;
-        about_author_text: string | null;
-        also_by_text: string | null;
-        publisher_name: string | null;
-        isbn: string | null;
-        cover_image_path: string | null;
-        cover_image_url: string | null;
-    };
+    book: Book;
     chapters: Array<{
         id: number;
         title: string;
@@ -63,9 +48,11 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
     });
 
     const [showSaved, setShowSaved] = useState(false);
-    const savedTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+    const savedTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
     const formDataRef = useRef(form.data);
-    formDataRef.current = form.data;
+    useEffect(() => {
+        formDataRef.current = form.data;
+    }, [form.data]);
 
     const showSavedBriefly = useCallback(() => {
         setShowSaved(true);
@@ -81,13 +68,13 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
         });
     }, 1000);
 
-    const handleFieldChange = useCallback(
-        (field: keyof typeof form.data, value: string) => {
-            form.setData(field, value);
-            debouncedSave();
-        },
-        [form.setData, debouncedSave],
-    );
+    const handleFieldChange = (
+        field: keyof typeof form.data,
+        value: string,
+    ) => {
+        form.setData(field, value);
+        debouncedSave();
+    };
 
     const handleCoverUpload = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {

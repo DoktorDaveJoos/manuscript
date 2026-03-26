@@ -26,6 +26,7 @@ export type OnDiscussFinding = (
 ) => void;
 
 export type EditorialReviewFinding = {
+    key: string;
     severity: FindingSeverity;
     description: string;
     chapter_references: number[];
@@ -44,7 +45,7 @@ export type EditorialReviewSection = {
 export type EditorialReviewChapterNote = {
     id: number;
     chapter_id: number;
-    notes: Record<string, unknown>;
+    notes: Record<string, unknown> & { chapter_note?: string };
 };
 
 export type EditorialReview = {
@@ -62,6 +63,7 @@ export type EditorialReview = {
     executive_summary: string | null;
     top_strengths: string[] | null;
     top_improvements: string[] | null;
+    resolved_findings: string[] | null;
     started_at: string | null;
     completed_at: string | null;
     sections: EditorialReviewSection[];
@@ -173,6 +175,7 @@ export type Book = {
     publisher_name?: string | null;
     isbn?: string | null;
     cover_image_path?: string | null;
+    cover_image_url?: string | null;
     created_at: string;
     updated_at: string;
     storylines?: Storyline[];

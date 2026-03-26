@@ -5,7 +5,6 @@ import {
     List,
     ListOrdered,
     Maximize2,
-    StickyNote,
     Strikethrough,
     TextQuote,
 } from 'lucide-react';
@@ -55,13 +54,11 @@ function ToolbarButton({
 export default function FormattingToolbar({
     editor,
     onToggleFocusMode,
-    onToggleNotes,
     isTypewriterMode,
     onToggleTypewriterMode,
 }: {
     editor: Editor | null;
     onToggleFocusMode: () => void;
-    onToggleNotes: () => void;
     isTypewriterMode?: boolean;
     onToggleTypewriterMode?: () => void;
 }) {
@@ -228,12 +225,6 @@ export default function FormattingToolbar({
                     title={t('toolbar.focus')}
                 >
                     <Maximize2 size={14} />
-                </ToolbarButton>
-                <ToolbarButton
-                    onClick={onToggleNotes}
-                    title={t('toolbar.notes')}
-                >
-                    <StickyNote size={15} />
                 </ToolbarButton>
             </div>
         </div>

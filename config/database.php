@@ -38,10 +38,15 @@ return [
             'database' => env('DB_DATABASE', database_path('database.sqlite')),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
-            'busy_timeout' => null,
-            'journal_mode' => null,
-            'synchronous' => null,
+            'busy_timeout' => 5000,
+            'journal_mode' => 'wal',
+            'synchronous' => 'normal',
             'transaction_mode' => 'DEFERRED',
+            'pragmas' => [
+                'cache_size' => -64000,
+                'mmap_size' => 268435456,
+                'temp_store' => 'MEMORY',
+            ],
         ],
 
         'mysql' => [

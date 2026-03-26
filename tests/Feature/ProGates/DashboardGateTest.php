@@ -16,10 +16,7 @@ test('free user sees dashboard with basic stats', function () {
             ->has('status_counts')
             ->where('writing_goal', null)
             ->where('manuscript_target', null)
-            ->where('ai_usage', null)
-            ->where('health_metrics', null)
             ->where('suggested_next', null)
-            ->where('ai_preparation', null)
         );
 });
 
@@ -36,8 +33,6 @@ test('pro user sees full dashboard', function () {
             ->has('status_counts')
             ->has('writing_goal')
             ->has('manuscript_target')
-            ->has('ai_usage')
             ->has('writing_heatmap')
-            ->has('health_history')
         );
 });

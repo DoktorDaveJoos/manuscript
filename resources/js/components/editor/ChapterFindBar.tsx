@@ -91,23 +91,21 @@ export default function ChapterFindBar({
         inputRef.current?.focus();
     }, []);
 
-    const pushHighlights = useCallback(
-        (params: typeof searchParams, activeMatch?: ChapterMatch) => {
-            for (const [sceneId, editor] of editorRegistry.current) {
-                if (editor.isDestroyed) continue;
-                updateSearchHighlight(editor, {
-                    ...params,
-                    activeFrom:
-                        activeMatch?.sceneId === sceneId
-                            ? activeMatch.from
-                            : -1,
-                    activeTo:
-                        activeMatch?.sceneId === sceneId ? activeMatch.to : -1,
-                });
-            }
-        },
-        [editorRegistry],
-    );
+    const pushHighlights = (
+        params: typeof searchParams,
+        activeMatch?: ChapterMatch,
+    ) => {
+        for (const [sceneId, editor] of editorRegistry.current) {
+            if (editor.isDestroyed) continue;
+            updateSearchHighlight(editor, {
+                ...params,
+                activeFrom:
+                    activeMatch?.sceneId === sceneId ? activeMatch.from : -1,
+                activeTo:
+                    activeMatch?.sceneId === sceneId ? activeMatch.to : -1,
+            });
+        }
+    };
 
     useEffect(() => {
         return () => {
@@ -124,41 +122,40 @@ export default function ChapterFindBar({
         };
     }, [editorRegistry]);
 
-    const doCollect = useCallback(
-        (preserveIndex?: number) => {
-            if (!searchParams.query) {
-                setAllMatches([]);
-                setActiveMatchIndex(-1);
-                pushHighlights(searchParams);
-                return;
-            }
+    const doCollect = (preserveIndex?: number) => {
+        if (!searchParams.query) {
+            setAllMatches([]);
+            setActiveMatchIndex(-1);
+            pushHighlights(searchParams);
+            return;
+        }
 
-            const matches = collectMatches(
-                scenes,
-                editorRegistry.current,
-                searchParams,
-            );
-            setAllMatches(matches);
+        const matches = collectMatches(
+            scenes,
+            editorRegistry.current,
+            searchParams,
+        );
+        setAllMatches(matches);
 
-            let newIndex: number;
-            if (
-                preserveIndex !== undefined &&
-                preserveIndex >= 0 &&
-                matches.length > 0
-            ) {
-                newIndex = Math.min(preserveIndex, matches.length - 1);
-            } else {
-                newIndex = matches.length > 0 ? 0 : -1;
-            }
-            setActiveMatchIndex(newIndex);
-            pushHighlights(searchParams, matches[newIndex]);
-        },
-        [searchParams, scenes, editorRegistry, pushHighlights],
-    );
+        let newIndex: number;
+        if (
+            preserveIndex !== undefined &&
+            preserveIndex >= 0 &&
+            matches.length > 0
+        ) {
+            newIndex = Math.min(preserveIndex, matches.length - 1);
+        } else {
+            newIndex = matches.length > 0 ? 0 : -1;
+        }
+        setActiveMatchIndex(newIndex);
+        pushHighlights(searchParams, matches[newIndex]);
+    };
 
     // Stable ref for doCollect so the editor update listener doesn't churn
     const doCollectRef = useRef(doCollect);
-    doCollectRef.current = doCollect;
+    useEffect(() => {
+        doCollectRef.current = doCollect;
+    }, [doCollect]);
 
     useEffect(() => {
         if (collectTimerRef.current) clearTimeout(collectTimerRef.current);
@@ -190,58 +187,47 @@ export default function ChapterFindBar({
     }, [editorRegistry, scenes]);
 
     // Navigate to a specific match
-    const navigateToMatch = useCallback(
-        (index: number) => {
-            if (allMatches.length === 0 || index < 0) return;
+    const navigateToMatch = (index: number) => {
+        if (allMatches.length === 0 || index < 0) return;
 
-            const match = allMatches[index];
-            const editor = editorRegistry.current.get(match.sceneId);
-            if (!editor || editor.isDestroyed) return;
+        const match = allMatches[index];
+        const editor = editorRegistry.current.get(match.sceneId);
+        if (!editor || editor.isDestroyed) return;
 
-            setActiveMatchIndex(index);
-            pushHighlights(searchParams, match);
+        setActiveMatchIndex(index);
+        pushHighlights(searchParams, match);
 
-            editor.commands.focus();
-            editor.commands.setTextSelection({
-                from: match.from,
-                to: match.to,
-            });
+        editor.commands.focus();
+        editor.commands.setTextSelection({
+            from: match.from,
+            to: match.to,
+        });
 
-            cancelAnimationFrame(rafRef.current);
-            rafRef.current = requestAnimationFrame(() => {
-                const container = scrollContainerRef.current;
-                if (!container) return;
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = requestAnimationFrame(() => {
+            const container = scrollContainerRef.current;
+            if (!container) return;
 
-                try {
-                    const coords = editor.view.coordsAtPos(match.from);
-                    const containerRect = container.getBoundingClientRect();
-                    const relativeTop = coords.top - containerRect.top;
+            try {
+                const coords = editor.view.coordsAtPos(match.from);
+                const containerRect = container.getBoundingClientRect();
+                const relativeTop = coords.top - containerRect.top;
 
-                    if (
-                        relativeTop < 80 ||
-                        relativeTop > containerRect.height - 80
-                    ) {
-                        const targetCenter = containerRect.height / 2;
-                        container.scrollTo({
-                            top:
-                                container.scrollTop +
-                                (relativeTop - targetCenter),
-                            behavior: 'smooth',
-                        });
-                    }
-                } catch {
-                    // coordsAtPos can throw if position is invalid
+                if (
+                    relativeTop < 80 ||
+                    relativeTop > containerRect.height - 80
+                ) {
+                    const targetCenter = containerRect.height / 2;
+                    container.scrollTo({
+                        top: container.scrollTop + (relativeTop - targetCenter),
+                        behavior: 'smooth',
+                    });
                 }
-            });
-        },
-        [
-            allMatches,
-            editorRegistry,
-            scrollContainerRef,
-            searchParams,
-            pushHighlights,
-        ],
-    );
+            } catch {
+                // coordsAtPos can throw if position is invalid
+            }
+        });
+    };
 
     const nextMatch = useCallback(() => {
         if (allMatches.length === 0) return;
@@ -256,7 +242,7 @@ export default function ChapterFindBar({
         navigateToMatch(prev);
     }, [allMatches.length, activeMatchIndex, navigateToMatch]);
 
-    const replaceCurrent = useCallback(() => {
+    const replaceCurrent = () => {
         if (activeMatchIndex < 0 || activeMatchIndex >= allMatches.length)
             return;
 
@@ -276,9 +262,9 @@ export default function ChapterFindBar({
             () => doCollectRef.current(activeMatchIndex),
             50,
         );
-    }, [activeMatchIndex, allMatches, editorRegistry, replaceText]);
+    };
 
-    const replaceAllMatches = useCallback(() => {
+    const replaceAllMatches = () => {
         if (!searchParams.query) return;
 
         // Re-collect from live doc state to avoid stale positions
@@ -317,7 +303,7 @@ export default function ChapterFindBar({
 
         if (collectTimerRef.current) clearTimeout(collectTimerRef.current);
         collectTimerRef.current = setTimeout(() => doCollectRef.current(), 50);
-    }, [searchParams, scenes, editorRegistry, replaceText]);
+    };
 
     const handleSearchKeyDown = useCallback(
         (e: React.KeyboardEvent) => {

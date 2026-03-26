@@ -16,6 +16,7 @@ import ReviewPhase from '@/components/onboarding/ReviewPhase';
 import type { ReviewStoryline } from '@/components/onboarding/ReviewPhase';
 import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
+import SectionLabel from '@/components/ui/SectionLabel';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
 import type { Book, Storyline, StorylineType } from '@/types/models';
 
@@ -113,9 +114,9 @@ function UploadPhase({
             </div>
 
             <div className="w-[480px] pt-6">
-                <p className="text-[11px] leading-[14px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                <SectionLabel variant="section">
                     {t('importGuide.label')}
-                </p>
+                </SectionLabel>
                 <div className="mt-5 flex flex-col">
                     {([1, 2, 3] as const).map((step, i) => (
                         <div

@@ -12,6 +12,8 @@
     "emptyState.cta": "Prepare Manuscript",
     "emptyState.learnMore": "Learn what AI analyzes",
     "emptyState.configureProvider": "Configure AI provider",
+    "emptyState.preparing": "Preparing your manuscript…",
+    "emptyState.error": "Something went wrong",
 
     "emptyState.features.title": "WHAT AI CAN DO",
     "emptyState.features.clarity.title": "See your manuscript clearly",

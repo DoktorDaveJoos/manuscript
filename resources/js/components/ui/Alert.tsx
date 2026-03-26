@@ -29,7 +29,7 @@ function Alert({ className, variant = 'default', children, ...props }: AlertProp
     return (
         <div role="alert" className={cn(alertVariants({ variant }), className)} {...props}>
             {VARIANT_ICONS[variant ?? 'default']}
-            <div className="flex flex-col gap-1">{children}</div>
+            <div className="flex flex-1 flex-col gap-1">{children}</div>
         </div>
     );
 }

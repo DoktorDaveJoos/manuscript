@@ -1,0 +1,34 @@
+import { useCallback } from 'react';
+import { toggleFinding } from '@/actions/App/Http/Controllers/EditorialReviewController';
+import { jsonFetchHeaders } from '@/lib/utils';
+
+export function useToggleFinding(
+    bookId: number,
+    reviewId: number,
+    resolvedFindings: string[],
+    onUpdate: (resolved: string[]) => void,
+) {
+    return useCallback(
+        async (key: string) => {
+            const newResolved = resolvedFindings.includes(key)
+                ? resolvedFindings.filter((k) => k !== key)
+                : [...resolvedFindings, key];
+
+            onUpdate(newResolved);
+
+            try {
+                await fetch(
+                    toggleFinding.url({ book: bookId, review: reviewId }),
+                    {
+                        method: 'POST',
+                        headers: jsonFetchHeaders(),
+                        body: JSON.stringify({ key }),
+                    },
+                );
+            } catch {
+                onUpdate(resolvedFindings);
+            }
+        },
+        [bookId, reviewId, resolvedFindings, onUpdate],
+    );
+}

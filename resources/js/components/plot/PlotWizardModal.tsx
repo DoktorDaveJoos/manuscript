@@ -81,7 +81,7 @@ export default function PlotWizardModal({
             {/* Header */}
             <div className="flex items-center justify-between px-8 py-6">
                 <div className="flex flex-col gap-1">
-                    <SectionLabel className="text-ink-faint">
+                    <SectionLabel variant="section">
                         {t(`wizard.typeLabel.${template.key}`)}
                     </SectionLabel>
                     <h2 className="font-serif text-2xl leading-8 font-semibold tracking-[-0.01em] text-ink">
@@ -114,7 +114,7 @@ export default function PlotWizardModal({
                 </div>
 
                 <div className="flex flex-col gap-2">
-                    <SectionLabel className="text-ink-faint">
+                    <SectionLabel variant="section">
                         {t('wizard.howTheActsWork')}
                     </SectionLabel>
                     {renderActCards()}

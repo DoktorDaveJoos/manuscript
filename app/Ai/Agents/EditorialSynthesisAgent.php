@@ -9,6 +9,7 @@ use App\Enums\AiTaskCategory;
 use App\Enums\EditorialSectionType;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
@@ -84,7 +85,7 @@ class EditorialSynthesisAgent implements Agent, BelongsToBook, HasMiddleware, Ha
     }
 
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {
@@ -97,7 +98,7 @@ class EditorialSynthesisAgent implements Agent, BelongsToBook, HasMiddleware, Ha
                     'description' => $schema->string()->required(),
                     'chapter_references' => $schema->array()->items($schema->integer())->required(),
                     'recommendation' => $schema->string()->required(),
-                ])
+                ])->withoutAdditionalProperties()
             )->required(),
             'recommendations' => $schema->array()->items($schema->string())->required(),
         ];

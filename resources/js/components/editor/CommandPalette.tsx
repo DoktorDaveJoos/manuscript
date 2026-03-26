@@ -7,6 +7,7 @@ import {
     GitBranch,
     Keyboard,
     Maximize,
+    MessageCircle,
     Minus,
     Plus,
     StickyNote,
@@ -70,6 +71,7 @@ export default function CommandPalette({
     onEnterFocusMode,
     isFocusMode,
     onToggleNotes,
+    onToggleChat,
     isTypewriterMode,
     onToggleTypewriterMode,
 }: {
@@ -83,6 +85,7 @@ export default function CommandPalette({
     onEnterFocusMode?: () => void;
     isFocusMode?: boolean;
     onToggleNotes?: () => void;
+    onToggleChat?: () => void;
     isTypewriterMode?: boolean;
     onToggleTypewriterMode?: () => void;
 }) {
@@ -178,6 +181,22 @@ export default function CommandPalette({
                                     {t('palette.openNotes')}
                                 </span>
                             </CommandItem>
+
+                            {onToggleChat && (
+                                <CommandItem
+                                    value={t('palette.openChat')}
+                                    onSelect={() =>
+                                        handleSelect(() => onToggleChat())
+                                    }
+                                >
+                                    <PaletteIcon>
+                                        <MessageCircle size={16} />
+                                    </PaletteIcon>
+                                    <span className="flex-1">
+                                        {t('palette.openChat')}
+                                    </span>
+                                </CommandItem>
+                            )}
 
                             <CommandItem
                                 value={typewriterLabel}

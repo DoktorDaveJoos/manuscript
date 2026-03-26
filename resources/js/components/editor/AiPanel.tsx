@@ -1,15 +1,10 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import {
-    ChevronLeft,
-    ChevronRight,
-    Lock,
-    MessageCircle,
-    PenTool,
-    Pilcrow,
-    Sparkles,
-} from 'lucide-react';
+import { Lock, PenTool, Pilcrow, Sparkles } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { beautify, revise } from '@/actions/App/Http/Controllers/AiController';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
+import PanelHeader from '@/components/ui/PanelHeader';
 import ProFeatureLock from '@/components/ui/ProFeatureLock';
 import SectionLabel from '@/components/ui/SectionLabel';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
@@ -24,8 +19,6 @@ import type {
     CharacterChapterPivot,
     InformationDelivery,
 } from '@/types/models';
-import { beautify, revise } from '@/actions/App/Http/Controllers/AiController';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 
 type ChapterCharacter = Character & { pivot: CharacterChapterPivot };
 type AnalysisWithSummary = {
@@ -248,19 +241,15 @@ export default function AiPanel({
     characters,
     book,
     chapter,
-    isOpen,
-    onToggle,
+    onClose,
     onError,
-    onOpenChat,
     chapterAnalyses,
 }: {
     characters: ChapterCharacter[];
     book: Book;
     chapter: Chapter;
-    isOpen: boolean;
-    onToggle: () => void;
+    onClose: () => void;
     onError?: (message: string) => void;
-    onOpenChat?: () => void;
     chapterAnalyses?: Record<string, Analysis>;
 }) {
     const { t, i18n } = useTranslation('ai');
@@ -450,443 +439,345 @@ export default function AiPanel({
     if (!visible) return null;
 
     return (
-        <aside
-            className={cn(
-                'flex h-full shrink-0 flex-col border-l border-border-light bg-surface-sidebar transition-[width] duration-200 ease-in-out',
-                isOpen ? 'w-[272px]' : 'w-10',
-            )}
-        >
-            {isOpen ? (
-                <>
-                    {/* Header */}
-                    <button
-                        type="button"
-                        onClick={onToggle}
-                        className="flex items-center justify-between px-5 py-3"
-                    >
-                        <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-semibold tracking-[0.06em] text-ink uppercase">
-                                {t('headerTitle')}
-                            </span>
-                            {licensed ? (
-                                <span
-                                    className={cn(
-                                        'size-1.5 rounded-full',
-                                        aiEnabled
-                                            ? 'bg-ai-green'
-                                            : 'bg-status-revised',
-                                    )}
-                                />
-                            ) : (
-                                <Lock size={14} className="text-ink-faint" />
+        <aside className="flex h-full shrink-0 flex-col border-l border-border-light bg-surface-sidebar">
+            <PanelHeader
+                title={t('headerTitle')}
+                icon={<Sparkles size={14} className="text-ink-muted" />}
+                onClose={onClose}
+                suffix={
+                    licensed ? (
+                        <span
+                            className={cn(
+                                'size-1.5 rounded-full',
+                                aiEnabled ? 'bg-ai-green' : 'bg-status-revised',
                             )}
-                        </div>
-                        <ChevronRight size={14} className="text-ink-faint" />
-                    </button>
+                        />
+                    ) : (
+                        <Lock size={14} className="text-ink-faint" />
+                    )
+                }
+            />
 
-                    {licensed ? (
-                        <>
-                            {/* Scrollable content */}
-                            <div className="flex flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto p-5">
-                                {/* Actions section */}
-                                <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>
-                                        {t('section.actions')}
-                                    </SectionLabel>
-                                    {aiEnabled ? (
-                                        <>
-                                            <button
-                                                type="button"
-                                                onClick={handleAnalyze}
-                                                disabled={isAnalyzing}
-                                                className={actionButtonClass}
-                                            >
-                                                <Sparkles
-                                                    size={14}
-                                                    strokeWidth={2.5}
-                                                />
-                                                {isAnalyzing
-                                                    ? t('actions.analyzing')
-                                                    : t('actions.analyze')}
-                                            </button>
-                                            <DescriptionText>
-                                                {t(
-                                                    'actions.analyzeDescription',
-                                                )}
-                                            </DescriptionText>
-                                            {analysisError && (
-                                                <p className="text-[11px] leading-[1.4] text-red-600">
-                                                    {analysisError}
-                                                </p>
-                                            )}
-                                            <button
-                                                type="button"
-                                                onClick={handleBeautify}
-                                                disabled={isBeautifying}
-                                                className={actionButtonClass}
-                                            >
-                                                <Pilcrow
-                                                    size={14}
-                                                    strokeWidth={2.5}
-                                                />
-                                                {isBeautifying
-                                                    ? t('actions.beautifying')
-                                                    : t('actions.beautify')}
-                                            </button>
-                                            <DescriptionText>
-                                                {t(
-                                                    'actions.beautifyDescription',
-                                                )}
-                                            </DescriptionText>
-                                        </>
-                                    ) : (
-                                        <DescriptionText>
-                                            {t('actions.notConfigured')}{' '}
-                                            <Link
-                                                href={settingsIndex.url({
-                                                    query: { from: pageUrl },
-                                                })}
-                                                className="font-medium text-accent underline decoration-accent/30 hover:decoration-accent"
-                                            >
-                                                {t('actions.configureSettings')}
-                                            </Link>
-                                        </DescriptionText>
-                                    )}
-                                </div>
-
-                                {/* Prose section */}
-                                {aiEnabled && (
-                                    <div className="flex flex-col gap-2.5">
-                                        <SectionLabel>
-                                            {t('section.prose')}
-                                        </SectionLabel>
-                                        <button
-                                            type="button"
-                                            onClick={handleRunProse}
-                                            disabled={isRunningProse}
-                                            className={actionButtonClass}
-                                        >
-                                            <PenTool
-                                                size={14}
-                                                strokeWidth={2.5}
-                                            />
-                                            {isRunningProse
-                                                ? t('prose.running')
-                                                : t('prose.runProsePass')}
-                                        </button>
-                                        <DescriptionText>
-                                            {t('prose.description')}
-                                        </DescriptionText>
-                                        <Link
-                                            href={settingsIndex.url({
-                                                query: { from: pageUrl },
-                                            })}
-                                            className="text-[11px] font-medium text-accent transition-colors hover:text-accent-dark"
-                                        >
-                                            {t('prose.settingsLink')}
-                                        </Link>
-                                    </div>
-                                )}
-
-                                {/* Craft Metrics */}
-                                <div className="flex flex-col gap-4">
-                                    <SectionLabel className="text-[11px] text-ink">
-                                        {t('section.craftMetrics')}
-                                    </SectionLabel>
-                                    <LevelGroup title={t('level.chapter')}>
-                                        <CraftMetricRow
-                                            label={t('metric.tensionDynamics')}
-                                            score={tensionLabel}
-                                            detail={
-                                                chapter.tension_score != null
-                                                    ? t(
-                                                          'metric.tensionDetail',
-                                                          {
-                                                              score: chapter.tension_score,
-                                                              microTension:
-                                                                  chapter.micro_tension_score ??
-                                                                  '--',
-                                                          },
-                                                      )
-                                                    : null
-                                            }
-                                        />
-                                        <CraftMetricRow
-                                            label={t('metric.emotionalArc')}
-                                            score={emotionalLabel}
-                                            detail={
-                                                chapter.emotional_shift_magnitude !=
-                                                null
-                                                    ? t(
-                                                          'metric.emotionalDetail',
-                                                          {
-                                                              open:
-                                                                  chapter.emotional_state_open ??
-                                                                  '?',
-                                                              close:
-                                                                  chapter.emotional_state_close ??
-                                                                  '?',
-                                                              magnitude:
-                                                                  chapter.emotional_shift_magnitude,
-                                                          },
-                                                      )
-                                                    : null
-                                            }
-                                        />
-                                        <CraftMetricRow
-                                            label={t('metric.pacing')}
-                                            score={pacingLabel}
-                                        />
-                                    </LevelGroup>
-
-                                    <LevelGroup title={t('level.prose')}>
-                                        <CraftMetricRow
-                                            label={t('metric.sensoryDetail')}
-                                            score={sensoryLabel}
-                                            detail={
-                                                chapter.sensory_grounding !=
-                                                null
-                                                    ? t(
-                                                          'metric.sensoryDetailCount',
-                                                          {
-                                                              senses: chapter.sensory_grounding,
-                                                          },
-                                                      )
-                                                    : null
-                                            }
-                                        />
-                                        <CraftMetricRow
-                                            label={t(
-                                                'metric.informationDelivery',
-                                            )}
-                                            score={infoDeliveryLabel}
-                                        />
-                                        <CraftMetricRow
-                                            label={t('metric.narrativeDensity')}
-                                            score={densityLabel}
-                                            detail={densityDetail}
-                                        />
-                                    </LevelGroup>
-
-                                    <LevelGroup title={t('level.scene')}>
-                                        <CraftMetricRow
-                                            label={t('metric.scenePurpose')}
-                                            score={scenePurposeLabel}
-                                            detail={
-                                                chapter.scene_purpose
-                                                    ? (chapter.value_shift ??
-                                                      t('metric.noValueShift'))
-                                                    : null
-                                            }
-                                        />
-                                        <CraftMetricRow
-                                            label={t('metric.hooks')}
-                                            score={hookLabel}
-                                            detail={
-                                                avgHookScore != null
-                                                    ? chapter.hook_type
-                                                        ? t(
-                                                              'metric.hooksDetailWithType',
-                                                              {
-                                                                  entry:
-                                                                      chapter.entry_hook_score ??
-                                                                      '--',
-                                                                  exit:
-                                                                      chapter.exit_hook_score ??
-                                                                      '--',
-                                                                  hookType:
-                                                                      chapter.hook_type.replace(
-                                                                          '_',
-                                                                          ' ',
-                                                                      ),
-                                                              },
-                                                          )
-                                                        : t(
-                                                              'metric.hooksDetail',
-                                                              {
-                                                                  entry:
-                                                                      chapter.entry_hook_score ??
-                                                                      '--',
-                                                                  exit:
-                                                                      chapter.exit_hook_score ??
-                                                                      '--',
-                                                              },
-                                                          )
-                                                    : null
-                                            }
-                                        />
-                                    </LevelGroup>
-
-                                    <LevelGroup title={t('level.manuscript')}>
-                                        <CraftMetricRow
-                                            label={t('metric.plotAlignment')}
-                                            score={plotLabel}
-                                            detail={plotDetail}
-                                        />
-                                        <CraftMetricRow
-                                            label={t('metric.consistency')}
-                                            score={consistencyLabel}
-                                            detail={consistencyDetail}
-                                        />
-                                    </LevelGroup>
-                                </div>
-
-                                {/* Findings */}
-                                <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>
-                                        {t('section.findings')}
-                                    </SectionLabel>
-                                    {findings.length > 0 ? (
-                                        <div className="flex flex-col gap-2.5">
-                                            {findings.map((f, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="flex gap-2"
-                                                >
-                                                    <FindingDot
-                                                        variant={f.variant}
-                                                    />
-                                                    <span className="text-[11px] leading-[1.4] text-ink-soft">
-                                                        {f.text}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className="text-[11px] leading-[1.4] text-ink-muted italic">
-                                            {analysisStatus === 'completed'
-                                                ? t('findings.none')
-                                                : t('findings.noAnalysis')}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Next Chapter */}
-                                <div className="flex flex-col gap-2">
-                                    <SectionLabel>
-                                        {t('section.nextChapter')}
-                                    </SectionLabel>
-                                    {nextSuggestion ? (
-                                        <p className="text-[11px] leading-[1.4] text-ink-soft">
-                                            {nextSuggestion}
-                                        </p>
-                                    ) : (
-                                        <p className="text-[11px] leading-[1.4] text-ink-soft">
-                                            {t('nextChapter.noSuggestion')}
-                                        </p>
-                                    )}
-                                    <button
-                                        type="button"
-                                        disabled={!nextSuggestion}
-                                        className="self-start text-xs font-medium text-accent transition-colors hover:text-accent-dark disabled:opacity-50"
-                                    >
-                                        {t('nextChapter.generateOutline')}
-                                    </button>
-                                </div>
-
-                                {/* In This Chapter — Characters */}
-                                <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>
-                                        {t('section.inThisChapter')}
-                                    </SectionLabel>
-                                    {characters.length > 0 ? (
-                                        <div className="flex flex-col gap-2.5">
-                                            {characters.map((character) => (
-                                                <CharacterRow
-                                                    key={character.id}
-                                                    character={character}
-                                                    roleText={t(
-                                                        `role.${character.pivot.role}`,
-                                                    )}
-                                                />
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className="text-[11px] leading-[1.4] text-ink-muted italic">
-                                            {t('characters.none')}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Bottom bar */}
-                            <div className="flex flex-col gap-2 border-t border-border-light px-4 py-3">
+            {licensed ? (
+                <div className="flex flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto p-5">
+                    {/* Actions section */}
+                    <div className="flex flex-col gap-2.5">
+                        <SectionLabel>{t('section.actions')}</SectionLabel>
+                        {aiEnabled ? (
+                            <>
                                 <button
                                     type="button"
-                                    onClick={onOpenChat}
-                                    className="flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-[9px] text-[13px] text-ink-soft transition-colors hover:bg-surface hover:text-ink"
+                                    onClick={handleAnalyze}
+                                    disabled={isAnalyzing}
+                                    className={actionButtonClass}
                                 >
-                                    <MessageCircle
-                                        size={14}
-                                        className="text-ink-muted"
-                                    />
-                                    {t('askAi')}
+                                    <Sparkles size={14} strokeWidth={2.5} />
+                                    {isAnalyzing
+                                        ? t('actions.analyzing')
+                                        : t('actions.analyze')}
                                 </button>
-                                <span className="text-center text-[11px] text-ink-faint">
-                                    {t('tokensEstimate')}
-                                </span>
-                            </div>
-                        </>
-                    ) : (
-                        <ProFeatureLock>
-                            <div className="flex flex-1 flex-col gap-5 p-4 opacity-40">
-                                <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>
-                                        {t('section.actions')}
-                                    </SectionLabel>
-                                    <div className="h-9 rounded-md bg-border/50" />
-                                </div>
-                                <div className="flex flex-col gap-2.5">
-                                    <SectionLabel>
-                                        {t('section.craftMetrics')}
-                                    </SectionLabel>
-                                    <div className="flex flex-col gap-4">
-                                        <LevelGroup title={t('level.chapter')}>
-                                            <CraftMetricRow
-                                                label={t(
-                                                    'metric.tensionDynamics',
-                                                )}
-                                                score={EMPTY_SCORE}
-                                            />
-                                            <CraftMetricRow
-                                                label={t('metric.emotionalArc')}
-                                                score={EMPTY_SCORE}
-                                            />
-                                            <CraftMetricRow
-                                                label={t('metric.pacing')}
-                                                score={EMPTY_SCORE}
-                                            />
-                                        </LevelGroup>
-                                        <LevelGroup title={t('level.prose')}>
-                                            <CraftMetricRow
-                                                label={t(
-                                                    'metric.sensoryDetail',
-                                                )}
-                                                score={EMPTY_SCORE}
-                                            />
-                                            <CraftMetricRow
-                                                label={t('metric.density')}
-                                                score={EMPTY_SCORE}
-                                            />
-                                        </LevelGroup>
-                                    </div>
-                                </div>
-                            </div>
-                        </ProFeatureLock>
+                                <DescriptionText>
+                                    {t('actions.analyzeDescription')}
+                                </DescriptionText>
+                                {analysisError && (
+                                    <p className="text-[11px] leading-[1.4] text-red-600">
+                                        {analysisError}
+                                    </p>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={handleBeautify}
+                                    disabled={isBeautifying}
+                                    className={actionButtonClass}
+                                >
+                                    <Pilcrow size={14} strokeWidth={2.5} />
+                                    {isBeautifying
+                                        ? t('actions.beautifying')
+                                        : t('actions.beautify')}
+                                </button>
+                                <DescriptionText>
+                                    {t('actions.beautifyDescription')}
+                                </DescriptionText>
+                            </>
+                        ) : (
+                            <DescriptionText>
+                                {t('actions.notConfigured')}{' '}
+                                <Link
+                                    href={settingsIndex.url({
+                                        query: { from: pageUrl },
+                                    })}
+                                    className="font-medium text-accent underline decoration-accent/30 hover:decoration-accent"
+                                >
+                                    {t('actions.configureSettings')}
+                                </Link>
+                            </DescriptionText>
+                        )}
+                    </div>
+
+                    {/* Prose section */}
+                    {aiEnabled && (
+                        <div className="flex flex-col gap-2.5">
+                            <SectionLabel>{t('section.prose')}</SectionLabel>
+                            <button
+                                type="button"
+                                onClick={handleRunProse}
+                                disabled={isRunningProse}
+                                className={actionButtonClass}
+                            >
+                                <PenTool size={14} strokeWidth={2.5} />
+                                {isRunningProse
+                                    ? t('prose.running')
+                                    : t('prose.runProsePass')}
+                            </button>
+                            <DescriptionText>
+                                {t('prose.description')}
+                            </DescriptionText>
+                            <Link
+                                href={settingsIndex.url({
+                                    query: {
+                                        from: pageUrl,
+                                        section: 'revision-rules',
+                                    },
+                                })}
+                                className="text-[11px] font-medium text-accent transition-colors hover:text-accent-dark"
+                            >
+                                {t('prose.settingsLink')}
+                            </Link>
+                        </div>
                     )}
-                </>
+
+                    {/* Craft Metrics */}
+                    <div className="flex flex-col gap-4">
+                        <SectionLabel className="text-[11px] text-ink">
+                            {t('section.craftMetrics')}
+                        </SectionLabel>
+                        <LevelGroup title={t('level.chapter')}>
+                            <CraftMetricRow
+                                label={t('metric.tensionDynamics')}
+                                score={tensionLabel}
+                                detail={
+                                    chapter.tension_score != null
+                                        ? t('metric.tensionDetail', {
+                                              score: chapter.tension_score,
+                                              microTension:
+                                                  chapter.micro_tension_score ??
+                                                  '--',
+                                          })
+                                        : null
+                                }
+                            />
+                            <CraftMetricRow
+                                label={t('metric.emotionalArc')}
+                                score={emotionalLabel}
+                                detail={
+                                    chapter.emotional_shift_magnitude != null
+                                        ? t('metric.emotionalDetail', {
+                                              open:
+                                                  chapter.emotional_state_open ??
+                                                  '?',
+                                              close:
+                                                  chapter.emotional_state_close ??
+                                                  '?',
+                                              magnitude:
+                                                  chapter.emotional_shift_magnitude,
+                                          })
+                                        : null
+                                }
+                            />
+                            <CraftMetricRow
+                                label={t('metric.pacing')}
+                                score={pacingLabel}
+                            />
+                        </LevelGroup>
+
+                        <LevelGroup title={t('level.prose')}>
+                            <CraftMetricRow
+                                label={t('metric.sensoryDetail')}
+                                score={sensoryLabel}
+                                detail={
+                                    chapter.sensory_grounding != null
+                                        ? t('metric.sensoryDetailCount', {
+                                              senses: chapter.sensory_grounding,
+                                          })
+                                        : null
+                                }
+                            />
+                            <CraftMetricRow
+                                label={t('metric.informationDelivery')}
+                                score={infoDeliveryLabel}
+                            />
+                            <CraftMetricRow
+                                label={t('metric.narrativeDensity')}
+                                score={densityLabel}
+                                detail={densityDetail}
+                            />
+                        </LevelGroup>
+
+                        <LevelGroup title={t('level.scene')}>
+                            <CraftMetricRow
+                                label={t('metric.scenePurpose')}
+                                score={scenePurposeLabel}
+                                detail={
+                                    chapter.scene_purpose
+                                        ? (chapter.value_shift ??
+                                          t('metric.noValueShift'))
+                                        : null
+                                }
+                            />
+                            <CraftMetricRow
+                                label={t('metric.hooks')}
+                                score={hookLabel}
+                                detail={
+                                    avgHookScore != null
+                                        ? chapter.hook_type
+                                            ? t('metric.hooksDetailWithType', {
+                                                  entry:
+                                                      chapter.entry_hook_score ??
+                                                      '--',
+                                                  exit:
+                                                      chapter.exit_hook_score ??
+                                                      '--',
+                                                  hookType:
+                                                      chapter.hook_type.replace(
+                                                          '_',
+                                                          ' ',
+                                                      ),
+                                              })
+                                            : t('metric.hooksDetail', {
+                                                  entry:
+                                                      chapter.entry_hook_score ??
+                                                      '--',
+                                                  exit:
+                                                      chapter.exit_hook_score ??
+                                                      '--',
+                                              })
+                                        : null
+                                }
+                            />
+                        </LevelGroup>
+
+                        <LevelGroup title={t('level.manuscript')}>
+                            <CraftMetricRow
+                                label={t('metric.plotAlignment')}
+                                score={plotLabel}
+                                detail={plotDetail}
+                            />
+                            <CraftMetricRow
+                                label={t('metric.consistency')}
+                                score={consistencyLabel}
+                                detail={consistencyDetail}
+                            />
+                        </LevelGroup>
+                    </div>
+
+                    {/* Findings */}
+                    <div className="flex flex-col gap-2.5">
+                        <SectionLabel>{t('section.findings')}</SectionLabel>
+                        {findings.length > 0 ? (
+                            <div className="flex flex-col gap-2.5">
+                                {findings.map((f, i) => (
+                                    <div key={i} className="flex gap-2">
+                                        <FindingDot variant={f.variant} />
+                                        <span className="text-[11px] leading-[1.4] text-ink-soft">
+                                            {f.text}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[11px] leading-[1.4] text-ink-muted italic">
+                                {analysisStatus === 'completed'
+                                    ? t('findings.none')
+                                    : t('findings.noAnalysis')}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Next Chapter */}
+                    <div className="flex flex-col gap-2">
+                        <SectionLabel>{t('section.nextChapter')}</SectionLabel>
+                        {nextSuggestion ? (
+                            <p className="text-[11px] leading-[1.4] text-ink-soft">
+                                {nextSuggestion}
+                            </p>
+                        ) : (
+                            <p className="text-[11px] leading-[1.4] text-ink-soft">
+                                {t('nextChapter.noSuggestion')}
+                            </p>
+                        )}
+                        <button
+                            type="button"
+                            disabled={!nextSuggestion}
+                            className="self-start text-xs font-medium text-accent transition-colors hover:text-accent-dark disabled:opacity-50"
+                        >
+                            {t('nextChapter.generateOutline')}
+                        </button>
+                    </div>
+
+                    {/* In This Chapter — Characters */}
+                    <div className="flex flex-col gap-2.5">
+                        <SectionLabel>
+                            {t('section.inThisChapter')}
+                        </SectionLabel>
+                        {characters.length > 0 ? (
+                            <div className="flex flex-col gap-2.5">
+                                {characters.map((character) => (
+                                    <CharacterRow
+                                        key={character.id}
+                                        character={character}
+                                        roleText={t(
+                                            `role.${character.pivot.role}`,
+                                        )}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[11px] leading-[1.4] text-ink-muted italic">
+                                {t('characters.none')}
+                            </p>
+                        )}
+                    </div>
+                </div>
             ) : (
-                /* Collapsed state */
-                <button
-                    type="button"
-                    onClick={onToggle}
-                    className="flex h-full w-full flex-col items-center gap-3 pt-4 transition-colors hover:bg-surface"
-                >
-                    <span className="text-[11px] font-normal tracking-[0.06em] text-ink">
-                        AI
-                    </span>
-                    <ChevronLeft size={14} className="text-ink-faint" />
-                </button>
+                <ProFeatureLock>
+                    <div className="flex flex-1 flex-col gap-5 p-4 opacity-40">
+                        <div className="flex flex-col gap-2.5">
+                            <SectionLabel>{t('section.actions')}</SectionLabel>
+                            <div className="h-9 rounded-md bg-border/50" />
+                        </div>
+                        <div className="flex flex-col gap-2.5">
+                            <SectionLabel>
+                                {t('section.craftMetrics')}
+                            </SectionLabel>
+                            <div className="flex flex-col gap-4">
+                                <LevelGroup title={t('level.chapter')}>
+                                    <CraftMetricRow
+                                        label={t('metric.tensionDynamics')}
+                                        score={EMPTY_SCORE}
+                                    />
+                                    <CraftMetricRow
+                                        label={t('metric.emotionalArc')}
+                                        score={EMPTY_SCORE}
+                                    />
+                                    <CraftMetricRow
+                                        label={t('metric.pacing')}
+                                        score={EMPTY_SCORE}
+                                    />
+                                </LevelGroup>
+                                <LevelGroup title={t('level.prose')}>
+                                    <CraftMetricRow
+                                        label={t('metric.sensoryDetail')}
+                                        score={EMPTY_SCORE}
+                                    />
+                                    <CraftMetricRow
+                                        label={t('metric.density')}
+                                        score={EMPTY_SCORE}
+                                    />
+                                </LevelGroup>
+                            </div>
+                        </div>
+                    </div>
+                </ProFeatureLock>
             )}
         </aside>
     );

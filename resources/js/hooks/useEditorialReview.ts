@@ -21,6 +21,13 @@ export function useEditorialReview(
         ['pending', 'analyzing', 'synthesizing'].includes(review.status)
     );
 
+    // Sync when server provides fresh review data (e.g., after router.reload())
+    useEffect(() => {
+        if (initialReview) {
+            setReview(initialReview);
+        }
+    }, [initialReview]);
+
     useEffect(() => {
         if (!isRunning || !review) {
             if (pollRef.current) {
@@ -91,5 +98,19 @@ export function useEditorialReview(
         setReview(selected);
     }, []);
 
-    return { review, isRunning, starting, error, handleStart, selectReview };
+    const updateResolved = useCallback((resolved: string[]) => {
+        setReview((prev) =>
+            prev ? { ...prev, resolved_findings: resolved } : prev,
+        );
+    }, []);
+
+    return {
+        review,
+        isRunning,
+        starting,
+        error,
+        handleStart,
+        selectReview,
+        updateResolved,
+    };
 }

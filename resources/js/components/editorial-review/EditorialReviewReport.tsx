@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import Dialog from '@/components/ui/Dialog';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
+import { useToggleFinding } from '@/hooks/useToggleFinding';
 import type {
     Chapter,
     EditorialReview,
     OnDiscussFinding,
 } from '@/types/models';
+import ChapterProgressStrip from './ChapterProgressStrip';
 import EditorialReviewSection from './EditorialReviewSection';
 
 function ScoreDisplay({
@@ -85,6 +87,7 @@ export default function EditorialReviewReport({
     onStartNew,
     starting,
     onDiscussFinding,
+    onResolvedChange,
 }: {
     review: EditorialReview;
     reviews: EditorialReview[];
@@ -93,9 +96,23 @@ export default function EditorialReviewReport({
     onStartNew: () => void;
     starting: boolean;
     onDiscussFinding: OnDiscussFinding;
+    onResolvedChange: (resolved: string[]) => void;
 }) {
     const { t, i18n } = useTranslation('editorial-review');
     const [showConfirm, setShowConfirm] = useState(false);
+
+    const resolvedFindings = review.resolved_findings ?? [];
+    const resolvedSet = useMemo(
+        () => new Set(resolvedFindings),
+        [resolvedFindings],
+    );
+
+    const handleToggleFinding = useToggleFinding(
+        review.book_id,
+        review.id,
+        resolvedFindings,
+        onResolvedChange,
+    );
 
     const formatDate = (dateStr: string | null) =>
         dateStr
@@ -158,6 +175,13 @@ export default function EditorialReviewReport({
                         )}
                 </Card>
 
+                <ChapterProgressStrip
+                    chapters={chapters}
+                    sections={review.sections}
+                    resolvedSet={resolvedSet}
+                    bookId={review.book_id}
+                />
+
                 <div className="flex items-center justify-between">
                     <Select
                         variant="compact"
@@ -192,7 +216,7 @@ export default function EditorialReviewReport({
 
                 <SectionLabel>{t('sectionLabel.editorialReview')}</SectionLabel>
 
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                <div className="flex max-w-3xl flex-col gap-4">
                     {orderedSections.map(
                         (section) =>
                             section && (
@@ -200,6 +224,9 @@ export default function EditorialReviewReport({
                                     key={section.id}
                                     section={section}
                                     chapters={chapters}
+                                    bookId={review.book_id}
+                                    resolvedSet={resolvedSet}
+                                    onToggleFinding={handleToggleFinding}
                                     onDiscussFinding={onDiscussFinding}
                                 />
                             ),

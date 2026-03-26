@@ -1,12 +1,12 @@
 import { router } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { NEXT_STATUS, STATUS_COLORS, TYPE_STYLES } from '@/lib/plot-constants';
-import type { PlotPoint } from '@/types/models';
 import {
     store,
     updateStatus,
 } from '@/actions/App/Http/Controllers/PlotPointController';
+import { NEXT_STATUS, STATUS_COLORS, TYPE_STYLES } from '@/lib/plot-constants';
+import type { PlotPoint } from '@/types/models';
 
 type Props = {
     plotPoints: PlotPoint[];

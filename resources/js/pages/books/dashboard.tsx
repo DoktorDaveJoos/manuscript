@@ -129,7 +129,7 @@ export default function Dashboard({
     writing_heatmap: HeatmapDay[];
     manuscript_target: ManuscriptTarget | null;
 }) {
-    const { t, i18n } = useTranslation('dashboard');
+    const { t } = useTranslation('dashboard');
     const storylines = useSidebarStorylines();
     const { isFree } = useFreeTier();
 

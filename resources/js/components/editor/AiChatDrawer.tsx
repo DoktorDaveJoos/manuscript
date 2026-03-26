@@ -1,16 +1,26 @@
-import { ArrowUp, BookOpen, Loader, Sparkles, X } from 'lucide-react';
+import {
+    ArrowUp,
+    BookOpen,
+    BookSearch,
+    Loader,
+    MessageCircle,
+    Sparkles,
+} from 'lucide-react';
 import MarkdownIt from 'markdown-it';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { chat } from '@/actions/App/Http/Controllers/AiController';
 import { chat as editorialChat } from '@/actions/App/Http/Controllers/EditorialReviewController';
-import { useResizablePanel } from '@/hooks/useResizablePanel';
+import PanelHeader from '@/components/ui/PanelHeader';
+import { severityDotColor } from '@/lib/editorial-constants';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type {
     Book,
     Chapter,
     Character,
     CharacterChapterPivot,
+    EditorialSectionType,
+    FindingSeverity,
 } from '@/types/models';
 
 const md = new MarkdownIt({ linkify: true, breaks: true });
@@ -34,6 +44,15 @@ const AssistantMessage = memo(function AssistantMessage({
     );
 });
 
+function ContextStatus({ label }: { label: string }) {
+    return (
+        <div className="flex items-center gap-1">
+            <span className="size-1 rounded-full bg-ai-green" />
+            <span className="text-[11px] text-ink-muted">{label}</span>
+        </div>
+    );
+}
+
 type ChapterWithCharacters = Chapter & {
     characters?: (Character & { pivot: CharacterChapterPivot })[];
 };
@@ -42,15 +61,20 @@ export default function AiChatDrawer({
     book,
     chapter,
     onClose,
+    title,
     editorialReview,
 }: {
     book: Book;
     chapter?: ChapterWithCharacters;
     onClose: () => void;
+    title?: string;
     editorialReview?: {
         reviewId: number;
-        sectionType?: string;
+        sectionType?: EditorialSectionType;
         findingIndex?: number;
+        findingDescription?: string;
+        findingSeverity?: FindingSeverity;
+        sectionLabel?: string;
     };
 }) {
     const { t } = useTranslation('ai');
@@ -59,18 +83,6 @@ export default function AiChatDrawer({
     const [isStreaming, setIsStreaming] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
-
-    const {
-        width,
-        panelRef: asideRef,
-        handleMouseDown,
-    } = useResizablePanel({
-        storageKey: 'ai-chat-drawer-width',
-        minWidth: 280,
-        maxWidth: 600,
-        defaultWidth: 320,
-        direction: 'right',
-    });
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -232,35 +244,12 @@ export default function AiChatDrawer({
     const wordCount = chapter?.word_count ?? 0;
 
     return (
-        <aside
-            ref={asideRef}
-            className="relative flex h-full shrink-0 flex-col border-l border-border-light bg-surface-sidebar"
-            style={{ width }}
-        >
-            {/* Resize handle */}
-            <div
-                onMouseDown={handleMouseDown}
-                className="group absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize"
-            >
-                <div className="absolute inset-y-0 left-[3px] w-px bg-transparent transition-colors group-hover:bg-ink/20" />
-            </div>
-
-            {/* Header */}
-            <div className="flex h-11 items-center justify-between border-b border-border-light px-5">
-                <div className="flex items-center gap-2">
-                    <Sparkles size={14} className="text-accent" />
-                    <span className="text-[11px] font-semibold tracking-[0.06em] text-ink uppercase">
-                        {t('askAi')}
-                    </span>
-                </div>
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:text-ink"
-                >
-                    <X size={14} />
-                </button>
-            </div>
+        <aside className="flex h-full shrink-0 flex-col border-l border-border-light bg-surface-sidebar">
+            <PanelHeader
+                title={title ?? t('askAi')}
+                icon={<MessageCircle size={14} className="text-ink-muted" />}
+                onClose={onClose}
+            />
 
             {/* Chapter Context */}
             {chapter && (
@@ -287,18 +276,8 @@ export default function AiChatDrawer({
                         </span>
                     </div>
                     <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1">
-                            <span className="size-1 rounded-full bg-ai-green" />
-                            <span className="text-[11px] text-ink-muted">
-                                {t('chat.chapterLoaded')}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <span className="size-1 rounded-full bg-ai-green" />
-                            <span className="text-[11px] text-ink-muted">
-                                {t('chat.bookContext')}
-                            </span>
-                        </div>
+                        <ContextStatus label={t('chat.chapterLoaded')} />
+                        <ContextStatus label={t('chat.bookContext')} />
                     </div>
                 </div>
             )}
@@ -306,19 +285,53 @@ export default function AiChatDrawer({
             {/* Editorial Review Context */}
             {editorialReview && !chapter && (
                 <div className="flex flex-col gap-1 border-b border-border-light px-5 py-2.5">
-                    <div className="flex items-center gap-2">
-                        <span className="size-[5px] shrink-0 rounded-full bg-ai-green" />
-                        <Sparkles size={14} className="shrink-0 text-accent" />
-                        <span className="truncate text-xs font-medium text-ink">
-                            {t('editorial-review:sectionLabel.editorialReview')}
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <span className="size-1 rounded-full bg-ai-green" />
-                        <span className="text-[11px] text-ink-muted">
-                            {t('chat.bookContext')}
-                        </span>
-                    </div>
+                    {editorialReview.findingDescription &&
+                    editorialReview.findingSeverity ? (
+                        <>
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className={`size-[5px] shrink-0 rounded-full ${severityDotColor[editorialReview.findingSeverity]}`}
+                                />
+                                <BookSearch
+                                    size={14}
+                                    className="shrink-0 text-accent"
+                                />
+                                <span className="truncate text-xs font-medium text-ink">
+                                    {editorialReview.sectionLabel}
+                                </span>
+                                <span className="shrink-0 rounded bg-neutral-bg px-1.5 py-0.5 text-[11px] font-medium text-ink-muted">
+                                    {t(
+                                        `editorial-review:severity.${editorialReview.findingSeverity}`,
+                                    )}
+                                </span>
+                            </div>
+                            <p className="line-clamp-3 text-[11px] text-ink-faint">
+                                {editorialReview.findingDescription}
+                            </p>
+                            <div className="flex items-center gap-3">
+                                <ContextStatus
+                                    label={t('chat.findingLoaded')}
+                                />
+                                <ContextStatus label={t('chat.bookContext')} />
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="flex items-center gap-2">
+                                <span className="size-[5px] shrink-0 rounded-full bg-ai-green" />
+                                <Sparkles
+                                    size={14}
+                                    className="shrink-0 text-accent"
+                                />
+                                <span className="truncate text-xs font-medium text-ink">
+                                    {t(
+                                        'editorial-review:sectionLabel.editorialReview',
+                                    )}
+                                </span>
+                            </div>
+                            <ContextStatus label={t('chat.bookContext')} />
+                        </>
+                    )}
                 </div>
             )}
 

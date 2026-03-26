@@ -1,3 +1,4 @@
+import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     start as startPreparation,
@@ -40,6 +41,10 @@ export function useAiPreparation(
                 if (!res.ok) throw new Error();
                 const data = await res.json();
                 setStatus(data);
+
+                if (data?.status === 'completed') {
+                    router.reload();
+                }
             } catch {
                 // Silently retry on next interval
             }

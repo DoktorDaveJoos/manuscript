@@ -1,6 +1,6 @@
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { ChevronRight } from 'lucide-react';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import {
     menuContentBase,
@@ -127,7 +127,7 @@ function DropdownMenuSubTrigger({
             )}
             {...props}
         >
-            {children}
+            {children as ReactNode}
             <ChevronRight size={10} strokeWidth={2.5} className="text-ink-faint" />
         </DropdownMenuPrimitive.SubTrigger>
     );

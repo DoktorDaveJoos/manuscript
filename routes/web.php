@@ -176,6 +176,7 @@ Route::middleware('license')->group(function () {
     Route::get('/books/{book}/ai/editorial-review/{review}', [EditorialReviewController::class, 'show'])->name('books.ai.editorial-review.show');
     Route::get('/books/{book}/ai/editorial-review/{review}/progress', [EditorialReviewController::class, 'progress'])->name('books.ai.editorial-review.progress');
     Route::post('/books/{book}/ai/editorial-review/{review}/chat', [EditorialReviewController::class, 'chat'])->name('books.ai.editorial-review.chat');
+    Route::post('/books/{book}/ai/editorial-review/{review}/toggle-finding', [EditorialReviewController::class, 'toggleFinding'])->name('books.ai.editorial-review.toggle-finding');
 
     Route::post('/books/{book}/settings/writing-style/regenerate', [BookSettingsController::class, 'regenerateWritingStyle'])->name('books.settings.writing-style.regenerate');
 
