@@ -43,6 +43,28 @@ export function jsonFetchHeaders(): Record<string, string> {
     };
 }
 
+export function extractErrorMessage(error: unknown, fallback: string): string {
+    if (
+        error instanceof Error &&
+        'response' in error &&
+        typeof (error as { response?: { data?: unknown } }).response?.data ===
+            'object'
+    ) {
+        const data = (error as { response: { data: Record<string, unknown> } })
+            .response.data;
+        if (typeof data.message === 'string' && data.message)
+            return data.message;
+        if (data.errors && typeof data.errors === 'object') {
+            const first = Object.values(
+                data.errors as Record<string, unknown[]>,
+            ).flat()[0];
+            if (typeof first === 'string') return first;
+        }
+    }
+    if (error instanceof Error) return error.message;
+    return fallback;
+}
+
 export function formatTimeAgo(
     dateString: string,
     t: (key: string, options?: Record<string, unknown>) => string,

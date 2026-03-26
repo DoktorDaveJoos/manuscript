@@ -18,6 +18,7 @@ import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
 import SectionLabel from '@/components/ui/SectionLabel';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
+import { extractErrorMessage } from '@/lib/utils';
 import type { Book, Storyline, StorylineType } from '@/types/models';
 
 function normalizeFilenameToStorylineName(filename: string): string {
@@ -227,8 +228,11 @@ export default function BooksImport({
     const [reviewData, setReviewData] = useState<ReviewStoryline[]>([]);
     const [parsingChapters, setParsingChapters] = useState<ChapterItem[]>([]);
     const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     async function handleStartParsing(files: FileEntry[], mergeMode: boolean) {
+        setError(null);
+
         const formData = new FormData();
         files.forEach((entry, i) => {
             formData.append(`files[${i}][file]`, entry.file);
@@ -286,13 +290,14 @@ export default function BooksImport({
             setReviewData(storylines);
             setParsingChapters(allChapters);
             setPhase('parsing');
-        } catch {
-            // Validation or server errors are handled by Inertia
+        } catch (e) {
+            setError(extractErrorMessage(e, t('import.parseError')));
         }
     }
 
     async function handleConfirm() {
         setSubmitting(true);
+        setError(null);
 
         const payload = {
             storylines: reviewData.map((s) => ({
@@ -310,13 +315,30 @@ export default function BooksImport({
         try {
             await axios.post(confirmImport.url(book), payload);
             router.visit(editor.url(book));
-        } catch {
+        } catch (e) {
             setSubmitting(false);
+            setError(extractErrorMessage(e, t('import.confirmError')));
         }
     }
 
     return (
         <>
+            {error && (
+                <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2">
+                    <div className="flex items-center gap-3 rounded-lg border border-delete/20 bg-delete-bg px-4 py-3 shadow-lg">
+                        <p className="text-[13px] font-medium text-delete">
+                            {error}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setError(null)}
+                            className="shrink-0 text-delete/60 transition-colors hover:text-delete"
+                        >
+                            &times;
+                        </button>
+                    </div>
+                </div>
+            )}
             {phase === 'upload' && (
                 <UploadPhase book={book} onStartParsing={handleStartParsing} />
             )}

@@ -1,6 +1,7 @@
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
+import DebugOverlay from '@/components/ui/DebugOverlay';
 import UpdateDialog from '@/components/ui/UpdateDialog';
 import '../css/app.css';
 import i18n from './i18n';
@@ -42,10 +43,10 @@ createInertiaApp({
         const root = createRoot(el);
 
         root.render(
-            <>
+            <DebugOverlay>
                 <App {...props} />
                 <UpdateDialog currentVersion={appVersion} />
-            </>,
+            </DebugOverlay>,
         );
     },
     progress: {

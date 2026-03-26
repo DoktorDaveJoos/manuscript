@@ -79,6 +79,8 @@
 
     "import.chapterLabel": "Chapter {{number}} — {{title}}",
     "import.noHeadingsNotice": "No chapter headings detected — importing as single chapter",
+    "import.parseError": "Something went wrong while reading your file. Please check the format and try again.",
+    "import.confirmError": "Something went wrong while saving your import. Please try again.",
 
     "reviewPhase.subtitle": "Review your import",
     "reviewPhase.storylineType.main": "main",

@@ -26,7 +26,11 @@ export function useEditorialReview(
         if (initialReview) {
             setReview(initialReview);
         }
-    }, [initialReview]);
+    }, [
+        initialReview?.id,
+        initialReview?.status,
+        initialReview?.sections?.length,
+    ]);
 
     useEffect(() => {
         if (!isRunning || !review) {

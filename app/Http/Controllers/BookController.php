@@ -77,9 +77,17 @@ class BookController extends Controller
         $results = [];
 
         foreach ($request->validated('files') as $fileEntry) {
-            $ext = $fileEntry['file']->getClientOriginalExtension();
-            $parser = $factory->forExtension($ext);
-            $parsed = $parser->parse($fileEntry['file']);
+            $filename = $fileEntry['file']->getClientOriginalName();
+
+            try {
+                $ext = $fileEntry['file']->getClientOriginalExtension();
+                $parser = $factory->forExtension($ext);
+                $parsed = $parser->parse($fileEntry['file']);
+            } catch (\Throwable $e) {
+                abort(422, __('Could not parse ":file". The file may be corrupted or in an unsupported format.', [
+                    'file' => $filename,
+                ]));
+            }
 
             $results[] = [
                 'storyline_name' => $fileEntry['storyline_name'],
