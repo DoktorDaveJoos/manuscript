@@ -1,7 +1,12 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { DOMSerializer } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
-import { MessageCircle, NotebookPen, Sparkles } from 'lucide-react';
+import {
+    MessageCircle,
+    NotebookPen,
+    NotebookText,
+    Sparkles,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -22,6 +27,7 @@ import CommandPalette from '@/components/editor/CommandPalette';
 import DiffView from '@/components/editor/DiffView';
 import EditorBar from '@/components/editor/EditorBar';
 import type { SaveStatus } from '@/components/editor/EditorBar';
+import EditorialReviewPanel from '@/components/editor/EditorialReviewPanel';
 import FormattingToolbar from '@/components/editor/FormattingToolbar';
 import GlobalFindDrawer from '@/components/editor/GlobalFindDrawer';
 import NotesPanel from '@/components/editor/NotesPanel';
@@ -33,6 +39,7 @@ import SlidePanel from '@/components/ui/SlidePanel';
 import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
+
 import { createChapter, jsonFetchHeaders } from '@/lib/utils';
 import type {
     Analysis,
@@ -41,6 +48,7 @@ import type {
     Chapter,
     Character,
     CharacterChapterPivot,
+    EditorialReview,
     ProsePassRule,
     Scene,
 } from '@/types/models';
@@ -80,18 +88,27 @@ async function splitAtCursor(
     return { belowHtml, currentIndex };
 }
 
+const VALID_PANELS: Set<PanelId> = new Set([
+    'notes',
+    'ai',
+    'chat',
+    'editorial',
+]);
+
 export default function ChapterShow({
     book,
     chapter,
     versionCount,
     prosePassRules,
     chapterAnalyses,
+    editorialReview: initialEditorialReview,
 }: {
     book: Book;
     chapter: ChapterWithRelations;
     versionCount: number;
     prosePassRules?: ProsePassRule[];
     chapterAnalyses?: Record<string, Analysis>;
+    editorialReview?: EditorialReview | null;
 }) {
     const { t } = useTranslation('editor');
     const pendingVersion = chapter.pending_version ?? null;
@@ -120,10 +137,7 @@ export default function ChapterShow({
         useState<SearchHighlight | null>(null);
     const [isLocalFindOpen, setIsLocalFindOpen] = useState(false);
     const [localFindShowReplace, setLocalFindShowReplace] = useState(false);
-    const VALID_PANELS: Set<string> = useMemo(
-        () => new Set(['notes', 'ai', 'chat']),
-        [],
-    );
+    const editorialReview = initialEditorialReview ?? null;
 
     const [openPanels, setOpenPanels] = useState<Set<PanelId>>(() => {
         try {
@@ -239,14 +253,41 @@ export default function ChapterShow({
     const editorFontSize = app_settings.editor_font_size;
 
     const toggleNotes = useCallback(() => togglePanel('notes'), [togglePanel]);
-    const closeNotes = useCallback(() => {
-        closePanel('notes');
-        activeEditorRef.current?.commands.focus();
-    }, [closePanel]);
-    const closeAi = useCallback(() => closePanel('ai'), [closePanel]);
-    const closeChat = useCallback(() => closePanel('chat'), [closePanel]);
+    const closePanelAndFocus = useCallback(
+        (panel: PanelId) => {
+            closePanel(panel);
+            activeEditorRef.current?.commands.focus();
+        },
+        [closePanel],
+    );
+    const closeNotes = useCallback(
+        () => closePanelAndFocus('notes'),
+        [closePanelAndFocus],
+    );
+    const closeAi = useCallback(
+        () => closePanelAndFocus('ai'),
+        [closePanelAndFocus],
+    );
+    const closeChat = useCallback(
+        () => closePanelAndFocus('chat'),
+        [closePanelAndFocus],
+    );
+    const closeEditorial = useCallback(
+        () => closePanelAndFocus('editorial'),
+        [closePanelAndFocus],
+    );
 
     const { t: tAi } = useTranslation('ai');
+    const { t: tEditorial } = useTranslation('editorial-review');
+
+    const hasChapterNote = useMemo(() => {
+        if (!editorialReview?.chapter_notes) return false;
+        const note = editorialReview.chapter_notes.find(
+            (n) => n.chapter_id === chapter.id,
+        );
+        return !!note?.notes?.chapter_note;
+    }, [editorialReview, chapter.id]);
+
     const accessBarItems = useMemo(() => {
         const items: AccessBarItemConfig[] = [
             {
@@ -267,10 +308,16 @@ export default function ChapterShow({
                     icon: MessageCircle,
                     label: tAi('askAi'),
                 },
+                {
+                    id: 'editorial',
+                    icon: NotebookText,
+                    label: tEditorial('panel.title'),
+                    badge: hasChapterNote ? 1 : 0,
+                },
             );
         }
         return items;
-    }, [aiVisible, t, tAi]);
+    }, [aiVisible, t, tAi, tEditorial, hasChapterNote]);
 
     // Reset scenes and title when chapter changes (e.g. after version restore)
     useEffect(() => {
@@ -716,6 +763,11 @@ export default function ChapterShow({
                                 onEnterFocusMode={toggleFocusMode}
                                 isFocusMode={isFocusMode}
                                 onToggleNotes={toggleNotes}
+                                onToggleChat={
+                                    aiVisible
+                                        ? () => togglePanel('chat')
+                                        : undefined
+                                }
                                 isTypewriterMode={isTypewriterMode}
                                 onToggleTypewriterMode={toggleTypewriterMode}
                             />
@@ -733,6 +785,7 @@ export default function ChapterShow({
                             defaultWidth={260}
                         >
                             <NotesPanel
+                                key={chapter.id}
                                 bookId={book.id}
                                 chapterId={chapter.id}
                                 initialNotes={chapterNotes}
@@ -789,6 +842,20 @@ export default function ChapterShow({
                                 book={book}
                                 chapter={chapter}
                                 onClose={closeChat}
+                            />
+                        </SlidePanel>
+
+                        <SlidePanel
+                            open={openPanels.has('editorial') && aiVisible}
+                            onClose={closeEditorial}
+                            storageKey="manuscript:editorial-panel-width"
+                            defaultWidth={280}
+                        >
+                            <EditorialReviewPanel
+                                book={book}
+                                chapterId={chapter.id}
+                                editorialReview={editorialReview}
+                                onClose={closeEditorial}
                             />
                         </SlidePanel>
 

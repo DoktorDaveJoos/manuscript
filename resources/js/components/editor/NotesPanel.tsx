@@ -1,10 +1,12 @@
+import { NotebookPen } from 'lucide-react';
 import MarkdownIt from 'markdown-it';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { updateNotes } from '@/actions/App/Http/Controllers/ChapterController';
 import NotesSlashMenu from '@/components/editor/NotesSlashMenu';
 import Kbd from '@/components/ui/Kbd';
+import PanelHeader from '@/components/ui/PanelHeader';
 import { jsonFetchHeaders } from '@/lib/utils';
-import { updateNotes } from '@/actions/App/Http/Controllers/ChapterController';
 
 const md = new MarkdownIt({ linkify: true });
 
@@ -134,6 +136,7 @@ export default function NotesPanel({
     useEffect(() => {
         linesRef.current = lines;
     }, [lines]);
+    const savedNotesRef = useRef(initialNotes);
 
     useEffect(() => {
         requestAnimationFrame(() => {
@@ -175,6 +178,7 @@ export default function NotesPanel({
                 },
             );
             if (response.ok) {
+                savedNotesRef.current = value || null;
                 onNotesChange?.(value || null);
                 setSaveStatus('saved');
                 if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
@@ -209,7 +213,10 @@ export default function NotesPanel({
             if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
             abortRef.current?.abort();
             const value = serializeLines(linesRef.current);
-            if (pendingRef.current !== null || value !== (initialNotes ?? '')) {
+            if (
+                pendingRef.current !== null ||
+                value !== (savedNotesRef.current ?? '')
+            ) {
                 pendingRef.current = null;
                 onNotesChange?.(value || null);
                 fetch(updateNotes.url({ book: bookId, chapter: chapterId }), {
@@ -219,7 +226,8 @@ export default function NotesPanel({
                 }).catch(() => {});
             }
         };
-    }, [bookId, chapterId, initialNotes, onNotesChange]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [bookId, chapterId]);
 
     const updateLine = useCallback(
         (index: number, updates: Partial<LineData>) => {
@@ -463,13 +471,9 @@ export default function NotesPanel({
                     linesRef.current[activeIndex + 1].text.length,
                 );
                 setActiveIndex(activeIndex + 1);
-            } else if (e.key === 'Escape') {
-                e.stopPropagation();
-                flush();
-                onClose();
             }
         },
-        [activeIndex, flush, onClose, scheduleSave, updateLine],
+        [activeIndex, scheduleSave, updateLine],
     );
 
     const handleSlashSelect = useCallback(
@@ -562,24 +566,26 @@ export default function NotesPanel({
     return (
         <div
             data-notes-panel
-            className="relative flex w-[260px] shrink-0 flex-col border-l border-border bg-surface-sidebar"
+            className="relative flex h-full shrink-0 flex-col border-l border-border bg-surface-sidebar"
         >
-            <header className="flex h-[44px] shrink-0 items-center justify-between border-b border-border px-4">
-                <span className="text-[13px] font-semibold text-ink">
-                    {t('notes.title')}
-                </span>
-                <div className="flex items-center gap-1.5">
-                    {saveStatus !== 'idle' && (
-                        <span className="text-[11px] text-ink-faint">
-                            {saveStatus === 'saving'
-                                ? t('notes.saving')
-                                : t('notes.saved')}
-                        </span>
-                    )}
-                    <Kbd keys="/" />
-                    <Kbd keys="Esc" />
-                </div>
-            </header>
+            <PanelHeader
+                title={t('notes.title')}
+                icon={<NotebookPen size={14} className="text-ink-muted" />}
+                onClose={onClose}
+                suffix={
+                    <>
+                        {saveStatus !== 'idle' && (
+                            <span className="text-[11px] text-ink-faint">
+                                {saveStatus === 'saving'
+                                    ? t('notes.saving')
+                                    : t('notes.saved')}
+                            </span>
+                        )}
+                        <Kbd keys="/" />
+                        <Kbd keys="Esc" />
+                    </>
+                }
+            />
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5">
                 {lines.map((line, i) => {
                     const isActive = i === activeIndex;

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
+import { cn } from '@/lib/utils';
 
 export default function SlidePanel({
     open,
@@ -63,39 +64,42 @@ export default function SlidePanel({
 
     if (!mounted) return null;
 
-    if (settled) {
-        return (
-            <div
-                ref={panelRef}
-                className="relative h-full shrink-0"
-                style={{ width: panelWidth }}
-                onKeyDown={handleKeyDown}
-            >
-                <div
-                    onMouseDown={handleMouseDown}
-                    className="group absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize"
-                >
-                    <div className="absolute inset-y-0 left-[3px] w-px bg-transparent transition-colors group-hover:bg-ink/20" />
-                </div>
-                {children}
-            </div>
-        );
-    }
+    const isAnimating = !settled;
 
     return (
         <div
-            style={{ width: expanded ? panelWidth : 0 }}
-            className="h-full shrink-0 overflow-hidden transition-[width] duration-200 ease-out"
-            onKeyDown={handleKeyDown}
-            onTransitionEnd={() => {
-                if (open) {
-                    setSettled(true);
-                } else {
-                    setMounted(false);
-                }
+            ref={settled ? panelRef : undefined}
+            style={{
+                width: isAnimating
+                    ? expanded
+                        ? panelWidth
+                        : 0
+                    : panelWidth,
             }}
+            className={cn('h-full shrink-0', isAnimating ? 'overflow-hidden transition-[width] duration-200 ease-out' : 'relative')}
+            onKeyDown={handleKeyDown}
+            onTransitionEnd={
+                isAnimating
+                    ? () => {
+                          if (open) {
+                              setSettled(true);
+                          } else {
+                              setMounted(false);
+                          }
+                      }
+                    : undefined
+            }
         >
-            <div className="h-full" style={{ minWidth: panelWidth }}>
+            <div
+                onMouseDown={settled ? handleMouseDown : undefined}
+                className={cn('group absolute inset-y-0 -left-1 z-10 w-2', settled ? 'cursor-col-resize' : 'pointer-events-none opacity-0')}
+            >
+                <div className="absolute inset-y-0 left-[3px] w-px bg-transparent transition-colors group-hover:bg-ink/20" />
+            </div>
+            <div
+                className="h-full"
+                style={isAnimating ? { minWidth: panelWidth } : undefined}
+            >
                 {children}
             </div>
         </div>
