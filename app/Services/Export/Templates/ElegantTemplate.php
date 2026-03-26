@@ -30,7 +30,7 @@ class ElegantTemplate implements ExportTemplate
             'headingColor' => '#1a1a1a',
             'pdfLineHeight' => 1.4,
             'epubLineHeight' => 1.55,
-            'chapterLabelSizeEm' => 0.65,
+            'chapterLabelSizeEm' => 0.85,
             'titleSizeEm' => 2.0,
             'titleWeight' => 'normal',
             'runningHeaderStyle' => 'italic',
@@ -54,7 +54,7 @@ class ElegantTemplate implements ExportTemplate
 
     public function defaultDropCaps(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -97,13 +97,12 @@ class ElegantTemplate implements ExportTemplate
             -webkit-hyphens: auto;
         }
         .chapter-label {
-            font-size: 0.65em;
-            font-weight: 500;
+            font-family: {$headingFontFamily};
+            font-size: 0.85em;
+            font-weight: normal;
             text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
             color: #999999;
-            margin: 2em 0 0.25em;
+            margin: 9em 0 0.25em;
             text-indent: 0;
         }
         h1 {
@@ -244,15 +243,26 @@ class ElegantTemplate implements ExportTemplate
             hyphens: auto;
             -webkit-hyphens: auto;
         }
+        .chapter-label {
+            font-family: {$headingFamily};
+            font-size: 0.85em;
+            font-weight: normal;
+            text-align: center;
+            color: #999999;
+            margin: 9em 0 0.25em;
+        }
         h1 {
             font-family: {$headingFamily};
             font-size: 2.0em;
             font-weight: normal;
-            margin: 2em 0 1em;
+            margin: 0 0 1em;
             text-align: center;
             page-break-before: always;
         }
         h1:first-child {
+            page-break-before: avoid;
+        }
+        .chapter-label + h1 {
             page-break-before: avoid;
         }
         h2 {
@@ -398,9 +408,49 @@ class ElegantTemplate implements ExportTemplate
             line-height: 0.8;
             padding-right: 0.08em;
             margin-top: 0.05em;
-            font-weight: bold;
+            font-weight: normal;
             color: #1a1a1a;
         }
         CSS;
+    }
+
+    public function chapterHeaderHtml(int $index, string $title, string $locale = 'en'): string
+    {
+        $number = $index + 1;
+        $escapedTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+
+        if ($locale === 'en' && $number >= 1 && $number <= 99) {
+            $label = 'Chapter '.self::numberToWord($number);
+        } else {
+            $label = __('Chapter :number', ['number' => $number], $locale);
+        }
+
+        return '<p class="chapter-label" id="chapter-'.$index.'">'.htmlspecialchars($label, ENT_QUOTES, 'UTF-8').'</p>'
+            ."\n".'<h1>'.$escapedTitle.'</h1>';
+    }
+
+    private static function numberToWord(int $number): string
+    {
+        $ones = [
+            1 => 'One', 2 => 'Two', 3 => 'Three', 4 => 'Four', 5 => 'Five',
+            6 => 'Six', 7 => 'Seven', 8 => 'Eight', 9 => 'Nine', 10 => 'Ten',
+            11 => 'Eleven', 12 => 'Twelve', 13 => 'Thirteen', 14 => 'Fourteen',
+            15 => 'Fifteen', 16 => 'Sixteen', 17 => 'Seventeen', 18 => 'Eighteen',
+            19 => 'Nineteen',
+        ];
+
+        $tens = [
+            2 => 'Twenty', 3 => 'Thirty', 4 => 'Forty', 5 => 'Fifty',
+            6 => 'Sixty', 7 => 'Seventy', 8 => 'Eighty', 9 => 'Ninety',
+        ];
+
+        if ($number <= 19) {
+            return $ones[$number];
+        }
+
+        $ten = $tens[intdiv($number, 10)];
+        $one = $number % 10;
+
+        return $one === 0 ? $ten : $ten.'-'.$ones[$one];
     }
 }

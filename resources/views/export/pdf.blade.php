@@ -173,8 +173,7 @@
 
         <section class="chapter-section"@unless ($isEbook) style="page: chapter-{{ $index }};"@endunless>
             @if ($options->includeChapterTitles)
-                <p class="chapter-label" id="chapter-{{ $index }}">{{ __('Chapter :number', ['number' => $index + 1]) }}</p>
-                <h1>{{ $chapter->title }}</h1>
+                {!! $template->chapterHeaderHtml($index, $chapter->title, $book->language ?? config('app.fallback_locale', 'en')) !!}
             @endif
 
             {!! $chapter->prepared_content !!}

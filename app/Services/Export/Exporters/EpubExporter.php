@@ -45,7 +45,7 @@ class EpubExporter implements Exporter
         // Front matter files
         $frontMatterFiles = $this->addFrontMatter($zip, $book, $chapters, $options);
 
-        $chapterFiles = $this->addChapters($zip, $chapters, $options);
+        $chapterFiles = $this->addChapters($zip, $chapters, $options, $book->language ?? config('app.fallback_locale', 'en'));
 
         // Back matter files
         $backMatterFiles = $this->addBackMatter($zip, $book, $options);
@@ -382,7 +382,7 @@ class EpubExporter implements Exporter
     /**
      * @return array<int, string>
      */
-    private function addChapters(ZipArchive $zip, Collection $chapters, ExportOptions $options): array
+    private function addChapters(ZipArchive $zip, Collection $chapters, ExportOptions $options, string $locale = 'en'): array
     {
         $chapterFiles = [];
         $currentActId = null;
@@ -401,8 +401,7 @@ class EpubExporter implements Exporter
             }
 
             if ($options->includeChapterTitles) {
-                $title = htmlspecialchars($chapter->title, ENT_XML1, 'UTF-8');
-                $body .= "<h1>{$title}</h1>\n";
+                $body .= $this->template->chapterHeaderHtml($index, $chapter->title, $locale)."\n";
             }
 
             $body .= $this->renderChapterBody($chapter, $options);

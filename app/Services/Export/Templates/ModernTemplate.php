@@ -30,9 +30,9 @@ class ModernTemplate implements ExportTemplate
             'headingColor' => '#111111',
             'pdfLineHeight' => 1.4,
             'epubLineHeight' => 1.6,
-            'chapterLabelSizeEm' => 0.65,
-            'titleSizeEm' => 1.8,
-            'titleWeight' => 'bold',
+            'chapterLabelSizeEm' => 1.0,
+            'titleSizeEm' => 1.2,
+            'titleWeight' => 'normal',
             'runningHeaderStyle' => 'normal',
             'runningHeaderColor' => '#aaaaaa',
             'runningHeaderSizePt' => 7,
@@ -97,20 +97,18 @@ class ModernTemplate implements ExportTemplate
             -webkit-hyphens: auto;
         }
         .chapter-label {
-            font-size: 0.65em;
-            font-weight: 500;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            color: #888888;
-            margin: 2em 0 0.25em;
+            font-size: 1em;
+            font-weight: bold;
+            text-align: left;
+            color: #333333;
+            margin: 4.5em 0 0.3em;
             text-indent: 0;
         }
         h1 {
             font-family: {$headingFontFamily};
-            font-size: 1.8em;
-            font-weight: bold;
-            text-align: center;
+            font-size: 1.2em;
+            font-weight: normal;
+            text-align: left;
             margin: 0 0 1.5em;
             color: #111111;
         }
@@ -140,10 +138,10 @@ class ModernTemplate implements ExportTemplate
             text-indent: 0;
         }
         .toc-title {
-            font-size: 1.8em;
-            font-weight: bold;
-            text-align: center;
-            margin: 2em 0 1.5em;
+            font-size: 1.2em;
+            font-weight: normal;
+            text-align: left;
+            margin: 4.5em 0 1.5em;
             color: #111111;
         }
         .toc-entry {
@@ -155,13 +153,13 @@ class ModernTemplate implements ExportTemplate
             color: inherit;
         }
         .matter-title {
-            font-size: 0.65em;
+            font-size: 0.85em;
             font-weight: 500;
-            text-align: center;
+            text-align: left;
             text-transform: uppercase;
-            letter-spacing: 0.2em;
+            letter-spacing: 0.15em;
             color: #888888;
-            margin: 2em 0 1.5em;
+            margin: 4.5em 0 1.5em;
             text-indent: 0;
         }
         .matter-body {
@@ -243,15 +241,25 @@ class ModernTemplate implements ExportTemplate
             hyphens: auto;
             -webkit-hyphens: auto;
         }
+        .chapter-label {
+            font-size: 1em;
+            font-weight: bold;
+            text-align: left;
+            color: #333333;
+            margin: 4.5em 0 0.3em;
+        }
         h1 {
             font-family: {$headingFamily};
-            font-size: 1.8em;
-            font-weight: 700;
-            margin: 2em 0 1em;
-            text-align: center;
+            font-size: 1.2em;
+            font-weight: normal;
+            margin: 0 0 1em;
+            text-align: left;
             page-break-before: always;
         }
         h1:first-child {
+            page-break-before: avoid;
+        }
+        .chapter-label + h1 {
             page-break-before: avoid;
         }
         h2 {
@@ -385,5 +393,14 @@ class ModernTemplate implements ExportTemplate
     public function dropCapCss(): string
     {
         return '';
+    }
+
+    public function chapterHeaderHtml(int $index, string $title, string $locale = 'en'): string
+    {
+        $number = $index + 1;
+        $escapedTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+
+        return '<p class="chapter-label" id="chapter-'.$index.'">'.$number.'</p>'
+            ."\n".'<h1>'.$escapedTitle.'</h1>';
     }
 }

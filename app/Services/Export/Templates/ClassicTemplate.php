@@ -31,7 +31,7 @@ class ClassicTemplate implements ExportTemplate
             'pdfLineHeight' => 1.35,
             'epubLineHeight' => 1.5,
             'chapterLabelSizeEm' => 0.7,
-            'titleSizeEm' => 1.6,
+            'titleSizeEm' => 1.8,
             'titleWeight' => 'normal',
             'runningHeaderStyle' => 'italic',
             'runningHeaderColor' => '#999999',
@@ -103,19 +103,19 @@ class ClassicTemplate implements ExportTemplate
             text-transform: uppercase;
             letter-spacing: 0.2em;
             color: #999999;
-            margin: 2em 0 0.25em;
+            margin: 9em 0 0.25em;
             text-indent: 0;
         }
         h1 {
             font-family: {$headingFontFamily};
-            font-size: 1.6em;
+            font-size: 1.8em;
             font-weight: normal;
             text-align: center;
             margin: 0 0 1.5em;
             color: #1a1a1a;
         }
         .act-break {
-            font-size: 1.6em;
+            font-size: 1.8em;
             font-weight: bold;
             text-align: center;
             margin: 3em 0 1em;
@@ -244,15 +244,27 @@ class ClassicTemplate implements ExportTemplate
             hyphens: auto;
             -webkit-hyphens: auto;
         }
+        .chapter-label {
+            font-size: 0.7em;
+            font-weight: 500;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #999999;
+            margin: 9em 0 0.25em;
+        }
         h1 {
             font-family: {$headingFamily};
             font-size: 1.8em;
-            font-weight: 700;
-            margin: 2em 0 1em;
+            font-weight: normal;
+            margin: 0 0 1em;
             text-align: center;
             page-break-before: always;
         }
         h1:first-child {
+            page-break-before: avoid;
+        }
+        .chapter-label + h1 {
             page-break-before: avoid;
         }
         h2 {
@@ -402,5 +414,15 @@ class ClassicTemplate implements ExportTemplate
             color: #1a1a1a;
         }
         CSS;
+    }
+
+    public function chapterHeaderHtml(int $index, string $title, string $locale = 'en'): string
+    {
+        $number = $index + 1;
+        $escapedTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+        $label = __('Chapter :number', ['number' => $number], $locale);
+
+        return '<p class="chapter-label" id="chapter-'.$index.'">'.htmlspecialchars($label, ENT_QUOTES, 'UTF-8').'</p>'
+            ."\n".'<h1>'.$escapedTitle.'</h1>';
     }
 }

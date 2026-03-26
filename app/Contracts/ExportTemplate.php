@@ -31,4 +31,9 @@ interface ExportTemplate
     public function sceneBreakCss(): string;
 
     public function dropCapCss(): string;
+
+    /**
+     * HTML markup for the chapter opening (label + title).
+     */
+    public function chapterHeaderHtml(int $index, string $title, string $locale = 'en'): string;
 }
