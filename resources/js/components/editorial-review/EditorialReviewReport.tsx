@@ -14,6 +14,29 @@ import type {
 import ChapterProgressStrip from './ChapterProgressStrip';
 import EditorialReviewSection from './EditorialReviewSection';
 
+function BulletList({
+    items,
+    dotColor,
+}: {
+    items: string[];
+    dotColor: string;
+}) {
+    return (
+        <div className="flex flex-col gap-2">
+            {items.map((item, i) => (
+                <div key={i} className="flex items-start gap-2">
+                    <span
+                        className={`mt-[6px] size-2 shrink-0 rounded-full ${dotColor}`}
+                    />
+                    <span className="text-[13px] leading-relaxed text-ink-muted">
+                        {item}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 function ScoreDisplay({
     score,
     qualityLabel,
@@ -51,31 +74,13 @@ function StrengthsAndImprovements({
             {strengths.length > 0 && (
                 <div className="flex flex-1 flex-col gap-2">
                     <SectionLabel>{t('report.strengths')}</SectionLabel>
-                    <div className="flex flex-col gap-2">
-                        {strengths.map((s, i) => (
-                            <div key={i} className="flex items-start gap-2">
-                                <span className="mt-[6px] size-2 shrink-0 rounded-full bg-status-final" />
-                                <span className="text-[13px] leading-relaxed text-ink-muted">
-                                    {s}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
+                    <BulletList items={strengths} dotColor="bg-status-final" />
                 </div>
             )}
 
             <div className="flex flex-1 flex-col gap-2">
                 <SectionLabel>{t('report.improvements')}</SectionLabel>
-                <div className="flex flex-col gap-2">
-                    {improvements.map((imp, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                            <span className="mt-[6px] size-2 shrink-0 rounded-full bg-accent" />
-                            <span className="text-[13px] leading-relaxed text-ink-muted">
-                                {imp}
-                            </span>
-                        </div>
-                    ))}
-                </div>
+                <BulletList items={improvements} dotColor="bg-accent" />
             </div>
         </div>
     );
@@ -252,19 +257,10 @@ export default function EditorialReviewReport({
                         </p>
                         {review.top_improvements &&
                             review.top_improvements.length > 0 && (
-                                <div className="flex flex-col gap-2">
-                                    {review.top_improvements.map((imp, i) => (
-                                        <div
-                                            key={i}
-                                            className="flex items-start gap-2"
-                                        >
-                                            <span className="mt-[6px] size-2 shrink-0 rounded-full bg-accent" />
-                                            <span className="text-[13px] leading-relaxed text-ink-muted">
-                                                {imp}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
+                                <BulletList
+                                    items={review.top_improvements}
+                                    dotColor="bg-accent"
+                                />
                             )}
                         <div className="pt-2">
                             <Button
