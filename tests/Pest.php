@@ -1,5 +1,14 @@
 <?php
 
+use App\Models\AiPreparation;
+use App\Models\Book;
+use App\Models\Chapter;
+use App\Models\ChapterVersion;
+use App\Models\Scene;
+use App\Models\Storyline;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -11,9 +20,13 @@
 |
 */
 
-pest()->extend(Tests\TestCase::class)
-    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
     ->in('Feature');
+
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->in('Browser');
 
 /*
 |--------------------------------------------------------------------------
@@ -43,21 +56,21 @@ expect()->extend('toBeOne', function () {
 
 function createBookWithChapters(int $chapterCount = 3): array
 {
-    $book = App\Models\Book::factory()->withAi()->create();
-    $storyline = App\Models\Storyline::factory()->for($book)->create();
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
     $chapters = [];
 
     for ($i = 1; $i <= $chapterCount; $i++) {
         $content = "<p>Chapter {$i} content. ".fake()->paragraphs(3, true).'</p>';
-        $chapter = App\Models\Chapter::factory()->for($book)->for($storyline)->create([
+        $chapter = Chapter::factory()->for($book)->for($storyline)->create([
             'reader_order' => $i,
             'title' => "Chapter {$i}",
         ]);
-        App\Models\ChapterVersion::factory()->for($chapter)->create([
+        ChapterVersion::factory()->for($chapter)->create([
             'is_current' => true,
             'content' => $content,
         ]);
-        App\Models\Scene::factory()->for($chapter)->create([
+        Scene::factory()->for($chapter)->create([
             'content' => $content,
             'sort_order' => 0,
             'word_count' => str_word_count(strip_tags($content)),
@@ -66,7 +79,7 @@ function createBookWithChapters(int $chapterCount = 3): array
         $chapters[] = $chapter;
     }
 
-    $preparation = App\Models\AiPreparation::create([
+    $preparation = AiPreparation::create([
         'book_id' => $book->id,
         'status' => 'pending',
     ]);
