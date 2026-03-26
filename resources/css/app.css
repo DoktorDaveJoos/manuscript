@@ -4,26 +4,123 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
 @font-face {
-    font-family: 'Literata';
-    src: url('../fonts/Literata.ttf') format('truetype');
+    font-family: 'Playfair Display';
+    src: url('../fonts/PlayfairDisplay-Regular.ttf') format('truetype');
     font-weight: 100 900;
     font-style: normal;
     font-display: swap;
 }
 
+/* Export preview fonts — bundled locally for offline support */
 @font-face {
-    font-family: 'Literata';
-    src: url('../fonts/Literata-Italic.ttf') format('truetype');
-    font-weight: 100 900;
+    font-family: 'Crimson Pro';
+    src: url('../fonts/CrimsonPro-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Crimson Pro';
+    src: url('../fonts/CrimsonPro-Italic.ttf') format('truetype');
+    font-weight: 400;
     font-style: italic;
     font-display: swap;
 }
 
 @font-face {
-    font-family: 'Playfair Display';
-    src: url('../fonts/PlayfairDisplay-Regular.ttf') format('truetype');
-    font-weight: 100 900;
+    font-family: 'Crimson Pro';
+    src: url('../fonts/CrimsonPro-Bold.ttf') format('truetype');
+    font-weight: 700;
     font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Crimson Pro';
+    src: url('../fonts/CrimsonPro-BoldItalic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Sans 3';
+    src: url('../fonts/SourceSans3-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Sans 3';
+    src: url('../fonts/SourceSans3-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Serif 4';
+    src: url('../fonts/SourceSerif4-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Serif 4';
+    src: url('../fonts/SourceSerif4-Italic.ttf') format('truetype');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Serif 4';
+    src: url('../fonts/SourceSerif4-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Serif 4';
+    src: url('../fonts/SourceSerif4-BoldItalic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cormorant Garamond';
+    src: url('../fonts/CormorantGaramond-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cormorant Garamond';
+    src: url('../fonts/CormorantGaramond-Italic.ttf') format('truetype');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cormorant Garamond';
+    src: url('../fonts/CormorantGaramond-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cormorant Garamond';
+    src: url('../fonts/CormorantGaramond-BoldItalic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
     font-display: swap;
 }
 

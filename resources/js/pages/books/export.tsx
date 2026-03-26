@@ -32,9 +32,6 @@ interface Props {
     sceneBreakStyles: SceneBreakStyleDef[];
 }
 
-const GOOGLE_FONTS_URL =
-    'https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,700;1,400;1,700&family=Source+Sans+3:wght@400;700&family=Source+Serif+4:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400;1,700&display=swap';
-
 export default function Export({
     book,
     storylines,
@@ -331,9 +328,7 @@ export default function Export({
 
     return (
         <>
-            <Head title={t('pageTitle', { bookTitle: book.title })}>
-                <link rel="stylesheet" href={GOOGLE_FONTS_URL} />
-            </Head>
+            <Head title={t('pageTitle', { bookTitle: book.title })} />
             <div className="flex h-screen overflow-hidden bg-surface">
                 <Sidebar
                     book={book}
