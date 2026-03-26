@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
+import { Lock, Trash2 } from 'lucide-react';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,17 +27,26 @@ import {
     DEFAULT_FONT_SIZE,
     FONT_SIZES,
 } from '@/components/editor/FontSizeSelector';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/Accordion';
+import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import NavItem from '@/components/ui/NavItem';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/RadioGroup';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Toggle from '@/components/ui/Toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
 import type { Theme } from '@/lib/theme';
-import { jsonFetchHeaders } from '@/lib/utils';
+import { cn, jsonFetchHeaders } from '@/lib/utils';
 import type {
     AppSettings,
     AiSetting,
@@ -153,8 +162,8 @@ function LicenseSection() {
 
     return (
         <div>
-            <SectionLabel className="text-[11px] font-medium text-ink-faint">
-                {t('section.license').toUpperCase()}
+            <SectionLabel variant="section">
+                {t('section.license')}
             </SectionLabel>
             <Card className="mt-3">
                 {license.active ? (
@@ -182,9 +191,7 @@ function LicenseSection() {
                             <span className="text-[14px] font-medium text-ink">
                                 Pro
                             </span>
-                            <span className="rounded bg-accent/10 px-2 py-0.5 text-[12px] font-medium text-accent">
-                                Lifetime
-                            </span>
+                            <Badge variant="default">Lifetime</Badge>
                         </div>
                         {error && (
                             <div className="px-6 pb-3">
@@ -203,11 +210,11 @@ function LicenseSection() {
                             {t('license.formDescription')}
                         </p>
                         <form onSubmit={handleActivate} className="mt-4">
-                            <span className="mb-1.5 block text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                                {t('license.keyLabel')}
-                            </span>
-                            <div className="flex items-start gap-3">
-                                <div className="flex flex-1 flex-col gap-1">
+                            <FormField
+                                label={t('license.keyLabel')}
+                                error={error || undefined}
+                            >
+                                <div className="flex items-start gap-3">
                                     <Input
                                         type="text"
                                         value={key}
@@ -217,23 +224,18 @@ function LicenseSection() {
                                         )}
                                         className="font-mono"
                                     />
-                                    {error && (
-                                        <span className="text-[12px] text-danger">
-                                            {error}
-                                        </span>
-                                    )}
+                                    <Button
+                                        variant="accent"
+                                        type="submit"
+                                        disabled={activating || !key}
+                                        className="h-9"
+                                    >
+                                        {activating
+                                            ? t('license.activating')
+                                            : t('license.activate')}
+                                    </Button>
                                 </div>
-                                <Button
-                                    variant="accent"
-                                    type="submit"
-                                    disabled={activating || !key}
-                                    className="h-9"
-                                >
-                                    {activating
-                                        ? t('license.activating')
-                                        : t('license.activate')}
-                                </Button>
-                            </div>
+                            </FormField>
                         </form>
                     </div>
                 )}
@@ -261,7 +263,7 @@ function LanguageSection() {
 
     return (
         <div>
-            <SectionLabel className="text-[11px] font-medium text-ink-faint">
+            <SectionLabel variant="section">
                 {t('language.sectionLabel')}
             </SectionLabel>
             <Card className="mt-3 p-6">
@@ -307,8 +309,8 @@ function AppearanceSection() {
 
     return (
         <div>
-            <SectionLabel className="text-[11px] font-medium text-ink-faint">
-                {t('appearance.title').toUpperCase()}
+            <SectionLabel variant="section">
+                {t('appearance.title')}
             </SectionLabel>
             <Card className="mt-3 p-6">
                 <div className="flex flex-col gap-4">
@@ -320,28 +322,32 @@ function AppearanceSection() {
                             {t('appearance.theme.description')}
                         </p>
                     </div>
-                    <ToggleGroup
-                        type="single"
+                    <RadioGroup
                         value={theme}
-                        onValueChange={(val) => {
-                            if (val) setTheme(val as Theme);
-                        }}
+                        onValueChange={(val) => setTheme(val as Theme)}
                     >
                         {THEME_OPTIONS.map((option) => (
-                            <ToggleGroupItem
+                            <label
                                 key={option.value}
-                                value={option.value}
-                                className="flex flex-1 flex-col items-start rounded-lg px-4 py-3 text-left"
+                                htmlFor={`theme-${option.value}`}
+                                className="flex cursor-pointer items-start gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-neutral-bg"
                             >
-                                <span className="text-[14px] font-medium">
-                                    {t(option.labelKey)}
-                                </span>
-                                <span className="mt-0.5 text-[12px] opacity-70">
-                                    {t(option.descriptionKey)}
-                                </span>
-                            </ToggleGroupItem>
+                                <RadioGroupItem
+                                    value={option.value}
+                                    id={`theme-${option.value}`}
+                                    className="mt-0.5"
+                                />
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-medium text-ink">
+                                        {t(option.labelKey)}
+                                    </span>
+                                    <span className="text-xs text-ink-muted">
+                                        {t(option.descriptionKey)}
+                                    </span>
+                                </div>
+                            </label>
                         ))}
-                    </ToggleGroup>
+                    </RadioGroup>
                 </div>
             </Card>
         </div>
@@ -371,8 +377,8 @@ function EditorSection({
 
     return (
         <div>
-            <SectionLabel className="text-[11px] font-medium text-ink-faint">
-                {t('appearance.editor').toUpperCase()}
+            <SectionLabel variant="section">
+                {t('appearance.editor')}
             </SectionLabel>
             <div className="mt-3 flex flex-col gap-3">
                 {/* Font */}
@@ -495,24 +501,9 @@ type TestStatus =
 function ProviderForm({ setting }: { setting: ProviderSetting }) {
     const { t } = useTranslation('settings');
     const [apiKey, setApiKey] = useState('');
-    const [baseUrl, setBaseUrl] = useState(setting.base_url ?? '');
-    const [apiVersion, setApiVersion] = useState(setting.api_version ?? '');
-    const [writingModel, setWritingModel] = useState(
-        setting.writing_model ?? '',
-    );
-    const [analysisModel, setAnalysisModel] = useState(
-        setting.analysis_model ?? '',
-    );
-    const [extractionModel, setExtractionModel] = useState(
-        setting.extraction_model ?? '',
-    );
     const [saving, setSaving] = useState(false);
     const [testStatus, setTestStatus] = useState<TestStatus>({ type: 'idle' });
     const [saveMessage, setSaveMessage] = useState('');
-    const [showAdvanced, setShowAdvanced] = useState(false);
-
-    const isAzure = setting.provider === 'azure';
-    const isOllama = setting.provider === 'ollama';
     const configured = setting.requires_api_key
         ? setting.has_api_key
         : !!setting.base_url;
@@ -524,11 +515,6 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
             setSaveMessage('');
             const data: Record<string, unknown> = { enabled: true };
             if (apiKey) data.api_key = apiKey;
-            if (baseUrl) data.base_url = baseUrl;
-            if (apiVersion) data.api_version = apiVersion;
-            if (writingModel) data.writing_model = writingModel;
-            if (analysisModel) data.analysis_model = analysisModel;
-            if (extractionModel) data.extraction_model = extractionModel;
 
             fetch(updateAiProvider.url(setting.provider), {
                 method: 'PUT',
@@ -546,16 +532,7 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                 .catch(() => setSaveMessage(t('aiProviders.saveFailed')))
                 .finally(() => setSaving(false));
         },
-        [
-            apiKey,
-            baseUrl,
-            apiVersion,
-            writingModel,
-            analysisModel,
-            extractionModel,
-            setting.provider,
-            t,
-        ],
+        [apiKey, setting.provider, t],
     );
 
     const handleTest = useCallback(() => {
@@ -582,23 +559,11 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
             });
     }, [setting.provider, t]);
 
-    const hasAdvanced = true;
-
-    // Input component handles base styling; no inputClasses needed
-    const fieldLabelClasses =
-        'text-[12px] font-medium uppercase tracking-[0.06em] text-ink-muted';
-
     return (
-        <form
-            onSubmit={handleSave}
-            className="border-t border-border-light px-5 pt-4 pb-5"
-        >
+        <form onSubmit={handleSave} className="pb-1">
             <div className="flex flex-col gap-5 pl-[30px]">
                 {setting.requires_api_key && (
-                    <div className="flex flex-col gap-2">
-                        <span className={fieldLabelClasses}>
-                            {t('aiProviders.apiKey')}
-                        </span>
+                    <FormField label={t('aiProviders.apiKey')}>
                         {setting.has_api_key && !apiKey ? (
                             <div className="flex items-center justify-between gap-3 rounded-md border border-border px-4 py-2.5">
                                 <span className="font-mono text-[13px] leading-[1.43] text-ink-muted">
@@ -636,145 +601,7 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                                 placeholder={t('aiProviders.apiKeyPlaceholder')}
                             />
                         )}
-                    </div>
-                )}
-
-                {hasAdvanced && !showAdvanced && (
-                    <button
-                        type="button"
-                        onClick={() => setShowAdvanced(true)}
-                        className="flex items-center gap-1.5 self-start text-[13px] font-medium text-ink-muted transition-colors hover:text-ink"
-                    >
-                        {t('aiProviders.advancedSettings')}
-                        <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 16 16"
-                            fill="none"
-                        >
-                            <path
-                                d="M6 4l4 4-4 4"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
-                    </button>
-                )}
-
-                {showAdvanced && (
-                    <>
-                        {setting.requires_base_url && (
-                            <label className="flex flex-col gap-2">
-                                <span className={fieldLabelClasses}>
-                                    {t('aiProviders.baseUrl')}
-                                </span>
-                                <Input
-                                    type="url"
-                                    value={baseUrl}
-                                    onChange={(e) => setBaseUrl(e.target.value)}
-                                    placeholder={
-                                        isOllama
-                                            ? 'http://localhost:11434'
-                                            : 'https://your-resource.openai.azure.com'
-                                    }
-                                />
-                            </label>
-                        )}
-                        {isAzure && (
-                            <label className="flex flex-col gap-2">
-                                <span className={fieldLabelClasses}>
-                                    {t('aiProviders.apiVersion')}
-                                </span>
-                                <Input
-                                    type="text"
-                                    value={apiVersion}
-                                    onChange={(e) =>
-                                        setApiVersion(e.target.value)
-                                    }
-                                    placeholder="2024-10-21"
-                                />
-                            </label>
-                        )}
-
-                        <div>
-                            <p className="text-[12px] text-ink-muted">
-                                {t('aiProviders.advancedDescription')}
-                            </p>
-                            <div className="mt-4 flex flex-col gap-4">
-                                <label className="flex flex-col gap-1">
-                                    <span className={fieldLabelClasses}>
-                                        {t('aiProviders.writingModel')}
-                                    </span>
-                                    <span className="text-[11px] text-ink-faint">
-                                        {t(
-                                            'aiProviders.writingModelDescription',
-                                        )}
-                                    </span>
-                                    <Input
-                                        type="text"
-                                        value={writingModel}
-                                        onChange={(e) =>
-                                            setWritingModel(e.target.value)
-                                        }
-                                        placeholder={t(
-                                            'aiProviders.modelPlaceholder',
-                                        )}
-                                        className="mt-1"
-                                    />
-                                    <span className="text-[11px] text-ink-faint">
-                                        {t('aiProviders.writingModelHint')}
-                                    </span>
-                                </label>
-                                <label className="flex flex-col gap-1">
-                                    <span className={fieldLabelClasses}>
-                                        {t('aiProviders.analysisModel')}
-                                    </span>
-                                    <span className="text-[11px] text-ink-faint">
-                                        {t(
-                                            'aiProviders.analysisModelDescription',
-                                        )}
-                                    </span>
-                                    <Input
-                                        type="text"
-                                        value={analysisModel}
-                                        onChange={(e) =>
-                                            setAnalysisModel(e.target.value)
-                                        }
-                                        placeholder={t(
-                                            'aiProviders.modelPlaceholder',
-                                        )}
-                                        className="mt-1"
-                                    />
-                                </label>
-                                <label className="flex flex-col gap-1">
-                                    <span className={fieldLabelClasses}>
-                                        {t('aiProviders.extractionModel')}
-                                    </span>
-                                    <span className="text-[11px] text-ink-faint">
-                                        {t(
-                                            'aiProviders.extractionModelDescription',
-                                        )}
-                                    </span>
-                                    <Input
-                                        type="text"
-                                        value={extractionModel}
-                                        onChange={(e) =>
-                                            setExtractionModel(e.target.value)
-                                        }
-                                        placeholder={t(
-                                            'aiProviders.modelPlaceholder',
-                                        )}
-                                        className="mt-1"
-                                    />
-                                    <span className="text-[11px] text-ink-faint">
-                                        {t('aiProviders.extractionModelHint')}
-                                    </span>
-                                </label>
-                            </div>
-                        </div>
-                    </>
+                    </FormField>
                 )}
 
                 <div className="flex items-center gap-3 pt-1">
@@ -826,9 +653,6 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
     const locked = !license.active;
 
     const enabledProvider = providers.find((p) => p.enabled)?.provider ?? null;
-    const [expandedProvider, setExpandedProvider] = useState<string | null>(
-        enabledProvider,
-    );
 
     const handleSelect = useCallback(
         (provider: string) => {
@@ -844,117 +668,92 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
         [locked],
     );
 
-    const handleToggle = useCallback(
-        (provider: string) => {
+    const handleAccordionChange = useCallback(
+        (value: string) => {
             if (locked) return;
-            const willExpand = expandedProvider !== provider;
-            setExpandedProvider(willExpand ? provider : null);
-            if (willExpand && provider !== enabledProvider) {
-                handleSelect(provider);
+            if (value && value !== enabledProvider) {
+                handleSelect(value);
             }
         },
-        [locked, expandedProvider, enabledProvider, handleSelect],
+        [locked, enabledProvider, handleSelect],
     );
 
     return (
         <div>
-            <SectionLabel className="text-[11px] font-medium text-ink-faint">
-                {t('aiProviders.title').toUpperCase()}
+            <SectionLabel variant="section">
+                {t('aiProviders.title')}
             </SectionLabel>
-            <div
-                className={`mt-3 overflow-hidden rounded-lg border border-border ${locked ? 'opacity-50' : ''}`}
-            >
-                {providers.map((setting, i) => {
-                    const isSelected = setting.enabled;
-                    const isExpanded = expandedProvider === setting.provider;
-                    const configured = setting.requires_api_key
-                        ? setting.has_api_key
-                        : !!setting.base_url;
+            <Card className={cn('mt-3 px-5', locked && 'opacity-50')}>
+                <Accordion
+                    type="single"
+                    collapsible
+                    defaultValue={enabledProvider ?? undefined}
+                    onValueChange={handleAccordionChange}
+                    disabled={locked}
+                >
+                    {providers.map((setting) => {
+                        const isSelected = setting.enabled;
+                        const configured = setting.requires_api_key
+                            ? setting.has_api_key
+                            : !!setting.base_url;
 
-                    return (
-                        <div
-                            key={setting.provider}
-                            className={i > 0 ? 'border-t border-border' : ''}
-                        >
-                            <button
-                                type="button"
-                                onClick={() => handleToggle(setting.provider)}
-                                disabled={locked}
-                                className="flex w-full items-center gap-3 px-5 py-4 text-left"
+                        return (
+                            <AccordionItem
+                                key={setting.provider}
+                                value={setting.provider}
                             >
-                                {locked ? (
-                                    <svg
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 16 16"
-                                        fill="none"
-                                        className="text-ink-faint"
-                                    >
-                                        <rect
-                                            x="3"
-                                            y="7"
-                                            width="10"
-                                            height="7"
-                                            rx="1.5"
-                                            stroke="currentColor"
-                                            strokeWidth="1.5"
-                                        />
-                                        <path
-                                            d="M5 7V5a3 3 0 016 0v2"
-                                            stroke="currentColor"
-                                            strokeWidth="1.5"
-                                            strokeLinecap="round"
-                                        />
-                                    </svg>
-                                ) : (
-                                    <span
-                                        className={`flex size-[18px] items-center justify-center rounded-full border-2 transition-colors ${isSelected ? 'border-accent' : 'border-border'}`}
-                                    >
-                                        {isSelected && (
-                                            <span className="size-[10px] rounded-full bg-accent" />
+                                <AccordionTrigger className="px-0 py-4">
+                                    <div className="flex flex-1 items-center gap-3">
+                                        {locked ? (
+                                            <Lock
+                                                size={14}
+                                                className="text-ink-faint"
+                                            />
+                                        ) : (
+                                            <span
+                                                className={`flex size-[18px] items-center justify-center rounded-full border-2 transition-colors ${isSelected ? 'border-ink' : 'border-border'}`}
+                                            >
+                                                {isSelected && (
+                                                    <span className="size-[10px] rounded-full bg-ink" />
+                                                )}
+                                            </span>
                                         )}
-                                    </span>
-                                )}
-                                <span
-                                    className={`text-sm ${isSelected ? 'font-medium' : ''} text-ink`}
-                                >
-                                    {setting.label}
-                                </span>
-                                <span className="flex-1" />
-                                {!locked && (
-                                    <span
-                                        className={`rounded px-2.5 py-1 text-[11px] font-medium ${configured ? 'bg-status-final/15 text-status-final' : 'bg-neutral-bg text-ink-faint'}`}
-                                    >
-                                        {configured
-                                            ? t('aiProviders.configured')
-                                            : t('aiProviders.notConfigured')}
-                                    </span>
-                                )}
-                                {!locked && (
-                                    <svg
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 16 16"
-                                        fill="none"
-                                        className={`text-ink-muted transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                                    >
-                                        <path
-                                            d="M4 6l4 4 4-4"
-                                            stroke="currentColor"
-                                            strokeWidth="1.5"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    </svg>
-                                )}
-                            </button>
-                            {isExpanded && !locked && (
-                                <ProviderForm setting={setting} />
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
+                                        <span
+                                            className={`text-sm ${isSelected ? 'font-medium' : ''} text-ink`}
+                                        >
+                                            {setting.label}
+                                        </span>
+                                        <span className="flex-1" />
+                                        {!locked && (
+                                            <Badge
+                                                className="mr-2"
+                                                variant={
+                                                    configured
+                                                        ? 'success'
+                                                        : 'secondary'
+                                                }
+                                            >
+                                                {configured
+                                                    ? t(
+                                                          'aiProviders.configured',
+                                                      )
+                                                    : t(
+                                                          'aiProviders.notConfigured',
+                                                      )}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                    {!locked && (
+                                        <ProviderForm setting={setting} />
+                                    )}
+                                </AccordionContent>
+                            </AccordionItem>
+                        );
+                    })}
+                </Accordion>
+            </Card>
         </div>
     );
 }
@@ -1002,8 +801,8 @@ function MarkdownTextareaSection({
 
     return (
         <div>
-            <SectionLabel className="text-[11px] font-medium text-ink-faint">
-                {t(sectionLabelKey ?? `${i18nPrefix}.title`).toUpperCase()}
+            <SectionLabel variant="section">
+                {t(sectionLabelKey ?? `${i18nPrefix}.title`)}
             </SectionLabel>
             <Card className="mt-3 p-6">
                 <div className="flex flex-col gap-4">
@@ -1049,7 +848,7 @@ function MarkdownTextareaSection({
                             onChange={(e) => setText(e.target.value)}
                             onBlur={handleSave}
                             placeholder={t(`${i18nPrefix}.placeholder`)}
-                            className="h-[200px] w-full resize-y rounded-b-md border border-t-0 border-border bg-surface-card px-3 py-2.5 font-mono text-[13px] leading-[1.7] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
+                            className="h-[200px] w-full resize-y rounded-b-md border border-t-0 border-border bg-surface-card px-3 py-2.5 font-mono text-[13px] leading-[1.7] text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
                         />
                     </div>
                 </div>
@@ -1088,8 +887,8 @@ function RevisionRulesSection({
 
     return (
         <div>
-            <SectionLabel className="text-[11px] font-medium text-ink-faint">
-                {t('prosePassRules.title').toUpperCase()}
+            <SectionLabel variant="section">
+                {t('prosePassRules.title')}
             </SectionLabel>
             <Card className="mt-3">
                 <div className="px-6 pt-5 pb-4">
@@ -1143,7 +942,7 @@ function PrivacySection({
 
     return (
         <div>
-            <SectionLabel className="text-[11px] font-medium text-ink-faint">
+            <SectionLabel variant="section">
                 {t('privacy.sectionLabel')}
             </SectionLabel>
             <Card className="mt-3 flex items-center justify-between px-6 py-3.5">
@@ -1191,7 +990,7 @@ function UpdatesSection({
 
     return (
         <div>
-            <SectionLabel className="text-[11px] font-medium text-ink-faint">
+            <SectionLabel variant="section">
                 {t('updates.sectionLabel')}
             </SectionLabel>
             <Card className="mt-3">
@@ -1409,9 +1208,12 @@ function SettingsSidebar({
                     return (
                         <div key={item.key}>
                             {showGroup && (
-                                <span className="mt-3 mb-1.5 block px-2.5 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                                <SectionLabel
+                                    variant="section"
+                                    className="mt-3 mb-1.5 block px-2.5"
+                                >
                                     {t(item.groupKey!)}
-                                </span>
+                                </SectionLabel>
                             )}
                             <NavItem
                                 label={t(item.label)}
