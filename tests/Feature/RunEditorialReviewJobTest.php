@@ -67,6 +67,7 @@ function fakeAllEditorialAgents(): void
             'executive_summary' => 'This is a solid manuscript with clear strengths in character development.',
             'top_strengths' => ['Strong characters', 'Compelling plot', 'Vivid settings'],
             'top_improvements' => ['Pacing in middle act', 'Dialogue tags', 'Tighter prose'],
+            'is_pre_editorial' => false,
         ];
     });
 }
@@ -248,6 +249,7 @@ test('RunEditorialReviewJob handles individual chapter failures gracefully', fun
         return [
             'overall_score' => 68, 'executive_summary' => 'Good work overall.',
             'top_strengths' => ['A', 'B', 'C'], 'top_improvements' => ['D', 'E', 'F'],
+            'is_pre_editorial' => false,
         ];
     });
 
