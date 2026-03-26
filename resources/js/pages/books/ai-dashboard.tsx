@@ -8,6 +8,7 @@ import AnalyzedChaptersTable from '@/components/ai-dashboard/AnalyzedChaptersTab
 import CommandCenter from '@/components/ai-dashboard/CommandCenter';
 import ManuscriptHealthCard from '@/components/ai-dashboard/ManuscriptHealthCard';
 import Sidebar from '@/components/editor/Sidebar';
+import PageHeader from '@/components/ui/PageHeader';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { AiPreparationStatus, Book, HealthMetric } from '@/types/models';
 
@@ -63,33 +64,29 @@ export default function AiDashboardPage({
                 <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
                     {/* Page header */}
                     <div className="flex flex-col gap-4 px-12 pt-10">
-                        <div className="flex items-start justify-between">
-                            <div className="flex flex-col gap-1">
-                                <div className="flex items-center gap-2">
-                                    <Sparkles
-                                        size={16}
-                                        className="text-ink-muted"
-                                    />
-                                    <h1 className="font-serif text-[24px] font-semibold text-ink">
-                                        {t('title')}
-                                    </h1>
-                                </div>
-                                <p className="text-[14px] text-ink-muted">
-                                    {t('subtitle')}
-                                </p>
-                            </div>
-                            {is_prepared && (
-                                <div className="flex items-center gap-1.5 rounded-full bg-neutral-bg px-3 py-1">
-                                    <CheckCircle
-                                        size={14}
-                                        className="text-ink-muted"
-                                    />
-                                    <span className="text-[12px] font-medium text-ink-muted">
-                                        {t('badge.prepared')}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
+                        <PageHeader
+                            title={t('title')}
+                            subtitle={t('subtitle')}
+                            icon={
+                                <Sparkles
+                                    size={16}
+                                    className="text-ink-muted"
+                                />
+                            }
+                            actions={
+                                is_prepared && (
+                                    <div className="flex items-center gap-1.5 rounded-full bg-neutral-bg px-3 py-1">
+                                        <CheckCircle
+                                            size={14}
+                                            className="text-ink-muted"
+                                        />
+                                        <span className="text-[12px] font-medium text-ink-muted">
+                                            {t('badge.prepared')}
+                                        </span>
+                                    </div>
+                                )
+                            }
+                        />
 
                         {/* Tab nav */}
                         <div className="flex gap-1 border-b border-border-light">

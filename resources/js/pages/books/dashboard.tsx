@@ -7,6 +7,7 @@ import WritingHeatmap from '@/components/dashboard/WritingHeatmap';
 import Sidebar from '@/components/editor/Sidebar';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import PageHeader from '@/components/ui/PageHeader';
 import ProFeatureLock from '@/components/ui/ProFeatureLock';
 import SectionLabel from '@/components/ui/SectionLabel';
 import { useFreeTier } from '@/hooks/useFreeTier';
@@ -141,15 +142,16 @@ export default function Dashboard({
                 <main className="flex min-w-0 flex-1 flex-col overflow-y-auto p-12">
                     <div className="flex w-full flex-col gap-8">
                         {/* Book Header */}
-                        <div className="flex flex-col gap-1.5">
-                            <h1 className="font-serif text-2xl font-semibold tracking-[-0.01em] text-ink">
-                                {book.title}
-                            </h1>
-                            {book.author && (
-                                <p className="text-sm text-ink-muted">
-                                    {t('header.by', { author: book.author })}
-                                </p>
-                            )}
+                        <PageHeader
+                            title={book.title}
+                            subtitle={
+                                book.author
+                                    ? t('header.by', {
+                                          author: book.author,
+                                      })
+                                    : undefined
+                            }
+                        >
                             {writing_goal && writing_goal.streak > 0 && (
                                 <p className="text-sm text-ink-soft">
                                     {t('header.greeting', {
@@ -157,7 +159,7 @@ export default function Dashboard({
                                     })}
                                 </p>
                             )}
-                        </div>
+                        </PageHeader>
 
                         {/* Stats Row */}
                         <div className="flex gap-4">

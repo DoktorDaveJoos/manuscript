@@ -13,6 +13,7 @@ import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
+import PageHeader from '@/components/ui/PageHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
@@ -141,21 +142,17 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
 
                 <main className="flex flex-1 flex-col items-center overflow-y-auto px-12 py-10">
                     <div className="w-full max-w-[640px]">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
-                                    {t('title')}
-                                </h1>
-                                <p className="mt-1 text-[14px] text-ink-muted">
-                                    {t('subtitle')}
-                                </p>
-                            </div>
-                            {showSaved && (
-                                <span className="animate-in fade-in rounded-full bg-status-final/10 px-3 py-1 text-xs font-medium text-status-final">
-                                    {t('saved')}
-                                </span>
-                            )}
-                        </div>
+                        <PageHeader
+                            title={t('title')}
+                            subtitle={t('subtitle')}
+                            actions={
+                                showSaved && (
+                                    <span className="animate-in fade-in rounded-full bg-status-final/10 px-3 py-1 text-xs font-medium text-status-final">
+                                        {t('saved')}
+                                    </span>
+                                )
+                            }
+                        />
 
                         <div className="mt-9 flex flex-col gap-9">
                             {/* Cover Image */}

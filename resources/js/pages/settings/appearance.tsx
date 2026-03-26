@@ -4,8 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import PageHeader from '@/components/ui/PageHeader';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/RadioGroup';
+import SectionLabel from '@/components/ui/SectionLabel';
 import Toggle from '@/components/ui/Toggle';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
 import SettingsLayout from '@/layouts/SettingsLayout';
@@ -100,14 +102,10 @@ export default function Appearance({ settings, book, version }: Props) {
             title={t('appearance.title')}
         >
             <div className="flex flex-col gap-6">
-                <div>
-                    <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
-                        {t('appearance.title')}
-                    </h1>
-                    <p className="mt-1 text-[14px] text-ink-muted">
-                        {t('appearance.description')}
-                    </p>
-                </div>
+                <PageHeader
+                    title={t('appearance.title')}
+                    subtitle={t('appearance.description')}
+                />
 
                 {/* Theme */}
                 <Card className="p-6">
@@ -120,28 +118,34 @@ export default function Appearance({ settings, book, version }: Props) {
                                 {t('appearance.theme.description')}
                             </p>
                         </div>
-                        <ToggleGroup
-                            type="single"
+                        <RadioGroup
                             value={theme}
-                            onValueChange={(val) => {
-                                if (val) setTheme(val as typeof theme);
-                            }}
+                            onValueChange={(val) =>
+                                setTheme(val as typeof theme)
+                            }
                         >
                             {THEME_OPTIONS.map((option) => (
-                                <ToggleGroupItem
+                                <label
                                     key={option.value}
-                                    value={option.value}
-                                    className="flex flex-1 flex-col items-start rounded-lg px-4 py-3 text-left"
+                                    htmlFor={`theme-a-${option.value}`}
+                                    className="flex cursor-pointer items-start gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-neutral-bg"
                                 >
-                                    <span className="text-[14px] font-medium">
-                                        {t(option.labelKey)}
-                                    </span>
-                                    <span className="mt-0.5 text-[12px] opacity-70">
-                                        {t(option.descriptionKey)}
-                                    </span>
-                                </ToggleGroupItem>
+                                    <RadioGroupItem
+                                        value={option.value}
+                                        id={`theme-a-${option.value}`}
+                                        className="mt-0.5"
+                                    />
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-medium text-ink">
+                                            {t(option.labelKey)}
+                                        </span>
+                                        <span className="text-xs text-ink-muted">
+                                            {t(option.descriptionKey)}
+                                        </span>
+                                    </div>
+                                </label>
                             ))}
-                        </ToggleGroup>
+                        </RadioGroup>
                     </div>
                 </Card>
 
@@ -162,9 +166,9 @@ export default function Appearance({ settings, book, version }: Props) {
 
                 {/* Editor section */}
                 <div>
-                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                    <SectionLabel variant="section">
                         {t('appearance.editor')}
-                    </span>
+                    </SectionLabel>
                     <Card className="mt-3 px-6">
                         <SettingRow
                             label={t('appearance.hideToolbar.label')}
@@ -184,9 +188,9 @@ export default function Appearance({ settings, book, version }: Props) {
 
                 {/* Privacy */}
                 <div>
-                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                    <SectionLabel variant="section">
                         {t('appearance.privacy')}
-                    </span>
+                    </SectionLabel>
                     <Card className="mt-3 px-6">
                         <SettingRow
                             label={t('appearance.sendErrorReports.label')}

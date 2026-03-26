@@ -13,6 +13,7 @@ import type {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import PageHeader from '@/components/ui/PageHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
@@ -95,14 +96,7 @@ export default function ExportSettings({
         <div className="flex flex-1 flex-col overflow-y-auto bg-surface">
             <div className="flex flex-1 flex-col px-11 pt-10 pb-10">
                 {/* Header */}
-                <div className="flex flex-col gap-1.5">
-                    <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
-                        {t('title')}
-                    </h1>
-                    <p className="text-[13px] text-ink-faint">
-                        {t('subtitle')}
-                    </p>
-                </div>
+                <PageHeader title={t('title')} subtitle={t('subtitle')} />
 
                 <div className="mt-8 flex flex-col gap-8">
                     {/* Format */}

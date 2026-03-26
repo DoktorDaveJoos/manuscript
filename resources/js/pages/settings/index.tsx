@@ -39,6 +39,7 @@ import { Card } from '@/components/ui/Card';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import NavItem from '@/components/ui/NavItem';
+import PageHeader from '@/components/ui/PageHeader';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/RadioGroup';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Toggle from '@/components/ui/Toggle';
@@ -1371,14 +1372,10 @@ export default function Settings({
                         <div className="mx-auto w-full max-w-[760px] px-12 pt-12 pb-[80vh]">
                             <div className="flex flex-col gap-9">
                                 {/* Page header */}
-                                <div>
-                                    <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
-                                        {t('title')}
-                                    </h1>
-                                    <p className="mt-1 text-[14px] text-ink-muted">
-                                        {t('pageDescription')}
-                                    </p>
-                                </div>
+                                <PageHeader
+                                    title={t('title')}
+                                    subtitle={t('pageDescription')}
+                                />
 
                                 <div ref={licenseRef} data-section="license">
                                     <LicenseSection />

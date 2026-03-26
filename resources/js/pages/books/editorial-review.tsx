@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { index as aiDashboardIndex } from '@/actions/App/Http/Controllers/AiDashboardController';
@@ -8,7 +8,9 @@ import Sidebar from '@/components/editor/Sidebar';
 import EditorialReviewEmptyState from '@/components/editorial-review/EditorialReviewEmptyState';
 import EditorialReviewProgress from '@/components/editorial-review/EditorialReviewProgress';
 import EditorialReviewReport from '@/components/editorial-review/EditorialReviewReport';
+import { Alert } from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
+import PageHeader from '@/components/ui/PageHeader';
 import SlidePanel from '@/components/ui/SlidePanel';
 import { useEditorialReview } from '@/hooks/useEditorialReview';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
@@ -34,9 +36,17 @@ export default function EditorialReviewPage({
 }) {
     const { t } = useTranslation('editorial-review');
     const storylines = useSidebarStorylines();
-    const { review, isRunning, starting, error, handleStart, selectReview } =
-        useEditorialReview(book.id, latestReview);
+    const {
+        review,
+        isRunning,
+        starting,
+        error,
+        handleStart,
+        selectReview,
+        updateResolved,
+    } = useEditorialReview(book.id, latestReview);
 
+    const [alertDismissed, setAlertDismissed] = useState(false);
     const [chatContext, setChatContext] = useState<{
         reviewId: number;
         sectionType?: EditorialSectionType;
@@ -76,22 +86,16 @@ export default function EditorialReviewPage({
 
                 <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
                     <div className="flex flex-col gap-4 px-12 pt-10">
-                        <div className="flex items-start justify-between">
-                            <div className="flex flex-col gap-1">
-                                <div className="flex items-center gap-2">
-                                    <Sparkles
-                                        size={16}
-                                        className="text-ink-muted"
-                                    />
-                                    <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
-                                        {t('title')}
-                                    </h1>
-                                </div>
-                                <p className="text-[13px] text-ink-muted">
-                                    {t('subtitle')}
-                                </p>
-                            </div>
-                        </div>
+                        <PageHeader
+                            title={t('title')}
+                            subtitle={t('subtitle')}
+                            icon={
+                                <Sparkles
+                                    size={16}
+                                    className="text-ink-muted"
+                                />
+                            }
+                        />
 
                         <div className="flex gap-1 border-b border-border-light">
                             <Link
@@ -107,6 +111,21 @@ export default function EditorialReviewPage({
                     </div>
 
                     <div className="flex flex-1 flex-col px-12 py-6">
+                        {!alertDismissed && (
+                            <Alert variant="info" className="mb-4">
+                                <div className="flex items-center justify-between gap-3">
+                                    <span>{t('experimentalAlert')}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setAlertDismissed(true)}
+                                        className="shrink-0 text-ink-faint transition-colors hover:text-ink"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            </Alert>
+                        )}
+
                         {error && (
                             <div className="mb-4 rounded-lg bg-delete-bg px-4 py-3 text-[13px] text-delete">
                                 {error}
@@ -153,6 +172,7 @@ export default function EditorialReviewPage({
                                 onStartNew={handleStart}
                                 starting={starting}
                                 onDiscussFinding={handleDiscussFinding}
+                                onResolvedChange={updateResolved}
                             />
                         )}
                     </div>
