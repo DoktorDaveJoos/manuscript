@@ -216,6 +216,7 @@ class RunEditorialReviewJob implements ShouldQueue
             'executive_summary' => $result['executive_summary'] ?? null,
             'top_strengths' => $result['top_strengths'] ?? [],
             'top_improvements' => $result['top_improvements'] ?? [],
+            'is_pre_editorial' => $result['is_pre_editorial'] ?? false,
             'status' => 'completed',
             'completed_at' => now(),
         ]);
