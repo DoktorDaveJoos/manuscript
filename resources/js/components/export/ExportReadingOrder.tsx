@@ -198,8 +198,6 @@ function SectionHeader({
     );
 }
 
-const COLLAPSED_KEY = 'export-reading-order-collapsed';
-
 export default function ExportReadingOrder({
     bookId,
     storylines,
@@ -216,23 +214,17 @@ export default function ExportReadingOrder({
     const pageUrl = usePage().url;
     const bookPublishUrl = publishShow.url(bookId);
     const [activeChapter, setActiveChapter] = useState<ChapterRow | null>(null);
-    const [collapsed, setCollapsed] = useState(
-        () => localStorage.getItem(COLLAPSED_KEY) === '1',
-    );
-    const toggleCollapsed = useCallback(() => {
-        setCollapsed((prev) => {
-            const next = !prev;
-            localStorage.setItem(COLLAPSED_KEY, next ? '1' : '0');
-            return next;
-        });
-    }, []);
 
-    const { width, panelRef, handleMouseDown } = useResizablePanel({
-        storageKey: 'export-reading-order-width',
-        minWidth: 220,
-        maxWidth: 400,
-        defaultWidth: 260,
-    });
+    const { width, isCollapsed, toggleCollapsed, panelRef, handleMouseDown } =
+        useResizablePanel({
+            storageKey: 'export-reading-order-width',
+            minWidth: 220,
+            maxWidth: 400,
+            defaultWidth: 260,
+            collapsible: true,
+            collapsedWidth: 36,
+            collapseThreshold: 160,
+        });
 
     const sensors = useSensors(
         useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
@@ -277,185 +269,201 @@ export default function ExportReadingOrder({
         ? storylineMap.get(activeChapter.storyline_id)
         : undefined;
 
-    if (collapsed) {
-        return (
-            <aside className="flex h-full w-9 shrink-0 flex-col items-center border-r border-border-subtle bg-white pt-3 dark:bg-surface-card">
-                <button
-                    type="button"
-                    onClick={toggleCollapsed}
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink-muted"
-                >
-                    <PanelLeftOpen size={14} />
-                </button>
-                <TableOfContents size={14} className="mt-3 text-ink-faint" />
-            </aside>
-        );
-    }
-
     return (
         <aside
             ref={panelRef}
-            className="relative flex h-full shrink-0 flex-col border-r border-border-subtle bg-white dark:bg-surface-card"
+            className="relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border-subtle bg-white transition-[width] duration-200 ease-out dark:bg-surface-card"
             style={{ width }}
         >
-            {/* Resize handle */}
-            <div
-                onMouseDown={handleMouseDown}
-                className="group absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize"
-            >
-                <div className="absolute inset-y-0 right-[3px] w-px bg-transparent transition-colors group-hover:bg-ink/20" />
-            </div>
-
-            {/* Header */}
-            <PanelHeader
-                title={t('readingOrder')}
-                icon={<TableOfContents size={14} className="text-ink-faint" />}
-                suffix={
+            {isCollapsed ? (
+                <div className="flex flex-col items-center pt-3">
                     <button
                         type="button"
                         onClick={toggleCollapsed}
-                        className="flex size-6 items-center justify-center rounded text-ink-muted transition-colors hover:text-ink-soft"
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink-muted"
                     >
-                        <PanelLeftClose size={14} />
+                        <PanelLeftOpen size={14} />
                     </button>
-                }
-            />
-
-            {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto">
-                {/* Front matter */}
-                <Collapsible defaultOpen>
-                    <div className="border-b border-border-subtle">
-                        <div className="px-4 pt-3 pb-2">
-                            <CollapsibleTrigger asChild>
-                                <SectionHeader>
-                                    {t('frontMatter')}
-                                </SectionHeader>
-                            </CollapsibleTrigger>
-                        </div>
-                        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                            <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
-                                {frontMatter.map((item) => (
-                                    <MatterRow
-                                        key={item.id}
-                                        item={item}
-                                        onToggle={() =>
-                                            onToggleFrontMatter(item.id)
-                                        }
-                                        fromUrl={pageUrl}
-                                        publishUrl={bookPublishUrl}
-                                    />
-                                ))}
-                            </div>
-                        </CollapsibleContent>
+                    <TableOfContents
+                        size={14}
+                        className="mt-3 text-ink-faint"
+                    />
+                </div>
+            ) : (
+                <>
+                    {/* Resize handle */}
+                    <div
+                        onMouseDown={handleMouseDown}
+                        className="group absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize"
+                    >
+                        <div className="absolute inset-y-0 right-[3px] w-px bg-transparent transition-colors group-hover:bg-ink/20" />
                     </div>
-                </Collapsible>
 
-                {/* Chapters */}
-                <Collapsible defaultOpen>
-                    <div className="border-b border-border-subtle">
-                        <div className="px-4 pt-3 pb-2">
-                            <CollapsibleTrigger asChild>
-                                <SectionHeader count={orderedChapters.length}>
-                                    {t('chapters')}
-                                </SectionHeader>
-                            </CollapsibleTrigger>
-                        </div>
-                        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                            <div className="flex flex-col px-4 pt-1 pb-3.5">
-                                <DndContext
-                                    sensors={sensors}
-                                    collisionDetection={closestCenter}
-                                    onDragStart={handleDragStart}
-                                    onDragEnd={handleDragEnd}
-                                >
-                                    <SortableContext
-                                        items={orderedChapters.map(
-                                            (ch) => `export-${ch.id}`,
-                                        )}
-                                        strategy={verticalListSortingStrategy}
-                                    >
-                                        {orderedChapters.map(
-                                            (chapter, index) => (
-                                                <SortableChapterRow
-                                                    key={chapter.id}
-                                                    chapter={chapter}
-                                                    index={index}
-                                                    storyline={storylineMap.get(
-                                                        chapter.storyline_id,
-                                                    )}
-                                                    checked={selectedChapterIds.has(
-                                                        chapter.id,
-                                                    )}
-                                                    onToggle={() =>
-                                                        onToggleChapter(
-                                                            chapter.id,
-                                                        )
-                                                    }
-                                                />
-                                            ),
-                                        )}
-                                    </SortableContext>
+                    {/* Header */}
+                    <PanelHeader
+                        title={t('readingOrder')}
+                        icon={
+                            <TableOfContents
+                                size={14}
+                                className="text-ink-faint"
+                            />
+                        }
+                        suffix={
+                            <button
+                                type="button"
+                                onClick={toggleCollapsed}
+                                className="flex size-6 items-center justify-center rounded text-ink-muted transition-colors hover:text-ink-soft"
+                            >
+                                <PanelLeftClose size={14} />
+                            </button>
+                        }
+                    />
 
-                                    <DragOverlay>
-                                        {activeChapter && (
-                                            <div className="flex items-center gap-2 rounded bg-white px-2 py-1 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A] dark:bg-surface-card">
-                                                <span className="flex shrink-0 items-center text-ink-faint">
-                                                    <GripVertical className="h-3 w-3" />
-                                                </span>
-                                                <span
-                                                    className="h-1.5 w-1.5 shrink-0 rounded-full"
-                                                    style={{
-                                                        backgroundColor:
-                                                            activeStoryline?.color ??
-                                                            '#737373',
-                                                    }}
-                                                />
-                                                <span className="min-w-0 flex-1 truncate text-[12px] text-ink-soft">
-                                                    {activeChapter.title}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </DragOverlay>
-                                </DndContext>
+                    {/* Scrollable content */}
+                    <div className="flex-1 overflow-y-auto">
+                        {/* Front matter */}
+                        <Collapsible defaultOpen>
+                            <div className="border-b border-border-subtle">
+                                <div className="px-4 pt-3 pb-2">
+                                    <CollapsibleTrigger asChild>
+                                        <SectionHeader>
+                                            {t('frontMatter')}
+                                        </SectionHeader>
+                                    </CollapsibleTrigger>
+                                </div>
+                                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                                    <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
+                                        {frontMatter.map((item) => (
+                                            <MatterRow
+                                                key={item.id}
+                                                item={item}
+                                                onToggle={() =>
+                                                    onToggleFrontMatter(item.id)
+                                                }
+                                                fromUrl={pageUrl}
+                                                publishUrl={bookPublishUrl}
+                                            />
+                                        ))}
+                                    </div>
+                                </CollapsibleContent>
                             </div>
-                        </CollapsibleContent>
-                    </div>
-                </Collapsible>
+                        </Collapsible>
 
-                {/* Back matter */}
-                <Collapsible defaultOpen>
-                    <div className="border-b border-border-subtle">
-                        <div className="px-4 pt-3 pb-2">
-                            <CollapsibleTrigger asChild>
-                                <SectionHeader>{t('backMatter')}</SectionHeader>
-                            </CollapsibleTrigger>
-                        </div>
-                        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                            <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
-                                {backMatter.map((item) => (
-                                    <MatterRow
-                                        key={item.id}
-                                        item={item}
-                                        onToggle={() =>
-                                            onToggleBackMatter(item.id)
-                                        }
-                                        fromUrl={pageUrl}
-                                        publishUrl={bookPublishUrl}
-                                    />
-                                ))}
+                        {/* Chapters */}
+                        <Collapsible defaultOpen>
+                            <div className="border-b border-border-subtle">
+                                <div className="px-4 pt-3 pb-2">
+                                    <CollapsibleTrigger asChild>
+                                        <SectionHeader
+                                            count={orderedChapters.length}
+                                        >
+                                            {t('chapters')}
+                                        </SectionHeader>
+                                    </CollapsibleTrigger>
+                                </div>
+                                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                                    <div className="flex flex-col px-4 pt-1 pb-3.5">
+                                        <DndContext
+                                            sensors={sensors}
+                                            collisionDetection={closestCenter}
+                                            onDragStart={handleDragStart}
+                                            onDragEnd={handleDragEnd}
+                                        >
+                                            <SortableContext
+                                                items={orderedChapters.map(
+                                                    (ch) => `export-${ch.id}`,
+                                                )}
+                                                strategy={
+                                                    verticalListSortingStrategy
+                                                }
+                                            >
+                                                {orderedChapters.map(
+                                                    (chapter, index) => (
+                                                        <SortableChapterRow
+                                                            key={chapter.id}
+                                                            chapter={chapter}
+                                                            index={index}
+                                                            storyline={storylineMap.get(
+                                                                chapter.storyline_id,
+                                                            )}
+                                                            checked={selectedChapterIds.has(
+                                                                chapter.id,
+                                                            )}
+                                                            onToggle={() =>
+                                                                onToggleChapter(
+                                                                    chapter.id,
+                                                                )
+                                                            }
+                                                        />
+                                                    ),
+                                                )}
+                                            </SortableContext>
+
+                                            <DragOverlay>
+                                                {activeChapter && (
+                                                    <div className="flex items-center gap-2 rounded bg-white px-2 py-1 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A] dark:bg-surface-card">
+                                                        <span className="flex shrink-0 items-center text-ink-faint">
+                                                            <GripVertical className="h-3 w-3" />
+                                                        </span>
+                                                        <span
+                                                            className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                                            style={{
+                                                                backgroundColor:
+                                                                    activeStoryline?.color ??
+                                                                    '#737373',
+                                                            }}
+                                                        />
+                                                        <span className="min-w-0 flex-1 truncate text-[12px] text-ink-soft">
+                                                            {
+                                                                activeChapter.title
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </DragOverlay>
+                                        </DndContext>
+                                    </div>
+                                </CollapsibleContent>
                             </div>
-                        </CollapsibleContent>
-                    </div>
-                </Collapsible>
-            </div>
+                        </Collapsible>
 
-            {/* Footer */}
-            <div className="border-t border-border px-4 py-3.5">
-                <p className="text-[11px] text-ink-faint">
-                    {t('excludedHint')}
-                </p>
-            </div>
+                        {/* Back matter */}
+                        <Collapsible defaultOpen>
+                            <div className="border-b border-border-subtle">
+                                <div className="px-4 pt-3 pb-2">
+                                    <CollapsibleTrigger asChild>
+                                        <SectionHeader>
+                                            {t('backMatter')}
+                                        </SectionHeader>
+                                    </CollapsibleTrigger>
+                                </div>
+                                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                                    <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
+                                        {backMatter.map((item) => (
+                                            <MatterRow
+                                                key={item.id}
+                                                item={item}
+                                                onToggle={() =>
+                                                    onToggleBackMatter(item.id)
+                                                }
+                                                fromUrl={pageUrl}
+                                                publishUrl={bookPublishUrl}
+                                            />
+                                        ))}
+                                    </div>
+                                </CollapsibleContent>
+                            </div>
+                        </Collapsible>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="border-t border-border px-4 py-3.5">
+                        <p className="text-[11px] text-ink-faint">
+                            {t('excludedHint')}
+                        </p>
+                    </div>
+                </>
+            )}
         </aside>
     );
 }
