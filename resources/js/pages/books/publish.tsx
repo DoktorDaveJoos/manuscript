@@ -1,6 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { ImagePlus, Trash2, Upload } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     deleteCover,
@@ -106,6 +106,14 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
         router.delete(deleteCover.url(book.id), { preserveScroll: true });
     }, [book.id]);
 
+    useEffect(() => {
+        const hash = window.location.hash.slice(1);
+        if (hash) {
+            const el = document.getElementById(hash);
+            el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, []);
+
     const currentEpilogueId = chapters.find((ch) => ch.is_epilogue)?.id ?? null;
 
     const handleEpilogueChange = useCallback(
@@ -131,8 +139,8 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                     onScenesVisibleChange={() => {}}
                 />
 
-                <main className="flex-1 overflow-y-auto">
-                    <div className="mx-auto w-full max-w-[760px] px-12 pt-12 pb-20">
+                <main className="flex flex-1 flex-col items-center overflow-y-auto px-12 py-10">
+                    <div className="w-full max-w-[640px]">
                         <div className="flex items-center justify-between">
                             <div>
                                 <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
@@ -152,8 +160,8 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                         <div className="mt-9 flex flex-col gap-9">
                             {/* Cover Image */}
                             <div>
-                                <SectionLabel className="text-[11px] font-medium text-ink-faint">
-                                    {t('cover.title').toUpperCase()}
+                                <SectionLabel variant="section">
+                                    {t('cover.title')}
                                 </SectionLabel>
                                 <Card className="mt-3 p-6">
                                     <span className="text-sm font-medium text-ink">
@@ -228,8 +236,8 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
 
                             {/* Metadata */}
                             <div>
-                                <SectionLabel className="text-[11px] font-medium text-ink-faint">
-                                    {t('metadata.title').toUpperCase()}
+                                <SectionLabel variant="section">
+                                    {t('metadata.title')}
                                 </SectionLabel>
                                 <div className="mt-3 flex flex-col gap-3">
                                     <Card className="px-6 py-4">
@@ -273,9 +281,9 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                             </div>
 
                             {/* Front Matter */}
-                            <div>
-                                <SectionLabel className="text-[11px] font-medium text-ink-faint">
-                                    {t('frontMatter.title').toUpperCase()}
+                            <div id="front-matter">
+                                <SectionLabel variant="section">
+                                    {t('frontMatter.title')}
                                 </SectionLabel>
                                 <Card className="mt-3 p-6">
                                     <span className="text-sm font-medium text-ink">
@@ -287,6 +295,7 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
 
                                     <div className="mt-4 flex flex-col gap-5">
                                         <FormField
+                                            id="copyright"
                                             label={t('frontMatter.copyright')}
                                         >
                                             <Textarea
@@ -305,6 +314,7 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                         </FormField>
 
                                         <FormField
+                                            id="dedication"
                                             label={t('frontMatter.dedication')}
                                         >
                                             <Textarea
@@ -327,6 +337,7 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                         <div className="border-t border-border-subtle" />
 
                                         <FormField
+                                            id="epigraph"
                                             label={t('frontMatter.epigraph')}
                                         >
                                             <Textarea
@@ -370,9 +381,9 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                             </div>
 
                             {/* Back Matter */}
-                            <div>
-                                <SectionLabel className="text-[11px] font-medium text-ink-faint">
-                                    {t('backMatter.title').toUpperCase()}
+                            <div id="back-matter">
+                                <SectionLabel variant="section">
+                                    {t('backMatter.title')}
                                 </SectionLabel>
                                 <Card className="mt-3 p-6">
                                     <span className="text-sm font-medium text-ink">
@@ -384,6 +395,7 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
 
                                     <div className="mt-4 flex flex-col gap-5">
                                         <FormField
+                                            id="acknowledgments"
                                             label={t(
                                                 'backMatter.acknowledgments',
                                             )}
@@ -407,6 +419,7 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                         </FormField>
 
                                         <FormField
+                                            id="about-author"
                                             label={t('backMatter.aboutAuthor')}
                                         >
                                             <Textarea
@@ -427,6 +440,7 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                         </FormField>
 
                                         <FormField
+                                            id="also-by"
                                             label={t('backMatter.alsoBy')}
                                         >
                                             <Textarea
@@ -450,6 +464,7 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                         <div className="border-t border-border-subtle" />
 
                                         <FormField
+                                            id="epilogue"
                                             label={t('backMatter.epilogue')}
                                         >
                                             <Select
