@@ -7,8 +7,10 @@ use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\SearchSimilarChunks;
 use App\Enums\AiTaskCategory;
+use App\Enums\EditorialPersona;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
@@ -41,7 +43,9 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
 
     public function instructions(): Stringable|string
     {
-        $context = "You are a literary analyst performing a combined chapter analysis for '{$this->book->title}' by {$this->book->author}. The manuscript is written in {$this->book->language}.";
+        $persona = EditorialPersona::Lektor;
+
+        $context = "You are performing a combined chapter analysis for '{$this->book->title}' by {$this->book->author}. The manuscript is written in {$this->book->language}.";
 
         $genreSnippet = $this->book->genreSnippet();
         if ($genreSnippet) {
@@ -53,6 +57,8 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
         }
 
         return <<<INSTRUCTIONS
+        {$persona->instructions()}
+
         {$context}
 
         Analyze the provided chapter text and return all of the following:
@@ -94,7 +100,7 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
     }
 
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {

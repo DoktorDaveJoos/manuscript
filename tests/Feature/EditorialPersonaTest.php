@@ -43,3 +43,81 @@ it('returns anti-pattern rules', function () {
         ->toContain('DO NOT')
         ->toContain('hedge');
 });
+
+use App\Ai\Agents\ChapterAnalyzer;
+use App\Ai\Agents\EditorialChatAgent;
+use App\Ai\Agents\EditorialNotesAgent;
+use App\Ai\Agents\EditorialSummaryAgent;
+use App\Ai\Agents\EditorialSynthesisAgent;
+use App\Enums\EditorialSectionType;
+use App\Models\Book;
+
+it('synthesis agent instructions include persona and calibration', function () {
+    $book = Book::factory()->create();
+    $agent = new EditorialSynthesisAgent(
+        book: $book,
+        sectionType: EditorialSectionType::Plot,
+        aggregatedData: 'test data',
+    );
+
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)
+        ->toContain('serve the work, not the author\'s ego')
+        ->toContain('55-65')
+        ->toContain('DO NOT use compliment sandwiches')
+        ->toContain('critical: Structural issues');
+});
+
+it('summary agent instructions include persona and honesty rules', function () {
+    $book = Book::factory()->create();
+    $agent = new EditorialSummaryAgent(
+        book: $book,
+        sectionSummaries: 'test summaries',
+    );
+
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)
+        ->toContain('serve the work, not the author\'s ego')
+        ->toContain('DO NOT use compliment sandwiches')
+        ->not->toContain('Be balanced and constructive');
+});
+
+it('notes agent instructions lead with issues before strengths', function () {
+    $book = Book::factory()->create();
+    $agent = new EditorialNotesAgent(book: $book);
+
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)
+        ->toContain('serve the work, not the author\'s ego')
+        ->toContain('lead with what needs the author\'s attention')
+        ->not->toContain('highlight what works, what needs attention');
+});
+
+it('chat agent instructions are direct and handle disagreement properly', function () {
+    $book = Book::factory()->create();
+    $agent = new EditorialChatAgent(
+        book: $book,
+        editorialContext: 'test context',
+    );
+
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)
+        ->toContain('re-examine the evidence')
+        ->toContain('not trying to win an argument')
+        ->not->toContain('encouraging')
+        ->not->toContain('respecting their creative vision');
+});
+
+it('chapter analyzer instructions include persona', function () {
+    $book = Book::factory()->create();
+    $agent = new ChapterAnalyzer(book: $book);
+
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)
+        ->toContain('serve the work, not the author\'s ego');
+});

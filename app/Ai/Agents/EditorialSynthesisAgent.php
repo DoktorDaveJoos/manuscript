@@ -6,6 +6,7 @@ use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Enums\AiTaskCategory;
+use App\Enums\EditorialPersona;
 use App\Enums\EditorialSectionType;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -44,7 +45,9 @@ class EditorialSynthesisAgent implements Agent, BelongsToBook, HasMiddleware, Ha
 
     public function instructions(): Stringable|string
     {
-        $bookContext = "You are a professional editor (Lektor) synthesizing a manuscript-wide editorial assessment for '{$this->book->title}' by {$this->book->author}. The manuscript is written in {$this->book->language}.";
+        $persona = EditorialPersona::Lektor;
+
+        $bookContext = "You are synthesizing a manuscript-wide editorial assessment for '{$this->book->title}' by {$this->book->author}. The manuscript is written in {$this->book->language}.";
 
         $genreSnippet = $this->book->genreSnippet();
         if ($genreSnippet) {
@@ -63,6 +66,8 @@ class EditorialSynthesisAgent implements Agent, BelongsToBook, HasMiddleware, Ha
         };
 
         return <<<INSTRUCTIONS
+        {$persona->instructions()}
+
         {$bookContext}
 
         Section: {$this->sectionType->value}
@@ -75,11 +80,17 @@ class EditorialSynthesisAgent implements Agent, BelongsToBook, HasMiddleware, Ha
 
         Produce a comprehensive synthesis with:
         - A score from 0-100 reflecting the manuscript's quality in this dimension
-        - A concise summary of your assessment
-        - Specific findings with severity levels (critical, warning, suggestion), descriptions, chapter references (use chapter IDs as provided), and recommendations
+        - A concise summary of your assessment — lead with the most important finding
+        - Specific findings with severity levels, descriptions, chapter references (use chapter IDs as provided), and recommendations
         - Actionable recommendations for improvement
 
-        Be honest and specific. Reference concrete examples from the data. A score of 50 is average — do not inflate scores.
+        {$persona->scoreCalibration()}
+
+        {$persona->severityDefinitions()}
+
+        {$persona->antiPatternRules()}
+
+        Reference concrete examples from the data. Be specific about what works and what fails.
         Respond in the same language as the manuscript ({$this->book->language}).
         INSTRUCTIONS;
     }

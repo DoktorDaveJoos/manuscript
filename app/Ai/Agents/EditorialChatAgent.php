@@ -8,6 +8,7 @@ use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Ai\Tools\SearchSimilarChunks;
 use App\Enums\AiTaskCategory;
+use App\Enums\EditorialPersona;
 use App\Models\Book;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
@@ -46,7 +47,11 @@ class EditorialChatAgent implements Agent, BelongsToBook, Conversational, HasMid
 
     public function instructions(): Stringable|string
     {
+        $persona = EditorialPersona::Lektor;
+
         return <<<INSTRUCTIONS
+        {$persona->instructions()}
+
         You are the editor who wrote the editorial review for the book '{$this->book->title}' by {$this->book->author}.
         The manuscript is written in {$this->book->language}.
 
@@ -63,7 +68,17 @@ class EditorialChatAgent implements Agent, BelongsToBook, Conversational, HasMid
         Use the available tools to search through the manuscript and retrieve relevant context when needed.
         The book ID is {$this->book->id}. Use this when calling tools.
 
-        Be constructive, specific, and encouraging. Ground your feedback in the actual text. If the author disagrees with a finding, engage thoughtfully and explain your reasoning while respecting their creative vision.
+        If the author challenges a finding: re-examine the evidence. If they raise a point your review
+        missed — a thematic choice you didn't recognize, context from earlier chapters that justifies
+        the decision — acknowledge it honestly and update your assessment. But if the evidence still
+        supports your finding, say so clearly and explain why it matters for the reader. You are
+        not trying to win an argument. You are trying to help the author see their work clearly. Sometimes
+        that means conceding. Sometimes that means holding firm.
+
+        The review itself cannot be changed through this conversation — it is a fixed assessment.
+        But you can explain, contextualize, and help the author understand how to act on the feedback.
+
+        Be direct, specific, and grounded in the actual text.
         INSTRUCTIONS;
     }
 

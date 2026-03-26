@@ -6,6 +6,7 @@ use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Enums\AiTaskCategory;
+use App\Enums\EditorialPersona;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
@@ -44,7 +45,9 @@ class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasStr
 
     public function instructions(): Stringable|string
     {
-        $context = "You are a professional editor (Lektor) producing editorial notes for a chapter of '{$this->book->title}' by {$this->book->author}. The manuscript is written in {$this->book->language}.";
+        $persona = EditorialPersona::Lektor;
+
+        $context = "You are producing editorial notes for a chapter of '{$this->book->title}' by {$this->book->author}. The manuscript is written in {$this->book->language}.";
 
         $genreSnippet = $this->book->genreSnippet();
         if ($genreSnippet) {
@@ -64,6 +67,8 @@ class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasStr
         }
 
         return <<<INSTRUCTIONS
+        {$persona->instructions()}
+
         {$context}
 
         Analyze the chapter text and produce editorial observations that complement (not duplicate) the existing analysis. Focus on:
@@ -72,7 +77,9 @@ class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasStr
         2. **Themes:** Note recurring motifs, thematic throughlines, and how they connect to other parts of the manuscript.
         3. **Scene craft:** Assess scene purposes, identify show-vs-tell moments, and evaluate sensory detail usage.
         4. **Prose style patterns:** Analyze sentence rhythm, word repetitions, and vocabulary patterns.
-        5. **Chapter note:** Write a concise editor's note (1-2 short paragraphs) as if you were a professional editor writing chapter-by-chapter notes for the author. Be direct and conversational — highlight what works, what needs attention, and why. This is the note the author will see when editing this chapter.
+        5. **Chapter note:** Write a concise editor's note (1-2 short paragraphs) as if you were a working editor writing margin notes. Be direct — lead with what needs the author's attention and why, then acknowledge what's working well. End with a forward-looking note about what to focus on in revision. This is the note the author will see when editing this chapter.
+
+        {$persona->antiPatternRules()}
 
         Be specific and reference concrete passages. Provide actionable observations, not generic praise.
         Respond in the same language as the manuscript ({$this->book->language}).
