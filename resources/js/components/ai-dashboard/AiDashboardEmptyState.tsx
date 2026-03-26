@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import Button from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/Card';
 import { useAiPreparation } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
 
@@ -54,11 +55,21 @@ export default function AiDashboardEmptyState({
                     {t('emptyState.cta')}
                 </Button>
                 <div className="flex items-center gap-4 text-[13px]">
-                    <span className="text-accent">
+                    <a
+                        href="https://getmanuscript.app/ai"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-accent transition-colors hover:text-accent/80"
+                    >
                         {t('emptyState.learnMore')}
-                    </span>
+                    </a>
                     <Link
-                        href={settingsIndex.url({ query: { from: pageUrl } })}
+                        href={settingsIndex.url({
+                            query: {
+                                from: pageUrl,
+                                section: 'ai-features',
+                            },
+                        })}
                         className="text-ink-muted transition-colors hover:text-ink"
                     >
                         {t('emptyState.configureProvider')}
@@ -73,17 +84,16 @@ export default function AiDashboardEmptyState({
                 </span>
                 <div className="grid grid-cols-4 gap-6">
                     {FEATURE_CARDS.map((card) => (
-                        <div
-                            key={card.titleKey}
-                            className="rounded-lg bg-surface-card p-8"
-                        >
-                            <h3 className="text-[16px] font-medium text-ink">
-                                {t(card.titleKey)}
-                            </h3>
-                            <p className="mt-2 text-[13px] leading-[1.6] text-ink-muted italic">
-                                {t(card.descKey)}
-                            </p>
-                        </div>
+                        <Card key={card.titleKey}>
+                            <CardContent className="p-8">
+                                <h3 className="text-[16px] font-medium text-ink">
+                                    {t(card.titleKey)}
+                                </h3>
+                                <p className="mt-2 text-[13px] leading-[1.6] text-ink-muted italic">
+                                    {t(card.descKey)}
+                                </p>
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
             </div>

@@ -25,7 +25,6 @@ export default function AiUsageSummary({
     const [confirming, setConfirming] = useState(false);
 
     const totalTokens = usage.input_tokens + usage.output_tokens;
-    const wordsProcessed = Math.round(totalTokens / 1.3 / 1000);
 
     const handleReset = useCallback(async () => {
         if (!confirming) {
@@ -76,7 +75,9 @@ export default function AiUsageSummary({
                         {t('usage.tokensUsed')}
                     </span>
                     <span className="text-[11px] text-ink-faint">
-                        {t('usage.wordsProcessed', { count: wordsProcessed })}
+                        {sinceDate
+                            ? t('usage.since', { date: sinceDate })
+                            : t('usage.allTime')}
                     </span>
                 </Card>
 
@@ -88,8 +89,10 @@ export default function AiUsageSummary({
                     <span className="text-[12px] text-ink-muted">
                         {t('usage.estimatedCost')}
                     </span>
-                    <span className="text-[11px] text-ai-green">
-                        {t('usage.withinBudget')}
+                    <span className="text-[11px] text-ink-faint">
+                        {sinceDate
+                            ? t('usage.since', { date: sinceDate })
+                            : t('usage.allTime')}
                     </span>
                 </Card>
 
@@ -101,11 +104,11 @@ export default function AiUsageSummary({
                     <span className="text-[12px] text-ink-muted">
                         {t('usage.apiRequests')}
                     </span>
-                    {sinceDate && (
-                        <span className="text-[11px] text-ink-faint">
-                            {t('usage.since', { date: sinceDate })}
-                        </span>
-                    )}
+                    <span className="text-[11px] text-ink-faint">
+                        {sinceDate
+                            ? t('usage.since', { date: sinceDate })
+                            : t('usage.allTime')}
+                    </span>
                 </Card>
             </div>
         </div>

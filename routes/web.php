@@ -166,6 +166,9 @@ Route::middleware('license')->group(function () {
     Route::post('/books/{book}/chapters/{chapter}/ai/analyze-chapter', [AiController::class, 'analyzeChapter'])->name('chapters.ai.analyzeChapter');
     Route::get('/books/{book}/chapters/{chapter}/ai/analysis-status', [AiController::class, 'chapterAnalysisStatus'])->name('chapters.ai.analysisStatus');
     Route::post('/books/{book}/ai/chat', [AiController::class, 'chat'])->name('books.ai.chat');
+    Route::post('/books/{book}/ai/beautify-all', [AiController::class, 'beautifyAll'])->name('books.ai.beautifyAll');
+    Route::post('/books/{book}/ai/revise-all', [AiController::class, 'reviseAll'])->name('books.ai.reviseAll');
+    Route::get('/books/{book}/ai/bulk-revision-status', [AiController::class, 'bulkRevisionStatus'])->name('books.ai.bulkRevisionStatus');
     Route::post('/books/{book}/ai/reset-usage', [AiController::class, 'resetUsage'])->name('books.ai.resetUsage');
 
     Route::get('/books/{book}/ai/editorial-review', [EditorialReviewController::class, 'index'])->name('books.ai.editorial-review.index');

@@ -1273,7 +1273,13 @@ export default function Settings({
         updates: updatesRef,
     });
 
-    const [activeSection, setActiveSection] = useState<SectionKey>('license');
+    const [activeSection, setActiveSection] = useState<SectionKey>(() => {
+        const params = new URLSearchParams(window.location.search);
+        const section = params.get('section') as SectionKey | null;
+        return section && NAV_ITEMS.some((item) => item.key === section)
+            ? section
+            : 'license';
+    });
     const mainRef = useRef<HTMLDivElement>(null);
 
     // Track active section via IntersectionObserver

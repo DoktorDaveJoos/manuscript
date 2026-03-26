@@ -1,6 +1,7 @@
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { show as showChapter } from '@/actions/App/Http/Controllers/ChapterController';
 import SectionLabel from '@/components/ui/SectionLabel';
 
 type ChapterRow = {
@@ -23,8 +24,10 @@ type PaginatedChapters = {
 };
 
 export default function AnalyzedChaptersTable({
+    bookId,
     chapters,
 }: {
+    bookId: number;
     chapters: PaginatedChapters;
 }) {
     const { t } = useTranslation('ai-dashboard');
@@ -106,9 +109,15 @@ export default function AnalyzedChaptersTable({
                                     {ch.storyline_name ?? '—'}
                                 </td>
                                 <td className="px-3 text-[13px]">
-                                    <span className="text-accent">
+                                    <Link
+                                        href={showChapter.url({
+                                            book: bookId,
+                                            chapter: ch.id,
+                                        })}
+                                        className="text-accent transition-colors hover:text-accent/80"
+                                    >
                                         {t('chapters.view')}
-                                    </span>
+                                    </Link>
                                 </td>
                             </tr>
                         ))}

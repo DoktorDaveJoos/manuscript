@@ -117,6 +117,7 @@ export default function AiDashboardPage({
                                 <CommandCenter
                                     bookId={book.id}
                                     initialStatus={ai_preparation}
+                                    chapterCount={analyzed_chapters?.total ?? 0}
                                 />
 
                                 <div className="border-t border-border-light" />
@@ -136,6 +137,7 @@ export default function AiDashboardPage({
                                 {analyzed_chapters && (
                                     <>
                                         <AnalyzedChaptersTable
+                                            bookId={book.id}
                                             chapters={analyzed_chapters}
                                         />
                                         <div className="border-t border-border-light" />
