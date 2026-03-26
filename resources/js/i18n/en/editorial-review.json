@@ -57,6 +57,9 @@
 
     "experimentalAlert": "This is an experimental feature. Results may vary in quality and accuracy.",
 
+    "preEditorial.heading": "Pre-Editorial Assessment",
+    "preEditorial.description": "This manuscript needs foundational work before a full editorial review would be useful. Focus on the areas below first, then run a new review.",
+
     "finding.recommendation": "Recommendation",
 
     "chapterStrip.title": "Chapter Progress",

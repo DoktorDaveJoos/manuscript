@@ -63,6 +63,7 @@ export type EditorialReview = {
     executive_summary: string | null;
     top_strengths: string[] | null;
     top_improvements: string[] | null;
+    is_pre_editorial: boolean;
     resolved_findings: string[] | null;
     started_at: string | null;
     completed_at: string | null;

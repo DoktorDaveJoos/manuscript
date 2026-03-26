@@ -50,5 +50,8 @@
     "failed.title": "Revisión Editorial Fallida",
     "failed.retry": "Reintentar",
 
-    "sectionLabel.editorialReview": "Revisión Editorial"
+    "sectionLabel.editorialReview": "Revisión Editorial",
+
+    "preEditorial.heading": "Evaluación Preliminar",
+    "preEditorial.description": "Este manuscrito necesita trabajo fundamental antes de que una revisión editorial completa sea útil. Concéntrate primero en las áreas siguientes y luego ejecuta una nueva revisión."
 }

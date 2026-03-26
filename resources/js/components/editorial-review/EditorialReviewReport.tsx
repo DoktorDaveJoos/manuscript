@@ -27,9 +27,9 @@ function ScoreDisplay({
                 {score}
             </span>
             <span className="text-[11px] font-medium text-ink-faint">
-                {score >= 70
+                {score >= 76
                     ? qualityLabel.good
-                    : score >= 50
+                    : score >= 60
                       ? qualityLabel.fair
                       : qualityLabel.needsWork}
             </span>
@@ -48,19 +48,21 @@ function StrengthsAndImprovements({
 
     return (
         <div className="flex gap-8 border-t border-border-subtle pt-6">
-            <div className="flex flex-1 flex-col gap-2">
-                <SectionLabel>{t('report.strengths')}</SectionLabel>
-                <div className="flex flex-col gap-2">
-                    {strengths.map((s, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                            <span className="mt-[6px] size-2 shrink-0 rounded-full bg-status-final" />
-                            <span className="text-[13px] leading-relaxed text-ink-muted">
-                                {s}
-                            </span>
-                        </div>
-                    ))}
+            {strengths.length > 0 && (
+                <div className="flex flex-1 flex-col gap-2">
+                    <SectionLabel>{t('report.strengths')}</SectionLabel>
+                    <div className="flex flex-col gap-2">
+                        {strengths.map((s, i) => (
+                            <div key={i} className="flex items-start gap-2">
+                                <span className="mt-[6px] size-2 shrink-0 rounded-full bg-status-final" />
+                                <span className="text-[13px] leading-relaxed text-ink-muted">
+                                    {s}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
 
             <div className="flex flex-1 flex-col gap-2">
                 <SectionLabel>{t('report.improvements')}</SectionLabel>
@@ -166,8 +168,9 @@ export default function EditorialReviewReport({
 
                     {review.top_strengths &&
                         review.top_improvements &&
-                        review.top_strengths.length > 0 &&
-                        review.top_improvements.length > 0 && (
+                        (review.top_strengths.length > 0 ||
+                            review.top_improvements.length > 0) &&
+                        !review.is_pre_editorial && (
                             <StrengthsAndImprovements
                                 strengths={review.top_strengths}
                                 improvements={review.top_improvements}
@@ -175,63 +178,106 @@ export default function EditorialReviewReport({
                         )}
                 </Card>
 
-                <ChapterProgressStrip
-                    chapters={chapters}
-                    sections={review.sections}
-                    resolvedSet={resolvedSet}
-                    bookId={review.book_id}
-                />
+                {!review.is_pre_editorial && (
+                    <>
+                        <ChapterProgressStrip
+                            chapters={chapters}
+                            sections={review.sections}
+                            resolvedSet={resolvedSet}
+                            bookId={review.book_id}
+                        />
 
-                <div className="flex items-center justify-between">
-                    <Select
-                        variant="compact"
-                        value={review.id}
-                        onChange={(e) => {
-                            const selected = reviews.find(
-                                (r) => r.id === Number(e.target.value),
-                            );
-                            if (selected) onSelectReview(selected);
-                        }}
-                    >
-                        {reviews.map((r) => (
-                            <option key={r.id} value={r.id}>
-                                {t('report.reviewFrom', {
-                                    date:
-                                        formatDate(r.completed_at) ||
-                                        `#${r.id}`,
-                                })}
-                            </option>
-                        ))}
-                    </Select>
+                        <div className="flex items-center justify-between">
+                            <Select
+                                variant="compact"
+                                value={review.id}
+                                onChange={(e) => {
+                                    const selected = reviews.find(
+                                        (r) => r.id === Number(e.target.value),
+                                    );
+                                    if (selected) onSelectReview(selected);
+                                }}
+                            >
+                                {reviews.map((r) => (
+                                    <option key={r.id} value={r.id}>
+                                        {t('report.reviewFrom', {
+                                            date:
+                                                formatDate(r.completed_at) ||
+                                                `#${r.id}`,
+                                        })}
+                                    </option>
+                                ))}
+                            </Select>
 
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => setShowConfirm(true)}
-                        disabled={starting}
-                    >
-                        {t('report.startNew')}
-                    </Button>
-                </div>
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => setShowConfirm(true)}
+                                disabled={starting}
+                            >
+                                {t('report.startNew')}
+                            </Button>
+                        </div>
 
-                <SectionLabel>{t('sectionLabel.editorialReview')}</SectionLabel>
+                        <SectionLabel>
+                            {t('sectionLabel.editorialReview')}
+                        </SectionLabel>
 
-                <div className="flex max-w-3xl flex-col gap-4">
-                    {orderedSections.map(
-                        (section) =>
-                            section && (
-                                <EditorialReviewSection
-                                    key={section.id}
-                                    section={section}
-                                    chapters={chapters}
-                                    bookId={review.book_id}
-                                    resolvedSet={resolvedSet}
-                                    onToggleFinding={handleToggleFinding}
-                                    onDiscussFinding={onDiscussFinding}
-                                />
-                            ),
-                    )}
-                </div>
+                        <div className="flex max-w-3xl flex-col gap-4">
+                            {orderedSections.map(
+                                (section) =>
+                                    section && (
+                                        <EditorialReviewSection
+                                            key={section.id}
+                                            section={section}
+                                            chapters={chapters}
+                                            bookId={review.book_id}
+                                            resolvedSet={resolvedSet}
+                                            onToggleFinding={
+                                                handleToggleFinding
+                                            }
+                                            onDiscussFinding={onDiscussFinding}
+                                        />
+                                    ),
+                            )}
+                        </div>
+                    </>
+                )}
+
+                {review.is_pre_editorial && (
+                    <Card className="flex flex-col gap-4 p-6">
+                        <SectionLabel>{t('preEditorial.heading')}</SectionLabel>
+                        <p className="text-[13px] leading-relaxed text-ink-muted">
+                            {t('preEditorial.description')}
+                        </p>
+                        {review.top_improvements &&
+                            review.top_improvements.length > 0 && (
+                                <div className="flex flex-col gap-2">
+                                    {review.top_improvements.map((imp, i) => (
+                                        <div
+                                            key={i}
+                                            className="flex items-start gap-2"
+                                        >
+                                            <span className="mt-[6px] size-2 shrink-0 rounded-full bg-accent" />
+                                            <span className="text-[13px] leading-relaxed text-ink-muted">
+                                                {imp}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        <div className="pt-2">
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => setShowConfirm(true)}
+                                disabled={starting}
+                            >
+                                {t('report.startNew')}
+                            </Button>
+                        </div>
+                    </Card>
+                )}
             </div>
 
             {showConfirm && (

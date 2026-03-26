@@ -50,5 +50,8 @@
     "failed.title": "Lektorat fehlgeschlagen",
     "failed.retry": "Erneut versuchen",
 
-    "sectionLabel.editorialReview": "Lektorat"
+    "sectionLabel.editorialReview": "Lektorat",
+
+    "preEditorial.heading": "Vorab-Einschätzung",
+    "preEditorial.description": "Dieses Manuskript benötigt grundlegende Überarbeitung, bevor ein vollständiges Lektorat sinnvoll wäre. Konzentriere dich zuerst auf die folgenden Bereiche und starte dann eine neue Bewertung."
 }
