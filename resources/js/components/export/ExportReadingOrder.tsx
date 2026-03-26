@@ -134,6 +134,16 @@ function SortableChapterRow({
     );
 }
 
+const PUBLISH_ANCHORS = new Set([
+    'copyright',
+    'dedication',
+    'epigraph',
+    'acknowledgments',
+    'about-author',
+    'also-by',
+    'epilogue',
+]);
+
 function MatterRow({
     item,
     onToggle,
@@ -149,7 +159,9 @@ function MatterRow({
         ? settingsIndex.url({
               query: { section: item.settingsSection, from: fromUrl },
           })
-        : publishUrl;
+        : publishUrl && PUBLISH_ANCHORS.has(item.id)
+          ? `${publishUrl}#${item.id}`
+          : undefined;
 
     return (
         <div className="flex items-center gap-2">
