@@ -74,11 +74,8 @@ class BulkRevisionJob implements ShouldQueue
 
         $response = $agent->prompt("{$this->type->promptPrefix()}\n\n{$content}");
 
+        $chapter->syncCurrentVersionContent();
         $currentVersion = $chapter->currentVersion;
-
-        if ($currentVersion) {
-            $currentVersion->update(['content' => $chapter->getFullContent()]);
-        }
 
         $sceneMap = $chapter->scenes->map(fn ($s) => [
             'title' => $s->title,

@@ -180,10 +180,7 @@ class AiController extends Controller
         $wordCount = str_word_count(strip_tags($content));
         abort_if($wordCount > 12000, 422, __('Chapter is too long for AI revision (:count words). Consider splitting it into smaller chapters.', ['count' => $wordCount]));
 
-        // Sync currentVersion content from scenes so the diff baseline is accurate
-        if ($currentVersion) {
-            $currentVersion->update(['content' => $chapter->getFullContent()]);
-        }
+        $chapter->syncCurrentVersionContent();
 
         $sceneMap = $chapter->scenes->map(fn ($s) => [
             'title' => $s->title,

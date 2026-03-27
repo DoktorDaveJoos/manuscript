@@ -181,6 +181,21 @@ class Chapter extends Model
             });
     }
 
+    /**
+     * Sync the current version's content with the latest scene content.
+     * Call this before creating a new version so the outgoing version
+     * captures the editor state (edits are saved to scenes, not versions).
+     */
+    public function syncCurrentVersionContent(): string
+    {
+        $this->loadMissing(['scenes', 'currentVersion']);
+        $content = $this->getFullContent();
+
+        $this->currentVersion?->update(['content' => $content]);
+
+        return $content;
+    }
+
     public function getFullContent(): string
     {
         return $this->scenes->pluck('content')->filter()->implode("\n");

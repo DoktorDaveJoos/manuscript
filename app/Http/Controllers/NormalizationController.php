@@ -110,8 +110,7 @@ class NormalizationController extends Controller
 
     private function applyToChapter(Chapter $chapter, string $language): bool
     {
-        $chapter->loadMissing('scenes');
-        $content = $chapter->getFullContent();
+        $content = $chapter->syncCurrentVersionContent();
         if (! $content) {
             return false;
         }

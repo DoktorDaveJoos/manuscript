@@ -287,6 +287,7 @@ class ChapterController extends Controller
     public function restoreVersion(Book $book, Chapter $chapter, ChapterVersion $version): RedirectResponse
     {
         DB::transaction(function () use ($chapter, $version) {
+            $chapter->syncCurrentVersionContent();
             $chapter->versions()->update(['is_current' => false]);
 
             $latestVersionNumber = $chapter->versions()->max('version_number');
@@ -308,8 +309,7 @@ class ChapterController extends Controller
     public function createSnapshot(CreateSnapshotRequest $request, Book $book, Chapter $chapter): JsonResponse
     {
         $version = DB::transaction(function () use ($request, $chapter) {
-            $chapter->loadMissing('scenes');
-            $content = $chapter->getFullContent();
+            $content = $chapter->syncCurrentVersionContent();
 
             $chapter->versions()->update(['is_current' => false]);
             $latestVersionNumber = $chapter->versions()->max('version_number');
@@ -361,6 +361,7 @@ class ChapterController extends Controller
     private function applyVersion(Chapter $chapter, ChapterVersion $version, string $content): void
     {
         DB::transaction(function () use ($chapter, $version, $content) {
+            $chapter->syncCurrentVersionContent();
             $chapter->versions()->where('is_current', true)->update(['is_current' => false]);
 
             $version->update([
