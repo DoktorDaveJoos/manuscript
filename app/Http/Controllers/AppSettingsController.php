@@ -21,6 +21,7 @@ class AppSettingsController extends Controller
         'locale',
         'send_error_reports',
         'crash_report_prompted',
+        'language_prompted',
         'auto_update',
         'editor_font',
         'editor_font_size',

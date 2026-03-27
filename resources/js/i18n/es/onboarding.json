@@ -90,6 +90,16 @@
     "reviewPhase.importing": "Importando…",
     "reviewPhase.confirmImport": "Confirmar importación",
 
+    "languageSelection.title": "Elige tu idioma",
+    "languageSelection.description": "Selecciona tu idioma preferido para Manuscript.\nPuedes cambiarlo en cualquier momento en Configuración.",
+    "languageSelection.continue": "Continuar",
+    "languageSelection.en": "English",
+    "languageSelection.enSub": "Inglés",
+    "languageSelection.de": "Deutsch",
+    "languageSelection.deSub": "Alemán",
+    "languageSelection.es": "Español",
+    "languageSelection.esSub": "Español",
+
     "crashReport.title": "Ayuda a mejorar Manuscript",
     "crashReport.description": "Si la aplicación llega a fallar, ¿te gustaría enviar un reporte anónimo? Esto nos ayuda a encontrar y corregir errores más rápido.",
     "crashReport.whatWeSend": "QUÉ ENVIAMOS",

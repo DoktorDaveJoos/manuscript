@@ -17,8 +17,10 @@ createServer((page) =>
                 import.meta.glob('./pages/**/*.tsx'),
             ),
         setup: ({ App, props }) => {
-            const locale = (props.initialPage.props.locale as string) ?? 'en';
-            i18n.changeLanguage(locale);
+            const settings = props.initialPage.props.app_settings as
+                | { locale?: string }
+                | undefined;
+            i18n.changeLanguage(settings?.locale ?? 'en');
 
             return <App {...props} />;
         },

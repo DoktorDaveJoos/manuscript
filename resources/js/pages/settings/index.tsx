@@ -47,7 +47,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
 import type { Theme } from '@/lib/theme';
-import { cn, jsonFetchHeaders } from '@/lib/utils';
+import { cn, jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
+import type { AppSettings } from '@/types/models';
 import type {
     AppSettings,
     AiSetting,
@@ -249,17 +250,13 @@ function LicenseSection() {
 
 function LanguageSection() {
     const { t, i18n } = useTranslation('settings');
-    const currentLocale = usePage<{ locale: string }>().props.locale ?? 'en';
-    const activeLocale = i18n.language || currentLocale;
+    const { app_settings } = usePage<{ app_settings: AppSettings }>().props;
+    const activeLocale = i18n.language || app_settings.locale || 'en';
 
     function switchLocale(locale: string) {
         if (locale === activeLocale) return;
         i18n.changeLanguage(locale);
-        fetch(update.url(), {
-            method: 'PUT',
-            headers: jsonFetchHeaders(),
-            body: JSON.stringify({ key: 'locale', value: locale }),
-        });
+        saveAppSetting('locale', locale);
     }
 
     return (

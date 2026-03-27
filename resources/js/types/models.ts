@@ -152,6 +152,8 @@ export type AppSettings = {
     show_scenes: boolean;
     send_error_reports: boolean;
     crash_report_prompted: boolean;
+    language_prompted: boolean;
+    locale: string;
     editor_font: string;
     editor_font_size: number;
 };

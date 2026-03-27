@@ -23,6 +23,10 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        AppSetting::clearCache();
+        app()->setLocale(config('app.locale', 'en'));
+    })
     ->in('Feature');
 
 pest()->extend(TestCase::class)

@@ -2,17 +2,8 @@ import { router } from '@inertiajs/react';
 import { Check, ShieldCheck, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import Dialog from '@/components/ui/Dialog';
-import { jsonFetchHeaders } from '@/lib/utils';
-
-function saveSetting(key: string, value: boolean) {
-    return fetch(update.url(), {
-        method: 'PUT',
-        headers: jsonFetchHeaders(),
-        body: JSON.stringify({ key, value }),
-    });
-}
+import { saveAppSetting } from '@/lib/utils';
 
 export default function CrashReportDialog() {
     const { t } = useTranslation('onboarding');
@@ -22,9 +13,9 @@ export default function CrashReportDialog() {
         if (submitting) return;
         setSubmitting(true);
 
-        const saves = [saveSetting('crash_report_prompted', true)];
+        const saves = [saveAppSetting('crash_report_prompted', true)];
         if (enableReports) {
-            saves.push(saveSetting('send_error_reports', true));
+            saves.push(saveAppSetting('send_error_reports', true));
         }
 
         Promise.all(saves)
