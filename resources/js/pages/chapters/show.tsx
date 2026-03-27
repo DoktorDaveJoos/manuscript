@@ -601,6 +601,13 @@ export default function ChapterShow({
         createChapter(book.id, chapter.storyline_id, sidebarStorylines);
     }, [book, chapter.storyline_id, handleBeforeNavigate, sidebarStorylines]);
 
+    const handleSidebarChapterRename = useCallback(
+        (id: number, title: string) => {
+            if (id === chapter.id) setChapterTitle(title);
+        },
+        [chapter.id],
+    );
+
     // Callbacks for sidebar-initiated scene mutations
     const handleSidebarSceneRename = useCallback(
         (sceneId: number, newTitle: string) => {
@@ -659,6 +666,7 @@ export default function ChapterShow({
                     activeChapterWordCount={wordCount}
                     onBeforeNavigate={handleBeforeNavigate}
                     activeScenes={scenes}
+                    onChapterRename={handleSidebarChapterRename}
                     onSceneRename={handleSidebarSceneRename}
                     onSceneDelete={handleSidebarSceneDelete}
                     onSceneReorder={handleSidebarSceneReorder}

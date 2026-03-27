@@ -41,6 +41,7 @@ export default function Sidebar({
     activeChapterWordCount,
     onBeforeNavigate,
     activeScenes,
+    onChapterRename,
     onSceneRename,
     onSceneDelete,
     onSceneReorder,
@@ -56,6 +57,7 @@ export default function Sidebar({
     activeChapterWordCount?: number;
     onBeforeNavigate?: () => Promise<void>;
     activeScenes?: Scene[];
+    onChapterRename?: (chapterId: number, newTitle: string) => void;
     onSceneRename?: (sceneId: number, newTitle: string) => void;
     onSceneDelete?: (sceneId: number) => void;
     onSceneReorder?: (orderedIds: number[]) => void;
@@ -329,10 +331,10 @@ export default function Sidebar({
                         activeChapterWordCount={activeChapterWordCount}
                         onBeforeNavigate={onBeforeNavigate}
                         onAddChapter={handleAddChapter}
-                        onAddStoryline={
-                            canCreateStoryline ? handleAddStoryline : undefined
-                        }
+                        onAddStoryline={handleAddStoryline}
+                        canAddStoryline={canCreateStoryline}
                         activeScenes={activeScenes}
+                        onChapterRename={onChapterRename}
                         onSceneRename={onSceneRename}
                         onSceneDelete={onSceneDelete}
                         onSceneReorder={onSceneReorder}

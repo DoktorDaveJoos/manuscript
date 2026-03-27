@@ -41,6 +41,7 @@
     "chapterList.addScene": "+ Add scene",
     "chapterList.addChapter": "Add chapter",
     "chapterList.addStoryline": "Add storyline",
+    "chapterList.upgradeToPro": "Upgrade to Pro",
     "chapterList.sceneDefault": "Scene {{number}}",
     "chapterList.collapseAll": "Collapse all",
     "chapterList.expandAll": "Expand all",
@@ -158,5 +159,12 @@
     "toolbar.heading2": "Heading 2",
     "toolbar.focus": "Focus",
     "toolbar.notes": "Notes",
-    "toolbar.fontSize": "Font size"
+    "toolbar.fontSize": "Font size",
+    "renameDialog.storyline": "Rename storyline",
+    "renameDialog.chapter": "Rename chapter",
+    "renameDialog.scene": "Rename scene",
+    "renameDialog.labelName": "Name",
+    "renameDialog.labelTitle": "Title",
+    "renameDialog.cancel": "Cancel",
+    "renameDialog.save": "Save"
 }

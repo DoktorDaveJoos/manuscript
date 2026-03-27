@@ -23,6 +23,7 @@ import {
     Eye,
     EyeOff,
     GripVertical,
+    Lock,
     Plus,
     UnfoldVertical,
     FoldVertical,
@@ -45,12 +46,13 @@ import {
 } from '@/actions/App/Http/Controllers/StorylineController';
 import { Collapsible, CollapsibleTrigger } from '@/components/ui/Collapsible';
 import { typedClosestCenter } from '@/lib/dnd';
-import { formatCompactCount, jsonFetchHeaders } from '@/lib/utils';
+import { cn, formatCompactCount, jsonFetchHeaders } from '@/lib/utils';
 import type { Chapter, Scene, Storyline } from '@/types/models';
 import ChapterContextMenu from './ChapterContextMenu';
 import ChapterListItem from './ChapterListItem';
 import DeleteChapterDialog from './DeleteChapterDialog';
 import DeleteStorylineDialog from './DeleteStorylineDialog';
+import RenameDialog from './RenameDialog';
 import SceneContextMenu from './SceneContextMenu';
 import SceneListItem from './SceneListItem';
 import StorylineContextMenu from './StorylineContextMenu';
@@ -296,20 +298,12 @@ function SceneList({
     bookId,
     chapterId,
     onSceneContextMenu,
-    renamingSceneId,
-    sceneRenameRef,
-    onRenameSceneSubmit,
-    onCancelRename,
     onReorder,
 }: {
     scenes: Scene[];
     bookId: number;
     chapterId: number;
     onSceneContextMenu?: (e: React.MouseEvent, scene: Scene) => void;
-    renamingSceneId?: number | null;
-    sceneRenameRef?: React.RefObject<HTMLInputElement | null>;
-    onRenameSceneSubmit?: (scene: Scene, newTitle: string) => void;
-    onCancelRename?: () => void;
     onReorder?: (orderedIds: number[]) => void;
 }) {
     const [scenes, setScenes] = useState(initialScenes);
@@ -379,47 +373,26 @@ function SceneList({
                 strategy={verticalListSortingStrategy}
             >
                 <div className="flex flex-col gap-px">
-                    {scenes.map((scene) =>
-                        renamingSceneId === scene.id ? (
-                            <input
-                                key={scene.id}
-                                ref={sceneRenameRef}
-                                type="text"
-                                defaultValue={scene.title}
-                                className="mx-1 rounded-md border border-border bg-surface px-2 py-1 text-[12px] text-ink outline-none"
-                                onBlur={(e) =>
-                                    onRenameSceneSubmit?.(scene, e.target.value)
-                                }
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter')
-                                        onRenameSceneSubmit?.(
-                                            scene,
-                                            e.currentTarget.value,
-                                        );
-                                    if (e.key === 'Escape') onCancelRename?.();
-                                }}
-                            />
-                        ) : (
-                            <SortableSceneItem
-                                key={scene.id}
-                                scene={scene}
-                                onClick={() => {
-                                    const el = document.getElementById(
-                                        `scene-${scene.id}`,
-                                    );
-                                    el?.scrollIntoView({
-                                        behavior: 'smooth',
-                                        block: 'start',
-                                    });
-                                }}
-                                onContextMenu={
-                                    onSceneContextMenu
-                                        ? (e) => onSceneContextMenu(e, scene)
-                                        : undefined
-                                }
-                            />
-                        ),
-                    )}
+                    {scenes.map((scene) => (
+                        <SortableSceneItem
+                            key={scene.id}
+                            scene={scene}
+                            onClick={() => {
+                                const el = document.getElementById(
+                                    `scene-${scene.id}`,
+                                );
+                                el?.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'start',
+                                });
+                            }}
+                            onContextMenu={
+                                onSceneContextMenu
+                                    ? (e) => onSceneContextMenu(e, scene)
+                                    : undefined
+                            }
+                        />
+                    ))}
                 </div>
             </SortableContext>
             <DragOverlay>
@@ -462,7 +435,9 @@ export default function ChapterList({
     onBeforeNavigate,
     onAddChapter,
     onAddStoryline,
+    canAddStoryline = true,
     activeScenes,
+    onChapterRename,
     onSceneRename,
     onSceneDelete,
     onSceneReorder,
@@ -480,7 +455,9 @@ export default function ChapterList({
     onBeforeNavigate?: () => Promise<void>;
     onAddChapter?: (storylineId: number) => void;
     onAddStoryline?: () => void;
+    canAddStoryline?: boolean;
     activeScenes?: Scene[];
+    onChapterRename?: (chapterId: number, newTitle: string) => void;
     onSceneRename?: (sceneId: number, newTitle: string) => void;
     onSceneDelete?: (sceneId: number) => void;
     onSceneReorder?: (orderedIds: number[]) => void;
@@ -505,16 +482,12 @@ export default function ChapterList({
     const [collapsedStorylineIds, setCollapsedStorylineIds] = useState<
         Set<number>
     >(() => new Set(savedCollapsedStorylineIds));
-    const [renamingChapterId, setRenamingChapterId] = useState<number | null>(
-        null,
-    );
-    const [renamingStorylineId, setRenamingStorylineId] = useState<
-        number | null
+    const [renaming, setRenaming] = useState<
+        | { type: 'chapter'; chapter: Chapter }
+        | { type: 'storyline'; storyline: Storyline }
+        | { type: 'scene'; scene: Scene; chapterId: number }
+        | null
     >(null);
-    const [renamingSceneId, setRenamingSceneId] = useState<number | null>(null);
-    const chapterRenameRef = useRef<HTMLInputElement>(null);
-    const storylineRenameRef = useRef<HTMLInputElement>(null);
-    const sceneRenameRef = useRef<HTMLInputElement>(null);
     const storylinesRef = useRef(initialStorylines);
     storylinesRef.current = initialStorylines;
     const prevActiveChapterIdRef = useRef(activeChapterId);
@@ -742,53 +715,98 @@ export default function ChapterList({
         [],
     );
 
-    const handleRenameChapter = useCallback((chapterId: number) => {
-        setRenamingChapterId(chapterId);
-        setTimeout(() => chapterRenameRef.current?.focus(), 0);
-    }, []);
-
-    const handleRenameChapterSubmit = useCallback(
-        async (chapter: Chapter, newTitle: string) => {
-            setRenamingChapterId(null);
-            if (!newTitle.trim() || newTitle.trim() === chapter.title) return;
-
-            await fetch(
-                updateTitle.url({ book: bookId, chapter: chapter.id }),
-                {
-                    method: 'PATCH',
-                    headers: jsonFetchHeaders(),
-                    body: JSON.stringify({ title: newTitle.trim() }),
-                },
-            );
-            router.reload({ only: ['book'] });
+    const handleRenameSubmit = useCallback(
+        async (newValue: string) => {
+            if (!renaming) return;
+            switch (renaming.type) {
+                case 'chapter':
+                    setStorylines((prev) =>
+                        prev.map((s) => ({
+                            ...s,
+                            chapters: s.chapters?.map((ch) =>
+                                ch.id === renaming.chapter.id
+                                    ? { ...ch, title: newValue }
+                                    : ch,
+                            ),
+                        })),
+                    );
+                    onChapterRename?.(renaming.chapter.id, newValue);
+                    await fetch(
+                        updateTitle.url({
+                            book: bookId,
+                            chapter: renaming.chapter.id,
+                        }),
+                        {
+                            method: 'PATCH',
+                            headers: jsonFetchHeaders(),
+                            body: JSON.stringify({ title: newValue }),
+                        },
+                    );
+                    router.reload({ only: ['book'] });
+                    break;
+                case 'storyline':
+                    setStorylines((prev) =>
+                        prev.map((s) =>
+                            s.id === renaming.storyline.id
+                                ? { ...s, name: newValue }
+                                : s,
+                        ),
+                    );
+                    await fetch(
+                        updateStoryline.url({
+                            book: bookId,
+                            storyline: renaming.storyline.id,
+                        }),
+                        {
+                            method: 'PATCH',
+                            headers: jsonFetchHeaders(),
+                            body: JSON.stringify({
+                                name: newValue,
+                                color: renaming.storyline.color,
+                            }),
+                        },
+                    );
+                    router.reload({ only: ['book'] });
+                    break;
+                case 'scene':
+                    setStorylines((prev) =>
+                        prev.map((s) => ({
+                            ...s,
+                            chapters: s.chapters?.map((ch) =>
+                                ch.id === renaming.chapterId
+                                    ? {
+                                          ...ch,
+                                          scenes: ch.scenes?.map((sc) =>
+                                              sc.id === renaming.scene.id
+                                                  ? { ...sc, title: newValue }
+                                                  : sc,
+                                          ),
+                                      }
+                                    : ch,
+                            ),
+                        })),
+                    );
+                    await fetch(
+                        updateSceneTitle.url({
+                            book: bookId,
+                            chapter: renaming.chapterId,
+                            scene: renaming.scene.id,
+                        }),
+                        {
+                            method: 'PATCH',
+                            headers: jsonFetchHeaders(),
+                            body: JSON.stringify({ title: newValue }),
+                        },
+                    );
+                    if (onSceneRename) {
+                        onSceneRename(renaming.scene.id, newValue);
+                    } else {
+                        router.reload({ only: ['book'] });
+                    }
+                    break;
+            }
         },
-        [bookId],
-    );
-
-    const handleRenameStoryline = useCallback((storylineId: number) => {
-        setRenamingStorylineId(storylineId);
-        setTimeout(() => storylineRenameRef.current?.focus(), 0);
-    }, []);
-
-    const handleRenameStorylineSubmit = useCallback(
-        async (storyline: Storyline, newName: string) => {
-            setRenamingStorylineId(null);
-            if (!newName.trim() || newName.trim() === storyline.name) return;
-
-            await fetch(
-                updateStoryline.url({ book: bookId, storyline: storyline.id }),
-                {
-                    method: 'PATCH',
-                    headers: jsonFetchHeaders(),
-                    body: JSON.stringify({
-                        name: newName.trim(),
-                        color: storyline.color,
-                    }),
-                },
-            );
-            router.reload({ only: ['book'] });
-        },
-        [bookId],
+        [renaming, bookId, onChapterRename, onSceneRename],
     );
 
     const handleSceneContextMenu = useCallback(
@@ -808,38 +826,6 @@ export default function ChapterList({
             });
         },
         [],
-    );
-
-    const handleRenameScene = useCallback((sceneId: number) => {
-        setRenamingSceneId(sceneId);
-        setTimeout(() => sceneRenameRef.current?.focus(), 0);
-    }, []);
-
-    const handleRenameSceneSubmit = useCallback(
-        async (scene: Scene, chapterId: number, newTitle: string) => {
-            setRenamingSceneId(null);
-            if (!newTitle.trim() || newTitle.trim() === scene.title) return;
-
-            await fetch(
-                updateSceneTitle.url({
-                    book: bookId,
-                    chapter: chapterId,
-                    scene: scene.id,
-                }),
-                {
-                    method: 'PATCH',
-                    headers: jsonFetchHeaders(),
-                    body: JSON.stringify({ title: newTitle.trim() }),
-                },
-            );
-
-            if (onSceneRename) {
-                onSceneRename(scene.id, newTitle.trim());
-            } else {
-                router.reload({ only: ['book'] });
-            }
-        },
-        [bookId, onSceneRename],
     );
 
     const handleDeleteScene = useCallback(
@@ -882,7 +868,37 @@ export default function ChapterList({
         [bookId, t],
     );
 
-    const showHeaders = storylines.length > 1;
+    const renamingProps = useMemo(() => {
+        if (!renaming) return null;
+        const titleKey =
+            renaming.type === 'chapter'
+                ? 'renameDialog.chapter'
+                : renaming.type === 'storyline'
+                  ? 'renameDialog.storyline'
+                  : 'renameDialog.scene';
+        const labelKey =
+            renaming.type === 'storyline'
+                ? 'renameDialog.labelName'
+                : 'renameDialog.labelTitle';
+        let value: string;
+        switch (renaming.type) {
+            case 'chapter':
+                value =
+                    (renaming.chapter.id === activeChapterId &&
+                        activeChapterTitle) ||
+                    renaming.chapter.title;
+                break;
+            case 'storyline':
+                value = renaming.storyline.name;
+                break;
+            case 'scene':
+                value = renaming.scene.title;
+                break;
+        }
+        return { titleKey, labelKey, value };
+    }, [renaming, activeChapterId, activeChapterTitle]);
+
+    const showHeaders = true;
 
     return (
         <>
@@ -979,51 +995,6 @@ export default function ChapterList({
                                         {storyline.chapters?.map((chapter) => {
                                             const index = chapterIndex++;
 
-                                            if (
-                                                renamingChapterId === chapter.id
-                                            ) {
-                                                return (
-                                                    <input
-                                                        key={chapter.id}
-                                                        ref={chapterRenameRef}
-                                                        type="text"
-                                                        defaultValue={
-                                                            chapter.id ===
-                                                                activeChapterId &&
-                                                            activeChapterTitle
-                                                                ? activeChapterTitle
-                                                                : chapter.title
-                                                        }
-                                                        className="mx-1 rounded-md border border-border bg-surface px-2 py-1.5 text-[13px] leading-4 text-ink outline-none"
-                                                        onBlur={(e) =>
-                                                            handleRenameChapterSubmit(
-                                                                chapter,
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        onKeyDown={(e) => {
-                                                            if (
-                                                                e.key ===
-                                                                'Enter'
-                                                            )
-                                                                handleRenameChapterSubmit(
-                                                                    chapter,
-                                                                    e
-                                                                        .currentTarget
-                                                                        .value,
-                                                                );
-                                                            if (
-                                                                e.key ===
-                                                                'Escape'
-                                                            )
-                                                                setRenamingChapterId(
-                                                                    null,
-                                                                );
-                                                        }}
-                                                    />
-                                                );
-                                            }
-
                                             const isActiveChapter =
                                                 chapter.id === activeChapterId;
                                             const liveScenes =
@@ -1108,27 +1079,6 @@ export default function ChapterList({
                                                                                     .length,
                                                                             )
                                                                         }
-                                                                        renamingSceneId={
-                                                                            renamingSceneId
-                                                                        }
-                                                                        sceneRenameRef={
-                                                                            sceneRenameRef
-                                                                        }
-                                                                        onRenameSceneSubmit={(
-                                                                            scene,
-                                                                            newTitle,
-                                                                        ) =>
-                                                                            handleRenameSceneSubmit(
-                                                                                scene,
-                                                                                chapter.id,
-                                                                                newTitle,
-                                                                            )
-                                                                        }
-                                                                        onCancelRename={() =>
-                                                                            setRenamingSceneId(
-                                                                                null,
-                                                                            )
-                                                                        }
                                                                         onReorder={
                                                                             isActiveChapter
                                                                                 ? onSceneReorder
@@ -1170,35 +1120,6 @@ export default function ChapterList({
                                         })}
                                     </SortableContext>
 
-                                    {showHeaders &&
-                                        renamingStorylineId ===
-                                            storyline.id && (
-                                            <input
-                                                ref={storylineRenameRef}
-                                                type="text"
-                                                defaultValue={storyline.name}
-                                                className="mx-1 -mt-1 mb-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-medium tracking-[0.08em] text-ink uppercase outline-none"
-                                                onBlur={(e) =>
-                                                    handleRenameStorylineSubmit(
-                                                        storyline,
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter')
-                                                        handleRenameStorylineSubmit(
-                                                            storyline,
-                                                            e.currentTarget
-                                                                .value,
-                                                        );
-                                                    if (e.key === 'Escape')
-                                                        setRenamingStorylineId(
-                                                            null,
-                                                        );
-                                                }}
-                                            />
-                                        )}
-
                                     {onAddChapter && (
                                         <button
                                             type="button"
@@ -1219,16 +1140,29 @@ export default function ChapterList({
                                 </SortableStorylineGroup>
                             ))}
                         </SortableContext>
-                        {onAddStoryline && (
-                            <button
-                                type="button"
-                                onClick={onAddStoryline}
-                                className="flex w-full items-center gap-1.5 px-2.5 pt-3.5 pb-1 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase transition-colors hover:text-ink"
-                            >
-                                <Plus size={12} className="text-ink-faint" />
-                                <span>{t('chapterList.addStoryline')}</span>
-                            </button>
-                        )}
+                        <button
+                            type="button"
+                            onClick={onAddStoryline}
+                            disabled={!canAddStoryline}
+                            title={
+                                canAddStoryline
+                                    ? undefined
+                                    : t('chapterList.upgradeToPro')
+                            }
+                            className={cn(
+                                'flex w-full items-center gap-1.5 px-2.5 pt-3.5 pb-1 text-[11px] font-medium tracking-[0.08em] uppercase transition-colors',
+                                canAddStoryline
+                                    ? 'text-ink-faint hover:text-ink'
+                                    : 'cursor-default opacity-50',
+                            )}
+                        >
+                            {canAddStoryline ? (
+                                <Plus size={12} />
+                            ) : (
+                                <Lock size={12} className="text-ink-faint" />
+                            )}
+                            <span>{t('chapterList.addStoryline')}</span>
+                        </button>
                     </div>
                 </div>
 
@@ -1263,7 +1197,12 @@ export default function ChapterList({
                     storylines={storylines}
                     position={contextMenu.position}
                     onClose={() => setContextMenu(null)}
-                    onRename={() => handleRenameChapter(contextMenu.chapter.id)}
+                    onRename={() =>
+                        setRenaming({
+                            type: 'chapter',
+                            chapter: contextMenu.chapter,
+                        })
+                    }
                     onDelete={() =>
                         setDialog({
                             type: 'deleteChapter',
@@ -1281,7 +1220,10 @@ export default function ChapterList({
                     position={contextMenu.position}
                     onClose={() => setContextMenu(null)}
                     onRename={() =>
-                        handleRenameStoryline(contextMenu.storyline.id)
+                        setRenaming({
+                            type: 'storyline',
+                            storyline: contextMenu.storyline,
+                        })
                     }
                     onDelete={() =>
                         setDialog({
@@ -1298,13 +1240,29 @@ export default function ChapterList({
                     canDelete={contextMenu.sceneCount > 1}
                     position={contextMenu.position}
                     onClose={() => setContextMenu(null)}
-                    onRename={() => handleRenameScene(contextMenu.scene.id)}
+                    onRename={() =>
+                        setRenaming({
+                            type: 'scene',
+                            scene: contextMenu.scene,
+                            chapterId: contextMenu.chapterId,
+                        })
+                    }
                     onDelete={() =>
                         handleDeleteScene(
                             contextMenu.chapterId,
                             contextMenu.scene.id,
                         )
                     }
+                />
+            )}
+
+            {renamingProps && (
+                <RenameDialog
+                    title={t(renamingProps.titleKey)}
+                    label={t(renamingProps.labelKey)}
+                    value={renamingProps.value}
+                    onSubmit={handleRenameSubmit}
+                    onClose={() => setRenaming(null)}
                 />
             )}
 

@@ -40,6 +40,7 @@
     "chapterList.addScene": "+ Añadir escena",
     "chapterList.addChapter": "Añadir capítulo",
     "chapterList.addStoryline": "Añadir línea narrativa",
+    "chapterList.upgradeToPro": "Actualizar a Pro",
     "chapterList.sceneDefault": "Escena {{number}}",
     "chapterList.collapseAll": "Contraer todo",
     "chapterList.expandAll": "Expandir todo",
@@ -157,5 +158,12 @@
     "toolbar.heading2": "Encabezado 2",
     "toolbar.focus": "Enfoque",
     "toolbar.notes": "Notas",
-    "toolbar.fontSize": "Tamaño de fuente"
+    "toolbar.fontSize": "Tamaño de fuente",
+    "renameDialog.storyline": "Renombrar línea narrativa",
+    "renameDialog.chapter": "Renombrar capítulo",
+    "renameDialog.scene": "Renombrar escena",
+    "renameDialog.labelName": "Nombre",
+    "renameDialog.labelTitle": "Título",
+    "renameDialog.cancel": "Cancelar",
+    "renameDialog.save": "Guardar"
 }

@@ -40,6 +40,7 @@
     "chapterList.addScene": "+ Szene hinzufügen",
     "chapterList.addChapter": "Kapitel hinzufügen",
     "chapterList.addStoryline": "Handlungsstrang hinzufügen",
+    "chapterList.upgradeToPro": "Upgrade auf Pro",
     "chapterList.sceneDefault": "Szene {{number}}",
     "chapterList.collapseAll": "Alle einklappen",
     "chapterList.expandAll": "Alle ausklappen",
@@ -157,5 +158,12 @@
     "toolbar.heading2": "Überschrift 2",
     "toolbar.focus": "Fokus",
     "toolbar.notes": "Notizen",
-    "toolbar.fontSize": "Schriftgröße"
+    "toolbar.fontSize": "Schriftgröße",
+    "renameDialog.storyline": "Handlungsstrang umbenennen",
+    "renameDialog.chapter": "Kapitel umbenennen",
+    "renameDialog.scene": "Szene umbenennen",
+    "renameDialog.labelName": "Name",
+    "renameDialog.labelTitle": "Titel",
+    "renameDialog.cancel": "Abbrechen",
+    "renameDialog.save": "Speichern"
 }
