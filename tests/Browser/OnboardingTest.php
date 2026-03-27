@@ -28,7 +28,7 @@ it('completes full onboarding: create book and skip import', function () {
         ->assertSee('Import manuscript');
 
     expect(Book::where('title', 'My First Novel')->exists())->toBeTrue();
-    expect(Storyline::where('name', 'Main')->exists())->toBeTrue();
+    expect(Storyline::where('name', 'Main Storyline')->exists())->toBeTrue();
 });
 
 it('import page renders correctly and shows file after attach', function () {
@@ -66,7 +66,7 @@ it('skip import creates a default storyline and reaches the editor', function ()
         ->assertSee('No chapters yet');
 
     expect($book->fresh()->storylines()->count())->toBe(1);
-    expect($book->fresh()->storylines()->first()->name)->toBe('Main');
+    expect($book->fresh()->storylines()->first()->name)->toBe('Main Storyline');
 });
 
 it('shows the book library when books exist', function () {

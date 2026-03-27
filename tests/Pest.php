@@ -29,6 +29,7 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->beforeEach(function () {
         AppSetting::set('crash_report_prompted', true);
+        AppSetting::set('language_prompted', true);
     })
     ->in('Browser');
 
