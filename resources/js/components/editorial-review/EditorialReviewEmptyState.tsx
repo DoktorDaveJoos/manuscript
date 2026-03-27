@@ -1,4 +1,4 @@
-import { FileSearch } from 'lucide-react';
+import { FileSearch, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
@@ -7,9 +7,11 @@ import Dialog from '@/components/ui/Dialog';
 export default function EditorialReviewEmptyState({
     onStart,
     starting,
+    locked = false,
 }: {
     onStart: () => void;
     starting: boolean;
+    locked?: boolean;
 }) {
     const { t } = useTranslation('editorial-review');
     const [showConfirm, setShowConfirm] = useState(false);
@@ -28,13 +30,22 @@ export default function EditorialReviewEmptyState({
                         {t('emptyState.description')}
                     </p>
                 </div>
-                <Button
-                    variant="primary"
-                    onClick={() => setShowConfirm(true)}
-                    disabled={starting}
-                >
-                    {starting ? t('progress.pending') : t('emptyState.button')}
-                </Button>
+                {locked ? (
+                    <Button variant="primary" disabled>
+                        <Lock size={14} />
+                        {t('emptyState.button')}
+                    </Button>
+                ) : (
+                    <Button
+                        variant="primary"
+                        onClick={() => setShowConfirm(true)}
+                        disabled={starting}
+                    >
+                        {starting
+                            ? t('progress.pending')
+                            : t('emptyState.button')}
+                    </Button>
+                )}
             </div>
 
             {showConfirm && (

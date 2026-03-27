@@ -16,6 +16,7 @@ class NativeAppServiceProvider implements ProvidesPhpIni
     {
         Window::open()
             ->title('Manuscript')
+            ->backgroundColor('#161616')
             ->width(1440)
             ->height(900)
             ->minWidth(1024)

@@ -46,7 +46,7 @@ export default function WikiIndex({
     tab,
 }: Props) {
     const { t } = useTranslation('wiki');
-    const { canCreateWikiEntry, wikiEntries: wikiLimits } = useFreeTier();
+    const { isPro, isFree, wikiEntries: wikiLimits } = useFreeTier();
     const storylines = useSidebarStorylines();
     const initialTab = validTabs.includes(tab as WikiTab)
         ? (tab as WikiTab)
@@ -57,6 +57,15 @@ export default function WikiIndex({
     const [creatingType, setCreatingType] = useState<WikiTab | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
     const isSearching = query.trim().length > 0;
+
+    const wikiLimit = wikiLimits?.limit ?? 5;
+    const totalEntries =
+        characters.length +
+        locations.length +
+        organizations.length +
+        items.length +
+        lore.length;
+    const canAddEntry = isPro || totalEntries < wikiLimit;
 
     const entriesByTab = useMemo<Record<WikiTab, (Character | WikiEntry)[]>>(
         () => ({
@@ -217,14 +226,14 @@ export default function WikiIndex({
                                     ? t('search.results', {
                                           count: totalResults,
                                       })
-                                    : wikiLimits
-                                      ? `${wikiLimits.count}/${wikiLimits.limit}`
+                                    : isFree
+                                      ? `${totalEntries}/${wikiLimit}`
                                       : count}
                             </span>
                         </div>
                         <AddEntryDropdown
                             onSelect={handleAddEntry}
-                            disabled={!canCreateWikiEntry}
+                            disabled={!canAddEntry}
                         />
                     </div>
 

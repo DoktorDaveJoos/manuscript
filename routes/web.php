@@ -118,6 +118,10 @@ Route::post('/license/activate', [LicenseController::class, 'activate'])->name('
 Route::post('/license/deactivate', [LicenseController::class, 'deactivate'])->name('license.deactivate');
 Route::post('/license/revalidate', [LicenseController::class, 'revalidate'])->name('license.revalidate');
 
+// AI pages — visible to all users (CTAs gated in frontend)
+Route::get('/books/{book}/ai/dashboard', [AiDashboardController::class, 'index'])->name('books.ai.dashboard');
+Route::get('/books/{book}/ai/editorial-review', [EditorialReviewController::class, 'index'])->name('books.ai.editorial-review.index');
+
 // Pro features — require active licence
 Route::middleware('license')->group(function () {
     Route::get('/books/{book}/canvas', [CanvasController::class, 'index'])->name('books.canvas');
@@ -148,8 +152,6 @@ Route::middleware('license')->group(function () {
     Route::post('/books/{book}/plot-connections', [PlotPointConnectionController::class, 'store'])->name('plotConnections.store');
     Route::delete('/books/{book}/plot-connections/{plotPointConnection}', [PlotPointConnectionController::class, 'destroy'])->name('plotConnections.destroy');
 
-    Route::get('/books/{book}/ai/dashboard', [AiDashboardController::class, 'index'])->name('books.ai.dashboard');
-
     Route::post('/books/{book}/ai/prepare', [AiPreparationController::class, 'start'])->name('books.ai.prepare');
     Route::get('/books/{book}/ai/prepare/status', [AiPreparationController::class, 'status'])->name('books.ai.prepare.status');
 
@@ -171,7 +173,6 @@ Route::middleware('license')->group(function () {
     Route::get('/books/{book}/ai/bulk-revision-status', [AiController::class, 'bulkRevisionStatus'])->name('books.ai.bulkRevisionStatus');
     Route::post('/books/{book}/ai/reset-usage', [AiController::class, 'resetUsage'])->name('books.ai.resetUsage');
 
-    Route::get('/books/{book}/ai/editorial-review', [EditorialReviewController::class, 'index'])->name('books.ai.editorial-review.index');
     Route::post('/books/{book}/ai/editorial-review', [EditorialReviewController::class, 'store'])->name('books.ai.editorial-review.store');
     Route::get('/books/{book}/ai/editorial-review/{review}', [EditorialReviewController::class, 'show'])->name('books.ai.editorial-review.show');
     Route::get('/books/{book}/ai/editorial-review/{review}/progress', [EditorialReviewController::class, 'progress'])->name('books.ai.editorial-review.progress');

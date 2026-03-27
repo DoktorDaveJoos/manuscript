@@ -49,5 +49,6 @@
     "Failed to deactivate license.": "Lizenz konnte nicht deaktiviert werden.",
     "License server authentication failed. Please contact support.": "Authentifizierung beim Lizenzserver fehlgeschlagen. Bitte kontaktiere den Support.",
     "No API key to remove.": "Kein API-Schlüssel zum Entfernen vorhanden.",
-    "No active license found.": "Keine aktive Lizenz gefunden."
+    "No active license found.": "Keine aktive Lizenz gefunden.",
+    "Main Storyline": "Haupthandlung"
 }

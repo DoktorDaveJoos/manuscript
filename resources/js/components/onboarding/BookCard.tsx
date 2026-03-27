@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 import { Card } from '@/components/ui/Card';
@@ -33,6 +33,8 @@ export default function BookCard({
     onDelete: () => void;
 }) {
     const { t, i18n } = useTranslation('onboarding');
+    const menuOpenRef = useRef(false);
+    const [hoursAgo] = useState(() => computeHoursAgo(book.updated_at));
 
     function formatWords(count: number | null): string {
         if (!count) return t('bookCard.words', { count: 0, formatted: '0' });
@@ -41,8 +43,6 @@ export default function BookCard({
             formatted: count.toLocaleString(i18n.language),
         });
     }
-
-    const [hoursAgo] = useState(() => computeHoursAgo(book.updated_at));
     const updatedAtLabel = (() => {
         if (hoursAgo < 1) return t('bookCard.editedJustNow');
         if (hoursAgo < 24)
@@ -62,7 +62,10 @@ export default function BookCard({
 
     return (
         <Card
-            onClick={() => router.visit(editor.url(book))}
+            onClick={() => {
+                if (menuOpenRef.current) return;
+                router.visit(editor.url(book));
+            }}
             className="relative flex w-[400px] shrink-0 cursor-pointer flex-col gap-5 p-6 transition-shadow hover:shadow-md"
         >
             <div className="absolute top-4 right-4">
@@ -70,6 +73,9 @@ export default function BookCard({
                     onRename={onRename}
                     onDuplicate={onDuplicate}
                     onDelete={onDelete}
+                    onOpenChange={(open) => {
+                        menuOpenRef.current = open;
+                    }}
                 />
             </div>
 

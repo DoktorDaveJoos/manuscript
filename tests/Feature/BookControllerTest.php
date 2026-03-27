@@ -64,7 +64,7 @@ test('skip import creates default storyline and redirects to editor', function (
         ->assertRedirect(route('books.editor', $book));
 
     expect($book->storylines)->toHaveCount(1)
-        ->and($book->storylines->first()->name)->toBe('Main');
+        ->and($book->storylines->first()->name)->toBe('Main Storyline');
 });
 
 test('validates title is required', function () {

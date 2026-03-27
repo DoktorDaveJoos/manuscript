@@ -55,7 +55,7 @@ class BookController extends Controller
     public function skipImport(Book $book): RedirectResponse
     {
         $book->storylines()->create([
-            'name' => 'Main',
+            'name' => __('Main Storyline'),
             'type' => StorylineType::Main,
             'sort_order' => 0,
         ]);

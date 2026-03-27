@@ -40,7 +40,19 @@ export function useAiPreparation(
                 });
                 if (!res.ok) throw new Error();
                 const data = await res.json();
-                setStatus(data);
+                setStatus((prev) => {
+                    if (
+                        prev &&
+                        prev.status === data.status &&
+                        prev.current_phase === data.current_phase &&
+                        prev.current_phase_progress ===
+                            data.current_phase_progress &&
+                        prev.current_phase_total === data.current_phase_total
+                    ) {
+                        return prev;
+                    }
+                    return data;
+                });
 
                 if (data?.status === 'completed') {
                     router.reload();

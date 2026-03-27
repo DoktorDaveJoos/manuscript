@@ -50,16 +50,23 @@ export function useEditorialReview(
                 if (!res.ok) throw new Error();
                 const data = await res.json();
 
-                setReview((prev) =>
-                    prev
-                        ? {
-                              ...prev,
-                              status: data.status,
-                              progress: data.progress,
-                              error_message: data.error_message,
-                          }
-                        : prev,
-                );
+                setReview((prev) => {
+                    if (
+                        !prev ||
+                        (prev.status === data.status &&
+                            prev.error_message === data.error_message &&
+                            JSON.stringify(prev.progress) ===
+                                JSON.stringify(data.progress))
+                    ) {
+                        return prev;
+                    }
+                    return {
+                        ...prev,
+                        status: data.status,
+                        progress: data.progress,
+                        error_message: data.error_message,
+                    };
+                });
 
                 if (data.status === 'completed' || data.status === 'failed') {
                     router.reload();
@@ -90,7 +97,7 @@ export function useEditorialReview(
             }
 
             const data = await res.json();
-            setReview(data);
+            setReview(data.review);
         } catch (e) {
             setError((e as Error).message);
         } finally {

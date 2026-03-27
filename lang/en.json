@@ -49,5 +49,6 @@
     "Failed to deactivate license.": "Failed to deactivate license.",
     "License server authentication failed. Please contact support.": "License server authentication failed. Please contact support.",
     "No API key to remove.": "No API key to remove.",
-    "No active license found.": "No active license found."
+    "No active license found.": "No active license found.",
+    "Main Storyline": "Main Storyline"
 }

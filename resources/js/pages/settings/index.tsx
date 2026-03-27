@@ -48,7 +48,6 @@ import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
 import type { Theme } from '@/lib/theme';
 import { cn, jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
-import type { AppSettings } from '@/types/models';
 import type {
     AppSettings,
     AiSetting,

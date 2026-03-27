@@ -12,15 +12,17 @@ export default function BookCardMenu({
     onRename,
     onDuplicate,
     onDelete,
+    onOpenChange,
 }: {
     onRename: () => void;
     onDuplicate?: () => void;
     onDelete: () => void;
+    onOpenChange?: (open: boolean) => void;
 }) {
     const { t } = useTranslation('onboarding');
 
     return (
-        <DropdownMenu>
+        <DropdownMenu onOpenChange={onOpenChange}>
             <DropdownMenuTrigger asChild>
                 <button
                     type="button"

@@ -143,14 +143,14 @@ export default function WritingSurface({
         (e: React.KeyboardEvent) => {
             if (e.key === 'Enter' && e.shiftKey) {
                 e.preventDefault();
+                document.execCommand('insertLineBreak');
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
                 if (scenes.length > 0) {
                     editorRegistry.current
                         .get(scenes[0].id)
                         ?.commands.focus('start');
                 }
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                document.execCommand('insertLineBreak');
             } else if (e.key === 'ArrowDown') {
                 const sel = window.getSelection();
                 if (!sel || !titleRef.current) return;
