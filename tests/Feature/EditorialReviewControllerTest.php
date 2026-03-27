@@ -174,8 +174,8 @@ test('show returns review with sections', function () {
         ->assertSuccessful()
         ->assertInertia(fn ($page) => $page
             ->component('books/editorial-review')
-            ->has('review')
-            ->has('review.sections', 1)
+            ->has('latestReview')
+            ->has('latestReview.sections', 1)
             ->has('chapters')
             ->has('book')
         );

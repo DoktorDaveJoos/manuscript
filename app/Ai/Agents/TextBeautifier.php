@@ -53,8 +53,8 @@ class TextBeautifier implements Agent, BelongsToBook, HasMiddleware
         - Scene transitions: existing <hr> tags in the input mark scene boundaries and MUST be preserved in the output. You may add additional <hr> tags only for new scene transitions you identify.
         - Emotional pacing: let impactful short sentences or revelations stand alone as their own paragraph.
 
-        Preserve ALL existing HTML formatting (<strong>, <em>, <u>, <blockquote>, <br>, <hr>).
-        Return the result as HTML using <p> tags for paragraphs and <hr> for scene breaks.
+        Preserve ALL existing HTML formatting (<strong>, <em>, <u>, <s>, <blockquote>, <br>, <hr>, <h1>, <h2>, <h3>, <ul>, <ol>, <li>).
+        Return the result as HTML using the same tags present in the input. Use <p> tags for paragraphs, <hr> for scene breaks, and preserve any headings, lists, or other block-level elements exactly as they appear.
         Return ONLY the reformatted text, without commentary or explanations.{$writingStyle}
         INSTRUCTIONS;
     }

@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     progress,
+    show,
     store,
 } from '@/actions/App/Http/Controllers/EditorialReviewController';
 import { jsonFetchHeaders } from '@/lib/utils';
@@ -50,6 +51,15 @@ export function useEditorialReview(
                 if (!res.ok) throw new Error();
                 const data = await res.json();
 
+                if (data.status === 'completed' || data.status === 'failed') {
+                    if (pollRef.current) {
+                        clearInterval(pollRef.current);
+                        pollRef.current = null;
+                    }
+                    router.reload();
+                    return;
+                }
+
                 setReview((prev) => {
                     if (
                         !prev ||
@@ -67,10 +77,6 @@ export function useEditorialReview(
                         error_message: data.error_message,
                     };
                 });
-
-                if (data.status === 'completed' || data.status === 'failed') {
-                    router.reload();
-                }
             } catch {
                 // Silently retry on next interval
             }
@@ -105,9 +111,12 @@ export function useEditorialReview(
         }
     }, [bookId]);
 
-    const selectReview = useCallback((selected: EditorialReview) => {
-        setReview(selected);
-    }, []);
+    const selectReview = useCallback(
+        (selected: EditorialReview) => {
+            router.visit(show.url({ book: bookId, review: selected.id }));
+        },
+        [bookId],
+    );
 
     const updateResolved = useCallback((resolved: string[]) => {
         setReview((prev) =>

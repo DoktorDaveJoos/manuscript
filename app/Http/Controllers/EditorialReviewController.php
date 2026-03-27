@@ -74,7 +74,7 @@ class EditorialReviewController extends Controller
 
         return Inertia::render('books/editorial-review', [
             'book' => $book->only('id', 'title', 'author', 'language'),
-            'review' => $review,
+            'latestReview' => $review,
             'chapters' => $this->chapterList($book),
             'reviews' => $book->editorialReviews()->latest()->get(),
         ]);
