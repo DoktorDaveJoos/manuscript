@@ -29,6 +29,20 @@ class ExportService
     public function export(Book $book, array $options): BinaryFileResponse
     {
         $format = ExportFormat::from($options['format'] ?? 'docx');
+        $filePath = $this->exportToPath($book, $options);
+        $downloadName = self::downloadName($book, $format);
+
+        return response()->download($filePath, $downloadName)->deleteFileAfterSend();
+    }
+
+    /**
+     * Export a book and return the temporary file path (caller is responsible for cleanup).
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public function exportToPath(Book $book, array $options): string
+    {
+        $format = ExportFormat::from($options['format'] ?? 'docx');
         $chapters = self::resolveChapters($book, $options);
 
         self::injectMatterText($options, $book);
@@ -37,11 +51,13 @@ class ExportService
         $template = self::resolveTemplate($exportOptions->template);
 
         $exporter = $this->resolveExporter($format, $template);
-        $filePath = $exporter->export($book, $chapters, $exportOptions);
 
-        $downloadName = Str::slug($book->title ?: 'export').'.'.$format->extension();
+        return $exporter->export($book, $chapters, $exportOptions);
+    }
 
-        return response()->download($filePath, $downloadName)->deleteFileAfterSend();
+    public static function downloadName(Book $book, ExportFormat $format): string
+    {
+        return Str::slug($book->title ?: 'export').'.'.$format->extension();
     }
 
     /**

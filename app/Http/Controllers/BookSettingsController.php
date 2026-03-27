@@ -22,6 +22,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Native\Desktop\Dialog;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BookSettingsController extends Controller
@@ -178,7 +179,44 @@ class BookSettingsController extends Controller
             return response()->json(['error' => 'PDF export requires the desktop app'], 422);
         }
 
+        if (config('nativephp-internal.running')) {
+            return $this->exportWithNativeDialog($book, $validated, $service);
+        }
+
         return $service->export($book, $validated);
+    }
+
+    private function exportWithNativeDialog(Book $book, array $validated, ExportService $service): JsonResponse
+    {
+        $format = ExportFormat::from($validated['format'] ?? 'docx');
+        $downloadName = ExportService::downloadName($book, $format);
+
+        // Generate the export file first so the user doesn't wait on both generation + dialog
+        $tempPath = $service->exportToPath($book, $validated);
+
+        try {
+            $savePath = app(Dialog::class)
+                ->title(__('Save Export'))
+                ->defaultPath($downloadName)
+                ->filter(strtoupper($format->extension()), [$format->extension()])
+                ->button(__('Save'))
+                ->asSheet()
+                ->save();
+
+            if (! $savePath) {
+                return response()->json(['cancelled' => true]);
+            }
+
+            if (! @copy($tempPath, $savePath)) {
+                return response()->json(['error' => 'Failed to save export file'], 500);
+            }
+
+            return response()->json(['success' => true]);
+        } catch (\Throwable) {
+            return response()->json(['error' => 'Save dialog unavailable'], 500);
+        } finally {
+            @unlink($tempPath);
+        }
     }
 
     public function previewPdf(ExportBookRequest $request, Book $book): JsonResponse

@@ -16,6 +16,7 @@ import Button from '@/components/ui/Button';
 import PageHeader from '@/components/ui/PageHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
+import { Spinner } from '@/components/ui/spinner';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import ToggleRow from '@/components/ui/ToggleRow';
 import { useFreeTier } from '@/hooks/useFreeTier';
@@ -280,7 +281,11 @@ export default function ExportSettings({
                         onClick={onExport}
                         disabled={exporting}
                     >
-                        <Download className="h-3.5 w-3.5" />
+                        {exporting ? (
+                            <Spinner className="h-3.5 w-3.5" />
+                        ) : (
+                            <Download className="h-3.5 w-3.5" />
+                        )}
                         {exporting ? t('exporting') : t('exportAs', { format })}
                     </Button>
                 </div>

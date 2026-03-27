@@ -10,7 +10,21 @@ use App\Services\Export\ContentPreparer;
 use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
 use App\Services\Export\Templates\ClassicTemplate;
+use Native\Desktop\Dialog;
 use Native\Desktop\Facades\System;
+
+function mockNativeDialog(string $extension = 'pdf'): string
+{
+    config(['nativephp-internal.running' => true]);
+
+    $savePath = storage_path('app/test-export-'.uniqid().'.'.$extension);
+    $dialog = Mockery::mock(Dialog::class);
+    $dialog->shouldReceive('title->defaultPath->filter->button->asSheet->save')
+        ->andReturn($savePath);
+    app()->instance(Dialog::class, $dialog);
+
+    return $savePath;
+}
 
 beforeEach(function () {
     License::factory()->create();
@@ -590,15 +604,14 @@ test('export endpoint accepts new formats', function () {
         ])->assertOk();
     }
 
-    // PDF requires NativePHP environment + System::printToPDF mock (Chromium-based)
-    config(['nativephp-internal.running' => true]);
-
-    // mPDF generates PDFs in PHP — no mocking needed
+    $savePath = mockNativeDialog();
 
     $this->postJson(route('books.settings.export.run', $book), [
         'format' => 'pdf',
         'scope' => 'full',
-    ])->assertOk();
+    ])->assertOk()->assertJson(['success' => true]);
+
+    @unlink($savePath);
 });
 
 test('export endpoint rejects invalid format', function () {
@@ -762,16 +775,16 @@ test('export endpoint accepts front_matter and back_matter arrays', function () 
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
     Scene::factory()->for($chapter)->create(['content' => '<p>Text.</p>', 'sort_order' => 1]);
 
-    config(['nativephp-internal.running' => true]);
-
-    // mPDF generates PDFs in PHP — no mocking needed
+    $savePath = mockNativeDialog();
 
     $this->postJson(route('books.settings.export.run', $book), [
         'format' => 'pdf',
         'scope' => 'full',
         'front_matter' => ['title-page', 'copyright'],
         'back_matter' => ['acknowledgments'],
-    ])->assertOk();
+    ])->assertOk()->assertJson(['success' => true]);
+
+    @unlink($savePath);
 });
 
 test('export endpoint rejects invalid front_matter values', function () {
@@ -854,7 +867,7 @@ test('pdf blade template renders valid html', function () {
         'front_matter' => ['title-page'],
     ]);
 
-    $template = new \App\Services\Export\Templates\ClassicTemplate;
+    $template = new ClassicTemplate;
 
     $html = view('export.pdf', [
         'book' => $book,

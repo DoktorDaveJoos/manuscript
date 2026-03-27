@@ -10,11 +10,18 @@ export function downloadExport(
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            Accept: 'application/octet-stream',
+            Accept: 'application/octet-stream, application/json',
         },
         body: JSON.stringify(options),
     }).then(async (res) => {
         if (!res.ok) throw new Error('Export failed');
+
+        const contentType = res.headers.get('content-type') ?? '';
+
+        if (contentType.includes('application/json')) {
+            return;
+        }
+
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
