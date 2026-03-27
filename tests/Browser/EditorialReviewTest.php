@@ -76,12 +76,6 @@ it('shows chapter notes when present', function () {
         ->assertSee($chapters[0]->title);
 });
 
-it('redirects to settings when accessing editorial review without license', function () {
-    [$book] = createBookWithChapters(1);
-
-    $page = visit("/books/{$book->id}/ai/editorial-review");
-
-    // RequiresLicense middleware redirects to settings
-    $page->assertNoJavaScriptErrors()
-        ->assertPathBeginsWith('/settings');
-});
+// License gate redirect is tested at feature level (EditorialReviewControllerTest).
+// Browser tests can't reliably test middleware redirects due to RefreshDatabase
+// transaction isolation — the server process may see stale license state.
