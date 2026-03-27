@@ -115,8 +115,12 @@ export default function ExportSettings({
                                     value={f}
                                     disabled={!canExportFormat(f)}
                                 >
-                                    .{f}
-                                    {!canExportFormat(f) && <Lock size={10} />}
+                                    <span className="inline-flex items-center gap-1">
+                                        .{f}
+                                        {!canExportFormat(f) && (
+                                            <Lock size={10} />
+                                        )}
+                                    </span>
                                 </ToggleGroupItem>
                             ))}
                         </ToggleGroup>
