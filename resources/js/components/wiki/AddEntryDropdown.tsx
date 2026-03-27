@@ -14,7 +14,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
-import { cn } from '@/lib/utils';
 import type { WikiTab } from './WikiTabBar';
 
 const options: { type: WikiTab; icon: typeof User }[] = [
@@ -34,25 +33,27 @@ export default function AddEntryDropdown({
 }) {
     const { t } = useTranslation('wiki');
 
+    if (disabled) {
+        return (
+            <button
+                data-testid="add-wiki-entry"
+                disabled
+                className="flex h-[26px] w-[26px] cursor-default items-center justify-center rounded-md border border-border bg-neutral-bg opacity-50 transition-colors"
+                title="Upgrade to Pro"
+            >
+                <Lock size={12} className="text-ink-faint" />
+            </button>
+        );
+    }
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <button
                     data-testid="add-wiki-entry"
-                    disabled={disabled}
-                    className={cn(
-                        'flex h-[26px] w-[26px] items-center justify-center rounded-md border border-border bg-neutral-bg transition-colors',
-                        disabled
-                            ? 'cursor-default opacity-50'
-                            : 'hover:bg-border',
-                    )}
-                    title={disabled ? 'Upgrade to Pro' : undefined}
+                    className="flex h-[26px] w-[26px] items-center justify-center rounded-md border border-border bg-neutral-bg transition-colors hover:bg-border"
                 >
-                    {disabled ? (
-                        <Lock size={12} className="text-ink-faint" />
-                    ) : (
-                        <Plus size={14} className="text-ink-soft" />
-                    )}
+                    <Plus size={14} className="text-ink-soft" />
                 </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-[184px]">
