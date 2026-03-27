@@ -117,6 +117,20 @@ export default function ChapterShow({
     const sidebarStorylines = useSidebarStorylines();
     const { visible: aiVisible } = useAiFeatures();
     const { app_settings } = usePage<{ app_settings: AppSettings }>().props;
+    const [pendingTitleSelect, setPendingTitleSelect] = useState(
+        () => chapter.word_count === 0,
+    );
+    const prevChapterIdRef = useRef(chapter.id);
+    useEffect(() => {
+        if (chapter.id !== prevChapterIdRef.current) {
+            prevChapterIdRef.current = chapter.id;
+            setPendingTitleSelect(chapter.word_count === 0);
+        }
+    }, [chapter.id, chapter.word_count]);
+    const handleTitleSelectHandled = useCallback(
+        () => setPendingTitleSelect(false),
+        [],
+    );
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
     const [chapterTitle, setChapterTitle] = useState(chapter.title);
     const [scenes, setScenes] = useState<Scene[]>(chapter.scenes ?? []);
@@ -735,6 +749,8 @@ export default function ChapterShow({
                                 bookId={book.id}
                                 chapterId={chapter.id}
                                 title={chapterTitle}
+                                autoSelectTitle={pendingTitleSelect}
+                                onTitleSelectHandled={handleTitleSelectHandled}
                                 povCharacterName={povCharacterName}
                                 timelineLabel={timelineLabel}
                                 onTitleUpdate={handleTitleUpdate}

@@ -46,11 +46,15 @@ export default function WritingSurface({
     isLocalFindOpen = false,
     localFindShowReplace = false,
     onLocalFindClose,
+    autoSelectTitle,
+    onTitleSelectHandled,
 }: {
     scenes: Scene[];
     bookId: number;
     chapterId: number;
     title: string;
+    autoSelectTitle?: boolean;
+    onTitleSelectHandled?: () => void;
     povCharacterName?: string | null;
     timelineLabel?: string | null;
     onTitleUpdate: (title: string) => void;
@@ -113,6 +117,27 @@ export default function WritingSurface({
         if (!el || el === document.activeElement) return;
         el.innerHTML = titleToHtml(title);
     }, [title]);
+
+    // Auto-focus and select the title text for empty chapters (e.g. freshly created)
+    useEffect(() => {
+        if (!autoSelectTitle) return;
+        const el = titleRef.current;
+        if (!el) return;
+        const timer = setTimeout(() => {
+            if (!el.textContent) return;
+            (document.activeElement as HTMLElement)?.blur?.();
+            el.focus();
+            const sel = window.getSelection();
+            if (sel) {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+            onTitleSelectHandled?.();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [autoSelectTitle, onTitleSelectHandled]);
 
     const handleTitleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
