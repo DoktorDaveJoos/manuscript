@@ -11,6 +11,7 @@ const badgeVariants = cva(
                 secondary: 'bg-neutral-bg text-ink-muted',
                 destructive: 'bg-delete/10 text-delete',
                 success: 'bg-status-final/15 text-status-final',
+                revised: 'bg-status-revised/15 text-status-revised',
                 warning: 'bg-accent/10 text-accent',
                 outline: 'border border-border text-ink-muted',
             },
