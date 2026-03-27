@@ -16,7 +16,6 @@ import {
     rejectVersion,
 } from '@/actions/App/Http/Controllers/ChapterController';
 import Button from '@/components/ui/Button';
-import { getXsrfToken } from '@/lib/csrf';
 import { ruleCheckers, RULE_THRESHOLDS, stripTags } from '@/lib/ruleCheckers';
 import type {
     ChapterVersion,
@@ -387,7 +386,6 @@ export default function DiffView({
                         headers: {
                             Accept: 'application/json',
                             'Content-Type': 'application/json',
-                            'X-XSRF-TOKEN': getXsrfToken(),
                         },
                         body: JSON.stringify({ content: mergedContent }),
                     },
@@ -404,7 +402,6 @@ export default function DiffView({
                         method: 'POST',
                         headers: {
                             Accept: 'application/json',
-                            'X-XSRF-TOKEN': getXsrfToken(),
                         },
                     },
                 );
@@ -438,7 +435,6 @@ export default function DiffView({
                     method: 'POST',
                     headers: {
                         Accept: 'application/json',
-                        'X-XSRF-TOKEN': getXsrfToken(),
                     },
                 },
             );

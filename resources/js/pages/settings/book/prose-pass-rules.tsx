@@ -4,7 +4,7 @@ import { updateProsePassRules } from '@/actions/App/Http/Controllers/SettingsCon
 import PageHeader from '@/components/ui/PageHeader';
 import Toggle from '@/components/ui/Toggle';
 import SettingsLayout from '@/layouts/SettingsLayout';
-import { getXsrfToken } from '@/lib/csrf';
+import { jsonFetchHeaders } from '@/lib/utils';
 import type { ProsePassRule } from '@/types/models';
 
 type BookData = { id: number; title: string };
@@ -27,11 +27,7 @@ export default function ProsePassRules({ book, rules: initialRules }: Props) {
 
             fetch(updateProsePassRules.url(), {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
-                    Accept: 'application/json',
-                },
+                headers: jsonFetchHeaders(),
                 body: JSON.stringify({ rules: updated }),
             }).catch(() => {
                 setRules(rules);

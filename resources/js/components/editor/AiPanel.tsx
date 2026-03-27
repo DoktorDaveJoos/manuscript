@@ -9,7 +9,6 @@ import ProFeatureLock from '@/components/ui/ProFeatureLock';
 import SectionLabel from '@/components/ui/SectionLabel';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useChapterAnalysis } from '@/hooks/useChapterAnalysis';
-import { getXsrfToken } from '@/lib/csrf';
 import { cn } from '@/lib/utils';
 import type {
     Analysis,
@@ -322,7 +321,6 @@ export default function AiPanel({
                     method: 'POST',
                     headers: {
                         Accept: 'application/json',
-                        'X-XSRF-TOKEN': getXsrfToken(),
                     },
                 },
             );
@@ -357,7 +355,6 @@ export default function AiPanel({
                     method: 'POST',
                     headers: {
                         Accept: 'application/json',
-                        'X-XSRF-TOKEN': getXsrfToken(),
                     },
                 },
             );

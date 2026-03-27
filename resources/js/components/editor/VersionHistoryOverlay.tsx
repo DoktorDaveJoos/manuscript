@@ -12,7 +12,6 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import PanelHeader from '@/components/ui/PanelHeader';
-import { getXsrfToken } from '@/lib/csrf';
 import type { ChapterVersion, VersionSource } from '@/types/models';
 
 const sourceBadgeVariant: Record<
@@ -124,7 +123,6 @@ export default function VersionHistoryOverlay({
                     method: 'DELETE',
                     headers: {
                         Accept: 'application/json',
-                        'X-XSRF-TOKEN': getXsrfToken(),
                     },
                 },
             ).then(() => {
@@ -144,7 +142,6 @@ export default function VersionHistoryOverlay({
                 headers: {
                     'Content-Type': 'application/json',
                     Accept: 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
                 },
                 body: JSON.stringify({ change_summary: summary || null }),
             }).then(() => {

@@ -1,5 +1,4 @@
 import { doExport } from '@/actions/App/Http/Controllers/BookSettingsController';
-import { getXsrfToken } from '@/lib/csrf';
 
 export function downloadExport(
     book: { id: number; title: string },
@@ -11,7 +10,6 @@ export function downloadExport(
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-XSRF-TOKEN': getXsrfToken(),
             Accept: 'application/octet-stream',
         },
         body: JSON.stringify(options),

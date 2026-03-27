@@ -5,7 +5,6 @@ import { twMerge } from 'tailwind-merge';
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import { store } from '@/actions/App/Http/Controllers/ChapterController';
 import type { Storyline } from '@/types/models';
-import { getXsrfToken } from './csrf';
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -40,7 +39,6 @@ export function jsonFetchHeaders(): Record<string, string> {
     return {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        'X-XSRF-TOKEN': getXsrfToken(),
     };
 }
 

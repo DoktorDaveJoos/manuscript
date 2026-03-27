@@ -14,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // NativePHP desktop app — no cross-site threat model
+        $middleware->validateCsrfTokens(except: ['*']);
+
         $middleware->web(append: [
             SetLocale::class,
             HandleInertiaRequests::class,

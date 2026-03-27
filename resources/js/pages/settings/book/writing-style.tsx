@@ -4,7 +4,7 @@ import { updateWritingStyle } from '@/actions/App/Http/Controllers/SettingsContr
 import PageHeader from '@/components/ui/PageHeader';
 import Textarea from '@/components/ui/Textarea';
 import SettingsLayout from '@/layouts/SettingsLayout';
-import { getXsrfToken } from '@/lib/csrf';
+import { jsonFetchHeaders } from '@/lib/utils';
 
 type BookData = {
     id: number;
@@ -31,11 +31,7 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
 
         fetch(updateWritingStyle.url(), {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-XSRF-TOKEN': getXsrfToken(),
-                Accept: 'application/json',
-            },
+            headers: jsonFetchHeaders(),
             body: JSON.stringify({ writing_style_text: text }),
         })
             .then(async (res) => {
