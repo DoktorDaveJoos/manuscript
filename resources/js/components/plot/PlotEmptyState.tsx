@@ -1,8 +1,10 @@
 import { BookOpen, Feather } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Badge from '@/components/ui/Badge';
+import { Card } from '@/components/ui/Card';
 import { getPlotTemplates } from '@/lib/plot-templates';
 import type { PlotTemplate } from '@/lib/plot-templates';
+import { cn } from '@/lib/utils';
 
 type PlotEmptyStateProps = {
     onSelectTemplate: (template: PlotTemplate) => void;
@@ -31,21 +33,28 @@ export default function PlotEmptyState({
                     </p>
                 </div>
 
-                <div className="flex max-w-[744px] flex-wrap justify-center gap-3">
+                <div className="grid w-full max-w-[860px] grid-cols-3 gap-3">
                     {templates.map((template) => {
                         const totalBeats = template.acts.reduce(
                             (sum, act) => sum + act.beats.length,
                             0,
                         );
                         return (
-                            <button
+                            <Card
                                 key={template.key}
+                                role="button"
+                                tabIndex={0}
                                 onClick={() => onSelectTemplate(template)}
-                                className={`flex w-[240px] flex-col gap-3 rounded-xl border bg-surface-card p-5 text-left transition-all hover:shadow-sm ${
-                                    template.featured
-                                        ? 'border-2 border-accent'
-                                        : 'border-border-light hover:border-accent'
-                                }`}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        onSelectTemplate(template);
+                                    }
+                                }}
+                                className={cn(
+                                    'flex cursor-pointer flex-col gap-3 border-border p-5 text-left transition-shadow hover:shadow-sm',
+                                    template.featured && 'border-2 border-ink',
+                                )}
                             >
                                 {template.featured && (
                                     <Badge
@@ -56,7 +65,7 @@ export default function PlotEmptyState({
                                     </Badge>
                                 )}
 
-                                <h3 className="text-sm leading-tight font-semibold text-ink">
+                                <h3 className="text-sm font-medium text-ink">
                                     {template.name}
                                 </h3>
 
@@ -84,7 +93,7 @@ export default function PlotEmptyState({
                                         beats: totalBeats,
                                     })}
                                 </span>
-                            </button>
+                            </Card>
                         );
                     })}
                 </div>
