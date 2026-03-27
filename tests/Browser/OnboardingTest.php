@@ -5,10 +5,6 @@ use App\Models\Book;
 use App\Models\License;
 use App\Models\Storyline;
 
-beforeEach(function () {
-    AppSetting::set('crash_report_prompted', true);
-});
-
 it('completes full onboarding: create book and skip import', function () {
     $page = visit('/');
 

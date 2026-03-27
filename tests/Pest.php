@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AiPreparation;
+use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
@@ -26,6 +27,9 @@ pest()->extend(TestCase::class)
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        AppSetting::set('crash_report_prompted', true);
+    })
     ->in('Browser');
 
 /*
