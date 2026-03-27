@@ -11,7 +11,7 @@
     font-display: swap;
 }
 
-/* Export preview fonts — bundled locally for offline support */
+/* Bundled locally so export preview renders correctly offline */
 @font-face {
     font-family: 'Crimson Pro';
     src: url('../fonts/CrimsonPro-Regular.ttf') format('truetype');
@@ -370,6 +370,14 @@ html.dark {
     margin: 0.8em 0;
 }
 
+.editor-prose ul > li {
+    list-style-type: disc;
+}
+
+.editor-prose ol > li {
+    list-style-type: decimal;
+}
+
 .editor-prose li {
     margin-bottom: 0.3em;
 }
@@ -457,6 +465,14 @@ h1[contenteditable]:empty::before {
     margin: 0.4em 0;
 }
 
+.ai-chat-markdown ul > li {
+    list-style-type: disc;
+}
+
+.ai-chat-markdown ol > li {
+    list-style-type: decimal;
+}
+
 .ai-chat-markdown li {
     margin-bottom: 0.15em;
 }
@@ -541,6 +557,15 @@ h1[contenteditable]:empty::before {
     padding-left: 1.4em;
     margin: 0;
 }
+
+.notes-line-md ul > li {
+    list-style-type: disc;
+}
+
+.notes-line-md ol > li {
+    list-style-type: decimal;
+}
+
 .notes-line-md li {
     margin: 0;
 }
