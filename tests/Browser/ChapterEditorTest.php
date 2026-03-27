@@ -16,7 +16,7 @@ it('shows empty state when book has no chapters', function () {
 });
 
 it('navigates to editor and displays chapter content', function () {
-    [$book, $chapters] = createBookWithChapters(2);
+    [$book, $chapters] = createBookWithChapters(1);
 
     $page = visit("/books/{$book->id}/editor");
 
@@ -25,7 +25,7 @@ it('navigates to editor and displays chapter content', function () {
 });
 
 it('shows specific chapter when navigated directly', function () {
-    [$book, $chapters] = createBookWithChapters(3);
+    [$book, $chapters] = createBookWithChapters(2);
 
     $page = visit("/books/{$book->id}/chapters/{$chapters[1]->id}");
 

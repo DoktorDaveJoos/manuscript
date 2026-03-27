@@ -38,6 +38,7 @@ export default function AddEntryDropdown({
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <button
+                    data-testid="add-wiki-entry"
                     disabled={disabled}
                     className={cn(
                         'flex h-[26px] w-[26px] items-center justify-center rounded-md border border-border bg-neutral-bg transition-colors',

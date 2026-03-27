@@ -1,7 +1,7 @@
 <?php
 
 it('renders publish page with book metadata sections', function () {
-    [$book] = createBookWithChapters(2);
+    [$book] = createBookWithChapters(1);
 
     $page = visit("/books/{$book->id}/publish");
 
@@ -26,7 +26,7 @@ it('displays metadata fields on publish page', function () {
 });
 
 it('renders export page with export controls', function () {
-    [$book] = createBookWithChapters(2);
+    [$book] = createBookWithChapters(1);
 
     $page = visit("/books/{$book->id}/settings/export");
 

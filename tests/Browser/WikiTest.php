@@ -37,7 +37,7 @@ it('creates a character from wiki page', function () {
     $page = visit("/books/{$book->id}/wiki");
 
     $page->assertNoJavaScriptErrors()
-        ->click('button.rounded-md.border.border-border')
+        ->click('[data-testid="add-wiki-entry"]')
         ->assertSee('Character')
         ->click('Character')
         ->assertSee('New Character')

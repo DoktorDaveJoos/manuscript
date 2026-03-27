@@ -1,11 +1,10 @@
 <?php
 
-use App\Models\Book;
 use App\Models\License;
 use App\Models\WritingSession;
 
 it('renders dashboard with book stats', function () {
-    [$book, $chapters] = createBookWithChapters(3);
+    [$book] = createBookWithChapters(1);
 
     $page = visit("/books/{$book->id}/dashboard");
 
@@ -17,7 +16,7 @@ it('renders dashboard with book stats', function () {
 });
 
 it('shows chapter progress section', function () {
-    [$book, $chapters] = createBookWithChapters(3);
+    [$book] = createBookWithChapters(1);
 
     $page = visit("/books/{$book->id}/dashboard");
 
@@ -26,22 +25,9 @@ it('shows chapter progress section', function () {
         ->assertSee('draft');
 });
 
-it('shows writing goal section for pro users', function () {
+it('shows writing goal with session data for pro users', function () {
     License::factory()->create();
-    $book = Book::factory()->create([
-        'title' => 'Pro Dashboard Book',
-        'daily_word_count_goal' => 2000,
-    ]);
-
-    $page = visit("/books/{$book->id}/dashboard");
-
-    $page->assertNoJavaScriptErrors()
-        ->assertSee("Today's Writing Goal");
-});
-
-it('displays writing session data on dashboard', function () {
-    License::factory()->create();
-    [$book, $chapters] = createBookWithChapters(1);
+    [$book] = createBookWithChapters(1);
     $book->update(['daily_word_count_goal' => 1000]);
 
     WritingSession::factory()->for($book)->create([
@@ -52,5 +38,6 @@ it('displays writing session data on dashboard', function () {
     $page = visit("/books/{$book->id}/dashboard");
 
     $page->assertNoJavaScriptErrors()
-        ->assertSee("Today's Writing Goal");
+        ->assertSee("Today's Writing Goal")
+        ->assertSee('500');
 });

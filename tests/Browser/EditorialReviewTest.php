@@ -6,9 +6,10 @@ use App\Models\EditorialReviewChapterNote;
 use App\Models\EditorialReviewSection;
 use App\Models\License;
 
+beforeEach(fn () => License::factory()->create());
+
 it('shows empty state when no review exists', function () {
-    License::factory()->create();
-    [$book] = createBookWithChapters(3);
+    [$book] = createBookWithChapters(1);
 
     $page = visit("/books/{$book->id}/ai/editorial-review");
 
@@ -18,8 +19,7 @@ it('shows empty state when no review exists', function () {
 });
 
 it('renders completed review with sections and scores', function () {
-    License::factory()->create();
-    [$book, $chapters] = createBookWithChapters(3);
+    [$book] = createBookWithChapters(1);
 
     $review = EditorialReview::factory()->for($book)->create([
         'overall_score' => 72,
@@ -55,8 +55,7 @@ it('renders completed review with sections and scores', function () {
 });
 
 it('shows chapter notes when present', function () {
-    License::factory()->create();
-    [$book, $chapters] = createBookWithChapters(3);
+    [$book, $chapters] = createBookWithChapters(1);
 
     $review = EditorialReview::factory()->for($book)->create();
 
