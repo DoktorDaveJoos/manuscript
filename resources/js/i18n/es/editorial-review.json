@@ -5,9 +5,19 @@
     "tabs.dashboard": "Panel IA",
     "tabs.editorialReview": "Revisión Editorial",
 
-    "emptyState.heading": "Obtén retroalimentación editorial completa sobre tu manuscrito.",
+    "emptyState.heading": "Ve tu historia a través de los ojos de un editor",
     "emptyState.description": "La Revisión Editorial está diseñada para primeros borradores terminados. Analiza tu manuscrito completo en ocho dimensiones editoriales y consume muchos tokens. Para retroalimentación continua mientras escribes, usa el Análisis de Capítulos.",
     "emptyState.button": "Iniciar Revisión Editorial",
+
+    "emptyState.features.title": "QUÉ CUBRE LA REVISIÓN EDITORIAL",
+    "emptyState.features.bigPicture.title": "El panorama general",
+    "emptyState.features.bigPicture.description": "Estructura de la trama, profundidad temática y si tu historia llega como lo pretendías.",
+    "emptyState.features.characters.title": "Personajes y voz",
+    "emptyState.features.characters.description": "Consistencia de los arcos, voces distintas y la verdad emocional de tus personajes.",
+    "emptyState.features.pacing.title": "Ritmo y cadencia",
+    "emptyState.features.pacing.description": "Dónde la historia respira, dónde se apresura y dónde los lectores podrían perder el hilo.",
+    "emptyState.features.prose.title": "Prosa y oficio",
+    "emptyState.features.prose.description": "Estilo a nivel de línea, construcción de escenas y las pequeñas decisiones que moldean la lectura.",
 
     "confirm.title": "¿Iniciar Revisión Editorial?",
     "confirm.description": "Esto analizará tu manuscrito completo. La Revisión Editorial funciona mejor con primeros borradores terminados. ¿Continuar?",

@@ -5,9 +5,19 @@
     "tabs.dashboard": "AI Dashboard",
     "tabs.editorialReview": "Editorial Review",
 
-    "emptyState.heading": "Get comprehensive editorial feedback on your manuscript.",
+    "emptyState.heading": "See your story through an editor's eyes",
     "emptyState.description": "Editorial Review is designed for completed first drafts. It analyzes your entire manuscript across eight editorial dimensions and is token-intensive. For ongoing feedback while writing, use Chapter Analysis instead.",
     "emptyState.button": "Start Editorial Review",
+
+    "emptyState.features.title": "WHAT EDITORIAL REVIEW COVERS",
+    "emptyState.features.bigPicture.title": "The big picture",
+    "emptyState.features.bigPicture.description": "Plot structure, thematic depth, and whether your story lands the way you intended.",
+    "emptyState.features.characters.title": "Character & voice",
+    "emptyState.features.characters.description": "Arc consistency, distinct voices, and the emotional truth of your cast.",
+    "emptyState.features.pacing.title": "Rhythm & pacing",
+    "emptyState.features.pacing.description": "Where the story breathes, where it rushes, and where readers might lose the thread.",
+    "emptyState.features.prose.title": "Prose & craft",
+    "emptyState.features.prose.description": "Line-level style, scene construction, and the small choices that shape how it reads.",
 
     "confirm.title": "Start Editorial Review?",
     "confirm.description": "This will analyze your entire manuscript. Editorial Review works best on completed first drafts. Continue?",
