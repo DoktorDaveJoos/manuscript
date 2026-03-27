@@ -785,12 +785,9 @@ export default function ChapterShow({
                                 onAddScene={handlePaletteAddScene}
                                 onEnterFocusMode={toggleFocusMode}
                                 isFocusMode={isFocusMode}
-                                onToggleNotes={toggleNotes}
-                                onToggleChat={
-                                    aiVisible
-                                        ? () => togglePanel('chat')
-                                        : undefined
-                                }
+                                panelItems={accessBarItems}
+                                openPanels={openPanels}
+                                onTogglePanel={togglePanel}
                                 isTypewriterMode={isTypewriterMode}
                                 onToggleTypewriterMode={toggleTypewriterMode}
                             />

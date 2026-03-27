@@ -7,14 +7,16 @@ import {
     GitBranch,
     Keyboard,
     Maximize,
-    MessageCircle,
     Minus,
     Plus,
-    StickyNote,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import type {
+    AccessBarItemConfig,
+    PanelId,
+} from '@/components/editor/AccessBar';
 import {
     Command,
     CommandEmpty,
@@ -60,6 +62,16 @@ function ShortcutKeys({ shortcut }: { shortcut: string }) {
     return <>{elements}</>;
 }
 
+const panelLabelKeys: Record<PanelId, { open: string; close: string }> = {
+    notes: { open: 'palette.openNotes', close: 'palette.closeNotes' },
+    ai: { open: 'palette.openAiAssistant', close: 'palette.closeAiAssistant' },
+    chat: { open: 'palette.openChat', close: 'palette.closeChat' },
+    editorial: {
+        open: 'palette.openEditorialReview',
+        close: 'palette.closeEditorialReview',
+    },
+};
+
 export default function CommandPalette({
     editor,
     isOpen,
@@ -70,8 +82,9 @@ export default function CommandPalette({
     onAddScene,
     onEnterFocusMode,
     isFocusMode,
-    onToggleNotes,
-    onToggleChat,
+    panelItems,
+    openPanels,
+    onTogglePanel,
     isTypewriterMode,
     onToggleTypewriterMode,
 }: {
@@ -84,8 +97,9 @@ export default function CommandPalette({
     onAddScene?: () => void;
     onEnterFocusMode?: () => void;
     isFocusMode?: boolean;
-    onToggleNotes?: () => void;
-    onToggleChat?: () => void;
+    panelItems: AccessBarItemConfig[];
+    openPanels: Set<PanelId>;
+    onTogglePanel: (panel: PanelId) => void;
     isTypewriterMode?: boolean;
     onToggleTypewriterMode?: () => void;
 }) {
@@ -150,7 +164,7 @@ export default function CommandPalette({
                             {t('palette.noMatchingActions')}
                         </CommandEmpty>
 
-                        <CommandGroup heading={t('palette.section.focus')}>
+                        <CommandGroup heading={t('palette.section.editor')}>
                             <CommandItem
                                 value={focusModeLabel}
                                 onSelect={() =>
@@ -169,36 +183,6 @@ export default function CommandPalette({
                             </CommandItem>
 
                             <CommandItem
-                                value={t('palette.openNotes')}
-                                onSelect={() =>
-                                    handleSelect(() => onToggleNotes?.())
-                                }
-                            >
-                                <PaletteIcon>
-                                    <StickyNote size={16} />
-                                </PaletteIcon>
-                                <span className="flex-1">
-                                    {t('palette.openNotes')}
-                                </span>
-                            </CommandItem>
-
-                            {onToggleChat && (
-                                <CommandItem
-                                    value={t('palette.openChat')}
-                                    onSelect={() =>
-                                        handleSelect(() => onToggleChat())
-                                    }
-                                >
-                                    <PaletteIcon>
-                                        <MessageCircle size={16} />
-                                    </PaletteIcon>
-                                    <span className="flex-1">
-                                        {t('palette.openChat')}
-                                    </span>
-                                </CommandItem>
-                            )}
-
-                            <CommandItem
                                 value={typewriterLabel}
                                 onSelect={() =>
                                     handleSelect(() =>
@@ -213,6 +197,35 @@ export default function CommandPalette({
                                     {typewriterLabel}
                                 </span>
                             </CommandItem>
+                        </CommandGroup>
+
+                        <CommandSeparator />
+
+                        <CommandGroup heading={t('palette.section.assistance')}>
+                            {panelItems.map((item) => {
+                                const isActive = openPanels.has(item.id);
+                                const keys = panelLabelKeys[item.id];
+                                const label = t(
+                                    isActive ? keys.close : keys.open,
+                                );
+                                const Icon = item.icon;
+                                return (
+                                    <CommandItem
+                                        key={item.id}
+                                        value={label}
+                                        onSelect={() =>
+                                            handleSelect(() =>
+                                                onTogglePanel(item.id),
+                                            )
+                                        }
+                                    >
+                                        <PaletteIcon>
+                                            <Icon size={16} />
+                                        </PaletteIcon>
+                                        <span className="flex-1">{label}</span>
+                                    </CommandItem>
+                                );
+                            })}
                         </CommandGroup>
 
                         <CommandSeparator />
