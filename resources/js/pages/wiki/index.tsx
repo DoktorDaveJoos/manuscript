@@ -1,14 +1,13 @@
 import { Head } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sidebar from '@/components/editor/Sidebar';
 import AddEntryDropdown from '@/components/wiki/AddEntryDropdown';
 import CharacterDetail from '@/components/wiki/CharacterDetail';
-import WikiCreateForm from '@/components/wiki/WikiCreateForm';
-import WikiEditForm from '@/components/wiki/WikiEditForm';
 import WikiEmptyState from '@/components/wiki/WikiEmptyState';
 import WikiEntryDetail from '@/components/wiki/WikiEntryDetail';
 import WikiEntryList from '@/components/wiki/WikiEntryList';
+import WikiForm from '@/components/wiki/WikiForm';
 import WikiSearchInput from '@/components/wiki/WikiSearchInput';
 import WikiSearchResults from '@/components/wiki/WikiSearchResults';
 import WikiTabBar from '@/components/wiki/WikiTabBar';
@@ -47,7 +46,8 @@ export default function WikiIndex({
 }: Props) {
     const { t } = useTranslation('wiki');
     const { isPro, isFree, wikiEntries: wikiLimits } = useFreeTier();
-    const storylines = useSidebarStorylines();
+    const sidebarStorylines = useSidebarStorylines();
+    const bookStorylines = book.storylines ?? [];
     const initialTab = validTabs.includes(tab as WikiTab)
         ? (tab as WikiTab)
         : 'characters';
@@ -56,6 +56,7 @@ export default function WikiIndex({
     const [query, setQuery] = useState('');
     const [creatingType, setCreatingType] = useState<WikiTab | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const prevCreatingType = useRef<WikiTab | null>(null);
     const isSearching = query.trim().length > 0;
 
     const wikiLimit = wikiLimits?.limit ?? 5;
@@ -77,6 +78,21 @@ export default function WikiIndex({
         }),
         [characters, locations, organizations, items, lore],
     );
+
+    // After creating an item, select the newest one in that tab
+    useEffect(() => {
+        if (prevCreatingType.current && !creatingType) {
+            const tab = prevCreatingType.current;
+            const list = entriesByTab[tab] ?? [];
+            if (list.length > 0) {
+                const newest = list.reduce((max, item) =>
+                    item.id > max.id ? item : max,
+                );
+                setSelectedId(newest.id);
+            }
+        }
+        prevCreatingType.current = creatingType;
+    }, [creatingType, entriesByTab]);
 
     const searchResults = useMemo(() => {
         if (!query.trim()) return [];
@@ -153,10 +169,11 @@ export default function WikiIndex({
     const renderDetailPanel = () => {
         if (creatingType) {
             return (
-                <WikiCreateForm
-                    type={creatingType}
+                <WikiForm
+                    key={`create-${creatingType}`}
+                    tab={creatingType}
                     book={book}
-                    storylines={book.storylines ?? []}
+                    storylines={bookStorylines}
                     onCancel={() => setCreatingType(null)}
                     onSuccess={() => setCreatingType(null)}
                 />
@@ -165,11 +182,12 @@ export default function WikiIndex({
 
         if (editingItem) {
             return (
-                <WikiEditForm
+                <WikiForm
+                    key={`edit-${editingItem.id}`}
                     item={editingItem}
                     tab={activeTab}
                     book={book}
-                    storylines={book.storylines ?? []}
+                    storylines={bookStorylines}
                     onCancel={() => setEditingId(null)}
                     onSuccess={() => setEditingId(null)}
                 />
@@ -180,6 +198,7 @@ export default function WikiIndex({
             return (
                 <CharacterDetail
                     character={selectedCharacter}
+                    storylines={bookStorylines}
                     onEdit={() => handleEdit(selectedCharacter.id)}
                 />
             );
@@ -204,7 +223,7 @@ export default function WikiIndex({
             <div className="flex h-screen overflow-hidden bg-surface">
                 <Sidebar
                     book={book}
-                    storylines={storylines}
+                    storylines={sidebarStorylines}
                     scenesVisible={false}
                     onScenesVisibleChange={() => {}}
                 />

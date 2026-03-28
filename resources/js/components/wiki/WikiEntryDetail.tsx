@@ -1,5 +1,9 @@
 import { Pencil } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import SectionLabel from '@/components/ui/SectionLabel';
 import type { WikiEntry } from '@/types/models';
 import WikiAvatar from './WikiAvatar';
 import type { WikiTab } from './WikiTabBar';
@@ -15,85 +19,89 @@ export default function WikiEntryDetail({
 }) {
     const { t } = useTranslation('wiki');
 
+    const hasMetadata = !!entry.first_appearance_chapter;
+
     return (
-        <div className="flex flex-col gap-8">
+        <div className="flex max-w-3xl flex-col gap-6">
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
                     <WikiAvatar name={entry.name} tab={tab} size="lg" />
                     <div>
-                        <h2 className="text-xl font-semibold tracking-[-0.01em] text-ink">
+                        <h2 className="font-serif text-2xl font-semibold tracking-[-0.01em] text-ink">
                             {entry.name}
                         </h2>
                         {entry.type && (
-                            <span className="mt-1.5 inline-block rounded border border-border px-2 py-0.5 text-[12px] text-ink-muted">
+                            <Badge variant="secondary" className="mt-1.5">
                                 {entry.type}
-                            </span>
+                            </Badge>
                         )}
                     </div>
                 </div>
                 {onEdit && (
-                    <button
-                        onClick={onEdit}
-                        className="flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:bg-neutral-bg"
-                    >
+                    <Button variant="secondary" size="sm" onClick={onEdit}>
                         <Pencil size={12} />
                         {t('edit.editButton')}
-                    </button>
+                    </Button>
                 )}
             </div>
 
             {/* Description */}
             {entry.description && (
-                <div>
-                    <h3 className="mb-2 text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                        {t('description')}
-                    </h3>
-                    <p className="text-[14px] leading-relaxed text-ink">
-                        {entry.description}
-                    </p>
-                </div>
+                <Card className="flex flex-col gap-3 p-6">
+                    <SectionLabel>{t('description')}</SectionLabel>
+                    <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-ink">
+                        {entry.description
+                            .split('\n')
+                            .filter(Boolean)
+                            .map((paragraph, i) => (
+                                <p key={i}>{paragraph}</p>
+                            ))}
+                    </div>
+                </Card>
             )}
 
-            {/* Metadata row */}
-            <div className="flex gap-12 border-t border-border-subtle pt-6">
-                {entry.first_appearance_chapter && (
-                    <div>
-                        <h4 className="mb-1 text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                            {t('firstAppearance')}
-                        </h4>
-                        <p className="text-[13px] text-ink">
-                            {t('chapterEntry', {
-                                order: entry.first_appearance_chapter
-                                    .reader_order,
-                                title: entry.first_appearance_chapter.title,
-                            })}
-                        </p>
-                    </div>
-                )}
-                {entry.is_ai_extracted && (
-                    <div>
-                        <h4 className="mb-1 text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                            {t('source')}
-                        </h4>
-                        <p className="text-[13px] text-ink">
-                            {t('aiExtracted')}
-                        </p>
-                    </div>
-                )}
-            </div>
+            {/* Metadata */}
+            {hasMetadata && (
+                <Card className="flex gap-12 p-6">
+                    {entry.first_appearance_chapter && (
+                        <div>
+                            <SectionLabel className="mb-1">
+                                {t('firstAppearance')}
+                            </SectionLabel>
+                            <p className="text-[13px] text-ink">
+                                {t('chapterEntry', {
+                                    order: entry.first_appearance_chapter
+                                        .reader_order,
+                                    title: entry.first_appearance_chapter.title,
+                                })}
+                            </p>
+                        </div>
+                    )}
+                </Card>
+            )}
+
+            {/* Source */}
+            <Card className="flex gap-12 p-6">
+                <div>
+                    <SectionLabel className="mb-1">{t('source')}</SectionLabel>
+                    <p className="text-[13px] text-ink">
+                        {entry.is_ai_extracted
+                            ? t('aiExtracted')
+                            : t('edit.manualEntry')}
+                    </p>
+                </div>
+            </Card>
 
             {/* Appears In */}
             {entry.chapters && entry.chapters.length > 0 && (
-                <div>
-                    <h3 className="mb-3 text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
-                        {t('appearsIn')}
-                    </h3>
+                <Card className="flex flex-col gap-3 p-6">
+                    <SectionLabel>{t('appearsIn')}</SectionLabel>
                     <div className="flex flex-col">
-                        {entry.chapters.map((chapter) => (
+                        {entry.chapters.map((chapter, index) => (
                             <div
                                 key={chapter.id}
-                                className="flex items-center gap-4 border-t border-border-subtle py-3"
+                                className={`flex items-center gap-4 py-3 ${index > 0 ? 'border-t border-border-subtle' : ''}`}
                             >
                                 <span className="w-44 shrink-0 text-[13px] text-ink">
                                     {chapter.reader_order}. {chapter.title}
@@ -101,7 +109,7 @@ export default function WikiEntryDetail({
                             </div>
                         ))}
                     </div>
-                </div>
+                </Card>
             )}
         </div>
     );

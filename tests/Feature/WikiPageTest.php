@@ -40,6 +40,26 @@ test('wiki page forwards tab query param', function () {
         );
 });
 
+test('wiki page includes character aliases and storylines in response', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    Character::factory()->for($book)->create([
+        'name' => 'Aragorn',
+        'aliases' => ['Strider', 'Elessar'],
+        'storylines' => [$storyline->id],
+    ]);
+
+    $this->get(route('books.wiki', $book))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->component('wiki/index')
+            ->has('characters', 1)
+            ->where('characters.0.name', 'Aragorn')
+            ->where('characters.0.aliases', ['Strider', 'Elessar'])
+            ->where('characters.0.storylines', [$storyline->id])
+        );
+});
+
 test('wiki page loads with empty book', function () {
     $book = Book::factory()->create();
     Storyline::factory()->for($book)->create();

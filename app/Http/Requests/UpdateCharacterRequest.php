@@ -24,6 +24,9 @@ class UpdateCharacterRequest extends FormRequest
             'storylines' => ['nullable', 'array'],
             'storylines.*' => ['integer'],
             'role' => ['nullable', 'string', 'in:protagonist,supporting,mentioned'],
+            'first_appearance' => ['nullable', 'integer', 'exists:chapters,id'],
+            'chapter_ids' => ['nullable', 'array'],
+            'chapter_ids.*' => ['integer', 'exists:chapters,id'],
         ];
     }
 }
