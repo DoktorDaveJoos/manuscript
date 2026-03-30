@@ -9,6 +9,7 @@ use App\Services\Export\ContentPreparer;
 use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
 use Illuminate\Support\Collection;
+use PhpOffice\PhpWord\Element\Section;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\SimpleType\Jc;
 
@@ -121,7 +122,7 @@ class DocxExporter implements Exporter
         return $filename;
     }
 
-    private function addFrontMatter(\PhpOffice\PhpWord\Element\Section $section, Book $book, ExportOptions $options): void
+    private function addFrontMatter(Section $section, Book $book, ExportOptions $options): void
     {
         foreach ($options->frontMatter as $item) {
             match ($item) {
@@ -134,7 +135,7 @@ class DocxExporter implements Exporter
         }
     }
 
-    private function addTitlePage(\PhpOffice\PhpWord\Element\Section $section, Book $book): void
+    private function addTitlePage(Section $section, Book $book): void
     {
         $section->addTextBreak(8);
         $section->addText(
@@ -151,7 +152,7 @@ class DocxExporter implements Exporter
         $section->addPageBreak();
     }
 
-    private function addCopyrightPage(\PhpOffice\PhpWord\Element\Section $section, Book $book, ExportOptions $options): void
+    private function addCopyrightPage(Section $section, Book $book, ExportOptions $options): void
     {
         $section->addTextBreak(12);
         $text = $options->copyrightText !== '' ? $options->copyrightText : 'Copyright © '.date('Y')."\n{$book->title}\nAll rights reserved.";
@@ -163,7 +164,7 @@ class DocxExporter implements Exporter
         $section->addPageBreak();
     }
 
-    private function addDedicationPage(\PhpOffice\PhpWord\Element\Section $section, ExportOptions $options): void
+    private function addDedicationPage(Section $section, ExportOptions $options): void
     {
         if ($options->dedicationText === '') {
             return;
@@ -177,7 +178,7 @@ class DocxExporter implements Exporter
         $section->addPageBreak();
     }
 
-    private function addEpigraphPage(\PhpOffice\PhpWord\Element\Section $section, ExportOptions $options): void
+    private function addEpigraphPage(Section $section, ExportOptions $options): void
     {
         if ($options->epigraphText === '') {
             return;
@@ -199,7 +200,7 @@ class DocxExporter implements Exporter
         $section->addPageBreak();
     }
 
-    private function addChapterContent(\PhpOffice\PhpWord\Element\Section $section, mixed $chapter): void
+    private function addChapterContent(Section $section, mixed $chapter): void
     {
         $content = $chapter->getContentWithSceneBreaks();
         $segments = $this->contentPreparer->toFormattedSegments($content);
@@ -232,7 +233,7 @@ class DocxExporter implements Exporter
         }
     }
 
-    private function addBackMatter(\PhpOffice\PhpWord\Element\Section $section, Book $book, ExportOptions $options): void
+    private function addBackMatter(Section $section, Book $book, ExportOptions $options): void
     {
         foreach ($options->backMatter as $item) {
             match ($item) {
@@ -245,7 +246,7 @@ class DocxExporter implements Exporter
         }
     }
 
-    private function addEpilogueMatter(\PhpOffice\PhpWord\Element\Section $section, Book $book): void
+    private function addEpilogueMatter(Section $section, Book $book): void
     {
         $epilogue = ExportService::resolveEpilogueChapter($book);
         if (! $epilogue) {
@@ -256,7 +257,7 @@ class DocxExporter implements Exporter
         $this->addChapterContent($section, $epilogue);
     }
 
-    private function addTextMatter(\PhpOffice\PhpWord\Element\Section $section, string $heading, string $text): void
+    private function addTextMatter(Section $section, string $heading, string $text): void
     {
         if ($text === '') {
             return;
@@ -270,7 +271,7 @@ class DocxExporter implements Exporter
         }
     }
 
-    private function addAlsoByMatter(\PhpOffice\PhpWord\Element\Section $section, Book $book, ExportOptions $options): void
+    private function addAlsoByMatter(Section $section, Book $book, ExportOptions $options): void
     {
         if ($options->alsoByText === '') {
             return;

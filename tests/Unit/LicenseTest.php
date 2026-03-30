@@ -1,8 +1,10 @@
 <?php
 
 use App\Models\License;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-uses(Tests\TestCase::class, Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(TestCase::class, RefreshDatabase::class);
 
 test('active returns the activated license', function () {
     expect(License::active())->toBeNull();

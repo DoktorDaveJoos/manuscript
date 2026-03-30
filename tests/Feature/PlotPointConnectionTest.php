@@ -4,6 +4,7 @@ use App\Enums\ConnectionType;
 use App\Models\Book;
 use App\Models\PlotPoint;
 use App\Models\PlotPointConnection;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 it('creates a connection between two plot points', function () {
     $book = Book::factory()->create();
@@ -66,7 +67,7 @@ it('prevents duplicate connections', function () {
         'target_plot_point_id' => $target->id,
         'type' => ConnectionType::Resolves,
     ]);
-})->throws(\Illuminate\Database\UniqueConstraintViolationException::class);
+})->throws(UniqueConstraintViolationException::class);
 
 it('cascades delete when plot point is removed', function () {
     $book = Book::factory()->create();

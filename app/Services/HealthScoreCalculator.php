@@ -2,15 +2,16 @@
 
 namespace App\Services;
 
+use App\Models\Chapter;
 use Illuminate\Support\Collection;
 
 class HealthScoreCalculator
 {
-    /** @var Collection<int, \App\Models\Chapter> */
+    /** @var Collection<int, Chapter> */
     private Collection $analyzed;
 
     /**
-     * @param  Collection<int, \App\Models\Chapter>  $analyzed  Chapters with hook_score !== null
+     * @param  Collection<int, Chapter>  $analyzed  Chapters with hook_score !== null
      */
     public function __construct(Collection $analyzed)
     {

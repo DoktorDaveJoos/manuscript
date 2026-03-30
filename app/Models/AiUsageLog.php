@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -24,9 +25,9 @@ class AiUsageLog extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @return Collection<int, static>
      */
-    public static function featureBreakdown(int $bookId, ?\DateTimeInterface $resetAt = null): \Illuminate\Database\Eloquent\Collection
+    public static function featureBreakdown(int $bookId, ?\DateTimeInterface $resetAt = null): Collection
     {
         return static::query()
             ->where('book_id', $bookId)
@@ -38,9 +39,9 @@ class AiUsageLog extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @return Collection<int, static>
      */
-    public static function monthlyUsage(int $bookId, ?\DateTimeInterface $resetAt = null, int $months = 5): \Illuminate\Database\Eloquent\Collection
+    public static function monthlyUsage(int $bookId, ?\DateTimeInterface $resetAt = null, int $months = 5): Collection
     {
         $since = now()->subMonths($months)->startOfMonth();
 

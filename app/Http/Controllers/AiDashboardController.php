@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Models\Chapter;
 use App\Services\HealthScoreCalculator;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -48,7 +50,7 @@ class AiDashboardController extends Controller
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, \App\Models\Chapter>  $chapters
+     * @param  Collection<int, Chapter>  $chapters
      * @return array{composite_score: int, metrics: list<array{label: string, score: int}>}|null
      */
     private function buildHealthMetrics($chapters): ?array

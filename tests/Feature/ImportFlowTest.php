@@ -4,6 +4,7 @@ use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
 use App\Models\Storyline;
+use App\Services\DocxParserService;
 use Illuminate\Http\UploadedFile;
 
 function docxFixture(string $name): UploadedFile
@@ -107,14 +108,14 @@ test('parser filters out empty chapters from consecutive headings', function () 
 });
 
 test('parser outputs HTML-wrapped paragraphs', function () {
-    $parser = new \App\Services\DocxParserService;
+    $parser = new DocxParserService;
     $result = $parser->parse(docxFixture('chapters.docx'));
 
     expect($result['chapters'][0]['content'])->toContain('<p>');
 });
 
 test('parser preserves inline formatting', function () {
-    $parser = new \App\Services\DocxParserService;
+    $parser = new DocxParserService;
     $result = $parser->parse(docxFixture('formatted.docx'));
     $content = $result['chapters'][0]['content'];
 
@@ -126,7 +127,7 @@ test('parser preserves inline formatting', function () {
 });
 
 test('parser converts scene breaks to hr', function () {
-    $parser = new \App\Services\DocxParserService;
+    $parser = new DocxParserService;
     $result = $parser->parse(docxFixture('formatted.docx'));
     $content = $result['chapters'][0]['content'];
 
@@ -134,7 +135,7 @@ test('parser converts scene breaks to hr', function () {
 });
 
 test('parser converts blockquote styles', function () {
-    $parser = new \App\Services\DocxParserService;
+    $parser = new DocxParserService;
     $result = $parser->parse(docxFixture('formatted.docx'));
     $content = $result['chapters'][0]['content'];
 
@@ -142,7 +143,7 @@ test('parser converts blockquote styles', function () {
 });
 
 test('parser escapes special characters', function () {
-    $parser = new \App\Services\DocxParserService;
+    $parser = new DocxParserService;
     $result = $parser->parse(docxFixture('formatted.docx'));
     $content = $result['chapters'][0]['content'];
 
@@ -152,7 +153,7 @@ test('parser escapes special characters', function () {
 });
 
 test('parser preserves line breaks', function () {
-    $parser = new \App\Services\DocxParserService;
+    $parser = new DocxParserService;
     $result = $parser->parse(docxFixture('formatted.docx'));
     $content = $result['chapters'][0]['content'];
 
@@ -160,7 +161,7 @@ test('parser preserves line breaks', function () {
 });
 
 test('fallback result produces HTML paragraphs', function () {
-    $parser = new \App\Services\DocxParserService;
+    $parser = new DocxParserService;
     $result = $parser->parse(docxFixture('no-headings.docx'));
     $content = $result['chapters'][0]['content'];
 

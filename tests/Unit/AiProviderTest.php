@@ -1,10 +1,11 @@
 <?php
 
 use App\Enums\AiProvider;
+use Laravel\Ai\Enums\Lab;
 
 test('all providers have a valid Lab mapping', function () {
     foreach (AiProvider::cases() as $provider) {
-        expect($provider->toLab())->toBeInstanceOf(\Laravel\Ai\Enums\Lab::class);
+        expect($provider->toLab())->toBeInstanceOf(Lab::class);
     }
 });
 

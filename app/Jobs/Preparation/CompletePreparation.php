@@ -4,6 +4,7 @@ namespace App\Jobs\Preparation;
 
 use App\Models\AiPreparation;
 use App\Models\Book;
+use App\Models\Chapter;
 use App\Models\HealthSnapshot;
 use App\Services\HealthScoreCalculator;
 use Illuminate\Bus\Batchable;
@@ -54,7 +55,7 @@ class CompletePreparation implements ShouldQueue
     }
 
     /**
-     * @param  Collection<int, \App\Models\Chapter>  $chapters
+     * @param  Collection<int, Chapter>  $chapters
      */
     private function upsertHealthSnapshot(Collection $chapters): void
     {

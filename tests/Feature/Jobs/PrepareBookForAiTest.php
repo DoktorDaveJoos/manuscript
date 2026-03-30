@@ -152,7 +152,7 @@ test('prepare book for ai isolates per-chapter failures', function () {
     ChapterAnalyzer::fake(function () use (&$callCount) {
         $callCount++;
         if ($callCount === 1) {
-            throw new \RuntimeException('API timeout');
+            throw new RuntimeException('API timeout');
         }
 
         return [
