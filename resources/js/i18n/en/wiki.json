@@ -13,6 +13,8 @@
     "storylines_other": "{{count}} storylines",
     "storylineLabel": "Storyline {{name}}",
     "description": "Description",
+    "description.author": "Your Notes",
+    "description.ai": "From Manuscript",
     "firstAppearance": "First Appearance",
     "chapterEntry": "Ch. {{order}} — {{title}}",
     "source": "Source",

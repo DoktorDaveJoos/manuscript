@@ -68,12 +68,27 @@ export default function CharacterDetail({
                 )}
             </div>
 
-            {/* Description */}
+            {/* Author Description */}
             {character.description && (
                 <Card className="flex flex-col gap-3 p-6">
-                    <SectionLabel>{t('description')}</SectionLabel>
+                    <SectionLabel>{t('description.author')}</SectionLabel>
                     <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-ink">
                         {character.description
+                            .split('\n')
+                            .filter(Boolean)
+                            .map((paragraph, i) => (
+                                <p key={i}>{paragraph}</p>
+                            ))}
+                    </div>
+                </Card>
+            )}
+
+            {/* AI Description */}
+            {character.ai_description && (
+                <Card className="bg-surface-base flex flex-col gap-3 border-border-subtle p-6">
+                    <SectionLabel>{t('description.ai')}</SectionLabel>
+                    <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-ink-muted">
+                        {character.ai_description
                             .split('\n')
                             .filter(Boolean)
                             .map((paragraph, i) => (
