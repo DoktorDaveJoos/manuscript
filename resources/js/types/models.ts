@@ -223,6 +223,7 @@ export type Character = {
     name: string;
     aliases: string[] | null;
     description: string | null;
+    ai_description: string | null;
     first_appearance: number | null;
     storylines: number[] | null;
     is_ai_extracted: boolean;
@@ -578,6 +579,7 @@ export type WikiEntry = {
     name: string;
     type: string | null;
     description: string | null;
+    ai_description: string | null;
     first_appearance: number | null;
     metadata: Record<string, unknown> | null;
     is_ai_extracted: boolean;
