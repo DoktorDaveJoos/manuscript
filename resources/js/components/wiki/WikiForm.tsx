@@ -385,9 +385,13 @@ export default function WikiForm({
                 </FormField>
             )}
 
-            {/* Description */}
+            {/* Description (author's manual notes) */}
             <FormField
-                label={t('field.description')}
+                label={
+                    isEditing && item?.ai_description
+                        ? t('description.author')
+                        : t('field.description')
+                }
                 labelClassName={wikiLabelClass}
             >
                 <Textarea
@@ -412,6 +416,25 @@ export default function WikiForm({
                     rows={isEditing ? 8 : 6}
                 />
             </FormField>
+
+            {/* AI Description (read-only, edit mode only) */}
+            {isEditing && item?.ai_description && (
+                <div className="flex flex-col gap-2">
+                    <span className={wikiLabelClass}>
+                        {t('description.ai')}
+                    </span>
+                    <div className="bg-surface-base rounded-md border border-border-subtle px-3 py-2.5">
+                        <div className="flex flex-col gap-2 text-[13px] leading-relaxed text-ink-muted">
+                            {item.ai_description
+                                .split('\n')
+                                .filter(Boolean)
+                                .map((paragraph, i) => (
+                                    <p key={i}>{paragraph}</p>
+                                ))}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Storylines (characters only) */}
             {isCharacter && storylines.length > 0 && (
