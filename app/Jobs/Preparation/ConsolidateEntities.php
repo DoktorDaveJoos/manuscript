@@ -8,6 +8,8 @@ use App\Jobs\Concerns\DetectsTransientErrors;
 use App\Models\AiPreparation;
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\Character;
+use App\Models\WikiEntry;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -16,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -47,8 +50,8 @@ class ConsolidateEntities implements ShouldQueue
             return;
         }
 
-        $characters = $this->book->characters()->where('is_ai_extracted', true)->get();
-        $wikiEntries = $this->book->wikiEntries()->where('is_ai_extracted', true)->get();
+        $characters = $this->book->characters()->get();
+        $wikiEntries = $this->book->wikiEntries()->get();
 
         if ($characters->count() + $wikiEntries->count() < 2) {
             $this->preparation->increment('current_phase_progress');
@@ -83,8 +86,8 @@ class ConsolidateEntities implements ShouldQueue
     }
 
     /**
-     * @param  EloquentCollection<int, \App\Models\Character>  $characters
-     * @param  EloquentCollection<int, \App\Models\WikiEntry>  $wikiEntries
+     * @param  EloquentCollection<int, Character>  $characters
+     * @param  EloquentCollection<int, WikiEntry>  $wikiEntries
      */
     private function buildPrompt(EloquentCollection $characters, EloquentCollection $wikiEntries): string
     {
@@ -121,16 +124,13 @@ class ConsolidateEntities implements ShouldQueue
             }
 
             DB::transaction(function () use ($merge) {
-                $canonical = $this->book->characters()
-                    ->where('is_ai_extracted', true)
-                    ->find($merge['canonical_id']);
+                $canonical = $this->book->characters()->find($merge['canonical_id']);
 
                 if (! $canonical) {
                     return;
                 }
 
                 $duplicates = $this->book->characters()
-                    ->where('is_ai_extracted', true)
                     ->whereIn('id', $merge['duplicate_ids'])
                     ->get();
 
@@ -196,9 +196,7 @@ class ConsolidateEntities implements ShouldQueue
             }
 
             DB::transaction(function () use ($merge) {
-                $canonical = $this->book->wikiEntries()
-                    ->where('is_ai_extracted', true)
-                    ->find($merge['canonical_id']);
+                $canonical = $this->book->wikiEntries()->find($merge['canonical_id']);
 
                 if (! $canonical) {
                     return;
@@ -244,7 +242,7 @@ class ConsolidateEntities implements ShouldQueue
      * Merge alias arrays from canonical and duplicates, deduplicating and excluding the canonical name.
      *
      * @param  array<int, string>  $canonicalAliases
-     * @param  \Illuminate\Support\Collection<int, mixed>  $duplicateAliasGroups
+     * @param  Collection<int, mixed>  $duplicateAliasGroups
      * @return list<string>
      */
     private function mergeAliases(array $canonicalAliases, $duplicateAliasGroups, string $canonicalName): array

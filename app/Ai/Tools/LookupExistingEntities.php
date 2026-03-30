@@ -4,6 +4,7 @@ namespace App\Ai\Tools;
 
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Stringable;
@@ -16,7 +17,7 @@ class LookupExistingEntities implements Tool
     }
 
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {
@@ -28,8 +29,8 @@ class LookupExistingEntities implements Tool
     public function handle(Request $request): Stringable|string
     {
         $book = Book::query()->findOrFail($request['book_id']);
-        $characters = $book->characters()->get(['id', 'name', 'aliases', 'description']);
-        $wikiEntries = $book->wikiEntries()->get(['id', 'name', 'kind', 'type', 'description', 'metadata']);
+        $characters = $book->characters()->get(['id', 'name', 'aliases', 'description', 'ai_description']);
+        $wikiEntries = $book->wikiEntries()->get(['id', 'name', 'kind', 'type', 'description', 'ai_description', 'metadata']);
 
         if ($characters->isEmpty() && $wikiEntries->isEmpty()) {
             return 'No existing characters or entities found for this book.';
@@ -41,7 +42,7 @@ class LookupExistingEntities implements Tool
             $results = [];
             foreach ($characters as $character) {
                 $aliases = ! empty($character->aliases) ? ' (aliases: '.implode(', ', $character->aliases).')' : '';
-                $results[] = "- {$character->name}{$aliases}: {$character->description}";
+                $results[] = "- {$character->name}{$aliases}: {$character->fullDescription()}";
             }
             $sections[] = "## Existing Characters\n\n".implode("\n", $results);
         }
@@ -51,7 +52,7 @@ class LookupExistingEntities implements Tool
             foreach ($wikiEntries as $entry) {
                 $type = $entry->type ? " ({$entry->type})" : '';
                 $aliases = ! empty($entry->metadata['aliases']) ? ' (aliases: '.implode(', ', $entry->metadata['aliases']).')' : '';
-                $results[] = "- [{$entry->kind->value}] {$entry->name}{$aliases}{$type}: {$entry->description}";
+                $results[] = "- [{$entry->kind->value}] {$entry->name}{$aliases}{$type}: {$entry->fullDescription()}";
             }
             $sections[] = "## Existing World Entities\n\n".implode("\n", $results);
         }
