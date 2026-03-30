@@ -70,9 +70,15 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureSqlite(): void
     {
-        DB::statement('PRAGMA synchronous = NORMAL;');
-        DB::statement('PRAGMA cache_size = -64000;');
-        DB::statement('PRAGMA mmap_size = 268435456;');
-        DB::statement('PRAGMA temp_store = MEMORY;');
+        try {
+            DB::statement('PRAGMA synchronous = NORMAL;');
+            DB::statement('PRAGMA cache_size = -64000;');
+            DB::statement('PRAGMA mmap_size = 268435456;');
+            DB::statement('PRAGMA temp_store = MEMORY;');
+        } catch (\Throwable) {
+            // Pragmas are performance optimizations — safe to skip during
+            // package:discover or other bootstrap-phase commands where the
+            // database may not be available yet (e.g. CI builds).
+        }
     }
 }
