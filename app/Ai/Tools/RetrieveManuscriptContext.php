@@ -52,7 +52,7 @@ class RetrieveManuscriptContext implements Tool
                 $sections[] = "\n## Characters";
                 foreach ($characters as $character) {
                     $aliases = $character->aliases ? ' (aliases: '.implode(', ', $character->aliases).')' : '';
-                    $sections[] = "- {$character->name}{$aliases}: {$character->description}";
+                    $sections[] = "- {$character->name}{$aliases}: {$character->fullDescription()}";
                 }
             }
         }
