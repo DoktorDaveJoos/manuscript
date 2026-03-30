@@ -97,7 +97,9 @@ class ConsolidateEntities implements ShouldQueue
             $lines[] = "## Characters\n";
             foreach ($characters as $character) {
                 $aliases = ! empty($character->aliases) ? ' (aliases: '.implode(', ', $character->aliases).')' : '';
-                $lines[] = "- ID:{$character->id} \"{$character->name}\"{$aliases} — {$character->description}";
+                $desc = $character->fullDescription() ?? 'No description';
+                $source = $character->is_ai_extracted ? '' : ' [MANUAL]';
+                $lines[] = "- ID:{$character->id} \"{$character->name}\"{$aliases}{$source} — {$desc}";
             }
             $lines[] = '';
         }
@@ -106,7 +108,9 @@ class ConsolidateEntities implements ShouldQueue
             $lines[] = "## World Entities\n";
             foreach ($wikiEntries as $entry) {
                 $aliases = ! empty($entry->metadata['aliases']) ? ' (aliases: '.implode(', ', $entry->metadata['aliases']).')' : '';
-                $lines[] = "- ID:{$entry->id} [{$entry->kind->value}] \"{$entry->name}\"{$aliases} — {$entry->description}";
+                $desc = $entry->fullDescription() ?? 'No description';
+                $source = $entry->is_ai_extracted ? '' : ' [MANUAL]';
+                $lines[] = "- ID:{$entry->id} [{$entry->kind->value}] \"{$entry->name}\"{$aliases}{$source} — {$desc}";
             }
         }
 
@@ -146,6 +150,7 @@ class ConsolidateEntities implements ShouldQueue
                 );
 
                 $this->keepLongestDescription($canonical, $duplicates);
+                $this->keepLongestAiDescription($canonical, $duplicates);
                 $this->resolveEarliestAppearance($canonical, $duplicates);
                 $canonical->save();
 
@@ -203,7 +208,6 @@ class ConsolidateEntities implements ShouldQueue
                 }
 
                 $duplicates = $this->book->wikiEntries()
-                    ->where('is_ai_extracted', true)
                     ->whereIn('id', $merge['duplicate_ids'])
                     ->get();
 
@@ -222,6 +226,7 @@ class ConsolidateEntities implements ShouldQueue
                 $canonical->metadata = $metadata;
 
                 $this->keepLongestDescription($canonical, $duplicates);
+                $this->keepLongestAiDescription($canonical, $duplicates);
                 $this->resolveEarliestAppearance($canonical, $duplicates);
                 $canonical->save();
 
@@ -270,6 +275,18 @@ class ConsolidateEntities implements ShouldQueue
         foreach ($duplicates as $duplicate) {
             if (mb_strlen($duplicate->description ?? '') > mb_strlen($canonical->description ?? '')) {
                 $canonical->description = $duplicate->description;
+            }
+        }
+    }
+
+    /**
+     * @param  EloquentCollection<int, Model>  $duplicates
+     */
+    private function keepLongestAiDescription(Model $canonical, EloquentCollection $duplicates): void
+    {
+        foreach ($duplicates as $duplicate) {
+            if (mb_strlen($duplicate->ai_description ?? '') > mb_strlen($canonical->ai_description ?? '')) {
+                $canonical->ai_description = $duplicate->ai_description;
             }
         }
     }
