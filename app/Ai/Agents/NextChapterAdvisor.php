@@ -10,6 +10,7 @@ use App\Ai\Tools\SearchSimilarChunks;
 use App\Enums\AiTaskCategory;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
@@ -52,12 +53,14 @@ class NextChapterAdvisor implements Agent, BelongsToBook, HasMiddleware, HasStru
         4. Ideas for chapter hooks or opening lines
 
         Use the available tools to retrieve manuscript context and search for relevant passages.
+        LANGUAGE RULE: ALL text content you produce — suggestions, plot points, hook ideas — MUST be written in {$this->book->language}. Only structured field names (JSON keys) remain in English. Do not mix languages.
+
         Be creative but consistent with the established tone and direction of the story.{$writingStyle}
         INSTRUCTIONS;
     }
 
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {

@@ -81,8 +81,9 @@ class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasStr
 
         {$persona->antiPatternRules()}
 
+        {$persona->languageRule($this->book->language)}
+
         Be specific and reference concrete passages. Provide actionable observations, not generic praise.
-        Respond in the same language as the manuscript ({$this->book->language}).
         INSTRUCTIONS;
     }
 

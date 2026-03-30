@@ -95,6 +95,8 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
         Use the search tool to find related passages from other chapters when cross-referencing themes or plot threads.
         The book ID is {$this->book->id}. Use this when calling the search tool.
 
+        {$persona->languageRule($this->book->language)}
+
         Be precise and analytical. Score honestly — not every chapter needs high scores. Low tension or quiet pacing can be exactly right for a chapter's role in the story.
         INSTRUCTIONS;
     }

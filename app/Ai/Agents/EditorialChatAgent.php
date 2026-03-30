@@ -78,6 +78,8 @@ class EditorialChatAgent implements Agent, BelongsToBook, Conversational, HasMid
         The review itself cannot be changed through this conversation — it is a fixed assessment.
         But you can explain, contextualize, and help the author understand how to act on the feedback.
 
+        {$persona->languageRule($this->book->language)}
+
         Be direct, specific, and grounded in the actual text.
         INSTRUCTIONS;
     }

@@ -90,8 +90,9 @@ class EditorialSynthesisAgent implements Agent, BelongsToBook, HasMiddleware, Ha
 
         {$persona->antiPatternRules()}
 
+        {$persona->languageRule($this->book->language)}
+
         Reference concrete examples from the data. Be specific about what works and what fails.
-        Respond in the same language as the manuscript ({$this->book->language}).
         INSTRUCTIONS;
     }
 

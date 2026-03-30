@@ -82,6 +82,14 @@ enum EditorialPersona: string
     }
 
     /**
+     * Language enforcement rule for agents that produce text content.
+     */
+    public static function languageRule(string $language): string
+    {
+        return "LANGUAGE RULE: ALL text content you produce — findings, observations, notes, descriptions, summaries, recommendations, and any other prose — MUST be written in {$language}. Only structured field names (JSON keys, enum values) remain in English. Do not mix languages.";
+    }
+
+    /**
      * Anti-pattern rules to prevent AI pleasantness bias.
      */
     public function antiPatternRules(): string

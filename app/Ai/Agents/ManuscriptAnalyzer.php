@@ -58,7 +58,7 @@ class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStru
 
         $summaryRule = 'The summary field should be a brief one-line overall assessment. Findings should list specific issues only — do not repeat the summary content.';
 
-        $personaRules = $persona->instructions()."\n\n".$persona->antiPatternRules();
+        $personaRules = $persona->instructions()."\n\n".$persona->antiPatternRules()."\n\n".$persona->languageRule($this->book->language);
 
         return match ($this->analysisType) {
             AnalysisType::Pacing => "{$personaRules}\n\n{$bookContext} Analyze the pacing of the manuscript. Evaluate chapter lengths, scene transitions, tension arcs, and narrative momentum. Identify sections that feel rushed or drag. {$qualityRules}",

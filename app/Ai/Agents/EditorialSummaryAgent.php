@@ -79,7 +79,7 @@ class EditorialSummaryAgent implements Agent, BelongsToBook, HasMiddleware, HasS
 
         {$persona->antiPatternRules()}
 
-        Respond in the same language as the manuscript ({$this->book->language}).
+        {$persona->languageRule($this->book->language)}
         INSTRUCTIONS;
     }
 

@@ -63,6 +63,8 @@ class BookChatAgent implements Agent, BelongsToBook, Conversational, HasMiddlewa
 
         The book ID is {$this->book->id}. Use this when calling tools.
 
+        LANGUAGE RULE: ALL text content you produce MUST be written in {$this->book->language}. Do not mix languages.
+
         Be concise, helpful, and grounded in the actual text. If you're unsure about something, say so rather than guessing.
         When referencing specific parts of the manuscript, mention the chapter title or number.{$writingStyle}{$chapterContext}
         INSTRUCTIONS;
