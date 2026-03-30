@@ -1,3 +1,4 @@
+import { router } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { update as updateWritingGoal } from '@/actions/App/Http/Controllers/WritingGoalController';
@@ -58,6 +59,7 @@ export default function WritingGoal({
 
             setGoal(parsed);
             setIsEditing(false);
+            router.reload({ only: ['manuscript_target', 'writing_goal'] });
         } catch {
             setSaveError(true);
         }

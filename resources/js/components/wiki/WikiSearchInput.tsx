@@ -11,7 +11,7 @@ export default function WikiSearchInput({
     const { t } = useTranslation('wiki');
 
     return (
-        <div className="flex items-center gap-2 rounded-lg bg-neutral-bg/50 px-2.5 py-1.5 ring-1 ring-transparent focus-within:ring-border">
+        <div className="flex items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 ring-1 ring-transparent focus-within:ring-border dark:bg-surface-card">
             <Search size={14} className="shrink-0 text-ink-faint" />
             <input
                 type="text"

@@ -127,8 +127,8 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                     onScenesVisibleChange={() => {}}
                 />
 
-                <main className="flex flex-1 flex-col items-center overflow-y-auto px-12 py-10">
-                    <div className="w-full max-w-[640px]">
+                <main className="flex-1 overflow-y-auto">
+                    <div className="mx-auto w-full max-w-[760px] px-12 pt-12 pb-[80vh]">
                         <PageHeader
                             title={t('title')}
                             subtitle={t('subtitle')}
@@ -148,10 +148,7 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                     {t('cover.title')}
                                 </SectionLabel>
                                 <Card className="mt-3 p-6">
-                                    <span className="text-sm font-medium text-ink">
-                                        {t('cover.title')}
-                                    </span>
-                                    <p className="mt-1 text-[13px] text-ink-muted">
+                                    <p className="text-[13px] text-ink-muted">
                                         {t('cover.description')}
                                     </p>
 
@@ -270,14 +267,11 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                     {t('frontMatter.title')}
                                 </SectionLabel>
                                 <Card className="mt-3 p-6">
-                                    <span className="text-sm font-medium text-ink">
-                                        {t('frontMatter.title')}
-                                    </span>
-                                    <p className="mt-1 text-[13px] text-ink-muted">
+                                    <p className="text-[13px] text-ink-muted">
                                         {t('frontMatter.description')}
                                     </p>
 
-                                    <div className="mt-4 flex flex-col gap-5">
+                                    <div className="mt-5 flex flex-col gap-5">
                                         <FormField
                                             id="copyright"
                                             label={t('frontMatter.copyright')}
@@ -370,14 +364,11 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                     {t('backMatter.title')}
                                 </SectionLabel>
                                 <Card className="mt-3 p-6">
-                                    <span className="text-sm font-medium text-ink">
-                                        {t('backMatter.title')}
-                                    </span>
-                                    <p className="mt-1 text-[13px] text-ink-muted">
+                                    <p className="text-[13px] text-ink-muted">
                                         {t('backMatter.description')}
                                     </p>
 
-                                    <div className="mt-4 flex flex-col gap-5">
+                                    <div className="mt-5 flex flex-col gap-5">
                                         <FormField
                                             id="acknowledgments"
                                             label={t(

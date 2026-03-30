@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "php-native-audit": {
+      "source": "DoktorDaveJoos/nativephp-skills",
+      "sourceType": "github",
+      "computedHash": "50e9d65e5c6ec27ecf6660294a61eb8c7e25cb01230a2ced0638a24f6f7e51d6"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",

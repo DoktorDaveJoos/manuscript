@@ -230,31 +230,23 @@ export default function WikiForm({
             {/* Header */}
             {isEditing ? (
                 <div className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
-                        {isDirty && (
-                            <span className="flex items-center gap-1.5 text-[12px] text-ink-muted">
-                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-ai-green" />
-                                {t('edit.editing')} · {t('edit.unsavedChanges')}
-                            </span>
-                        )}
-                        <div className="ml-auto flex items-center gap-2">
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                type="button"
-                                onClick={onCancel}
-                            >
-                                {t('create.cancel')}
-                            </Button>
-                            <Button
-                                variant="primary"
-                                size="sm"
-                                type="submit"
-                                disabled={currentForm.processing}
-                            >
-                                {t('edit.save')}
-                            </Button>
-                        </div>
+                    <div className="flex items-center justify-end gap-2">
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            type="button"
+                            onClick={onCancel}
+                        >
+                            {t('create.cancel')}
+                        </Button>
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            type="submit"
+                            disabled={!isDirty || currentForm.processing}
+                        >
+                            {t('edit.saveChanges')}
+                        </Button>
                     </div>
                     <Input
                         type="text"
