@@ -213,12 +213,13 @@ export default function WikiForm({
 
     // Delete
     const handleDelete = () => {
+        if (!item) return;
         if (isCharacter) {
-            router.delete(destroyCharacter.url({ book, character: item?.id }), {
+            router.delete(destroyCharacter.url({ book, character: item.id }), {
                 onSuccess,
             });
         } else {
-            router.delete(destroyEntry.url({ book, wikiEntry: item?.id }), {
+            router.delete(destroyEntry.url({ book, wikiEntry: item.id }), {
                 onSuccess,
             });
         }
