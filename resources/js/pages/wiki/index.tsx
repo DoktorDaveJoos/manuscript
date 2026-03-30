@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sidebar from '@/components/editor/Sidebar';
 import AddEntryDropdown from '@/components/wiki/AddEntryDropdown';
@@ -56,7 +56,6 @@ export default function WikiIndex({
     const [query, setQuery] = useState('');
     const [creatingType, setCreatingType] = useState<WikiTab | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
-    const prevCreatingType = useRef<WikiTab | null>(null);
     const isSearching = query.trim().length > 0;
 
     const wikiLimit = wikiLimits?.limit ?? 5;
@@ -79,10 +78,10 @@ export default function WikiIndex({
         [characters, locations, organizations, items, lore],
     );
 
-    // After creating an item, select the newest one in that tab
-    useEffect(() => {
-        if (prevCreatingType.current && !creatingType) {
-            const tab = prevCreatingType.current;
+    const handleCreateSuccess = useCallback(() => {
+        const tab = creatingType;
+        setCreatingType(null);
+        if (tab) {
             const list = entriesByTab[tab] ?? [];
             if (list.length > 0) {
                 const newest = list.reduce((max, item) =>
@@ -91,7 +90,6 @@ export default function WikiIndex({
                 setSelectedId(newest.id);
             }
         }
-        prevCreatingType.current = creatingType;
     }, [creatingType, entriesByTab]);
 
     const searchResults = useMemo(() => {
@@ -175,7 +173,7 @@ export default function WikiIndex({
                     book={book}
                     storylines={bookStorylines}
                     onCancel={() => setCreatingType(null)}
-                    onSuccess={() => setCreatingType(null)}
+                    onSuccess={handleCreateSuccess}
                 />
             );
         }

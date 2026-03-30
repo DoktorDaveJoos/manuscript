@@ -268,7 +268,6 @@ export default function ChapterShow({
     const editorFont = app_settings.editor_font;
     const editorFontSize = app_settings.editor_font_size;
 
-    const toggleNotes = useCallback(() => togglePanel('notes'), [togglePanel]);
     const closePanelAndFocus = useCallback(
         (panel: PanelId) => {
             closePanel(panel);
