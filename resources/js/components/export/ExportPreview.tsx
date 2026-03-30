@@ -23,8 +23,12 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso } from 'react-virtuoso';
-import type { Format } from '@/components/export/types';
-import type { MatterItem, TrimSizeOption } from '@/components/export/types';
+import type {
+    Format,
+    MatterItem,
+    TrimSizeOption,
+} from '@/components/export/types';
+import { VISUAL_FORMATS } from '@/components/export/types';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { jsonFetchHeaders } from '@/lib/utils';
 
@@ -41,8 +45,6 @@ const EBOOK_SPEC: TrimSizeOption = {
     width: 90,
     height: 122,
 };
-const VISUAL_FORMATS: Set<Format> = new Set(['pdf', 'epub', 'kdp' as Format]);
-
 function computePageDimensions(
     spec: TrimSizeOption,
     pageWidth: number,
@@ -66,6 +68,11 @@ interface ExportPreviewProps {
     orderedChapters: Array<{ id: number }>;
     frontMatter: MatterItem[];
     backMatter: MatterItem[];
+    template?: string;
+    fontPairing?: string;
+    sceneBreakStyle?: string;
+    dropCaps?: boolean;
+    includeCover?: boolean;
 }
 
 function SkeletonPage({ width, height }: { width: number; height: number }) {
@@ -112,7 +119,8 @@ function PdfPageCanvas({
                     return;
                 }
 
-                const viewport = page.getViewport({ scale: scaleFactor });
+                const dpr = window.devicePixelRatio || 1;
+                const viewport = page.getViewport({ scale: scaleFactor * dpr });
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
 
@@ -171,6 +179,11 @@ export default function ExportPreview({
     orderedChapters,
     frontMatter,
     backMatter,
+    template = 'classic',
+    fontPairing = 'classic-serif',
+    sceneBreakStyle = 'asterisks',
+    dropCaps = true,
+    includeCover = false,
 }: ExportPreviewProps) {
     const { t } = useTranslation('export');
 
@@ -255,6 +268,7 @@ export default function ExportPreview({
                 signal: controller.signal,
                 body: JSON.stringify({
                     format,
+                    template,
                     trim_size: trimSize,
                     font_size: fontSize,
                     include_chapter_titles: includeChapterTitles,
@@ -263,6 +277,10 @@ export default function ExportPreview({
                     chapter_ids: orderedSelectedIds,
                     front_matter: checkedFrontMatter,
                     back_matter: checkedBackMatter,
+                    font_pairing: fontPairing,
+                    scene_break_style: sceneBreakStyle,
+                    drop_caps: dropCaps,
+                    include_cover: includeCover,
                 }),
             })
                 .then(async (res) => {
@@ -327,6 +345,7 @@ export default function ExportPreview({
         hasSelectedChapters,
         hasVisualPreview,
         format,
+        template,
         trimSize,
         fontSize,
         includeChapterTitles,
@@ -336,6 +355,10 @@ export default function ExportPreview({
         orderedChapterIds,
         checkedFrontMatter,
         checkedBackMatter,
+        fontPairing,
+        sceneBreakStyle,
+        dropCaps,
+        includeCover,
     ]);
 
     useEffect(() => {
@@ -352,21 +375,25 @@ export default function ExportPreview({
 
     const previewLabel = t('preview');
 
+    const templateLabel = template.charAt(0).toUpperCase() + template.slice(1);
+
     const VirtuosoHeader = useCallback(
         () => (
             <div className="flex items-center justify-between px-7 pt-6 pb-3">
-                <span className="text-[11px] font-semibold tracking-[0.01em] text-ink-faint uppercase">
+                <span className="text-[11px] font-semibold tracking-[0.08em] text-ink-faint uppercase">
                     {previewLabel}
                 </span>
                 <div className="flex items-center gap-2">
                     {loading && pdfDoc && (
                         <span className="inline-block size-3 animate-spin rounded-full border-2 border-ink-faint border-t-ink" />
                     )}
-                    <span className="text-[11px] text-ink-faint">Classic</span>
+                    <span className="text-[11px] text-ink-faint">
+                        {templateLabel}
+                    </span>
                 </div>
             </div>
         ),
-        [previewLabel, loading, pdfDoc],
+        [previewLabel, loading, pdfDoc, templateLabel],
     );
 
     const virtuosoComponents = useMemo(
@@ -434,7 +461,7 @@ export default function ExportPreview({
             ) : showPdf ? (
                 <div className="relative flex w-full flex-1 flex-col">
                     {loading && (
-                        <div className="pointer-events-none absolute inset-0 z-10 bg-white/40 dark:bg-black/20" />
+                        <div className="pointer-events-none absolute inset-0 z-10 bg-surface/40" />
                     )}
                     <Virtuoso
                         className="w-full flex-1"

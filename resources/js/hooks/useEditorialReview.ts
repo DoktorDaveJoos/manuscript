@@ -1,4 +1,10 @@
+import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    progress,
+    show,
+    store,
+} from '@/actions/App/Http/Controllers/EditorialReviewController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { EditorialReview } from '@/types/models';
 
@@ -16,6 +22,17 @@ export function useEditorialReview(
         ['pending', 'analyzing', 'synthesizing'].includes(review.status)
     );
 
+    // Sync when server provides fresh review data (e.g., after router.reload())
+    useEffect(() => {
+        if (initialReview) {
+            setReview(initialReview);
+        }
+    }, [
+        initialReview?.id,
+        initialReview?.status,
+        initialReview?.sections?.length,
+    ]);
+
     useEffect(() => {
         if (!isRunning || !review) {
             if (pollRef.current) {
@@ -28,12 +45,38 @@ export function useEditorialReview(
         pollRef.current = setInterval(async () => {
             try {
                 const res = await fetch(
-                    `/books/${bookId}/ai/editorial-review/${review.id}/progress`,
+                    progress.url({ book: bookId, review: review.id }),
                     { headers: { Accept: 'application/json' } },
                 );
                 if (!res.ok) throw new Error();
                 const data = await res.json();
-                setReview(data);
+
+                if (data.status === 'completed' || data.status === 'failed') {
+                    if (pollRef.current) {
+                        clearInterval(pollRef.current);
+                        pollRef.current = null;
+                    }
+                    router.reload();
+                    return;
+                }
+
+                setReview((prev) => {
+                    if (
+                        !prev ||
+                        (prev.status === data.status &&
+                            prev.error_message === data.error_message &&
+                            JSON.stringify(prev.progress) ===
+                                JSON.stringify(data.progress))
+                    ) {
+                        return prev;
+                    }
+                    return {
+                        ...prev,
+                        status: data.status,
+                        progress: data.progress,
+                        error_message: data.error_message,
+                    };
+                });
             } catch {
                 // Silently retry on next interval
             }
@@ -49,7 +92,7 @@ export function useEditorialReview(
         setError(null);
 
         try {
-            const res = await fetch(`/books/${bookId}/ai/editorial-review`, {
+            const res = await fetch(store.url(bookId), {
                 method: 'POST',
                 headers: jsonFetchHeaders(),
             });
@@ -60,7 +103,7 @@ export function useEditorialReview(
             }
 
             const data = await res.json();
-            setReview(data);
+            setReview(data.review);
         } catch (e) {
             setError((e as Error).message);
         } finally {
@@ -68,9 +111,26 @@ export function useEditorialReview(
         }
     }, [bookId]);
 
-    const selectReview = useCallback((selected: EditorialReview) => {
-        setReview(selected);
+    const selectReview = useCallback(
+        (selected: EditorialReview) => {
+            router.visit(show.url({ book: bookId, review: selected.id }));
+        },
+        [bookId],
+    );
+
+    const updateResolved = useCallback((resolved: string[]) => {
+        setReview((prev) =>
+            prev ? { ...prev, resolved_findings: resolved } : prev,
+        );
     }, []);
 
-    return { review, isRunning, starting, error, handleStart, selectReview };
+    return {
+        review,
+        isRunning,
+        starting,
+        error,
+        handleStart,
+        selectReview,
+        updateResolved,
+    };
 }

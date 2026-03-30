@@ -109,8 +109,8 @@ test('EditorialReview casts progress as array', function () {
 test('EditorialReview casts timestamps as datetime', function () {
     $review = EditorialReview::factory()->create();
 
-    expect($review->started_at)->toBeInstanceOf(\DateTimeInterface::class)
-        ->and($review->completed_at)->toBeInstanceOf(\DateTimeInterface::class);
+    expect($review->started_at)->toBeInstanceOf(DateTimeInterface::class)
+        ->and($review->completed_at)->toBeInstanceOf(DateTimeInterface::class);
 });
 
 test('EditorialReviewSection factory creates a section with findings', function () {

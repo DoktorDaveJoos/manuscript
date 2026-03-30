@@ -1,5 +1,7 @@
 <?php
 
+use App\Providers\NativeAppServiceProvider;
+
 return [
     /**
      * The version of your app.
@@ -51,7 +53,7 @@ return [
      * takes care of bootstrapping your application and configuring
      * any global hotkeys, menus, windows, etc.
      */
-    'provider' => \App\Providers\NativeAppServiceProvider::class,
+    'provider' => NativeAppServiceProvider::class,
 
     /**
      * A list of environment keys that should be removed from the
@@ -163,6 +165,9 @@ return [
      * Define your own scripts to run before and after the build process.
      */
     'prebuild' => [
+        'php artisan config:cache',
+        'php artisan route:cache',
+        'php artisan view:cache',
         'npm run build',
     ],
 

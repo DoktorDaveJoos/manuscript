@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\AppSetting;
+use Sentry\Event;
+
 /**
  * Sentry Laravel SDK configuration file.
  *
@@ -11,8 +14,8 @@ return [
     'dsn' => env('SENTRY_LARAVEL_DSN', env('SENTRY_DSN')),
 
     // Only send events when the user has opted in
-    'before_send' => function (\Sentry\Event $event): ?\Sentry\Event {
-        if (! \App\Models\AppSetting::get('send_error_reports', false)) {
+    'before_send' => function (Event $event): ?Event {
+        if (! AppSetting::get('send_error_reports', false)) {
             return null;
         }
 
@@ -27,7 +30,7 @@ return [
 
     // The release version of your application
     // Example with dynamic git hash: trim(exec('git --git-dir ' . base_path('.git') . ' log --pretty="%h" -n1 HEAD'))
-    'release' => env('SENTRY_RELEASE'),
+    'release' => env('SENTRY_RELEASE', env('NATIVEPHP_APP_VERSION')),
 
     // When left empty or `null` the Laravel environment will be used (usually discovered from `APP_ENV` in your `.env`)
     'environment' => env('SENTRY_ENVIRONMENT'),

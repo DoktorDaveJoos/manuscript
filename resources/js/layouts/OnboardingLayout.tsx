@@ -2,6 +2,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
 import CrashReportDialog from '@/components/onboarding/CrashReportDialog';
+import LanguageSelectionDialog from '@/components/onboarding/LanguageSelectionDialog';
 import type { AppSettings } from '@/types/models';
 
 export default function OnboardingLayout({
@@ -14,7 +15,9 @@ export default function OnboardingLayout({
     return (
         <>
             <Head title={title} />
-            {!app_settings.crash_report_prompted && <CrashReportDialog />}
+            {!app_settings.language_prompted && <LanguageSelectionDialog />}
+            {app_settings.language_prompted &&
+                !app_settings.crash_report_prompted && <CrashReportDialog />}
             <div className="flex min-h-screen flex-col bg-surface">
                 <header className="flex items-center justify-between px-10 py-4">
                     <span className="text-[13px] font-semibold tracking-[0.08em] text-ink uppercase">

@@ -17,24 +17,33 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     ArrowUpRight,
     ChevronDown,
-    ChevronRight,
     GripVertical,
+    PanelLeftClose,
+    PanelLeftOpen,
+    TableOfContents,
 } from 'lucide-react';
-import type { PropsWithChildren } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { show as publishShow } from '@/actions/App/Http/Controllers/PublishController';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import type {
     ChapterRow,
     MatterItem,
     StorylineRef,
 } from '@/components/export/types';
 import Checkbox from '@/components/ui/Checkbox';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/Collapsible';
+import PanelHeader from '@/components/ui/PanelHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { cn } from '@/lib/utils';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 
 type ExportReadingOrderProps = {
+    bookId: number;
     storylines: StorylineRef[];
     selectedChapterIds: Set<number>;
     onToggleChapter: (id: number) => void;
@@ -125,15 +134,35 @@ function SortableChapterRow({
     );
 }
 
+const PUBLISH_ANCHORS = new Set([
+    'copyright',
+    'dedication',
+    'epigraph',
+    'acknowledgments',
+    'about-author',
+    'also-by',
+    'epilogue',
+]);
+
 function MatterRow({
     item,
     onToggle,
     fromUrl,
+    publishUrl,
 }: {
     item: MatterItem;
     onToggle: () => void;
     fromUrl: string;
+    publishUrl?: string;
 }) {
+    const linkHref = item.settingsSection
+        ? settingsIndex.url({
+              query: { section: item.settingsSection, from: fromUrl },
+          })
+        : publishUrl && PUBLISH_ANCHORS.has(item.id)
+          ? `${publishUrl}#${item.id}`
+          : undefined;
+
     return (
         <div className="flex items-center gap-2">
             <span className="flex shrink-0 items-center text-ink-faint">
@@ -148,11 +177,9 @@ function MatterRow({
             >
                 {item.label}
             </span>
-            {item.settingsSection && (
+            {linkHref && (
                 <Link
-                    href={settingsIndex.url({
-                        query: { section: item.settingsSection, from: fromUrl },
-                    })}
+                    href={linkHref}
                     className="shrink-0 text-ink-faint transition-colors hover:text-ink-muted dark:hover:text-ink-soft"
                 >
                     <ArrowUpRight className="h-3 w-3" />
@@ -165,26 +192,16 @@ function MatterRow({
 function SectionHeader({
     children,
     count,
-    expanded,
-    onToggle,
 }: {
     children: React.ReactNode;
     count?: number;
-    expanded: boolean;
-    onToggle: () => void;
 }) {
     return (
         <button
             type="button"
-            onClick={onToggle}
-            className="flex w-full items-center gap-1.5"
+            className="group flex w-full items-center gap-1.5"
         >
-            <ChevronDown
-                className={cn(
-                    'h-3 w-3 text-ink-faint transition-transform',
-                    !expanded && '-rotate-90',
-                )}
-            />
+            <ChevronDown className="h-3 w-3 text-ink-faint transition-transform group-data-[state=closed]:-rotate-90" />
             <SectionLabel>{children}</SectionLabel>
             {count !== undefined && (
                 <span className="text-[11px] text-ink-faint">{count}</span>
@@ -193,25 +210,8 @@ function SectionHeader({
     );
 }
 
-function CollapsibleSection({
-    expanded,
-    children,
-}: PropsWithChildren<{ expanded: boolean }>) {
-    return (
-        <div
-            className={cn(
-                'grid transition-[grid-template-rows] duration-200 ease-out',
-                expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
-            )}
-        >
-            <div className="overflow-hidden">{children}</div>
-        </div>
-    );
-}
-
-const COLLAPSED_KEY = 'export-reading-order-collapsed';
-
 export default function ExportReadingOrder({
+    bookId,
     storylines,
     selectedChapterIds,
     onToggleChapter,
@@ -224,37 +224,19 @@ export default function ExportReadingOrder({
 }: ExportReadingOrderProps) {
     const { t } = useTranslation('export');
     const pageUrl = usePage().url;
+    const bookPublishUrl = publishShow.url(bookId);
     const [activeChapter, setActiveChapter] = useState<ChapterRow | null>(null);
-    const [collapsed, setCollapsed] = useState(
-        () => localStorage.getItem(COLLAPSED_KEY) === '1',
-    );
-    const [expandedSections, setExpandedSections] = useState(
-        () => new Set(['front-matter', 'chapters', 'back-matter']),
-    );
 
-    const toggleCollapsed = useCallback(() => {
-        setCollapsed((prev) => {
-            const next = !prev;
-            localStorage.setItem(COLLAPSED_KEY, next ? '1' : '0');
-            return next;
+    const { width, isCollapsed, toggleCollapsed, panelRef, handleMouseDown } =
+        useResizablePanel({
+            storageKey: 'export-reading-order-width',
+            minWidth: 220,
+            maxWidth: 400,
+            defaultWidth: 260,
+            collapsible: true,
+            collapsedWidth: 36,
+            collapseThreshold: 160,
         });
-    }, []);
-
-    const toggleSection = useCallback((key: string) => {
-        setExpandedSections((prev) => {
-            const next = new Set(prev);
-            if (next.has(key)) next.delete(key);
-            else next.add(key);
-            return next;
-        });
-    }, []);
-
-    const { width, panelRef, handleMouseDown } = useResizablePanel({
-        storageKey: 'export-reading-order-width',
-        minWidth: 220,
-        maxWidth: 400,
-        defaultWidth: 260,
-    });
 
     const sensors = useSensors(
         useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
@@ -299,189 +281,201 @@ export default function ExportReadingOrder({
         ? storylineMap.get(activeChapter.storyline_id)
         : undefined;
 
-    if (collapsed) {
-        return (
-            <aside className="flex h-full w-9 shrink-0 flex-col items-center border-r border-border-subtle bg-white pt-3 dark:bg-surface-card">
-                <button
-                    type="button"
-                    onClick={toggleCollapsed}
-                    className="hover:bg-surface-hover flex h-7 w-7 items-center justify-center rounded-md text-ink-faint transition-colors hover:text-ink-muted"
-                >
-                    <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-                <span className="mt-3 text-[12px] font-semibold tracking-wide text-ink [writing-mode:vertical-lr]">
-                    {t('readingOrder')}
-                </span>
-            </aside>
-        );
-    }
-
     return (
         <aside
             ref={panelRef}
-            className="relative flex h-full shrink-0 flex-col border-r border-border-subtle bg-white dark:bg-surface-card"
+            className="relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border-subtle bg-white transition-[width] duration-200 ease-out dark:bg-surface-card"
             style={{ width }}
         >
-            {/* Resize handle */}
-            <div
-                onMouseDown={handleMouseDown}
-                className="group absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize"
-            >
-                <div className="absolute inset-y-0 right-[3px] w-px bg-transparent transition-colors group-hover:bg-ink/20" />
-            </div>
-
-            {/* Header */}
-            <div className="flex flex-col gap-1 px-4 py-5">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-[14px] font-semibold tracking-[0.06em] text-ink uppercase">
-                        {t('readingOrder')}
-                    </h2>
+            {isCollapsed ? (
+                <div className="flex flex-col items-center pt-3">
                     <button
                         type="button"
                         onClick={toggleCollapsed}
-                        className="hover:bg-surface-hover flex h-6 w-6 items-center justify-center rounded-md text-ink-faint transition-colors hover:text-ink-muted"
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink-muted"
                     >
-                        <ChevronDown className="h-3 w-3 rotate-90" />
+                        <PanelLeftOpen size={14} />
                     </button>
+                    <TableOfContents
+                        size={14}
+                        className="mt-3 text-ink-faint"
+                    />
                 </div>
-                <p className="text-[11px] text-ink-faint">
-                    {t('readingOrderSubtitle')}
-                </p>
-            </div>
-
-            {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto">
-                {/* Front matter */}
-                <div className="border-b border-border-subtle">
-                    <div className="px-4 pt-3 pb-2">
-                        <SectionHeader
-                            expanded={expandedSections.has('front-matter')}
-                            onToggle={() => toggleSection('front-matter')}
-                        >
-                            {t('frontMatter')}
-                        </SectionHeader>
-                    </div>
-                    <CollapsibleSection
-                        expanded={expandedSections.has('front-matter')}
+            ) : (
+                <>
+                    {/* Resize handle */}
+                    <div
+                        onMouseDown={handleMouseDown}
+                        className="group absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize"
                     >
-                        <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
-                            {frontMatter.map((item) => (
-                                <MatterRow
-                                    key={item.id}
-                                    item={item}
-                                    onToggle={() =>
-                                        onToggleFrontMatter(item.id)
-                                    }
-                                    fromUrl={pageUrl}
-                                />
-                            ))}
-                        </div>
-                    </CollapsibleSection>
-                </div>
-
-                {/* Chapters */}
-                <div className="border-b border-border-subtle">
-                    <div className="px-4 pt-1.5 pb-1">
-                        <SectionHeader
-                            count={orderedChapters.length}
-                            expanded={expandedSections.has('chapters')}
-                            onToggle={() => toggleSection('chapters')}
-                        >
-                            {t('chapters')}
-                        </SectionHeader>
+                        <div className="absolute inset-y-0 right-[3px] w-px bg-transparent transition-colors group-hover:bg-ink/20" />
                     </div>
-                    <CollapsibleSection
-                        expanded={expandedSections.has('chapters')}
-                    >
-                        <div className="flex flex-col px-4 pt-1 pb-3.5">
-                            <DndContext
-                                sensors={sensors}
-                                collisionDetection={closestCenter}
-                                onDragStart={handleDragStart}
-                                onDragEnd={handleDragEnd}
+
+                    {/* Header */}
+                    <PanelHeader
+                        title={t('readingOrder')}
+                        icon={
+                            <TableOfContents
+                                size={14}
+                                className="text-ink-faint"
+                            />
+                        }
+                        suffix={
+                            <button
+                                type="button"
+                                onClick={toggleCollapsed}
+                                className="flex size-6 items-center justify-center rounded text-ink-muted transition-colors hover:text-ink-soft"
                             >
-                                <SortableContext
-                                    items={orderedChapters.map(
-                                        (ch) => `export-${ch.id}`,
-                                    )}
-                                    strategy={verticalListSortingStrategy}
-                                >
-                                    {orderedChapters.map((chapter, index) => (
-                                        <SortableChapterRow
-                                            key={chapter.id}
-                                            chapter={chapter}
-                                            index={index}
-                                            storyline={storylineMap.get(
-                                                chapter.storyline_id,
-                                            )}
-                                            checked={selectedChapterIds.has(
-                                                chapter.id,
-                                            )}
-                                            onToggle={() =>
-                                                onToggleChapter(chapter.id)
-                                            }
-                                        />
-                                    ))}
-                                </SortableContext>
+                                <PanelLeftClose size={14} />
+                            </button>
+                        }
+                    />
 
-                                <DragOverlay>
-                                    {activeChapter && (
-                                        <div className="flex items-center gap-2 rounded bg-white px-2 py-1 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A] dark:bg-surface-card">
-                                            <span className="flex shrink-0 items-center text-ink-faint">
-                                                <GripVertical className="h-3 w-3" />
-                                            </span>
-                                            <span
-                                                className="h-1.5 w-1.5 shrink-0 rounded-full"
-                                                style={{
-                                                    backgroundColor:
-                                                        activeStoryline?.color ??
-                                                        '#737373',
-                                                }}
+                    {/* Scrollable content */}
+                    <div className="flex-1 overflow-y-auto">
+                        {/* Front matter */}
+                        <Collapsible defaultOpen>
+                            <div className="border-b border-border-subtle">
+                                <div className="px-4 pt-3 pb-2">
+                                    <CollapsibleTrigger asChild>
+                                        <SectionHeader>
+                                            {t('frontMatter')}
+                                        </SectionHeader>
+                                    </CollapsibleTrigger>
+                                </div>
+                                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                                    <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
+                                        {frontMatter.map((item) => (
+                                            <MatterRow
+                                                key={item.id}
+                                                item={item}
+                                                onToggle={() =>
+                                                    onToggleFrontMatter(item.id)
+                                                }
+                                                fromUrl={pageUrl}
+                                                publishUrl={bookPublishUrl}
                                             />
-                                            <span className="min-w-0 flex-1 truncate text-[12px] text-ink-soft">
-                                                {activeChapter.title}
-                                            </span>
-                                        </div>
-                                    )}
-                                </DragOverlay>
-                            </DndContext>
-                        </div>
-                    </CollapsibleSection>
-                </div>
+                                        ))}
+                                    </div>
+                                </CollapsibleContent>
+                            </div>
+                        </Collapsible>
 
-                {/* Back matter */}
-                <div className="border-b border-border-subtle">
-                    <div className="px-4 pt-3 pb-2">
-                        <SectionHeader
-                            expanded={expandedSections.has('back-matter')}
-                            onToggle={() => toggleSection('back-matter')}
-                        >
-                            {t('backMatter')}
-                        </SectionHeader>
+                        {/* Chapters */}
+                        <Collapsible defaultOpen>
+                            <div className="border-b border-border-subtle">
+                                <div className="px-4 pt-3 pb-2">
+                                    <CollapsibleTrigger asChild>
+                                        <SectionHeader
+                                            count={orderedChapters.length}
+                                        >
+                                            {t('chapters')}
+                                        </SectionHeader>
+                                    </CollapsibleTrigger>
+                                </div>
+                                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                                    <div className="flex flex-col px-4 pt-1 pb-3.5">
+                                        <DndContext
+                                            sensors={sensors}
+                                            collisionDetection={closestCenter}
+                                            onDragStart={handleDragStart}
+                                            onDragEnd={handleDragEnd}
+                                        >
+                                            <SortableContext
+                                                items={orderedChapters.map(
+                                                    (ch) => `export-${ch.id}`,
+                                                )}
+                                                strategy={
+                                                    verticalListSortingStrategy
+                                                }
+                                            >
+                                                {orderedChapters.map(
+                                                    (chapter, index) => (
+                                                        <SortableChapterRow
+                                                            key={chapter.id}
+                                                            chapter={chapter}
+                                                            index={index}
+                                                            storyline={storylineMap.get(
+                                                                chapter.storyline_id,
+                                                            )}
+                                                            checked={selectedChapterIds.has(
+                                                                chapter.id,
+                                                            )}
+                                                            onToggle={() =>
+                                                                onToggleChapter(
+                                                                    chapter.id,
+                                                                )
+                                                            }
+                                                        />
+                                                    ),
+                                                )}
+                                            </SortableContext>
+
+                                            <DragOverlay>
+                                                {activeChapter && (
+                                                    <div className="flex items-center gap-2 rounded bg-white px-2 py-1 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A] dark:bg-surface-card">
+                                                        <span className="flex shrink-0 items-center text-ink-faint">
+                                                            <GripVertical className="h-3 w-3" />
+                                                        </span>
+                                                        <span
+                                                            className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                                            style={{
+                                                                backgroundColor:
+                                                                    activeStoryline?.color ??
+                                                                    '#737373',
+                                                            }}
+                                                        />
+                                                        <span className="min-w-0 flex-1 truncate text-[12px] text-ink-soft">
+                                                            {
+                                                                activeChapter.title
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </DragOverlay>
+                                        </DndContext>
+                                    </div>
+                                </CollapsibleContent>
+                            </div>
+                        </Collapsible>
+
+                        {/* Back matter */}
+                        <Collapsible defaultOpen>
+                            <div className="border-b border-border-subtle">
+                                <div className="px-4 pt-3 pb-2">
+                                    <CollapsibleTrigger asChild>
+                                        <SectionHeader>
+                                            {t('backMatter')}
+                                        </SectionHeader>
+                                    </CollapsibleTrigger>
+                                </div>
+                                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                                    <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
+                                        {backMatter.map((item) => (
+                                            <MatterRow
+                                                key={item.id}
+                                                item={item}
+                                                onToggle={() =>
+                                                    onToggleBackMatter(item.id)
+                                                }
+                                                fromUrl={pageUrl}
+                                                publishUrl={bookPublishUrl}
+                                            />
+                                        ))}
+                                    </div>
+                                </CollapsibleContent>
+                            </div>
+                        </Collapsible>
                     </div>
-                    <CollapsibleSection
-                        expanded={expandedSections.has('back-matter')}
-                    >
-                        <div className="flex flex-col gap-1 px-4 pt-2 pb-3.5">
-                            {backMatter.map((item) => (
-                                <MatterRow
-                                    key={item.id}
-                                    item={item}
-                                    onToggle={() => onToggleBackMatter(item.id)}
-                                    fromUrl={pageUrl}
-                                />
-                            ))}
-                        </div>
-                    </CollapsibleSection>
-                </div>
-            </div>
 
-            {/* Footer */}
-            <div className="border-t border-border px-4 py-3.5">
-                <p className="text-[11px] text-ink-faint">
-                    {t('excludedHint')}
-                </p>
-            </div>
+                    {/* Footer */}
+                    <div className="border-t border-border px-4 py-3.5">
+                        <p className="text-[11px] text-ink-faint">
+                            {t('excludedHint')}
+                        </p>
+                    </div>
+                </>
+            )}
         </aside>
     );
 }

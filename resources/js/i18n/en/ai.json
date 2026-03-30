@@ -2,6 +2,7 @@
     "header": "AI",
     "headerTitle": "AI Assistant",
     "askAi": "Ask AI",
+    "discussWithAi": "Discuss with AI",
     "tokensEstimate": "~2k tokens/query",
 
     "section.actions": "Actions",
@@ -87,6 +88,7 @@
     "chat.fullContext": "Full manuscript context",
     "chat.words": "{{count}} words",
     "chat.chapterLoaded": "Chapter loaded",
+    "chat.findingLoaded": "Finding loaded",
     "chat.bookContext": "Book context",
     "chat.thinking": "Thinking…",
     "chat.chapter": "Ch. {{number}}",

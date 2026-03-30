@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Card } from '@/components/ui/Card';
+import SectionLabel from '@/components/ui/SectionLabel';
 import type { HeatmapDay } from '@/types/models';
 
 const CELL = 10;
@@ -104,11 +106,11 @@ export default function WritingHeatmap({
     const svgHeight = topPad + ROWS * (CELL + GAP);
 
     return (
-        <div className="rounded-xl border border-border-light bg-surface-card p-6">
+        <Card className="h-full p-6">
             <div className="mb-3 flex items-center justify-between">
-                <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                <SectionLabel variant="section">
                     {t('heatmap.title', 'Writing Activity')}
-                </span>
+                </SectionLabel>
                 <div className="flex items-center gap-1.5">
                     <span className="text-[11px] text-ink-faint">
                         {t('heatmap.legendLess', 'Less')}
@@ -231,6 +233,6 @@ export default function WritingHeatmap({
                     </span>
                 </div>
             )}
-        </div>
+        </Card>
     );
 }

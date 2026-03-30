@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActController;
 use App\Http\Controllers\AiController;
+use App\Http\Controllers\AiDashboardController;
 use App\Http\Controllers\AiPreparationController;
 use App\Http\Controllers\AiSettingsController;
 use App\Http\Controllers\AppSettingsController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\PlotController;
 use App\Http\Controllers\PlotPointConnectionController;
 use App\Http\Controllers\PlotPointController;
 use App\Http\Controllers\PlotSetupController;
+use App\Http\Controllers\PublishController;
 use App\Http\Controllers\SceneController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
@@ -103,9 +105,6 @@ Route::post('/update/install', [UpdateController::class, 'install'])->name('upda
 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::put('/settings', [AppSettingsController::class, 'update'])->name('settings.update');
 Route::put('/settings/writing-style', [SettingsController::class, 'updateWritingStyle'])->name('settings.writing-style.update');
-Route::put('/settings/copyright', [SettingsController::class, 'updateCopyright'])->name('settings.copyright.update');
-Route::put('/settings/acknowledgment', [SettingsController::class, 'updateAcknowledgment'])->name('settings.acknowledgment.update');
-Route::put('/settings/about-author', [SettingsController::class, 'updateAboutAuthor'])->name('settings.about-author.update');
 Route::put('/settings/prose-pass-rules', [SettingsController::class, 'updateProsePassRules'])->name('settings.prose-pass-rules.update');
 
 // Legacy routes — redirect to unified settings
@@ -115,6 +114,10 @@ Route::get('/settings/license', fn () => redirect('/settings'))->name('settings.
 Route::post('/license/activate', [LicenseController::class, 'activate'])->name('license.activate');
 Route::post('/license/deactivate', [LicenseController::class, 'deactivate'])->name('license.deactivate');
 Route::post('/license/revalidate', [LicenseController::class, 'revalidate'])->name('license.revalidate');
+
+// AI pages — visible to all users (CTAs gated in frontend)
+Route::get('/books/{book}/ai/dashboard', [AiDashboardController::class, 'index'])->name('books.ai.dashboard');
+Route::get('/books/{book}/ai/editorial-review', [EditorialReviewController::class, 'index'])->name('books.ai.editorial-review.index');
 
 // Pro features — require active licence
 Route::middleware('license')->group(function () {
@@ -162,13 +165,16 @@ Route::middleware('license')->group(function () {
     Route::post('/books/{book}/chapters/{chapter}/ai/analyze-chapter', [AiController::class, 'analyzeChapter'])->name('chapters.ai.analyzeChapter');
     Route::get('/books/{book}/chapters/{chapter}/ai/analysis-status', [AiController::class, 'chapterAnalysisStatus'])->name('chapters.ai.analysisStatus');
     Route::post('/books/{book}/ai/chat', [AiController::class, 'chat'])->name('books.ai.chat');
+    Route::post('/books/{book}/ai/beautify-all', [AiController::class, 'beautifyAll'])->name('books.ai.beautifyAll');
+    Route::post('/books/{book}/ai/revise-all', [AiController::class, 'reviseAll'])->name('books.ai.reviseAll');
+    Route::get('/books/{book}/ai/bulk-revision-status', [AiController::class, 'bulkRevisionStatus'])->name('books.ai.bulkRevisionStatus');
     Route::post('/books/{book}/ai/reset-usage', [AiController::class, 'resetUsage'])->name('books.ai.resetUsage');
 
-    Route::get('/books/{book}/ai/editorial-review', [EditorialReviewController::class, 'index'])->name('books.ai.editorial-review.index');
     Route::post('/books/{book}/ai/editorial-review', [EditorialReviewController::class, 'store'])->name('books.ai.editorial-review.store');
     Route::get('/books/{book}/ai/editorial-review/{review}', [EditorialReviewController::class, 'show'])->name('books.ai.editorial-review.show');
     Route::get('/books/{book}/ai/editorial-review/{review}/progress', [EditorialReviewController::class, 'progress'])->name('books.ai.editorial-review.progress');
     Route::post('/books/{book}/ai/editorial-review/{review}/chat', [EditorialReviewController::class, 'chat'])->name('books.ai.editorial-review.chat');
+    Route::post('/books/{book}/ai/editorial-review/{review}/toggle-finding', [EditorialReviewController::class, 'toggleFinding'])->name('books.ai.editorial-review.toggle-finding');
 
     Route::post('/books/{book}/settings/writing-style/regenerate', [BookSettingsController::class, 'regenerateWritingStyle'])->name('books.settings.writing-style.regenerate');
 
@@ -185,3 +191,11 @@ Route::get('/books/{book}/settings/prose-pass-rules', fn () => redirect('/settin
 Route::get('/books/{book}/settings/export', [BookSettingsController::class, 'export'])->name('books.settings.export');
 Route::post('/books/{book}/settings/export', [BookSettingsController::class, 'doExport'])->name('books.settings.export.run');
 Route::post('/books/{book}/export/preview', [BookSettingsController::class, 'previewPdf'])->name('books.export.preview');
+
+// Publish page — book metadata and matter content
+Route::get('/books/{book}/publish', [PublishController::class, 'show'])->name('books.publish');
+Route::put('/books/{book}/publish', [PublishController::class, 'update'])->name('books.publish.update');
+Route::post('/books/{book}/publish/cover', [PublishController::class, 'uploadCover'])->name('books.publish.cover');
+Route::delete('/books/{book}/publish/cover', [PublishController::class, 'deleteCover'])->name('books.publish.cover.delete');
+Route::put('/books/{book}/publish/epilogue', [PublishController::class, 'updateEpilogue'])->name('books.publish.epilogue');
+Route::get('/books/{book}/publish/cover', [PublishController::class, 'serveCover'])->name('books.publish.cover.serve');

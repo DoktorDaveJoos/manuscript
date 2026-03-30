@@ -34,6 +34,7 @@
     "Only pending versions can be rejected.": "Nur ausstehende Versionen können abgelehnt werden.",
     "Cannot delete the last scene": "Die letzte Szene kann nicht gelöscht werden",
     "Chapter 1": "Kapitel 1",
+    "Chapter :number": "Kapitel :number",
     "Cannot delete the last storyline.": "Der letzte Erzählstrang kann nicht gelöscht werden.",
     "Setting updated.": "Einstellung aktualisiert.",
     "AI is not enabled or no API key configured.": "KI ist nicht aktiviert oder kein API-Schlüssel konfiguriert.",
@@ -48,5 +49,6 @@
     "Failed to deactivate license.": "Lizenz konnte nicht deaktiviert werden.",
     "License server authentication failed. Please contact support.": "Authentifizierung beim Lizenzserver fehlgeschlagen. Bitte kontaktiere den Support.",
     "No API key to remove.": "Kein API-Schlüssel zum Entfernen vorhanden.",
-    "No active license found.": "Keine aktive Lizenz gefunden."
+    "No active license found.": "Keine aktive Lizenz gefunden.",
+    "Main Storyline": "Haupthandlung"
 }

@@ -1,13 +1,14 @@
 import { router } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { resetUsage } from '@/actions/App/Http/Controllers/AiController';
+import { Card } from '@/components/ui/Card';
 import { formatCompactCount, jsonFetchHeaders } from '@/lib/utils';
 import type {
     AiUsage,
     AiUsageFeatureBreakdown,
     AiUsageMonthly,
 } from '@/types/models';
-import { resetUsage } from '@/actions/App/Http/Controllers/AiController';
 
 const FEATURE_LABELS: Record<string, string> = {
     chat: 'AI Chat',
@@ -35,7 +36,7 @@ function CostBreakdownTable({
     const totalCost = breakdown.reduce((sum, f) => sum + f.cost_micro, 0);
 
     return (
-        <div className="rounded-xl border border-border-light bg-surface-card p-6">
+        <Card className="p-6">
             <span className="mb-4 block text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                 {t('aiUsage.costBreakdown', 'Cost Breakdown')}
             </span>
@@ -109,7 +110,7 @@ function CostBreakdownTable({
                     </tr>
                 </tfoot>
             </table>
-        </div>
+        </Card>
     );
 }
 
@@ -138,7 +139,7 @@ function TokenUsageChart({ monthly }: { monthly: AiUsageMonthly[] }) {
     }
 
     return (
-        <div className="rounded-xl border border-border-light bg-surface-card p-6">
+        <Card className="p-6">
             <span className="mb-4 block text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                 {t('aiUsage.tokenUsage', 'Token Usage')}
             </span>
@@ -214,7 +215,7 @@ function TokenUsageChart({ monthly }: { monthly: AiUsageMonthly[] }) {
                     );
                 })}
             </svg>
-        </div>
+        </Card>
     );
 }
 
@@ -266,11 +267,11 @@ export default function AiUsageStats({
 
             {/* Summary cards */}
             <div className="flex gap-4">
-                <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-6">
+                <Card className="flex flex-1 flex-col items-center gap-2 p-6">
                     <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.tokensUsed', 'Tokens Used')}
                     </span>
-                    <span className="font-serif text-[32px] font-normal text-ink">
+                    <span className="font-serif text-[32px] font-semibold text-ink">
                         {formatCompactCount(
                             usage.input_tokens + usage.output_tokens,
                         )}
@@ -278,40 +279,40 @@ export default function AiUsageStats({
                     <span className="text-[12px] text-ink-muted">
                         {t('aiUsage.tokens', 'tokens')}
                     </span>
-                </div>
-                <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-6">
+                </Card>
+                <Card className="flex flex-1 flex-col items-center gap-2 p-6">
                     <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.estCost')}
                     </span>
-                    <span className="font-serif text-[32px] font-normal text-ink">
+                    <span className="font-serif text-[32px] font-semibold text-ink">
                         {usage.cost_display}
                     </span>
                     <span className="text-[12px] text-ink-muted">
                         {t('aiUsage.thisMonth', 'this month')}
                     </span>
-                </div>
-                <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-6">
+                </Card>
+                <Card className="flex flex-1 flex-col items-center gap-2 p-6">
                     <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.apiRequests', 'API Requests')}
                     </span>
-                    <span className="font-serif text-[32px] font-normal text-ink">
+                    <span className="font-serif text-[32px] font-semibold text-ink">
                         {usage.request_count.toLocaleString(i18n.language)}
                     </span>
                     <span className="text-[12px] text-ink-muted">
                         {t('aiUsage.totalLabel', 'total')}
                     </span>
-                </div>
-                <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border-light bg-surface-card p-6">
+                </Card>
+                <Card className="flex flex-1 flex-col items-center gap-2 p-6">
                     <span className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">
                         {t('aiUsage.avgCost', 'Avg. Cost')}
                     </span>
-                    <span className="font-serif text-[32px] font-normal text-ink">
+                    <span className="font-serif text-[32px] font-semibold text-ink">
                         {usage.avg_cost_display}
                     </span>
                     <span className="text-[12px] text-ink-muted">
                         {t('aiUsage.perRequest', 'per request')}
                     </span>
-                </div>
+                </Card>
             </div>
 
             {usage.reset_at && (

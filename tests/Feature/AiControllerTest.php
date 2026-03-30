@@ -12,8 +12,12 @@ use App\Models\AiSetting;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
+use App\Models\Character;
 use App\Models\License;
+use App\Models\Scene;
 use App\Models\Storyline;
+use App\Models\WikiEntry;
+use App\Services\Normalization\NormalizationService;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
@@ -125,13 +129,13 @@ test('prose reviser instructions include character, entity, and narrative contex
 
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 3]);
 
-    $character = \App\Models\Character::factory()->for($book)->create([
+    $character = Character::factory()->for($book)->create([
         'name' => 'Elena Vasquez',
         'description' => 'A seasoned detective.',
     ]);
     $chapter->characters()->attach($character, ['role' => 'protagonist']);
 
-    $wikiEntry = \App\Models\WikiEntry::factory()->for($book)->location()->create([
+    $wikiEntry = WikiEntry::factory()->for($book)->location()->create([
         'name' => 'Ravenholm',
         'description' => 'A fog-shrouded coastal town.',
     ]);
@@ -241,7 +245,7 @@ test('revise rejects chapter over 12000 words', function () {
 
     // Create a scene with enough words to exceed the limit
     $longContent = '<p>'.implode(' ', array_fill(0, 13000, 'word')).'</p>';
-    \App\Models\Scene::factory()->for($chapter)->create([
+    Scene::factory()->for($chapter)->create([
         'content' => $longContent,
         'sort_order' => 0,
     ]);
@@ -261,7 +265,7 @@ test('AI revision content is normalized before saving', function () {
 
     // Simulate the normalization pipeline used in streamAgentRevision
     $decoded = html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-    $result = app(\App\Services\Normalization\NormalizationService::class)->normalize($decoded, 'en');
+    $result = app(NormalizationService::class)->normalize($decoded, 'en');
 
     $content = $result['content'];
 
@@ -288,7 +292,7 @@ test('revise syncs currentVersion content from scenes before processing', functi
     ]);
 
     // Simulate user editing scenes without snapshotting
-    \App\Models\Scene::factory()->for($chapter)->create([
+    Scene::factory()->for($chapter)->create([
         'content' => '<p>Fresh scene content.</p>',
         'sort_order' => 0,
     ]);
@@ -306,11 +310,11 @@ test('revise uses scene breaks in prompt', function () {
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
 
-    \App\Models\Scene::factory()->for($chapter)->create([
+    Scene::factory()->for($chapter)->create([
         'content' => '<p>Scene one</p>',
         'sort_order' => 0,
     ]);
-    \App\Models\Scene::factory()->for($chapter)->create([
+    Scene::factory()->for($chapter)->create([
         'content' => '<p>Scene two</p>',
         'sort_order' => 1,
     ]);

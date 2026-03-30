@@ -18,7 +18,11 @@
     "nav.wiki": "Wiki",
     "nav.plot": "Trama",
     "nav.canvas": "Lienzo",
-    "nav.export": "Exportar",
+    "nav.settings": "Configuración",
+    "nav.library": "Biblioteca",
     "nav.ai": "IA",
-    "preview": "Vista previa"
+    "nav.export": "Exportar",
+    "preview": "Vista previa",
+    "sidebar.expand": "Expandir barra lateral",
+    "sidebar.collapse": "Colapsar barra lateral"
 }

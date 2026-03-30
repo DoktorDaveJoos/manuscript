@@ -2,10 +2,13 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { ChevronRight } from 'lucide-react';
 import { type ReactNode, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-
-const menuShadow = 'shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]';
-const itemBase =
-    'flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] leading-[18px] outline-none transition-colors';
+import {
+    menuContentBase,
+    menuItemBase,
+    menuItemVariants,
+    menuSeparatorBase,
+    menuShadow,
+} from './menu-primitives';
 
 type Position = { x: number; y: number };
 
@@ -40,7 +43,8 @@ function ContextMenuRoot({
                     side="bottom"
                     align="start"
                     className={cn(
-                        'z-50 w-[200px] rounded-lg bg-surface-card p-1',
+                        menuContentBase,
+                        'w-[200px]',
                         menuShadow,
                         className,
                     )}
@@ -69,18 +73,13 @@ function Item({
     className?: string;
     children?: ReactNode;
 }) {
-    const variantStyles =
-        variant === 'danger'
-            ? 'font-medium text-delete data-[highlighted]:bg-neutral-bg'
-            : 'text-ink-soft data-[highlighted]:bg-neutral-bg';
-
     return (
         <DropdownMenu.Item
             disabled={disabled}
             onSelect={onClick}
             className={cn(
-                itemBase,
-                variantStyles,
+                menuItemBase,
+                menuItemVariants[variant],
                 disabled && 'cursor-not-allowed text-ink-faint',
                 className,
             )}
@@ -109,7 +108,7 @@ function Submenu({
     return (
         <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger
-                className={cn(itemBase, 'justify-between text-ink-soft data-[highlighted]:bg-neutral-bg')}
+                className={cn(menuItemBase, 'justify-between', menuItemVariants.default)}
             >
                 <span className="flex items-center gap-2.5">
                     {icon}
@@ -124,7 +123,7 @@ function Submenu({
             <DropdownMenu.Portal>
                 <DropdownMenu.SubContent
                     className={cn(
-                        'z-50 rounded-lg bg-surface-card p-1',
+                        menuContentBase,
                         menuShadow,
                         width,
                     )}
@@ -137,7 +136,7 @@ function Submenu({
 }
 
 function Separator() {
-    return <DropdownMenu.Separator className="mx-2 my-1 h-px bg-border" />;
+    return <DropdownMenu.Separator className={menuSeparatorBase} />;
 }
 
 const ContextMenu = Object.assign(ContextMenuRoot, {

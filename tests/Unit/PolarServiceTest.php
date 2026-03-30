@@ -2,8 +2,9 @@
 
 use App\Services\PolarService;
 use Illuminate\Support\Facades\Http;
+use Tests\TestCase;
 
-uses(Tests\TestCase::class);
+uses(TestCase::class);
 
 test('uses production API URL when APP_ENV is not local', function () {
     Http::fake(['*' => Http::response(['license_key' => ['status' => 'granted']], 200)]);

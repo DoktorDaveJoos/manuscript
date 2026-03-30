@@ -1,10 +1,11 @@
 import { router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { editor } from '@/actions/App/Http/Controllers/ChapterController';
+import { Card } from '@/components/ui/Card';
 import type { Book } from '@/types/models';
 import BookCardMenu from './BookCardMenu';
 import ProgressBar from './ProgressBar';
-import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 
 type BookWithCounts = Book & {
     chapters_count: number;
@@ -32,6 +33,8 @@ export default function BookCard({
     onDelete: () => void;
 }) {
     const { t, i18n } = useTranslation('onboarding');
+    const menuOpenRef = useRef(false);
+    const [hoursAgo] = useState(() => computeHoursAgo(book.updated_at));
 
     function formatWords(count: number | null): string {
         if (!count) return t('bookCard.words', { count: 0, formatted: '0' });
@@ -40,8 +43,6 @@ export default function BookCard({
             formatted: count.toLocaleString(i18n.language),
         });
     }
-
-    const [hoursAgo] = useState(() => computeHoursAgo(book.updated_at));
     const updatedAtLabel = (() => {
         if (hoursAgo < 1) return t('bookCard.editedJustNow');
         if (hoursAgo < 24)
@@ -60,20 +61,26 @@ export default function BookCard({
     ].join(' \u00B7 ');
 
     return (
-        <div
-            onClick={() => router.visit(editor.url(book))}
-            className="relative flex w-[400px] shrink-0 cursor-pointer flex-col gap-5 rounded-lg border border-border bg-surface-card p-8 transition-shadow hover:shadow-md"
+        <Card
+            onClick={() => {
+                if (menuOpenRef.current) return;
+                router.visit(editor.url(book));
+            }}
+            className="relative flex w-[400px] shrink-0 cursor-pointer flex-col gap-5 p-6 transition-shadow hover:shadow-md"
         >
             <div className="absolute top-4 right-4">
                 <BookCardMenu
                     onRename={onRename}
                     onDuplicate={onDuplicate}
                     onDelete={onDelete}
+                    onOpenChange={(open) => {
+                        menuOpenRef.current = open;
+                    }}
                 />
             </div>
 
             <div className="flex flex-col gap-1.5 pr-8">
-                <h3 className="font-serif text-xl leading-7 font-normal tracking-[-0.01em] text-ink">
+                <h3 className="font-serif text-xl leading-7 font-semibold tracking-[-0.01em] text-ink">
                     {book.title}
                 </h3>
                 <p className="text-[13px] leading-[18px] text-ink-muted">
@@ -92,7 +99,7 @@ export default function BookCard({
             <span className="text-xs leading-4 text-ink-faint">
                 {updatedAtLabel}
             </span>
-        </div>
+        </Card>
     );
 }
 

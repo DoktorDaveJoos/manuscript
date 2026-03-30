@@ -5,6 +5,7 @@ namespace App\Ai\Tools;
 use App\Models\Book;
 use App\Services\StoryBibleService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Stringable;
@@ -17,15 +18,15 @@ class RetrieveManuscriptContext implements Tool
     }
 
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {
         return [
             'book_id' => $schema->integer()->required(),
-            'chapter_id' => $schema->integer(),
-            'include_characters' => $schema->boolean(),
-            'include_plot_points' => $schema->boolean(),
+            'chapter_id' => $schema->integer()->nullable()->required(),
+            'include_characters' => $schema->boolean()->nullable()->required(),
+            'include_plot_points' => $schema->boolean()->nullable()->required(),
         ];
     }
 
@@ -51,7 +52,7 @@ class RetrieveManuscriptContext implements Tool
                 $sections[] = "\n## Characters";
                 foreach ($characters as $character) {
                     $aliases = $character->aliases ? ' (aliases: '.implode(', ', $character->aliases).')' : '';
-                    $sections[] = "- {$character->name}{$aliases}: {$character->description}";
+                    $sections[] = "- {$character->name}{$aliases}: {$character->fullDescription()}";
                 }
             }
         }

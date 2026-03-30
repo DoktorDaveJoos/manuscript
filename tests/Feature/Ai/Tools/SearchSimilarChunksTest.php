@@ -67,7 +67,7 @@ it('does not rerank when reranking is disabled', function () {
 });
 
 it('falls back to KNN order when reranking fails', function () {
-    Reranking::fake(fn () => throw new \Exception('Cohere API error'));
+    Reranking::fake(fn () => throw new Exception('Cohere API error'));
 
     AppSetting::set('reranking_enabled', true);
     AppSetting::set('cohere_api_key', 'test-key');

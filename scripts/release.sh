@@ -23,7 +23,15 @@ preflight_checks() {
     info "Pre-flight checks"
     divider
 
-    # 1. Working tree clean
+    # 1. gh CLI available
+    if ! command -v gh &> /dev/null; then
+        fail "GitHub CLI (gh) is not installed"
+        echo "  Install it: https://cli.github.com"
+        exit 1
+    fi
+    success "GitHub CLI available"
+
+    # 2. Working tree clean
     if [ -n "$(git diff --name-only HEAD)" ] || [ -n "$(git diff --cached --name-only)" ]; then
         fail "Working tree is not clean"
         echo "  Commit or stash your changes before releasing."
@@ -31,26 +39,26 @@ preflight_checks() {
     fi
     success "Working tree is clean"
 
-    # 2. On main branch
+    # 3. On dev branch
     local branch
     branch=$(git branch --show-current)
-    if [ "$branch" != "main" ]; then
-        fail "Not on main branch (currently on ${branch})"
-        echo "  Switch to main before releasing."
+    if [ "$branch" != "dev" ]; then
+        fail "Not on dev branch (currently on ${branch})"
+        echo "  Switch to dev before releasing."
         exit 1
     fi
-    success "On main branch"
+    success "On dev branch"
 
-    # 3. Up-to-date with remote
-    git fetch origin main --quiet
+    # 4. Up-to-date with remote
+    git fetch origin dev --quiet
     local behind
-    behind=$(git rev-list HEAD..origin/main --count)
+    behind=$(git rev-list HEAD..origin/dev --count)
     if [ "$behind" -gt 0 ]; then
-        fail "Branch is ${behind} commit(s) behind origin/main"
+        fail "Branch is ${behind} commit(s) behind origin/dev"
         echo "  Pull the latest changes before releasing."
         exit 1
     fi
-    success "Up-to-date with origin/main"
+    success "Up-to-date with origin/dev"
 
     echo ""
 }
@@ -247,6 +255,9 @@ generate_changelog() {
         section="${section}\n\n### Other Changes\n${other}"
     fi
 
+    # Build PR body from changelog section (plain text, no escape sequences)
+    PR_BODY=$(echo -e "$section")
+
     # Write to CHANGELOG.md
     if [ -f "$changelog_file" ]; then
         # Prepend after the first line (# Changelog header)
@@ -268,13 +279,23 @@ generate_changelog() {
     echo ""
 }
 
-# --- Tag + push ---
-create_and_push_tag() {
-    info "Create tag"
+# --- Push + create PR ---
+push_and_create_pr() {
+    info "Push & create PR"
     divider
 
-    git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
-    success "Created tag ${BOLD}v${NEW_VERSION}${RESET}"
+    git push origin dev --quiet
+    success "Pushed dev to origin"
+
+    local pr_url
+    pr_url=$(gh pr create \
+        --base main \
+        --head dev \
+        --title "Release v${NEW_VERSION}" \
+        --body "$PR_BODY" \
+        2>&1)
+
+    success "Created PR: ${BOLD}${pr_url}${RESET}"
     echo ""
 
     # Summary
@@ -283,23 +304,15 @@ create_and_push_tag() {
     echo "  Version:  v${NEW_VERSION}"
     echo "  Commits:  ${COMMIT_COUNT}"
     echo "  Checks:   all passed"
+    echo "  PR:       ${pr_url}"
     echo ""
 
-    # Confirm push
-    local confirm
-    read -rp "  Push v${NEW_VERSION} to origin? This will trigger the CI build. [y/N] " confirm
-
-    if [[ "$confirm" =~ ^[Yy]$ ]]; then
-        git push origin main --quiet
-        git push origin "v${NEW_VERSION}" --quiet
-        echo ""
-        success "Pushed ${BOLD}v${NEW_VERSION}${RESET} to origin"
-    else
-        echo ""
-        warn "Push skipped. To push manually:"
-        echo "    git push origin main && git push origin v${NEW_VERSION}"
-    fi
-
+    info "Next steps"
+    divider
+    echo "  1. Review and merge the PR on GitHub"
+    echo "  2. Create the release tag:"
+    echo ""
+    echo "     gh release create v${NEW_VERSION} --target main --title \"v${NEW_VERSION}\" --notes-from-tag"
     echo ""
 }
 
@@ -314,7 +327,7 @@ main() {
     run_quality_gate
     select_version
     generate_changelog
-    create_and_push_tag
+    push_and_create_pr
 
     success "Done!"
     echo ""

@@ -82,7 +82,8 @@ export function updateSearchHighlight(
     params: SearchHighlight & { activeFrom?: number; activeTo?: number },
 ): void {
     if (editor.isDestroyed) return;
-    const storage = editor.extensionStorage.searchHighlight;
+    const storage = (editor.extensionStorage as Record<string, any>)
+        .searchHighlight;
     if (!storage) return;
     storage.query = params.query;
     storage.caseSensitive = params.caseSensitive;
@@ -110,18 +111,18 @@ export const SearchHighlightExtension = Extension.create({
     },
 
     addProseMirrorPlugins() {
-        const extension = this;
+        const { storage } = this;
 
         return [
             new Plugin({
                 key: searchHighlightKey,
                 state: {
                     init(_, state) {
-                        return buildDecorations(state.doc, extension.storage);
+                        return buildDecorations(state.doc, storage);
                     },
                     apply(tr, old) {
                         if (tr.docChanged || tr.getMeta(searchHighlightKey)) {
-                            return buildDecorations(tr.doc, extension.storage);
+                            return buildDecorations(tr.doc, storage);
                         }
                         return old;
                     },

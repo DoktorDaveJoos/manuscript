@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Database\SqliteVecConnector;
 use App\Listeners\RecordAiTokenUsage;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -29,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureSqlite();
 
         Event::listen(AgentPrompted::class, RecordAiTokenUsage::class);
         Event::listen(AgentStreamed::class, RecordAiTokenUsage::class);
@@ -40,6 +42,8 @@ class AppServiceProvider extends ServiceProvider
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
+
+        Model::preventLazyLoading(! app()->isProduction());
 
         DB::prohibitDestructiveCommands(
             app()->isProduction(),
@@ -54,5 +58,21 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    /**
+     * Apply SQLite pragmas that the NativePHP runtime connection misses.
+     *
+     * The 'sqlite' config connection gets pragmas via config/database.php,
+     * but NativePHP registers a 'nativephp' connection at runtime without
+     * those keys. This covers synchronous, cache_size, mmap_size, and
+     * temp_store on whichever connection is active.
+     */
+    protected function configureSqlite(): void
+    {
+        DB::statement('PRAGMA synchronous = NORMAL;');
+        DB::statement('PRAGMA cache_size = -64000;');
+        DB::statement('PRAGMA mmap_size = 268435456;');
+        DB::statement('PRAGMA temp_store = MEMORY;');
     }
 }

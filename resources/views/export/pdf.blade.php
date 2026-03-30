@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{ $book->language ?? config('app.fallback_locale', 'en') }}">
 <head>
     <meta charset="UTF-8">
     <style>
@@ -32,21 +32,22 @@
         @endif
 
         {{-- Per-chapter named pages with running headers --}}
+        @php $tokens = $template->designTokens(); @endphp
         @foreach ($chapters as $index => $chapter)
         @@page chapter-{{ $index }} :left {
             @@top-left {
                 content: "{{ cssEscape($book->title) }}";
-                font-size: 8pt;
-                color: #999999;
-                font-style: italic;
+                font-size: {{ $tokens['runningHeaderSizePt'] }}pt;
+                color: {{ $tokens['runningHeaderColor'] }};
+                font-style: {{ $tokens['runningHeaderStyle'] }};
             }
         }
         @@page chapter-{{ $index }} :right {
             @@top-right {
                 content: "{{ cssEscape($chapter->title) }}";
-                font-size: 8pt;
-                color: #999999;
-                font-style: italic;
+                font-size: {{ $tokens['runningHeaderSizePt'] }}pt;
+                color: {{ $tokens['runningHeaderColor'] }};
+                font-style: {{ $tokens['runningHeaderStyle'] }};
             }
         }
         @@page chapter-{{ $index }}:first {
@@ -83,12 +84,25 @@
 </head>
 <body>
     @if (!($isEbook) && $options->showPageNumbers)
+    @php $tokens = $tokens ?? $template->designTokens(); @endphp
     <htmlpagefooter name="footerL" style="display:none">
-        <div style="font-size: 8pt; color: #999999;">{PAGENO}</div>
+        <div style="font-size: {{ $tokens['pageNumberSizePt'] }}pt; color: {{ $tokens['pageNumberColor'] }};">{PAGENO}</div>
     </htmlpagefooter>
     <htmlpagefooter name="footerR" style="display:none">
-        <div style="font-size: 8pt; color: #999999; text-align: right;">{PAGENO}</div>
+        <div style="font-size: {{ $tokens['pageNumberSizePt'] }}pt; color: {{ $tokens['pageNumberColor'] }}; text-align: right;">{PAGENO}</div>
     </htmlpagefooter>
+    @endif
+
+    {{-- Cover Image --}}
+    @if ($options->includeCover && $options->coverImagePath)
+        @php
+            $coverAbsPath = \Illuminate\Support\Facades\Storage::disk('local')->path($options->coverImagePath);
+        @endphp
+        @if (file_exists($coverAbsPath))
+            <section class="matter-section" style="text-align: center; padding: 0; margin: 0;">
+                <img src="{{ $coverAbsPath }}" style="max-width: 100%; max-height: 100%;" />
+            </section>
+        @endif
     @endif
 
     {{-- Front Matter --}}
@@ -104,9 +118,28 @@
 
         @if ($item === 'copyright')
             <section class="matter-section" style="padding-top: 60%;">
-                <p class="copyright-text">Copyright &copy; {{ date('Y') }}</p>
-                <p class="copyright-text">{{ $book->title }}</p>
-                <p class="copyright-text">All rights reserved.</p>
+                @if ($options->copyrightText !== '')
+                    {!! $contentPreparer->toMatterHtml($options->copyrightText, 'copyright-text') !!}
+                @else
+                    <p class="copyright-text">Copyright &copy; {{ date('Y') }}</p>
+                    <p class="copyright-text">{{ $book->title }}</p>
+                    <p class="copyright-text">All rights reserved.</p>
+                @endif
+            </section>
+        @endif
+
+        @if ($item === 'dedication' && $options->dedicationText !== '')
+            <section class="matter-section" style="padding-top: 30%; text-align: center;">
+                <p class="dedication-text">{{ $options->dedicationText }}</p>
+            </section>
+        @endif
+
+        @if ($item === 'epigraph' && $options->epigraphText !== '')
+            <section class="matter-section" style="padding-top: 30%; text-align: center;">
+                <p style="font-style: italic;">{{ $options->epigraphText }}</p>
+                @if ($options->epigraphAttribution !== '')
+                    <p style="margin-top: 0.5em; font-size: 0.9em;">{{ $options->epigraphAttribution }}</p>
+                @endif
             </section>
         @endif
 
@@ -140,8 +173,7 @@
 
         <section class="chapter-section"@unless ($isEbook) style="page: chapter-{{ $index }};"@endunless>
             @if ($options->includeChapterTitles)
-                <p class="chapter-label" id="chapter-{{ $index }}">Chapter {{ $index + 1 }}</p>
-                <h1>{{ $chapter->title }}</h1>
+                {!! $template->chapterHeaderHtml($index, $chapter->title, $book->language ?? config('app.fallback_locale', 'en')) !!}
             @endif
 
             {!! $chapter->prepared_content !!}
@@ -153,17 +185,43 @@
         $backMatterHeadings = [
             'acknowledgments' => 'Acknowledgments',
             'about-author' => 'About the Author',
+            'also-by' => 'Also By ' . $book->author,
         ];
         $backMatterTexts = [
             'acknowledgments' => $options->acknowledgmentText,
             'about-author' => $options->aboutAuthorText,
+            'also-by' => $options->alsoByText,
         ];
     @endphp
     @foreach ($options->backMatter as $item)
-        @if (isset($backMatterHeadings[$item]))
+        @if ($item === 'epilogue')
+            @php
+                $epilogueChapter = \App\Services\Export\ExportService::resolveEpilogueChapter($book);
+            @endphp
+            @if ($epilogueChapter)
+                <section class="matter-section">
+                    <p class="chapter-label">Epilogue</p>
+                    <h1>{{ $epilogueChapter->title }}</h1>
+                    @php
+                        $sceneBreak = $options->sceneBreakStyle ?? $template->defaultSceneBreakStyle();
+                        $epilogueContent = '';
+                        foreach ($epilogueChapter->scenes as $si => $scene) {
+                            if ($si > 0) {
+                                $epilogueContent .= $sceneBreak->html();
+                            }
+                            $epilogueContent .= $contentPreparer->toChapterHtml($scene->content ?? '', $sceneBreak);
+                        }
+                        if ($options->dropCaps) {
+                            $epilogueContent = $contentPreparer->addDropCap($epilogueContent);
+                        }
+                    @endphp
+                    {!! $epilogueContent !!}
+                </section>
+            @endif
+        @elseif (isset($backMatterHeadings[$item]))
             <section class="matter-section">
                 <p class="matter-title">{{ $backMatterHeadings[$item] }}</p>
-                {!! $contentPreparer->toMatterHtml($backMatterTexts[$item]) !!}
+                {!! $contentPreparer->toMatterHtml($backMatterTexts[$item] ?? '') !!}
             </section>
         @endif
     @endforeach

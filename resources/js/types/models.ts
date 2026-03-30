@@ -15,7 +15,18 @@ export type EditorialReviewStatus =
     | 'failed';
 export type FindingSeverity = 'critical' | 'warning' | 'suggestion';
 
+export type OnDiscussFinding = (
+    sectionType: EditorialSectionType,
+    findingIndex: number,
+    finding: {
+        description: string;
+        severity: FindingSeverity;
+        sectionLabel: string;
+    },
+) => void;
+
 export type EditorialReviewFinding = {
+    key: string;
     severity: FindingSeverity;
     description: string;
     chapter_references: number[];
@@ -34,7 +45,7 @@ export type EditorialReviewSection = {
 export type EditorialReviewChapterNote = {
     id: number;
     chapter_id: number;
-    notes: Record<string, unknown>;
+    notes: Record<string, unknown> & { chapter_note?: string };
 };
 
 export type EditorialReview = {
@@ -52,6 +63,8 @@ export type EditorialReview = {
     executive_summary: string | null;
     top_strengths: string[] | null;
     top_improvements: string[] | null;
+    is_pre_editorial: boolean;
+    resolved_findings: string[] | null;
     started_at: string | null;
     completed_at: string | null;
     sections: EditorialReviewSection[];
@@ -139,6 +152,10 @@ export type AppSettings = {
     show_scenes: boolean;
     send_error_reports: boolean;
     crash_report_prompted: boolean;
+    language_prompted: boolean;
+    locale: string;
+    editor_font: string;
+    editor_font_size: number;
 };
 
 export type Book = {
@@ -151,6 +168,17 @@ export type Book = {
     prose_pass_rules: ProsePassRule[] | null;
     writing_style_text: string | null;
     story_bible?: StoryBible | null;
+    copyright_text?: string | null;
+    dedication_text?: string | null;
+    epigraph_text?: string | null;
+    epigraph_attribution?: string | null;
+    acknowledgment_text?: string | null;
+    about_author_text?: string | null;
+    also_by_text?: string | null;
+    publisher_name?: string | null;
+    isbn?: string | null;
+    cover_image_path?: string | null;
+    cover_image_url?: string | null;
     created_at: string;
     updated_at: string;
     storylines?: Storyline[];
@@ -195,6 +223,7 @@ export type Character = {
     name: string;
     aliases: string[] | null;
     description: string | null;
+    ai_description: string | null;
     first_appearance: number | null;
     storylines: number[] | null;
     is_ai_extracted: boolean;
@@ -255,6 +284,7 @@ export type Chapter = {
     analysis_status: 'pending' | 'running' | 'completed' | 'failed' | null;
     analysis_error: string | null;
     analyzed_at: string | null;
+    is_epilogue?: boolean;
     created_at: string;
     updated_at: string;
     book?: Book;
@@ -395,6 +425,7 @@ export type SuggestedNext = {
     title: string;
     description: string;
     chapter_id?: number;
+    last_edited_at?: string;
 };
 
 export type WritingGoalData = {
@@ -548,6 +579,7 @@ export type WikiEntry = {
     name: string;
     type: string | null;
     description: string | null;
+    ai_description: string | null;
     first_appearance: number | null;
     metadata: Record<string, unknown> | null;
     is_ai_extracted: boolean;

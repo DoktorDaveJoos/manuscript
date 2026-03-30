@@ -12,6 +12,7 @@ use App\Jobs\Preparation\PhaseTransition;
 use App\Models\AiPreparation;
 use App\Models\AiSetting;
 use App\Models\Book;
+use App\Models\Chapter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -95,8 +96,8 @@ class PrepareBookForAi implements ShouldQueue
     /**
      * Build the flat list of jobs for the batch pipeline.
      *
-     * @param  Collection<int, \App\Models\Chapter>  $chapters
-     * @param  Collection<int, \App\Models\Chapter>  $dirtyChapters
+     * @param  Collection<int, Chapter>  $chapters
+     * @param  Collection<int, Chapter>  $dirtyChapters
      * @return list<object>
      */
     private function buildJobList(Collection $chapters, Collection $dirtyChapters): array

@@ -65,7 +65,8 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
         - Dialogue naturalness
         - Consistent narrative voice
 
-        The text contains <hr> tags marking scene boundaries. Preserve these exactly — do not add or remove <hr> tags.
+        Preserve ALL existing HTML formatting (<strong>, <em>, <u>, <s>, <blockquote>, <br>, <hr>, <h1>, <h2>, <h3>, <ul>, <ol>, <li>).
+        The <hr> tags mark scene boundaries — do not add or remove <hr> tags.
 
         Preserve the author's intent, plot, and character voice. Do not change plot points or character actions.
         Return ONLY the revised text, without commentary or explanations.{$writingStyle}{$rulesSection}{$contextSections}
@@ -112,8 +113,9 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
                 $parts[] = "[{$character->pivot->role}]";
             }
             $line = implode(' ', $parts);
-            if ($character->description) {
-                $line .= ": {$character->description}";
+            $desc = $character->fullDescription();
+            if ($desc) {
+                $line .= ": {$desc}";
             }
             $lines[] = $line;
         }
@@ -135,8 +137,9 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
             $lines[] = "\n**{$label}:**";
             foreach ($entries as $entry) {
                 $line = "- {$entry->name}";
-                if ($entry->description) {
-                    $line .= ": {$entry->description}";
+                $desc = $entry->fullDescription();
+                if ($desc) {
+                    $line .= ": {$desc}";
                 }
                 $lines[] = $line;
             }

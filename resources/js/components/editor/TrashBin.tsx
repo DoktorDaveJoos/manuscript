@@ -2,13 +2,14 @@ import { router } from '@inertiajs/react';
 import { AlignLeft, ChevronRight, Circle, File, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { jsonFetchHeaders } from '@/lib/utils';
-import type { TrashItem } from '@/types/models';
 import {
     index as trashIndex,
     restore as trashRestore,
     empty as trashEmpty,
 } from '@/actions/App/Http/Controllers/TrashController';
+import SectionLabel from '@/components/ui/SectionLabel';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type { TrashItem } from '@/types/models';
 
 const typeIcon: Record<TrashItem['type'], React.ReactNode> = {
     storyline: <Circle size={12} className="shrink-0" />,
@@ -93,9 +94,9 @@ export default function TrashBin({ bookId }: { bookId: number }) {
             >
                 <span className="flex items-center gap-1.5">
                     <Trash2 size={12} className="shrink-0 text-ink-faint" />
-                    <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                    <SectionLabel variant="section">
                         {t('trash.title')}
-                    </span>
+                    </SectionLabel>
                 </span>
                 <span className="flex items-center gap-1.5">
                     {items.length > 0 && (

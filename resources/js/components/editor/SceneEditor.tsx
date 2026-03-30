@@ -2,13 +2,13 @@ import type { Editor } from '@tiptap/react';
 import { EditorContent } from '@tiptap/react';
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
+import { updateContent } from '@/actions/App/Http/Controllers/SceneController';
 import type { SaveStatus } from '@/components/editor/EditorBar';
 import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import { updateSearchHighlight } from '@/extensions/SearchHighlightExtension';
 import useChapterEditor from '@/hooks/useChapterEditor';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Scene } from '@/types/models';
-import { updateContent } from '@/actions/App/Http/Controllers/SceneController';
 
 export default function SceneEditor({
     scene,
@@ -90,8 +90,6 @@ export default function SceneEditor({
                     pendingContentRef.current = null;
                     onSaveStatusChange?.('saved');
                 }
-                const data = await response.json();
-                onWordCountChange(scene.id, data.word_count);
             } else {
                 onSaveStatusChange?.('error');
             }

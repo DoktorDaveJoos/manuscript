@@ -10,6 +10,7 @@ use App\Enums\AiTaskCategory;
 use App\Enums\WikiEntryKind;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Attributes\UseCheapestModel;
@@ -100,7 +101,7 @@ class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructu
     }
 
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {

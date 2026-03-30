@@ -10,6 +10,7 @@ use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
 use App\Models\Storyline;
+use Illuminate\Http\Client\ConnectionException;
 
 function fakeChapterAnalysis(array $overrides = []): array
 {
@@ -175,7 +176,7 @@ test('analyze chapter builds rolling context from preceding chapters', function 
 
 test('analyze chapter logs errors without throwing', function () {
     ChapterAnalyzer::fake(function () {
-        throw new \RuntimeException('AI service unavailable');
+        throw new RuntimeException('AI service unavailable');
     });
 
     EntityExtractor::fake(function () {
@@ -242,7 +243,7 @@ test('analyze chapter sets prepared_content_hash on success', function () {
 
 test('analyze chapter does not set prepared_content_hash when analysis fails', function () {
     ChapterAnalyzer::fake(function () {
-        throw new \RuntimeException('API timeout');
+        throw new RuntimeException('API timeout');
     });
 
     EntityExtractor::fake(function () {
@@ -268,7 +269,7 @@ test('analyze chapter does not set prepared_content_hash when entity extraction 
     ChapterAnalyzer::fake(fn () => fakeChapterAnalysis());
 
     EntityExtractor::fake(function () {
-        throw new \RuntimeException('Entity extraction failed');
+        throw new RuntimeException('Entity extraction failed');
     });
 
     ManuscriptAnalyzer::fake(function () {
@@ -320,7 +321,7 @@ test('analyze chapter logs manuscript analysis errors without throwing', functio
     });
 
     ManuscriptAnalyzer::fake(function () {
-        throw new \RuntimeException('Manuscript analysis failed');
+        throw new RuntimeException('Manuscript analysis failed');
     });
 
     [$book, $chapters, $preparation] = createBookForAnalysis(1);
@@ -341,7 +342,7 @@ test('analyze chapter logs manuscript analysis errors without throwing', functio
 
 test('analyze chapter rethrows transient errors for retry', function () {
     ChapterAnalyzer::fake(function () {
-        throw new \Illuminate\Http\Client\ConnectionException('cURL error 28: Operation timed out');
+        throw new ConnectionException('cURL error 28: Operation timed out');
     });
 
     EntityExtractor::fake(function () {
@@ -353,7 +354,7 @@ test('analyze chapter rethrows transient errors for retry', function () {
     $job = new AnalyzeChapter($book, $preparation, $chapters[0]->id);
 
     // Transient errors should be rethrown, not caught
-    expect(fn () => $job->handle())->toThrow(\Illuminate\Http\Client\ConnectionException::class);
+    expect(fn () => $job->handle())->toThrow(ConnectionException::class);
 
     // Phase errors should NOT have been logged (will be logged by failed() after retries exhausted)
     $preparation->refresh();

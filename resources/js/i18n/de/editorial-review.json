@@ -5,9 +5,19 @@
     "tabs.dashboard": "KI-Dashboard",
     "tabs.editorialReview": "Lektorat",
 
-    "emptyState.heading": "Umfassendes redaktionelles Feedback für Ihr Manuskript.",
+    "emptyState.heading": "Sehen Sie Ihre Geschichte mit den Augen eines Lektors",
     "emptyState.description": "Das Lektorat ist für fertige Erstentwürfe konzipiert. Es analysiert Ihr gesamtes Manuskript in acht redaktionellen Dimensionen und ist token-intensiv. Für laufendes Feedback während des Schreibens nutzen Sie stattdessen die Kapitelanalyse.",
     "emptyState.button": "Lektorat starten",
+
+    "emptyState.features.title": "WAS DAS LEKTORAT ABDECKT",
+    "emptyState.features.bigPicture.title": "Das große Ganze",
+    "emptyState.features.bigPicture.description": "Plotstruktur, thematische Tiefe und ob Ihre Geschichte so ankommt, wie Sie es beabsichtigt haben.",
+    "emptyState.features.characters.title": "Figuren & Stimme",
+    "emptyState.features.characters.description": "Konsistenz der Handlungsbögen, eigenständige Stimmen und die emotionale Wahrheit Ihrer Figuren.",
+    "emptyState.features.pacing.title": "Rhythmus & Tempo",
+    "emptyState.features.pacing.description": "Wo die Geschichte atmet, wo sie eilt und wo Leser den Faden verlieren könnten.",
+    "emptyState.features.prose.title": "Prosa & Handwerk",
+    "emptyState.features.prose.description": "Stil auf Satzebene, Szenenkonstruktion und die kleinen Entscheidungen, die das Leseerlebnis prägen.",
 
     "confirm.title": "Lektorat starten?",
     "confirm.description": "Dies wird Ihr gesamtes Manuskript analysieren. Das Lektorat funktioniert am besten mit fertigen Erstentwürfen. Fortfahren?",
@@ -50,5 +60,8 @@
     "failed.title": "Lektorat fehlgeschlagen",
     "failed.retry": "Erneut versuchen",
 
-    "sectionLabel.editorialReview": "Lektorat"
+    "sectionLabel.editorialReview": "Lektorat",
+
+    "preEditorial.heading": "Vorab-Einschätzung",
+    "preEditorial.description": "Dieses Manuskript benötigt grundlegende Überarbeitung, bevor ein vollständiges Lektorat sinnvoll wäre. Konzentriere dich zuerst auf die folgenden Bereiche und starte dann eine neue Bewertung."
 }

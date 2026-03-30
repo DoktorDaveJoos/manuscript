@@ -7,10 +7,12 @@ use App\Ai\Agents\NextChapterAdvisor;
 use App\Ai\Agents\ProseReviser;
 use App\Ai\Agents\TextBeautifier;
 use App\Enums\AnalysisType;
+use App\Enums\BulkRevisionType;
 use App\Enums\VersionSource;
 use App\Enums\VersionStatus;
 use App\Http\Requests\RunAnalysisRequest;
 use App\Jobs\AnalyzeChapterJob;
+use App\Jobs\BulkRevisionJob;
 use App\Jobs\ExtractEntitiesJob;
 use App\Jobs\GenerateEmbeddingsJob;
 use App\Jobs\RunAnalysisJob;
@@ -20,6 +22,7 @@ use App\Models\Chapter;
 use App\Services\Normalization\NormalizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Responses\StreamableAgentResponse;
 
@@ -177,10 +180,7 @@ class AiController extends Controller
         $wordCount = str_word_count(strip_tags($content));
         abort_if($wordCount > 12000, 422, __('Chapter is too long for AI revision (:count words). Consider splitting it into smaller chapters.', ['count' => $wordCount]));
 
-        // Sync currentVersion content from scenes so the diff baseline is accurate
-        if ($currentVersion) {
-            $currentVersion->update(['content' => $chapter->getFullContent()]);
-        }
+        $chapter->syncCurrentVersionContent();
 
         $sceneMap = $chapter->scenes->map(fn ($s) => [
             'title' => $s->title,
@@ -209,11 +209,53 @@ class AiController extends Controller
         });
     }
 
+    public function beautifyAll(Book $book): JsonResponse
+    {
+        return $this->dispatchBulkRevision($book, BulkRevisionType::Beautify);
+    }
+
+    public function reviseAll(Book $book): JsonResponse
+    {
+        return $this->dispatchBulkRevision($book, BulkRevisionType::Revise);
+    }
+
+    public function bulkRevisionStatus(Book $book): JsonResponse
+    {
+        $status = Cache::get(BulkRevisionJob::cacheKey($book->id));
+
+        return response()->json($status ?? ['status' => 'idle']);
+    }
+
     public function resetUsage(Book $book): JsonResponse
     {
         $book->resetAiUsage();
 
         return response()->json(['message' => __('AI usage counters reset.')]);
+    }
+
+    private function dispatchBulkRevision(Book $book, BulkRevisionType $type): JsonResponse
+    {
+        $this->ensureAiConfigured();
+
+        $lock = Cache::lock("bulk_revision_lock:{$book->id}", 10);
+
+        abort_unless($lock->get(), 422, __('A bulk revision is already starting for this book.'));
+
+        try {
+            $status = Cache::get(BulkRevisionJob::cacheKey($book->id));
+
+            abort_if(
+                $status && $status['status'] === 'running',
+                422,
+                __('A bulk revision is already running for this book.'),
+            );
+
+            BulkRevisionJob::dispatch($book, $type);
+        } finally {
+            $lock->release();
+        }
+
+        return response()->json(['status' => 'started', 'type' => $type->value]);
     }
 
     private function ensureAiConfigured(): void

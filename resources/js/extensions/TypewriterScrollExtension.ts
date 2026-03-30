@@ -13,7 +13,7 @@ let targetScrollTop: number | null = null;
 let isMouseDriven = false;
 let mouseUpTimerId: ReturnType<typeof setTimeout> | null = null;
 let pendingUpdateRaf: number | null = null;
-const activeInstances = 0;
+let activeInstances = 0;
 
 export function cancelTypewriterAnimation(): void {
     if (animationId !== null) {

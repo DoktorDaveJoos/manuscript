@@ -2,6 +2,12 @@ import { router } from '@inertiajs/react';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+    confirmImport,
+    parse,
+    skipImport,
+} from '@/actions/App/Http/Controllers/BookController';
+import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 import DropZone from '@/components/onboarding/DropZone';
 import FileRow from '@/components/onboarding/FileRow';
 import ImportChapterRow from '@/components/onboarding/ImportChapterRow';
@@ -10,14 +16,10 @@ import ReviewPhase from '@/components/onboarding/ReviewPhase';
 import type { ReviewStoryline } from '@/components/onboarding/ReviewPhase';
 import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
+import SectionLabel from '@/components/ui/SectionLabel';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
+import { extractErrorMessage } from '@/lib/utils';
 import type { Book, Storyline, StorylineType } from '@/types/models';
-import {
-    confirmImport,
-    parse,
-    skipImport,
-} from '@/actions/App/Http/Controllers/BookController';
-import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 
 function normalizeFilenameToStorylineName(filename: string): string {
     return filename
@@ -72,7 +74,7 @@ function UploadPhase({
     return (
         <div className="flex flex-1 flex-col items-center gap-8 px-10 pt-20 pb-16">
             <div className="flex flex-col items-center gap-2">
-                <h1 className="font-serif text-[32px] leading-10 font-normal tracking-[-0.01em] text-ink">
+                <h1 className="font-serif text-[32px] leading-10 font-semibold tracking-[-0.01em] text-ink">
                     {book.title}
                 </h1>
                 <p className="text-sm leading-[18px] text-ink-muted">
@@ -100,7 +102,7 @@ function UploadPhase({
                 )}
 
                 {files.length >= 2 && (
-                    <div className="flex items-center gap-3 px-4 py-3">
+                    <label className="flex items-center gap-3 px-4 py-3">
                         <Checkbox
                             checked={mergeMode}
                             onChange={() => setMergeMode(!mergeMode)}
@@ -108,14 +110,14 @@ function UploadPhase({
                         <span className="text-[13px] leading-4 text-ink-soft">
                             {t('uploadPhase.mergeFiles')}
                         </span>
-                    </div>
+                    </label>
                 )}
             </div>
 
             <div className="w-[480px] pt-6">
-                <p className="text-[11px] leading-[14px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                <SectionLabel variant="section">
                     {t('importGuide.label')}
-                </p>
+                </SectionLabel>
                 <div className="mt-5 flex flex-col">
                     {([1, 2, 3] as const).map((step, i) => (
                         <div
@@ -193,7 +195,7 @@ function ParsingPhase({
     return (
         <div className="flex flex-1 flex-col items-center gap-10 px-10 pt-20 pb-16">
             <div className="flex flex-col items-center gap-2">
-                <h1 className="font-serif text-[32px] leading-10 font-normal tracking-[-0.01em] text-ink">
+                <h1 className="font-serif text-[32px] leading-10 font-semibold tracking-[-0.01em] text-ink">
                     {book.title}
                 </h1>
                 <p className="text-sm leading-[18px] text-ink-muted">
@@ -226,8 +228,11 @@ export default function BooksImport({
     const [reviewData, setReviewData] = useState<ReviewStoryline[]>([]);
     const [parsingChapters, setParsingChapters] = useState<ChapterItem[]>([]);
     const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     async function handleStartParsing(files: FileEntry[], mergeMode: boolean) {
+        setError(null);
+
         const formData = new FormData();
         files.forEach((entry, i) => {
             formData.append(`files[${i}][file]`, entry.file);
@@ -285,13 +290,14 @@ export default function BooksImport({
             setReviewData(storylines);
             setParsingChapters(allChapters);
             setPhase('parsing');
-        } catch {
-            // Validation or server errors are handled by Inertia
+        } catch (e) {
+            setError(extractErrorMessage(e, t('import.parseError')));
         }
     }
 
     async function handleConfirm() {
         setSubmitting(true);
+        setError(null);
 
         const payload = {
             storylines: reviewData.map((s) => ({
@@ -309,13 +315,30 @@ export default function BooksImport({
         try {
             await axios.post(confirmImport.url(book), payload);
             router.visit(editor.url(book));
-        } catch {
+        } catch (e) {
             setSubmitting(false);
+            setError(extractErrorMessage(e, t('import.confirmError')));
         }
     }
 
     return (
         <>
+            {error && (
+                <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2">
+                    <div className="flex items-center gap-3 rounded-lg border border-delete/20 bg-delete-bg px-4 py-3 shadow-lg">
+                        <p className="text-[13px] font-medium text-delete">
+                            {error}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setError(null)}
+                            className="shrink-0 text-delete/60 transition-colors hover:text-delete"
+                        >
+                            &times;
+                        </button>
+                    </div>
+                </div>
+            )}
             {phase === 'upload' && (
                 <UploadPhase book={book} onStartParsing={handleStartParsing} />
             )}

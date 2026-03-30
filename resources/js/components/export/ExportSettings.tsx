@@ -1,12 +1,25 @@
-import { BookOpen, Download, Lock } from 'lucide-react';
+import { Download, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import CustomizePanel from '@/components/export/CustomizePanel';
+import TemplateSelector from '@/components/export/TemplateSelector';
 import { VISUAL_FORMATS } from '@/components/export/types';
-import type { Format, TrimSizeOption } from '@/components/export/types';
+import type {
+    FontPairingDef,
+    Format,
+    SceneBreakStyleDef,
+    TemplateDef,
+    TrimSizeOption,
+} from '@/components/export/types';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import PageHeader from '@/components/ui/PageHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
+import { Spinner } from '@/components/ui/spinner';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import ToggleRow from '@/components/ui/ToggleRow';
 import { useFreeTier } from '@/hooks/useFreeTier';
-import { cn } from '@/lib/utils';
 
 type ExportSettingsProps = {
     format: Format;
@@ -26,50 +39,23 @@ type ExportSettingsProps = {
     onShowPageNumbersChange: () => void;
     exporting: boolean;
     onExport: () => void;
+    templates: TemplateDef[];
+    fontPairings: FontPairingDef[];
+    sceneBreakStyles: SceneBreakStyleDef[];
+    fontPairing: string;
+    onFontPairingChange: (v: string) => void;
+    sceneBreakStyle: string;
+    onSceneBreakStyleChange: (v: string) => void;
+    dropCaps: boolean;
+    onDropCapsChange: (v: boolean) => void;
+    isCustomized: boolean;
+    includeCover: boolean;
+    onIncludeCoverChange: (v: boolean) => void;
+    hasCover: boolean;
 };
 
 const FORMATS: Format[] = ['epub', 'pdf', 'docx', 'txt'];
-const TEMPLATES = [{ value: 'classic', label: 'Classic' }];
 const FONT_SIZES = [10, 11, 12, 13, 14];
-
-function FormatPill({
-    label,
-    active,
-    onClick,
-    locked,
-}: {
-    label: string;
-    active: boolean;
-    onClick: () => void;
-    locked?: boolean;
-}) {
-    if (locked) {
-        return (
-            <span
-                className="flex items-center gap-1.5 rounded-md bg-neutral-bg px-4 py-[7px] text-[12px] text-ink-faint opacity-60"
-                title="Upgrade to Pro"
-            >
-                .{label}
-                <Lock size={10} />
-            </span>
-        );
-    }
-
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className={cn(
-                'rounded-md px-4 py-[7px] text-[12px] transition-colors',
-                active
-                    ? 'bg-ink font-semibold text-white dark:bg-ink dark:text-surface'
-                    : 'bg-neutral-bg text-ink-muted hover:text-ink',
-            )}
-        >
-            .{label}
-        </button>
-    );
-}
 
 export default function ExportSettings({
     format,
@@ -89,66 +75,103 @@ export default function ExportSettings({
     onShowPageNumbersChange,
     exporting,
     onExport,
+    templates,
+    fontPairings,
+    sceneBreakStyles,
+    fontPairing,
+    onFontPairingChange,
+    sceneBreakStyle,
+    onSceneBreakStyleChange,
+    dropCaps,
+    onDropCapsChange,
+    isCustomized,
+    includeCover,
+    onIncludeCoverChange,
+    hasCover,
 }: ExportSettingsProps) {
     const { t } = useTranslation('export');
     const { canExportFormat } = useFreeTier();
+    const isVisual = VISUAL_FORMATS.has(format);
 
     return (
         <div className="flex flex-1 flex-col overflow-y-auto bg-surface">
             <div className="flex flex-1 flex-col px-11 pt-10 pb-10">
                 {/* Header */}
-                <div className="flex flex-col gap-1.5">
-                    <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
-                        {t('title')}
-                    </h1>
-                    <p className="text-[13px] text-ink-faint">
-                        {t('subtitle')}
-                    </p>
-                </div>
+                <PageHeader title={t('title')} subtitle={t('subtitle')} />
 
                 <div className="mt-8 flex flex-col gap-8">
                     {/* Format */}
                     <div className="flex flex-col gap-2.5">
                         <SectionLabel>{t('format')}</SectionLabel>
-                        <div className="flex gap-1.5">
+                        <ToggleGroup
+                            type="single"
+                            value={format}
+                            onValueChange={(val) => {
+                                if (val) onFormatChange(val as Format);
+                            }}
+                        >
                             {FORMATS.map((f) => (
-                                <FormatPill
+                                <ToggleGroupItem
                                     key={f}
-                                    label={f}
-                                    active={format === f}
-                                    onClick={() => onFormatChange(f)}
-                                    locked={!canExportFormat(f)}
-                                />
+                                    value={f}
+                                    disabled={!canExportFormat(f)}
+                                >
+                                    <span className="inline-flex items-center gap-1">
+                                        .{f}
+                                        {!canExportFormat(f) && (
+                                            <Lock size={10} />
+                                        )}
+                                    </span>
+                                </ToggleGroupItem>
                             ))}
-                        </div>
+                        </ToggleGroup>
                         <p className="mt-1.5 text-[11px] text-ink-faint">
                             {t(`formatDescription.${format}`)}
                         </p>
                     </div>
 
                     {/* Template (visual formats only) */}
-                    {VISUAL_FORMATS.has(format) && (
+                    {isVisual && (
                         <div className="flex flex-col gap-2.5">
-                            <SectionLabel>{t('template')}</SectionLabel>
-                            <Select
-                                value={template}
-                                onChange={(e) =>
-                                    onTemplateChange(e.target.value)
+                            <div className="flex items-center gap-2">
+                                <SectionLabel>{t('template')}</SectionLabel>
+                                {isCustomized && (
+                                    <Badge
+                                        variant="warning"
+                                        className="text-[10px]"
+                                    >
+                                        {t('customLabel')}
+                                    </Badge>
+                                )}
+                            </div>
+                            <TemplateSelector
+                                templates={templates}
+                                selectedTemplate={template}
+                                onChange={onTemplateChange}
+                            />
+                            <Alert variant="info">
+                                <AlertTitle>
+                                    {t('templateAlertTitle')}
+                                </AlertTitle>
+                                <AlertDescription>
+                                    {t('templateAlertDescription')}
+                                </AlertDescription>
+                            </Alert>
+
+                            {/* Customize Panel */}
+                            <CustomizePanel
+                                fontPairings={fontPairings}
+                                sceneBreakStyles={sceneBreakStyles}
+                                selectedFontPairing={fontPairing}
+                                selectedSceneBreakStyle={sceneBreakStyle}
+                                dropCaps={dropCaps}
+                                onFontPairingChange={onFontPairingChange}
+                                onSceneBreakStyleChange={
+                                    onSceneBreakStyleChange
                                 }
-                                icon={<BookOpen />}
-                            >
-                                {TEMPLATES.map((tmpl) => (
-                                    <option key={tmpl.value} value={tmpl.value}>
-                                        {tmpl.label}
-                                    </option>
-                                ))}
-                            </Select>
-                            <p className="text-[11px] text-ink-faint">
-                                {t('templateHint')}
-                            </p>
-                            <p className="rounded-md bg-accent/10 px-3 py-2 text-[11px] text-accent">
-                                {t('templateComingSoon')}
-                            </p>
+                                onDropCapsChange={onDropCapsChange}
+                                isCustomized={isCustomized}
+                            />
                         </div>
                     )}
 
@@ -226,8 +249,24 @@ export default function ExportSettings({
                             label={t('showPageNumbers')}
                             checked={showPageNumbers}
                             onChange={onShowPageNumbersChange}
-                            border={false}
                         />
+                        {isVisual && (
+                            <ToggleRow
+                                label={
+                                    hasCover
+                                        ? t('includeCover')
+                                        : t('noCoverUploaded')
+                                }
+                                checked={includeCover}
+                                onChange={() =>
+                                    onIncludeCoverChange(!includeCover)
+                                }
+                                border={false}
+                            />
+                        )}
+                        {!isVisual && (
+                            <div className="h-0" /> // spacer for non-visual last row
+                        )}
                     </div>
                 </div>
 
@@ -236,15 +275,19 @@ export default function ExportSettings({
 
                 {/* Export button + preview link */}
                 <div className="flex items-center gap-3 pt-4">
-                    <button
-                        type="button"
+                    <Button
+                        variant="primary"
+                        size="lg"
                         onClick={onExport}
                         disabled={exporting}
-                        className="flex items-center gap-2 rounded-lg bg-ink px-6 py-[11px] text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-ink dark:text-surface"
                     >
-                        <Download className="h-3.5 w-3.5" />
+                        {exporting ? (
+                            <Spinner className="h-3.5 w-3.5" />
+                        ) : (
+                            <Download className="h-3.5 w-3.5" />
+                        )}
                         {exporting ? t('exporting') : t('exportAs', { format })}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

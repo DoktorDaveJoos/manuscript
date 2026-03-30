@@ -4,7 +4,9 @@ namespace App\Http\Requests;
 
 use App\Enums\BackMatterType;
 use App\Enums\ExportFormat;
+use App\Enums\FontPairing;
 use App\Enums\FrontMatterType;
+use App\Enums\SceneBreakStyle;
 use App\Enums\TrimSize;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -33,7 +35,11 @@ class ExportBookRequest extends FormRequest
             'front_matter.*' => ['string', Rule::enum(FrontMatterType::class)],
             'back_matter' => ['nullable', 'array'],
             'back_matter.*' => ['string', Rule::enum(BackMatterType::class)],
-            'template' => ['nullable', 'string', 'in:classic'],
+            'template' => ['nullable', 'string', 'in:classic,modern,elegant,romance'],
+            'font_pairing' => ['nullable', 'string', Rule::enum(FontPairing::class)],
+            'scene_break_style' => ['nullable', 'string', Rule::enum(SceneBreakStyle::class)],
+            'drop_caps' => ['nullable', 'boolean'],
+            'include_cover' => ['nullable', 'boolean'],
         ];
     }
 }

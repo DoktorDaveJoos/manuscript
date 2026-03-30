@@ -1,10 +1,13 @@
+import { router } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { update as updateWritingGoal } from '@/actions/App/Http/Controllers/WritingGoalController';
 import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
+import SectionLabel from '@/components/ui/SectionLabel';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { WritingGoalData } from '@/types/models';
-import { update as updateWritingGoal } from '@/actions/App/Http/Controllers/WritingGoalController';
 
 export default function WritingGoal({
     bookId,
@@ -56,6 +59,7 @@ export default function WritingGoal({
 
             setGoal(parsed);
             setIsEditing(false);
+            router.reload({ only: ['manuscript_target', 'writing_goal'] });
         } catch {
             setSaveError(true);
         }
@@ -76,7 +80,7 @@ export default function WritingGoal({
     // No goal set: show setup card
     if (!goal && !isEditing) {
         return (
-            <div className="rounded-xl border border-border-light bg-surface-card p-6">
+            <Card className="p-6">
                 <p className="text-sm text-ink-muted">
                     {t('writingGoal.setupPrompt')}
                 </p>
@@ -89,17 +93,17 @@ export default function WritingGoal({
                 >
                     {t('writingGoal.setGoal')}
                 </Button>
-            </div>
+            </Card>
         );
     }
 
     // Editing mode
     if (isEditing) {
         return (
-            <div className="rounded-xl border border-border-light bg-surface-card p-6">
-                <label className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+            <Card className="p-6">
+                <SectionLabel as="label" variant="section">
                     {t('writingGoal.dailyWordGoal')}
-                </label>
+                </SectionLabel>
                 <div className="mt-2 flex flex-col gap-4">
                     <div className="flex items-center gap-2">
                         <Input
@@ -166,7 +170,7 @@ export default function WritingGoal({
                         </p>
                     )}
                 </div>
-            </div>
+            </Card>
         );
     }
 
@@ -182,12 +186,12 @@ export default function WritingGoal({
     const wordsToGo = Math.max(0, effectiveGoal - writingGoal.today_words);
 
     return (
-        <div className="flex flex-col gap-4 rounded-xl border border-border-light bg-surface-card p-6">
+        <Card className="flex h-full flex-col gap-4 p-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                <SectionLabel variant="section">
                     {t('writingGoal.todaysWriting')}
-                </span>
+                </SectionLabel>
                 <button
                     type="button"
                     onClick={() => setIsEditing(true)}
@@ -232,6 +236,6 @@ export default function WritingGoal({
                     </span>
                 )}
             </div>
-        </div>
+        </Card>
     );
 }

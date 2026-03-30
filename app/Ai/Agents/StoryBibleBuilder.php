@@ -9,6 +9,7 @@ use App\Ai\Tools\SearchSimilarChunks;
 use App\Enums\AiTaskCategory;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
@@ -52,12 +53,14 @@ class StoryBibleBuilder implements Agent, BelongsToBook, HasMiddleware, HasStruc
         Verify key facts against the manuscript text using the search tool.
         The book ID is {$this->book->id}. Use this when calling the search tool.
 
+        LANGUAGE RULE: ALL text content you produce — themes, style rules, timeline entries — MUST be written in {$this->book->language}. Only structured field names (JSON keys) remain in English. Do not mix languages.
+
         Be concise. This will be used as supplementary context for other AI agents.
         INSTRUCTIONS;
     }
 
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {

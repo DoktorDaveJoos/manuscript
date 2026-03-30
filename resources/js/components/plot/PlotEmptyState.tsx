@@ -1,7 +1,10 @@
 import { BookOpen, Feather } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import Badge from '@/components/ui/Badge';
+import { Card } from '@/components/ui/Card';
 import { getPlotTemplates } from '@/lib/plot-templates';
 import type { PlotTemplate } from '@/lib/plot-templates';
+import { cn } from '@/lib/utils';
 
 type PlotEmptyStateProps = {
     onSelectTemplate: (template: PlotTemplate) => void;
@@ -17,44 +20,56 @@ export default function PlotEmptyState({
         <div className="flex h-full flex-col items-center justify-center px-10">
             <div className="flex flex-col items-center gap-7">
                 <div className="flex flex-col items-center gap-3">
-                    <Feather size={36} className="text-accent" />
+                    <div className="flex size-12 items-center justify-center rounded-full bg-neutral-bg">
+                        <Feather size={24} className="text-ink-muted" />
+                    </div>
 
-                    <h2 className="text-center font-serif text-2xl leading-[1.2] font-normal text-ink">
+                    <h2 className="text-center font-serif text-[32px] leading-10 font-semibold tracking-[-0.01em] text-ink">
                         {t('emptyState.title')}
                     </h2>
 
-                    <p className="max-w-[480px] text-center text-[14px] leading-[1.6] whitespace-pre-line text-ink-muted">
+                    <p className="max-w-[520px] text-center text-sm leading-relaxed text-ink-muted">
                         {t('emptyState.subtitle')}
                     </p>
                 </div>
 
-                <div className="flex flex-wrap justify-center gap-3">
+                <div className="grid w-full max-w-[860px] grid-cols-3 gap-3">
                     {templates.map((template) => {
                         const totalBeats = template.acts.reduce(
                             (sum, act) => sum + act.beats.length,
                             0,
                         );
                         return (
-                            <button
+                            <Card
                                 key={template.key}
+                                role="button"
+                                tabIndex={0}
                                 onClick={() => onSelectTemplate(template)}
-                                className={`flex w-[210px] flex-col gap-2 rounded-xl p-5 pb-4 text-left transition-all hover:shadow-sm ${
-                                    template.featured
-                                        ? 'border-2 border-accent bg-surface-card'
-                                        : 'border border-border bg-surface-card hover:border-accent'
-                                }`}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        onSelectTemplate(template);
+                                    }
+                                }}
+                                className={cn(
+                                    'flex cursor-pointer flex-col gap-3 border-border p-5 text-left transition-shadow hover:shadow-sm',
+                                    template.featured && 'border-2 border-ink',
+                                )}
                             >
                                 {template.featured && (
-                                    <span className="text-[11px] font-bold tracking-[0.06em] text-accent uppercase">
+                                    <Badge
+                                        variant="warning"
+                                        className="self-start"
+                                    >
                                         {t('emptyState.fitsBadge')}
-                                    </span>
+                                    </Badge>
                                 )}
 
-                                <h3 className="text-[14px] leading-tight font-semibold text-ink">
+                                <h3 className="text-sm font-medium text-ink">
                                     {template.name}
                                 </h3>
 
-                                <p className="w-[170px] text-[12px] leading-[1.5] text-ink-muted">
+                                <p className="text-xs leading-relaxed text-ink-muted">
                                     {template.description}
                                 </p>
 
@@ -78,22 +93,12 @@ export default function PlotEmptyState({
                                         beats: totalBeats,
                                     })}
                                 </span>
-
-                                <span
-                                    className={`text-[11px] font-medium ${
-                                        template.featured
-                                            ? 'text-accent'
-                                            : 'text-ink-faint'
-                                    }`}
-                                >
-                                    {t('emptyState.select')}
-                                </span>
-                            </button>
+                            </Card>
                         );
                     })}
                 </div>
 
-                <p className="text-[12px] text-ink-faint italic">
+                <p className="text-xs text-ink-faint italic">
                     {t('emptyState.hint')}
                 </p>
             </div>

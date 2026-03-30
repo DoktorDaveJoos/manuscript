@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { duplicate } from '@/actions/App/Http/Controllers/BookController';
 import BookCard from '@/components/onboarding/BookCard';
 import type { BookWithCounts } from '@/components/onboarding/BookCard';
 import CreateBookDialog from '@/components/onboarding/CreateBookDialog';
@@ -10,7 +11,6 @@ import RenameBookDialog from '@/components/onboarding/RenameBookDialog';
 import Button from '@/components/ui/Button';
 import { useFreeTier } from '@/hooks/useFreeTier';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
-import { duplicate } from '@/actions/App/Http/Controllers/BookController';
 
 type DialogState =
     | { type: 'create' }
@@ -24,7 +24,7 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
     return (
         <div className="flex flex-1 flex-col items-center justify-center pb-20">
             <div className="flex flex-col items-center gap-4">
-                <h1 className="font-serif text-[32px] leading-10 font-normal tracking-[-0.01em] text-ink">
+                <h1 className="font-serif text-[32px] leading-10 font-semibold tracking-[-0.01em] text-ink">
                     {t('emptyState.title')}
                 </h1>
                 <p className="text-sm leading-6 text-ink-muted">
@@ -63,7 +63,7 @@ function BookLibrary({
 
     return (
         <div className="flex flex-1 flex-col items-center gap-12 px-10 py-20">
-            <h1 className="font-serif text-[32px] leading-10 font-normal tracking-[-0.01em] text-ink">
+            <h1 className="font-serif text-[32px] leading-10 font-semibold tracking-[-0.01em] text-ink">
                 {t('bookLibrary.title')}
             </h1>
             <div className="flex flex-wrap justify-center gap-6">

@@ -4,26 +4,123 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
 @font-face {
-    font-family: 'Literata';
-    src: url('../fonts/Literata.ttf') format('truetype');
+    font-family: 'Playfair Display';
+    src: url('../fonts/PlayfairDisplay-Regular.ttf') format('truetype');
     font-weight: 100 900;
     font-style: normal;
     font-display: swap;
 }
 
+/* Bundled locally so export preview renders correctly offline */
 @font-face {
-    font-family: 'Literata';
-    src: url('../fonts/Literata-Italic.ttf') format('truetype');
-    font-weight: 100 900;
+    font-family: 'Crimson Pro';
+    src: url('../fonts/CrimsonPro-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Crimson Pro';
+    src: url('../fonts/CrimsonPro-Italic.ttf') format('truetype');
+    font-weight: 400;
     font-style: italic;
     font-display: swap;
 }
 
 @font-face {
-    font-family: 'Playfair Display';
-    src: url('../fonts/PlayfairDisplay-Regular.ttf') format('truetype');
-    font-weight: 100 900;
+    font-family: 'Crimson Pro';
+    src: url('../fonts/CrimsonPro-Bold.ttf') format('truetype');
+    font-weight: 700;
     font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Crimson Pro';
+    src: url('../fonts/CrimsonPro-BoldItalic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Sans 3';
+    src: url('../fonts/SourceSans3-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Sans 3';
+    src: url('../fonts/SourceSans3-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Serif 4';
+    src: url('../fonts/SourceSerif4-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Serif 4';
+    src: url('../fonts/SourceSerif4-Italic.ttf') format('truetype');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Serif 4';
+    src: url('../fonts/SourceSerif4-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Serif 4';
+    src: url('../fonts/SourceSerif4-BoldItalic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cormorant Garamond';
+    src: url('../fonts/CormorantGaramond-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cormorant Garamond';
+    src: url('../fonts/CormorantGaramond-Italic.ttf') format('truetype');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cormorant Garamond';
+    src: url('../fonts/CormorantGaramond-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cormorant Garamond';
+    src: url('../fonts/CormorantGaramond-BoldItalic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
     font-display: swap;
 }
 
@@ -144,6 +241,32 @@ html.dark {
     animation: collapsible-up 200ms ease-out;
 }
 
+@keyframes accordion-down {
+    from {
+        height: 0;
+    }
+    to {
+        height: var(--radix-accordion-content-height);
+    }
+}
+
+@keyframes accordion-up {
+    from {
+        height: var(--radix-accordion-content-height);
+    }
+    to {
+        height: 0;
+    }
+}
+
+@utility animate-accordion-down {
+    animation: accordion-down 200ms ease-out;
+}
+
+@utility animate-accordion-up {
+    animation: accordion-up 200ms ease-out;
+}
+
 @keyframes slideDownFromTop {
     from {
         opacity: 0;
@@ -190,31 +313,21 @@ html.dark {
     }
 }
 
-/* Tiptap editor prose styles — book-like typography */
+/* Tiptap editor prose styles */
 .editor-prose {
     font-family: var(--font-serif);
     font-size: var(--editor-font-size, 18px);
-    line-height: 1.45;
+    line-height: 1.55;
     color: var(--color-ink);
     outline: none;
-    text-align: justify;
-    hyphens: auto;
-    -webkit-hyphens: auto;
 }
 
 .editor-prose p {
-    margin: 0;
-    text-indent: 1em;
+    margin-bottom: 0.85em;
 }
 
-/* First paragraph of scene / after headings / after breaks: flush left */
-.editor-prose > p:first-child,
-.editor-prose h1 + p,
-.editor-prose h2 + p,
-.editor-prose h3 + p,
-.editor-prose hr + p,
-.editor-prose blockquote + p {
-    text-indent: 0;
+.editor-prose > *:last-child {
+    margin-bottom: 0;
 }
 
 .editor-prose h1 {
@@ -255,6 +368,14 @@ html.dark {
 .editor-prose ol {
     padding-left: 1.5em;
     margin: 0.8em 0;
+}
+
+.editor-prose ul > li {
+    list-style-type: disc;
+}
+
+.editor-prose ol > li {
+    list-style-type: decimal;
 }
 
 .editor-prose li {
@@ -344,6 +465,14 @@ h1[contenteditable]:empty::before {
     margin: 0.4em 0;
 }
 
+.ai-chat-markdown ul > li {
+    list-style-type: disc;
+}
+
+.ai-chat-markdown ol > li {
+    list-style-type: decimal;
+}
+
 .ai-chat-markdown li {
     margin-bottom: 0.15em;
 }
@@ -428,6 +557,15 @@ h1[contenteditable]:empty::before {
     padding-left: 1.4em;
     margin: 0;
 }
+
+.notes-line-md ul > li {
+    list-style-type: disc;
+}
+
+.notes-line-md ol > li {
+    list-style-type: decimal;
+}
+
 .notes-line-md li {
     margin: 0;
 }
@@ -488,5 +626,4 @@ h1[contenteditable]:empty::before {
     height: 0;
     font-family: var(--font-serif);
     font-size: 18px;
-    text-indent: 0;
 }

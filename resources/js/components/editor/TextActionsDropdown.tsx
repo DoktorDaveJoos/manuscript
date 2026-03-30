@@ -1,6 +1,11 @@
 import { EllipsisVertical, Lock } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/DropdownMenu';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 
 export default function TextActionsDropdown({
@@ -14,86 +19,57 @@ export default function TextActionsDropdown({
 }) {
     const { visible, usable, licensed } = useAiFeatures();
     const { t } = useTranslation('editor');
-    const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!open) return;
-
-        function handleClickOutside(e: MouseEvent) {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                setOpen(false);
-            }
-        }
-
-        document.addEventListener('mousedown', handleClickOutside);
-
-        return () =>
-            document.removeEventListener('mousedown', handleClickOutside);
-    }, [open]);
 
     return (
-        <div ref={ref} className="relative">
-            <button
-                type="button"
-                onClick={() => setOpen(!open)}
-                title={t('textActions.moreActions')}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-xs text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
-            >
-                <EllipsisVertical size={14} strokeWidth={2.5} />
-            </button>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button
+                    type="button"
+                    title={t('textActions.moreActions')}
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-xs text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
+                >
+                    <EllipsisVertical size={14} strokeWidth={2.5} />
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-[220px]">
+                <DropdownMenuItem
+                    className="flex-col items-start gap-0.5"
+                    onSelect={onNormalizeClick}
+                >
+                    <span className="text-xs font-medium text-ink">
+                        {t('textActions.normalize')}
+                    </span>
+                    <span className="text-[11px] text-ink-faint">
+                        {t('textActions.normalizeDescription')}
+                    </span>
+                </DropdownMenuItem>
 
-            {open && (
-                <div className="absolute top-full right-0 z-50 mt-1 w-[220px] rounded-lg bg-surface-card shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]">
-                    <div className="flex flex-col p-1">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setOpen(false);
-                                onNormalizeClick();
-                            }}
-                            className="w-full rounded-md px-3 py-2 text-left transition-colors hover:bg-neutral-bg"
-                        >
-                            <span className="block text-xs font-medium text-ink">
-                                {t('textActions.normalize')}
+                {visible && (
+                    <DropdownMenuItem
+                        className="flex-col items-start gap-0.5"
+                        disabled={!usable || isBeautifying}
+                        onSelect={onBeautifyClick}
+                    >
+                        <span className="flex items-center gap-1.5 text-xs font-medium text-ink">
+                            {t('textActions.beautify')}
+                            <span className="rounded bg-ink-faint/10 px-1 py-0.5 text-[11px] font-medium text-ink-faint">
+                                AI
                             </span>
-                            <span className="block text-[11px] text-ink-faint">
-                                {t('textActions.normalizeDescription')}
-                            </span>
-                        </button>
-
-                        {visible && (
-                            <button
-                                type="button"
-                                disabled={!usable || isBeautifying}
-                                onClick={() => {
-                                    setOpen(false);
-                                    onBeautifyClick();
-                                }}
-                                className="w-full rounded-md px-3 py-2 text-left transition-colors hover:bg-neutral-bg disabled:opacity-50"
-                            >
-                                <span className="flex items-center gap-1.5 text-xs font-medium text-ink">
-                                    {t('textActions.beautify')}
-                                    <span className="rounded bg-status-revised/15 px-1 py-0.5 text-[11px] font-medium text-status-revised">
-                                        AI
-                                    </span>
-                                    {!licensed && (
-                                        <span className="flex items-center gap-0.5 rounded bg-ink-faint/10 px-1 py-0.5 text-[11px] font-medium text-ink-faint">
-                                            <Lock size={12} />
-                                            PRO
-                                        </span>
-                                    )}
+                            {!licensed && (
+                                <span className="flex items-center gap-0.5 rounded bg-ink-faint/10 px-1 py-0.5 text-[11px] font-medium text-ink-faint">
+                                    <Lock size={12} />
+                                    PRO
                                 </span>
-                                <span className="block text-[11px] text-ink-faint">
-                                    {isBeautifying
-                                        ? t('textActions.processing')
-                                        : t('textActions.beautifyDescription')}
-                                </span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-            )}
-        </div>
+                            )}
+                        </span>
+                        <span className="text-[11px] text-ink-faint">
+                            {isBeautifying
+                                ? t('textActions.processing')
+                                : t('textActions.beautifyDescription')}
+                        </span>
+                    </DropdownMenuItem>
+                )}
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }

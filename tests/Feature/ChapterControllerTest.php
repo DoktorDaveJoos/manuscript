@@ -520,6 +520,54 @@ test('createSnapshot creates new version with snapshot source', function () {
     expect($versions->where('version_number', 1)->first()->is_current)->toBeFalse();
 });
 
+test('createSnapshot syncs outgoing version content from scenes', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $v1 = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => '',
+    ]);
+    Scene::factory()->for($chapter)->create([
+        'content' => '<p>User has written content</p>',
+        'sort_order' => 0,
+    ]);
+
+    $this->postJson(route('chapters.createSnapshot', [$book, $chapter]))
+        ->assertOk();
+
+    $v1->refresh();
+    expect($v1->content)->toBe('<p>User has written content</p>');
+});
+
+test('restoreVersion syncs current version content before restoring', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $v1 = ChapterVersion::factory()->for($chapter)->create([
+        'version_number' => 1,
+        'content' => '<p>Original</p>',
+        'is_current' => false,
+    ]);
+    $v2 = ChapterVersion::factory()->for($chapter)->create([
+        'version_number' => 2,
+        'content' => '',
+        'is_current' => true,
+    ]);
+    Scene::factory()->for($chapter)->create([
+        'content' => '<p>Edited since v2 was created</p>',
+        'sort_order' => 0,
+    ]);
+
+    $this->post(route('chapters.restoreVersion', [$book, $chapter, $v1]))
+        ->assertRedirect();
+
+    $v2->refresh();
+    expect($v2->content)->toBe('<p>Edited since v2 was created</p>');
+});
+
 test('createSnapshot validates change_summary max length', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();

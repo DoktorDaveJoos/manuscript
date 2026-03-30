@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
-import { getXsrfToken } from '@/lib/csrf';
+import { jsonFetchHeaders } from '@/lib/utils';
 import type { NormalizePreviewResult } from '@/types/models';
 
 export default function NormalizePreview({
@@ -34,11 +34,7 @@ export default function NormalizePreview({
 
         fetch(previewUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'X-XSRF-TOKEN': getXsrfToken(),
-            },
+            headers: jsonFetchHeaders(),
             signal: controller.signal,
         })
             .then((res) => {
@@ -68,7 +64,6 @@ export default function NormalizePreview({
                 headers: {
                     'Content-Type': 'application/json',
                     Accept: 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
                 },
             });
 

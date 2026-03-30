@@ -45,7 +45,7 @@ test('chunks long text into multiple overlapping chunks', function () {
 });
 
 test('chunk version creates chunk models and deletes existing', function () {
-    $book = \App\Models\Book::factory()->create();
+    $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
     $version = ChapterVersion::factory()->for($chapter)->create([
@@ -66,7 +66,7 @@ test('chunk version creates chunk models and deletes existing', function () {
 });
 
 test('chunk version handles null content', function () {
-    $book = \App\Models\Book::factory()->create();
+    $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
     $version = ChapterVersion::factory()->for($chapter)->create([

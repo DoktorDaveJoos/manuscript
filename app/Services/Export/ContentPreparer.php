@@ -2,16 +2,21 @@
 
 namespace App\Services\Export;
 
+use App\Enums\SceneBreakStyle;
+
 class ContentPreparer
 {
     /**
      * Convert HTML content to plain text, preserving paragraph and scene breaks.
      */
-    public function toPlainText(string $html): string
+    public function toPlainText(string $html, ?SceneBreakStyle $sceneBreak = null): string
     {
+        $sceneBreak = $sceneBreak ?? SceneBreakStyle::Asterisks;
+        $plainBreak = $sceneBreak->plainText();
+
         return strip_tags(str_replace(
             ['<p>', '</p>', '<br>', '<br/>', '<br />', '<hr>', '<hr/>', '<hr />'],
-            ["\n", "\n", "\n", "\n", "\n", "\n* * *\n", "\n* * *\n", "\n* * *\n"],
+            ["\n", "\n", "\n", "\n", "\n", "\n{$plainBreak}\n", "\n{$plainBreak}\n", "\n{$plainBreak}\n"],
             $html,
         ));
     }
@@ -19,12 +24,13 @@ class ContentPreparer
     /**
      * Convert TipTap HTML to valid XHTML for EPUB.
      */
-    public function toXhtml(string $html): string
+    public function toXhtml(string $html, ?SceneBreakStyle $sceneBreak = null): string
     {
+        $sceneBreak = $sceneBreak ?? SceneBreakStyle::Asterisks;
         $html = $this->normalizeHtml($html);
 
-        // Convert <hr> variants to self-closing XHTML
-        $html = preg_replace('/<hr\s*\/?>/', '<hr class="scene-break" />', $html);
+        // Convert <hr> variants using the chosen scene break style
+        $html = preg_replace('/<hr\s*\/?>/', $sceneBreak->xhtml(), $html);
 
         // Convert <br> variants to self-closing XHTML
         $html = preg_replace('/<br\s*\/?>/', '<br />', $html);
@@ -37,39 +43,93 @@ class ContentPreparer
     /**
      * Prepare HTML for chapter rendering (PDF and Chromium-based exports).
      */
-    public function toChapterHtml(string $html): string
+    public function toChapterHtml(string $html, ?SceneBreakStyle $sceneBreak = null): string
     {
+        $sceneBreak = $sceneBreak ?? SceneBreakStyle::Asterisks;
         $html = $this->normalizeHtml($html);
 
-        // Convert <hr> to styled scene break (spaced asterisks matching preview)
-        $html = preg_replace(
-            '/<hr\s*\/?>/',
-            '<p class="scene-break">*&nbsp;&nbsp;*&nbsp;&nbsp;*</p>',
-            $html,
-        );
+        // Convert <hr> using the chosen scene break style
+        $html = preg_replace('/<hr\s*\/?>/', $sceneBreak->html(), $html);
 
         return $html;
     }
 
     /**
-     * Backward-compatible alias for toChapterHtml().
-     */
-    public function toPdfHtml(string $html): string
-    {
-        return $this->toChapterHtml($html);
-    }
-
-    /**
-     * Add a drop cap to the first letter of the first paragraph.
+     * Add a drop cap to the first letter of the first non-empty paragraph,
+     * capturing any leading punctuation (quotes, brackets) into the drop cap span.
+     * Handles inline tags (em, strong, span) wrapping the first letter.
      */
     public function addDropCap(string $html): string
     {
-        return preg_replace(
-            '/(<p[^>]*>)(\s*)([a-zA-Z\x{00C0}-\x{024F}])/u',
-            '$1$2<span class="drop-cap">$3</span>',
+        // Match first <p> tag, then any number of opening inline tags, then optional
+        // punctuation, then the first letter. Captures:
+        // 1: <p...>
+        // 2: optional whitespace
+        // 3: zero or more opening inline tags like <em>, <strong>, <span class="...">
+        // 4: leading punctuation (quotes, brackets)
+        // 5: first letter
+        $pattern = '/(<p[^>]*>)([\s]*)((?:<[^\/][^>]*>)*)(["\'"\'\x{201C}\x{201D}\x{2018}\x{2019}\x{00AB}\x{00BF}\x{00A1}\(\[]*)([\p{L}\p{N}])/u';
+
+        return preg_replace_callback(
+            $pattern,
+            function ($matches) {
+                $openTag = $matches[1];
+                $whitespace = $matches[2];
+                $inlineTags = $matches[3];
+                $punctuation = $matches[4];
+                $letter = $matches[5];
+
+                $dropCapContent = $punctuation.$letter;
+
+                return "{$openTag}{$whitespace}{$inlineTags}<span class=\"drop-cap\">{$dropCapContent}</span>";
+            },
             $html,
             1,
         );
+    }
+
+    /**
+     * Parse HTML into structured segments with formatting metadata for PhpWord.
+     *
+     * @return array<int, array{type: string, text?: string, bold?: bool, italic?: bool, strikethrough?: bool}>
+     */
+    public function toFormattedSegments(string $html): array
+    {
+        $segments = [];
+        $dom = new \DOMDocument;
+        @$dom->loadHTML('<body>'.mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8').'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+        $body = $dom->getElementsByTagName('body')->item(0);
+        if (! $body) {
+            return $segments;
+        }
+
+        foreach ($body->childNodes as $child) {
+            if ($child->nodeType !== XML_ELEMENT_NODE) {
+                continue;
+            }
+
+            if ($child->nodeName === 'hr') {
+                $segments[] = ['type' => 'scene-break'];
+
+                continue;
+            }
+
+            if (in_array($child->nodeName, ['p', 'blockquote'])) {
+                if (trim($child->textContent) === '') {
+                    continue;
+                }
+
+                $segments[] = ['type' => 'paragraph-start'];
+                $this->extractTextSegments($child, $segments, [
+                    'bold' => false,
+                    'italic' => $child->nodeName === 'blockquote',
+                    'strikethrough' => false,
+                ]);
+            }
+        }
+
+        return $segments;
     }
 
     /**
@@ -104,6 +164,34 @@ class ContentPreparer
             fn (string $line) => "<p{$classAttr}>".htmlspecialchars($line, $encoding, 'UTF-8').'</p>',
             array_filter($lines, fn (string $line) => trim($line) !== ''),
         ));
+    }
+
+    /**
+     * Recursively extract text segments with formatting from a DOM node.
+     *
+     * @param  array<int, array{type: string, text?: string, bold?: bool, italic?: bool, strikethrough?: bool}>  $segments
+     * @param  array{bold: bool, italic: bool, strikethrough: bool}  $formatting
+     */
+    private function extractTextSegments(\DOMNode $node, array &$segments, array $formatting): void
+    {
+        foreach ($node->childNodes as $child) {
+            if ($child->nodeType === XML_TEXT_NODE) {
+                $text = $child->textContent;
+                if ($text !== '') {
+                    $segments[] = array_merge(['type' => 'text', 'text' => $text], $formatting);
+                }
+            } elseif ($child->nodeType === XML_ELEMENT_NODE) {
+                $childFormatting = $formatting;
+                match ($child->nodeName) {
+                    'strong', 'b' => $childFormatting['bold'] = true,
+                    'em', 'i' => $childFormatting['italic'] = true,
+                    's', 'del' => $childFormatting['strikethrough'] = true,
+                    'p' => null,
+                    default => null,
+                };
+                $this->extractTextSegments($child, $segments, $childFormatting);
+            }
+        }
     }
 
     /**

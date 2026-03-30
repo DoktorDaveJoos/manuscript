@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { updateWritingStyle } from '@/actions/App/Http/Controllers/SettingsController';
+import PageHeader from '@/components/ui/PageHeader';
 import Textarea from '@/components/ui/Textarea';
 import SettingsLayout from '@/layouts/SettingsLayout';
-import { getXsrfToken } from '@/lib/csrf';
-import { updateWritingStyle } from '@/actions/App/Http/Controllers/SettingsController';
+import { jsonFetchHeaders } from '@/lib/utils';
 
 type BookData = {
     id: number;
@@ -30,11 +31,7 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
 
         fetch(updateWritingStyle.url(), {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-XSRF-TOKEN': getXsrfToken(),
-                Accept: 'application/json',
-            },
+            headers: jsonFetchHeaders(),
             body: JSON.stringify({ writing_style_text: text }),
         })
             .then(async (res) => {
@@ -54,16 +51,10 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
             title={t('writingStyle.pageTitle', { bookTitle: book.title })}
         >
             <div className="flex flex-col gap-4">
-                <div className="flex items-start justify-between">
-                    <div>
-                        <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
-                            {t('writingStyle.title')}
-                        </h1>
-                        <p className="mt-1 text-[13px] text-ink-muted">
-                            {t('writingStyle.description')}
-                        </p>
-                    </div>
-                </div>
+                <PageHeader
+                    title={t('writingStyle.title')}
+                    subtitle={t('writingStyle.description')}
+                />
 
                 <div>
                     <Textarea

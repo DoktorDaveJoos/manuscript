@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { updateProsePassRules } from '@/actions/App/Http/Controllers/SettingsController';
+import PageHeader from '@/components/ui/PageHeader';
 import Toggle from '@/components/ui/Toggle';
 import SettingsLayout from '@/layouts/SettingsLayout';
-import { getXsrfToken } from '@/lib/csrf';
+import { jsonFetchHeaders } from '@/lib/utils';
 import type { ProsePassRule } from '@/types/models';
-import { updateProsePassRules } from '@/actions/App/Http/Controllers/SettingsController';
 
 type BookData = { id: number; title: string };
 
@@ -26,11 +27,7 @@ export default function ProsePassRules({ book, rules: initialRules }: Props) {
 
             fetch(updateProsePassRules.url(), {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
-                    Accept: 'application/json',
-                },
+                headers: jsonFetchHeaders(),
                 body: JSON.stringify({ rules: updated }),
             }).catch(() => {
                 setRules(rules);
@@ -46,14 +43,10 @@ export default function ProsePassRules({ book, rules: initialRules }: Props) {
             title={t('prosePassRules.pageTitle', { bookTitle: book.title })}
         >
             <div className="flex flex-col gap-4">
-                <div>
-                    <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
-                        {t('prosePassRules.title')}
-                    </h1>
-                    <p className="mt-1 text-[13px] text-ink-muted">
-                        {t('prosePassRules.description')}
-                    </p>
-                </div>
+                <PageHeader
+                    title={t('prosePassRules.title')}
+                    subtitle={t('prosePassRules.description')}
+                />
 
                 <div className="flex flex-col">
                     {rules.map((rule, i) => (

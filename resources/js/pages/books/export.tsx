@@ -8,9 +8,12 @@ import ExportReadingOrder from '@/components/export/ExportReadingOrder';
 import ExportSettings from '@/components/export/ExportSettings';
 import type {
     ChapterRow,
+    FontPairingDef,
     Format,
     MatterItem,
+    SceneBreakStyleDef,
     StorylineRef,
+    TemplateDef,
     TrimSizeOption,
 } from '@/components/export/types';
 import { useFreeTier } from '@/hooks/useFreeTier';
@@ -24,38 +27,29 @@ interface Props {
     storylines: StorylineRef[];
     chapters: ChapterRow[];
     trimSizes: TrimSizeOption[];
+    templates: TemplateDef[];
+    fontPairings: FontPairingDef[];
+    sceneBreakStyles: SceneBreakStyleDef[];
 }
-
-const INITIAL_FRONT_MATTER: MatterItem[] = [
-    { id: 'title-page', label: 'Title Page', checked: true },
-    { id: 'copyright', label: 'Copyright', checked: true },
-    { id: 'toc', label: 'Table of Contents', checked: false },
-];
-
-const INITIAL_BACK_MATTER: MatterItem[] = [
-    {
-        id: 'acknowledgments',
-        label: 'Acknowledgments',
-        checked: false,
-        settingsSection: 'acknowledgment',
-    },
-    {
-        id: 'about-author',
-        label: 'About the Author',
-        checked: false,
-        settingsSection: 'about-author',
-    },
-];
 
 export default function Export({
     book,
     storylines,
     chapters,
     trimSizes,
+    templates,
+    fontPairings,
+    sceneBreakStyles,
 }: Props) {
     const { t } = useTranslation('export');
     const { isPro } = useFreeTier();
     const sidebarStorylines = useSidebarStorylines();
+
+    // Epilogue detection
+    const hasEpilogue = useMemo(
+        () => chapters.some((ch) => ch.is_epilogue),
+        [chapters],
+    );
 
     // Format
     const [format, setFormat] = useState<Format>(isPro ? 'epub' : 'docx');
@@ -76,22 +70,150 @@ export default function Export({
         () => new Set(chapters.map((ch) => ch.id)),
     );
 
+    // Template & customization
+    const defaultTemplate = templates[0];
+    const [template, setTemplate] = useState(
+        defaultTemplate?.slug ?? 'classic',
+    );
+    const [fontPairing, setFontPairing] = useState(
+        defaultTemplate?.defaultFontPairing ?? 'classic-serif',
+    );
+    const [sceneBreakStyle, setSceneBreakStyle] = useState(
+        defaultTemplate?.defaultSceneBreakStyle ?? 'asterisks',
+    );
+    const [dropCaps, setDropCaps] = useState(
+        defaultTemplate?.defaultDropCaps ?? true,
+    );
+
+    const selectedTemplateDef = useMemo(
+        () => templates.find((t) => t.slug === template) ?? templates[0],
+        [templates, template],
+    );
+
+    const isCustomized = useMemo(() => {
+        if (!selectedTemplateDef) return false;
+        return (
+            fontPairing !== selectedTemplateDef.defaultFontPairing ||
+            sceneBreakStyle !== selectedTemplateDef.defaultSceneBreakStyle ||
+            dropCaps !== selectedTemplateDef.defaultDropCaps
+        );
+    }, [selectedTemplateDef, fontPairing, sceneBreakStyle, dropCaps]);
+
+    const handleTemplateChange = useCallback(
+        (slug: string) => {
+            setTemplate(slug);
+            const def = templates.find((t) => t.slug === slug);
+            if (def) {
+                setFontPairing(def.defaultFontPairing);
+                setSceneBreakStyle(def.defaultSceneBreakStyle);
+                setDropCaps(def.defaultDropCaps);
+            }
+        },
+        [templates],
+    );
+
     // Options
     const [includeChapterTitles, setIncludeChapterTitles] = useState(true);
     const [includeActBreaks, setIncludeActBreaks] = useState(false);
     const [showPageNumbers, setShowPageNumbers] = useState(true);
     const [trimSize, setTrimSize] = useState('6x9');
     const [fontSize, setFontSize] = useState(11);
-    const [template, setTemplate] = useState('classic');
+    const [includeCover, setIncludeCover] = useState(!!book.cover_image_path);
     const [exporting, setExporting] = useState(false);
 
+    const hasCover = !!book.cover_image_path;
+
     // Front/back matter (visual only)
-    const [frontMatter, setFrontMatter] = useState(INITIAL_FRONT_MATTER);
-    const [backMatter, setBackMatter] = useState(INITIAL_BACK_MATTER);
+    const initialFrontMatter: MatterItem[] = useMemo(
+        () => [
+            {
+                id: 'title-page',
+                label: t('frontMatter.titlePage'),
+                checked: true,
+            },
+            {
+                id: 'copyright',
+                label: t('frontMatter.copyright'),
+                checked: true,
+            },
+            {
+                id: 'dedication',
+                label: t('frontMatter.dedication'),
+                checked: false,
+            },
+            {
+                id: 'epigraph',
+                label: t('frontMatter.epigraph'),
+                checked: false,
+            },
+            {
+                id: 'toc',
+                label: t('frontMatter.tableOfContents'),
+                checked: false,
+            },
+        ],
+        [t],
+    );
+
+    const initialBackMatter: MatterItem[] = useMemo(() => {
+        const items: MatterItem[] = [];
+        if (hasEpilogue) {
+            items.push({
+                id: 'epilogue',
+                label: t('backMatter.epilogue'),
+                checked: false,
+            });
+        }
+        items.push(
+            {
+                id: 'acknowledgments',
+                label: t('backMatter.acknowledgments'),
+                checked: false,
+                settingsSection: 'acknowledgment',
+            },
+            {
+                id: 'about-author',
+                label: t('backMatter.aboutTheAuthor'),
+                checked: false,
+                settingsSection: 'about-author',
+            },
+            {
+                id: 'also-by',
+                label: t('backMatter.alsoBy'),
+                checked: false,
+            },
+        );
+        return items;
+    }, [t, hasEpilogue]);
+
+    const [frontMatter, setFrontMatter] = useState(initialFrontMatter);
+    const [backMatter, setBackMatter] = useState(initialBackMatter);
+
+    // If hasEpilogue changes, we need to reset back matter
+    const [prevHasEpilogue, setPrevHasEpilogue] = useState(hasEpilogue);
+    if (prevHasEpilogue !== hasEpilogue) {
+        setPrevHasEpilogue(hasEpilogue);
+        setBackMatter(initialBackMatter);
+    }
 
     const includeToc = useMemo(
         () => frontMatter.find((item) => item.id === 'toc')?.checked ?? false,
         [frontMatter],
+    );
+
+    // When epilogue is checked in back matter, hide epilogue chapters from the list
+    const epilogueChecked = useMemo(
+        () =>
+            backMatter.find((item) => item.id === 'epilogue')?.checked ?? false,
+        [backMatter],
+    );
+
+    const visibleChapters = useMemo(
+        () =>
+            epilogueChecked
+                ? orderedChapters.filter((ch) => !ch.is_epilogue)
+                : orderedChapters,
+        [orderedChapters, epilogueChecked],
     );
 
     const handleToggleChapter = useCallback((id: number) => {
@@ -165,6 +287,10 @@ export default function Export({
             include_act_breaks: includeActBreaks,
             include_table_of_contents: includeToc,
             show_page_numbers: showPageNumbers,
+            font_pairing: fontPairing,
+            scene_break_style: sceneBreakStyle,
+            drop_caps: dropCaps,
+            include_cover: includeCover,
         };
 
         if (format === 'pdf') {
@@ -194,6 +320,10 @@ export default function Export({
         fontSize,
         frontMatter,
         backMatter,
+        fontPairing,
+        sceneBreakStyle,
+        dropCaps,
+        includeCover,
     ]);
 
     return (
@@ -208,10 +338,11 @@ export default function Export({
                 />
 
                 <ExportReadingOrder
+                    bookId={book.id}
                     storylines={storylines}
                     selectedChapterIds={selectedChapterIds}
                     onToggleChapter={handleToggleChapter}
-                    orderedChapters={orderedChapters}
+                    orderedChapters={visibleChapters}
                     onReorder={handleReorder}
                     frontMatter={frontMatter}
                     onToggleFrontMatter={handleToggleFrontMatter}
@@ -223,7 +354,7 @@ export default function Export({
                     format={format}
                     onFormatChange={setFormat}
                     template={template}
-                    onTemplateChange={setTemplate}
+                    onTemplateChange={handleTemplateChange}
                     trimSize={trimSize}
                     onTrimSizeChange={setTrimSize}
                     fontSize={fontSize}
@@ -237,6 +368,19 @@ export default function Export({
                     onShowPageNumbersChange={handleTogglePageNumbers}
                     exporting={exporting}
                     onExport={handleExport}
+                    templates={templates}
+                    fontPairings={fontPairings}
+                    sceneBreakStyles={sceneBreakStyles}
+                    fontPairing={fontPairing}
+                    onFontPairingChange={setFontPairing}
+                    sceneBreakStyle={sceneBreakStyle}
+                    onSceneBreakStyleChange={setSceneBreakStyle}
+                    dropCaps={dropCaps}
+                    onDropCapsChange={setDropCaps}
+                    isCustomized={isCustomized}
+                    includeCover={includeCover}
+                    onIncludeCoverChange={setIncludeCover}
+                    hasCover={hasCover}
                 />
 
                 <ExportPreview
@@ -252,6 +396,11 @@ export default function Export({
                     orderedChapters={orderedChapters}
                     frontMatter={frontMatter}
                     backMatter={backMatter}
+                    template={template}
+                    fontPairing={fontPairing}
+                    sceneBreakStyle={sceneBreakStyle}
+                    dropCaps={dropCaps}
+                    includeCover={includeCover}
                 />
             </div>
         </>

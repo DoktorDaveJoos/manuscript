@@ -1,8 +1,11 @@
 import { Link } from '@inertiajs/react';
-import { Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { SuggestedNext as SuggestedNextType } from '@/types/models';
 import { show as showChapter } from '@/actions/App/Http/Controllers/ChapterController';
+import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import SectionLabel from '@/components/ui/SectionLabel';
+import { formatTimeAgo } from '@/lib/utils';
+import type { SuggestedNext as SuggestedNextType } from '@/types/models';
 
 export default function SuggestedNext({
     suggestion,
@@ -13,34 +16,45 @@ export default function SuggestedNext({
 }) {
     const { t } = useTranslation('dashboard');
 
-    return (
-        <div className="rounded-xl border border-border-light bg-surface-card p-6">
-            <div className="flex items-start gap-4">
-                <Check size={20} className="mt-0.5 shrink-0 text-accent" />
+    const description =
+        suggestion.description ||
+        (suggestion.last_edited_at
+            ? t('suggestedNext.lastEdited', {
+                  timeAgo: formatTimeAgo(
+                      suggestion.last_edited_at,
+                      t,
+                      'aiInsights.timeAgo',
+                  ),
+              })
+            : '');
 
-                <div className="flex flex-col gap-1.5">
-                    <span className="text-[11px] font-medium tracking-[0.08em] text-accent uppercase">
-                        {t('suggestedNext.label')}
-                    </span>
+    return (
+        <div className="flex flex-col gap-3">
+            <SectionLabel>{t('suggestedNext.pickUpLabel')}</SectionLabel>
+            <Card className="flex items-center justify-between gap-4 p-6">
+                <div className="flex min-w-0 flex-col gap-1">
                     <h3 className="text-base font-semibold text-ink">
                         {suggestion.title}
                     </h3>
-                    <p className="text-[13px] leading-[1.4] text-ink-soft">
-                        {suggestion.description}
-                    </p>
-                    {suggestion.chapter_id && (
+                    {description && (
+                        <p className="text-[13px] leading-[1.4] text-ink-muted">
+                            {description}
+                        </p>
+                    )}
+                </div>
+                {suggestion.chapter_id && (
+                    <Button asChild>
                         <Link
                             href={showChapter.url({
                                 book: bookId,
                                 chapter: suggestion.chapter_id,
                             })}
-                            className="mt-1 text-[13px] font-medium text-accent"
                         >
-                            {t('suggestedNext.openInEditor')} &rarr;
+                            {t('suggestedNext.continueWriting')}
                         </Link>
-                    )}
-                </div>
-            </div>
+                    </Button>
+                )}
+            </Card>
         </div>
     );
 }

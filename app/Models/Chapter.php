@@ -37,6 +37,7 @@ class Chapter extends Model
             'sensory_grounding' => 'integer',
             'analyzed_at' => 'datetime',
             'ai_prepared_at' => 'datetime',
+            'is_epilogue' => 'boolean',
         ];
     }
 
@@ -178,6 +179,21 @@ class Chapter extends Model
                 $q->whereColumn('content_hash', '!=', 'prepared_content_hash')
                     ->orWhereNull('prepared_content_hash');
             });
+    }
+
+    /**
+     * Sync the current version's content with the latest scene content.
+     * Call this before creating a new version so the outgoing version
+     * captures the editor state (edits are saved to scenes, not versions).
+     */
+    public function syncCurrentVersionContent(): string
+    {
+        $this->loadMissing(['scenes', 'currentVersion']);
+        $content = $this->getFullContent();
+
+        $this->currentVersion?->update(['content' => $content]);
+
+        return $content;
     }
 
     public function getFullContent(): string

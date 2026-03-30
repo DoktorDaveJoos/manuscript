@@ -3,21 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ExportFormat;
+use App\Enums\FontPairing;
+use App\Enums\SceneBreakStyle;
 use App\Enums\TrimSize;
 use App\Http\Requests\ExportBookRequest;
-use App\Models\AppSetting;
 use App\Models\Book;
 use App\Services\Export\ContentPreparer;
 use App\Services\Export\Exporters\PdfExporter;
 use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
 use App\Services\Export\FontService;
+use App\Services\Export\Templates\ClassicTemplate;
+use App\Services\Export\Templates\ElegantTemplate;
+use App\Services\Export\Templates\ModernTemplate;
 use App\Services\FreeTierLimits;
 use App\Services\WritingStyleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Native\Desktop\Dialog;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BookSettingsController extends Controller
@@ -105,16 +110,16 @@ class BookSettingsController extends Controller
         $book->load('storylines', 'acts');
 
         $chapters = $book->chapters()
-            ->select('id', 'book_id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count')
+            ->select('id', 'book_id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count', 'is_epilogue')
             ->with(['scenes' => fn ($q) => $q->orderBy('sort_order')->select('id', 'chapter_id', 'content')])
             ->orderBy('reader_order')
             ->get();
 
         return Inertia::render('books/export', [
-            'book' => $book->only('id', 'title', 'author'),
+            'book' => $book->only('id', 'title', 'author', 'cover_image_path'),
             'storylines' => $book->storylines->map(fn ($s) => $s->only('id', 'name', 'color', 'type')),
             'chapters' => $chapters->map(fn ($ch) => [
-                ...$ch->only('id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count'),
+                ...$ch->only('id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count', 'is_epilogue'),
                 'content' => $ch->getContentWithSceneBreaks(),
             ]),
             'trimSizes' => collect(TrimSize::cases())->map(function ($t) {
@@ -128,9 +133,34 @@ class BookSettingsController extends Controller
                 ];
             }),
             'acts' => $book->acts->map(fn ($a) => $a->only('id', 'number', 'title')),
-            'copyrightText' => (string) AppSetting::get('copyright_text', ''),
-            'acknowledgmentText' => (string) AppSetting::get('acknowledgment_text', ''),
-            'aboutAuthorText' => (string) AppSetting::get('about_author_text', ''),
+            'copyrightText' => $book->copyright_text ?? '',
+            'acknowledgmentText' => $book->acknowledgment_text ?? '',
+            'aboutAuthorText' => $book->about_author_text ?? '',
+            'templates' => collect([new ClassicTemplate, new ModernTemplate, new ElegantTemplate])
+                ->map(function ($t) {
+                    $pairing = $t->defaultFontPairing();
+
+                    return [
+                        'slug' => $t->slug(),
+                        'name' => $t->name(),
+                        'pack' => 'Basic',
+                        'defaultFontPairing' => $pairing->value,
+                        'defaultSceneBreakStyle' => $t->defaultSceneBreakStyle()->value,
+                        'defaultDropCaps' => $t->defaultDropCaps(),
+                        'headingFont' => $pairing->headingFont(),
+                        'bodyFont' => $pairing->bodyFont(),
+                    ];
+                }),
+            'fontPairings' => collect(FontPairing::cases())->map(fn ($fp) => [
+                'value' => $fp->value,
+                'label' => $fp->label(),
+                'headingFont' => $fp->headingFont(),
+                'bodyFont' => $fp->bodyFont(),
+            ]),
+            'sceneBreakStyles' => collect(SceneBreakStyle::cases())->map(fn ($s) => [
+                'value' => $s->value,
+                'label' => $s->label(),
+            ]),
         ]);
     }
 
@@ -149,7 +179,44 @@ class BookSettingsController extends Controller
             return response()->json(['error' => 'PDF export requires the desktop app'], 422);
         }
 
+        if (config('nativephp-internal.running')) {
+            return $this->exportWithNativeDialog($book, $validated, $service);
+        }
+
         return $service->export($book, $validated);
+    }
+
+    private function exportWithNativeDialog(Book $book, array $validated, ExportService $service): JsonResponse
+    {
+        $format = ExportFormat::from($validated['format'] ?? 'docx');
+        $downloadName = ExportService::downloadName($book, $format);
+
+        // Generate the export file first so the user doesn't wait on both generation + dialog
+        $tempPath = $service->exportToPath($book, $validated);
+
+        try {
+            $savePath = app(Dialog::class)
+                ->title(__('Save Export'))
+                ->defaultPath($downloadName)
+                ->filter(strtoupper($format->extension()), [$format->extension()])
+                ->button(__('Save'))
+                ->asSheet()
+                ->save();
+
+            if (! $savePath) {
+                return response()->json(['cancelled' => true]);
+            }
+
+            if (! @copy($tempPath, $savePath)) {
+                return response()->json(['error' => 'Failed to save export file'], 500);
+            }
+
+            return response()->json(['success' => true]);
+        } catch (\Throwable) {
+            return response()->json(['error' => 'Save dialog unavailable'], 500);
+        } finally {
+            @unlink($tempPath);
+        }
     }
 
     public function previewPdf(ExportBookRequest $request, Book $book): JsonResponse
@@ -161,7 +228,7 @@ class BookSettingsController extends Controller
         $validated = $request->validated();
         $validated['preview_format'] = ExportFormat::from($validated['format'] ?? 'pdf')->value;
         $chapters = ExportService::resolveChapters($book, $validated);
-        ExportService::injectMatterText($validated);
+        ExportService::injectMatterText($validated, $book);
         $options = ExportOptions::fromArray($validated);
 
         $contentPreparer = new ContentPreparer;

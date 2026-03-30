@@ -189,7 +189,7 @@ test('AnalyzeChapterJob completes even if ManuscriptAnalyzer throws', function (
         return ['characters' => [], 'entities' => []];
     });
     ManuscriptAnalyzer::fake(function () {
-        throw new \RuntimeException('Manuscript analysis exploded');
+        throw new RuntimeException('Manuscript analysis exploded');
     });
 
     $book = Book::factory()->withAi()->create();

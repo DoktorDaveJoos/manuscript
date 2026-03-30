@@ -23,6 +23,9 @@ class UpdateWikiEntryRequest extends FormRequest
             'kind' => ['sometimes', Rule::enum(WikiEntryKind::class)],
             'type' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'first_appearance' => ['nullable', 'integer', 'exists:chapters,id'],
+            'chapter_ids' => ['nullable', 'array'],
+            'chapter_ids.*' => ['integer', 'exists:chapters,id'],
         ];
     }
 }

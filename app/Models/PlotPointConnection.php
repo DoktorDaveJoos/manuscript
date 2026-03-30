@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Enums\ConnectionType;
+use Database\Factories\PlotPointConnectionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PlotPointConnection extends Model
 {
-    /** @use HasFactory<\Database\Factories\PlotPointConnectionFactory> */
+    /** @use HasFactory<PlotPointConnectionFactory> */
     use HasFactory;
 
     protected $guarded = [];

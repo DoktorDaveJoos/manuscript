@@ -21,6 +21,7 @@ use App\Models\WritingSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -116,6 +117,13 @@ class ChapterController extends Controller
             'chapterAnalyses' => Inertia::defer(fn () => $chapter->analyses()
                 ->get()
                 ->keyBy(fn ($a) => $a->type->value)),
+            'editorialReview' => Inertia::defer(function () use ($book, $chapter) {
+                return $book->editorialReviews()
+                    ->where('status', 'completed')
+                    ->latest()
+                    ->with(['chapterNotes' => fn ($q) => $q->where('chapter_id', $chapter->id)])
+                    ->first();
+            }),
         ]);
     }
 
@@ -279,6 +287,7 @@ class ChapterController extends Controller
     public function restoreVersion(Book $book, Chapter $chapter, ChapterVersion $version): RedirectResponse
     {
         DB::transaction(function () use ($chapter, $version) {
+            $chapter->syncCurrentVersionContent();
             $chapter->versions()->update(['is_current' => false]);
 
             $latestVersionNumber = $chapter->versions()->max('version_number');
@@ -300,8 +309,7 @@ class ChapterController extends Controller
     public function createSnapshot(CreateSnapshotRequest $request, Book $book, Chapter $chapter): JsonResponse
     {
         $version = DB::transaction(function () use ($request, $chapter) {
-            $chapter->loadMissing('scenes');
-            $content = $chapter->getFullContent();
+            $content = $chapter->syncCurrentVersionContent();
 
             $chapter->versions()->update(['is_current' => false]);
             $latestVersionNumber = $chapter->versions()->max('version_number');
@@ -353,6 +361,7 @@ class ChapterController extends Controller
     private function applyVersion(Chapter $chapter, ChapterVersion $version, string $content): void
     {
         DB::transaction(function () use ($chapter, $version, $content) {
+            $chapter->syncCurrentVersionContent();
             $chapter->versions()->where('is_current', true)->update(['is_current' => false]);
 
             $version->update([
@@ -499,11 +508,11 @@ class ChapterController extends Controller
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, Chapter>  $chapters
-     * @param  \Illuminate\Support\Collection<int, int>  $storylineSortOrders
-     * @return \Illuminate\Support\Collection<int, Chapter>
+     * @param  Collection<int, Chapter>  $chapters
+     * @param  Collection<int, int>  $storylineSortOrders
+     * @return Collection<int, Chapter>
      */
-    private function roundRobinByStoryline($chapters, $storylineSortOrders): \Illuminate\Support\Collection
+    private function roundRobinByStoryline($chapters, $storylineSortOrders): Collection
     {
         $byStoryline = $chapters->groupBy('storyline_id');
 

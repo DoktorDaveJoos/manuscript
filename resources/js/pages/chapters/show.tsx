@@ -1,15 +1,34 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { DOMSerializer } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    MessageCircle,
+    NotebookPen,
+    NotebookText,
+    Sparkles,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+    show,
+    split,
+    updateTitle,
+} from '@/actions/App/Http/Controllers/ChapterController';
+import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
+import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
+import AccessBar from '@/components/editor/AccessBar';
+import type {
+    AccessBarItemConfig,
+    PanelId,
+} from '@/components/editor/AccessBar';
 import AiChatDrawer from '@/components/editor/AiChatDrawer';
 import AiPanel from '@/components/editor/AiPanel';
 import CommandPalette from '@/components/editor/CommandPalette';
 import DiffView from '@/components/editor/DiffView';
 import EditorBar from '@/components/editor/EditorBar';
 import type { SaveStatus } from '@/components/editor/EditorBar';
+import EditorialReviewPanel from '@/components/editor/EditorialReviewPanel';
 import FormattingToolbar from '@/components/editor/FormattingToolbar';
 import GlobalFindDrawer from '@/components/editor/GlobalFindDrawer';
 import NotesPanel from '@/components/editor/NotesPanel';
@@ -17,9 +36,12 @@ import Sidebar from '@/components/editor/Sidebar';
 import VersionHistoryOverlay from '@/components/editor/VersionHistoryOverlay';
 import WritingSurface from '@/components/editor/WritingSurface';
 import Kbd from '@/components/ui/Kbd';
+import SlidePanel from '@/components/ui/SlidePanel';
 import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
+
+import { getChapterNote } from '@/lib/editorial-constants';
 import { createChapter, jsonFetchHeaders } from '@/lib/utils';
 import type {
     Analysis,
@@ -28,15 +50,10 @@ import type {
     Chapter,
     Character,
     CharacterChapterPivot,
+    EditorialReview,
     ProsePassRule,
     Scene,
 } from '@/types/models';
-import {
-    show,
-    split,
-    updateTitle,
-} from '@/actions/App/Http/Controllers/ChapterController';
-import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 
 type ChapterWithRelations = Chapter & {
     characters?: (Character & { pivot: CharacterChapterPivot })[];
@@ -73,24 +90,47 @@ async function splitAtCursor(
     return { belowHtml, currentIndex };
 }
 
+const VALID_PANELS: Set<PanelId> = new Set([
+    'notes',
+    'ai',
+    'chat',
+    'editorial',
+]);
+
 export default function ChapterShow({
     book,
     chapter,
     versionCount,
     prosePassRules,
     chapterAnalyses,
+    editorialReview: initialEditorialReview,
 }: {
     book: Book;
     chapter: ChapterWithRelations;
     versionCount: number;
     prosePassRules?: ProsePassRule[];
     chapterAnalyses?: Record<string, Analysis>;
+    editorialReview?: EditorialReview | null;
 }) {
     const { t } = useTranslation('editor');
     const pendingVersion = chapter.pending_version ?? null;
     const sidebarStorylines = useSidebarStorylines();
-    const { visible: aiVisible, licensed: isLicensed } = useAiFeatures();
+    const { visible: aiVisible } = useAiFeatures();
     const { app_settings } = usePage<{ app_settings: AppSettings }>().props;
+    const [pendingTitleSelect, setPendingTitleSelect] = useState(
+        () => chapter.word_count === 0,
+    );
+    const prevChapterIdRef = useRef(chapter.id);
+    useEffect(() => {
+        if (chapter.id !== prevChapterIdRef.current) {
+            prevChapterIdRef.current = chapter.id;
+            setPendingTitleSelect(chapter.word_count === 0);
+        }
+    }, [chapter.id, chapter.word_count]);
+    const handleTitleSelectHandled = useCallback(
+        () => setPendingTitleSelect(false),
+        [],
+    );
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
     const [chapterTitle, setChapterTitle] = useState(chapter.title);
     const [scenes, setScenes] = useState<Scene[]>(chapter.scenes ?? []);
@@ -113,34 +153,52 @@ export default function ChapterShow({
         useState<SearchHighlight | null>(null);
     const [isLocalFindOpen, setIsLocalFindOpen] = useState(false);
     const [localFindShowReplace, setLocalFindShowReplace] = useState(false);
-    const [isNotesOpen, setIsNotesOpen] = useState(() => {
+    const editorialReview = initialEditorialReview ?? null;
+
+    const [openPanels, setOpenPanels] = useState<Set<PanelId>>(() => {
         try {
-            return localStorage.getItem('manuscript:notes-open') === 'true';
+            const stored = localStorage.getItem('manuscript:open-panels');
+            if (!stored) return new Set();
+            const parsed: unknown = JSON.parse(stored);
+            if (!Array.isArray(parsed)) return new Set();
+            return new Set(
+                parsed.filter((p): p is PanelId => VALID_PANELS.has(p)),
+            );
         } catch {
-            return false;
+            return new Set();
         }
     });
 
-    const toggleNotes = useCallback(() => {
-        setIsNotesOpen((prev) => {
-            const next = !prev;
-            try {
-                localStorage.setItem('manuscript:notes-open', String(next));
-            } catch {
-                /* no-op */
+    useEffect(() => {
+        try {
+            localStorage.setItem(
+                'manuscript:open-panels',
+                JSON.stringify([...openPanels]),
+            );
+        } catch {
+            /* no-op */
+        }
+    }, [openPanels]);
+
+    const togglePanel = useCallback((panel: PanelId) => {
+        setOpenPanels((prev) => {
+            const next = new Set(prev);
+            if (next.has(panel)) {
+                next.delete(panel);
+            } else {
+                next.add(panel);
             }
             return next;
         });
     }, []);
 
-    const closeNotes = useCallback(() => {
-        setIsNotesOpen(false);
-        try {
-            localStorage.setItem('manuscript:notes-open', 'false');
-        } catch {
-            /* no-op */
-        }
-        activeEditorRef.current?.commands.focus();
+    const closePanel = useCallback((panel: PanelId) => {
+        setOpenPanels((prev) => {
+            if (!prev.has(panel)) return prev;
+            const next = new Set(prev);
+            next.delete(panel);
+            return next;
+        });
     }, []);
 
     const [scenesVisible, setScenesVisible] = useState(
@@ -207,64 +265,71 @@ export default function ChapterShow({
             document.exitFullscreen?.().catch(() => {});
     }, []);
 
-    const [editorFont, setEditorFont] = useState(() => {
-        try {
-            return (
-                localStorage.getItem('manuscript:editor-font') || 'eb-garamond'
+    const editorFont = app_settings.editor_font;
+    const editorFontSize = app_settings.editor_font_size;
+
+    const closePanelAndFocus = useCallback(
+        (panel: PanelId) => {
+            closePanel(panel);
+            activeEditorRef.current?.commands.focus();
+        },
+        [closePanel],
+    );
+    const closeNotes = useCallback(
+        () => closePanelAndFocus('notes'),
+        [closePanelAndFocus],
+    );
+    const closeAi = useCallback(
+        () => closePanelAndFocus('ai'),
+        [closePanelAndFocus],
+    );
+    const closeChat = useCallback(
+        () => closePanelAndFocus('chat'),
+        [closePanelAndFocus],
+    );
+    const closeEditorial = useCallback(
+        () => closePanelAndFocus('editorial'),
+        [closePanelAndFocus],
+    );
+
+    const { t: tAi } = useTranslation('ai');
+    const { t: tEditorial } = useTranslation('editorial-review');
+
+    const chapterNote = getChapterNote(
+        editorialReview?.chapter_notes,
+        chapter.id,
+    );
+
+    const accessBarItems = useMemo(() => {
+        const items: AccessBarItemConfig[] = [
+            {
+                id: 'notes',
+                icon: NotebookPen,
+                label: t('toolbar.notes'),
+            },
+        ];
+        if (aiVisible) {
+            items.push(
+                {
+                    id: 'ai',
+                    icon: Sparkles,
+                    label: tAi('headerTitle'),
+                },
+                {
+                    id: 'chat',
+                    icon: MessageCircle,
+                    label: tAi('askAi'),
+                },
+                {
+                    id: 'editorial',
+                    icon: NotebookText,
+                    label: tEditorial('panel.title'),
+                    badge: chapterNote ? 1 : 0,
+                },
             );
-        } catch {
-            return 'eb-garamond';
         }
-    });
-
-    const handleFontChange = useCallback((fontId: string) => {
-        setEditorFont(fontId);
-        try {
-            localStorage.setItem('manuscript:editor-font', fontId);
-        } catch {
-            // Ignore storage errors
-        }
-    }, []);
-
-    const [editorFontSize, setEditorFontSize] = useState(() => {
-        try {
-            const stored = localStorage.getItem('manuscript:editor-font-size');
-            return stored ? Number(stored) : 18;
-        } catch {
-            return 18;
-        }
-    });
-
-    const handleFontSizeChange = useCallback((size: number) => {
-        setEditorFontSize(size);
-        try {
-            localStorage.setItem('manuscript:editor-font-size', String(size));
-        } catch {
-            // Ignore storage errors
-        }
-    }, []);
-
-    const [isChatOpen, setIsChatOpen] = useState(false);
-
-    const [isAiPanelOpen, setIsAiPanelOpen] = useState(() => {
-        try {
-            return localStorage.getItem('manuscript:ai-panel-open') !== 'false';
-        } catch {
-            return true;
-        }
-    });
-
-    const toggleAiPanel = useCallback(() => {
-        setIsAiPanelOpen((prev) => {
-            const next = !prev;
-            try {
-                localStorage.setItem('manuscript:ai-panel-open', String(next));
-            } catch {
-                // Ignore storage errors
-            }
-            return next;
-        });
-    }, []);
+        return items;
+    }, [aiVisible, t, tAi, tEditorial, chapterNote]);
 
     // Reset scenes and title when chapter changes (e.g. after version restore)
     useEffect(() => {
@@ -549,6 +614,13 @@ export default function ChapterShow({
         createChapter(book.id, chapter.storyline_id, sidebarStorylines);
     }, [book, chapter.storyline_id, handleBeforeNavigate, sidebarStorylines]);
 
+    const handleSidebarChapterRename = useCallback(
+        (id: number, title: string) => {
+            if (id === chapter.id) setChapterTitle(title);
+        },
+        [chapter.id],
+    );
+
     // Callbacks for sidebar-initiated scene mutations
     const handleSidebarSceneRename = useCallback(
         (sceneId: number, newTitle: string) => {
@@ -607,6 +679,7 @@ export default function ChapterShow({
                     activeChapterWordCount={wordCount}
                     onBeforeNavigate={handleBeforeNavigate}
                     activeScenes={scenes}
+                    onChapterRename={handleSidebarChapterRename}
                     onSceneRename={handleSidebarSceneRename}
                     onSceneDelete={handleSidebarSceneDelete}
                     onSceneReorder={handleSidebarSceneReorder}
@@ -662,12 +735,7 @@ export default function ChapterShow({
                             >
                                 <FormattingToolbar
                                     editor={activeEditor}
-                                    editorFont={editorFont}
-                                    onFontChange={handleFontChange}
-                                    editorFontSize={editorFontSize}
-                                    onFontSizeChange={handleFontSizeChange}
                                     onToggleFocusMode={toggleFocusMode}
-                                    onToggleNotes={toggleNotes}
                                     isTypewriterMode={isTypewriterMode}
                                     onToggleTypewriterMode={
                                         toggleTypewriterMode
@@ -680,6 +748,8 @@ export default function ChapterShow({
                                 bookId={book.id}
                                 chapterId={chapter.id}
                                 title={chapterTitle}
+                                autoSelectTitle={pendingTitleSelect}
+                                onTitleSelectHandled={handleTitleSelectHandled}
                                 povCharacterName={povCharacterName}
                                 timelineLabel={timelineLabel}
                                 onTitleUpdate={handleTitleUpdate}
@@ -714,68 +784,107 @@ export default function ChapterShow({
                                 onAddScene={handlePaletteAddScene}
                                 onEnterFocusMode={toggleFocusMode}
                                 isFocusMode={isFocusMode}
-                                onToggleNotes={toggleNotes}
+                                panelItems={accessBarItems}
+                                openPanels={openPanels}
+                                onTogglePanel={togglePanel}
                                 isTypewriterMode={isTypewriterMode}
                                 onToggleTypewriterMode={toggleTypewriterMode}
-                                licensed={isLicensed}
                             />
                         </>
                     )}
                 </div>
 
-                {isNotesOpen && !isFocusMode && !pendingVersion && (
-                    <NotesPanel
-                        bookId={book.id}
-                        chapterId={chapter.id}
-                        initialNotes={chapterNotes}
-                        onNotesChange={setChapterNotes}
-                        onClose={closeNotes}
-                    />
-                )}
+                {/* Right-side panels — fixed order: notes, find, ai, chat */}
+                {!isFocusMode && !pendingVersion && (
+                    <>
+                        <SlidePanel
+                            open={openPanels.has('notes')}
+                            onClose={closeNotes}
+                            storageKey="manuscript:notes-width"
+                            defaultWidth={260}
+                        >
+                            <NotesPanel
+                                key={chapter.id}
+                                bookId={book.id}
+                                chapterId={chapter.id}
+                                initialNotes={chapterNotes}
+                                onNotesChange={setChapterNotes}
+                                onClose={closeNotes}
+                            />
+                        </SlidePanel>
 
-                {isFindOpen && !isFocusMode && !pendingVersion && (
-                    <GlobalFindDrawer
-                        bookId={book.id}
-                        currentChapterId={chapter.id}
-                        onClose={() => {
-                            setIsFindOpen(false);
-                            setSearchHighlight(null);
-                        }}
-                        onNavigate={handleFindNavigate}
-                        onSearchChange={setSearchHighlight}
-                        showReplace={findShowReplace}
-                    />
-                )}
+                        {isFindOpen && (
+                            <GlobalFindDrawer
+                                bookId={book.id}
+                                currentChapterId={chapter.id}
+                                onClose={() => {
+                                    setIsFindOpen(false);
+                                    setSearchHighlight(null);
+                                }}
+                                onNavigate={handleFindNavigate}
+                                onSearchChange={setSearchHighlight}
+                                showReplace={findShowReplace}
+                            />
+                        )}
 
-                {!pendingVersion && aiVisible && (
-                    <div
-                        className={`flex overflow-hidden transition-[width,opacity] duration-300 ${isFocusMode ? 'w-0 opacity-0' : ''}`}
-                    >
-                        <AiPanel
-                            characters={
-                                (chapter.characters as (Character & {
-                                    pivot: CharacterChapterPivot;
-                                })[]) ?? []
-                            }
-                            book={book}
-                            chapter={chapter}
-                            isOpen={isAiPanelOpen}
-                            onToggle={toggleAiPanel}
-                            onError={(msg) => {
-                                console.error('[AiPanel]', msg);
-                                setSaveStatus('error');
-                            }}
-                            onOpenChat={() => setIsChatOpen(true)}
-                            chapterAnalyses={chapterAnalyses}
-                        />
-                        {isChatOpen && (
+                        <SlidePanel
+                            open={openPanels.has('ai') && aiVisible}
+                            onClose={closeAi}
+                            storageKey="manuscript:ai-panel-width"
+                            defaultWidth={272}
+                        >
+                            <AiPanel
+                                characters={
+                                    (chapter.characters as (Character & {
+                                        pivot: CharacterChapterPivot;
+                                    })[]) ?? []
+                                }
+                                book={book}
+                                chapter={chapter}
+                                onClose={closeAi}
+                                onError={(msg) => {
+                                    console.error('[AiPanel]', msg);
+                                    setSaveStatus('error');
+                                }}
+                                chapterAnalyses={chapterAnalyses}
+                            />
+                        </SlidePanel>
+
+                        <SlidePanel
+                            open={openPanels.has('chat') && aiVisible}
+                            onClose={closeChat}
+                            storageKey="manuscript:chat-width"
+                            defaultWidth={320}
+                            maxWidth={700}
+                        >
                             <AiChatDrawer
                                 book={book}
                                 chapter={chapter}
-                                onClose={() => setIsChatOpen(false)}
+                                onClose={closeChat}
                             />
-                        )}
-                    </div>
+                        </SlidePanel>
+
+                        <SlidePanel
+                            open={openPanels.has('editorial') && aiVisible}
+                            onClose={closeEditorial}
+                            storageKey="manuscript:editorial-panel-width"
+                            defaultWidth={280}
+                        >
+                            <EditorialReviewPanel
+                                chapterNote={chapterNote}
+                                editorialReviewUrl={editorialReviewIndex.url(
+                                    book,
+                                )}
+                                onClose={closeEditorial}
+                            />
+                        </SlidePanel>
+
+                        <AccessBar
+                            items={accessBarItems}
+                            openPanels={openPanels}
+                            onToggle={togglePanel}
+                        />
+                    </>
                 )}
             </div>
 

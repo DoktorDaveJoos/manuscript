@@ -1,10 +1,11 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
+import { index as booksIndex } from '@/actions/App/Http/Controllers/BookController';
 import BookSwitcher from '@/components/settings/BookSwitcher';
 import NavItem from '@/components/ui/NavItem';
+import SectionLabel from '@/components/ui/SectionLabel';
 import UpdateBanner from '@/components/ui/UpdateBanner';
-import { index as booksIndex } from '@/actions/App/Http/Controllers/BookController';
 
 type ActiveSection =
     | 'appearance'
@@ -69,9 +70,12 @@ export default function SettingsLayout({
 
                         {/* App settings */}
                         <div className="px-2.5">
-                            <span className="mb-1.5 block px-2.5 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                            <SectionLabel
+                                variant="section"
+                                className="mb-1.5 block px-2.5"
+                            >
                                 {t('section.app')}
-                            </span>
+                            </SectionLabel>
                             <div className="flex flex-col gap-0.5">
                                 <NavItem
                                     label={t('section.appearance')}

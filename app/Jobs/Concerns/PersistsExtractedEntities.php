@@ -4,6 +4,7 @@ namespace App\Jobs\Concerns;
 
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Support\EntityNameMatcher;
 use Illuminate\Database\Eloquent\Model;
 
 trait PersistsExtractedEntities
@@ -15,21 +16,31 @@ trait PersistsExtractedEntities
      */
     protected function persistExtractedEntities(Book $book, Chapter $chapter, array $response): void
     {
-        $this->persistCharacters($book, $chapter, $response['characters'] ?? []);
-        $this->persistWikiEntries($book, $chapter, $response['entities'] ?? []);
+        $characters = $response['characters'] ?? [];
+        $entities = $response['entities'] ?? [];
+
+        if (empty($characters) && empty($entities)) {
+            return;
+        }
+
+        $matcher = new EntityNameMatcher(
+            $book->characters()->get(),
+            $book->wikiEntries()->get(),
+        );
+
+        $this->persistCharacters($book, $chapter, $characters, $matcher);
+        $this->persistWikiEntries($book, $chapter, $entities, $matcher);
     }
 
     /**
      * @param  array<int, array<string, mixed>>  $characters
      */
-    private function persistCharacters(Book $book, Chapter $chapter, array $characters): void
+    private function persistCharacters(Book $book, Chapter $chapter, array $characters, EntityNameMatcher $matcher): void
     {
         if (empty($characters)) {
             return;
         }
 
-        // Pre-fetch all existing characters for this book in one query
-        $existingCharacters = $book->characters()->get()->keyBy('name');
         $readerOrderCache = [$chapter->id => $chapter->reader_order];
 
         foreach ($characters as $characterData) {
@@ -38,9 +49,10 @@ trait PersistsExtractedEntities
             }
 
             $name = $characterData['name'];
-            $character = $existingCharacters->get($name);
+            $character = $matcher->findCharacter($name);
+            $isNew = ! $character;
 
-            if (! $character) {
+            if ($isNew) {
                 $character = $book->characters()->make(['name' => $name]);
             }
 
@@ -50,16 +62,17 @@ trait PersistsExtractedEntities
             )));
 
             $newDescription = $characterData['description'] ?? null;
-            if (! $character->description || mb_strlen($newDescription ?? '') > mb_strlen($character->description)) {
-                $character->description = $newDescription;
+            if (! $character->ai_description || mb_strlen($newDescription ?? '') > mb_strlen($character->ai_description)) {
+                $character->ai_description = $newDescription;
             }
 
-            $character->is_ai_extracted = true;
+            if ($isNew) {
+                $character->is_ai_extracted = true;
+            }
 
             $this->resolveFirstAppearance($character, $chapter, $readerOrderCache);
 
             $character->save();
-            $existingCharacters->put($name, $character);
 
             $character->chapters()->syncWithoutDetaching([
                 $chapter->id => ['role' => $characterData['role'] ?? 'mentioned'],
@@ -70,14 +83,12 @@ trait PersistsExtractedEntities
     /**
      * @param  array<int, array<string, mixed>>  $entities
      */
-    private function persistWikiEntries(Book $book, Chapter $chapter, array $entities): void
+    private function persistWikiEntries(Book $book, Chapter $chapter, array $entities, EntityNameMatcher $matcher): void
     {
         if (empty($entities)) {
             return;
         }
 
-        // Pre-fetch all existing wiki entries for this book in one query
-        $existingEntries = $book->wikiEntries()->get()->keyBy(fn ($e) => $e->name.'|'.$e->kind->value);
         $readerOrderCache = [$chapter->id => $chapter->reader_order];
 
         foreach ($entities as $entityData) {
@@ -85,10 +96,10 @@ trait PersistsExtractedEntities
                 continue;
             }
 
-            $key = $entityData['name'].'|'.$entityData['kind'];
-            $entry = $existingEntries->get($key);
+            $entry = $matcher->findWikiEntry($entityData['name'], $entityData['kind']);
+            $isNew = ! $entry;
 
-            if (! $entry) {
+            if ($isNew) {
                 $entry = $book->wikiEntries()->make([
                     'name' => $entityData['name'],
                     'kind' => $entityData['kind'],
@@ -96,17 +107,19 @@ trait PersistsExtractedEntities
             }
 
             $newDescription = $entityData['description'] ?? null;
-            if (! $entry->description || mb_strlen($newDescription ?? '') > mb_strlen($entry->description)) {
-                $entry->description = $newDescription;
+            if (! $entry->ai_description || mb_strlen($newDescription ?? '') > mb_strlen($entry->ai_description)) {
+                $entry->ai_description = $newDescription;
             }
 
-            $entry->type = $entityData['type'] ?? null;
-            $entry->is_ai_extracted = true;
+            $entry->type = $entityData['type'] ?? $entry->type;
+
+            if ($isNew) {
+                $entry->is_ai_extracted = true;
+            }
 
             $this->resolveFirstAppearance($entry, $chapter, $readerOrderCache);
 
             $entry->save();
-            $existingEntries->put($key, $entry);
 
             $entry->chapters()->syncWithoutDetaching([$chapter->id => []]);
         }

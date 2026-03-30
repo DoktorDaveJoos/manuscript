@@ -6,8 +6,10 @@ use App\Models\License;
 use App\Models\Storyline;
 use App\Models\WikiEntry;
 use App\Services\FreeTierLimits;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-uses(Tests\TestCase::class, Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(TestCase::class, RefreshDatabase::class);
 
 // --- Book creation ---
 

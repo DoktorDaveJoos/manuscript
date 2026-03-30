@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AiProvider;
 use App\Enums\AiTaskCategory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -119,9 +120,9 @@ class AiSetting extends Model
     /**
      * Get all globally enabled providers.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
-    public static function enabledProviders(): \Illuminate\Database\Eloquent\Collection
+    public static function enabledProviders(): Collection
     {
         return self::query()->where('enabled', true)->get();
     }

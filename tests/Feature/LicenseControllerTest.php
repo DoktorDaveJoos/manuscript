@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\License;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -102,7 +103,7 @@ test('activate with missing key returns validation error', function () {
 });
 
 test('activate returns 503 when offline', function () {
-    Http::fake(fn (Request $request) => throw new \Illuminate\Http\Client\ConnectionException('Connection refused'));
+    Http::fake(fn (Request $request) => throw new ConnectionException('Connection refused'));
 
     $this->postJson(route('license.activate'), ['license_key' => 'MANU-AAAA-BBBB-CCCC'])
         ->assertStatus(503);
@@ -128,7 +129,7 @@ test('deactivate calls Polar API and removes license', function () {
 test('deactivate returns 503 when offline and keeps license', function () {
     License::factory()->create();
 
-    Http::fake(fn (Request $request) => throw new \Illuminate\Http\Client\ConnectionException('Connection refused'));
+    Http::fake(fn (Request $request) => throw new ConnectionException('Connection refused'));
 
     $this->postJson(route('license.deactivate'))
         ->assertStatus(503);
@@ -158,7 +159,7 @@ test('revalidate updates last_validated_at on success', function () {
 test('revalidate silently skips when offline', function () {
     $license = License::factory()->stale()->create();
 
-    Http::fake(fn (Request $request) => throw new \Illuminate\Http\Client\ConnectionException('Connection refused'));
+    Http::fake(fn (Request $request) => throw new ConnectionException('Connection refused'));
 
     $this->postJson(route('license.revalidate'))
         ->assertOk()

@@ -12,7 +12,10 @@ use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
 use App\Services\Export\FontService;
 use Illuminate\Support\Collection;
+use Mpdf\Config\ConfigVariables;
+use Mpdf\Config\FontVariables;
 use Mpdf\Mpdf;
+use Mpdf\Output\Destination;
 
 class PdfExporter implements Exporter
 {
@@ -36,7 +39,7 @@ class PdfExporter implements Exporter
     public function generatePdf(Book $book, Collection $chapters, ExportOptions $options, string $outputPath): void
     {
         $this->buildMpdf($book, $chapters, $options)
-            ->Output($outputPath, \Mpdf\Output\Destination::FILE);
+            ->Output($outputPath, Destination::FILE);
     }
 
     /**
@@ -45,7 +48,7 @@ class PdfExporter implements Exporter
     public function generatePdfString(Book $book, Collection $chapters, ExportOptions $options): string
     {
         return $this->buildMpdf($book, $chapters, $options)
-            ->Output('', \Mpdf\Output\Destination::STRING_RETURN);
+            ->Output('', Destination::STRING_RETURN);
     }
 
     /**
@@ -66,21 +69,36 @@ class PdfExporter implements Exporter
      */
     public function renderHtml(Book $book, Collection $chapters, ExportOptions $options, bool $isEbookPreview = false): string
     {
-        $preparedChapters = $this->prepareChapters($chapters);
+        $preparedChapters = $this->prepareChapters($chapters, $options);
 
+        $pairing = $options->fontPairing ?? $this->template->defaultFontPairing();
         $fontSize = $options->fontSize;
         $css = $isEbookPreview
-            ? $this->template->ebookPreviewCss($fontSize)
-            : $this->template->pdfCss($fontSize);
+            ? $this->template->ebookPreviewCss($fontSize, $pairing)
+            : $this->template->pdfCss($fontSize, $pairing);
 
-        return view('export.pdf', [
-            'book' => $book,
-            'chapters' => $preparedChapters,
-            'options' => $options,
-            'css' => $css,
-            'isEbookPreview' => $isEbookPreview,
-            'contentPreparer' => $this->contentPreparer,
-        ])->render();
+        $css .= "\n".$this->template->sceneBreakCss();
+
+        if ($options->dropCaps) {
+            $css .= "\n".$this->template->dropCapCss();
+        }
+
+        $previousLocale = app()->getLocale();
+        app()->setLocale($book->language ?? config('app.fallback_locale', 'en'));
+
+        try {
+            return view('export.pdf', [
+                'book' => $book,
+                'chapters' => $preparedChapters,
+                'options' => $options,
+                'css' => $css,
+                'isEbookPreview' => $isEbookPreview,
+                'contentPreparer' => $this->contentPreparer,
+                'template' => $this->template,
+            ])->render();
+        } finally {
+            app()->setLocale($previousLocale);
+        }
     }
 
     /**
@@ -100,15 +118,18 @@ class PdfExporter implements Exporter
             $margins = $trimSize->margins();
         }
 
-        $defaultConfig = (new \Mpdf\Config\ConfigVariables)->getDefaults();
-        $defaultFontConfig = (new \Mpdf\Config\FontVariables)->getDefaults();
+        $defaultConfig = (new ConfigVariables)->getDefaults();
+        $defaultFontConfig = (new FontVariables)->getDefaults();
 
         $fontDirs = $defaultConfig['fontDir'];
         $fontData = $defaultFontConfig['fontdata'];
 
-        if ($this->fontService->fontsAvailable()) {
-            $fontDirs[] = resource_path('fonts');
-            $fontData = array_merge($fontData, $this->fontService->mPdfFontData());
+        $pairing = $options->fontPairing ?? $this->template->defaultFontPairing();
+        $bodyFontKey = $pairing->bodyFontKey();
+
+        if ($this->fontService->fontsAvailableForPairing($pairing)) {
+            $fontDirs = array_merge($fontDirs, $this->fontService->mPdfFontDirectories());
+            $fontData = array_merge($fontData, $this->fontService->mPdfFontDataForPairing($pairing));
         }
 
         $config = [
@@ -121,7 +142,7 @@ class PdfExporter implements Exporter
             'margin_header' => $isEbookPreview ? 0 : 5,
             'margin_footer' => $isEbookPreview ? 0 : 5,
             'default_font_size' => $fontSize,
-            'default_font' => 'crimsonpro',
+            'default_font' => $bodyFontKey,
             'fontDir' => $fontDirs,
             'fontdata' => $fontData,
             'tempDir' => storage_path('app/mpdf-tmp'),
@@ -135,21 +156,28 @@ class PdfExporter implements Exporter
     /**
      * Prepare chapter content: merge scenes with scene breaks and apply drop caps.
      */
-    private function prepareChapters(Collection $chapters): Collection
+    private function prepareChapters(Collection $chapters, ExportOptions $options): Collection
     {
-        return $chapters->map(function ($chapter) {
+        $sceneBreak = $options->sceneBreakStyle ?? $this->template->defaultSceneBreakStyle();
+        $dropCaps = $options->dropCaps;
+
+        return $chapters->map(function ($chapter) use ($sceneBreak, $dropCaps) {
             $scenes = $chapter->scenes ?? collect();
             $preparedContent = '';
 
             foreach ($scenes as $sceneIndex => $scene) {
                 if ($sceneIndex > 0) {
-                    $preparedContent .= '<p class="scene-break">*&nbsp;&nbsp;*&nbsp;&nbsp;*</p>';
+                    $preparedContent .= $sceneBreak->html();
                 }
 
                 $content = $scene->content ?? '';
-                $html = $this->contentPreparer->toPdfHtml($content);
+                $html = $this->contentPreparer->toChapterHtml($content, $sceneBreak);
 
                 $preparedContent .= $html;
+            }
+
+            if ($dropCaps) {
+                $preparedContent = $this->contentPreparer->addDropCap($preparedContent);
             }
 
             $chapter->prepared_content = $preparedContent;

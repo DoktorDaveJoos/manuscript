@@ -1,92 +1,132 @@
-import { ChevronRight } from 'lucide-react';
+import { Check, ChevronRight, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { show as chapterShow } from '@/actions/App/Http/Controllers/ChapterController';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import Checkbox from '@/components/ui/Checkbox';
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/Collapsible';
-import SectionLabel from '@/components/ui/SectionLabel';
+import { severityDotColor } from '@/lib/editorial-constants';
+import { cn } from '@/lib/utils';
 import type {
     Chapter,
     EditorialReviewFinding,
     EditorialReviewSection as EditorialReviewSectionType,
-    FindingSeverity,
+    OnDiscussFinding,
 } from '@/types/models';
-
-const severityColor: Record<FindingSeverity, string> = {
-    critical: 'bg-delete',
-    warning: 'bg-accent',
-    suggestion: 'bg-ink-faint',
-};
-
-const severityTextColor: Record<FindingSeverity, string> = {
-    critical: 'text-delete',
-    warning: 'text-accent',
-    suggestion: 'text-ink-faint',
-};
-
-function ScoreBadge({ score }: { score: number | null }) {
-    if (score === null) return null;
-
-    return (
-        <span className="ml-auto rounded-full bg-neutral-bg px-2 py-0.5 text-[11px] font-medium text-ink-muted">
-            {score} / 100
-        </span>
-    );
-}
 
 function FindingItem({
     finding,
     chapters,
+    bookId,
+    isResolved,
+    onToggleResolved,
     onDiscuss,
 }: {
     finding: EditorialReviewFinding;
     chapters: Chapter[];
+    bookId: number;
+    isResolved: boolean;
+    onToggleResolved: () => void;
     onDiscuss: () => void;
 }) {
     const { t } = useTranslation('editorial-review');
+    const [open, setOpen] = useState(false);
 
-    const chapterLabels = finding.chapter_references
+    const chapterRefs = finding.chapter_references
         .map((id) => {
             const chapter = chapters.find((c) => c.id === id);
-            return chapter ? chapter.reader_order + 1 : null;
+            return chapter ? { id, label: chapter.reader_order + 1 } : null;
         })
-        .filter(Boolean);
+        .filter(Boolean) as { id: number; label: number }[];
+
+    const truncated =
+        finding.description.length > 80
+            ? finding.description.slice(0, 80) + '...'
+            : finding.description;
 
     return (
-        <div className="flex gap-3 py-2">
-            <span
-                className={`mt-[6px] size-2 shrink-0 rounded-full ${severityColor[finding.severity]}`}
-            />
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <p className="text-[13px] leading-relaxed text-ink">
-                    {finding.description}
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                    {chapterLabels.length > 0 && (
-                        <span
-                            className={`text-[11px] font-medium ${severityTextColor[finding.severity]}`}
-                        >
-                            {t('section.chapters', {
-                                chapters: chapterLabels.join(', '),
-                            })}
-                        </span>
+        <div className={cn('flex flex-col py-2', isResolved && 'opacity-50')}>
+            <div className="flex items-center gap-2">
+                <Checkbox checked={isResolved} onChange={onToggleResolved} />
+
+                <span
+                    className={cn(
+                        'size-2 shrink-0 rounded-full',
+                        severityDotColor[finding.severity],
                     )}
-                    <button
-                        type="button"
-                        onClick={onDiscuss}
-                        className="text-[11px] font-medium text-accent transition-colors hover:text-accent-dark"
-                    >
-                        {t('section.discuss')}
-                    </button>
-                </div>
-                {finding.recommendation && (
-                    <p className="text-xs leading-relaxed text-ink-muted">
-                        {finding.recommendation}
-                    </p>
+                />
+
+                <button
+                    type="button"
+                    onClick={() => setOpen(!open)}
+                    className={cn(
+                        'min-w-0 flex-1 text-left text-[13px] leading-snug text-ink',
+                        isResolved && 'line-through',
+                    )}
+                >
+                    {open ? finding.description : truncated}
+                </button>
+
+                {chapterRefs.length > 0 && (
+                    <span className="flex shrink-0 items-center gap-1">
+                        {chapterRefs.map((ref) => (
+                            <a
+                                key={ref.id}
+                                href={chapterShow.url({
+                                    book: bookId,
+                                    chapter: ref.id,
+                                })}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                }}
+                                className="rounded bg-neutral-bg px-1.5 py-0.5 text-[11px] font-medium text-ink-muted transition-colors hover:bg-border-light hover:text-ink"
+                            >
+                                {t('section.chapters', {
+                                    chapters: ref.label,
+                                })}
+                            </a>
+                        ))}
+                    </span>
                 )}
+
+                <button
+                    type="button"
+                    onClick={() => setOpen(!open)}
+                    className="shrink-0 text-ink-faint"
+                >
+                    <ChevronRight
+                        size={12}
+                        className={cn(
+                            'transition-transform duration-150',
+                            open && 'rotate-90',
+                        )}
+                    />
+                </button>
             </div>
+
+            {open && (
+                <div className="mt-2 flex flex-col gap-2 pl-6">
+                    {finding.recommendation && (
+                        <div className="rounded-md bg-neutral-bg px-3 py-2">
+                            <p className="text-[11px] font-medium text-ink-faint">
+                                {t('finding.recommendation')}
+                            </p>
+                            <p className="text-[13px] leading-relaxed text-ink-muted">
+                                {finding.recommendation}
+                            </p>
+                        </div>
+                    )}
+                    <Button variant="secondary" size="sm" onClick={onDiscuss}>
+                        <MessageCircle size={12} />
+                        {t('section.discuss')}
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }
@@ -94,74 +134,107 @@ function FindingItem({
 export default function EditorialReviewSection({
     section,
     chapters,
+    bookId,
+    resolvedSet,
+    onToggleFinding,
     onDiscussFinding,
 }: {
     section: EditorialReviewSectionType;
     chapters: Chapter[];
-    onDiscussFinding: (sectionType: string, findingIndex: number) => void;
+    bookId: number;
+    resolvedSet: Set<string>;
+    onToggleFinding: (key: string) => void;
+    onDiscussFinding: OnDiscussFinding;
 }) {
     const { t } = useTranslation('editorial-review');
     const [open, setOpen] = useState(false);
 
+    const findings = section.findings ?? [];
+    const totalFindings = findings.length;
+    const resolvedCount = findings.filter((f) => resolvedSet.has(f.key)).length;
+    const remainingCount = totalFindings - resolvedCount;
+
     return (
-        <Collapsible open={open} onOpenChange={setOpen}>
-            <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-lg px-4 py-3 transition-colors hover:bg-neutral-bg">
+        <Collapsible
+            open={open}
+            onOpenChange={setOpen}
+            className="overflow-hidden rounded-lg border border-border-light bg-surface-card"
+        >
+            <CollapsibleTrigger className="flex w-full items-center gap-2 px-4 py-3 transition-colors hover:bg-neutral-bg">
                 <ChevronRight
                     size={14}
-                    className={`shrink-0 text-ink-faint transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
+                    className={cn(
+                        'shrink-0 text-ink-faint transition-transform duration-200',
+                        open && 'rotate-90',
+                    )}
                 />
                 <span className="text-sm font-medium text-ink">
                     {t(`section.${section.type}`)}
                 </span>
-                <ScoreBadge score={section.score} />
+
+                {section.score !== null && (
+                    <Badge variant="secondary" className="ml-auto">
+                        {section.score} / 100
+                    </Badge>
+                )}
+
+                {totalFindings > 0 && (
+                    <span
+                        className={cn(
+                            'text-[11px] font-medium',
+                            section.score === null && 'ml-auto',
+                            remainingCount === 0
+                                ? 'text-status-final'
+                                : 'text-ink-faint',
+                        )}
+                    >
+                        {remainingCount === 0 ? (
+                            <span className="flex items-center gap-1">
+                                <Check size={12} />
+                                {t('section.allResolved')}
+                            </span>
+                        ) : (
+                            t('section.remaining', {
+                                count: remainingCount,
+                            })
+                        )}
+                    </span>
+                )}
             </CollapsibleTrigger>
 
             <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-[collapsible-up_200ms_ease-out] data-[state=open]:animate-[collapsible-down_200ms_ease-out]">
-                <div className="flex flex-col gap-4 px-4 pt-1 pb-4">
+                <div className="flex flex-col gap-2 px-4 pt-1 pb-4">
                     {section.summary && (
                         <p className="text-[13px] leading-relaxed text-ink-muted">
                             {section.summary}
                         </p>
                     )}
 
-                    {/* Findings */}
-                    {section.findings && section.findings.length > 0 && (
-                        <div className="flex flex-col gap-1">
-                            <SectionLabel>{t('section.findings')}</SectionLabel>
-                            <div className="flex flex-col divide-y divide-border-subtle">
-                                {section.findings.map((finding, i) => (
-                                    <FindingItem
-                                        key={i}
-                                        finding={finding}
-                                        chapters={chapters}
-                                        onDiscuss={() =>
-                                            onDiscussFinding(section.type, i)
-                                        }
-                                    />
-                                ))}
-                            </div>
+                    {totalFindings > 0 && (
+                        <div className="flex flex-col divide-y divide-border-subtle">
+                            {findings.map((finding, i) => (
+                                <FindingItem
+                                    key={finding.key}
+                                    finding={finding}
+                                    chapters={chapters}
+                                    bookId={bookId}
+                                    isResolved={resolvedSet.has(finding.key)}
+                                    onToggleResolved={() =>
+                                        onToggleFinding(finding.key)
+                                    }
+                                    onDiscuss={() =>
+                                        onDiscussFinding(section.type, i, {
+                                            description: finding.description,
+                                            severity: finding.severity,
+                                            sectionLabel: t(
+                                                `section.${section.type}`,
+                                            ),
+                                        })
+                                    }
+                                />
+                            ))}
                         </div>
                     )}
-
-                    {/* Recommendations */}
-                    {section.recommendations &&
-                        section.recommendations.length > 0 && (
-                            <div className="flex flex-col gap-2">
-                                <SectionLabel>
-                                    {t('section.recommendations')}
-                                </SectionLabel>
-                                <ol className="flex list-decimal flex-col gap-1.5 pl-5">
-                                    {section.recommendations.map((rec, i) => (
-                                        <li
-                                            key={i}
-                                            className="text-[13px] leading-relaxed text-ink-muted"
-                                        >
-                                            {rec}
-                                        </li>
-                                    ))}
-                                </ol>
-                            </div>
-                        )}
                 </div>
             </CollapsibleContent>
         </Collapsible>

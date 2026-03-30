@@ -90,6 +90,16 @@
     "reviewPhase.importing": "Wird importiert …",
     "reviewPhase.confirmImport": "Import bestätigen",
 
+    "languageSelection.title": "Sprache wählen",
+    "languageSelection.description": "Wähle deine bevorzugte Sprache für Manuscript.\nDu kannst dies jederzeit in den Einstellungen ändern.",
+    "languageSelection.continue": "Weiter",
+    "languageSelection.en": "English",
+    "languageSelection.enSub": "Englisch",
+    "languageSelection.de": "Deutsch",
+    "languageSelection.deSub": "Deutsch",
+    "languageSelection.es": "Español",
+    "languageSelection.esSub": "Spanisch",
+
     "crashReport.title": "Manuscript verbessern",
     "crashReport.description": "Falls die App abstürzt — möchtest du einen anonymen Bericht senden? Das hilft uns, Fehler schneller zu finden und zu beheben.",
     "crashReport.whatWeSend": "WAS WIR SENDEN",

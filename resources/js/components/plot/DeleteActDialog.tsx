@@ -49,7 +49,7 @@ export default function DeleteActDialog({
                         />
                     </svg>
                 </div>
-                <h2 className="font-serif text-2xl leading-8 font-normal tracking-[-0.01em] text-ink">
+                <h2 className="font-serif text-2xl leading-8 font-semibold tracking-[-0.01em] text-ink">
                     {t('deleteAct.title')}
                 </h2>
                 <p className="text-sm leading-[22px] text-ink-muted">

@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Enums\AnalysisType;
 use App\Enums\ChapterStatus;
-use App\Models\AiUsageLog;
 use App\Models\Book;
 use App\Models\License;
 use App\Models\WritingSession;
-use App\Services\HealthScoreCalculator;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,7 +19,7 @@ class DashboardController extends Controller
         $book->load([
             'storylines' => fn ($q) => $q->orderBy('sort_order'),
             'storylines.chapters' => fn ($q) => $q
-                ->select('id', 'book_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count', 'summary', 'tension_score', 'hook_score', 'hook_type', 'scene_purpose', 'value_shift', 'emotional_shift_magnitude', 'micro_tension_score', 'pacing_feel', 'entry_hook_score', 'exit_hook_score', 'sensory_grounding', 'information_delivery')
+                ->select('id', 'book_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count', 'summary', 'updated_at')
                 ->orderBy('reader_order'),
         ]);
 
@@ -36,15 +35,11 @@ class DashboardController extends Controller
 
         $isLicensed = License::isActive();
 
-        $aiPreparation = $isLicensed ? $book->aiPreparations()->latest()->first() : null;
-
         $todaySession = $isLicensed
             ? $book->writingSessions()->whereDate('date', now()->toDateString())->first()
             : null;
 
         $streak = $isLicensed ? $this->calculateStreak($book, $todaySession) : 0;
-
-        $healthMetrics = $isLicensed ? $this->buildHealthMetrics($book, $chapters) : null;
 
         // Auto-detect milestone
         if ($isLicensed && $book->target_word_count && $totalWords >= $book->target_word_count && ! $book->milestone_reached_at) {
@@ -60,10 +55,7 @@ class DashboardController extends Controller
                 'reading_time_minutes' => $chapterCount > 0 ? (int) ceil($totalWords / 230) : 0,
             ],
             'status_counts' => $statusCounts,
-            'health_metrics' => $healthMetrics,
-            'suggested_next' => $isLicensed ? $this->buildSuggestedNext($book) : null,
-            'ai_preparation' => $aiPreparation,
-            'story_bible' => $book->story_bible,
+            'suggested_next' => $this->buildSuggestedNext($book, $isLicensed),
             'writing_goal' => $isLicensed ? [
                 'daily_word_count_goal' => $book->daily_word_count_goal,
                 'today_words' => $todaySession?->words_written ?? 0,
@@ -71,18 +63,7 @@ class DashboardController extends Controller
                 'streak' => $streak,
             ] : null,
             'writing_heatmap' => $isLicensed ? $this->buildWritingHeatmap($book) : [],
-            'health_history' => $isLicensed ? $this->buildHealthHistory($book) : [],
             'manuscript_target' => $isLicensed ? $this->buildManuscriptTarget($book, $totalWords) : null,
-            'ai_usage' => $isLicensed ? [
-                'input_tokens' => $book->ai_input_tokens,
-                'output_tokens' => $book->ai_output_tokens,
-                'cost_display' => $book->ai_cost_display,
-                'reset_at' => $book->ai_usage_reset_at?->toISOString(),
-                'request_count' => $book->ai_request_count,
-                'avg_cost_display' => $book->ai_avg_cost_display,
-                'features_breakdown' => AiUsageLog::featureBreakdown($book->id, $book->ai_usage_reset_at),
-                'monthly_usage' => AiUsageLog::monthlyUsage($book->id, $book->ai_usage_reset_at),
-            ] : null,
         ]);
     }
 
@@ -91,168 +72,6 @@ class DashboardController extends Controller
         $book->update(['milestone_dismissed' => true]);
 
         return response()->json(['dismissed' => true]);
-    }
-
-    /**
-     * Build health metrics from per-chapter analysis data.
-     *
-     * @param  \Illuminate\Support\Collection<int, \App\Models\Chapter>  $chapters
-     * @return array{composite_score: int, metrics: list<array{label: string, score: int}>, last_analyzed_at: string, attention_items: list<array>}|null
-     */
-    private function buildHealthMetrics(Book $book, $chapters): ?array
-    {
-        $analyzed = $chapters->filter(fn ($ch) => $ch->hook_score !== null);
-
-        if ($analyzed->isEmpty()) {
-            return $this->buildLegacyHealthMetrics($book);
-        }
-
-        $scores = (new HealthScoreCalculator($analyzed))->calculate();
-
-        $metrics = [
-            ['label' => 'scene_purpose', 'score' => $scores['scene_purpose']],
-            ['label' => 'pacing', 'score' => $scores['pacing']],
-            ['label' => 'tension_dynamics', 'score' => $scores['tension_dynamics']],
-            ['label' => 'hooks', 'score' => $scores['hooks']],
-            ['label' => 'emotional_arc', 'score' => $scores['emotional_arc']],
-            ['label' => 'craft', 'score' => $scores['craft']],
-        ];
-
-        $attentionItems = [];
-
-        foreach ($analyzed as $chapter) {
-            if ($chapter->scene_purpose === 'transition' && $chapter->value_shift === null) {
-                $attentionItems[] = [
-                    'chapter_order' => $chapter->reader_order,
-                    'chapter_title' => $chapter->title,
-                    'description_key' => 'transitionNoValueShift',
-                    'severity' => 'medium',
-                ];
-            }
-
-            if (in_array($chapter->information_delivery, ['info_dump', 'exposition_heavy'])) {
-                $attentionItems[] = [
-                    'chapter_order' => $chapter->reader_order,
-                    'chapter_title' => $chapter->title,
-                    'description_key' => 'informationDelivery',
-                    'description_params' => ['type' => $chapter->information_delivery],
-                    'severity' => $chapter->information_delivery === 'info_dump' ? 'high' : 'medium',
-                ];
-            }
-
-            if ($chapter->tension_score !== null && $chapter->tension_score <= 3
-                && $chapter->micro_tension_score !== null && $chapter->micro_tension_score <= 3) {
-                $attentionItems[] = [
-                    'chapter_order' => $chapter->reader_order,
-                    'chapter_title' => $chapter->title,
-                    'description_key' => 'lowTension',
-                    'severity' => 'high',
-                ];
-            }
-
-            if ($chapter->sensory_grounding !== null && $chapter->sensory_grounding <= 1) {
-                $attentionItems[] = [
-                    'chapter_order' => $chapter->reader_order,
-                    'chapter_title' => $chapter->title,
-                    'description_key' => 'lowSensory',
-                    'description_params' => ['count' => $chapter->sensory_grounding],
-                    'severity' => 'medium',
-                ];
-            }
-        }
-
-        $weakestHooks = $analyzed->sortBy('hook_score')->take(3);
-        foreach ($weakestHooks as $chapter) {
-            if ($chapter->hook_score <= 7) {
-                $attentionItems[] = [
-                    'chapter_order' => $chapter->reader_order,
-                    'chapter_title' => $chapter->title,
-                    'description_key' => 'weakHook',
-                    'description_params' => ['score' => $chapter->hook_score, 'type' => $chapter->hook_type],
-                    'severity' => $chapter->hook_score <= 3 ? 'high' : ($chapter->hook_score <= 5 ? 'medium' : 'low'),
-                ];
-            }
-        }
-
-        $lastAnalyzed = $analyzed->max('updated_at');
-
-        return [
-            'composite_score' => $scores['composite'],
-            'metrics' => $metrics,
-            'last_analyzed_at' => $lastAnalyzed?->toISOString() ?? now()->toISOString(),
-            'attention_items' => array_slice($attentionItems, 0, 5),
-        ];
-    }
-
-    /**
-     * Fallback to legacy analysis-based health metrics.
-     *
-     * @return array{composite_score: int, metrics: list<array{label: string, score: int}>, last_analyzed_at: string, attention_items: list<array>}|null
-     */
-    private function buildLegacyHealthMetrics(Book $book): ?array
-    {
-        $healthTypes = [
-            AnalysisType::Pacing->value => 'pacing',
-            AnalysisType::Plothole->value => 'hooks',
-            AnalysisType::Density->value => 'tension',
-            AnalysisType::CharacterConsistency->value => 'weave',
-        ];
-
-        $enumTypes = [
-            AnalysisType::Pacing,
-            AnalysisType::Plothole,
-            AnalysisType::Density,
-            AnalysisType::CharacterConsistency,
-        ];
-
-        $analyses = $book->analyses()
-            ->whereNull('chapter_id')
-            ->whereIn('type', $enumTypes)
-            ->latest()
-            ->get()
-            ->unique('type');
-
-        if ($analyses->isEmpty()) {
-            return null;
-        }
-
-        $metrics = [];
-        $attentionItems = [];
-
-        foreach ($healthTypes as $typeValue => $label) {
-            $analysis = $analyses->first(fn ($a) => $a->type->value === $typeValue);
-            if (! $analysis) {
-                continue;
-            }
-
-            $score = min(100, max(0, (int) (($analysis->result['score'] ?? 0) * 10)));
-            $metrics[] = ['label' => $label, 'score' => $score];
-
-            $findings = $analysis->result['findings'] ?? [];
-            foreach ($findings as $finding) {
-                $attentionItems[] = [
-                    'type' => $label,
-                    'title' => $finding['title'] ?? $label.' issue',
-                    'description' => $finding['description'] ?? '',
-                    'severity' => $finding['severity'] ?? 'medium',
-                ];
-            }
-        }
-
-        $compositeScore = count($metrics) > 0
-            ? (int) round(collect($metrics)->avg('score'))
-            : 0;
-
-        $attentionItems = array_slice($attentionItems, 0, 3);
-
-        $lastAnalyzedAt = $analyses->max('created_at');
-
-        return [
-            'composite_score' => $compositeScore,
-            'metrics' => $metrics,
-            'last_analyzed_at' => $lastAnalyzedAt->toISOString(),
-            'attention_items' => $attentionItems,
-        ];
     }
 
     private function calculateStreak(Book $book, ?WritingSession $todaySession): int
@@ -273,7 +92,7 @@ class DashboardController extends Controller
         $checkDate = now()->subDay();
 
         foreach ($sessions as $sessionDate) {
-            $dateString = $sessionDate instanceof \Carbon\Carbon
+            $dateString = $sessionDate instanceof Carbon
                 ? $sessionDate->toDateString()
                 : substr((string) $sessionDate, 0, 10);
 
@@ -289,23 +108,40 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return array{title: string, description: string}|null
+     * @return array{title: string, description: string, chapter_id: int|null}|null
      */
-    private function buildSuggestedNext(Book $book): ?array
+    private function buildSuggestedNext(Book $book, bool $isLicensed): ?array
     {
-        $suggestion = $book->analyses()
-            ->where('type', AnalysisType::NextChapterSuggestion)
-            ->latest()
+        if ($isLicensed) {
+            $suggestion = $book->analyses()
+                ->where('type', AnalysisType::NextChapterSuggestion)
+                ->latest()
+                ->first();
+
+            if ($suggestion && $suggestion->result) {
+                return [
+                    'title' => $suggestion->result['title'] ?? 'Next Chapter',
+                    'description' => $suggestion->result['description'] ?? '',
+                    'chapter_id' => $suggestion->result['chapter_id'] ?? $suggestion->chapter_id,
+                ];
+            }
+        }
+
+        // Fallback: most recently edited chapter (uses already-loaded relation)
+        $recentChapter = $book->storylines
+            ->flatMap->chapters
+            ->sortByDesc('updated_at')
             ->first();
 
-        if (! $suggestion || ! $suggestion->result) {
+        if (! $recentChapter) {
             return null;
         }
 
         return [
-            'title' => $suggestion->result['title'] ?? 'Next Chapter',
-            'description' => $suggestion->result['description'] ?? '',
-            'chapter_id' => $suggestion->result['chapter_id'] ?? $suggestion->chapter_id,
+            'title' => $recentChapter->title,
+            'description' => '',
+            'chapter_id' => $recentChapter->id,
+            'last_edited_at' => $recentChapter->updated_at->toISOString(),
         ];
     }
 
@@ -318,36 +154,11 @@ class DashboardController extends Controller
             ->where('date', '>=', now()->subDays(364))
             ->get(['date', 'words_written', 'goal_met'])
             ->map(fn ($session) => [
-                'date' => $session->date instanceof \Carbon\Carbon
+                'date' => $session->date instanceof Carbon
                     ? $session->date->toDateString()
                     : substr((string) $session->date, 0, 10),
                 'words' => (int) $session->words_written,
                 'goal_met' => (bool) $session->goal_met,
-            ])
-            ->values()
-            ->all();
-    }
-
-    /**
-     * @return list<array{date: string, composite: int, hooks: int, pacing: int, tension: int, weave: int|null, scene_purpose: int|null, tension_dynamics: int|null, emotional_arc: int|null, craft: int|null}>
-     */
-    private function buildHealthHistory(Book $book): array
-    {
-        return $book->healthSnapshots()
-            ->where('recorded_at', '>=', now()->subDays(90))
-            ->orderBy('recorded_at')
-            ->get()
-            ->map(fn ($snapshot) => [
-                'date' => $snapshot->recorded_at->toDateString(),
-                'composite' => $snapshot->composite_score,
-                'hooks' => $snapshot->hooks_score,
-                'pacing' => $snapshot->pacing_score,
-                'tension' => $snapshot->tension_score,
-                'weave' => $snapshot->weave_score,
-                'scene_purpose' => $snapshot->scene_purpose_score,
-                'tension_dynamics' => $snapshot->tension_dynamics_score,
-                'emotional_arc' => $snapshot->emotional_arc_score,
-                'craft' => $snapshot->craft_score,
             ])
             ->values()
             ->all();

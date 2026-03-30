@@ -21,7 +21,7 @@ return new class extends Migration
                     embedding float[1536]
                 )
             SQL);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::warning('sqlite-vec: Could not create chunk_embeddings virtual table. Is the extension loaded?', [
                 'error' => $e->getMessage(),
             ]);
@@ -32,7 +32,7 @@ return new class extends Migration
     {
         try {
             DB::statement('DROP TABLE IF EXISTS chunk_embeddings');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Virtual table may not exist if extension wasn't loaded
         }
 

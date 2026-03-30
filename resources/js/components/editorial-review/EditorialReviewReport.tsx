@@ -1,10 +1,41 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import Dialog from '@/components/ui/Dialog';
 import SectionLabel from '@/components/ui/SectionLabel';
-import type { Chapter, EditorialReview } from '@/types/models';
+import Select from '@/components/ui/Select';
+import { useToggleFinding } from '@/hooks/useToggleFinding';
+import type {
+    Chapter,
+    EditorialReview,
+    OnDiscussFinding,
+} from '@/types/models';
+import ChapterProgressStrip from './ChapterProgressStrip';
 import EditorialReviewSection from './EditorialReviewSection';
+
+function BulletList({
+    items,
+    dotColor,
+}: {
+    items: string[];
+    dotColor: string;
+}) {
+    return (
+        <div className="flex flex-col gap-2">
+            {items.map((item, i) => (
+                <div key={i} className="flex items-start gap-2">
+                    <span
+                        className={`mt-[6px] size-2 shrink-0 rounded-full ${dotColor}`}
+                    />
+                    <span className="text-[13px] leading-relaxed text-ink-muted">
+                        {item}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+}
 
 function ScoreDisplay({
     score,
@@ -14,14 +45,14 @@ function ScoreDisplay({
     qualityLabel: { good: string; fair: string; needsWork: string };
 }) {
     return (
-        <div className="flex flex-col items-center gap-1">
-            <span className="font-serif text-[32px] leading-[1] font-normal text-ink">
+        <div className="flex flex-col items-center gap-1 rounded-lg bg-neutral-bg px-5 py-3">
+            <span className="font-serif text-[32px] leading-[1] font-semibold text-ink">
                 {score}
             </span>
             <span className="text-[11px] font-medium text-ink-faint">
-                {score >= 70
+                {score >= 76
                     ? qualityLabel.good
-                    : score >= 50
+                    : score >= 60
                       ? qualityLabel.fair
                       : qualityLabel.needsWork}
             </span>
@@ -39,35 +70,17 @@ function StrengthsAndImprovements({
     const { t } = useTranslation('editorial-review');
 
     return (
-        <div className="flex gap-8">
-            {/* Strengths */}
-            <div className="flex flex-1 flex-col gap-2">
-                <SectionLabel>{t('report.strengths')}</SectionLabel>
-                <div className="flex flex-col gap-2">
-                    {strengths.map((s, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                            <span className="mt-[6px] size-2 shrink-0 rounded-full bg-status-final" />
-                            <span className="text-[13px] leading-relaxed text-ink-muted">
-                                {s}
-                            </span>
-                        </div>
-                    ))}
+        <div className="flex gap-8 border-t border-border-subtle pt-6">
+            {strengths.length > 0 && (
+                <div className="flex flex-1 flex-col gap-2">
+                    <SectionLabel>{t('report.strengths')}</SectionLabel>
+                    <BulletList items={strengths} dotColor="bg-status-final" />
                 </div>
-            </div>
+            )}
 
-            {/* Improvements */}
             <div className="flex flex-1 flex-col gap-2">
                 <SectionLabel>{t('report.improvements')}</SectionLabel>
-                <div className="flex flex-col gap-2">
-                    {improvements.map((imp, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                            <span className="mt-[6px] size-2 shrink-0 rounded-full bg-accent" />
-                            <span className="text-[13px] leading-relaxed text-ink-muted">
-                                {imp}
-                            </span>
-                        </div>
-                    ))}
-                </div>
+                <BulletList items={improvements} dotColor="bg-accent" />
             </div>
         </div>
     );
@@ -81,6 +94,7 @@ export default function EditorialReviewReport({
     onStartNew,
     starting,
     onDiscussFinding,
+    onResolvedChange,
 }: {
     review: EditorialReview;
     reviews: EditorialReview[];
@@ -88,10 +102,24 @@ export default function EditorialReviewReport({
     onSelectReview: (review: EditorialReview) => void;
     onStartNew: () => void;
     starting: boolean;
-    onDiscussFinding: (sectionType: string, findingIndex: number) => void;
+    onDiscussFinding: OnDiscussFinding;
+    onResolvedChange: (resolved: string[]) => void;
 }) {
     const { t, i18n } = useTranslation('editorial-review');
     const [showConfirm, setShowConfirm] = useState(false);
+
+    const resolvedFindings = review.resolved_findings ?? [];
+    const resolvedSet = useMemo(
+        () => new Set(resolvedFindings),
+        [resolvedFindings],
+    );
+
+    const handleToggleFinding = useToggleFinding(
+        review.book_id,
+        review.id,
+        resolvedFindings,
+        onResolvedChange,
+    );
 
     const formatDate = (dateStr: string | null) =>
         dateStr
@@ -120,8 +148,9 @@ export default function EditorialReviewReport({
     return (
         <>
             <div className="flex flex-col gap-6">
-                {/* Header card */}
-                <div className="flex flex-col gap-6 rounded-lg border border-border-light bg-surface-card p-6">
+                <Card className="flex flex-col gap-6 p-6">
+                    <SectionLabel>{t('report.summary')}</SectionLabel>
+
                     <div className="flex items-start gap-6">
                         {review.overall_score !== null && (
                             <ScoreDisplay
@@ -142,75 +171,116 @@ export default function EditorialReviewReport({
                         </div>
                     </div>
 
-                    {/* Strengths & Improvements */}
                     {review.top_strengths &&
                         review.top_improvements &&
-                        review.top_strengths.length > 0 &&
-                        review.top_improvements.length > 0 && (
+                        (review.top_strengths.length > 0 ||
+                            review.top_improvements.length > 0) &&
+                        !review.is_pre_editorial && (
                             <StrengthsAndImprovements
                                 strengths={review.top_strengths}
                                 improvements={review.top_improvements}
                             />
                         )}
-                </div>
+                </Card>
 
-                {/* History bar */}
-                <div className="flex items-center justify-between">
-                    <select
-                        value={review.id}
-                        onChange={(e) => {
-                            const selected = reviews.find(
-                                (r) => r.id === Number(e.target.value),
-                            );
-                            if (selected) onSelectReview(selected);
-                        }}
-                        className="rounded-md border border-border bg-surface px-3 py-1.5 text-[13px] text-ink"
-                    >
-                        {reviews.map((r) => (
-                            <option key={r.id} value={r.id}>
-                                {t('report.reviewFrom', {
-                                    date:
-                                        formatDate(r.completed_at) ||
-                                        `#${r.id}`,
-                                })}
-                            </option>
-                        ))}
-                    </select>
+                {!review.is_pre_editorial && (
+                    <>
+                        <ChapterProgressStrip
+                            chapters={chapters}
+                            sections={review.sections}
+                            resolvedSet={resolvedSet}
+                            bookId={review.book_id}
+                        />
 
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => setShowConfirm(true)}
-                        disabled={starting}
-                    >
-                        {t('report.startNew')}
-                    </Button>
-                </div>
+                        <div className="flex items-center justify-between">
+                            <Select
+                                variant="compact"
+                                value={review.id}
+                                onChange={(e) => {
+                                    const selected = reviews.find(
+                                        (r) => r.id === Number(e.target.value),
+                                    );
+                                    if (selected) onSelectReview(selected);
+                                }}
+                            >
+                                {reviews.map((r) => (
+                                    <option key={r.id} value={r.id}>
+                                        {t('report.reviewFrom', {
+                                            date:
+                                                formatDate(r.completed_at) ||
+                                                `#${r.id}`,
+                                        })}
+                                    </option>
+                                ))}
+                            </Select>
 
-                {/* Section Label */}
-                <SectionLabel>{t('sectionLabel.editorialReview')}</SectionLabel>
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => setShowConfirm(true)}
+                                disabled={starting}
+                            >
+                                {t('report.startNew')}
+                            </Button>
+                        </div>
 
-                {/* Accordion sections */}
-                <div className="flex flex-col divide-y divide-border-subtle rounded-lg border border-border-light bg-surface-card">
-                    {orderedSections.map(
-                        (section) =>
-                            section && (
-                                <EditorialReviewSection
-                                    key={section.id}
-                                    section={section}
-                                    chapters={chapters}
-                                    onDiscussFinding={onDiscussFinding}
+                        <SectionLabel>
+                            {t('sectionLabel.editorialReview')}
+                        </SectionLabel>
+
+                        <div className="flex max-w-3xl flex-col gap-4">
+                            {orderedSections.map(
+                                (section) =>
+                                    section && (
+                                        <EditorialReviewSection
+                                            key={section.id}
+                                            section={section}
+                                            chapters={chapters}
+                                            bookId={review.book_id}
+                                            resolvedSet={resolvedSet}
+                                            onToggleFinding={
+                                                handleToggleFinding
+                                            }
+                                            onDiscussFinding={onDiscussFinding}
+                                        />
+                                    ),
+                            )}
+                        </div>
+                    </>
+                )}
+
+                {review.is_pre_editorial && (
+                    <Card className="flex flex-col gap-4 p-6">
+                        <SectionLabel>{t('preEditorial.heading')}</SectionLabel>
+                        <p className="text-[13px] leading-relaxed text-ink-muted">
+                            {t('preEditorial.description')}
+                        </p>
+                        {review.top_improvements &&
+                            review.top_improvements.length > 0 && (
+                                <BulletList
+                                    items={review.top_improvements}
+                                    dotColor="bg-accent"
                                 />
-                            ),
-                    )}
-                </div>
+                            )}
+                        <div className="pt-2">
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => setShowConfirm(true)}
+                                disabled={starting}
+                            >
+                                {t('report.startNew')}
+                            </Button>
+                        </div>
+                    </Card>
+                )}
             </div>
 
             {showConfirm && (
                 <Dialog onClose={() => setShowConfirm(false)} width={420}>
                     <div className="flex flex-col gap-6">
                         <div className="flex flex-col gap-2">
-                            <h2 className="font-serif text-2xl leading-8 font-normal tracking-[-0.01em] text-ink">
+                            <h2 className="font-serif text-2xl leading-8 font-semibold tracking-[-0.01em] text-ink">
                                 {t('confirm.title')}
                             </h2>
                             <p className="text-sm leading-relaxed text-ink-muted">

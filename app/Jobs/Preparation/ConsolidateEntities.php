@@ -8,6 +8,8 @@ use App\Jobs\Concerns\DetectsTransientErrors;
 use App\Models\AiPreparation;
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\Character;
+use App\Models\WikiEntry;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -16,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -47,8 +50,8 @@ class ConsolidateEntities implements ShouldQueue
             return;
         }
 
-        $characters = $this->book->characters()->where('is_ai_extracted', true)->get();
-        $wikiEntries = $this->book->wikiEntries()->where('is_ai_extracted', true)->get();
+        $characters = $this->book->characters()->get();
+        $wikiEntries = $this->book->wikiEntries()->get();
 
         if ($characters->count() + $wikiEntries->count() < 2) {
             $this->preparation->increment('current_phase_progress');
@@ -83,8 +86,8 @@ class ConsolidateEntities implements ShouldQueue
     }
 
     /**
-     * @param  EloquentCollection<int, \App\Models\Character>  $characters
-     * @param  EloquentCollection<int, \App\Models\WikiEntry>  $wikiEntries
+     * @param  EloquentCollection<int, Character>  $characters
+     * @param  EloquentCollection<int, WikiEntry>  $wikiEntries
      */
     private function buildPrompt(EloquentCollection $characters, EloquentCollection $wikiEntries): string
     {
@@ -94,7 +97,9 @@ class ConsolidateEntities implements ShouldQueue
             $lines[] = "## Characters\n";
             foreach ($characters as $character) {
                 $aliases = ! empty($character->aliases) ? ' (aliases: '.implode(', ', $character->aliases).')' : '';
-                $lines[] = "- ID:{$character->id} \"{$character->name}\"{$aliases} — {$character->description}";
+                $desc = $character->fullDescription() ?? 'No description';
+                $source = $character->is_ai_extracted ? '' : ' [MANUAL]';
+                $lines[] = "- ID:{$character->id} \"{$character->name}\"{$aliases}{$source} — {$desc}";
             }
             $lines[] = '';
         }
@@ -103,7 +108,9 @@ class ConsolidateEntities implements ShouldQueue
             $lines[] = "## World Entities\n";
             foreach ($wikiEntries as $entry) {
                 $aliases = ! empty($entry->metadata['aliases']) ? ' (aliases: '.implode(', ', $entry->metadata['aliases']).')' : '';
-                $lines[] = "- ID:{$entry->id} [{$entry->kind->value}] \"{$entry->name}\"{$aliases} — {$entry->description}";
+                $desc = $entry->fullDescription() ?? 'No description';
+                $source = $entry->is_ai_extracted ? '' : ' [MANUAL]';
+                $lines[] = "- ID:{$entry->id} [{$entry->kind->value}] \"{$entry->name}\"{$aliases}{$source} — {$desc}";
             }
         }
 
@@ -121,16 +128,13 @@ class ConsolidateEntities implements ShouldQueue
             }
 
             DB::transaction(function () use ($merge) {
-                $canonical = $this->book->characters()
-                    ->where('is_ai_extracted', true)
-                    ->find($merge['canonical_id']);
+                $canonical = $this->book->characters()->find($merge['canonical_id']);
 
                 if (! $canonical) {
                     return;
                 }
 
                 $duplicates = $this->book->characters()
-                    ->where('is_ai_extracted', true)
                     ->whereIn('id', $merge['duplicate_ids'])
                     ->get();
 
@@ -145,7 +149,8 @@ class ConsolidateEntities implements ShouldQueue
                     $merge['canonical_name'],
                 );
 
-                $this->keepLongestDescription($canonical, $duplicates);
+                $this->keepLongestField($canonical, $duplicates, 'description');
+                $this->keepLongestField($canonical, $duplicates, 'ai_description');
                 $this->resolveEarliestAppearance($canonical, $duplicates);
                 $canonical->save();
 
@@ -196,16 +201,13 @@ class ConsolidateEntities implements ShouldQueue
             }
 
             DB::transaction(function () use ($merge) {
-                $canonical = $this->book->wikiEntries()
-                    ->where('is_ai_extracted', true)
-                    ->find($merge['canonical_id']);
+                $canonical = $this->book->wikiEntries()->find($merge['canonical_id']);
 
                 if (! $canonical) {
                     return;
                 }
 
                 $duplicates = $this->book->wikiEntries()
-                    ->where('is_ai_extracted', true)
                     ->whereIn('id', $merge['duplicate_ids'])
                     ->get();
 
@@ -223,7 +225,8 @@ class ConsolidateEntities implements ShouldQueue
                 );
                 $canonical->metadata = $metadata;
 
-                $this->keepLongestDescription($canonical, $duplicates);
+                $this->keepLongestField($canonical, $duplicates, 'description');
+                $this->keepLongestField($canonical, $duplicates, 'ai_description');
                 $this->resolveEarliestAppearance($canonical, $duplicates);
                 $canonical->save();
 
@@ -244,7 +247,7 @@ class ConsolidateEntities implements ShouldQueue
      * Merge alias arrays from canonical and duplicates, deduplicating and excluding the canonical name.
      *
      * @param  array<int, string>  $canonicalAliases
-     * @param  \Illuminate\Support\Collection<int, mixed>  $duplicateAliasGroups
+     * @param  Collection<int, mixed>  $duplicateAliasGroups
      * @return list<string>
      */
     private function mergeAliases(array $canonicalAliases, $duplicateAliasGroups, string $canonicalName): array
@@ -267,11 +270,11 @@ class ConsolidateEntities implements ShouldQueue
     /**
      * @param  EloquentCollection<int, Model>  $duplicates
      */
-    private function keepLongestDescription(Model $canonical, EloquentCollection $duplicates): void
+    private function keepLongestField(Model $canonical, EloquentCollection $duplicates, string $field): void
     {
         foreach ($duplicates as $duplicate) {
-            if (mb_strlen($duplicate->description ?? '') > mb_strlen($canonical->description ?? '')) {
-                $canonical->description = $duplicate->description;
+            if (mb_strlen($duplicate->{$field} ?? '') > mb_strlen($canonical->{$field} ?? '')) {
+                $canonical->{$field} = $duplicate->{$field};
             }
         }
     }

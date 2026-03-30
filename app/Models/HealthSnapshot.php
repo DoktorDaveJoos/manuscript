@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\HealthSnapshotFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class HealthSnapshot extends Model
 {
-    /** @use HasFactory<\Database\Factories\HealthSnapshotFactory> */
+    /** @use HasFactory<HealthSnapshotFactory> */
     use HasFactory;
 
     protected $guarded = [];

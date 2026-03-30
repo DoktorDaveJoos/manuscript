@@ -8,6 +8,7 @@ use App\Models\Chunk;
 use App\Services\EmbeddingService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Reranking;
 use Laravel\Ai\Tools\Request;
@@ -21,15 +22,15 @@ class SearchSimilarChunks implements Tool
     }
 
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {
         return [
             'book_id' => $schema->integer()->required(),
             'query' => $schema->string()->required(),
-            'limit' => $schema->integer()->min(1)->max(20),
-            'search_mode' => $schema->string()->enum(['semantic', 'keyword', 'hybrid']),
+            'limit' => $schema->integer()->min(1)->max(20)->nullable()->required(),
+            'search_mode' => $schema->string()->enum(['semantic', 'keyword', 'hybrid'])->nullable()->required(),
         ];
     }
 

@@ -66,17 +66,21 @@ class WikiController extends Controller
                 ->with('error', __('Upgrade to Manuscript Pro for unlimited Story Bible entries.'));
         }
 
-        $book->characters()->create([
-            ...$request->safe()->except('role'),
+        $character = $book->characters()->create([
+            ...$request->safe()->except(['role', 'chapter_ids']),
             'is_ai_extracted' => false,
         ]);
+
+        $this->syncCharacterChapters($character, $request);
 
         return redirect()->route('books.wiki', ['book' => $book, 'tab' => 'characters']);
     }
 
     public function updateCharacter(UpdateCharacterRequest $request, Book $book, Character $character): RedirectResponse
     {
-        $character->update($request->safe()->except('role'));
+        $character->update($request->safe()->except(['role', 'chapter_ids']));
+
+        $this->syncCharacterChapters($character, $request);
 
         return redirect()->route('books.wiki', ['book' => $book, 'tab' => 'characters']);
     }
@@ -98,17 +102,26 @@ class WikiController extends Controller
                 ->with('error', __('Upgrade to Manuscript Pro for unlimited Story Bible entries.'));
         }
 
-        $book->wikiEntries()->create([
+        unset($data['chapter_ids']);
+
+        $entry = $book->wikiEntries()->create([
             ...$data,
             'is_ai_extracted' => false,
         ]);
+
+        $this->syncEntryChapters($entry, $request);
 
         return redirect()->route('books.wiki', ['book' => $book, 'tab' => $tab]);
     }
 
     public function updateEntry(UpdateWikiEntryRequest $request, Book $book, WikiEntry $wikiEntry): RedirectResponse
     {
-        $wikiEntry->update($request->validated());
+        $data = $request->validated();
+        unset($data['chapter_ids']);
+
+        $wikiEntry->update($data);
+
+        $this->syncEntryChapters($wikiEntry, $request);
 
         return redirect()->route('books.wiki', ['book' => $book, 'tab' => $wikiEntry->kind->value]);
     }
@@ -119,5 +132,23 @@ class WikiController extends Controller
         $wikiEntry->delete();
 
         return redirect()->route('books.wiki', ['book' => $book, 'tab' => $tab]);
+    }
+
+    private function syncCharacterChapters(Character $character, Request $request): void
+    {
+        if ($request->has('chapter_ids')) {
+            $role = $request->input('role', 'supporting');
+            $pivotData = collect($request->input('chapter_ids', []))
+                ->mapWithKeys(fn ($id) => [$id => ['role' => $role]])
+                ->all();
+            $character->chapters()->sync($pivotData);
+        }
+    }
+
+    private function syncEntryChapters(WikiEntry $entry, Request $request): void
+    {
+        if ($request->has('chapter_ids')) {
+            $entry->chapters()->sync($request->input('chapter_ids', []));
+        }
     }
 }

@@ -15,13 +15,13 @@ beforeEach(function () {
 
 // --- Authorization tests ---
 
-test('index requires license', function () {
+test('index loads without license', function () {
     License::query()->delete();
 
     $book = Book::factory()->create();
 
     $this->getJson(route('books.ai.editorial-review.index', $book))
-        ->assertForbidden();
+        ->assertOk();
 });
 
 test('store requires license', function () {
@@ -174,8 +174,8 @@ test('show returns review with sections', function () {
         ->assertSuccessful()
         ->assertInertia(fn ($page) => $page
             ->component('books/editorial-review')
-            ->has('review')
-            ->has('review.sections', 1)
+            ->has('latestReview')
+            ->has('latestReview.sections', 1)
             ->has('chapters')
             ->has('book')
         );
@@ -291,6 +291,112 @@ test('chat returns 404 for review from different book', function () {
     $this->postJson(route('books.ai.editorial-review.chat', [$book, $review]), [
         'message' => 'Tell me about the plot.',
     ])->assertNotFound();
+});
+
+// --- Finding keys tests ---
+
+test('ensureFindingKeys adds keys to findings without keys', function () {
+    $book = Book::factory()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+    ]);
+    $section = EditorialReviewSection::factory()->create([
+        'editorial_review_id' => $review->id,
+        'type' => EditorialSectionType::Plot,
+        'findings' => [
+            ['severity' => 'critical', 'description' => 'Plot hole in chapter 3', 'chapter_references' => [], 'recommendation' => 'Fix it'],
+            ['severity' => 'warning', 'description' => 'Pacing issue', 'chapter_references' => [], 'recommendation' => 'Improve'],
+        ],
+    ]);
+
+    $section->ensureFindingKeys();
+    $section->refresh();
+
+    expect($section->findings)->toHaveCount(2);
+    expect($section->findings[0]['key'])->toBeString()->not->toBeEmpty();
+    expect($section->findings[1]['key'])->toBeString()->not->toBeEmpty();
+    expect($section->findings[0]['key'])->not->toBe($section->findings[1]['key']);
+});
+
+test('ensureFindingKeys does not overwrite existing keys', function () {
+    $book = Book::factory()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+    ]);
+    $section = EditorialReviewSection::factory()->create([
+        'editorial_review_id' => $review->id,
+        'type' => EditorialSectionType::Plot,
+        'findings' => [
+            ['key' => 'existing-key', 'severity' => 'critical', 'description' => 'Plot hole', 'chapter_references' => [], 'recommendation' => 'Fix'],
+        ],
+    ]);
+
+    $section->ensureFindingKeys();
+    $section->refresh();
+
+    expect($section->findings[0]['key'])->toBe('existing-key');
+});
+
+// --- Toggle finding tests ---
+
+test('toggle finding adds key to resolved findings', function () {
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+        'resolved_findings' => [],
+    ]);
+
+    $this->postJson(route('books.ai.editorial-review.toggle-finding', [$book, $review]), [
+        'key' => 'abc123',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('resolved_findings', ['abc123']);
+
+    expect($review->fresh()->resolved_findings)->toBe(['abc123']);
+});
+
+test('toggle finding removes key when already resolved', function () {
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+        'resolved_findings' => ['abc123', 'def456'],
+    ]);
+
+    $this->postJson(route('books.ai.editorial-review.toggle-finding', [$book, $review]), [
+        'key' => 'abc123',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('resolved_findings', ['def456']);
+
+    expect($review->fresh()->resolved_findings)->toBe(['def456']);
+});
+
+test('toggle finding returns 404 for review from different book', function () {
+    $book = Book::factory()->withAi()->create();
+    $otherBook = Book::factory()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $otherBook->id,
+    ]);
+
+    $this->postJson(route('books.ai.editorial-review.toggle-finding', [$book, $review]), [
+        'key' => 'abc123',
+    ])->assertNotFound();
+});
+
+test('toggle finding requires key', function () {
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+    ]);
+
+    $this->postJson(route('books.ai.editorial-review.toggle-finding', [$book, $review]), [])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('key');
 });
 
 test('chat history validation rejects invalid roles', function () {

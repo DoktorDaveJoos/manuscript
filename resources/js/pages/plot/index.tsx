@@ -15,6 +15,11 @@ import { Head, router } from '@inertiajs/react';
 import { GripVertical, Plus } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+    move as beatMove,
+    reorder as beatReorder,
+} from '@/actions/App/Http/Controllers/BeatController';
+import { reorder as plotPointReorder } from '@/actions/App/Http/Controllers/PlotPointController';
 import Sidebar from '@/components/editor/Sidebar';
 import ActColumn from '@/components/plot/ActColumn';
 import ActContextMenu from '@/components/plot/ActContextMenu';
@@ -26,6 +31,7 @@ import PlotEmptyState from '@/components/plot/PlotEmptyState';
 import PlotPointContextMenu from '@/components/plot/PlotPointContextMenu';
 import PlotPointDetailPanel from '@/components/plot/PlotPointDetailPanel';
 import PlotWizardModal from '@/components/plot/PlotWizardModal';
+import Button from '@/components/ui/Button';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { PlotTemplate } from '@/lib/plot-templates';
 import type {
@@ -38,11 +44,6 @@ import type {
     PlotPoint,
     Storyline,
 } from '@/types/models';
-import {
-    move as beatMove,
-    reorder as beatReorder,
-} from '@/actions/App/Http/Controllers/BeatController';
-import { reorder as plotPointReorder } from '@/actions/App/Http/Controllers/PlotPointController';
 
 type PlotPageProps = {
     book: Book;
@@ -571,14 +572,14 @@ export default function Plot({
                                 <h1 className="text-sm font-medium text-ink">
                                     {t('page.tabs.timeline', 'Plot')}
                                 </h1>
-                                <button
-                                    type="button"
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
                                     onClick={handleAddAct}
-                                    className="flex items-center gap-1.5 rounded-md bg-neutral-bg px-3 py-1.5 text-[12px] font-medium text-ink-muted transition-opacity hover:opacity-80"
                                 >
                                     <Plus size={14} />
                                     {t('act.addAct')}
-                                </button>
+                                </Button>
                             </div>
 
                             {/* Act columns + detail panel */}

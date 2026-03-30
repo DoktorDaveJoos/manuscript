@@ -2,24 +2,28 @@ import { router } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import { getXsrfToken } from '@/lib/csrf';
-import type { ChapterVersion, VersionSource } from '@/types/models';
 import {
     createSnapshot,
     destroyVersion,
     restoreVersion,
     versions,
 } from '@/actions/App/Http/Controllers/ChapterController';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import PanelHeader from '@/components/ui/PanelHeader';
+import type { ChapterVersion, VersionSource } from '@/types/models';
 
-const sourceBadgeClass: Record<VersionSource, string> = {
-    original: 'bg-neutral-bg text-ink-muted',
-    ai_revision: 'bg-status-revised/15 text-status-revised',
-    manual_edit: 'bg-status-final/15 text-status-final',
-    normalization: 'bg-neutral-bg text-ink-muted',
-    beautify: 'bg-status-revised/15 text-status-revised',
-    snapshot: 'bg-status-final/15 text-status-final',
+const sourceBadgeVariant: Record<
+    VersionSource,
+    'secondary' | 'success' | 'revised'
+> = {
+    original: 'secondary',
+    ai_revision: 'revised',
+    manual_edit: 'success',
+    normalization: 'secondary',
+    beautify: 'revised',
+    snapshot: 'success',
 };
 
 export default function VersionHistoryOverlay({
@@ -119,7 +123,6 @@ export default function VersionHistoryOverlay({
                     method: 'DELETE',
                     headers: {
                         Accept: 'application/json',
-                        'X-XSRF-TOKEN': getXsrfToken(),
                     },
                 },
             ).then(() => {
@@ -139,7 +142,6 @@ export default function VersionHistoryOverlay({
                 headers: {
                     'Content-Type': 'application/json',
                     Accept: 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
                 },
                 body: JSON.stringify({ change_summary: summary || null }),
             }).then(() => {
@@ -157,18 +159,18 @@ export default function VersionHistoryOverlay({
             ref={ref}
             className="absolute top-full right-0 z-50 mt-1 w-[360px] rounded-lg border border-border bg-surface-card shadow-lg"
         >
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <span className="text-sm font-medium text-ink">
-                    {t('versionHistory.title')}
-                </span>
-                <button
-                    type="button"
-                    onClick={() => setShowForm((v) => !v)}
-                    className="rounded-md bg-neutral-bg px-2 py-1 text-[11px] font-medium text-ink-muted transition-colors hover:bg-border hover:text-ink"
-                >
-                    {t('versionHistory.newVersion')}
-                </button>
-            </div>
+            <PanelHeader
+                title={t('versionHistory.title')}
+                suffix={
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setShowForm((v) => !v)}
+                    >
+                        {t('versionHistory.newVersion')}
+                    </Button>
+                }
+            />
 
             {showForm && (
                 <form
@@ -176,9 +178,9 @@ export default function VersionHistoryOverlay({
                     className="border-b border-border px-4 py-3"
                 >
                     <div className="mb-2 flex items-center gap-2">
-                        <span className="rounded-full bg-status-final/15 px-1.5 py-0.5 text-[11px] font-medium text-status-final">
+                        <Badge variant="success">
                             {t('versionHistory.snapshot')}
-                        </span>
+                        </Badge>
                         <span className="text-xs text-ink-muted">
                             {t('versionHistory.newVersionSnapshot')}
                         </span>
@@ -205,7 +207,7 @@ export default function VersionHistoryOverlay({
                             {t('versionHistory.cancel')}
                         </Button>
                         <Button
-                            variant="accent"
+                            variant="primary"
                             size="sm"
                             type="submit"
                             disabled={creating}
@@ -239,22 +241,26 @@ export default function VersionHistoryOverlay({
                                         <span className="text-sm font-medium text-ink">
                                             v{version.version_number}
                                         </span>
-                                        <span
-                                            className={`rounded-full px-1.5 py-0.5 text-[11px] font-medium ${sourceBadgeClass[version.source]}`}
+                                        <Badge
+                                            variant={
+                                                sourceBadgeVariant[
+                                                    version.source
+                                                ]
+                                            }
                                         >
                                             {sourceLabel(version.source)}
-                                        </span>
+                                        </Badge>
                                         {version.is_current && (
-                                            <span className="text-[11px] font-medium text-status-final">
+                                            <Badge variant="success">
                                                 {t('versionHistory.current')}
-                                            </span>
+                                            </Badge>
                                         )}
                                         {version.status === 'pending' && (
-                                            <span className="text-[11px] font-medium text-accent">
+                                            <Badge variant="warning">
                                                 {t(
                                                     'versionHistory.pendingReview',
                                                 )}
-                                            </span>
+                                            </Badge>
                                         )}
                                     </div>
                                     {version.change_summary && (
@@ -269,31 +275,32 @@ export default function VersionHistoryOverlay({
 
                                 {!version.is_current && (
                                     <div className="flex shrink-0 gap-1">
-                                        <button
-                                            type="button"
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
                                             onClick={() =>
                                                 handleRestore(version)
                                             }
                                             disabled={restoring !== null}
-                                            className="rounded-md border border-border px-2 py-1 text-[11px] text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink disabled:opacity-50"
                                         >
                                             {restoring === version.id
                                                 ? t('versionHistory.restoring')
                                                 : t('versionHistory.restore')}
-                                        </button>
-                                        <button
-                                            type="button"
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
                                             onClick={() =>
                                                 handleDelete(version)
                                             }
                                             disabled={deleting !== null}
-                                            className="rounded-md border border-border p-1 text-ink-faint transition-colors hover:bg-delete-bg hover:text-delete disabled:opacity-50"
+                                            className="text-ink-faint hover:bg-delete/10 hover:text-delete"
                                             title={t(
                                                 'versionHistory.deleteVersion',
                                             )}
                                         >
                                             <Trash2 size={14} />
-                                        </button>
+                                        </Button>
                                     </div>
                                 )}
                             </div>

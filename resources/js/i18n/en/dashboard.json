@@ -140,8 +140,8 @@
     "normalize.loadError": "Failed to load normalization preview",
     "normalize.applyError": "Failed to apply normalization",
 
-    "stats.words": "Total Words",
-    "stats.pages": "Est. Pages",
+    "stats.words": "Words",
+    "stats.pages": "Pages",
     "stats.pagesEst": "est.",
     "stats.readingTime": "Reading Time",
     "stats.readingTimeMin": "min",
@@ -152,10 +152,27 @@
     "statusBar.draft": "draft",
 
     "sections.chapterStatus": "Chapter Status",
+    "sections.chapterProgress": "Chapter Progress",
     "sections.aiInsights": "AI Insights",
     "sections.healthTimeline": "Health Timeline",
     "sections.stats": "Stats",
     "sections.aiUsage": "AI Usage & Costs",
 
-    "header.by": "by {{author}}"
+    "header.by": "by {{author}}",
+    "header.greeting_one": "You have been writing consistently for {{count}} day. Keep the momentum going!",
+    "header.greeting_other": "You have been writing consistently for {{count}} days. Keep the momentum going!",
+
+    "suggestedNext.pickUpLabel": "Pick Up Where You Left Off",
+    "suggestedNext.continueWriting": "Continue Writing",
+    "suggestedNext.lastEdited": "Last edited {{timeAgo}}. Pick up where you left off!",
+
+    "manuscriptProgress.label.starting": "just getting started",
+    "manuscriptProgress.label.building": "building momentum",
+    "manuscriptProgress.label.great": "great progress!",
+    "manuscriptProgress.label.halfway": "over halfway!",
+    "manuscriptProgress.label.almostThere": "almost there!",
+
+    "feedback.title": "Help us improve Manuscript",
+    "feedback.description": "We would love to hear how we can make your writing experience even better. Your feedback shapes what we build next.",
+    "feedback.button": "Give us feedback"
 }

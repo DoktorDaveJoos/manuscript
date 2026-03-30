@@ -2,6 +2,7 @@ import type { Editor } from '@tiptap/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SaveStatus } from '@/components/editor/EditorBar';
+import Kbd from '@/components/ui/Kbd';
 import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import {
     cancelTypewriterAnimation,
@@ -46,11 +47,15 @@ export default function WritingSurface({
     isLocalFindOpen = false,
     localFindShowReplace = false,
     onLocalFindClose,
+    autoSelectTitle,
+    onTitleSelectHandled,
 }: {
     scenes: Scene[];
     bookId: number;
     chapterId: number;
     title: string;
+    autoSelectTitle?: boolean;
+    onTitleSelectHandled?: () => void;
     povCharacterName?: string | null;
     timelineLabel?: string | null;
     onTitleUpdate: (title: string) => void;
@@ -107,6 +112,42 @@ export default function WritingSurface({
         editor.on('destroy', cleanup);
     }, []);
 
+    const [isTitleFocused, setIsTitleFocused] = useState(false);
+    const [kbePos, setKbePos] = useState({ left: 0, top: 0 });
+
+    const updateKbePosition = useCallback(() => {
+        const el = titleRef.current;
+        if (!el) return;
+        const titleRect = el.getBoundingClientRect();
+
+        // Measure the right edge of the last line of text
+        const textRange = document.createRange();
+        textRange.selectNodeContents(el);
+        const textRects = textRange.getClientRects();
+        const lastTextRect = textRects[textRects.length - 1];
+        const textEndLeft = lastTextRect
+            ? lastTextRect.right - titleRect.left
+            : 0;
+
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        const range = sel.getRangeAt(0);
+        const caretRect = range.getBoundingClientRect();
+        if (caretRect.width === 0 && caretRect.height === 0 && !lastTextRect) {
+            setKbePos({ left: 0, top: 0 });
+        } else {
+            const caretLeft = caretRect.right - titleRect.left;
+            const lastLineTop = lastTextRect
+                ? lastTextRect.top - titleRect.top
+                : 0;
+            const caretTop = caretRect.top - titleRect.top;
+            setKbePos({
+                left: Math.max(caretLeft, textEndLeft),
+                top: Math.max(caretTop, lastLineTop),
+            });
+        }
+    }, []);
+
     // Sync title prop into contentEditable only when not actively editing
     useEffect(() => {
         const el = titleRef.current;
@@ -114,18 +155,39 @@ export default function WritingSurface({
         el.innerHTML = titleToHtml(title);
     }, [title]);
 
+    // Auto-focus and select the title text for empty chapters (e.g. freshly created)
+    useEffect(() => {
+        if (!autoSelectTitle) return;
+        const el = titleRef.current;
+        if (!el) return;
+        const timer = setTimeout(() => {
+            if (!el.textContent) return;
+            (document.activeElement as HTMLElement)?.blur?.();
+            el.focus();
+            const sel = window.getSelection();
+            if (sel) {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+            onTitleSelectHandled?.();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [autoSelectTitle, onTitleSelectHandled]);
+
     const handleTitleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
             if (e.key === 'Enter' && e.shiftKey) {
+                e.preventDefault();
+                document.execCommand('insertLineBreak');
+            } else if (e.key === 'Enter') {
                 e.preventDefault();
                 if (scenes.length > 0) {
                     editorRegistry.current
                         .get(scenes[0].id)
                         ?.commands.focus('start');
                 }
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                document.execCommand('insertLineBreak');
             } else if (e.key === 'ArrowDown') {
                 const sel = window.getSelection();
                 if (!sel || !titleRef.current) return;
@@ -155,7 +217,8 @@ export default function WritingSurface({
     const handleTitleInput = useCallback(() => {
         const text = titleRef.current?.innerText ?? '';
         onTitleUpdate(text);
-    }, [onTitleUpdate]);
+        updateKbePosition();
+    }, [onTitleUpdate, updateKbePosition]);
 
     const handleTitlePaste = useCallback((e: React.ClipboardEvent) => {
         e.preventDefault();
@@ -259,15 +322,37 @@ export default function WritingSurface({
                         minHeight: containerHeight,
                     }}
                 >
-                    <h1
-                        ref={titleRef}
-                        contentEditable
-                        suppressContentEditableWarning
-                        onKeyDown={handleTitleKeyDown}
-                        onInput={handleTitleInput}
-                        onPaste={handleTitlePaste}
-                        className="mb-0 font-serif text-[32px] leading-[1.3] font-semibold tracking-[-0.01em] text-ink outline-none"
-                    />
+                    <div className="relative">
+                        <h1
+                            ref={titleRef}
+                            contentEditable
+                            suppressContentEditableWarning
+                            onKeyDown={(e) => {
+                                handleTitleKeyDown(e);
+                                requestAnimationFrame(updateKbePosition);
+                            }}
+                            onInput={handleTitleInput}
+                            onPaste={handleTitlePaste}
+                            onFocus={() => {
+                                setIsTitleFocused(true);
+                                requestAnimationFrame(updateKbePosition);
+                            }}
+                            onBlur={() => setIsTitleFocused(false)}
+                            className="mb-0 font-serif text-[32px] leading-[1.3] font-semibold tracking-[-0.01em] text-ink outline-none"
+                        />
+                        <div
+                            className={`pointer-events-none absolute flex items-center gap-1.5 transition-all duration-150 ease-out ${isTitleFocused ? 'opacity-80' : 'opacity-0'}`}
+                            style={{
+                                left: kbePos.left + 12,
+                                top: kbePos.top + 12,
+                            }}
+                        >
+                            <Kbd keys="⇧↵" />
+                            <span className="font-sans text-xs text-ink-faint">
+                                new line
+                            </span>
+                        </div>
+                    </div>
                     {metadataParts.length > 0 && (
                         <p className="mt-2 mb-0 font-sans text-sm tracking-wide text-ink-muted">
                             {metadataParts.join(' · ')}

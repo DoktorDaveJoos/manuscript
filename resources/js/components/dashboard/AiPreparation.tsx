@@ -1,10 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
 import { Brain, Crown, RefreshCw, Sparkle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useAiPreparation, TOTAL_PHASES } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
-import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 
 export default function AiPreparation({
     bookId,

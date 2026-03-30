@@ -169,7 +169,7 @@ export default function NotesSlashMenu({
                             key={item.blockType}
                             className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left ${
                                 isActive
-                                    ? 'bg-accent-light'
+                                    ? 'bg-neutral-bg'
                                     : 'hover:bg-neutral-bg'
                             }`}
                             onMouseEnter={() => setActiveIndex(index)}
@@ -179,7 +179,7 @@ export default function NotesSlashMenu({
                                 size={16}
                                 className={
                                     isActive
-                                        ? 'shrink-0 text-accent'
+                                        ? 'shrink-0 text-ink-soft'
                                         : 'shrink-0 text-ink-muted'
                                 }
                             />

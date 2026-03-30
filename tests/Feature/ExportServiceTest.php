@@ -1,7 +1,6 @@
 <?php
 
 use App\Contracts\ExportTemplate;
-use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\License;
@@ -11,7 +10,21 @@ use App\Services\Export\ContentPreparer;
 use App\Services\Export\ExportOptions;
 use App\Services\Export\ExportService;
 use App\Services\Export\Templates\ClassicTemplate;
+use Native\Desktop\Dialog;
 use Native\Desktop\Facades\System;
+
+function mockNativeDialog(string $extension = 'pdf'): string
+{
+    config(['nativephp-internal.running' => true]);
+
+    $savePath = storage_path('app/test-export-'.uniqid().'.'.$extension);
+    $dialog = Mockery::mock(Dialog::class);
+    $dialog->shouldReceive('title->defaultPath->filter->button->asSheet->save')
+        ->andReturn($savePath);
+    app()->instance(Dialog::class, $dialog);
+
+    return $savePath;
+}
 
 beforeEach(function () {
     License::factory()->create();
@@ -591,15 +604,14 @@ test('export endpoint accepts new formats', function () {
         ])->assertOk();
     }
 
-    // PDF requires NativePHP environment + System::printToPDF mock (Chromium-based)
-    config(['nativephp-internal.running' => true]);
-
-    // mPDF generates PDFs in PHP — no mocking needed
+    $savePath = mockNativeDialog();
 
     $this->postJson(route('books.settings.export.run', $book), [
         'format' => 'pdf',
         'scope' => 'full',
-    ])->assertOk();
+    ])->assertOk()->assertJson(['success' => true]);
+
+    @unlink($savePath);
 });
 
 test('export endpoint rejects invalid format', function () {
@@ -763,16 +775,16 @@ test('export endpoint accepts front_matter and back_matter arrays', function () 
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
     Scene::factory()->for($chapter)->create(['content' => '<p>Text.</p>', 'sort_order' => 1]);
 
-    config(['nativephp-internal.running' => true]);
-
-    // mPDF generates PDFs in PHP — no mocking needed
+    $savePath = mockNativeDialog();
 
     $this->postJson(route('books.settings.export.run', $book), [
         'format' => 'pdf',
         'scope' => 'full',
         'front_matter' => ['title-page', 'copyright'],
         'back_matter' => ['acknowledgments'],
-    ])->assertOk();
+    ])->assertOk()->assertJson(['success' => true]);
+
+    @unlink($savePath);
 });
 
 test('export endpoint rejects invalid front_matter values', function () {
@@ -840,7 +852,7 @@ test('pdf blade template renders valid html', function () {
             if ($sceneIndex > 0) {
                 $preparedContent .= '<p class="scene-break">*&nbsp;&nbsp;*&nbsp;&nbsp;*</p>';
             }
-            $preparedContent .= $contentPreparer->toPdfHtml($scene->content ?? '');
+            $preparedContent .= $contentPreparer->toChapterHtml($scene->content ?? '');
         }
         $chapter->prepared_content = $preparedContent;
 
@@ -855,12 +867,15 @@ test('pdf blade template renders valid html', function () {
         'front_matter' => ['title-page'],
     ]);
 
+    $template = new ClassicTemplate;
+
     $html = view('export.pdf', [
         'book' => $book,
         'chapters' => $chapters,
         'options' => $options,
-        'css' => (new \App\Services\Export\Templates\ClassicTemplate)->pdfCss($options->fontSize),
+        'css' => $template->pdfCss($options->fontSize),
         'contentPreparer' => $contentPreparer,
+        'template' => $template,
     ])->render();
 
     expect($html)->toContain('<!DOCTYPE html>');
@@ -933,8 +948,8 @@ test('resolveTemplate returns ClassicTemplate for classic slug', function () {
 
     expect($template)->toBeInstanceOf(ClassicTemplate::class);
     expect($template)->toBeInstanceOf(ExportTemplate::class);
-    expect($template::slug())->toBe('classic');
-    expect($template::name())->toBe('Classic');
+    expect($template->slug())->toBe('classic');
+    expect($template->name())->toBe('Classic');
 });
 
 test('resolveTemplate falls back to ClassicTemplate for unknown slug', function () {
@@ -974,14 +989,17 @@ test('export endpoint rejects invalid template', function () {
     ])->assertUnprocessable();
 });
 
-test('injectMatterText populates options from app settings', function () {
-    AppSetting::set('copyright_text', 'Test Copyright');
+test('injectMatterText populates options from book fields', function () {
+    $book = Book::factory()->create([
+        'copyright_text' => 'Test Copyright',
+        'author' => 'Jane Doe',
+    ]);
 
     $options = [
         'front_matter' => ['copyright'],
     ];
 
-    ExportService::injectMatterText($options);
+    ExportService::injectMatterText($options, $book);
 
     expect($options['copyright_text'])->toBe('Test Copyright');
 });

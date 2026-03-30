@@ -3,15 +3,17 @@
 namespace App\Services\Export\Templates;
 
 use App\Contracts\ExportTemplate;
+use App\Enums\FontPairing;
+use App\Enums\SceneBreakStyle;
 
 class ClassicTemplate implements ExportTemplate
 {
-    public static function slug(): string
+    public function slug(): string
     {
         return 'classic';
     }
 
-    public static function name(): string
+    public function name(): string
     {
         return 'Classic';
     }
@@ -26,11 +28,10 @@ class ClassicTemplate implements ExportTemplate
         return [
             'bodyColor' => '#2a2a2a',
             'headingColor' => '#1a1a1a',
-            'accentColor' => '#999999',
             'pdfLineHeight' => 1.35,
             'epubLineHeight' => 1.5,
             'chapterLabelSizeEm' => 0.7,
-            'titleSizeEm' => 1.6,
+            'titleSizeEm' => 1.8,
             'titleWeight' => 'normal',
             'runningHeaderStyle' => 'italic',
             'runningHeaderColor' => '#999999',
@@ -41,36 +42,59 @@ class ClassicTemplate implements ExportTemplate
         ];
     }
 
+    public function defaultFontPairing(): FontPairing
+    {
+        return FontPairing::ClassicSerif;
+    }
+
+    public function defaultSceneBreakStyle(): SceneBreakStyle
+    {
+        return SceneBreakStyle::Asterisks;
+    }
+
+    public function defaultDropCaps(): bool
+    {
+        return false;
+    }
+
     /**
      * Complete CSS for mPDF rendering.
      */
-    public function pdfCss(int $fontSize): string
+    public function pdfCss(int $fontSize, ?FontPairing $fontPairing = null): string
     {
-        return $this->baseCss($fontSize, 1.35);
+        return $this->baseCss($fontSize, 1.35, fontPairing: $fontPairing);
     }
 
     /**
      * CSS for e-book preview PDF — reflowable look, no running headers or page numbers.
      */
-    public function ebookPreviewCss(int $fontSize): string
+    public function ebookPreviewCss(int $fontSize, ?FontPairing $fontPairing = null): string
     {
-        return $this->baseCss($fontSize, 1.5, pagedMedia: false);
+        return $this->baseCss($fontSize, 1.5, pagedMedia: false, fontPairing: $fontPairing);
     }
 
     /**
      * Shared CSS for both PDF and e-book preview rendering.
      */
-    private function baseCss(int $fontSize, float $lineHeight, bool $pagedMedia = true): string
+    private function baseCss(int $fontSize, float $lineHeight, bool $pagedMedia = true, ?FontPairing $fontPairing = null): string
     {
+        $pairing = $fontPairing ?? $this->defaultFontPairing();
+        $bodyFontKey = $pairing->bodyFontKey();
+        $headingFontKey = $pairing->headingFontKey();
+        $bodyFontFamily = "{$bodyFontKey}, Georgia, serif";
+        $headingFontFamily = "{$headingFontKey}, Georgia, serif";
+
         $matterSectionPage = $pagedMedia ? "\n            page: matter;" : '';
 
         return <<<CSS
         body {
-            font-family: crimsonpro, Georgia, serif;
+            font-family: {$bodyFontFamily};
             font-size: {$fontSize}pt;
             line-height: {$lineHeight};
             text-align: justify;
             color: #2a2a2a;
+            hyphens: auto;
+            -webkit-hyphens: auto;
         }
         .chapter-label {
             font-size: 0.7em;
@@ -79,18 +103,19 @@ class ClassicTemplate implements ExportTemplate
             text-transform: uppercase;
             letter-spacing: 0.2em;
             color: #999999;
-            margin: 2em 0 0.25em;
+            margin: 9em 0 0.25em;
             text-indent: 0;
         }
         h1 {
-            font-size: 1.6em;
+            font-family: {$headingFontFamily};
+            font-size: 1.8em;
             font-weight: normal;
             text-align: center;
             margin: 0 0 1.5em;
             color: #1a1a1a;
         }
         .act-break {
-            font-size: 1.6em;
+            font-size: 1.8em;
             font-weight: bold;
             text-align: center;
             margin: 3em 0 1em;
@@ -176,7 +201,24 @@ class ClassicTemplate implements ExportTemplate
             break-before: page;
         }
         .chapter-section {
+            page-break-before: always;
             break-before: page;
+        }
+        blockquote {
+            margin: 1em 0 1em 2em;
+            font-size: 0.95em;
+            font-style: italic;
+        }
+        blockquote p {
+            text-indent: 0;
+        }
+        ul, ol {
+            margin: 0.8em 0 0.8em 2em;
+            padding: 0;
+        }
+        li {
+            margin: 0.2em 0;
+            text-indent: 0;
         }
         CSS;
     }
@@ -184,13 +226,17 @@ class ClassicTemplate implements ExportTemplate
     /**
      * Complete CSS for EPUB rendering.
      */
-    public function epubCss(string $fontFaceCss): string
+    public function epubCss(string $fontFaceCss, ?FontPairing $fontPairing = null): string
     {
+        $pairing = $fontPairing ?? $this->defaultFontPairing();
+        $bodyFamily = $pairing->bodyFontFamily();
+        $headingFamily = $pairing->headingFontFamily();
+
         return <<<CSS
         {$fontFaceCss}
 
         body {
-            font-family: "Crimson Pro", Georgia, serif;
+            font-family: {$bodyFamily};
             font-size: 1em;
             line-height: 1.5; /* keep in sync with getLineHeightMultiplier() in usePreviewPages.ts */
             margin: 1em;
@@ -198,17 +244,31 @@ class ClassicTemplate implements ExportTemplate
             hyphens: auto;
             -webkit-hyphens: auto;
         }
+        .chapter-label {
+            font-size: 0.7em;
+            font-weight: 500;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #999999;
+            margin: 9em 0 0.25em;
+        }
         h1 {
+            font-family: {$headingFamily};
             font-size: 1.8em;
-            font-weight: 700;
-            margin: 2em 0 1em;
+            font-weight: normal;
+            margin: 0 0 1em;
             text-align: center;
             page-break-before: always;
         }
         h1:first-child {
             page-break-before: avoid;
         }
+        .chapter-label + h1 {
+            page-break-before: avoid;
+        }
         h2 {
+            font-family: {$headingFamily};
             font-size: 1.4em;
             font-weight: 700;
             margin: 2em 0 0.5em;
@@ -298,6 +358,71 @@ class ClassicTemplate implements ExportTemplate
             text-indent: 0;
             margin: 0 0 0.5em;
         }
+        blockquote {
+            margin: 1em 0 1em 2em;
+            font-size: 0.95em;
+            font-style: italic;
+        }
+        blockquote p {
+            text-indent: 0;
+        }
+        ul, ol {
+            margin: 0.8em 0 0.8em 2em;
+            padding: 0;
+        }
+        li {
+            margin: 0.2em 0;
+            text-indent: 0;
+        }
         CSS;
+    }
+
+    public function sceneBreakCss(): string
+    {
+        return <<<'CSS'
+        .scene-break {
+            text-align: center;
+            margin: 1.5em 0;
+            font-size: 1em;
+            color: #999999;
+            page-break-before: avoid;
+            page-break-after: avoid;
+            text-indent: 0;
+        }
+        .scene-break--rule {
+            border: none;
+            border-top: 1px solid #cccccc;
+            width: 30%;
+            margin: 1.5em auto;
+        }
+        .scene-break--blank {
+            height: 2em;
+        }
+        CSS;
+    }
+
+    public function dropCapCss(): string
+    {
+        return <<<'CSS'
+        .drop-cap {
+            float: left;
+            font-size: 3.2em;
+            line-height: 0.8;
+            padding-right: 0.08em;
+            margin-top: 0.05em;
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+        CSS;
+    }
+
+    public function chapterHeaderHtml(int $index, string $title, string $locale = 'en'): string
+    {
+        $number = $index + 1;
+        $escapedTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+        $label = __('Chapter :number', ['number' => $number], $locale);
+
+        return '<p class="chapter-label" id="chapter-'.$index.'">'.htmlspecialchars($label, ENT_QUOTES, 'UTF-8').'</p>'
+            ."\n".'<h1>'.$escapedTitle.'</h1>';
     }
 }
