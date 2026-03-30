@@ -105,9 +105,6 @@ Route::post('/update/install', [UpdateController::class, 'install'])->name('upda
 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::put('/settings', [AppSettingsController::class, 'update'])->name('settings.update');
 Route::put('/settings/writing-style', [SettingsController::class, 'updateWritingStyle'])->name('settings.writing-style.update');
-Route::put('/settings/copyright', [SettingsController::class, 'updateCopyright'])->name('settings.copyright.update');
-Route::put('/settings/acknowledgment', [SettingsController::class, 'updateAcknowledgment'])->name('settings.acknowledgment.update');
-Route::put('/settings/about-author', [SettingsController::class, 'updateAboutAuthor'])->name('settings.about-author.update');
 Route::put('/settings/prose-pass-rules', [SettingsController::class, 'updateProsePassRules'])->name('settings.prose-pass-rules.update');
 
 // Legacy routes — redirect to unified settings

@@ -17,9 +17,6 @@ import {
 } from '@/actions/App/Http/Controllers/LicenseController';
 import {
     updateWritingStyle,
-    updateCopyright,
-    updateAcknowledgment,
-    updateAboutAuthor,
     updateProsePassRules,
 } from '@/actions/App/Http/Controllers/SettingsController';
 import { DEFAULT_FONT_ID, FONTS } from '@/components/editor/FontSelector';
@@ -64,9 +61,6 @@ interface Props {
     settings: AppSettings;
     ai_providers: ProviderSetting[];
     writing_style_text: string;
-    copyright_text: string;
-    acknowledgment_text: string;
-    about_author_text: string;
     prose_pass_rules: ProsePassRule[];
     version: string;
 }
@@ -1103,9 +1097,6 @@ type SectionKey =
     | 'ai-features'
     | 'writing-style'
     | 'revision-rules'
-    | 'copyright'
-    | 'acknowledgment'
-    | 'about-author'
     | 'privacy'
     | 'updates';
 
@@ -1138,21 +1129,6 @@ const NAV_ITEMS: NavSection[] = [
         key: 'revision-rules',
         label: 'section.prosePassRules',
         groupKey: 'sidebar.editor',
-    },
-    {
-        key: 'copyright',
-        label: 'copyright.navLabel',
-        groupKey: 'sidebar.print',
-    },
-    {
-        key: 'acknowledgment',
-        label: 'acknowledgment.navLabel',
-        groupKey: 'sidebar.print',
-    },
-    {
-        key: 'about-author',
-        label: 'aboutAuthor.navLabel',
-        groupKey: 'sidebar.print',
     },
     { key: 'privacy', label: 'privacy.navLabel', groupKey: 'sidebar.account' },
     { key: 'updates', label: 'updates.navLabel', groupKey: 'sidebar.account' },
@@ -1232,9 +1208,6 @@ export default function Settings({
     settings,
     ai_providers,
     writing_style_text,
-    copyright_text,
-    acknowledgment_text,
-    about_author_text,
     prose_pass_rules,
     version,
 }: Props) {
@@ -1247,9 +1220,6 @@ export default function Settings({
     const aiFeaturesRef = useRef<HTMLDivElement>(null);
     const writingStyleRef = useRef<HTMLDivElement>(null);
     const revisionRulesRef = useRef<HTMLDivElement>(null);
-    const copyrightRef = useRef<HTMLDivElement>(null);
-    const acknowledgmentRef = useRef<HTMLDivElement>(null);
-    const aboutAuthorRef = useRef<HTMLDivElement>(null);
     const privacyRef = useRef<HTMLDivElement>(null);
     const updatesRef = useRef<HTMLDivElement>(null);
 
@@ -1263,9 +1233,6 @@ export default function Settings({
         'ai-features': aiFeaturesRef,
         'writing-style': writingStyleRef,
         'revision-rules': revisionRulesRef,
-        copyright: copyrightRef,
-        acknowledgment: acknowledgmentRef,
-        'about-author': aboutAuthorRef,
         privacy: privacyRef,
         updates: updatesRef,
     });
@@ -1427,45 +1394,6 @@ export default function Settings({
                                     >
                                         <RevisionRulesSection
                                             initialRules={prose_pass_rules}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-col gap-9">
-                                    <div
-                                        ref={copyrightRef}
-                                        data-section="copyright"
-                                    >
-                                        <MarkdownTextareaSection
-                                            initialText={copyright_text}
-                                            saveUrl={updateCopyright.url()}
-                                            fieldName="copyright_text"
-                                            i18nPrefix="copyright"
-                                            sectionLabelKey="copyright.sectionLabel"
-                                        />
-                                    </div>
-                                    <div
-                                        ref={acknowledgmentRef}
-                                        data-section="acknowledgment"
-                                    >
-                                        <MarkdownTextareaSection
-                                            initialText={acknowledgment_text}
-                                            saveUrl={updateAcknowledgment.url()}
-                                            fieldName="acknowledgment_text"
-                                            i18nPrefix="acknowledgment"
-                                            sectionLabelKey="acknowledgment.sectionLabel"
-                                        />
-                                    </div>
-                                    <div
-                                        ref={aboutAuthorRef}
-                                        data-section="about-author"
-                                    >
-                                        <MarkdownTextareaSection
-                                            initialText={about_author_text}
-                                            saveUrl={updateAboutAuthor.url()}
-                                            fieldName="about_author_text"
-                                            i18nPrefix="aboutAuthor"
-                                            sectionLabelKey="aboutAuthor.sectionLabel"
                                         />
                                     </div>
                                 </div>
