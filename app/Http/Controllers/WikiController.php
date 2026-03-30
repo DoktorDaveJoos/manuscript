@@ -102,7 +102,6 @@ class WikiController extends Controller
                 ->with('error', __('Upgrade to Manuscript Pro for unlimited Story Bible entries.'));
         }
 
-        $chapterIds = $data['chapter_ids'] ?? [];
         unset($data['chapter_ids']);
 
         $entry = $book->wikiEntries()->create([
@@ -110,9 +109,7 @@ class WikiController extends Controller
             'is_ai_extracted' => false,
         ]);
 
-        if ($request->has('chapter_ids')) {
-            $entry->chapters()->sync($chapterIds);
-        }
+        $this->syncEntryChapters($entry, $request);
 
         return redirect()->route('books.wiki', ['book' => $book, 'tab' => $tab]);
     }
@@ -120,14 +117,11 @@ class WikiController extends Controller
     public function updateEntry(UpdateWikiEntryRequest $request, Book $book, WikiEntry $wikiEntry): RedirectResponse
     {
         $data = $request->validated();
-        $chapterIds = $data['chapter_ids'] ?? [];
         unset($data['chapter_ids']);
 
         $wikiEntry->update($data);
 
-        if ($request->has('chapter_ids')) {
-            $wikiEntry->chapters()->sync($chapterIds);
-        }
+        $this->syncEntryChapters($wikiEntry, $request);
 
         return redirect()->route('books.wiki', ['book' => $book, 'tab' => $wikiEntry->kind->value]);
     }
@@ -148,6 +142,13 @@ class WikiController extends Controller
                 ->mapWithKeys(fn ($id) => [$id => ['role' => $role]])
                 ->all();
             $character->chapters()->sync($pivotData);
+        }
+    }
+
+    private function syncEntryChapters(WikiEntry $entry, Request $request): void
+    {
+        if ($request->has('chapter_ids')) {
+            $entry->chapters()->sync($request->input('chapter_ids', []));
         }
     }
 }

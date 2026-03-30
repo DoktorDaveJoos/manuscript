@@ -13,6 +13,8 @@
     "storylines_other": "{{count}} tramas",
     "storylineLabel": "Trama {{name}}",
     "description": "Descripción",
+    "description.author": "Tus notas",
+    "description.ai": "De Manuscript",
     "firstAppearance": "Primera aparición",
     "chapterEntry": "Cap. {{order}} — {{title}}",
     "source": "Fuente",

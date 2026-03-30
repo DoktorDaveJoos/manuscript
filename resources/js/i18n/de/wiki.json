@@ -13,6 +13,8 @@
     "storylines_other": "{{count}} Handlungsstränge",
     "storylineLabel": "Handlungsstrang {{name}}",
     "description": "Beschreibung",
+    "description.author": "Deine Notizen",
+    "description.ai": "Von Manuscript",
     "firstAppearance": "Erstes Auftreten",
     "chapterEntry": "Kap. {{order}} — {{title}}",
     "source": "Quelle",
