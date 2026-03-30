@@ -59,6 +59,11 @@ jobs:
           sed -i '' "s|POLAR_ACCESS_TOKEN=.*|POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN}|" .env
           sed -i '' "s|POLAR_ORGANIZATION_ID=.*|POLAR_ORGANIZATION_ID=${POLAR_ORGANIZATION_ID}|" .env
 
+      - name: Build frontend assets
+        env:
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+        run: npm run build
+
       - name: Install Apple signing certificate
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
