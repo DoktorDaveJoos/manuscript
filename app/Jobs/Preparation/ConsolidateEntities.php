@@ -149,8 +149,8 @@ class ConsolidateEntities implements ShouldQueue
                     $merge['canonical_name'],
                 );
 
-                $this->keepLongestDescription($canonical, $duplicates);
-                $this->keepLongestAiDescription($canonical, $duplicates);
+                $this->keepLongestField($canonical, $duplicates, 'description');
+                $this->keepLongestField($canonical, $duplicates, 'ai_description');
                 $this->resolveEarliestAppearance($canonical, $duplicates);
                 $canonical->save();
 
@@ -225,8 +225,8 @@ class ConsolidateEntities implements ShouldQueue
                 );
                 $canonical->metadata = $metadata;
 
-                $this->keepLongestDescription($canonical, $duplicates);
-                $this->keepLongestAiDescription($canonical, $duplicates);
+                $this->keepLongestField($canonical, $duplicates, 'description');
+                $this->keepLongestField($canonical, $duplicates, 'ai_description');
                 $this->resolveEarliestAppearance($canonical, $duplicates);
                 $canonical->save();
 
@@ -270,23 +270,11 @@ class ConsolidateEntities implements ShouldQueue
     /**
      * @param  EloquentCollection<int, Model>  $duplicates
      */
-    private function keepLongestDescription(Model $canonical, EloquentCollection $duplicates): void
+    private function keepLongestField(Model $canonical, EloquentCollection $duplicates, string $field): void
     {
         foreach ($duplicates as $duplicate) {
-            if (mb_strlen($duplicate->description ?? '') > mb_strlen($canonical->description ?? '')) {
-                $canonical->description = $duplicate->description;
-            }
-        }
-    }
-
-    /**
-     * @param  EloquentCollection<int, Model>  $duplicates
-     */
-    private function keepLongestAiDescription(Model $canonical, EloquentCollection $duplicates): void
-    {
-        foreach ($duplicates as $duplicate) {
-            if (mb_strlen($duplicate->ai_description ?? '') > mb_strlen($canonical->ai_description ?? '')) {
-                $canonical->ai_description = $duplicate->ai_description;
+            if (mb_strlen($duplicate->{$field} ?? '') > mb_strlen($canonical->{$field} ?? '')) {
+                $canonical->{$field} = $duplicate->{$field};
             }
         }
     }

@@ -16,12 +16,20 @@ trait PersistsExtractedEntities
      */
     protected function persistExtractedEntities(Book $book, Chapter $chapter, array $response): void
     {
-        $characters = $book->characters()->get();
-        $wikiEntries = $book->wikiEntries()->get();
-        $matcher = new EntityNameMatcher($characters, $wikiEntries);
+        $characters = $response['characters'] ?? [];
+        $entities = $response['entities'] ?? [];
 
-        $this->persistCharacters($book, $chapter, $response['characters'] ?? [], $matcher);
-        $this->persistWikiEntries($book, $chapter, $response['entities'] ?? [], $matcher);
+        if (empty($characters) && empty($entities)) {
+            return;
+        }
+
+        $matcher = new EntityNameMatcher(
+            $book->characters()->get(),
+            $book->wikiEntries()->get(),
+        );
+
+        $this->persistCharacters($book, $chapter, $characters, $matcher);
+        $this->persistWikiEntries($book, $chapter, $entities, $matcher);
     }
 
     /**
@@ -48,19 +56,16 @@ trait PersistsExtractedEntities
                 $character = $book->characters()->make(['name' => $name]);
             }
 
-            // Merge aliases (additive, safe for both manual and AI entries)
             $character->aliases = array_values(array_unique(array_merge(
                 $character->aliases ?? [],
                 $characterData['aliases'] ?? [],
             )));
 
-            // AI always writes to ai_description, never to description
             $newDescription = $characterData['description'] ?? null;
             if (! $character->ai_description || mb_strlen($newDescription ?? '') > mb_strlen($character->ai_description)) {
                 $character->ai_description = $newDescription;
             }
 
-            // Only set is_ai_extracted on new entries
             if ($isNew) {
                 $character->is_ai_extracted = true;
             }
@@ -101,7 +106,6 @@ trait PersistsExtractedEntities
                 ]);
             }
 
-            // AI always writes to ai_description, never to description
             $newDescription = $entityData['description'] ?? null;
             if (! $entry->ai_description || mb_strlen($newDescription ?? '') > mb_strlen($entry->ai_description)) {
                 $entry->ai_description = $newDescription;
@@ -109,7 +113,6 @@ trait PersistsExtractedEntities
 
             $entry->type = $entityData['type'] ?? $entry->type;
 
-            // Only set is_ai_extracted on new entries
             if ($isNew) {
                 $entry->is_ai_extracted = true;
             }

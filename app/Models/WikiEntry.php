@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\WikiEntryKind;
+use App\Models\Concerns\HasDualDescription;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class WikiEntry extends Model
 {
-    use HasFactory;
+    use HasDualDescription, HasFactory;
 
     protected $guarded = [];
 
@@ -50,18 +51,5 @@ class WikiEntry extends Model
         return $this->belongsToMany(Chapter::class, 'wiki_entry_chapter')
             ->withPivot(['notes'])
             ->withTimestamps();
-    }
-
-    /**
-     * Get the combined description (manual + AI) for use in AI agent context.
-     */
-    public function fullDescription(): ?string
-    {
-        $parts = array_filter([
-            $this->description,
-            $this->ai_description,
-        ]);
-
-        return $parts ? implode("\n\n", $parts) : null;
     }
 }

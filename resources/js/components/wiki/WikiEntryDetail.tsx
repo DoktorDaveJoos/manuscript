@@ -5,6 +5,7 @@ import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import SectionLabel from '@/components/ui/SectionLabel';
 import type { WikiEntry } from '@/types/models';
+import DescriptionBlock from './DescriptionBlock';
 import WikiAvatar from './WikiAvatar';
 import type { WikiTab } from './WikiTabBar';
 
@@ -50,14 +51,7 @@ export default function WikiEntryDetail({
             {entry.description && (
                 <Card className="flex flex-col gap-3 p-6">
                     <SectionLabel>{t('description.author')}</SectionLabel>
-                    <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-ink">
-                        {entry.description
-                            .split('\n')
-                            .filter(Boolean)
-                            .map((paragraph, i) => (
-                                <p key={i}>{paragraph}</p>
-                            ))}
-                    </div>
+                    <DescriptionBlock text={entry.description} />
                 </Card>
             )}
 
@@ -65,14 +59,10 @@ export default function WikiEntryDetail({
             {entry.ai_description && (
                 <Card className="bg-surface-base flex flex-col gap-3 border-border-subtle p-6">
                     <SectionLabel>{t('description.ai')}</SectionLabel>
-                    <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-ink-muted">
-                        {entry.ai_description
-                            .split('\n')
-                            .filter(Boolean)
-                            .map((paragraph, i) => (
-                                <p key={i}>{paragraph}</p>
-                            ))}
-                    </div>
+                    <DescriptionBlock
+                        text={entry.ai_description}
+                        className="text-[14px] leading-relaxed text-ink-muted"
+                    />
                 </Card>
             )}
 

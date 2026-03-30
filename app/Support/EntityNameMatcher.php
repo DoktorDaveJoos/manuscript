@@ -44,7 +44,6 @@ class EntityNameMatcher
     {
         $name = mb_strtolower(trim($name));
 
-        // Strip leading articles
         foreach (self::ARTICLES as $article) {
             $prefix = $article.' ';
             if (str_starts_with($name, $prefix)) {

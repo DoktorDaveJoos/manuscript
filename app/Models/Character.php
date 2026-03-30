@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDualDescription;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Character extends Model
 {
-    use HasFactory;
+    use HasDualDescription, HasFactory;
 
     protected $guarded = [];
 
@@ -59,18 +60,5 @@ class Character extends Model
         return $this->belongsToMany(PlotPoint::class)
             ->withPivot('role')
             ->withTimestamps();
-    }
-
-    /**
-     * Get the combined description (manual + AI) for use in AI agent context.
-     */
-    public function fullDescription(): ?string
-    {
-        $parts = array_filter([
-            $this->description,
-            $this->ai_description,
-        ]);
-
-        return $parts ? implode("\n\n", $parts) : null;
     }
 }

@@ -25,6 +25,7 @@ import type {
     WikiEntry,
 } from '@/types/models';
 import ChapterCombobox from './ChapterCombobox';
+import DescriptionBlock from './DescriptionBlock';
 import StorylineCombobox from './StorylineCombobox';
 import type { WikiTab } from './WikiTabBar';
 
@@ -424,14 +425,10 @@ export default function WikiForm({
                         {t('description.ai')}
                     </span>
                     <div className="bg-surface-base rounded-md border border-border-subtle px-3 py-2.5">
-                        <div className="flex flex-col gap-2 text-[13px] leading-relaxed text-ink-muted">
-                            {item.ai_description
-                                .split('\n')
-                                .filter(Boolean)
-                                .map((paragraph, i) => (
-                                    <p key={i}>{paragraph}</p>
-                                ))}
-                        </div>
+                        <DescriptionBlock
+                            text={item.ai_description}
+                            className="text-[13px] leading-relaxed text-ink-muted"
+                        />
                     </div>
                 </div>
             )}

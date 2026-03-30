@@ -113,8 +113,9 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
                 $parts[] = "[{$character->pivot->role}]";
             }
             $line = implode(' ', $parts);
-            if ($character->fullDescription()) {
-                $line .= ": {$character->fullDescription()}";
+            $desc = $character->fullDescription();
+            if ($desc) {
+                $line .= ": {$desc}";
             }
             $lines[] = $line;
         }
@@ -136,8 +137,9 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
             $lines[] = "\n**{$label}:**";
             foreach ($entries as $entry) {
                 $line = "- {$entry->name}";
-                if ($entry->fullDescription()) {
-                    $line .= ": {$entry->fullDescription()}";
+                $desc = $entry->fullDescription();
+                if ($desc) {
+                    $line .= ": {$desc}";
                 }
                 $lines[] = $line;
             }

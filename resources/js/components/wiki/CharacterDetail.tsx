@@ -5,6 +5,7 @@ import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import SectionLabel from '@/components/ui/SectionLabel';
 import type { Character, Storyline } from '@/types/models';
+import DescriptionBlock from './DescriptionBlock';
 import WikiAvatar from './WikiAvatar';
 
 export default function CharacterDetail({
@@ -72,14 +73,7 @@ export default function CharacterDetail({
             {character.description && (
                 <Card className="flex flex-col gap-3 p-6">
                     <SectionLabel>{t('description.author')}</SectionLabel>
-                    <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-ink">
-                        {character.description
-                            .split('\n')
-                            .filter(Boolean)
-                            .map((paragraph, i) => (
-                                <p key={i}>{paragraph}</p>
-                            ))}
-                    </div>
+                    <DescriptionBlock text={character.description} />
                 </Card>
             )}
 
@@ -87,14 +81,10 @@ export default function CharacterDetail({
             {character.ai_description && (
                 <Card className="bg-surface-base flex flex-col gap-3 border-border-subtle p-6">
                     <SectionLabel>{t('description.ai')}</SectionLabel>
-                    <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-ink-muted">
-                        {character.ai_description
-                            .split('\n')
-                            .filter(Boolean)
-                            .map((paragraph, i) => (
-                                <p key={i}>{paragraph}</p>
-                            ))}
-                    </div>
+                    <DescriptionBlock
+                        text={character.ai_description}
+                        className="text-[14px] leading-relaxed text-ink-muted"
+                    />
                 </Card>
             )}
 
