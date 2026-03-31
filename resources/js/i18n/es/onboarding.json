@@ -53,6 +53,8 @@
 
     "dropZone.title": "Suelta los archivos del manuscrito aquí",
     "dropZone.subtitle": "Compatible con .docx, .odt, .txt y .md — agrega todos los que necesites",
+    "dropZone.unsupportedFormat": "Formato no soportado: {{files}}. Por favor usa archivos .docx, .odt, .txt o .md.",
+    "dropZone.fileTooLarge": "Archivo demasiado grande: {{files}}. El tamaño máximo es 10 MB.",
 
     "importChapterRow.words": "{{formatted}} palabras",
 

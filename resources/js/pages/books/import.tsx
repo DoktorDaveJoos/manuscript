@@ -54,9 +54,11 @@ type ParseResponse = {
 function UploadPhase({
     book,
     onStartParsing,
+    onReject,
 }: {
     book: Book & { storylines: Pick<Storyline, 'id' | 'book_id' | 'name'>[] };
     onStartParsing: (files: FileEntry[], mergeMode: boolean) => void;
+    onReject?: (message: string) => void;
 }) {
     const { t } = useTranslation('onboarding');
     const [files, setFiles] = useState<FileEntry[]>([]);
@@ -84,7 +86,7 @@ function UploadPhase({
             </div>
 
             <div className="flex w-[560px] flex-col gap-0">
-                <DropZone onFiles={handleFiles} />
+                <DropZone onFiles={handleFiles} onReject={onReject} />
 
                 {files.length > 0 && (
                     <div className="flex flex-col">
@@ -342,7 +344,11 @@ export default function BooksImport({
                 </div>
             )}
             {phase === 'upload' && (
-                <UploadPhase book={book} onStartParsing={handleStartParsing} />
+                <UploadPhase
+                    book={book}
+                    onStartParsing={handleStartParsing}
+                    onReject={setError}
+                />
             )}
             {phase === 'parsing' && (
                 <ParsingPhase
