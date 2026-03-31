@@ -16,6 +16,7 @@ use App\Services\Parsers\DocumentParserFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -84,20 +85,32 @@ class BookController extends Controller
                 $parser = $factory->forExtension($ext);
                 $parsed = $parser->parse($fileEntry['file']);
             } catch (\Throwable $e) {
+                Log::warning('Import parse failed', [
+                    'file' => $filename,
+                    'error' => $e->getMessage(),
+                ]);
                 abort(422, __('Could not parse ":file". The file may be corrupted or in an unsupported format.', [
                     'file' => $filename,
                 ]));
+            }
+
+            $warnings = [];
+
+            if (count($parsed['chapters']) === 1 && $parsed['chapters'][0]['title'] === 'Full Document') {
+                $warnings[] = __('No chapter headings were detected in ":file". The entire file was imported as a single chapter.', ['file' => $filename]);
             }
 
             $results[] = [
                 'storyline_name' => $fileEntry['storyline_name'],
                 'storyline_type' => $fileEntry['storyline_type'],
                 'chapters' => $parsed['chapters'],
+                'warnings' => $warnings,
             ];
         }
 
         if ($request->boolean('merge_into_single_storyline') && count($results) > 1) {
             $mergedChapters = [];
+            $mergedWarnings = [];
             $number = 1;
 
             foreach ($results as $storyline) {
@@ -105,6 +118,7 @@ class BookController extends Controller
                     $chapter['number'] = $number++;
                     $mergedChapters[] = $chapter;
                 }
+                array_push($mergedWarnings, ...$storyline['warnings']);
             }
 
             $results = [
@@ -112,6 +126,7 @@ class BookController extends Controller
                     'storyline_name' => $results[0]['storyline_name'],
                     'storyline_type' => $results[0]['storyline_type'],
                     'chapters' => $mergedChapters,
+                    'warnings' => $mergedWarnings,
                 ],
             ];
         }

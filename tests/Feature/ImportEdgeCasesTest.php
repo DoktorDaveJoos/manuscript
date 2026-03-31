@@ -8,6 +8,7 @@ use App\Services\Parsers\DocumentParserFactory;
 use App\Services\Parsers\MarkdownParserService;
 use App\Services\Parsers\TxtParserService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Testing\TestResponse;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -688,4 +689,75 @@ test('confirm import assigns sequential storyline sort_order', function () {
     expect($storylines)->toHaveCount(3)
         ->and($storylines->pluck('sort_order')->all())->toBe([0, 1, 2])
         ->and($storylines->pluck('name')->all())->toBe(['A', 'B', 'C']);
+});
+
+// ─── Parse Response Warnings ───────────────────────────────────────────
+
+test('parse response includes warnings array', function () {
+    $book = Book::factory()->create();
+    $file = tempFile("Chapter 1: Beginning\n\nOnce upon a time.", 'story.txt');
+
+    parseFiles($book, [[
+        'file' => $file,
+        'storyline_name' => 'Main',
+        'storyline_type' => 'main',
+    ]])->assertSuccessful()
+        ->assertJsonIsArray('storylines.0.warnings')
+        ->assertJsonCount(0, 'storylines.0.warnings');
+});
+
+test('file with no headings includes single-chapter fallback warning', function () {
+    $book = Book::factory()->create();
+    $file = tempFile('Just a single paragraph of text with no chapter headings at all.', 'noheadings.txt');
+
+    parseFiles($book, [[
+        'file' => $file,
+        'storyline_name' => 'Main',
+        'storyline_type' => 'main',
+    ]])->assertSuccessful()
+        ->assertJsonCount(1, 'storylines.0.warnings')
+        ->assertJsonPath('storylines.0.chapters.0.title', 'Full Document');
+});
+
+test('merge mode preserves warnings from all files', function () {
+    $book = Book::factory()->create();
+
+    $response = parseFiles($book, [
+        [
+            'file' => tempFile('No headings here at all.', 'a.txt'),
+            'storyline_name' => 'A',
+            'storyline_type' => 'main',
+        ],
+        [
+            'file' => tempFile("Chapter 1: Real\n\nContent here.", 'b.txt'),
+            'storyline_name' => 'B',
+            'storyline_type' => 'main',
+        ],
+    ], merge: true);
+
+    $response->assertSuccessful()
+        ->assertJsonCount(1, 'storylines')
+        ->assertJsonCount(1, 'storylines.0.warnings');
+});
+
+test('parse logs warning when file cannot be parsed', function () {
+    $book = Book::factory()->create();
+
+    Log::shouldReceive('warning')
+        ->once()
+        ->withArgs(fn (string $message, array $context) => $message === 'Import parse failed'
+            && $context['file'] === 'broken.docx'
+            && ! empty($context['error'])
+        );
+
+    $this->mock(DocumentParserFactory::class, function ($mock) {
+        $mock->shouldReceive('forExtension')
+            ->andThrow(new RuntimeException('Test parse failure'));
+    });
+
+    parseFiles($book, [[
+        'file' => tempFile('not a real file', 'broken.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+        'storyline_name' => 'Main',
+        'storyline_type' => 'main',
+    ]])->assertStatus(422);
 });
