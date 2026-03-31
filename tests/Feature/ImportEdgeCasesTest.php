@@ -328,7 +328,9 @@ test('txt parser handles unicode content correctly', function () {
     expect($result['chapters'])->toHaveCount(2)
         ->and($result['chapters'][0]['title'])->toBe('日本語タイトル')
         ->and($result['chapters'][0]['content'])->toContain('これは日本語のテキストです。')
-        ->and($result['chapters'][1]['title'])->toBe('中文标题');
+        ->and($result['chapters'][0]['word_count'])->toBeGreaterThan(0)
+        ->and($result['chapters'][1]['title'])->toBe('中文标题')
+        ->and($result['chapters'][1]['word_count'])->toBeGreaterThan(0);
 });
 
 test('markdown parser handles unicode content', function () {

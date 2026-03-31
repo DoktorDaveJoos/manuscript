@@ -2,6 +2,8 @@
 
 namespace App\Services\Parsers\Concerns;
 
+use App\Support\WordCount;
+
 trait DetectsChapters
 {
     /** Chapter keywords that require a number or word after them. */
@@ -118,7 +120,7 @@ trait DetectsChapters
         return [
             'number' => $number,
             'title' => $title,
-            'word_count' => str_word_count(strip_tags($content)),
+            'word_count' => WordCount::count($content),
             'content' => $content,
         ];
     }
@@ -166,7 +168,7 @@ trait DetectsChapters
                 [
                     'number' => 1,
                     'title' => 'Full Document',
-                    'word_count' => str_word_count(strip_tags($content)),
+                    'word_count' => WordCount::count($content),
                     'content' => $content,
                 ],
             ],
