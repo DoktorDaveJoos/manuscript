@@ -64,6 +64,8 @@
     "uploadPhase.skip": "Omitir — comenzar en blanco",
     "uploadPhase.importFiles_one": "Importar {{count}} archivo",
     "uploadPhase.importFiles_other": "Importar {{count}} archivos",
+    "uploadPhase.uploading": "Subiendo…",
+    "uploadPhase.maxFiles": "Máximo 20 archivos permitidos.",
     "uploadPhase.mergeFiles": "Combinar todos los archivos en una sola trama",
 
     "importGuide.label": "Cómo funciona la importación",
