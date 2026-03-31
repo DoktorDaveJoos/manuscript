@@ -264,51 +264,54 @@ class BookController extends Controller
 
     public function confirmImport(ConfirmImportRequest $request, Book $book, NormalizationService $normalizer): RedirectResponse
     {
-        $storylineOrder = 0;
+        DB::transaction(function () use ($request, $book, $normalizer) {
+            $storylineOrder = 0;
 
-        foreach ($request->validated('storylines') as $storylineData) {
-            $storyline = $book->storylines()->create([
-                'name' => $storylineData['name'],
-                'type' => $storylineData['type'],
-                'sort_order' => $storylineOrder++,
-            ]);
+            foreach ($request->validated('storylines') as $storylineData) {
+                $storyline = $book->storylines()->create([
+                    'name' => $storylineData['name'],
+                    'type' => $storylineData['type'],
+                    'sort_order' => $storylineOrder++,
+                ]);
 
-            $chapterOrder = 0;
+                $chapterOrder = 0;
 
-            foreach ($storylineData['chapters'] as $chapterData) {
-                if (! $chapterData['included']) {
-                    continue;
+                foreach ($storylineData['chapters'] as $chapterData) {
+                    if (! $chapterData['included']) {
+                        continue;
+                    }
+
+                    if (trim($chapterData['content'] ?? '') === '') {
+                        continue;
+                    }
+
+                    $normalized = $normalizer->normalize($chapterData['content'], $book->language ?? 'en');
+                    $wordCount = str_word_count(strip_tags($normalized['content']));
+
+                    $chapter = $storyline->chapters()->create([
+                        'book_id' => $book->id,
+                        'title' => $chapterData['title'],
+                        'reader_order' => $chapterOrder++,
+                        'status' => 'draft',
+                        'word_count' => $wordCount,
+                    ]);
+
+                    $chapter->versions()->create([
+                        'version_number' => 1,
+                        'content' => $normalized['content'],
+                        'source' => VersionSource::Original,
+                        'is_current' => true,
+                    ]);
+
+                    $chapter->scenes()->create([
+                        'title' => 'Scene 1',
+                        'content' => $normalized['content'],
+                        'sort_order' => 0,
+                        'word_count' => $wordCount,
+                    ]);
                 }
-
-                if (trim($chapterData['content'] ?? '') === '') {
-                    continue;
-                }
-
-                $normalized = $normalizer->normalize($chapterData['content'], $book->language ?? 'en');
-
-                $chapter = $storyline->chapters()->create([
-                    'book_id' => $book->id,
-                    'title' => $chapterData['title'],
-                    'reader_order' => $chapterOrder++,
-                    'status' => 'draft',
-                    'word_count' => $chapterData['word_count'],
-                ]);
-
-                $chapter->versions()->create([
-                    'version_number' => 1,
-                    'content' => $normalized['content'],
-                    'source' => VersionSource::Original,
-                    'is_current' => true,
-                ]);
-
-                $chapter->scenes()->create([
-                    'title' => 'Scene 1',
-                    'content' => $normalized['content'],
-                    'sort_order' => 0,
-                    'word_count' => $chapterData['word_count'],
-                ]);
             }
-        }
+        });
 
         return redirect()->route('books.editor', $book);
     }
