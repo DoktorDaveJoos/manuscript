@@ -78,6 +78,7 @@ trait DetectsChapters
         $chapters = [];
         $currentTitle = null;
         $currentContent = [];
+        $preambleContent = [];
 
         foreach ($paragraphs as $para) {
             if ($this->isChapterHeading($para['style'] ?? null, $para['text'])) {
@@ -86,6 +87,8 @@ trait DetectsChapters
                 }
                 $currentTitle = $this->extractTitle($para['text']);
                 $currentContent = [];
+            } elseif ($currentTitle === null) {
+                $preambleContent[] = $para['html'];
             } else {
                 $currentContent[] = $para['html'];
             }
@@ -93,6 +96,10 @@ trait DetectsChapters
 
         if ($currentTitle !== null) {
             $chapters[] = $this->buildChapter(count($chapters) + 1, $currentTitle, $currentContent);
+        }
+
+        if ($preambleContent !== [] && $chapters !== []) {
+            array_unshift($chapters, $this->buildChapter(1, 'Preamble', $preambleContent));
         }
 
         return $this->filterAndRenumber($chapters);

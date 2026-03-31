@@ -781,3 +781,81 @@ test('confirm import assigns sequential storyline sort_order', function () {
         ->and($storylines->pluck('sort_order')->all())->toBe([0, 1, 2])
         ->and($storylines->pluck('name')->all())->toBe(['A', 'B', 'C']);
 });
+
+// ─── Preamble Preservation ─────────────────────────────────────────────
+
+test('txt file preserves content before first chapter heading as preamble', function () {
+    $content = "This is a dedication.\n\nFor my family.\n\nChapter 1: The Beginning\n\nOnce upon a time.\n\nChapter 2: The End\n\nThey lived happily.";
+    $file = tempFile($content, 'with-preamble.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(3)
+        ->and($result['chapters'][0]['title'])->toBe('Preamble')
+        ->and($result['chapters'][0]['content'])->toContain('dedication')
+        ->and($result['chapters'][0]['content'])->toContain('family')
+        ->and($result['chapters'][1]['title'])->toBe('The Beginning')
+        ->and($result['chapters'][2]['title'])->toBe('The End');
+});
+
+test('markdown file preserves content before first heading as preamble', function () {
+    $content = "This is the author's foreword.\n\nWith multiple paragraphs.\n\n# Chapter One\n\nThe story begins.\n\n# Chapter Two\n\nThe story ends.";
+    $file = tempFile($content, 'with-preamble.md', 'text/markdown');
+
+    $parser = new MarkdownParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(3)
+        ->and($result['chapters'][0]['title'])->toBe('Preamble')
+        ->and($result['chapters'][0]['content'])->toContain('foreword')
+        ->and($result['chapters'][0]['content'])->toContain('multiple paragraphs')
+        ->and($result['chapters'][1]['title'])->toBe('Chapter One')
+        ->and($result['chapters'][2]['title'])->toBe('Chapter Two');
+});
+
+test('txt file with whitespace-only preamble does not create preamble chapter', function () {
+    $content = "   \n\n   \n\nChapter 1: Real Content\n\nSome actual text.";
+    $file = tempFile($content, 'whitespace-preamble.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(1)
+        ->and($result['chapters'][0]['title'])->toBe('Real Content');
+});
+
+test('markdown file with whitespace-only preamble does not create preamble chapter', function () {
+    $content = "   \n\n   \n\n# Real Chapter\n\nSome actual text.";
+    $file = tempFile($content, 'whitespace-preamble.md', 'text/markdown');
+
+    $parser = new MarkdownParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(1)
+        ->and($result['chapters'][0]['title'])->toBe('Real Chapter');
+});
+
+test('txt file with no headings still falls back to Full Document', function () {
+    $content = "Just some text without any chapter headings.\n\nAnother paragraph of regular content.";
+    $file = tempFile($content, 'no-headings.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(1)
+        ->and($result['chapters'][0]['title'])->toBe('Full Document')
+        ->and($result['chapters'][0]['content'])->toContain('chapter headings');
+});
+
+test('markdown file with no headings still falls back to Full Document', function () {
+    $content = "Just some text without any markdown headings.\n\nAnother paragraph of regular content.";
+    $file = tempFile($content, 'no-headings.md', 'text/markdown');
+
+    $parser = new MarkdownParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(1)
+        ->and($result['chapters'][0]['title'])->toBe('Full Document')
+        ->and($result['chapters'][0]['content'])->toContain('headings');
+});
