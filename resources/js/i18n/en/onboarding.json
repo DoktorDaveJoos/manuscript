@@ -66,6 +66,8 @@
     "uploadPhase.skip": "Skip — start blank",
     "uploadPhase.importFiles_one": "Import {{count}} file",
     "uploadPhase.importFiles_other": "Import {{count}} files",
+    "uploadPhase.uploading": "Uploading…",
+    "uploadPhase.maxFiles": "Maximum 20 files allowed.",
     "uploadPhase.mergeFiles": "Merge all files into one storyline",
 
     "importGuide.label": "How import works",
