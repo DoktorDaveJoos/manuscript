@@ -224,6 +224,98 @@ test('txt parser detects German part headings (Teil)', function () {
         ->and($result['chapters'][1]['title'])->toBe('Sommer');
 });
 
+// ─── French / Spanish / Italian Chapter Patterns ───────────────────────
+
+test('txt parser detects French chapter headings (Chapitre)', function () {
+    $content = "Chapitre 1: Le Début\n\nIl était une fois.\n\nChapitre 2: La Fin\n\nEt ils vécurent heureux.";
+    $file = tempFile($content, 'french.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('Le Début')
+        ->and($result['chapters'][1]['title'])->toBe('La Fin');
+});
+
+test('txt parser detects Spanish chapter headings (Capítulo)', function () {
+    $content = "Capítulo 3: La Noche\n\nEra una noche oscura.\n\nCapítulo 4: El Día\n\nEl sol brillaba.";
+    $file = tempFile($content, 'spanish.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('La Noche')
+        ->and($result['chapters'][1]['title'])->toBe('El Día');
+});
+
+// ─── Standalone Heading Patterns ───────────────────────────────────────
+
+test('txt parser detects standalone Prologue heading', function () {
+    $content = "Prologue\n\nThe story begins in darkness.\n\nChapter 1: Dawn\n\nThe sun rose.";
+    $file = tempFile($content, 'prologue.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('Prologue')
+        ->and($result['chapters'][1]['title'])->toBe('Dawn');
+});
+
+test('txt parser detects standalone Epilogue heading', function () {
+    $content = "Chapter 1: The Journey\n\nThey traveled far.\n\nEpilogue\n\nYears later, peace reigned.";
+    $file = tempFile($content, 'epilogue.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('The Journey')
+        ->and($result['chapters'][1]['title'])->toBe('Epilogue');
+});
+
+// ─── Part / Act / Section Patterns ─────────────────────────────────────
+
+test('txt parser detects Part headings with title', function () {
+    $content = "Part One: The Beginning\n\nIt all started here.\n\nPart Two: The Middle\n\nThe plot thickened.";
+    $file = tempFile($content, 'parts.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('The Beginning')
+        ->and($result['chapters'][1]['title'])->toBe('The Middle');
+});
+
+test('txt parser detects Act headings with roman numerals', function () {
+    $content = "Act I\n\nThe curtain rises.\n\nAct II\n\nThe conflict deepens.";
+    $file = tempFile($content, 'acts.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('Act I')
+        ->and($result['chapters'][1]['title'])->toBe('Act II');
+});
+
+// ─── Roman Numeral Chapter Headings ────────────────────────────────────
+
+test('txt parser detects Chapter with roman numeral and title', function () {
+    $content = "Chapter IV: The Return\n\nHe came back at last.\n\nChapter V: The Reckoning\n\nJustice was served.";
+    $file = tempFile($content, 'roman.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('The Return')
+        ->and($result['chapters'][1]['title'])->toBe('The Reckoning');
+});
+
 // ─── Unicode Content ────────────────────────────────────────────────────
 
 test('txt parser handles unicode content correctly', function () {

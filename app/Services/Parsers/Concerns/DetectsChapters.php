@@ -4,6 +4,12 @@ namespace App\Services\Parsers\Concerns;
 
 trait DetectsChapters
 {
+    /** Chapter keywords that require a number or word after them. */
+    private const NUMBERED_HEADING_KEYWORDS = 'chapter|kapitel|teil|chapitre|capítulo|capitolo|part|act|book|section';
+
+    /** Chapter keywords that stand alone as the entire heading. */
+    private const STANDALONE_HEADING_KEYWORDS = 'prologue|epilogue|introduction|foreword|afterword|preface|acknowledgements|acknowledgments';
+
     /**
      * Determine whether a paragraph is a chapter heading.
      */
@@ -13,7 +19,17 @@ trait DetectsChapters
             return true;
         }
 
-        return (bool) preg_match('/^(chapter|kapitel|teil)\s+\w+/i', trim($text));
+        $trimmed = trim($text);
+
+        if (preg_match('/^('.self::NUMBERED_HEADING_KEYWORDS.')\s+\w+/iu', $trimmed)) {
+            return true;
+        }
+
+        if (preg_match('/^('.self::STANDALONE_HEADING_KEYWORDS.')$/iu', $trimmed)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -44,7 +60,7 @@ trait DetectsChapters
     {
         $text = trim($text);
 
-        if (preg_match('/^(?:chapter|kapitel|teil)\s+\w+\s*[:\-—–.]\s*(.+)$/i', $text, $matches)) {
+        if (preg_match('/^(?:'.self::NUMBERED_HEADING_KEYWORDS.')\s+\w+\s*[:\-—–.]\s*(.+)$/iu', $text, $matches)) {
             return trim($matches[1]);
         }
 
