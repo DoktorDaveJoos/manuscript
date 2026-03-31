@@ -53,6 +53,8 @@
 
     "dropZone.title": "Drop manuscript files here",
     "dropZone.subtitle": "Supports .docx, .odt, .txt, and .md — add as many as you need",
+    "dropZone.unsupportedFormat": "Unsupported format: {{files}}. Please use .docx, .odt, .txt, or .md files.",
+    "dropZone.fileTooLarge": "File too large: {{files}}. Maximum size is 10 MB.",
 
     "importChapterRow.words": "{{formatted}} words",
 

@@ -53,6 +53,8 @@
 
     "dropZone.title": "Manuskriptdateien hierher ziehen",
     "dropZone.subtitle": "Unterstützt .docx, .odt, .txt und .md — beliebig viele Dateien",
+    "dropZone.unsupportedFormat": "Nicht unterstütztes Format: {{files}}. Bitte verwende .docx, .odt, .txt oder .md Dateien.",
+    "dropZone.fileTooLarge": "Datei zu groß: {{files}}. Maximale Größe ist 10 MB.",
 
     "importChapterRow.words": "{{formatted}} Wörter",
 

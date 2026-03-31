@@ -2,12 +2,6 @@ import { router } from '@inertiajs/react';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    confirmImport,
-    parse,
-    skipImport,
-} from '@/actions/App/Http/Controllers/BookController';
-import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 import DropZone from '@/components/onboarding/DropZone';
 import FileRow from '@/components/onboarding/FileRow';
 import ImportChapterRow from '@/components/onboarding/ImportChapterRow';
@@ -20,6 +14,12 @@ import SectionLabel from '@/components/ui/SectionLabel';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
 import { extractErrorMessage } from '@/lib/utils';
 import type { Book, Storyline, StorylineType } from '@/types/models';
+import {
+    confirmImport,
+    parse,
+    skipImport,
+} from '@/actions/App/Http/Controllers/BookController';
+import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 
 function normalizeFilenameToStorylineName(filename: string): string {
     return filename
@@ -53,9 +53,11 @@ type ParseResponse = {
 function UploadPhase({
     book,
     onStartParsing,
+    onReject,
 }: {
     book: Book & { storylines: Pick<Storyline, 'id' | 'book_id' | 'name'>[] };
     onStartParsing: (files: FileEntry[], mergeMode: boolean) => void;
+    onReject?: (message: string) => void;
 }) {
     const { t } = useTranslation('onboarding');
     const [files, setFiles] = useState<FileEntry[]>([]);
@@ -83,7 +85,7 @@ function UploadPhase({
             </div>
 
             <div className="flex w-[560px] flex-col gap-0">
-                <DropZone onFiles={handleFiles} />
+                <DropZone onFiles={handleFiles} onReject={onReject} />
 
                 {files.length > 0 && (
                     <div className="flex flex-col">
@@ -340,7 +342,11 @@ export default function BooksImport({
                 </div>
             )}
             {phase === 'upload' && (
-                <UploadPhase book={book} onStartParsing={handleStartParsing} />
+                <UploadPhase
+                    book={book}
+                    onStartParsing={handleStartParsing}
+                    onReject={setError}
+                />
             )}
             {phase === 'parsing' && (
                 <ParsingPhase
