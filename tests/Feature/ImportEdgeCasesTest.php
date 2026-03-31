@@ -4,6 +4,7 @@ use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\Storyline;
 use App\Services\DocxParserService;
+use App\Services\Normalization\NormalizationService;
 use App\Services\Parsers\DocumentParserFactory;
 use App\Services\Parsers\MarkdownParserService;
 use App\Services\Parsers\TxtParserService;
@@ -27,7 +28,7 @@ function tempFile(string $content, string $name, string $mime = 'text/plain'): U
 
 afterEach(function () {
     global $tempFiles;
-    foreach ($tempFiles as $path) {
+    foreach ($tempFiles ?? [] as $path) {
         @unlink($path);
     }
     $tempFiles = [];
@@ -688,4 +689,71 @@ test('confirm import assigns sequential storyline sort_order', function () {
     expect($storylines)->toHaveCount(3)
         ->and($storylines->pluck('sort_order')->all())->toBe([0, 1, 2])
         ->and($storylines->pluck('name')->all())->toBe(['A', 'B', 'C']);
+});
+
+// ─── Transaction Rollback ──────────────────────────────────────────────
+
+test('confirm import rolls back all data on failure', function () {
+    $book = Book::factory()->create();
+
+    $callCount = 0;
+    $normalizer = Mockery::mock(NormalizationService::class);
+    $normalizer->shouldReceive('normalize')
+        ->andReturnUsing(function () use (&$callCount) {
+            $callCount++;
+            if ($callCount >= 2) {
+                throw new RuntimeException('Normalization failed');
+            }
+
+            return ['content' => '<p>Normalized.</p>', 'changes' => [], 'total_changes' => 0];
+        });
+
+    $this->app->instance(NormalizationService::class, $normalizer);
+
+    $this->post(route('books.import.confirm', $book), [
+        'storylines' => [[
+            'name' => 'Main',
+            'type' => 'main',
+            'chapters' => [
+                ['title' => 'Ch 1', 'content' => 'First content.', 'word_count' => 2, 'included' => true],
+                ['title' => 'Ch 2', 'content' => 'Second content.', 'word_count' => 2, 'included' => true],
+            ],
+        ]],
+    ])->assertServerError();
+
+    expect(Storyline::where('book_id', $book->id)->count())->toBe(0)
+        ->and(Chapter::where('book_id', $book->id)->count())->toBe(0);
+});
+
+// ─── Word Count Recalculation ──────────────────────────────────────────
+
+test('confirm import recalculates word count from normalized content', function () {
+    $book = Book::factory()->create(['language' => 'en']);
+
+    // Content with "--" which normalizes to em dash "—", potentially changing word count.
+    // The raw payload word_count (99) is intentionally wrong to prove recalculation.
+    $this->post(route('books.import.confirm', $book), [
+        'storylines' => [[
+            'name' => 'Main',
+            'type' => 'main',
+            'chapters' => [
+                [
+                    'title' => 'Chapter One',
+                    'content' => '<p>She said "hello" -- and then smiled...</p>',
+                    'word_count' => 99,
+                    'included' => true,
+                ],
+            ],
+        ]],
+    ])->assertRedirect();
+
+    $chapter = Chapter::where('book_id', $book->id)->first();
+    $scene = $chapter->scenes->first();
+    $normalizedContent = $chapter->currentVersion->content;
+
+    $expectedWordCount = str_word_count(strip_tags($normalizedContent));
+
+    expect($chapter->word_count)->toBe($expectedWordCount)
+        ->and($chapter->word_count)->not->toBe(99)
+        ->and($scene->word_count)->toBe($expectedWordCount);
 });
