@@ -44,6 +44,7 @@ class TxtParserService implements DocumentParserInterface
             }
 
             $escaped = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+            $escaped = str_replace("\n", '<br>', $escaped);
             $paragraphs[] = [
                 'style' => null,
                 'text' => $text,
