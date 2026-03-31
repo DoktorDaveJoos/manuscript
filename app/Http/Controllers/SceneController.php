@@ -10,6 +10,7 @@ use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\Scene;
 use App\Models\WritingSession;
+use App\Support\WordCount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -25,7 +26,7 @@ class SceneController extends Controller
             ->increment('sort_order');
 
         $content = $request->validated('content') ?? '';
-        $wordCount = $content !== '' ? str_word_count(strip_tags($content)) : 0;
+        $wordCount = $content !== '' ? WordCount::count($content) : 0;
 
         $scene = $chapter->scenes()->create([
             'title' => $request->validated('title'),
@@ -44,7 +45,7 @@ class SceneController extends Controller
     public function updateContent(UpdateSceneContentRequest $request, Book $book, Chapter $chapter, Scene $scene): JsonResponse
     {
         $previousSceneWordCount = $scene->word_count;
-        $wordCount = str_word_count(strip_tags($request->validated('content')));
+        $wordCount = WordCount::count($request->validated('content'));
 
         $scene->update([
             'content' => $request->validated('content'),
