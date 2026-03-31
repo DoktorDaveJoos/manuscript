@@ -320,6 +320,21 @@ test('txt parser recognizes various scene break patterns', function (string $pat
     '- - -',
 ]);
 
+test('single character is not detected as scene break', function (string $char) {
+    $content = "Chapter 1: Test\n\nBefore.\n\n{$char}\n\nAfter.";
+    $file = tempFile($content, 'no-break.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'][0]['content'])->not->toContain('<hr>');
+})->with([
+    '-',
+    '*',
+    '#',
+    '~',
+]);
+
 // ─── Multiple Files Without Merge ───────────────────────────────────────
 
 test('multiple files create separate storylines without merge', function () {
