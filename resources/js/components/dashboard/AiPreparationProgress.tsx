@@ -1,5 +1,6 @@
 import { Check, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
 import { useAiPreparation, TOTAL_PHASES } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
@@ -153,11 +154,14 @@ export default function AiPreparationProgress({
                     ? t('preparation.starting')
                     : t('preparationProgress.prepareForAi')}
             </Button>
-            {error && <span className="text-xs text-red-600">{error}</span>}
-            {status?.status === 'failed' && (
-                <span className="text-xs text-red-600">
-                    {status.error_message ?? t('preparation.failed')}
-                </span>
+            {(error || status?.status === 'failed') && (
+                <Alert variant="destructive">
+                    <AlertDescription>
+                        {error ||
+                            status?.error_message ||
+                            t('preparation.failed')}
+                    </AlertDescription>
+                </Alert>
             )}
         </div>
     );

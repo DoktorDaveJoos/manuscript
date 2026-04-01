@@ -28,7 +28,7 @@ class EditorialReviewController extends Controller
             ->get();
 
         $latestReview = $reviews->first(fn ($r) => in_array($r->status, ['pending', 'analyzing', 'synthesizing']))
-            ?? $reviews->firstWhere('status', 'completed');
+            ?? $reviews->first(fn ($r) => in_array($r->status, ['failed', 'completed']));
 
         if ($latestReview && $latestReview->status === 'completed') {
             $latestReview->load(['sections', 'chapterNotes']);

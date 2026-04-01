@@ -35,7 +35,7 @@ class EditorialReviewSection extends Model
     }
 
     /**
-     * Ensure all findings have a key field, adding keys where missing.
+     * Ensure all findings have a valid key field.
      */
     public function ensureFindingKeys(): void
     {
@@ -48,8 +48,10 @@ class EditorialReviewSection extends Model
         $changed = false;
 
         foreach ($findings as &$finding) {
-            if (empty($finding['key'])) {
-                $finding['key'] = self::findingKey($this->type->value, $finding['description'] ?? '');
+            $expected = self::findingKey($this->type->value, $finding['description'] ?? '');
+
+            if (($finding['key'] ?? '') !== $expected) {
+                $finding['key'] = $expected;
                 $changed = true;
             }
         }

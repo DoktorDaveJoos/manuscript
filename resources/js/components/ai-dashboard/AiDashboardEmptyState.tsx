@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { Loader2, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { TOTAL_PHASES, useAiPreparation } from '@/hooks/useAiPreparation';
@@ -93,9 +94,9 @@ export default function AiDashboardEmptyState({
                     </Button>
                 )}
                 {error && (
-                    <p className="text-[13px] text-red-500">
-                        {t('emptyState.error')}: {error}
-                    </p>
+                    <Alert variant="destructive" className="max-w-md">
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
                 )}
                 <div className="flex items-center gap-4 text-[13px]">
                     <a

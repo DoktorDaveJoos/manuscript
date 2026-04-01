@@ -58,7 +58,7 @@ class RunEditorialReviewJob implements ShouldQueue
             $this->refreshStaleAnalyses($chapters);
             $this->gapFillChapters($chapters);
 
-            if ($this->review->chapterNotes()->count() === 0) {
+            if (! $this->review->chapterNotes()->exists()) {
                 $this->markFailed(__('No chapter content available for editorial review.'));
 
                 return;

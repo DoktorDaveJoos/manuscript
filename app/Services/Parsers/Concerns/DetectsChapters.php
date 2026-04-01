@@ -160,6 +160,53 @@ trait DetectsChapters
     }
 
     /**
+     * Detect if a paragraph is a blockquote by its style name.
+     */
+    protected function isBlockquote(?string $style): bool
+    {
+        if ($style === null) {
+            return false;
+        }
+
+        return (bool) preg_match('/^(Quote|Quotations|BlockQuote|Block\s*Text|IntenseQuote)$/i', $style);
+    }
+
+    /**
+     * Wrap inline HTML in the appropriate block element.
+     */
+    protected function wrapParagraph(string $inlineHtml, ?string $style, bool $isScene): string
+    {
+        if ($isScene) {
+            return '<hr>';
+        }
+
+        if ($this->isBlockquote($style)) {
+            return '<blockquote><p>'.$inlineHtml.'</p></blockquote>';
+        }
+
+        return '<p>'.$inlineHtml.'</p>';
+    }
+
+    /**
+     * Merge adjacent identical formatting tags, preserving any whitespace between them.
+     *
+     * Word/LibreOffice often split a single styled phrase into multiple runs,
+     * producing fragments like `</em> <em>` that should be collapsed.
+     */
+    protected function mergeAdjacentTags(string $html): string
+    {
+        $previous = '';
+        while ($previous !== $html) {
+            $previous = $html;
+            $html = preg_replace('#</em>(\s*)<em>#', '$1', $html);
+            $html = preg_replace('#</strong>(\s*)<strong>#', '$1', $html);
+            $html = preg_replace('#</u>(\s*)<u>#', '$1', $html);
+        }
+
+        return $html;
+    }
+
+    /**
      * Fallback when no chapters are detected — return the entire document as one chapter.
      *
      * @param  list<array{style: string|null, text: string, html: string}>  $paragraphs

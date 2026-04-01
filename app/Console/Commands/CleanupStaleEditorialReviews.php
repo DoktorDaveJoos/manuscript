@@ -21,6 +21,7 @@ class CleanupStaleEditorialReviews extends Command
             ->update([
                 'status' => 'failed',
                 'error_message' => __('Review timed out. Please try again.'),
+                'updated_at' => now(),
             ]);
 
         if ($count > 0) {

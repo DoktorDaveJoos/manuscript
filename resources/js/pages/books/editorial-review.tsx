@@ -8,7 +8,7 @@ import Sidebar from '@/components/editor/Sidebar';
 import EditorialReviewEmptyState from '@/components/editorial-review/EditorialReviewEmptyState';
 import EditorialReviewProgress from '@/components/editorial-review/EditorialReviewProgress';
 import EditorialReviewReport from '@/components/editorial-review/EditorialReviewReport';
-import { Alert } from '@/components/ui/Alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
 import PageHeader from '@/components/ui/PageHeader';
 import SlidePanel from '@/components/ui/SlidePanel';
@@ -128,29 +128,28 @@ export default function EditorialReviewPage({
                             </Alert>
                         )}
 
-                        {error && (
-                            <div className="mb-4 rounded-lg bg-delete-bg px-4 py-3 text-[13px] text-delete">
-                                {error}
-                            </div>
-                        )}
-
-                        {review?.status === 'failed' && review && (
+                        {(error || review?.status === 'failed') && (
                             <div className="flex flex-1 flex-col items-center justify-center gap-4">
-                                <p className="text-sm font-medium text-delete">
-                                    {t('failed.title')}
-                                </p>
-                                {review.error_message && (
-                                    <p className="max-w-md text-center text-[13px] text-ink-muted">
-                                        {review.error_message}
-                                    </p>
-                                )}
-                                <Button
-                                    variant="primary"
-                                    onClick={handleStart}
-                                    disabled={starting}
+                                <Alert
+                                    variant="destructive"
+                                    className="max-w-xl"
                                 >
-                                    {t('failed.retry')}
-                                </Button>
+                                    <AlertTitle>{t('failed.title')}</AlertTitle>
+                                    <AlertDescription>
+                                        {error ||
+                                            review?.error_message ||
+                                            t('failed.title')}
+                                    </AlertDescription>
+                                </Alert>
+                                {review?.status === 'failed' && (
+                                    <Button
+                                        variant="primary"
+                                        onClick={handleStart}
+                                        disabled={starting}
+                                    >
+                                        {t('failed.retry')}
+                                    </Button>
+                                )}
                             </div>
                         )}
 

@@ -166,60 +166,15 @@ class DocxParserService implements DocumentParserInterface
             return false;
         }
 
-        $val = $xpath->query($property.'/@w:val', $rPr);
-        if ($val && $val->length > 0) {
-            $v = $val->item(0)->nodeValue;
+        $val = $nodes->item(0)->getAttributeNS(
+            'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
+            'val',
+        );
 
-            return $v !== 'false' && $v !== '0';
+        if ($val !== '') {
+            return $val !== 'false' && $val !== '0';
         }
 
         return true;
-    }
-
-    /**
-     * Detect if a paragraph is a blockquote.
-     */
-    private function isBlockquote(?string $style): bool
-    {
-        if ($style === null) {
-            return false;
-        }
-
-        return (bool) preg_match('/^(Quote|BlockQuote|Block\s*Text|IntenseQuote)$/i', $style);
-    }
-
-    /**
-     * Wrap inline HTML in the appropriate block element.
-     */
-    private function wrapParagraph(string $inlineHtml, ?string $style, bool $isScene): string
-    {
-        if ($isScene) {
-            return '<hr>';
-        }
-
-        if ($this->isBlockquote($style)) {
-            return '<blockquote><p>'.$inlineHtml.'</p></blockquote>';
-        }
-
-        return '<p>'.$inlineHtml.'</p>';
-    }
-
-    /**
-     * Merge adjacent identical formatting tags, preserving any whitespace between them.
-     *
-     * Word often splits a single styled phrase into multiple runs, producing
-     * fragments like `</em> <em>` that should be collapsed.
-     */
-    private function mergeAdjacentTags(string $html): string
-    {
-        $previous = '';
-        while ($previous !== $html) {
-            $previous = $html;
-            $html = preg_replace('#</em>(\s*)<em>#', '$1', $html);
-            $html = preg_replace('#</strong>(\s*)<strong>#', '$1', $html);
-            $html = preg_replace('#</u>(\s*)<u>#', '$1', $html);
-        }
-
-        return $html;
     }
 }

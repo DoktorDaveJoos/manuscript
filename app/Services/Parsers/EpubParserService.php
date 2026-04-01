@@ -63,7 +63,7 @@ class EpubParserService implements DocumentParserInterface
                 continue;
             }
 
-            $paragraphs = array_merge($paragraphs, $this->extractParagraphs($xhtml));
+            array_push($paragraphs, ...$this->extractParagraphs($xhtml));
         }
 
         $zip->close();
@@ -122,7 +122,6 @@ class EpubParserService implements DocumentParserInterface
         $xpath = new DOMXPath($dom);
         $xpath->registerNamespace('opf', self::NS_OPF);
 
-        // Build manifest map: id => href
         $manifest = [];
         $items = $xpath->query('//opf:manifest/opf:item');
 
@@ -138,7 +137,6 @@ class EpubParserService implements DocumentParserInterface
             }
         }
 
-        // Read spine order
         $spineRefs = $xpath->query('//opf:spine/opf:itemref');
         $files = [];
 
@@ -164,7 +162,6 @@ class EpubParserService implements DocumentParserInterface
     {
         $dom = new DOMDocument;
 
-        // Try loadXML first for well-formed XHTML, fall back to loadHTML
         if (@$dom->loadXML($xhtml, LIBXML_NOERROR | LIBXML_NOWARNING) === false) {
             @$dom->loadHTML($xhtml, LIBXML_NOERROR | LIBXML_NOWARNING);
         }
@@ -203,14 +200,13 @@ class EpubParserService implements DocumentParserInterface
             }
 
             if ($tagName === 'blockquote') {
-                $innerText = $this->extractInlineText($node);
-                $innerHtml = $this->extractInlineHtml($node);
+                $inline = $this->extractInline($node);
 
-                if (trim($innerText) !== '') {
+                if (trim($inline['text']) !== '') {
                     $paragraphs[] = [
                         'style' => null,
-                        'text' => $innerText,
-                        'html' => '<blockquote><p>'.$innerHtml.'</p></blockquote>',
+                        'text' => $inline['text'],
+                        'html' => '<blockquote><p>'.$inline['html'].'</p></blockquote>',
                     ];
                 }
 
@@ -224,15 +220,15 @@ class EpubParserService implements DocumentParserInterface
                 $style = ($level <= 2) ? 'Heading'.$level : null;
             }
 
-            $rawText = $this->extractInlineText($node);
-            $inlineHtml = $this->extractInlineHtml($node);
-            $isScene = $this->isSceneBreak(null, $rawText, null);
+            $inline = $this->extractInline($node);
+            $inlineHtml = $this->mergeAdjacentTags($inline['html']);
+            $isScene = $this->isSceneBreak(null, $inline['text']);
 
-            if (trim($rawText) !== '' || $isScene) {
+            if (trim($inline['text']) !== '' || $isScene) {
                 $paragraphs[] = [
                     'style' => $style,
-                    'text' => $rawText,
-                    'html' => $this->wrapParagraph($inlineHtml, $rawText, $isScene),
+                    'text' => $inline['text'],
+                    'html' => $this->wrapParagraph($inlineHtml, $style, $isScene),
                 ];
             }
         }
@@ -241,68 +237,45 @@ class EpubParserService implements DocumentParserInterface
     }
 
     /**
-     * Extract the plain text from a node by walking its children.
+     * Extract both plain text and formatted HTML from a node in a single walk.
+     *
+     * @return array{text: string, html: string}
      */
-    private function extractInlineText(DOMNode $node): string
+    private function extractInline(DOMNode $node): array
     {
         $text = '';
+        $html = '';
 
         foreach ($node->childNodes as $child) {
             if ($child->nodeType === XML_TEXT_NODE) {
                 $text .= $child->textContent;
+                $html .= htmlspecialchars($child->textContent, ENT_QUOTES, 'UTF-8');
             } elseif ($child->nodeType === XML_ELEMENT_NODE) {
                 $childTag = strtolower($child->localName);
 
                 if ($childTag === 'br') {
                     $text .= ' ';
-                } else {
-                    $text .= $this->extractInlineText($child);
-                }
-            }
-        }
-
-        return $text;
-    }
-
-    /**
-     * Extract HTML from a node, preserving inline formatting tags.
-     */
-    private function extractInlineHtml(DOMNode $node): string
-    {
-        $parts = [];
-
-        foreach ($node->childNodes as $child) {
-            if ($child->nodeType === XML_TEXT_NODE) {
-                $parts[] = htmlspecialchars($child->textContent, ENT_QUOTES, 'UTF-8');
-            } elseif ($child->nodeType === XML_ELEMENT_NODE) {
-                $childTag = strtolower($child->localName);
-
-                if ($childTag === 'br') {
-                    $parts[] = '<br>';
+                    $html .= '<br>';
                 } elseif (in_array($childTag, ['strong', 'b'])) {
-                    $parts[] = '<strong>'.$this->extractInlineHtml($child).'</strong>';
+                    $inner = $this->extractInline($child);
+                    $text .= $inner['text'];
+                    $html .= '<strong>'.$inner['html'].'</strong>';
                 } elseif (in_array($childTag, ['em', 'i'])) {
-                    $parts[] = '<em>'.$this->extractInlineHtml($child).'</em>';
+                    $inner = $this->extractInline($child);
+                    $text .= $inner['text'];
+                    $html .= '<em>'.$inner['html'].'</em>';
                 } elseif ($childTag === 'u') {
-                    $parts[] = '<u>'.$this->extractInlineHtml($child).'</u>';
+                    $inner = $this->extractInline($child);
+                    $text .= $inner['text'];
+                    $html .= '<u>'.$inner['html'].'</u>';
                 } else {
-                    $parts[] = $this->extractInlineHtml($child);
+                    $inner = $this->extractInline($child);
+                    $text .= $inner['text'];
+                    $html .= $inner['html'];
                 }
             }
         }
 
-        return implode('', $parts);
-    }
-
-    /**
-     * Wrap inline HTML in the appropriate block element.
-     */
-    private function wrapParagraph(string $inlineHtml, string $rawText, bool $isScene): string
-    {
-        if ($isScene) {
-            return '<hr>';
-        }
-
-        return '<p>'.$inlineHtml.'</p>';
+        return ['text' => $text, 'html' => $html];
     }
 }
