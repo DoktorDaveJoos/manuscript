@@ -2,12 +2,6 @@ import { router } from '@inertiajs/react';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    confirmImport,
-    parse,
-    skipImport,
-} from '@/actions/App/Http/Controllers/BookController';
-import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 import DropZone from '@/components/onboarding/DropZone';
 import FileRow from '@/components/onboarding/FileRow';
 import ImportChapterRow from '@/components/onboarding/ImportChapterRow';
@@ -21,12 +15,18 @@ import { Spinner } from '@/components/ui/spinner';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
 import { extractErrorMessage } from '@/lib/utils';
 import type { Book, Storyline, StorylineType } from '@/types/models';
+import {
+    confirmImport,
+    parse,
+    skipImport,
+} from '@/actions/App/Http/Controllers/BookController';
+import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 
 const MAX_FILES = 20;
 
 function normalizeFilenameToStorylineName(filename: string): string {
     return filename
-        .replace(/\.(docx|odt|txt|md|markdown)$/i, '')
+        .replace(/\.(docx|odt|txt|md|markdown|epub)$/i, '')
         .replace(/[_-]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim()

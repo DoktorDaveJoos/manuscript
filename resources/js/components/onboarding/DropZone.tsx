@@ -4,7 +4,14 @@ import type { DragEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-const SUPPORTED_EXTENSIONS = ['.docx', '.odt', '.txt', '.md', '.markdown'];
+const SUPPORTED_EXTENSIONS = [
+    '.docx',
+    '.odt',
+    '.txt',
+    '.md',
+    '.markdown',
+    '.epub',
+];
 
 export default function DropZone({
     onFiles,
@@ -86,7 +93,7 @@ export default function DropZone({
             <input
                 ref={inputRef}
                 type="file"
-                accept=".docx,.odt,.txt,.md,.markdown"
+                accept=".docx,.odt,.txt,.md,.markdown,.epub"
                 multiple
                 className="hidden"
                 onChange={(e) => {

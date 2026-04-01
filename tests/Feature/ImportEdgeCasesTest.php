@@ -61,6 +61,7 @@ test('corrupted zip files fall back to empty single chapter', function (string $
 })->with([
     'docx' => ['docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
     'odt' => ['odt', 'application/vnd.oasis.opendocument.text'],
+    'epub' => ['epub', 'application/epub+zip'],
 ]);
 
 // ─── Empty / Whitespace-Only Files ──────────────────────────────────────
@@ -143,7 +144,6 @@ test('unsupported file extensions are rejected by validation', function (string 
     'pdf' => ['pdf', 'application/pdf'],
     'rtf' => ['rtf', 'application/rtf'],
     'html' => ['html', 'text/html'],
-    'epub' => ['epub', 'application/epub+zip'],
 ]);
 
 // ─── Validation Edge Cases ──────────────────────────────────────────────
