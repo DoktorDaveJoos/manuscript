@@ -90,7 +90,7 @@ class OdtParserService implements DocumentParserInterface
         $paragraphs = [];
 
         // Process both text:h (headings) and text:p (paragraphs) in document order
-        $nodes = $xpath->query('//office:body/office:text/text:h | //office:body/office:text/text:p');
+        $nodes = $xpath->query('//office:body//text:h | //office:body//text:p');
 
         if ($nodes === false) {
             return [];
@@ -104,6 +104,9 @@ class OdtParserService implements DocumentParserInterface
                 $outlineLevel = $node->getAttributeNS(self::NS_TEXT, 'outline-level');
                 $level = (int) $outlineLevel;
                 $style = ($level <= 2) ? 'Heading'.$level : null;
+            } else {
+                $styleName = $node->getAttributeNS(self::NS_TEXT, 'style-name');
+                $style = ($styleName !== '') ? $styleName : null;
             }
 
             $rawText = '';
@@ -121,14 +124,14 @@ class OdtParserService implements DocumentParserInterface
                 }
             }
 
-            $inlineHtml = implode('', $htmlParts);
-            $isScene = $this->isSceneBreak(null, $rawText, null);
+            $inlineHtml = $this->mergeAdjacentTags(implode('', $htmlParts));
+            $isScene = $this->isSceneBreak($style, $rawText);
 
             if (trim($rawText) !== '' || $isScene) {
                 $paragraphs[] = [
                     'style' => $style,
                     'text' => $rawText,
-                    'html' => $this->wrapParagraph($inlineHtml, $rawText, $isScene),
+                    'html' => $this->wrapParagraph($inlineHtml, $style, $isScene),
                 ];
             }
         }
@@ -203,17 +206,5 @@ class OdtParserService implements DocumentParserInterface
         }
 
         return ['text' => $text, 'html' => $html];
-    }
-
-    /**
-     * Wrap inline HTML in the appropriate block element.
-     */
-    private function wrapParagraph(string $inlineHtml, string $rawText, bool $isScene): string
-    {
-        if ($isScene) {
-            return '<hr>';
-        }
-
-        return '<p>'.$inlineHtml.'</p>';
     }
 }

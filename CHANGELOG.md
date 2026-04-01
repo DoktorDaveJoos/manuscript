@@ -1,5 +1,65 @@
 # Changelog
 
+## v0.4.1 (2026-04-01)
+
+### Features
+
+- add EPUB import support (90f3848)
+- add Unicode NFC normalization rule for imported text (9962e9d)
+- add parse error logging and content warnings to import flow (fba0d10)
+- add unsupported file feedback and client-side size check to DropZone (94094ac)
+- add CJK-aware word counting via WordCount helper (fd72373)
+- broaden chapter heading detection for multilingual and structural patterns (e4bedd0)
+
+### Fixes
+
+- detect Windows-1252 encoding for smart quotes in TXT imports (d465ab1)
+- move DocxParserService to Parsers namespace and add mergeAdjacentTags whitespace handling (7810f9d)
+- OdtParser blockquotes, nested sections, style reading, and tag merging (05bf7ca)
+- require at least 3 non-space separator chars for scene break detection (7fd8e67)
+- use CJK-aware WordCount in confirmImport and enforce max 20 files server-side (e28a340)
+- harden editorial review controller and surface in-progress reviews (747310b)
+- add cascade delete on chapter_id FK and composite index on editorial_reviews (772b55b)
+- add scheduled cleanup for zombie editorial reviews (6382ab7)
+- add empty-book short-circuit and upgrade finding key hash to xxh128 (eb5a7bf)
+- rollback optimistic UI on non-2xx server responses in useToggleFinding (bbbceac)
+- handle mixed-formatting docx imports (German styles, false positives, fragmented tags) (6784864)
+- improve import page UX with upload feedback, file limits, and state preservation (3ce55d7)
+- wrap confirmImport in DB transaction and recalculate word count (2ed1185)
+- tighten scene break detection and preserve TXT single line breaks (1cc5a30)
+- preserve preamble content before first chapter heading during import (5dacfc8)
+
+### Other Changes
+
+- Fix ESLint import order in useToggleFinding and import page (d56d63b)
+- Refactor parsers, improve editorial review error handling (fdc9579)
+- Merge pull request #88 from DoktorDaveJoos/feat/epub-parser (41ac963)
+- Merge branch 'dev' into feat/epub-parser (3844c25)
+- Merge pull request #85 from DoktorDaveJoos/fix/docx-namespace-and-merge-tags (5a15afb)
+- Merge branch 'dev' into fix/docx-namespace-and-merge-tags (a04ca61)
+- Merge pull request #87 from DoktorDaveJoos/fix/txt-parser-encoding-detection (786a2ca)
+- Merge branch 'dev' into fix/txt-parser-encoding-detection (d4d6dad)
+- Merge pull request #86 from DoktorDaveJoos/feat/nfc-normalization-rule (b55191e)
+- Merge pull request #84 from DoktorDaveJoos/fix/odt-parser-improvements (4a1244a)
+- Merge branch 'dev' into fix/odt-parser-improvements (ee8a3c0)
+- Merge pull request #83 from DoktorDaveJoos/fix/scene-break-regex (8735b39)
+- Merge pull request #82 from DoktorDaveJoos/fix/import-wordcount-and-file-limit (55a351a)
+- Merge remote-tracking branch 'origin/dev' into dev (6630741)
+- Merge pull request #81 from DoktorDaveJoos/worktree-agent-ac5eec6b (64455d4)
+- Merge pull request #78 from DoktorDaveJoos/worktree-agent-ac2b31ee (9112e00)
+- Merge pull request #80 from DoktorDaveJoos/worktree-agent-ae9637e4 (19289b1)
+- Merge pull request #77 from DoktorDaveJoos/worktree-agent-ab9bfb51 (409ff46)
+- Merge pull request #79 from DoktorDaveJoos/worktree-agent-a8e444ca (9afd886)
+- Merge remote-tracking branch 'origin/worktree-agent-a6bbcf5b' into dev (e9c006d)
+- Merge pull request #74 from DoktorDaveJoos/worktree-agent-a937e8c8 (5b9302f)
+- Merge remote-tracking branch 'origin/worktree-agent-af61aa07' into dev (b4cd44b)
+- Merge remote-tracking branch 'origin/worktree-agent-a6c48876' into dev (11b2471)
+- Merge pull request #72 from DoktorDaveJoos/worktree-agent-a622e113 (fa11bde)
+- Merge pull request #71 from DoktorDaveJoos/worktree-agent-ac34989c (ed2c0f0)
+- Merge pull request #70 from DoktorDaveJoos/worktree-agent-a066afb8 (5904160)
+- Merge pull request #69 from DoktorDaveJoos/worktree-agent-a3f083f2 (ef90a3f)
+
+
 ## v0.3.0 (2026-03-21)
 
 ### Features

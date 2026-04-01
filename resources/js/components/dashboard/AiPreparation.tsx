@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { Brain, Crown, RefreshCw, Sparkle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useAiPreparation, TOTAL_PHASES } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
@@ -193,13 +194,14 @@ export default function AiPreparation({
                 <p className="text-xs text-ink-faint">
                     {t('preparation.unlockDescription')}
                 </p>
-                {error && (
-                    <span className="text-[12px] text-red-600">{error}</span>
-                )}
-                {status?.status === 'failed' && (
-                    <span className="text-[12px] text-red-600">
-                        {status.error_message ?? t('preparation.failed')}
-                    </span>
+                {(error || status?.status === 'failed') && (
+                    <Alert variant="destructive">
+                        <AlertDescription>
+                            {error ||
+                                status?.error_message ||
+                                t('preparation.failed')}
+                        </AlertDescription>
+                    </Alert>
                 )}
             </div>
             <button

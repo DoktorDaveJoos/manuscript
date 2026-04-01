@@ -4,7 +4,7 @@ use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
 use App\Models\Storyline;
-use App\Services\DocxParserService;
+use App\Services\Parsers\DocxParserService;
 use Illuminate\Http\UploadedFile;
 
 function docxFixture(string $name): UploadedFile
@@ -383,6 +383,29 @@ test('parse endpoint accepts md files', function () {
                     path: __DIR__.'/fixtures/chapters.md',
                     originalName: 'chapters.md',
                     mimeType: 'text/markdown',
+                    test: true,
+                ),
+                'storyline_name' => 'Main',
+                'storyline_type' => 'main',
+            ],
+        ],
+    ]);
+
+    $response->assertSuccessful()
+        ->assertJsonCount(1, 'storylines')
+        ->assertJsonPath('storylines.0.chapters.0.number', 1);
+});
+
+test('parse endpoint accepts epub files', function () {
+    $book = Book::factory()->create();
+
+    $response = $this->postJson(route('books.import.parse', $book), [
+        'files' => [
+            [
+                'file' => new UploadedFile(
+                    path: __DIR__.'/fixtures/chapters.epub',
+                    originalName: 'chapters.epub',
+                    mimeType: 'application/epub+zip',
                     test: true,
                 ),
                 'storyline_name' => 'Main',

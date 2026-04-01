@@ -49,6 +49,14 @@ class MarkdownParserService implements DocumentParserInterface
             );
         }
 
+        // Prepend preamble as its own chapter when headings exist
+        if ($preamble !== '' && count($chapters) > 0) {
+            $preambleHtml = trim($converter->convert($preamble)->getContent());
+            if ($preambleHtml !== '') {
+                array_unshift($chapters, $this->buildChapter(1, 'Preamble', [$preambleHtml]));
+            }
+        }
+
         $chapters = $this->filterAndRenumber($chapters);
 
         // Fallback: no headings found — entire file as single chapter

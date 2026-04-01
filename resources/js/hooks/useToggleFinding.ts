@@ -17,7 +17,7 @@ export function useToggleFinding(
             onUpdate(newResolved);
 
             try {
-                await fetch(
+                const res = await fetch(
                     toggleFinding.url({ book: bookId, review: reviewId }),
                     {
                         method: 'POST',
@@ -25,6 +25,10 @@ export function useToggleFinding(
                         body: JSON.stringify({ key }),
                     },
                 );
+
+                if (!res.ok) {
+                    onUpdate(resolvedFindings);
+                }
             } catch {
                 onUpdate(resolvedFindings);
             }

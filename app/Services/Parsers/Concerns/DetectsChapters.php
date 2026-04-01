@@ -2,18 +2,39 @@
 
 namespace App\Services\Parsers\Concerns;
 
+use App\Support\WordCount;
+
 trait DetectsChapters
 {
+    /** Chapter keywords that require a number/numeral after them. */
+    private const NUMBERED_HEADING_KEYWORDS = 'chapter|kapitel|teil|chapitre|capítulo|capitolo|part|act|book|section';
+
+    /** Number-like tokens that follow a numbered heading keyword. */
+    private const HEADING_NUMBER_PATTERN = '\d+|[IVXLC]+\b|one|two|three|four|five|six|seven|eight|nine|ten|eins|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn';
+
+    /** Chapter keywords that stand alone as the entire heading. */
+    private const STANDALONE_HEADING_KEYWORDS = 'prologue|epilogue|introduction|foreword|afterword|preface|acknowledgements|acknowledgments';
+
     /**
      * Determine whether a paragraph is a chapter heading.
      */
     protected function isChapterHeading(?string $style, string $text): bool
     {
-        if ($style !== null && preg_match('/^(Heading1|Heading2|heading\s*[12])$/i', $style)) {
+        if ($style !== null && preg_match('/^(Heading\s*[12]|Überschrift\s*[12]|Titre\s*[12]|Título\s*[12]|Intestazione\s*[12])$/iu', $style)) {
             return true;
         }
 
-        return (bool) preg_match('/^(chapter|kapitel|teil)\s+\w+/i', trim($text));
+        $trimmed = trim($text);
+
+        if (preg_match('/^('.self::NUMBERED_HEADING_KEYWORDS.')\s+('.self::HEADING_NUMBER_PATTERN.')/iu', $trimmed)) {
+            return true;
+        }
+
+        if (preg_match('/^('.self::STANDALONE_HEADING_KEYWORDS.')$/iu', $trimmed)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -26,8 +47,11 @@ trait DetectsChapters
         }
 
         $trimmed = trim($text);
-        if ($trimmed !== '' && preg_match('/^[\*\#\~\-\x{2014}\x{2013}\s]{1,20}$/u', $trimmed) && preg_match('/[\*\#\~\-\x{2014}\x{2013}]/u', $trimmed)) {
-            return true;
+        if ($trimmed !== '' && preg_match('/^[\*\#\~\-\x{2014}\x{2013}\s]{3,20}$/u', $trimmed)) {
+            $separatorCount = preg_match_all('/[\*\#\~\-\x{2014}\x{2013}]/u', $trimmed);
+            if ($separatorCount >= 3) {
+                return true;
+            }
         }
 
         if ($alignment === 'center' && mb_strlen($trimmed) <= 10 && $trimmed !== '' && preg_match('/^[\p{P}\p{S}\s]+$/u', $trimmed)) {
@@ -44,7 +68,7 @@ trait DetectsChapters
     {
         $text = trim($text);
 
-        if (preg_match('/^(?:chapter|kapitel|teil)\s+\w+\s*[:\-—–.]\s*(.+)$/i', $text, $matches)) {
+        if (preg_match('/^(?:'.self::NUMBERED_HEADING_KEYWORDS.')\s+(?:'.self::HEADING_NUMBER_PATTERN.')\s*[:\-—–.]\s*(.+)$/iu', $text, $matches)) {
             return trim($matches[1]);
         }
 
@@ -62,6 +86,7 @@ trait DetectsChapters
         $chapters = [];
         $currentTitle = null;
         $currentContent = [];
+        $preambleContent = [];
 
         foreach ($paragraphs as $para) {
             if ($this->isChapterHeading($para['style'] ?? null, $para['text'])) {
@@ -70,6 +95,8 @@ trait DetectsChapters
                 }
                 $currentTitle = $this->extractTitle($para['text']);
                 $currentContent = [];
+            } elseif ($currentTitle === null) {
+                $preambleContent[] = $para['html'];
             } else {
                 $currentContent[] = $para['html'];
             }
@@ -77,6 +104,10 @@ trait DetectsChapters
 
         if ($currentTitle !== null) {
             $chapters[] = $this->buildChapter(count($chapters) + 1, $currentTitle, $currentContent);
+        }
+
+        if ($preambleContent !== [] && $chapters !== []) {
+            array_unshift($chapters, $this->buildChapter(1, 'Preamble', $preambleContent));
         }
 
         return $this->filterAndRenumber($chapters);
@@ -95,7 +126,7 @@ trait DetectsChapters
         return [
             'number' => $number,
             'title' => $title,
-            'word_count' => str_word_count(strip_tags($content)),
+            'word_count' => WordCount::count($content),
             'content' => $content,
         ];
     }
@@ -129,6 +160,53 @@ trait DetectsChapters
     }
 
     /**
+     * Detect if a paragraph is a blockquote by its style name.
+     */
+    protected function isBlockquote(?string $style): bool
+    {
+        if ($style === null) {
+            return false;
+        }
+
+        return (bool) preg_match('/^(Quote|Quotations|BlockQuote|Block\s*Text|IntenseQuote)$/i', $style);
+    }
+
+    /**
+     * Wrap inline HTML in the appropriate block element.
+     */
+    protected function wrapParagraph(string $inlineHtml, ?string $style, bool $isScene): string
+    {
+        if ($isScene) {
+            return '<hr>';
+        }
+
+        if ($this->isBlockquote($style)) {
+            return '<blockquote><p>'.$inlineHtml.'</p></blockquote>';
+        }
+
+        return '<p>'.$inlineHtml.'</p>';
+    }
+
+    /**
+     * Merge adjacent identical formatting tags, preserving any whitespace between them.
+     *
+     * Word/LibreOffice often split a single styled phrase into multiple runs,
+     * producing fragments like `</em> <em>` that should be collapsed.
+     */
+    protected function mergeAdjacentTags(string $html): string
+    {
+        $previous = '';
+        while ($previous !== $html) {
+            $previous = $html;
+            $html = preg_replace('#</em>(\s*)<em>#', '$1', $html);
+            $html = preg_replace('#</strong>(\s*)<strong>#', '$1', $html);
+            $html = preg_replace('#</u>(\s*)<u>#', '$1', $html);
+        }
+
+        return $html;
+    }
+
+    /**
      * Fallback when no chapters are detected — return the entire document as one chapter.
      *
      * @param  list<array{style: string|null, text: string, html: string}>  $paragraphs
@@ -143,7 +221,7 @@ trait DetectsChapters
                 [
                     'number' => 1,
                     'title' => 'Full Document',
-                    'word_count' => str_word_count(strip_tags($content)),
+                    'word_count' => WordCount::count($content),
                     'content' => $content,
                 ],
             ],

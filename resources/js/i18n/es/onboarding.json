@@ -53,6 +53,8 @@
 
     "dropZone.title": "Suelta los archivos del manuscrito aquí",
     "dropZone.subtitle": "Compatible con .docx, .odt, .txt y .md — agrega todos los que necesites",
+    "dropZone.unsupportedFormat": "Formato no soportado: {{files}}. Por favor usa archivos .docx, .odt, .txt o .md.",
+    "dropZone.fileTooLarge": "Archivo demasiado grande: {{files}}. El tamaño máximo es 10 MB.",
 
     "importChapterRow.words": "{{formatted}} palabras",
 
@@ -64,6 +66,8 @@
     "uploadPhase.skip": "Omitir — comenzar en blanco",
     "uploadPhase.importFiles_one": "Importar {{count}} archivo",
     "uploadPhase.importFiles_other": "Importar {{count}} archivos",
+    "uploadPhase.uploading": "Subiendo…",
+    "uploadPhase.maxFiles": "Máximo 20 archivos permitidos.",
     "uploadPhase.mergeFiles": "Combinar todos los archivos en una sola trama",
 
     "importGuide.label": "Cómo funciona la importación",

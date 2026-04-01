@@ -102,6 +102,31 @@ test('returns zero changes for already clean content', function () {
     expect($result['changes'])->toBeEmpty();
 });
 
+test('normalizes decomposed unicode characters to NFC composed form', function () {
+    // e + combining acute accent (U+0301) should become é (U+00E9)
+    $result = $this->service->normalize("<p>caf\u{0065}\u{0301}</p>", 'en');
+
+    expect($result['content'])->toContain("\u{00E9}");
+    expect($result['total_changes'])->toBeGreaterThan(0);
+});
+
+test('reports zero changes for already NFC normalized text', function () {
+    $result = $this->service->normalize("<p>caf\u{00E9}</p>", 'en');
+
+    $unicodeNfcChanges = collect($result['changes'])->firstWhere('rule', 'Unicode NFC');
+
+    expect($unicodeNfcChanges)->toBeNull();
+});
+
+test('preserves HTML tags during unicode normalization', function () {
+    // u + combining diaeresis (U+0308) should become ü (U+00FC)
+    $result = $this->service->normalize("<p><strong>Gru\u{0308}ße</strong></p>", 'de');
+
+    expect($result['content'])->toContain('<strong>');
+    expect($result['content'])->toContain('</strong>');
+    expect($result['content'])->toContain("\u{00FC}");
+});
+
 test('returns correct change structure', function () {
     $result = $this->service->normalize('<p>Hello    world...</p>', 'en');
 
