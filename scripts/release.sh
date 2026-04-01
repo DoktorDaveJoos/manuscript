@@ -279,23 +279,45 @@ generate_changelog() {
     echo ""
 }
 
-# --- Push + create PR ---
-push_and_create_pr() {
+# --- Push, create PR, merge, and tag ---
+push_merge_and_tag() {
     info "Push & create PR"
     divider
 
     git push origin dev --quiet
     success "Pushed dev to origin"
 
+    # Create or reuse PR
     local pr_url
     pr_url=$(gh pr create \
         --base main \
         --head dev \
         --title "Release v${NEW_VERSION}" \
         --body "$PR_BODY" \
-        2>&1)
+        2>&1) || pr_url=$(gh pr view dev --json url --jq '.url' 2>&1)
 
-    success "Created PR: ${BOLD}${pr_url}${RESET}"
+    success "PR: ${BOLD}${pr_url}${RESET}"
+    echo ""
+
+    # Merge PR
+    info "Merge"
+    divider
+
+    local pr_number
+    pr_number=$(gh pr view dev --json number --jq '.number' 2>&1)
+
+    gh pr merge "$pr_number" --merge --admin --delete-branch=false 2>&1
+    success "Merged PR #${pr_number} into main"
+    echo ""
+
+    # Tag main and push — the publish workflow handles the release
+    info "Tag & trigger publish"
+    divider
+
+    git fetch origin main --quiet
+    git tag "v${NEW_VERSION}" origin/main
+    git push origin "v${NEW_VERSION}" --quiet
+    success "Pushed tag v${NEW_VERSION}"
     echo ""
 
     # Summary
@@ -304,15 +326,9 @@ push_and_create_pr() {
     echo "  Version:  v${NEW_VERSION}"
     echo "  Commits:  ${COMMIT_COUNT}"
     echo "  Checks:   all passed"
-    echo "  PR:       ${pr_url}"
     echo ""
-
-    info "Next steps"
-    divider
-    echo "  1. Review and merge the PR on GitHub"
-    echo "  2. Create the release tag:"
-    echo ""
-    echo "     gh release create v${NEW_VERSION} --target main --title \"v${NEW_VERSION}\" --notes-from-tag"
+    echo "  The publish workflow will build the DMGs and create the release."
+    echo "  Monitor: ${DIM}gh run watch${RESET}"
     echo ""
 }
 
@@ -327,7 +343,7 @@ main() {
     run_quality_gate
     select_version
     generate_changelog
-    push_and_create_pr
+    push_merge_and_tag
 
     success "Done!"
     echo ""

@@ -125,6 +125,95 @@ jobs:
           SENTRY_RELEASE: ${{ github.ref_name }}
         run: php artisan native:publish mac x64 --no-interaction
 
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Copy environment file
+        run: copy .env.example .env
+
+      - name: Create database file
+        run: type nul > database\database.sqlite
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Set version and secrets in .env
+        env:
+          SENTRY_LARAVEL_DSN: ${{ secrets.SENTRY_LARAVEL_DSN }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
+          POLAR_ORGANIZATION_ID: ${{ secrets.POLAR_ORGANIZATION_ID }}
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          sed -i "s/APP_ENV=.*/APP_ENV=production/" .env
+          sed -i "s/APP_DEBUG=.*/APP_DEBUG=false/" .env
+          sed -i "s/LOG_LEVEL=.*/LOG_LEVEL=error/" .env
+          sed -i "s/NATIVEPHP_APP_VERSION=.*/NATIVEPHP_APP_VERSION=${VERSION}/" .env
+          sed -i "s|SENTRY_LARAVEL_DSN=.*|SENTRY_LARAVEL_DSN=${SENTRY_LARAVEL_DSN}|" .env
+          sed -i "s|VITE_SENTRY_DSN=.*|VITE_SENTRY_DSN=${VITE_SENTRY_DSN}|" .env
+          sed -i "s|POLAR_ACCESS_TOKEN=.*|POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN}|" .env
+          sed -i "s|POLAR_ORGANIZATION_ID=.*|POLAR_ORGANIZATION_ID=${POLAR_ORGANIZATION_ID}|" .env
+
+      - name: Build frontend assets
+        env:
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+        run: npm run build
+
+      - name: Fix electron-builder repo detection
+        run: node -e "const p=JSON.parse(require('fs').readFileSync('vendor/nativephp/desktop/resources/electron/package.json','utf8')); p.repository={type:'git',url:'https://github.com/DoktorDaveJoos/manuscript.git'}; require('fs').writeFileSync('vendor/nativephp/desktop/resources/electron/package.json', JSON.stringify(p, null, 4))"
+
+      - name: Strip version from artifact names
+        shell: bash
+        run: |
+          sed -i "s/'-\${version}-setup.\${ext}'/'-setup.\${ext}'/g" vendor/nativephp/desktop/resources/electron/electron-builder.mjs
+          sed -i "s/'-\${version}-\${arch}.\${ext}'/'-\${arch}.\${ext}'/g" vendor/nativephp/desktop/resources/electron/electron-builder.mjs
+          sed -i "s/'-\${version}.\${ext}'/'.\${ext}'/g" vendor/nativephp/desktop/resources/electron/electron-builder.mjs
+
+      - name: Build and publish (x64)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NATIVEPHP_UPDATER_PROVIDER: github
+          GITHUB_REPO: manuscript
+          GITHUB_OWNER: DoktorDaveJoos
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_RELEASE_TYPE: draft
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          SENTRY_RELEASE: ${{ github.ref_name }}
+        run: php artisan native:publish win x64 --no-interaction
+
+  publish-release:
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
       - name: Publish release
         run: gh release edit ${{ github.ref_name }} --draft=false --title "Manuscript ${{ github.ref_name }}" --repo ${{ github.repository }}
         env:
