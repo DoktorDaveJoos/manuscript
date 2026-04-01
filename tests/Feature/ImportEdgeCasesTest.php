@@ -3,11 +3,13 @@
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\Storyline;
-use App\Services\DocxParserService;
+use App\Services\Normalization\NormalizationService;
 use App\Services\Parsers\DocumentParserFactory;
+use App\Services\Parsers\DocxParserService;
 use App\Services\Parsers\MarkdownParserService;
 use App\Services\Parsers\TxtParserService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Testing\TestResponse;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -27,7 +29,7 @@ function tempFile(string $content, string $name, string $mime = 'text/plain'): U
 
 afterEach(function () {
     global $tempFiles;
-    foreach ($tempFiles as $path) {
+    foreach ($tempFiles ?? [] as $path) {
         @unlink($path);
     }
     $tempFiles = [];
@@ -224,6 +226,98 @@ test('txt parser detects German part headings (Teil)', function () {
         ->and($result['chapters'][1]['title'])->toBe('Sommer');
 });
 
+// ─── French / Spanish / Italian Chapter Patterns ───────────────────────
+
+test('txt parser detects French chapter headings (Chapitre)', function () {
+    $content = "Chapitre 1: Le Début\n\nIl était une fois.\n\nChapitre 2: La Fin\n\nEt ils vécurent heureux.";
+    $file = tempFile($content, 'french.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('Le Début')
+        ->and($result['chapters'][1]['title'])->toBe('La Fin');
+});
+
+test('txt parser detects Spanish chapter headings (Capítulo)', function () {
+    $content = "Capítulo 3: La Noche\n\nEra una noche oscura.\n\nCapítulo 4: El Día\n\nEl sol brillaba.";
+    $file = tempFile($content, 'spanish.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('La Noche')
+        ->and($result['chapters'][1]['title'])->toBe('El Día');
+});
+
+// ─── Standalone Heading Patterns ───────────────────────────────────────
+
+test('txt parser detects standalone Prologue heading', function () {
+    $content = "Prologue\n\nThe story begins in darkness.\n\nChapter 1: Dawn\n\nThe sun rose.";
+    $file = tempFile($content, 'prologue.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('Prologue')
+        ->and($result['chapters'][1]['title'])->toBe('Dawn');
+});
+
+test('txt parser detects standalone Epilogue heading', function () {
+    $content = "Chapter 1: The Journey\n\nThey traveled far.\n\nEpilogue\n\nYears later, peace reigned.";
+    $file = tempFile($content, 'epilogue.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('The Journey')
+        ->and($result['chapters'][1]['title'])->toBe('Epilogue');
+});
+
+// ─── Part / Act / Section Patterns ─────────────────────────────────────
+
+test('txt parser detects Part headings with title', function () {
+    $content = "Part One: The Beginning\n\nIt all started here.\n\nPart Two: The Middle\n\nThe plot thickened.";
+    $file = tempFile($content, 'parts.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('The Beginning')
+        ->and($result['chapters'][1]['title'])->toBe('The Middle');
+});
+
+test('txt parser detects Act headings with roman numerals', function () {
+    $content = "Act I\n\nThe curtain rises.\n\nAct II\n\nThe conflict deepens.";
+    $file = tempFile($content, 'acts.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('Act I')
+        ->and($result['chapters'][1]['title'])->toBe('Act II');
+});
+
+// ─── Roman Numeral Chapter Headings ────────────────────────────────────
+
+test('txt parser detects Chapter with roman numeral and title', function () {
+    $content = "Chapter IV: The Return\n\nHe came back at last.\n\nChapter V: The Reckoning\n\nJustice was served.";
+    $file = tempFile($content, 'roman.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('The Return')
+        ->and($result['chapters'][1]['title'])->toBe('The Reckoning');
+});
+
 // ─── Unicode Content ────────────────────────────────────────────────────
 
 test('txt parser handles unicode content correctly', function () {
@@ -236,7 +330,9 @@ test('txt parser handles unicode content correctly', function () {
     expect($result['chapters'])->toHaveCount(2)
         ->and($result['chapters'][0]['title'])->toBe('日本語タイトル')
         ->and($result['chapters'][0]['content'])->toContain('これは日本語のテキストです。')
-        ->and($result['chapters'][1]['title'])->toBe('中文标题');
+        ->and($result['chapters'][0]['word_count'])->toBeGreaterThan(0)
+        ->and($result['chapters'][1]['title'])->toBe('中文标题')
+        ->and($result['chapters'][1]['word_count'])->toBeGreaterThan(0);
 });
 
 test('markdown parser handles unicode content', function () {
@@ -318,6 +414,49 @@ test('txt parser recognizes various scene break patterns', function (string $pat
     '###',
     '~~~',
     '- - -',
+]);
+
+test('single character is not detected as scene break', function (string $char) {
+    $content = "Chapter 1: Test\n\nBefore.\n\n{$char}\n\nAfter.";
+    $file = tempFile($content, 'no-break.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'][0]['content'])->not->toContain('<hr>');
+})->with([
+    '-',
+    '*',
+    '#',
+    '~',
+]);
+
+test('two separator chars with spaces is not a scene break', function (string $pattern) {
+    $content = "Chapter 1: Test\n\nBefore.\n\n{$pattern}\n\nAfter.";
+    $file = tempFile($content, 'no-break.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'][0]['content'])->not->toContain('<hr>');
+})->with([
+    '- -',
+    '* *',
+    '--',
+]);
+
+test('three separator chars with spaces is a valid scene break', function (string $pattern) {
+    $content = "Chapter 1: Test\n\nBefore the break.\n\n{$pattern}\n\nAfter the break.";
+    $file = tempFile($content, 'breaks.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'][0]['content'])->toContain('<hr>');
+})->with([
+    '- - -',
+    '* * *',
+    "\xE2\x80\x94 \xE2\x80\x94 \xE2\x80\x94", // em dashes: — — —
 ]);
 
 // ─── Multiple Files Without Merge ───────────────────────────────────────
@@ -688,4 +827,277 @@ test('confirm import assigns sequential storyline sort_order', function () {
     expect($storylines)->toHaveCount(3)
         ->and($storylines->pluck('sort_order')->all())->toBe([0, 1, 2])
         ->and($storylines->pluck('name')->all())->toBe(['A', 'B', 'C']);
+});
+
+// ─── Preamble Preservation ─────────────────────────────────────────────
+
+test('txt file preserves content before first chapter heading as preamble', function () {
+    $content = "This is a dedication.\n\nFor my family.\n\nChapter 1: The Beginning\n\nOnce upon a time.\n\nChapter 2: The End\n\nThey lived happily.";
+    $file = tempFile($content, 'with-preamble.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(3)
+        ->and($result['chapters'][0]['title'])->toBe('Preamble')
+        ->and($result['chapters'][0]['content'])->toContain('dedication')
+        ->and($result['chapters'][0]['content'])->toContain('family')
+        ->and($result['chapters'][1]['title'])->toBe('The Beginning')
+        ->and($result['chapters'][2]['title'])->toBe('The End');
+});
+
+test('markdown file preserves content before first heading as preamble', function () {
+    $content = "This is the author's foreword.\n\nWith multiple paragraphs.\n\n# Chapter One\n\nThe story begins.\n\n# Chapter Two\n\nThe story ends.";
+    $file = tempFile($content, 'with-preamble.md', 'text/markdown');
+
+    $parser = new MarkdownParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(3)
+        ->and($result['chapters'][0]['title'])->toBe('Preamble')
+        ->and($result['chapters'][0]['content'])->toContain('foreword')
+        ->and($result['chapters'][0]['content'])->toContain('multiple paragraphs')
+        ->and($result['chapters'][1]['title'])->toBe('Chapter One')
+        ->and($result['chapters'][2]['title'])->toBe('Chapter Two');
+});
+
+test('txt file with whitespace-only preamble does not create preamble chapter', function () {
+    $content = "   \n\n   \n\nChapter 1: Real Content\n\nSome actual text.";
+    $file = tempFile($content, 'whitespace-preamble.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(1)
+        ->and($result['chapters'][0]['title'])->toBe('Real Content');
+});
+
+test('markdown file with whitespace-only preamble does not create preamble chapter', function () {
+    $content = "   \n\n   \n\n# Real Chapter\n\nSome actual text.";
+    $file = tempFile($content, 'whitespace-preamble.md', 'text/markdown');
+
+    $parser = new MarkdownParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(1)
+        ->and($result['chapters'][0]['title'])->toBe('Real Chapter');
+});
+
+test('txt file with no headings still falls back to Full Document', function () {
+    $content = "Just some text without any chapter headings.\n\nAnother paragraph of regular content.";
+    $file = tempFile($content, 'no-headings.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(1)
+        ->and($result['chapters'][0]['title'])->toBe('Full Document')
+        ->and($result['chapters'][0]['content'])->toContain('chapter headings');
+});
+
+test('markdown file with no headings still falls back to Full Document', function () {
+    $content = "Just some text without any markdown headings.\n\nAnother paragraph of regular content.";
+    $file = tempFile($content, 'no-headings.md', 'text/markdown');
+
+    $parser = new MarkdownParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(1)
+        ->and($result['chapters'][0]['title'])->toBe('Full Document')
+        ->and($result['chapters'][0]['content'])->toContain('headings');
+});
+
+// ─── Transaction Rollback ──────────────────────────────────────────────
+
+test('confirm import rolls back all data on failure', function () {
+    $book = Book::factory()->create();
+
+    $callCount = 0;
+    $normalizer = Mockery::mock(NormalizationService::class);
+    $normalizer->shouldReceive('normalize')
+        ->andReturnUsing(function () use (&$callCount) {
+            $callCount++;
+            if ($callCount >= 2) {
+                throw new RuntimeException('Normalization failed');
+            }
+
+            return ['content' => '<p>Normalized.</p>', 'changes' => [], 'total_changes' => 0];
+        });
+
+    $this->app->instance(NormalizationService::class, $normalizer);
+
+    $this->post(route('books.import.confirm', $book), [
+        'storylines' => [[
+            'name' => 'Main',
+            'type' => 'main',
+            'chapters' => [
+                ['title' => 'Ch 1', 'content' => 'First content.', 'word_count' => 2, 'included' => true],
+                ['title' => 'Ch 2', 'content' => 'Second content.', 'word_count' => 2, 'included' => true],
+            ],
+        ]],
+    ])->assertServerError();
+
+    expect(Storyline::where('book_id', $book->id)->count())->toBe(0)
+        ->and(Chapter::where('book_id', $book->id)->count())->toBe(0);
+});
+
+// ─── Word Count Recalculation ──────────────────────────────────────────
+
+test('confirm import recalculates word count from normalized content', function () {
+    $book = Book::factory()->create(['language' => 'en']);
+
+    // Content with "--" which normalizes to em dash "—", potentially changing word count.
+    // The raw payload word_count (99) is intentionally wrong to prove recalculation.
+    $this->post(route('books.import.confirm', $book), [
+        'storylines' => [[
+            'name' => 'Main',
+            'type' => 'main',
+            'chapters' => [
+                [
+                    'title' => 'Chapter One',
+                    'content' => '<p>She said "hello" -- and then smiled...</p>',
+                    'word_count' => 99,
+                    'included' => true,
+                ],
+            ],
+        ]],
+    ])->assertRedirect();
+
+    $chapter = Chapter::where('book_id', $book->id)->first();
+    $scene = $chapter->scenes->first();
+    $normalizedContent = $chapter->currentVersion->content;
+
+    $expectedWordCount = str_word_count(strip_tags($normalizedContent));
+
+    expect($chapter->word_count)->toBe($expectedWordCount)
+        ->and($chapter->word_count)->not->toBe(99)
+        ->and($scene->word_count)->toBe($expectedWordCount);
+});
+
+// ─── Parse Response Warnings ───────────────────────────────────────────
+
+test('parse response includes warnings array', function () {
+    $book = Book::factory()->create();
+    $file = tempFile("Chapter 1: Beginning\n\nOnce upon a time.", 'story.txt');
+
+    parseFiles($book, [[
+        'file' => $file,
+        'storyline_name' => 'Main',
+        'storyline_type' => 'main',
+    ]])->assertSuccessful()
+        ->assertJsonIsArray('storylines.0.warnings')
+        ->assertJsonCount(0, 'storylines.0.warnings');
+});
+
+test('file with no headings includes single-chapter fallback warning', function () {
+    $book = Book::factory()->create();
+    $file = tempFile('Just a single paragraph of text with no chapter headings at all.', 'noheadings.txt');
+
+    parseFiles($book, [[
+        'file' => $file,
+        'storyline_name' => 'Main',
+        'storyline_type' => 'main',
+    ]])->assertSuccessful()
+        ->assertJsonCount(1, 'storylines.0.warnings')
+        ->assertJsonPath('storylines.0.chapters.0.title', 'Full Document');
+});
+
+test('merge mode preserves warnings from all files', function () {
+    $book = Book::factory()->create();
+
+    $response = parseFiles($book, [
+        [
+            'file' => tempFile('No headings here at all.', 'a.txt'),
+            'storyline_name' => 'A',
+            'storyline_type' => 'main',
+        ],
+        [
+            'file' => tempFile("Chapter 1: Real\n\nContent here.", 'b.txt'),
+            'storyline_name' => 'B',
+            'storyline_type' => 'main',
+        ],
+    ], merge: true);
+
+    $response->assertSuccessful()
+        ->assertJsonCount(1, 'storylines')
+        ->assertJsonCount(1, 'storylines.0.warnings');
+});
+
+test('parse logs warning when file cannot be parsed', function () {
+    $book = Book::factory()->create();
+
+    Log::shouldReceive('warning')
+        ->once()
+        ->withArgs(fn (string $message, array $context) => $message === 'Import parse failed'
+            && $context['file'] === 'broken.docx'
+            && ! empty($context['error'])
+        );
+
+    $this->mock(DocumentParserFactory::class, function ($mock) {
+        $mock->shouldReceive('forExtension')
+            ->andThrow(new RuntimeException('Test parse failure'));
+    });
+
+    parseFiles($book, [[
+        'file' => tempFile('not a real file', 'broken.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+        'storyline_name' => 'Main',
+        'storyline_type' => 'main',
+    ]])->assertStatus(422);
+});
+
+// ─── German Heading Styles ────────────────────────────────────────────
+
+test('txt parser does not falsely detect "Teil davon" as a heading', function () {
+    $content = "Kapitel 1: Chemie\n\nSome text.\n\nTeil davon stimmt sogar: Ich war offen.\n\nMore text here.";
+    $file = tempFile($content, 'teil-falsepositive.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(1)
+        ->and($result['chapters'][0]['title'])->toBe('Chemie')
+        ->and($result['chapters'][0]['content'])->toContain('Teil davon');
+});
+
+test('txt parser still detects "Teil 1" as a heading', function () {
+    $content = "Teil 1: Der Anfang\n\nContent A.\n\nTeil 2: Das Ende\n\nContent B.";
+    $file = tempFile($content, 'teil-valid.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('Der Anfang')
+        ->and($result['chapters'][1]['title'])->toBe('Das Ende');
+});
+
+test('txt parser detects "Chapter One" with word-number', function () {
+    $content = "Chapter One: The Beginning\n\nContent.\n\nChapter Two: The End\n\nMore.";
+    $file = tempFile($content, 'word-numbers.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('The Beginning')
+        ->and($result['chapters'][1]['title'])->toBe('The End');
+});
+
+// ─── HTML Tag Merging ─────────────────────────────────────────────────
+
+test('docx parser merges adjacent identical inline tags', function () {
+    $parser = new DocxParserService;
+
+    // Use reflection to test the private method
+    $method = new ReflectionMethod($parser, 'mergeAdjacentTags');
+    $method->setAccessible(true);
+
+    $fragmented = '<em>Hello</em><em> </em><em>world</em>';
+    expect($method->invoke($parser, $fragmented))->toBe('<em>Hello world</em>');
+
+    $nested = '<strong><em>a</em></strong><strong><em>b</em></strong>';
+    expect($method->invoke($parser, $nested))->toBe('<strong><em>ab</em></strong>');
+
+    $clean = '<em>Already clean text</em>';
+    expect($method->invoke($parser, $clean))->toBe('<em>Already clean text</em>');
 });

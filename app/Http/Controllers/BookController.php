@@ -13,9 +13,11 @@ use App\Models\Chunk;
 use App\Services\FreeTierLimits;
 use App\Services\Normalization\NormalizationService;
 use App\Services\Parsers\DocumentParserFactory;
+use App\Support\WordCount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -84,20 +86,32 @@ class BookController extends Controller
                 $parser = $factory->forExtension($ext);
                 $parsed = $parser->parse($fileEntry['file']);
             } catch (\Throwable $e) {
+                Log::warning('Import parse failed', [
+                    'file' => $filename,
+                    'error' => $e->getMessage(),
+                ]);
                 abort(422, __('Could not parse ":file". The file may be corrupted or in an unsupported format.', [
                     'file' => $filename,
                 ]));
+            }
+
+            $warnings = [];
+
+            if (count($parsed['chapters']) === 1 && $parsed['chapters'][0]['title'] === 'Full Document') {
+                $warnings[] = __('No chapter headings were detected in ":file". The entire file was imported as a single chapter.', ['file' => $filename]);
             }
 
             $results[] = [
                 'storyline_name' => $fileEntry['storyline_name'],
                 'storyline_type' => $fileEntry['storyline_type'],
                 'chapters' => $parsed['chapters'],
+                'warnings' => $warnings,
             ];
         }
 
         if ($request->boolean('merge_into_single_storyline') && count($results) > 1) {
             $mergedChapters = [];
+            $mergedWarnings = [];
             $number = 1;
 
             foreach ($results as $storyline) {
@@ -105,6 +119,7 @@ class BookController extends Controller
                     $chapter['number'] = $number++;
                     $mergedChapters[] = $chapter;
                 }
+                array_push($mergedWarnings, ...$storyline['warnings']);
             }
 
             $results = [
@@ -112,6 +127,7 @@ class BookController extends Controller
                     'storyline_name' => $results[0]['storyline_name'],
                     'storyline_type' => $results[0]['storyline_type'],
                     'chapters' => $mergedChapters,
+                    'warnings' => $mergedWarnings,
                 ],
             ];
         }
@@ -264,51 +280,54 @@ class BookController extends Controller
 
     public function confirmImport(ConfirmImportRequest $request, Book $book, NormalizationService $normalizer): RedirectResponse
     {
-        $storylineOrder = 0;
+        DB::transaction(function () use ($request, $book, $normalizer) {
+            $storylineOrder = 0;
 
-        foreach ($request->validated('storylines') as $storylineData) {
-            $storyline = $book->storylines()->create([
-                'name' => $storylineData['name'],
-                'type' => $storylineData['type'],
-                'sort_order' => $storylineOrder++,
-            ]);
+            foreach ($request->validated('storylines') as $storylineData) {
+                $storyline = $book->storylines()->create([
+                    'name' => $storylineData['name'],
+                    'type' => $storylineData['type'],
+                    'sort_order' => $storylineOrder++,
+                ]);
 
-            $chapterOrder = 0;
+                $chapterOrder = 0;
 
-            foreach ($storylineData['chapters'] as $chapterData) {
-                if (! $chapterData['included']) {
-                    continue;
+                foreach ($storylineData['chapters'] as $chapterData) {
+                    if (! $chapterData['included']) {
+                        continue;
+                    }
+
+                    if (trim($chapterData['content'] ?? '') === '') {
+                        continue;
+                    }
+
+                    $normalized = $normalizer->normalize($chapterData['content'], $book->language ?? 'en');
+                    $wordCount = WordCount::count($normalized['content']);
+
+                    $chapter = $storyline->chapters()->create([
+                        'book_id' => $book->id,
+                        'title' => $chapterData['title'],
+                        'reader_order' => $chapterOrder++,
+                        'status' => 'draft',
+                        'word_count' => $wordCount,
+                    ]);
+
+                    $chapter->versions()->create([
+                        'version_number' => 1,
+                        'content' => $normalized['content'],
+                        'source' => VersionSource::Original,
+                        'is_current' => true,
+                    ]);
+
+                    $chapter->scenes()->create([
+                        'title' => 'Scene 1',
+                        'content' => $normalized['content'],
+                        'sort_order' => 0,
+                        'word_count' => $wordCount,
+                    ]);
                 }
-
-                if (trim($chapterData['content'] ?? '') === '') {
-                    continue;
-                }
-
-                $normalized = $normalizer->normalize($chapterData['content'], $book->language ?? 'en');
-
-                $chapter = $storyline->chapters()->create([
-                    'book_id' => $book->id,
-                    'title' => $chapterData['title'],
-                    'reader_order' => $chapterOrder++,
-                    'status' => 'draft',
-                    'word_count' => $chapterData['word_count'],
-                ]);
-
-                $chapter->versions()->create([
-                    'version_number' => 1,
-                    'content' => $normalized['content'],
-                    'source' => VersionSource::Original,
-                    'is_current' => true,
-                ]);
-
-                $chapter->scenes()->create([
-                    'title' => 'Scene 1',
-                    'content' => $normalized['content'],
-                    'sort_order' => 0,
-                    'word_count' => $chapterData['word_count'],
-                ]);
             }
-        }
+        });
 
         return redirect()->route('books.editor', $book);
     }

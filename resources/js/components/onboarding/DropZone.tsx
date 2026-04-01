@@ -3,10 +3,22 @@ import { useCallback, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const SUPPORTED_EXTENSIONS = [
+    '.docx',
+    '.odt',
+    '.txt',
+    '.md',
+    '.markdown',
+    '.epub',
+];
+
 export default function DropZone({
     onFiles,
+    onReject,
 }: {
     onFiles: (files: File[]) => void;
+    onReject?: (message: string) => void;
 }) {
     const { t } = useTranslation('onboarding');
     const [dragging, setDragging] = useState(false);
@@ -16,22 +28,42 @@ export default function DropZone({
         (e: DragEvent) => {
             e.preventDefault();
             setDragging(false);
-            const supportedExtensions = [
-                '.docx',
-                '.odt',
-                '.txt',
-                '.md',
-                '.markdown',
-                '.epub',
-            ];
-            const files = Array.from(e.dataTransfer.files).filter((f) =>
-                supportedExtensions.some((ext) =>
+            const allFiles = Array.from(e.dataTransfer.files);
+
+            const supported: File[] = [];
+            const unsupported: string[] = [];
+            const tooLarge: string[] = [];
+
+            for (const f of allFiles) {
+                const isSupported = SUPPORTED_EXTENSIONS.some((ext) =>
                     f.name.toLowerCase().endsWith(ext),
-                ),
-            );
-            if (files.length > 0) onFiles(files);
+                );
+                if (!isSupported) {
+                    unsupported.push(f.name);
+                } else if (f.size > MAX_FILE_SIZE) {
+                    tooLarge.push(f.name);
+                } else {
+                    supported.push(f);
+                }
+            }
+
+            if (supported.length > 0) onFiles(supported);
+
+            if (unsupported.length > 0) {
+                onReject?.(
+                    t('dropZone.unsupportedFormat', {
+                        files: unsupported.join(', '),
+                    }),
+                );
+            } else if (tooLarge.length > 0) {
+                onReject?.(
+                    t('dropZone.fileTooLarge', {
+                        files: tooLarge.join(', '),
+                    }),
+                );
+            }
         },
-        [onFiles],
+        [onFiles, onReject, t],
     );
 
     return (
@@ -65,8 +97,22 @@ export default function DropZone({
                 multiple
                 className="hidden"
                 onChange={(e) => {
-                    const files = Array.from(e.target.files ?? []);
-                    if (files.length > 0) onFiles(files);
+                    const allFiles = Array.from(e.target.files ?? []);
+                    const tooLarge = allFiles.filter(
+                        (f) => f.size > MAX_FILE_SIZE,
+                    );
+                    const valid = allFiles.filter(
+                        (f) => f.size <= MAX_FILE_SIZE,
+                    );
+
+                    if (valid.length > 0) onFiles(valid);
+                    if (tooLarge.length > 0) {
+                        onReject?.(
+                            t('dropZone.fileTooLarge', {
+                                files: tooLarge.map((f) => f.name).join(', '),
+                            }),
+                        );
+                    }
                     e.target.value = '';
                 }}
             />

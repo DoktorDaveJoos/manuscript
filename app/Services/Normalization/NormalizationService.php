@@ -7,6 +7,7 @@ use App\Services\Normalization\Rules\DialogueRule;
 use App\Services\Normalization\Rules\EllipsisRule;
 use App\Services\Normalization\Rules\ParagraphRule;
 use App\Services\Normalization\Rules\SmartQuoteRule;
+use App\Services\Normalization\Rules\UnicodeNormalizationRule;
 use App\Services\Normalization\Rules\WhitespaceRule;
 
 class NormalizationService
@@ -17,6 +18,7 @@ class NormalizationService
     public function __construct()
     {
         $this->rules = [
+            new UnicodeNormalizationRule,
             new WhitespaceRule,
             new ParagraphRule,
             new EllipsisRule,

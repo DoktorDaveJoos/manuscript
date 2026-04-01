@@ -4,7 +4,7 @@ use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
 use App\Models\Storyline;
-use App\Services\DocxParserService;
+use App\Services\Parsers\DocxParserService;
 use Illuminate\Http\UploadedFile;
 
 function docxFixture(string $name): UploadedFile

@@ -53,6 +53,8 @@
 
     "dropZone.title": "Manuskriptdateien hierher ziehen",
     "dropZone.subtitle": "Unterstützt .docx, .odt, .txt und .md — beliebig viele Dateien",
+    "dropZone.unsupportedFormat": "Nicht unterstütztes Format: {{files}}. Bitte verwende .docx, .odt, .txt oder .md Dateien.",
+    "dropZone.fileTooLarge": "Datei zu groß: {{files}}. Maximale Größe ist 10 MB.",
 
     "importChapterRow.words": "{{formatted}} Wörter",
 
@@ -64,6 +66,8 @@
     "uploadPhase.skip": "Überspringen — leer starten",
     "uploadPhase.importFiles_one": "{{count}} Datei importieren",
     "uploadPhase.importFiles_other": "{{count}} Dateien importieren",
+    "uploadPhase.uploading": "Wird hochgeladen…",
+    "uploadPhase.maxFiles": "Maximal 20 Dateien erlaubt.",
     "uploadPhase.mergeFiles": "Alle Dateien in einen Handlungsstrang zusammenführen",
 
     "importGuide.label": "So funktioniert der Import",

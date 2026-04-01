@@ -86,6 +86,7 @@ createOdt(__DIR__.'/formatted.odt', '<?xml version="1.0" encoding="UTF-8"?>
       <text:p><text:span text:style-name="Bold">bold text</text:span></text:p>
       <text:p><text:span text:style-name="Italic">italic text</text:span></text:p>
       <text:p><text:span text:style-name="Underline">underlined</text:span></text:p>
+      <text:p text:style-name="Quotations">This is a blockquote paragraph.</text:p>
       <text:p>***</text:p>
       <text:p>After the break.</text:p>
     </office:text>
