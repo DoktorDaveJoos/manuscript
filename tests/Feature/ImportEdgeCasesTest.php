@@ -3,8 +3,8 @@
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\Storyline;
-use App\Services\DocxParserService;
 use App\Services\Parsers\DocumentParserFactory;
+use App\Services\Parsers\DocxParserService;
 use App\Services\Parsers\MarkdownParserService;
 use App\Services\Parsers\TxtParserService;
 use Illuminate\Http\UploadedFile;

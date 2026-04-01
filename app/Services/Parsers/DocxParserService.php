@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Parsers;
 
 use App\Contracts\DocumentParserInterface;
 use App\Services\Parsers\Concerns\DetectsChapters;
@@ -93,7 +93,7 @@ class DocxParserService implements DocumentParserInterface
                 }
             }
 
-            $inlineHtml = implode('', $htmlParts);
+            $inlineHtml = $this->mergeAdjacentTags(implode('', $htmlParts));
             $isScene = $this->isSceneBreak($style, $rawText, $alignment);
 
             if (trim($rawText) !== '' || $isScene) {
@@ -202,5 +202,24 @@ class DocxParserService implements DocumentParserInterface
         }
 
         return '<p>'.$inlineHtml.'</p>';
+    }
+
+    /**
+     * Merge adjacent identical formatting tags, preserving any whitespace between them.
+     *
+     * Word often splits a single styled phrase into multiple runs, producing
+     * fragments like `</em> <em>` that should be collapsed.
+     */
+    private function mergeAdjacentTags(string $html): string
+    {
+        $previous = '';
+        while ($previous !== $html) {
+            $previous = $html;
+            $html = preg_replace('#</em>(\s*)<em>#', '$1', $html);
+            $html = preg_replace('#</strong>(\s*)<strong>#', '$1', $html);
+            $html = preg_replace('#</u>(\s*)<u>#', '$1', $html);
+        }
+
+        return $html;
     }
 }
