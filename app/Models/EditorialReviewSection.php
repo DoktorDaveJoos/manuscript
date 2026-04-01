@@ -31,7 +31,7 @@ class EditorialReviewSection extends Model
      */
     public static function findingKey(string $sectionType, string $description): string
     {
-        return hash('xxh32', $sectionType.':'.mb_substr($description, 0, 100));
+        return hash('xxh128', $sectionType.':'.mb_substr($description, 0, 100));
     }
 
     /**
