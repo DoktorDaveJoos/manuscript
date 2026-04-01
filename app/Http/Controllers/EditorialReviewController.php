@@ -12,6 +12,7 @@ use App\Models\EditorialReview;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -23,14 +24,16 @@ class EditorialReviewController extends Controller
     {
         $reviews = $book->editorialReviews()
             ->latest()
+            ->limit(20)
             ->get();
 
-        $latestReview = $reviews
-            ->where('status', 'completed')
-            ->first();
+        $latestReview = $reviews->first(fn ($r) => in_array($r->status, ['pending', 'analyzing', 'synthesizing']))
+            ?? $reviews->firstWhere('status', 'completed');
 
-        $latestReview?->load(['sections', 'chapterNotes']);
-        $latestReview?->sections->each->ensureFindingKeys();
+        if ($latestReview && $latestReview->status === 'completed') {
+            $latestReview->load(['sections', 'chapterNotes']);
+            $latestReview->sections->each->ensureFindingKeys();
+        }
 
         return Inertia::render('books/editorial-review', [
             'book' => $book->only('id', 'title', 'author', 'language'),
@@ -76,7 +79,7 @@ class EditorialReviewController extends Controller
             'book' => $book->only('id', 'title', 'author', 'language'),
             'latestReview' => $review,
             'chapters' => $this->chapterList($book),
-            'reviews' => $book->editorialReviews()->latest()->get(),
+            'reviews' => $book->editorialReviews()->latest()->limit(20)->get(),
         ]);
     }
 
@@ -96,28 +99,37 @@ class EditorialReviewController extends Controller
         abort_if($review->book_id !== $book->id, 404);
 
         $request->validate([
-            'key' => ['required', 'string', 'max:32'],
+            'key' => ['required', 'string', 'max:64'],
         ]);
 
         $key = $request->input('key');
-        $resolved = $review->resolved_findings ?? [];
 
-        if (in_array($key, $resolved, true)) {
-            $resolved = array_values(array_filter($resolved, fn ($k) => $k !== $key));
-        } else {
-            $resolved[] = $key;
-        }
+        $resolved = DB::transaction(function () use ($review, $key) {
+            $review = EditorialReview::lockForUpdate()->find($review->id);
+            $resolved = $review->resolved_findings ?? [];
 
-        $review->update(['resolved_findings' => $resolved]);
+            if (in_array($key, $resolved, true)) {
+                $resolved = array_values(array_filter($resolved, fn ($k) => $k !== $key));
+            } else {
+                $resolved[] = $key;
+            }
+
+            $review->update(['resolved_findings' => $resolved]);
+
+            return $resolved;
+        });
 
         return response()->json(['resolved_findings' => $resolved]);
     }
 
     public function chat(Request $request, Book $book, EditorialReview $review): StreamableAgentResponse
     {
+        set_time_limit(300);
+
         $this->ensureAiConfigured();
 
         abort_if($review->book_id !== $book->id, 404);
+        abort_if($review->status !== 'completed', 422, __('Editorial review is not yet completed.'));
 
         $request->validate([
             'message' => ['required', 'string', 'max:2000'],
@@ -183,8 +195,6 @@ class EditorialReviewController extends Controller
 
     private function ensureAiConfigured(): void
     {
-        set_time_limit(300);
-
         $setting = AiSetting::activeProvider();
 
         abort_if(

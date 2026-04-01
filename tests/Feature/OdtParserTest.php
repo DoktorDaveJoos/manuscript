@@ -51,6 +51,14 @@ test('odt parser preserves inline formatting', function () {
         ->toContain('<u>underlined</u>');
 });
 
+test('odt parser converts blockquote styles', function () {
+    $parser = new OdtParserService;
+    $result = $parser->parse(odtFixture('formatted.odt'));
+    $content = $result['chapters'][0]['content'];
+
+    expect($content)->toContain('<blockquote><p>');
+});
+
 test('odt parser converts scene breaks to hr', function () {
     $parser = new OdtParserService;
     $result = $parser->parse(odtFixture('formatted.odt'));

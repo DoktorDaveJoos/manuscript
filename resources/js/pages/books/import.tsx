@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     confirmImport,
@@ -17,9 +17,12 @@ import type { ReviewStoryline } from '@/components/onboarding/ReviewPhase';
 import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
 import SectionLabel from '@/components/ui/SectionLabel';
+import { Spinner } from '@/components/ui/spinner';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
 import { extractErrorMessage } from '@/lib/utils';
 import type { Book, Storyline, StorylineType } from '@/types/models';
+
+const MAX_FILES = 20;
 
 function normalizeFilenameToStorylineName(filename: string): string {
     return filename
@@ -47,28 +50,67 @@ type ParseResponse = {
         storyline_name: string;
         storyline_type: StorylineType;
         chapters: ParsedChapter[];
+        warnings?: string[];
     }[];
 };
 
 function UploadPhase({
     book,
+    files,
+    setFiles,
+    mergeMode,
+    setMergeMode,
     onStartParsing,
+    uploading,
+    onReject,
+    onFilesChanged,
 }: {
     book: Book & { storylines: Pick<Storyline, 'id' | 'book_id' | 'name'>[] };
+    files: FileEntry[];
+    setFiles: React.Dispatch<React.SetStateAction<FileEntry[]>>;
+    mergeMode: boolean;
+    setMergeMode: React.Dispatch<React.SetStateAction<boolean>>;
     onStartParsing: (files: FileEntry[], mergeMode: boolean) => void;
+    uploading: boolean;
+    onReject?: (message: string) => void;
+    onFilesChanged: () => void;
 }) {
     const { t } = useTranslation('onboarding');
-    const [files, setFiles] = useState<FileEntry[]>([]);
-    const [mergeMode, setMergeMode] = useState(false);
 
     function handleFiles(newFiles: File[]) {
-        setFiles((prev) => [
-            ...prev,
-            ...newFiles.map((file) => ({
-                file,
-                storylineName: normalizeFilenameToStorylineName(file.name),
-            })),
-        ]);
+        setFiles((prev) => {
+            const deduplicated = newFiles
+                .map((file) => ({
+                    file,
+                    storylineName: normalizeFilenameToStorylineName(file.name),
+                }))
+                .filter(
+                    (entry) =>
+                        !prev.some(
+                            (existing) =>
+                                existing.file.name === entry.file.name &&
+                                existing.file.size === entry.file.size,
+                        ),
+                );
+
+            const combined = [...prev, ...deduplicated];
+            if (combined.length > MAX_FILES) {
+                onReject?.(t('uploadPhase.maxFiles'));
+                return combined.slice(0, MAX_FILES);
+            }
+            return combined;
+        });
+        onFilesChanged();
+    }
+
+    function handleRemoveFile(index: number) {
+        setFiles((prev) => prev.filter((_, j) => j !== index));
+        onFilesChanged();
+    }
+
+    function handleToggleMergeMode() {
+        setMergeMode(!mergeMode);
+        onFilesChanged();
     }
 
     return (
@@ -83,7 +125,7 @@ function UploadPhase({
             </div>
 
             <div className="flex w-[560px] flex-col gap-0">
-                <DropZone onFiles={handleFiles} />
+                <DropZone onFiles={handleFiles} onReject={onReject} />
 
                 {files.length > 0 && (
                     <div className="flex flex-col">
@@ -91,11 +133,7 @@ function UploadPhase({
                             <FileRow
                                 key={`${entry.file.name}-${i}`}
                                 file={entry.file}
-                                onRemove={() =>
-                                    setFiles((prev) =>
-                                        prev.filter((_, j) => j !== i),
-                                    )
-                                }
+                                onRemove={() => handleRemoveFile(i)}
                             />
                         ))}
                     </div>
@@ -105,7 +143,7 @@ function UploadPhase({
                     <label className="flex items-center gap-3 px-4 py-3">
                         <Checkbox
                             checked={mergeMode}
-                            onChange={() => setMergeMode(!mergeMode)}
+                            onChange={handleToggleMergeMode}
                         />
                         <span className="text-[13px] leading-4 text-ink-soft">
                             {t('uploadPhase.mergeFiles')}
@@ -155,8 +193,14 @@ function UploadPhase({
                         size="lg"
                         type="button"
                         onClick={() => onStartParsing(files, mergeMode)}
+                        disabled={uploading}
                     >
-                        {t('uploadPhase.importFiles', { count: files.length })}
+                        {uploading && <Spinner className="mr-2 h-4 w-4" />}
+                        {uploading
+                            ? t('uploadPhase.uploading')
+                            : t('uploadPhase.importFiles', {
+                                  count: files.length,
+                              })}
                     </Button>
                 )}
             </div>
@@ -228,19 +272,33 @@ export default function BooksImport({
     const [reviewData, setReviewData] = useState<ReviewStoryline[]>([]);
     const [parsingChapters, setParsingChapters] = useState<ChapterItem[]>([]);
     const [submitting, setSubmitting] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [files, setFiles] = useState<FileEntry[]>([]);
+    const [mergeMode, setMergeMode] = useState(false);
 
-    async function handleStartParsing(files: FileEntry[], mergeMode: boolean) {
+    async function handleStartParsing(
+        currentFiles: FileEntry[],
+        currentMergeMode: boolean,
+    ) {
         setError(null);
 
+        // If we already have review data (coming back from review), skip re-uploading
+        if (reviewData.length > 0) {
+            setPhase('parsing');
+            return;
+        }
+
+        setUploading(true);
+
         const formData = new FormData();
-        files.forEach((entry, i) => {
+        currentFiles.forEach((entry, i) => {
             formData.append(`files[${i}][file]`, entry.file);
             formData.append(`files[${i}][storyline_name]`, entry.storylineName);
             formData.append(`files[${i}][storyline_type]`, 'main');
         });
 
-        if (mergeMode) {
+        if (currentMergeMode) {
             formData.append('merge_into_single_storyline', '1');
         }
 
@@ -272,7 +330,9 @@ export default function BooksImport({
                     return {
                         name: s.storyline_name,
                         type: s.storyline_type,
-                        filename: files[si]?.file.name ?? '',
+                        filename: currentMergeMode
+                            ? currentFiles.map((f) => f.file.name).join(', ')
+                            : (currentFiles[si]?.file.name ?? ''),
                         chapters: s.chapters.map((ch) => ({
                             number: ch.number,
                             title: ch.title,
@@ -283,6 +343,7 @@ export default function BooksImport({
                         notice: !hasMultipleChapters
                             ? t('import.noHeadingsNotice')
                             : undefined,
+                        warnings: s.warnings ?? [],
                     };
                 },
             );
@@ -292,6 +353,8 @@ export default function BooksImport({
             setPhase('parsing');
         } catch (e) {
             setError(extractErrorMessage(e, t('import.parseError')));
+        } finally {
+            setUploading(false);
         }
     }
 
@@ -321,6 +384,11 @@ export default function BooksImport({
         }
     }
 
+    const invalidateParseCache = useCallback(() => {
+        setReviewData([]);
+        setParsingChapters([]);
+    }, []);
+
     return (
         <>
             {error && (
@@ -340,7 +408,17 @@ export default function BooksImport({
                 </div>
             )}
             {phase === 'upload' && (
-                <UploadPhase book={book} onStartParsing={handleStartParsing} />
+                <UploadPhase
+                    book={book}
+                    files={files}
+                    setFiles={setFiles}
+                    mergeMode={mergeMode}
+                    setMergeMode={setMergeMode}
+                    onStartParsing={handleStartParsing}
+                    uploading={uploading}
+                    onReject={setError}
+                    onFilesChanged={invalidateParseCache}
+                />
             )}
             {phase === 'parsing' && (
                 <ParsingPhase

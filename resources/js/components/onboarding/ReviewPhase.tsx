@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import ReviewChapterRow from '@/components/onboarding/ReviewChapterRow';
 import type { ReviewChapter } from '@/components/onboarding/ReviewChapterRow';
+import { Alert } from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
 import type { Book, StorylineType } from '@/types/models';
 
@@ -10,6 +11,7 @@ export type ReviewStoryline = {
     filename: string;
     chapters: ReviewChapter[];
     notice?: string;
+    warnings?: string[];
 };
 
 const STORYLINE_COLORS: Record<StorylineType, string> = {
@@ -109,6 +111,19 @@ export default function ReviewPhase({
                                 }
                             />
                         ))}
+
+                        {storyline.warnings &&
+                            storyline.warnings.length > 0 && (
+                                <div className="mt-2 flex flex-col gap-2">
+                                    {storyline.warnings.map((warning, wi) => (
+                                        <Alert key={wi} variant="info">
+                                            <span className="text-[12px]">
+                                                {warning}
+                                            </span>
+                                        </Alert>
+                                    ))}
+                                </div>
+                            )}
 
                         {storyline.notice && (
                             <span className="pt-1.5 text-xs leading-4 text-ink-faint italic">
