@@ -19,8 +19,8 @@ class TxtParserService implements DocumentParserInterface
     {
         $raw = $this->normalizeLineEndings($file->get());
 
-        $encoding = mb_detect_encoding($raw, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
-        if ($encoding && $encoding !== 'UTF-8') {
+        $encoding = $this->detectEncoding($raw);
+        if ($encoding !== 'UTF-8') {
             $raw = mb_convert_encoding($raw, 'UTF-8', $encoding);
         }
 
@@ -59,5 +59,24 @@ class TxtParserService implements DocumentParserInterface
         }
 
         return ['chapters' => $chapters];
+    }
+
+    /**
+     * Detect the encoding of raw file content, distinguishing Windows-1252 from ISO-8859-1.
+     *
+     * mb_detect_encoding cannot distinguish Windows-1252 from ISO-8859-1 because
+     * ISO-8859-1 is a strict superset at the byte level. Bytes 0x80-0x9F are
+     * undefined control characters in ISO-8859-1 but printable characters in
+     * Windows-1252 (smart quotes, em-dash, etc.).
+     */
+    private function detectEncoding(string $raw): string
+    {
+        $encoding = mb_detect_encoding($raw, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
+
+        if ($encoding === 'ISO-8859-1' && preg_match('/[\x80-\x9F]/', $raw)) {
+            return 'Windows-1252';
+        }
+
+        return $encoding ?: 'UTF-8';
     }
 }
