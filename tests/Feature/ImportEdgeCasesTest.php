@@ -431,6 +431,34 @@ test('single character is not detected as scene break', function (string $char) 
     '~',
 ]);
 
+test('two separator chars with spaces is not a scene break', function (string $pattern) {
+    $content = "Chapter 1: Test\n\nBefore.\n\n{$pattern}\n\nAfter.";
+    $file = tempFile($content, 'no-break.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'][0]['content'])->not->toContain('<hr>');
+})->with([
+    '- -',
+    '* *',
+    '--',
+]);
+
+test('three separator chars with spaces is a valid scene break', function (string $pattern) {
+    $content = "Chapter 1: Test\n\nBefore the break.\n\n{$pattern}\n\nAfter the break.";
+    $file = tempFile($content, 'breaks.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'][0]['content'])->toContain('<hr>');
+})->with([
+    '- - -',
+    '* * *',
+    "\xE2\x80\x94 \xE2\x80\x94 \xE2\x80\x94", // em dashes: — — —
+]);
+
 // ─── Multiple Files Without Merge ───────────────────────────────────────
 
 test('multiple files create separate storylines without merge', function () {
