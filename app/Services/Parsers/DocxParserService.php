@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Parsers;
 
 use App\Contracts\DocumentParserInterface;
 use App\Services\Parsers\Concerns\DetectsChapters;
@@ -177,26 +177,6 @@ class DocxParserService implements DocumentParserInterface
     }
 
     /**
-     * Merge adjacent identical inline tags to clean up per-word-run fragmentation.
-     *
-     * Collapses patterns like `</em><em>` into nothing, joining the text content.
-     */
-    private function mergeAdjacentTags(string $html): string
-    {
-        $previous = '';
-        while ($previous !== $html) {
-            $previous = $html;
-            $html = str_replace(
-                ['</em><em>', '</strong><strong>', '</u><u>'],
-                '',
-                $html,
-            );
-        }
-
-        return $html;
-    }
-
-    /**
      * Detect if a paragraph is a blockquote.
      */
     private function isBlockquote(?string $style): bool
@@ -222,5 +202,24 @@ class DocxParserService implements DocumentParserInterface
         }
 
         return '<p>'.$inlineHtml.'</p>';
+    }
+
+    /**
+     * Merge adjacent identical formatting tags, preserving any whitespace between them.
+     *
+     * Word often splits a single styled phrase into multiple runs, producing
+     * fragments like `</em> <em>` that should be collapsed.
+     */
+    private function mergeAdjacentTags(string $html): string
+    {
+        $previous = '';
+        while ($previous !== $html) {
+            $previous = $html;
+            $html = preg_replace('#</em>(\s*)<em>#', '$1', $html);
+            $html = preg_replace('#</strong>(\s*)<strong>#', '$1', $html);
+            $html = preg_replace('#</u>(\s*)<u>#', '$1', $html);
+        }
+
+        return $html;
     }
 }

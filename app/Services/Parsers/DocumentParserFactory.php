@@ -3,7 +3,6 @@
 namespace App\Services\Parsers;
 
 use App\Contracts\DocumentParserInterface;
-use App\Services\DocxParserService;
 use InvalidArgumentException;
 
 class DocumentParserFactory
