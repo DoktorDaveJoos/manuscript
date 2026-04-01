@@ -18,6 +18,7 @@ use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
 use App\Models\WritingSession;
+use App\Support\WordCount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -150,7 +151,7 @@ class ChapterController extends Controller
         ]);
 
         $previousWordCount = $chapter->word_count;
-        $wordCount = str_word_count(strip_tags($request->validated('content')));
+        $wordCount = WordCount::count($request->validated('content'));
         $chapter->update(['word_count' => $wordCount]);
 
         $delta = $wordCount - $previousWordCount;
@@ -201,7 +202,7 @@ class ChapterController extends Controller
                 ->increment('reader_order');
 
             $content = $request->validated('initial_content') ?? '';
-            $wordCount = str_word_count(strip_tags($content));
+            $wordCount = WordCount::count($content);
 
             $newChapter = $book->chapters()->create([
                 'storyline_id' => $chapter->storyline_id,

@@ -75,6 +75,35 @@ test('txt parser detects Windows-1252 encoding and converts smart quotes', funct
     @unlink($path);
 });
 
+test('txt parser preserves single line breaks as br tags', function () {
+    $path = tempnam(sys_get_temp_dir(), 'txt_');
+    file_put_contents($path, "Chapter 1: Poetry\n\nRoses are red\nViolets are blue\nSugar is sweet\nAnd so are you");
+
+    $file = new UploadedFile($path, 'poetry.txt', 'text/plain', null, true);
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'][0]['content'])
+        ->toContain('Roses are red<br>Violets are blue')
+        ->toContain('Sugar is sweet<br>And so are you');
+
+    @unlink($path);
+});
+
+test('txt parser preserves poetry structure with line breaks', function () {
+    $path = tempnam(sys_get_temp_dir(), 'txt_');
+    file_put_contents($path, "Chapter 1: Verse\n\nLine one\nLine two\nLine three");
+
+    $file = new UploadedFile($path, 'verse.txt', 'text/plain', null, true);
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'][0]['content'])
+        ->toContain('<p>Line one<br>Line two<br>Line three</p>');
+
+    @unlink($path);
+});
+
 test('txt parser escapes HTML entities', function () {
     $path = tempnam(sys_get_temp_dir(), 'txt_');
     file_put_contents($path, "Chapter 1: Safety First\n\nTom & Jerry went to <script>alert('xss')</script> the park.");
