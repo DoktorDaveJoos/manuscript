@@ -13,6 +13,7 @@ use App\Models\Chunk;
 use App\Services\FreeTierLimits;
 use App\Services\Normalization\NormalizationService;
 use App\Services\Parsers\DocumentParserFactory;
+use App\Support\WordCount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -301,7 +302,7 @@ class BookController extends Controller
                     }
 
                     $normalized = $normalizer->normalize($chapterData['content'], $book->language ?? 'en');
-                    $wordCount = str_word_count(strip_tags($normalized['content']));
+                    $wordCount = WordCount::count($normalized['content']);
 
                     $chapter = $storyline->chapters()->create([
                         'book_id' => $book->id,

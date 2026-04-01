@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { toggleFinding } from '@/actions/App/Http/Controllers/EditorialReviewController';
 import { jsonFetchHeaders } from '@/lib/utils';
+import { toggleFinding } from '@/actions/App/Http/Controllers/EditorialReviewController';
 
 export function useToggleFinding(
     bookId: number,
@@ -17,7 +17,7 @@ export function useToggleFinding(
             onUpdate(newResolved);
 
             try {
-                await fetch(
+                const res = await fetch(
                     toggleFinding.url({ book: bookId, review: reviewId }),
                     {
                         method: 'POST',
@@ -25,6 +25,10 @@ export function useToggleFinding(
                         body: JSON.stringify({ key }),
                     },
                 );
+
+                if (!res.ok) {
+                    onUpdate(resolvedFindings);
+                }
             } catch {
                 onUpdate(resolvedFindings);
             }
