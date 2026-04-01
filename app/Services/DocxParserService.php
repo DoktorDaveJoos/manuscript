@@ -93,7 +93,7 @@ class DocxParserService implements DocumentParserInterface
                 }
             }
 
-            $inlineHtml = implode('', $htmlParts);
+            $inlineHtml = $this->mergeAdjacentTags(implode('', $htmlParts));
             $isScene = $this->isSceneBreak($style, $rawText, $alignment);
 
             if (trim($rawText) !== '' || $isScene) {
@@ -174,6 +174,26 @@ class DocxParserService implements DocumentParserInterface
         }
 
         return true;
+    }
+
+    /**
+     * Merge adjacent identical inline tags to clean up per-word-run fragmentation.
+     *
+     * Collapses patterns like `</em><em>` into nothing, joining the text content.
+     */
+    private function mergeAdjacentTags(string $html): string
+    {
+        $previous = '';
+        while ($previous !== $html) {
+            $previous = $html;
+            $html = str_replace(
+                ['</em><em>', '</strong><strong>', '</u><u>'],
+                '',
+                $html,
+            );
+        }
+
+        return $html;
     }
 
     /**

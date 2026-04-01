@@ -1016,3 +1016,60 @@ test('parse logs warning when file cannot be parsed', function () {
         'storyline_type' => 'main',
     ]])->assertStatus(422);
 });
+
+// ─── German Heading Styles ────────────────────────────────────────────
+
+test('txt parser does not falsely detect "Teil davon" as a heading', function () {
+    $content = "Kapitel 1: Chemie\n\nSome text.\n\nTeil davon stimmt sogar: Ich war offen.\n\nMore text here.";
+    $file = tempFile($content, 'teil-falsepositive.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(1)
+        ->and($result['chapters'][0]['title'])->toBe('Chemie')
+        ->and($result['chapters'][0]['content'])->toContain('Teil davon');
+});
+
+test('txt parser still detects "Teil 1" as a heading', function () {
+    $content = "Teil 1: Der Anfang\n\nContent A.\n\nTeil 2: Das Ende\n\nContent B.";
+    $file = tempFile($content, 'teil-valid.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('Der Anfang')
+        ->and($result['chapters'][1]['title'])->toBe('Das Ende');
+});
+
+test('txt parser detects "Chapter One" with word-number', function () {
+    $content = "Chapter One: The Beginning\n\nContent.\n\nChapter Two: The End\n\nMore.";
+    $file = tempFile($content, 'word-numbers.txt');
+
+    $parser = new TxtParserService;
+    $result = $parser->parse($file);
+
+    expect($result['chapters'])->toHaveCount(2)
+        ->and($result['chapters'][0]['title'])->toBe('The Beginning')
+        ->and($result['chapters'][1]['title'])->toBe('The End');
+});
+
+// ─── HTML Tag Merging ─────────────────────────────────────────────────
+
+test('docx parser merges adjacent identical inline tags', function () {
+    $parser = new DocxParserService;
+
+    // Use reflection to test the private method
+    $method = new ReflectionMethod($parser, 'mergeAdjacentTags');
+    $method->setAccessible(true);
+
+    $fragmented = '<em>Hello</em><em> </em><em>world</em>';
+    expect($method->invoke($parser, $fragmented))->toBe('<em>Hello world</em>');
+
+    $nested = '<strong><em>a</em></strong><strong><em>b</em></strong>';
+    expect($method->invoke($parser, $nested))->toBe('<strong><em>ab</em></strong>');
+
+    $clean = '<em>Already clean text</em>';
+    expect($method->invoke($parser, $clean))->toBe('<em>Already clean text</em>');
+});

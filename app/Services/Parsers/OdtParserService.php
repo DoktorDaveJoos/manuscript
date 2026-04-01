@@ -121,7 +121,7 @@ class OdtParserService implements DocumentParserInterface
                 }
             }
 
-            $inlineHtml = implode('', $htmlParts);
+            $inlineHtml = $this->mergeAdjacentTags(implode('', $htmlParts));
             $isScene = $this->isSceneBreak(null, $rawText, null);
 
             if (trim($rawText) !== '' || $isScene) {
@@ -203,6 +203,24 @@ class OdtParserService implements DocumentParserInterface
         }
 
         return ['text' => $text, 'html' => $html];
+    }
+
+    /**
+     * Merge adjacent identical inline tags to clean up per-word-run fragmentation.
+     */
+    private function mergeAdjacentTags(string $html): string
+    {
+        $previous = '';
+        while ($previous !== $html) {
+            $previous = $html;
+            $html = str_replace(
+                ['</em><em>', '</strong><strong>', '</u><u>'],
+                '',
+                $html,
+            );
+        }
+
+        return $html;
     }
 
     /**
