@@ -147,10 +147,10 @@ jobs:
         run: npm ci
 
       - name: Copy environment file
-        run: copy .env.example .env
+        run: Copy-Item .env.example .env
 
       - name: Create database file
-        run: type nul > database\database.sqlite
+        run: New-Item -ItemType File -Path database\database.sqlite -Force
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
