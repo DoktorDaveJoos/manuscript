@@ -10,6 +10,7 @@ use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
 use App\Models\EditorialReview;
+use App\Models\EditorialReviewSection;
 use App\Models\License;
 use App\Models\Scene;
 use App\Models\Storyline;
@@ -343,4 +344,53 @@ test('EditorialReview model has correct relationships', function () {
     expect($review->book)->toBeInstanceOf(Book::class)
         ->and($review->sections)->toBeEmpty()
         ->and($review->chapterNotes)->toBeEmpty();
+});
+
+test('RunEditorialReviewJob fails gracefully when all chapters have empty content', function () {
+    ChapterAnalyzer::fake(function () {
+        return [
+            'summary' => 'Summary.', 'key_events' => [], 'characters_present' => [],
+            'tension_score' => 5, 'micro_tension_score' => 4, 'scene_purpose' => 'setup',
+            'value_shift' => null, 'emotional_state_open' => 'calm', 'emotional_state_close' => 'calm',
+            'emotional_shift_magnitude' => 1, 'hook_score' => 5, 'hook_type' => 'soft_hook',
+            'hook_reasoning' => 'Ok.', 'entry_hook_score' => 5, 'pacing_feel' => 'measured',
+            'sensory_grounding' => 3, 'information_delivery' => 'mixed',
+        ];
+    });
+    fakeAllEditorialAgents();
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create([
+        'reader_order' => 1,
+        'title' => 'Empty Chapter',
+        'content_hash' => null,
+        'prepared_content_hash' => null,
+    ]);
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'content' => '',
+    ]);
+    Scene::factory()->for($chapter)->create([
+        'content' => '',
+        'sort_order' => 0,
+        'word_count' => 0,
+    ]);
+
+    $review = EditorialReview::factory()->for($book)->create(['status' => 'pending']);
+
+    $job = new RunEditorialReviewJob($book, $review);
+    $job->handle();
+
+    $review->refresh();
+
+    expect($review->status)->toBe('failed')
+        ->and($review->error_message)->toContain('No chapter content');
+});
+
+test('findingKey produces xxh128 length hash', function () {
+    $key = EditorialReviewSection::findingKey('plot', 'Some finding description');
+
+    expect(strlen($key))->toBe(32);
 });
