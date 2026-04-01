@@ -44,8 +44,11 @@ trait DetectsChapters
         }
 
         $trimmed = trim($text);
-        if ($trimmed !== '' && preg_match('/^[\*\#\~\-\x{2014}\x{2013}\s]{3,20}$/u', $trimmed) && preg_match('/[\*\#\~\-\x{2014}\x{2013}]/u', $trimmed)) {
-            return true;
+        if ($trimmed !== '' && preg_match('/^[\*\#\~\-\x{2014}\x{2013}\s]{3,20}$/u', $trimmed)) {
+            $separatorCount = preg_match_all('/[\*\#\~\-\x{2014}\x{2013}]/u', $trimmed);
+            if ($separatorCount >= 3) {
+                return true;
+            }
         }
 
         if ($alignment === 'center' && mb_strlen($trimmed) <= 10 && $trimmed !== '' && preg_match('/^[\p{P}\p{S}\s]+$/u', $trimmed)) {
