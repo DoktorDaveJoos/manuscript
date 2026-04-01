@@ -396,6 +396,29 @@ test('parse endpoint accepts md files', function () {
         ->assertJsonPath('storylines.0.chapters.0.number', 1);
 });
 
+test('parse endpoint accepts epub files', function () {
+    $book = Book::factory()->create();
+
+    $response = $this->postJson(route('books.import.parse', $book), [
+        'files' => [
+            [
+                'file' => new UploadedFile(
+                    path: __DIR__.'/fixtures/chapters.epub',
+                    originalName: 'chapters.epub',
+                    mimeType: 'application/epub+zip',
+                    test: true,
+                ),
+                'storyline_name' => 'Main',
+                'storyline_type' => 'main',
+            ],
+        ],
+    ]);
+
+    $response->assertSuccessful()
+        ->assertJsonCount(1, 'storylines')
+        ->assertJsonPath('storylines.0.chapters.0.number', 1);
+});
+
 test('merge mode combines multiple files into single storyline', function () {
     $book = Book::factory()->create();
 

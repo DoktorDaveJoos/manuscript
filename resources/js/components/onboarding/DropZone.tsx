@@ -22,6 +22,7 @@ export default function DropZone({
                 '.txt',
                 '.md',
                 '.markdown',
+                '.epub',
             ];
             const files = Array.from(e.dataTransfer.files).filter((f) =>
                 supportedExtensions.some((ext) =>
@@ -60,7 +61,7 @@ export default function DropZone({
             <input
                 ref={inputRef}
                 type="file"
-                accept=".docx,.odt,.txt,.md,.markdown"
+                accept=".docx,.odt,.txt,.md,.markdown,.epub"
                 multiple
                 className="hidden"
                 onChange={(e) => {
