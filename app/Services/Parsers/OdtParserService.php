@@ -90,7 +90,7 @@ class OdtParserService implements DocumentParserInterface
         $paragraphs = [];
 
         // Process both text:h (headings) and text:p (paragraphs) in document order
-        $nodes = $xpath->query('//office:body/office:text/text:h | //office:body/office:text/text:p');
+        $nodes = $xpath->query('//office:body//text:h | //office:body//text:p');
 
         if ($nodes === false) {
             return [];
@@ -104,6 +104,9 @@ class OdtParserService implements DocumentParserInterface
                 $outlineLevel = $node->getAttributeNS(self::NS_TEXT, 'outline-level');
                 $level = (int) $outlineLevel;
                 $style = ($level <= 2) ? 'Heading'.$level : null;
+            } else {
+                $styleName = $node->getAttributeNS(self::NS_TEXT, 'style-name');
+                $style = ($styleName !== '') ? $styleName : null;
             }
 
             $rawText = '';
@@ -128,7 +131,7 @@ class OdtParserService implements DocumentParserInterface
                 $paragraphs[] = [
                     'style' => $style,
                     'text' => $rawText,
-                    'html' => $this->wrapParagraph($inlineHtml, $rawText, $isScene),
+                    'html' => $this->wrapParagraph($inlineHtml, $style, $isScene),
                 ];
             }
         }
@@ -206,32 +209,46 @@ class OdtParserService implements DocumentParserInterface
     }
 
     /**
-     * Merge adjacent identical inline tags to clean up per-word-run fragmentation.
+     * Detect if a paragraph is a blockquote.
+     */
+    private function isBlockquote(?string $style): bool
+    {
+        if ($style === null) {
+            return false;
+        }
+
+        return (bool) preg_match('/^(Quote|Quotations|BlockQuote|Block\s*Text|IntenseQuote)$/i', $style);
+    }
+
+    /**
+     * Wrap inline HTML in the appropriate block element.
+     */
+    private function wrapParagraph(string $inlineHtml, ?string $style, bool $isScene): string
+    {
+        if ($isScene) {
+            return '<hr>';
+        }
+
+        if ($this->isBlockquote($style)) {
+            return '<blockquote><p>'.$inlineHtml.'</p></blockquote>';
+        }
+
+        return '<p>'.$inlineHtml.'</p>';
+    }
+
+    /**
+     * Merge adjacent identical inline tags, preserving any whitespace between them.
      */
     private function mergeAdjacentTags(string $html): string
     {
         $previous = '';
         while ($previous !== $html) {
             $previous = $html;
-            $html = str_replace(
-                ['</em><em>', '</strong><strong>', '</u><u>'],
-                '',
-                $html,
-            );
+            $html = preg_replace('#</em>(\s*)<em>#', '$1', $html);
+            $html = preg_replace('#</strong>(\s*)<strong>#', '$1', $html);
+            $html = preg_replace('#</u>(\s*)<u>#', '$1', $html);
         }
 
         return $html;
-    }
-
-    /**
-     * Wrap inline HTML in the appropriate block element.
-     */
-    private function wrapParagraph(string $inlineHtml, string $rawText, bool $isScene): string
-    {
-        if ($isScene) {
-            return '<hr>';
-        }
-
-        return '<p>'.$inlineHtml.'</p>';
     }
 }
