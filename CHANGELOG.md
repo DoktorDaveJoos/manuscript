@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.4.2 (2026-04-01)
+
+### Other Changes
+
+- Merge remote-tracking branch 'origin/main' into dev (4885698)
+- Add Windows build to publish workflow (441e7cb)
+- Fix release script to let publish workflow handle release creation (d3080fc)
+
+
 ## v0.4.1 (2026-04-01)
 
 ### Features
