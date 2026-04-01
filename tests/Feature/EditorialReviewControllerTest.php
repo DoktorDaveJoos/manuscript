@@ -399,6 +399,53 @@ test('toggle finding requires key', function () {
         ->assertJsonValidationErrors('key');
 });
 
+test('chat returns 422 when review is not completed', function () {
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'analyzing',
+    ]);
+
+    $this->postJson(route('books.ai.editorial-review.chat', [$book, $review]), [
+        'message' => 'Tell me about the plot.',
+    ])->assertStatus(422);
+});
+
+test('index returns in-progress review as latest review', function () {
+    $book = Book::factory()->withAi()->create();
+    EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+    ]);
+    $inProgress = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'analyzing',
+    ]);
+
+    $this->get(route('books.ai.editorial-review.index', $book))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->component('books/editorial-review')
+            ->where('latestReview.id', $inProgress->id)
+            ->where('latestReview.status', 'analyzing')
+        );
+});
+
+test('index caps reviews to 20', function () {
+    $book = Book::factory()->withAi()->create();
+    EditorialReview::factory()->count(25)->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+    ]);
+
+    $this->get(route('books.ai.editorial-review.index', $book))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->component('books/editorial-review')
+            ->has('reviews', 20)
+        );
+});
+
 test('chat history validation rejects invalid roles', function () {
     $book = Book::factory()->withAi()->create();
     $review = EditorialReview::factory()->create([
