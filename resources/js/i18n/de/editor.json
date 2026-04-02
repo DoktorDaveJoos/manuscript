@@ -30,6 +30,8 @@
     "palette.closeEditorialReview": "Lektoratsbewertung schließen",
     "palette.enableTypewriterMode": "Schreibmaschinenmodus aktivieren",
     "palette.disableTypewriterMode": "Schreibmaschinenmodus deaktivieren",
+    "palette.enableProofreading": "Korrekturlesen aktivieren",
+    "palette.disableProofreading": "Korrekturlesen deaktivieren",
     "palette.bold": "Fett",
     "palette.italic": "Kursiv",
     "palette.generateNextParagraph": "Nächsten Absatz generieren",

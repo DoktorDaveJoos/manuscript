@@ -417,6 +417,38 @@ html.dark .search-highlight-active {
     color: #fff;
 }
 
+/* Proofreading decorations */
+.spelling-error {
+    background-color: transparent;
+    border-bottom: none;
+    text-decoration: underline wavy #ef4444;
+    text-decoration-skip-ink: none;
+    text-underline-offset: 2px;
+    animation: none;
+}
+
+.spelling-warning {
+    background-color: transparent;
+    border-bottom: none;
+    text-decoration: underline wavy #3b82f6;
+    text-decoration-skip-ink: none;
+    text-underline-offset: 2px;
+    animation: none;
+}
+
+.spelling-error:hover,
+.spelling-warning:hover {
+    background-color: transparent;
+}
+
+html.dark .spelling-error {
+    text-decoration-color: #f87171;
+}
+
+html.dark .spelling-warning {
+    text-decoration-color: #60a5fa;
+}
+
 /* Chapter title placeholder */
 h1[contenteditable]:empty::before {
     content: 'Untitled chapter';

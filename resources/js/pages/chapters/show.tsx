@@ -39,10 +39,12 @@ import Kbd from '@/components/ui/Kbd';
 import SlidePanel from '@/components/ui/SlidePanel';
 import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
+import { useProofreading } from '@/hooks/useProofreading';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 
 import { getChapterNote } from '@/lib/editorial-constants';
 import { createChapter, jsonFetchHeaders } from '@/lib/utils';
+import { DEFAULT_PROOFREADING_CONFIG } from '@/types/models';
 import type {
     Analysis,
     AppSettings,
@@ -51,6 +53,7 @@ import type {
     Character,
     CharacterChapterPivot,
     EditorialReview,
+    ProofreadingConfig,
     ProsePassRule,
     Scene,
 } from '@/types/models';
@@ -102,6 +105,8 @@ export default function ChapterShow({
     chapter,
     versionCount,
     prosePassRules,
+    proofreadingConfig: initialProofreadingConfig,
+    customDictionary: initialCustomDictionary,
     chapterAnalyses,
     editorialReview: initialEditorialReview,
 }: {
@@ -109,6 +114,8 @@ export default function ChapterShow({
     chapter: ChapterWithRelations;
     versionCount: number;
     prosePassRules?: ProsePassRule[];
+    proofreadingConfig?: ProofreadingConfig;
+    customDictionary?: string[];
     chapterAnalyses?: Record<string, Analysis>;
     editorialReview?: EditorialReview | null;
 }) {
@@ -117,6 +124,24 @@ export default function ChapterShow({
     const sidebarStorylines = useSidebarStorylines();
     const { visible: aiVisible } = useAiFeatures();
     const { app_settings } = usePage<{ app_settings: AppSettings }>().props;
+
+    const {
+        config: proofreadingConfig,
+        dictionary: customDictionary,
+        isEnabled: isProofreadingEnabled,
+        addToDictionary,
+        toggleEnabled: toggleProofreading,
+    } = useProofreading(
+        initialProofreadingConfig ?? DEFAULT_PROOFREADING_CONFIG,
+        initialCustomDictionary ?? [],
+        book.id,
+    );
+
+    const customDictionaryRef = useRef(customDictionary);
+    useEffect(() => {
+        customDictionaryRef.current = customDictionary;
+    }, [customDictionary]);
+
     const [pendingTitleSelect, setPendingTitleSelect] = useState(
         () => chapter.word_count === 0,
     );
@@ -772,6 +797,9 @@ export default function ChapterShow({
                                 onLocalFindClose={() =>
                                     setIsLocalFindOpen(false)
                                 }
+                                proofreadingConfig={proofreadingConfig}
+                                customDictionaryRef={customDictionaryRef}
+                                onAddToDictionary={addToDictionary}
                             />
 
                             <CommandPalette
@@ -789,6 +817,8 @@ export default function ChapterShow({
                                 onTogglePanel={togglePanel}
                                 isTypewriterMode={isTypewriterMode}
                                 onToggleTypewriterMode={toggleTypewriterMode}
+                                isProofreadingEnabled={isProofreadingEnabled}
+                                onToggleProofreading={toggleProofreading}
                             />
                         </>
                     )}

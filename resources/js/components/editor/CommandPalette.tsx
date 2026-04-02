@@ -9,6 +9,7 @@ import {
     Maximize,
     Minus,
     Plus,
+    SpellCheck,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
@@ -87,6 +88,8 @@ export default function CommandPalette({
     onTogglePanel,
     isTypewriterMode,
     onToggleTypewriterMode,
+    isProofreadingEnabled,
+    onToggleProofreading,
 }: {
     editor: Editor | null;
     isOpen: boolean;
@@ -102,6 +105,8 @@ export default function CommandPalette({
     onTogglePanel: (panel: PanelId) => void;
     isTypewriterMode?: boolean;
     onToggleTypewriterMode?: () => void;
+    isProofreadingEnabled?: boolean;
+    onToggleProofreading?: () => void;
 }) {
     const { t } = useTranslation('editor');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -121,6 +126,10 @@ export default function CommandPalette({
     const typewriterLabel = isTypewriterMode
         ? t('palette.disableTypewriterMode')
         : t('palette.enableTypewriterMode');
+
+    const proofreadingLabel = isProofreadingEnabled
+        ? t('palette.disableProofreading')
+        : t('palette.enableProofreading');
 
     const handleSelect = (action: () => void) => {
         action();
@@ -195,6 +204,20 @@ export default function CommandPalette({
                                 </PaletteIcon>
                                 <span className="flex-1">
                                     {typewriterLabel}
+                                </span>
+                            </CommandItem>
+
+                            <CommandItem
+                                value={proofreadingLabel}
+                                onSelect={() =>
+                                    handleSelect(() => onToggleProofreading?.())
+                                }
+                            >
+                                <PaletteIcon>
+                                    <SpellCheck size={16} />
+                                </PaletteIcon>
+                                <span className="flex-1">
+                                    {proofreadingLabel}
                                 </span>
                             </CommandItem>
                         </CommandGroup>

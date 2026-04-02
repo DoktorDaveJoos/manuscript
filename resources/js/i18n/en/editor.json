@@ -30,6 +30,8 @@
     "palette.closeEditorialReview": "Close Editorial Review",
     "palette.enableTypewriterMode": "Enable Typewriter Mode",
     "palette.disableTypewriterMode": "Disable Typewriter Mode",
+    "palette.enableProofreading": "Enable Proofreading",
+    "palette.disableProofreading": "Disable Proofreading",
     "palette.bold": "Bold",
     "palette.italic": "Italic",
     "palette.generateNextParagraph": "Generate next paragraph",

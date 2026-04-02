@@ -106,6 +106,9 @@ Route::get('/settings', [SettingsController::class, 'index'])->name('settings.in
 Route::put('/settings', [AppSettingsController::class, 'update'])->name('settings.update');
 Route::put('/settings/writing-style', [SettingsController::class, 'updateWritingStyle'])->name('settings.writing-style.update');
 Route::put('/settings/prose-pass-rules', [SettingsController::class, 'updateProsePassRules'])->name('settings.prose-pass-rules.update');
+Route::put('/settings/proofreading', [SettingsController::class, 'updateProofreadingConfig'])->name('settings.proofreading.update');
+Route::put('/books/{book}/settings/custom-dictionary', [SettingsController::class, 'updateCustomDictionary'])->name('books.settings.custom-dictionary.update');
+Route::post('/books/{book}/settings/custom-dictionary/seed', [SettingsController::class, 'seedCustomDictionary'])->name('books.settings.custom-dictionary.seed');
 
 // Legacy routes — redirect to unified settings
 Route::get('/settings/appearance', fn () => redirect('/settings'))->name('settings.appearance');

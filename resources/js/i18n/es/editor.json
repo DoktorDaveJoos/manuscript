@@ -30,6 +30,8 @@
     "palette.closeEditorialReview": "Cerrar Revisión Editorial",
     "palette.enableTypewriterMode": "Activar modo máquina de escribir",
     "palette.disableTypewriterMode": "Desactivar modo máquina de escribir",
+    "palette.enableProofreading": "Activar corrección",
+    "palette.disableProofreading": "Desactivar corrección",
     "palette.bold": "Negrita",
     "palette.italic": "Cursiva",
     "palette.generateNextParagraph": "Generar siguiente párrafo",

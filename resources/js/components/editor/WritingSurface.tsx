@@ -1,4 +1,5 @@
 import type { Editor } from '@tiptap/core';
+import type { RefObject } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SaveStatus } from '@/components/editor/EditorBar';
@@ -8,7 +9,7 @@ import {
     cancelTypewriterAnimation,
     centerCursorInContainer,
 } from '@/extensions/TypewriterScrollExtension';
-import type { Scene } from '@/types/models';
+import type { ProofreadingConfig, Scene } from '@/types/models';
 import ChapterFindBar from './ChapterFindBar';
 import { DEFAULT_FONT_ID, getFontFamily } from './FontSelector';
 import { DEFAULT_FONT_SIZE } from './FontSizeSelector';
@@ -49,6 +50,9 @@ export default function WritingSurface({
     onLocalFindClose,
     autoSelectTitle,
     onTitleSelectHandled,
+    proofreadingConfig,
+    customDictionaryRef,
+    onAddToDictionary,
 }: {
     scenes: Scene[];
     bookId: number;
@@ -74,6 +78,9 @@ export default function WritingSurface({
     isLocalFindOpen?: boolean;
     localFindShowReplace?: boolean;
     onLocalFindClose?: () => void;
+    proofreadingConfig?: ProofreadingConfig;
+    customDictionaryRef?: RefObject<string[]>;
+    onAddToDictionary?: (word: string) => void;
 }) {
     const { t } = useTranslation('editor');
 
@@ -413,6 +420,9 @@ export default function WritingSurface({
                                 searchHighlight={
                                     isLocalFindOpen ? null : searchHighlight
                                 }
+                                proofreadingConfig={proofreadingConfig}
+                                customDictionaryRef={customDictionaryRef}
+                                onAddToDictionary={onAddToDictionary}
                             />
                         ))}
                     </div>
