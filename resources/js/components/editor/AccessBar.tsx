@@ -1,7 +1,7 @@
 import Badge from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 
-export type PanelId = 'notes' | 'ai' | 'chat' | 'editorial';
+export type PanelId = 'wiki' | 'notes' | 'ai' | 'chat' | 'editorial';
 
 export type AccessBarItemConfig = {
     id: PanelId;

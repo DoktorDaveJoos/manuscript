@@ -2,6 +2,7 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { DOMSerializer } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
 import {
+    BookOpen,
     MessageCircle,
     NotebookPen,
     NotebookText,
@@ -57,6 +58,7 @@ import type {
     ProsePassRule,
     Scene,
 } from '@/types/models';
+import WikiPanel from '@/components/editor/WikiPanel';
 
 type ChapterWithRelations = Chapter & {
     characters?: (Character & { pivot: CharacterChapterPivot })[];
@@ -94,6 +96,7 @@ async function splitAtCursor(
 }
 
 const VALID_PANELS: Set<PanelId> = new Set([
+    'wiki',
     'notes',
     'ai',
     'chat',
@@ -300,6 +303,10 @@ export default function ChapterShow({
         },
         [closePanel],
     );
+    const closeWiki = useCallback(
+        () => closePanelAndFocus('wiki'),
+        [closePanelAndFocus],
+    );
     const closeNotes = useCallback(
         () => closePanelAndFocus('notes'),
         [closePanelAndFocus],
@@ -327,6 +334,11 @@ export default function ChapterShow({
 
     const accessBarItems = useMemo(() => {
         const items: AccessBarItemConfig[] = [
+            {
+                id: 'wiki',
+                icon: BookOpen,
+                label: t('toolbar.wiki'),
+            },
             {
                 id: 'notes',
                 icon: NotebookPen,
@@ -798,6 +810,7 @@ export default function ChapterShow({
                                     setIsLocalFindOpen(false)
                                 }
                                 proofreadingConfig={proofreadingConfig}
+                                bookLanguage={book.language}
                                 customDictionaryRef={customDictionaryRef}
                                 onAddToDictionary={addToDictionary}
                             />
@@ -827,6 +840,21 @@ export default function ChapterShow({
                 {/* Right-side panels — fixed order: notes, find, ai, chat */}
                 {!isFocusMode && !pendingVersion && (
                     <>
+                        <SlidePanel
+                            open={openPanels.has('wiki')}
+                            onClose={closeWiki}
+                            storageKey="manuscript:wiki-panel-width"
+                            defaultWidth={300}
+                            minWidth={200}
+                            maxWidth={600}
+                        >
+                            <WikiPanel
+                                book={book}
+                                chapter={chapter}
+                                onClose={closeWiki}
+                            />
+                        </SlidePanel>
+
                         <SlidePanel
                             open={openPanels.has('notes')}
                             onClose={closeNotes}

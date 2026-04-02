@@ -28,6 +28,7 @@ use App\Http\Controllers\StorylineController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\WikiController;
+use App\Http\Controllers\WikiPanelController;
 use App\Http\Controllers\WritingGoalController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,6 +52,12 @@ Route::delete('/books/{book}/characters/{character}', [WikiController::class, 'd
 Route::post('/books/{book}/wiki-entries', [WikiController::class, 'storeEntry'])->name('wikiEntries.store');
 Route::patch('/books/{book}/wiki-entries/{wikiEntry}', [WikiController::class, 'updateEntry'])->name('wikiEntries.update');
 Route::delete('/books/{book}/wiki-entries/{wikiEntry}', [WikiController::class, 'destroyEntry'])->name('wikiEntries.destroy');
+Route::get('/books/{book}/wiki/panel', [WikiPanelController::class, 'index'])->name('wiki.panel.index');
+Route::post('/books/{book}/wiki/panel/connect', [WikiPanelController::class, 'connect'])->name('wiki.panel.connect');
+Route::post('/books/{book}/wiki/panel/disconnect', [WikiPanelController::class, 'disconnect'])->name('wiki.panel.disconnect');
+Route::patch('/books/{book}/wiki/panel/characters/{character}', [WikiPanelController::class, 'updateCharacter'])->name('wiki.panel.updateCharacter');
+Route::patch('/books/{book}/wiki/panel/characters/{character}/role', [WikiPanelController::class, 'updateRole'])->name('wiki.panel.updateRole');
+Route::patch('/books/{book}/wiki/panel/wiki-entries/{wikiEntry}', [WikiPanelController::class, 'updateWikiEntry'])->name('wiki.panel.updateWikiEntry');
 // Plot board routes are gated behind Pro (see license middleware group below)
 
 Route::get('/books/{book}/editor', [ChapterController::class, 'editor'])->name('books.editor');

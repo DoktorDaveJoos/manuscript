@@ -64,6 +64,7 @@ function ShortcutKeys({ shortcut }: { shortcut: string }) {
 }
 
 const panelLabelKeys: Record<PanelId, { open: string; close: string }> = {
+    wiki: { open: 'palette.openWiki', close: 'palette.closeWiki' },
     notes: { open: 'palette.openNotes', close: 'palette.closeNotes' },
     ai: { open: 'palette.openAiAssistant', close: 'palette.closeAiAssistant' },
     chat: { open: 'palette.openChat', close: 'palette.closeChat' },
