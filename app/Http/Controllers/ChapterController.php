@@ -29,13 +29,13 @@ use Inertia\Response;
 
 class ChapterController extends Controller
 {
-    public function editor(Book $book): RedirectResponse|Response
+    public function editor(Request $request, Book $book): RedirectResponse|Response
     {
         $firstChapter = $book->chapters()
             ->orderBy('reader_order')
             ->first();
 
-        if (! $firstChapter) {
+        if (! $firstChapter && ! $request->query('panes')) {
             $book->load('storylines:id,book_id,name');
 
             return Inertia::render('chapters/empty', [
@@ -43,7 +43,21 @@ class ChapterController extends Controller
             ]);
         }
 
-        return redirect()->route('chapters.show', [$book, $firstChapter]);
+        $book->load([
+            'storylines' => fn ($q) => $q->orderBy('sort_order'),
+            'storylines.chapters' => fn ($q) => $q
+                ->select('id', 'book_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count')
+                ->orderBy('reader_order'),
+            'storylines.chapters.scenes' => fn ($q) => $q
+                ->select('id', 'chapter_id', 'title', 'sort_order', 'word_count')
+                ->orderBy('sort_order'),
+        ]);
+
+        return Inertia::render('chapters/editor', [
+            'book' => $book,
+            'initialPanes' => $request->query('panes'),
+            'fallbackChapterId' => $firstChapter?->id,
+        ]);
     }
 
     public function store(StoreChapterRequest $request, Book $book): RedirectResponse

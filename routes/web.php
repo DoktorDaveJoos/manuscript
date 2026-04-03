@@ -30,6 +30,8 @@ use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\WikiController;
 use App\Http\Controllers\WikiPanelController;
 use App\Http\Controllers\WritingGoalController;
+use App\Models\Book;
+use App\Models\Chapter;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [BookController::class, 'index'])->name('books.index');
@@ -62,7 +64,9 @@ Route::patch('/books/{book}/wiki/panel/wiki-entries/{wikiEntry}', [WikiPanelCont
 
 Route::get('/books/{book}/editor', [ChapterController::class, 'editor'])->name('books.editor');
 Route::post('/books/{book}/chapters', [ChapterController::class, 'store'])->name('chapters.store');
-Route::get('/books/{book}/chapters/{chapter}', [ChapterController::class, 'show'])->name('chapters.show');
+Route::get('/books/{book}/chapters/{chapter}', function (Book $book, Chapter $chapter) {
+    return redirect()->route('books.editor', ['book' => $book, 'panes' => $chapter->id]);
+})->name('chapters.show');
 Route::get('/books/{book}/chapters/{chapter}/json', [ChapterController::class, 'showJson'])->name('chapters.show.json');
 Route::patch('/books/{book}/chapters/{chapter}/title', [ChapterController::class, 'updateTitle'])->name('chapters.updateTitle');
 Route::put('/books/{book}/chapters/{chapter}/content', [ChapterController::class, 'updateContent'])->name('chapters.updateContent');
