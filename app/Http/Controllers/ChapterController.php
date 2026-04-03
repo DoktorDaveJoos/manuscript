@@ -99,49 +99,9 @@ class ChapterController extends Controller
         return redirect()->route('chapters.show', [$book, $chapter]);
     }
 
-    public function show(Book $book, Chapter $chapter): Response
+    public function show(Book $book, Chapter $chapter): RedirectResponse
     {
-        $book->load([
-            'storylines' => fn ($q) => $q->orderBy('sort_order'),
-            'storylines.chapters' => fn ($q) => $q
-                ->select('id', 'book_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count')
-                ->orderBy('reader_order'),
-            'storylines.chapters.scenes' => fn ($q) => $q
-                ->select('id', 'chapter_id', 'title', 'sort_order', 'word_count')
-                ->orderBy('sort_order'),
-        ]);
-
-        $chapter->load([
-            'currentVersion:id,chapter_id,version_number,content,source,is_current',
-            'pendingVersion:id,chapter_id,version_number,content,source,change_summary,status',
-            'scenes' => fn ($q) => $q->orderBy('sort_order'),
-            'storyline:id,name,timeline_label',
-            'povCharacter:id,name',
-            'characters' => fn ($q) => $q->select('characters.id', 'characters.name'),
-        ]);
-
-        return Inertia::render('chapters/show', [
-            'book' => $book,
-            'chapter' => $chapter,
-            'versionCount' => $chapter->versions()->count(),
-            'prosePassRules' => Book::globalProsePassRules(),
-            'proofreadingConfig' => Book::globalProofreadingConfig(),
-            'customDictionary' => $book->custom_dictionary ?? [],
-            'chapterPlotPoints' => $book->plotPoints()
-                ->where('intended_chapter_id', $chapter->id)
-                ->orderBy('sort_order')
-                ->get(),
-            'chapterAnalyses' => Inertia::defer(fn () => $chapter->analyses()
-                ->get()
-                ->keyBy(fn ($a) => $a->type->value)),
-            'editorialReview' => Inertia::defer(function () use ($book, $chapter) {
-                return $book->editorialReviews()
-                    ->where('status', 'completed')
-                    ->latest()
-                    ->with(['chapterNotes' => fn ($q) => $q->where('chapter_id', $chapter->id)])
-                    ->first();
-            }),
-        ]);
+        return redirect()->route('books.editor', ['book' => $book, 'panes' => $chapter->id]);
     }
 
     public function showJson(Book $book, Chapter $chapter): JsonResponse
