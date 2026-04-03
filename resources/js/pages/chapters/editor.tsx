@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
 import AccessBar from '@/components/editor/AccessBar';
 import type {
     AccessBarItemConfig,
@@ -34,13 +33,14 @@ import type { ChapterData } from '@/hooks/useChapterData';
 import useChapterData from '@/hooks/useChapterData';
 import usePaneManager from '@/hooks/usePaneManager';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
-import { createChapter } from '@/lib/utils';
+import { createChapter, saveAppSetting } from '@/lib/utils';
 import type {
     AppSettings,
     Book,
     Character,
     CharacterChapterPivot,
 } from '@/types/models';
+import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -70,6 +70,7 @@ function PaneWithData({
     onSaveStatusChange,
     onChapterDataReady,
     spellcheckEnabled,
+    scenesVisible,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -87,6 +88,7 @@ function PaneWithData({
     onSaveStatusChange: (status: SaveStatus) => void;
     onChapterDataReady: (data: ChapterData) => void;
     spellcheckEnabled: boolean;
+    scenesVisible: boolean;
 }) {
     const { data, isLoading, error } = useChapterData(bookId, chapterId);
 
@@ -131,6 +133,7 @@ function PaneWithData({
             onActiveEditorChange={onActiveEditorChange}
             onSaveStatusChange={onSaveStatusChange}
             spellcheckEnabled={spellcheckEnabled}
+            scenesVisible={scenesVisible}
         />
     );
 }
@@ -170,6 +173,16 @@ export default function EditorPage({
         () => setIsSpellcheckEnabled((prev) => !prev),
         [],
     );
+
+    // ── Scenes visible toggle ───────────────────────────────────────────
+    const [scenesVisible, setScenesVisible] = useState(
+        app_settings.show_scenes,
+    );
+
+    const handleScenesVisibleChange = useCallback((visible: boolean) => {
+        setScenesVisible(visible);
+        saveAppSetting('show_scenes', visible);
+    }, []);
 
     // ── Active editor tracking (from focused pane) ───────────────────────
     const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
@@ -556,7 +569,8 @@ export default function EditorPage({
                     onSceneDelete={() => {}}
                     onSceneReorder={() => {}}
                     onSceneAdd={async () => {}}
-                    scenesVisible={app_settings.show_scenes}
+                    scenesVisible={scenesVisible}
+                    onScenesVisibleChange={handleScenesVisibleChange}
                     isFocusMode={isFocusMode}
                 />
 
@@ -590,6 +604,7 @@ export default function EditorPage({
                                     )}
                                     onChapterDataReady={handleChapterDataReady}
                                     spellcheckEnabled={isSpellcheckEnabled}
+                                    scenesVisible={scenesVisible}
                                 />
                             </div>
                         ))

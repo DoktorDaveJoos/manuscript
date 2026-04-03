@@ -2,7 +2,6 @@ import type { Editor } from '@tiptap/react';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
 import type { ChapterData } from '@/hooks/useChapterData';
 import { useProofreading } from '@/hooks/useProofreading';
 import { jsonFetchHeaders } from '@/lib/utils';
@@ -13,6 +12,7 @@ import type { SaveStatus } from './EditorBar';
 import FormattingToolbar from './FormattingToolbar';
 import VersionHistoryOverlay from './VersionHistoryOverlay';
 import WritingSurface from './WritingSurface';
+import { updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
 
 export function firstLine(text: string): string {
     return text.split('\n')[0];
@@ -30,6 +30,7 @@ export default function ChapterPane({
     onActiveEditorChange,
     onSaveStatusChange,
     spellcheckEnabled,
+    scenesVisible,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -45,6 +46,7 @@ export default function ChapterPane({
     ) => void;
     onSaveStatusChange: (status: SaveStatus) => void;
     spellcheckEnabled: boolean;
+    scenesVisible: boolean;
 }) {
     const { t } = useTranslation('editor');
     const {
@@ -96,8 +98,6 @@ export default function ChapterPane({
     const toggleTypewriterMode = useCallback(() => {
         setIsTypewriterMode((prev) => !prev);
     }, []);
-
-    const [scenesVisible] = useState(appSettings.show_scenes);
 
     const editorFont = appSettings.editor_font;
     const editorFontSize = appSettings.editor_font_size;
