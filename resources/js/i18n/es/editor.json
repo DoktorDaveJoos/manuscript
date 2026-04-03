@@ -30,6 +30,8 @@
     "palette.closeEditorialReview": "Cerrar Revisión Editorial",
     "palette.enableTypewriterMode": "Activar modo máquina de escribir",
     "palette.disableTypewriterMode": "Desactivar modo máquina de escribir",
+    "palette.enableSpellCheck": "Activar corrector ortográfico",
+    "palette.disableSpellCheck": "Desactivar corrector ortográfico",
     "palette.bold": "Negrita",
     "palette.italic": "Cursiva",
     "palette.generateNextParagraph": "Generar siguiente párrafo",
@@ -174,5 +176,7 @@
     "renameDialog.labelName": "Nombre",
     "renameDialog.labelTitle": "Título",
     "renameDialog.cancel": "Cancelar",
-    "renameDialog.save": "Guardar"
+    "renameDialog.save": "Guardar",
+    "spellcheck.noSuggestions": "Sin sugerencias",
+    "spellcheck.addToDictionary": "Añadir al diccionario"
 }

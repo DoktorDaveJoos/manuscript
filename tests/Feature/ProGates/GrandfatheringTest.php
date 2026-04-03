@@ -40,9 +40,10 @@ test('free user with multiple storylines can still access editor', function () {
         'is_current' => true,
     ]);
 
-    // Editor redirects to first chapter — assertRedirect is expected
-    $this->get(route('books.editor', $book))->assertRedirect();
-    $this->get(route('chapters.show', [$book, $chapter]))->assertOk();
+    // Editor now renders the pane-based editor page directly
+    $this->get(route('books.editor', $book))->assertOk();
+    // chapters.show now redirects to the editor with the chapter as a pane
+    $this->get(route('chapters.show', [$book, $chapter]))->assertRedirect();
 });
 
 test('free user with over-limit wiki entries can still view and edit them', function () {

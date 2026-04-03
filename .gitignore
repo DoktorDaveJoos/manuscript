@@ -11,6 +11,7 @@
 /storage/*.key
 /storage/pail
 /vendor
+/nativephp/electron/node_modules
 .env
 .env.backup
 .env.production

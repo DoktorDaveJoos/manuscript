@@ -9,6 +9,7 @@ import {
     Maximize,
     Minus,
     Plus,
+    SpellCheck,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
@@ -63,6 +64,7 @@ function ShortcutKeys({ shortcut }: { shortcut: string }) {
 }
 
 const panelLabelKeys: Record<PanelId, { open: string; close: string }> = {
+    wiki: { open: 'palette.openWiki', close: 'palette.closeWiki' },
     notes: { open: 'palette.openNotes', close: 'palette.closeNotes' },
     ai: { open: 'palette.openAiAssistant', close: 'palette.closeAiAssistant' },
     chat: { open: 'palette.openChat', close: 'palette.closeChat' },
@@ -87,6 +89,8 @@ export default function CommandPalette({
     onTogglePanel,
     isTypewriterMode,
     onToggleTypewriterMode,
+    isSpellcheckEnabled,
+    onToggleSpellcheck,
 }: {
     editor: Editor | null;
     isOpen: boolean;
@@ -102,6 +106,8 @@ export default function CommandPalette({
     onTogglePanel: (panel: PanelId) => void;
     isTypewriterMode?: boolean;
     onToggleTypewriterMode?: () => void;
+    isSpellcheckEnabled?: boolean;
+    onToggleSpellcheck?: () => void;
 }) {
     const { t } = useTranslation('editor');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -121,6 +127,10 @@ export default function CommandPalette({
     const typewriterLabel = isTypewriterMode
         ? t('palette.disableTypewriterMode')
         : t('palette.enableTypewriterMode');
+
+    const spellcheckLabel = isSpellcheckEnabled
+        ? t('palette.disableSpellCheck')
+        : t('palette.enableSpellCheck');
 
     const handleSelect = (action: () => void) => {
         action();
@@ -195,6 +205,20 @@ export default function CommandPalette({
                                 </PaletteIcon>
                                 <span className="flex-1">
                                     {typewriterLabel}
+                                </span>
+                            </CommandItem>
+
+                            <CommandItem
+                                value={spellcheckLabel}
+                                onSelect={() =>
+                                    handleSelect(() => onToggleSpellcheck?.())
+                                }
+                            >
+                                <PaletteIcon>
+                                    <SpellCheck size={16} />
+                                </PaletteIcon>
+                                <span className="flex-1">
+                                    {spellcheckLabel}
                                 </span>
                             </CommandItem>
                         </CommandGroup>
