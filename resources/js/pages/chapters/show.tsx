@@ -9,13 +9,6 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    show,
-    split,
-    updateTitle,
-} from '@/actions/App/Http/Controllers/ChapterController';
-import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
-import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import NormalizePreview from '@/components/dashboard/NormalizePreview';
 import AccessBar from '@/components/editor/AccessBar';
 import type {
@@ -54,6 +47,13 @@ import type {
     ProsePassRule,
     Scene,
 } from '@/types/models';
+import {
+    show,
+    split,
+    updateTitle,
+} from '@/actions/App/Http/Controllers/ChapterController';
+import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
+import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 
 type ChapterWithRelations = Chapter & {
     characters?: (Character & { pivot: CharacterChapterPivot })[];
@@ -858,6 +858,7 @@ export default function ChapterShow({
                             maxWidth={700}
                         >
                             <AiChatDrawer
+                                key={chapter.id}
                                 book={book}
                                 chapter={chapter}
                                 onClose={closeChat}
