@@ -29,7 +29,7 @@ class SearchSimilarChunks implements Tool
         return [
             'book_id' => $schema->integer()->required(),
             'query' => $schema->string()->required(),
-            'limit' => $schema->integer()->min(1)->max(20)->nullable()->required(),
+            'limit' => $schema->integer()->nullable()->required(),
             'search_mode' => $schema->string()->enum(['semantic', 'keyword', 'hybrid'])->nullable()->required(),
         ];
     }
@@ -38,7 +38,7 @@ class SearchSimilarChunks implements Tool
     {
         $bookId = $request['book_id'];
         $query = $request['query'];
-        $limit = $request['limit'] ?? 5;
+        $limit = min($request['limit'] ?? 5, 20);
         $searchMode = $request['search_mode'] ?? 'hybrid';
 
         try {
