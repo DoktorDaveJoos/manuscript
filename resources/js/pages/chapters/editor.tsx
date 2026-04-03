@@ -69,6 +69,7 @@ function PaneWithData({
     onActiveEditorChange,
     onSaveStatusChange,
     onChapterDataReady,
+    spellcheckEnabled,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -85,6 +86,7 @@ function PaneWithData({
     ) => void;
     onSaveStatusChange: (status: SaveStatus) => void;
     onChapterDataReady: (data: ChapterData) => void;
+    spellcheckEnabled: boolean;
 }) {
     const { data, isLoading, error } = useChapterData(bookId, chapterId);
 
@@ -128,6 +130,7 @@ function PaneWithData({
             onClose={onClose}
             onActiveEditorChange={onActiveEditorChange}
             onSaveStatusChange={onSaveStatusChange}
+            spellcheckEnabled={spellcheckEnabled}
         />
     );
 }
@@ -160,6 +163,13 @@ export default function EditorPage({
         navigateToChapter,
         closePane,
     } = usePaneManager(book.id, initialPanes, fallbackChapterId ?? undefined);
+
+    // ── Spell check toggle ─────────────────────────────────────────────────
+    const [isSpellcheckEnabled, setIsSpellcheckEnabled] = useState(true);
+    const toggleSpellcheck = useCallback(
+        () => setIsSpellcheckEnabled((prev) => !prev),
+        [],
+    );
 
     // ── Active editor tracking (from focused pane) ───────────────────────
     const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
@@ -579,6 +589,7 @@ export default function EditorPage({
                                         pane.id,
                                     )}
                                     onChapterDataReady={handleChapterDataReady}
+                                    spellcheckEnabled={isSpellcheckEnabled}
                                 />
                             </div>
                         ))
@@ -714,6 +725,8 @@ export default function EditorPage({
                 panelItems={accessBarItems}
                 openPanels={openPanels}
                 onTogglePanel={togglePanel}
+                isSpellcheckEnabled={isSpellcheckEnabled}
+                onToggleSpellcheck={toggleSpellcheck}
             />
 
             {/* Focus mode whisper chrome */}

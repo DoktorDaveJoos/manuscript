@@ -29,6 +29,7 @@ export default function ChapterPane({
     onClose,
     onActiveEditorChange,
     onSaveStatusChange,
+    spellcheckEnabled,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -43,6 +44,7 @@ export default function ChapterPane({
         sceneId: number | null,
     ) => void;
     onSaveStatusChange: (status: SaveStatus) => void;
+    spellcheckEnabled: boolean;
 }) {
     const { t } = useTranslation('editor');
     const {
@@ -363,6 +365,7 @@ export default function ChapterPane({
                 scenesVisible={scenesVisible}
                 proofreadingConfig={proofreadingConfig}
                 bookLanguage={bookLanguage}
+                spellcheckEnabled={spellcheckEnabled}
             />
         </div>
     );

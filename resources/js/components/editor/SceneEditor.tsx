@@ -27,6 +27,7 @@ export default function SceneEditor({
     searchHighlight,
     proofreadingConfig,
     bookLanguage,
+    spellcheckEnabled,
 }: {
     scene: Scene;
     bookId: number;
@@ -44,6 +45,7 @@ export default function SceneEditor({
     searchHighlight?: SearchHighlight | null;
     proofreadingConfig?: ProofreadingConfig;
     bookLanguage?: string;
+    spellcheckEnabled?: boolean;
 }) {
     // Stable refs for cross-scene navigation callbacks (avoids editor re-creation)
     const onExitUpRef = useRef<(() => void) | null>(onExitUp ?? null);
@@ -151,6 +153,7 @@ export default function SceneEditor({
         onExitDownRef,
         proofreadingConfig,
         language: bookLanguage,
+        spellcheckEnabled,
     });
 
     // Notify parent when this editor gains focus

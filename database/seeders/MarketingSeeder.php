@@ -16,6 +16,7 @@ use App\Enums\StorylineType;
 use App\Enums\VersionSource;
 use App\Enums\WikiEntryKind;
 use App\Models\Act;
+use App\Models\AiPreparation;
 use App\Models\Analysis;
 use App\Models\Beat;
 use App\Models\Book;
@@ -56,6 +57,7 @@ class MarketingSeeder extends Seeder
         $this->createEditorialReview($book, $chapters);
         $this->createHealthSnapshots($book);
         $this->createWritingSessions($book);
+        $this->createAiPreparation($book);
     }
 
     private function createBook(): Book
@@ -643,6 +645,20 @@ class MarketingSeeder extends Seeder
                 'recorded_at' => Carbon::today()->subDays($data['days_ago']),
             ]);
         }
+    }
+
+    private function createAiPreparation(Book $book): void
+    {
+        AiPreparation::create([
+            'book_id' => $book->id,
+            'status' => 'completed',
+            'total_chapters' => 4,
+            'processed_chapters' => 4,
+            'embedded_chunks' => 24,
+            'completed_phases' => ['analyze', 'embed'],
+            'phase_errors' => [],
+            'consecutive_failures' => 0,
+        ]);
     }
 
     private function createWritingSessions(Book $book): void

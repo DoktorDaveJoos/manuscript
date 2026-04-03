@@ -21,6 +21,7 @@ export default function useChapterEditor({
     onExitDownRef,
     proofreadingConfig,
     language,
+    spellcheckEnabled = true,
 }: {
     content: string;
     onUpdate: (html: string, wordCount: number) => void;
@@ -30,11 +31,19 @@ export default function useChapterEditor({
     onExitDownRef: RefObject<(() => void) | null>;
     proofreadingConfig?: ProofreadingConfig;
     language?: string;
+    spellcheckEnabled?: boolean;
 }) {
     const onUpdateRef = useRef(onUpdate);
     useEffect(() => {
         onUpdateRef.current = onUpdate;
     }, [onUpdate]);
+
+    // Stable ref so the SpellcheckContextMenu plugin can read the latest
+    // value without requiring editor re-creation on toggle.
+    const spellcheckEnabledRef = useRef(spellcheckEnabled);
+    useEffect(() => {
+        spellcheckEnabledRef.current = spellcheckEnabled;
+    }, [spellcheckEnabled]);
 
     const proofreadingKey = useMemo(
         () => JSON.stringify({ config: proofreadingConfig ?? null, language }),
@@ -57,7 +66,9 @@ export default function useChapterEditor({
                     onExitDown: onExitDownRef,
                 }),
                 SearchHighlightExtension,
-                SpellcheckContextMenu,
+                SpellcheckContextMenu.configure({
+                    enabledRef: spellcheckEnabledRef,
+                }),
 
                 ...(proofreadingConfig
                     ? [
@@ -82,6 +93,15 @@ export default function useChapterEditor({
         },
         [content, proofreadingKey],
     );
+
+    // Toggle the spellcheck DOM attribute without recreating the editor
+    useEffect(() => {
+        if (!editor || editor.isDestroyed) return;
+        editor.view.dom.setAttribute(
+            'spellcheck',
+            spellcheckEnabled ? 'true' : 'false',
+        );
+    }, [editor, spellcheckEnabled]);
 
     return editor;
 }

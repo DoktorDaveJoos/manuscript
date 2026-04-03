@@ -52,6 +52,7 @@ export default function WritingSurface({
     onTitleSelectHandled,
     proofreadingConfig,
     bookLanguage,
+    spellcheckEnabled,
 }: {
     scenes: Scene[];
     bookId: number;
@@ -79,6 +80,7 @@ export default function WritingSurface({
     onLocalFindClose?: () => void;
     proofreadingConfig?: ProofreadingConfig;
     bookLanguage?: string;
+    spellcheckEnabled?: boolean;
 }) {
     const { t } = useTranslation('editor');
 
@@ -420,6 +422,7 @@ export default function WritingSurface({
                                 }
                                 proofreadingConfig={proofreadingConfig}
                                 bookLanguage={bookLanguage}
+                                spellcheckEnabled={spellcheckEnabled}
                             />
                         ))}
                     </div>
