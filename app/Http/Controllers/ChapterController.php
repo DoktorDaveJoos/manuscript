@@ -130,6 +130,26 @@ class ChapterController extends Controller
         ]);
     }
 
+    public function showJson(Book $book, Chapter $chapter): JsonResponse
+    {
+        $chapter->load([
+            'currentVersion:id,chapter_id,version_number,content,source,is_current',
+            'pendingVersion:id,chapter_id,version_number,content,source,change_summary,status',
+            'scenes' => fn ($q) => $q->orderBy('sort_order'),
+            'storyline:id,name,timeline_label',
+            'povCharacter:id,name',
+            'characters' => fn ($q) => $q->select('characters.id', 'characters.name'),
+        ]);
+
+        return response()->json([
+            'chapter' => $chapter,
+            'versionCount' => $chapter->versions()->count(),
+            'prosePassRules' => Book::globalProsePassRules(),
+            'proofreadingConfig' => Book::globalProofreadingConfig(),
+            'customDictionary' => $book->custom_dictionary ?? [],
+        ]);
+    }
+
     public function updateTitle(UpdateChapterTitleRequest $request, Book $book, Chapter $chapter): JsonResponse
     {
         $chapter->update(['title' => $request->validated('title')]);

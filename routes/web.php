@@ -63,6 +63,7 @@ Route::patch('/books/{book}/wiki/panel/wiki-entries/{wikiEntry}', [WikiPanelCont
 Route::get('/books/{book}/editor', [ChapterController::class, 'editor'])->name('books.editor');
 Route::post('/books/{book}/chapters', [ChapterController::class, 'store'])->name('chapters.store');
 Route::get('/books/{book}/chapters/{chapter}', [ChapterController::class, 'show'])->name('chapters.show');
+Route::get('/books/{book}/chapters/{chapter}/json', [ChapterController::class, 'showJson'])->name('chapters.show.json');
 Route::patch('/books/{book}/chapters/{chapter}/title', [ChapterController::class, 'updateTitle'])->name('chapters.updateTitle');
 Route::put('/books/{book}/chapters/{chapter}/content', [ChapterController::class, 'updateContent'])->name('chapters.updateContent');
 Route::get('/books/{book}/chapters/{chapter}/versions', [ChapterController::class, 'versions'])->name('chapters.versions');
