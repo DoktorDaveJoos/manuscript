@@ -46,6 +46,7 @@ export default function useChapterData(
         const controller = new AbortController();
         abortRef.current = controller;
 
+        setData(null);
         setIsLoading(true);
         setError(null);
 

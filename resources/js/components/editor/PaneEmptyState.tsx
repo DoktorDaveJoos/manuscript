@@ -26,12 +26,10 @@ export default function PaneEmptyState({
                     )}
                 </p>
             </div>
-            <div className="flex items-center gap-3">
-                <Button variant="primary" size="lg" onClick={onCreateChapter}>
-                    <Plus size={14} />
-                    {t('emptyPane.createChapter', 'New Chapter')}
-                </Button>
-            </div>
+            <Button variant="primary" size="lg" onClick={onCreateChapter}>
+                <Plus size={14} />
+                {t('emptyPane.createChapter', 'New Chapter')}
+            </Button>
             <div className="mt-4 flex flex-col items-center gap-2 text-[12px] text-ink-faint">
                 <span>
                     {t(

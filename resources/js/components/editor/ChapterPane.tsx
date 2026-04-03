@@ -3,7 +3,6 @@ import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
-import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import type { ChapterData } from '@/hooks/useChapterData';
 import { useProofreading } from '@/hooks/useProofreading';
 import { jsonFetchHeaders } from '@/lib/utils';
@@ -15,7 +14,7 @@ import FormattingToolbar from './FormattingToolbar';
 import VersionHistoryOverlay from './VersionHistoryOverlay';
 import WritingSurface from './WritingSurface';
 
-function firstLine(text: string): string {
+export function firstLine(text: string): string {
     return text.split('\n')[0];
 }
 
@@ -66,6 +65,8 @@ export default function ChapterPane({
     const activeEditorRef = useRef<Editor | null>(null);
     activeEditorRef.current = activeEditor;
     const [activeSceneId, setActiveSceneId] = useState<number | null>(null);
+    const activeSceneIdRef = useRef<number | null>(null);
+    activeSceneIdRef.current = activeSceneId;
     const [pendingFocusSceneId, setPendingFocusSceneId] = useState<
         number | null
     >(null);
@@ -136,10 +137,10 @@ export default function ChapterPane({
         (editor: Editor) => {
             setActiveEditor(editor);
             if (isFocused) {
-                onActiveEditorChange(editor, activeSceneId);
+                onActiveEditorChange(editor, activeSceneIdRef.current);
             }
         },
-        [isFocused, activeSceneId, onActiveEditorChange],
+        [isFocused, onActiveEditorChange],
     );
 
     const handleActiveSceneIdChange = useCallback(
@@ -227,38 +228,6 @@ export default function ChapterPane({
             flushTitleRef.current();
         };
     }, []);
-
-    // ── Scene management ─────────────────────────────────────────────────
-    const handleAddScene = useCallback(
-        async (afterPosition: number) => {
-            try {
-                const response = await fetch(
-                    storeScene.url({ book: bookId, chapter: chapter.id }),
-                    {
-                        method: 'POST',
-                        headers: jsonFetchHeaders(),
-                        body: JSON.stringify({
-                            title: `Scene ${scenes.length + 1}`,
-                            position: afterPosition,
-                        }),
-                    },
-                );
-
-                if (response.ok) {
-                    const newScene: Scene = await response.json();
-                    setScenes((prev) => {
-                        const updated = [...prev];
-                        updated.splice(afterPosition, 0, newScene);
-                        return updated.map((s, i) => ({ ...s, sort_order: i }));
-                    });
-                    setPendingFocusSceneId(newScene.id);
-                }
-            } catch {
-                // Ignore
-            }
-        },
-        [bookId, chapter.id, scenes.length],
-    );
 
     // ── Flush all pending saves ──────────────────────────────────────────
     const paneRef = useRef<HTMLDivElement>(null);

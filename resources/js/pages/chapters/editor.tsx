@@ -17,7 +17,7 @@ import type {
 } from '@/components/editor/AccessBar';
 import AiChatDrawer from '@/components/editor/AiChatDrawer';
 import AiPanel from '@/components/editor/AiPanel';
-import ChapterPane from '@/components/editor/ChapterPane';
+import ChapterPane, { firstLine } from '@/components/editor/ChapterPane';
 import type { SaveStatus } from '@/components/editor/ChapterPane';
 import CommandPalette from '@/components/editor/CommandPalette';
 import EditorialReviewPanel from '@/components/editor/EditorialReviewPanel';
@@ -44,6 +44,8 @@ import type {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
+const NOOP_EDITOR_CHANGE = () => {};
+
 const VALID_PANELS: Set<PanelId> = new Set([
     'wiki',
     'notes',
@@ -61,8 +63,9 @@ function PaneWithData({
     appSettings,
     isFocused,
     isFocusMode,
-    onFocus,
-    onClose,
+    paneId,
+    setFocusedPaneId,
+    closePane,
     onActiveEditorChange,
     onSaveStatusChange,
     onChapterDataReady,
@@ -73,8 +76,9 @@ function PaneWithData({
     appSettings: AppSettings;
     isFocused: boolean;
     isFocusMode: boolean;
-    onFocus: () => void;
-    onClose: () => void;
+    paneId: string;
+    setFocusedPaneId: (id: string) => void;
+    closePane: (id: string) => void;
     onActiveEditorChange: (
         editor: Editor | null,
         sceneId: number | null,
@@ -84,7 +88,12 @@ function PaneWithData({
 }) {
     const { data, isLoading, error } = useChapterData(bookId, chapterId);
 
-    // When data loads and this pane is focused, notify parent
+    const onFocus = useCallback(
+        () => setFocusedPaneId(paneId),
+        [paneId, setFocusedPaneId],
+    );
+    const onClose = useCallback(() => closePane(paneId), [paneId, closePane]);
+
     useEffect(() => {
         if (isFocused && data) {
             onChapterDataReady(data);
@@ -154,14 +163,12 @@ export default function EditorPage({
 
     // ── Active editor tracking (from focused pane) ───────────────────────
     const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
-    const [activeSceneId, setActiveSceneId] = useState<number | null>(null);
     const activeEditorRef = useRef<Editor | null>(null);
     activeEditorRef.current = activeEditor;
 
     const handleActiveEditorChange = useCallback(
-        (editor: Editor | null, sceneId: number | null) => {
+        (editor: Editor | null, _sceneId: number | null) => {
             setActiveEditor(editor);
-            setActiveSceneId(sceneId);
         },
         [],
     );
@@ -189,20 +196,31 @@ export default function EditorPage({
         else setCombinedSaveStatus('saved');
     }, []);
 
-    const makeSaveStatusHandler = useCallback(
-        (paneId: string) => (status: SaveStatus) => {
-            paneStatusesRef.current.set(paneId, status);
-            updateCombinedStatus();
+    const saveStatusHandlersRef = useRef<
+        Map<string, (status: SaveStatus) => void>
+    >(new Map());
+    const getSaveStatusHandler = useCallback(
+        (paneId: string) => {
+            let handler = saveStatusHandlersRef.current.get(paneId);
+            if (!handler) {
+                handler = (status: SaveStatus) => {
+                    paneStatusesRef.current.set(paneId, status);
+                    updateCombinedStatus();
+                };
+                saveStatusHandlersRef.current.set(paneId, handler);
+            }
+            return handler;
         },
         [updateCombinedStatus],
     );
 
-    // Clean up statuses for removed panes
+    // Clean up statuses and cached handlers for removed panes
     useEffect(() => {
         const currentIds = new Set(panes.map((p) => p.id));
         for (const key of paneStatusesRef.current.keys()) {
             if (!currentIds.has(key)) {
                 paneStatusesRef.current.delete(key);
+                saveStatusHandlersRef.current.delete(key);
             }
         }
         updateCombinedStatus();
@@ -484,7 +502,7 @@ export default function EditorPage({
         0,
     );
     const focusedDisplayTitle = focusedChapter
-        ? focusedChapter.title.split('\n')[0]
+        ? firstLine(focusedChapter.title)
         : '';
 
     // ── Create chapter from empty state / palette ────────────────────────
@@ -549,14 +567,15 @@ export default function EditorPage({
                                     appSettings={app_settings}
                                     isFocused={pane.id === focusedPaneId}
                                     isFocusMode={isFocusMode}
-                                    onFocus={() => setFocusedPaneId(pane.id)}
-                                    onClose={() => closePane(pane.id)}
+                                    paneId={pane.id}
+                                    setFocusedPaneId={setFocusedPaneId}
+                                    closePane={closePane}
                                     onActiveEditorChange={
                                         pane.id === focusedPaneId
                                             ? handleActiveEditorChange
-                                            : () => {}
+                                            : NOOP_EDITOR_CHANGE
                                     }
-                                    onSaveStatusChange={makeSaveStatusHandler(
+                                    onSaveStatusChange={getSaveStatusHandler(
                                         pane.id,
                                     )}
                                     onChapterDataReady={handleChapterDataReady}

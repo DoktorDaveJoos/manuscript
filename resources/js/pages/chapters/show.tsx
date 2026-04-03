@@ -1,10 +1,10 @@
 import { router } from '@inertiajs/react';
 import { useEffect } from 'react';
+import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 
 /**
- * Legacy chapter page — the server now redirects chapters.show to the
- * pane-based editor, but this client-side redirect acts as a safety net
- * in case the page is ever rendered directly (e.g. cached Inertia response).
+ * Safety net for cached Inertia responses — the server now redirects
+ * chapters.show to the pane-based editor.
  */
 export default function ChapterShow({
     book,
@@ -14,9 +14,13 @@ export default function ChapterShow({
     chapter: { id: number };
 }) {
     useEffect(() => {
-        router.visit(`/books/${book.id}/editor?panes=${chapter.id}`, {
-            replace: true,
-        });
+        router.visit(
+            editor.url(
+                { book: book.id },
+                { query: { panes: String(chapter.id) } },
+            ),
+            { replace: true },
+        );
     }, [book.id, chapter.id]);
 
     return null;

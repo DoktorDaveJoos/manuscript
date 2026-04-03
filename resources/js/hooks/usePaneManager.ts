@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 
 export type Pane = {
     id: string; // unique instance ID for React keys (NOT chapter ID)
@@ -27,8 +28,10 @@ function panesFromQuery(
 }
 
 function syncUrl(bookId: number, panes: Pane[]) {
-    const paneIds = panes.map((p) => p.chapterId).join(',');
-    const url = `/books/${bookId}/editor${panes.length ? `?panes=${paneIds}` : ''}`;
+    const query = panes.length
+        ? { panes: panes.map((p) => p.chapterId).join(',') }
+        : {};
+    const url = editor.url({ book: bookId }, { query });
     window.history.replaceState({}, '', url);
 }
 
