@@ -14,6 +14,8 @@ type ChapterListItemProps = {
     displayTitle?: string;
     wordCount?: number;
     onBeforeNavigate?: () => Promise<void>;
+    onChapterNavigate?: (chapterId: number) => void;
+    onOpenInNewPane?: (chapterId: number) => void;
     onContextMenu?: (e: React.MouseEvent) => void;
     dragListeners?: DraggableSyntheticListeners;
     isDragging?: boolean;
@@ -29,20 +31,38 @@ const ChapterListItem = forwardRef<HTMLButtonElement, ChapterListItemProps>(
             displayTitle,
             wordCount,
             onBeforeNavigate,
+            onChapterNavigate,
+            onOpenInNewPane,
             onContextMenu,
             dragListeners,
             isDragging,
         },
         ref,
     ) {
-        const handleClick = async () => {
+        const handleClick = async (e: React.MouseEvent) => {
+            // Cmd+click opens in new pane
+            if ((e.metaKey || e.ctrlKey) && onOpenInNewPane) {
+                onOpenInNewPane(chapter.id);
+                return;
+            }
+
+            if (isActive && !onOpenInNewPane) return;
+
+            // If chapter is already active, Cmd+click wasn't handled above,
+            // just return
             if (isActive) return;
+
             if (onBeforeNavigate) {
                 await onBeforeNavigate();
             }
-            router.visit(show.url({ book: bookId, chapter: chapter.id }), {
-                preserveScroll: true,
-            });
+
+            if (onChapterNavigate) {
+                onChapterNavigate(chapter.id);
+            } else {
+                router.visit(show.url({ book: bookId, chapter: chapter.id }), {
+                    preserveScroll: true,
+                });
+            }
         };
 
         return (

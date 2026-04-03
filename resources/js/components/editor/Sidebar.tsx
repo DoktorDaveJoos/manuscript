@@ -49,6 +49,8 @@ export default function Sidebar({
     scenesVisible = false,
     onScenesVisibleChange = () => {},
     isFocusMode = false,
+    onChapterNavigate,
+    onOpenInNewPane,
 }: {
     book: Book;
     storylines: Storyline[];
@@ -65,6 +67,8 @@ export default function Sidebar({
     scenesVisible?: boolean;
     onScenesVisibleChange?: (v: boolean) => void;
     isFocusMode?: boolean;
+    onChapterNavigate?: (chapterId: number) => void;
+    onOpenInNewPane?: (chapterId: number) => void;
 }) {
     const { t } = useTranslation();
     const { isFree, canCreateStoryline } = useFreeTier();
@@ -330,6 +334,8 @@ export default function Sidebar({
                         activeChapterTitle={activeChapterTitle}
                         activeChapterWordCount={activeChapterWordCount}
                         onBeforeNavigate={onBeforeNavigate}
+                        onChapterNavigate={onChapterNavigate}
+                        onOpenInNewPane={onOpenInNewPane}
                         onAddChapter={handleAddChapter}
                         onAddStoryline={handleAddStoryline}
                         canAddStoryline={canCreateStoryline}

@@ -520,6 +520,8 @@ export default function EditorPage({
                     activeChapterTitle={focusedDisplayTitle || undefined}
                     activeChapterWordCount={focusedWordCount}
                     onBeforeNavigate={handleBeforeNavigate}
+                    onChapterNavigate={navigateToChapter}
+                    onOpenInNewPane={openInNewPane}
                     activeScenes={focusedScenes}
                     onChapterRename={() => {}}
                     onSceneRename={() => {}}
