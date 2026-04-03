@@ -104,6 +104,8 @@ function SortableChapterItem({
     displayTitle,
     wordCount,
     onBeforeNavigate,
+    onChapterNavigate,
+    onOpenInNewPane,
     onContextMenu,
     isInCollapsedStoryline,
 }: {
@@ -114,6 +116,8 @@ function SortableChapterItem({
     displayTitle?: string;
     wordCount?: number;
     onBeforeNavigate?: () => Promise<void>;
+    onChapterNavigate?: (chapterId: number) => void;
+    onOpenInNewPane?: (chapterId: number) => void;
     onContextMenu: (e: React.MouseEvent) => void;
     isInCollapsedStoryline?: boolean;
 }) {
@@ -156,6 +160,8 @@ function SortableChapterItem({
                 displayTitle={displayTitle}
                 wordCount={wordCount}
                 onBeforeNavigate={onBeforeNavigate}
+                onChapterNavigate={onChapterNavigate}
+                onOpenInNewPane={onOpenInNewPane}
                 onContextMenu={onContextMenu}
                 dragListeners={listeners}
                 isDragging={isDragging}
@@ -433,6 +439,8 @@ export default function ChapterList({
     activeChapterTitle,
     activeChapterWordCount,
     onBeforeNavigate,
+    onChapterNavigate,
+    onOpenInNewPane,
     onAddChapter,
     onAddStoryline,
     canAddStoryline = true,
@@ -453,6 +461,8 @@ export default function ChapterList({
     activeChapterTitle?: string;
     activeChapterWordCount?: number;
     onBeforeNavigate?: () => Promise<void>;
+    onChapterNavigate?: (chapterId: number) => void;
+    onOpenInNewPane?: (chapterId: number) => void;
     onAddChapter?: (storylineId: number) => void;
     onAddStoryline?: () => void;
     canAddStoryline?: boolean;
@@ -1038,6 +1048,12 @@ export default function ChapterList({
                                                         onBeforeNavigate={
                                                             onBeforeNavigate
                                                         }
+                                                        onChapterNavigate={
+                                                            onChapterNavigate
+                                                        }
+                                                        onOpenInNewPane={
+                                                            onOpenInNewPane
+                                                        }
                                                         onContextMenu={(e) =>
                                                             handleChapterContextMenu(
                                                                 e,
@@ -1209,6 +1225,7 @@ export default function ChapterList({
                             chapter: contextMenu.chapter,
                         })
                     }
+                    onOpenInNewPane={onOpenInNewPane}
                 />
             )}
 

@@ -8,7 +8,7 @@ import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import { updateSearchHighlight } from '@/extensions/SearchHighlightExtension';
 import useChapterEditor from '@/hooks/useChapterEditor';
 import { jsonFetchHeaders } from '@/lib/utils';
-import type { Scene } from '@/types/models';
+import type { ProofreadingConfig, Scene } from '@/types/models';
 
 export default function SceneEditor({
     scene,
@@ -25,6 +25,9 @@ export default function SceneEditor({
     typewriterEnabledRef,
     scenesVisible = true,
     searchHighlight,
+    proofreadingConfig,
+    bookLanguage,
+    spellcheckEnabled,
 }: {
     scene: Scene;
     bookId: number;
@@ -40,6 +43,9 @@ export default function SceneEditor({
     typewriterEnabledRef: RefObject<boolean>;
     scenesVisible?: boolean;
     searchHighlight?: SearchHighlight | null;
+    proofreadingConfig?: ProofreadingConfig;
+    bookLanguage?: string;
+    spellcheckEnabled?: boolean;
 }) {
     // Stable refs for cross-scene navigation callbacks (avoids editor re-creation)
     const onExitUpRef = useRef<(() => void) | null>(onExitUp ?? null);
@@ -145,6 +151,9 @@ export default function SceneEditor({
         typewriterEnabledRef,
         onExitUpRef,
         onExitDownRef,
+        proofreadingConfig,
+        language: bookLanguage,
+        spellcheckEnabled,
     });
 
     // Notify parent when this editor gains focus

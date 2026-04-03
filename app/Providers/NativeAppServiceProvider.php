@@ -20,7 +20,8 @@ class NativeAppServiceProvider implements ProvidesPhpIni
             ->width(1440)
             ->height(900)
             ->minWidth(1024)
-            ->minHeight(680);
+            ->minHeight(680)
+            ->webPreferences(['spellcheck' => true]);
 
         AutoUpdater::checkForUpdates();
     }

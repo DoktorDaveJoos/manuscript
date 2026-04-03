@@ -20,6 +20,8 @@
     "toolbar.typewriterMode": "Typewriter mode",
     "palette.enterFocusMode": "Enter Focus Mode",
     "palette.leaveFocusMode": "Leave Focus Mode",
+    "palette.openWiki": "Open Wiki",
+    "palette.closeWiki": "Close Wiki",
     "palette.openNotes": "Open Notes",
     "palette.closeNotes": "Close Notes",
     "palette.openAiAssistant": "Open AI Assistant",
@@ -30,6 +32,8 @@
     "palette.closeEditorialReview": "Close Editorial Review",
     "palette.enableTypewriterMode": "Enable Typewriter Mode",
     "palette.disableTypewriterMode": "Disable Typewriter Mode",
+    "palette.enableSpellCheck": "Enable Spell Check",
+    "palette.disableSpellCheck": "Disable Spell Check",
     "palette.bold": "Bold",
     "palette.italic": "Italic",
     "palette.generateNextParagraph": "Generate next paragraph",
@@ -166,6 +170,7 @@
     "toolbar.heading1": "Heading 1",
     "toolbar.heading2": "Heading 2",
     "toolbar.focus": "Focus",
+    "toolbar.wiki": "Wiki",
     "toolbar.notes": "Notes",
     "toolbar.fontSize": "Font size",
     "renameDialog.storyline": "Rename storyline",
@@ -174,5 +179,7 @@
     "renameDialog.labelName": "Name",
     "renameDialog.labelTitle": "Title",
     "renameDialog.cancel": "Cancel",
-    "renameDialog.save": "Save"
+    "renameDialog.save": "Save",
+    "spellcheck.noSuggestions": "No suggestions",
+    "spellcheck.addToDictionary": "Add to Dictionary"
 }

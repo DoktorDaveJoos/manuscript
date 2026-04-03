@@ -28,6 +28,7 @@ use App\Http\Controllers\StorylineController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\WikiController;
+use App\Http\Controllers\WikiPanelController;
 use App\Http\Controllers\WritingGoalController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,11 +52,18 @@ Route::delete('/books/{book}/characters/{character}', [WikiController::class, 'd
 Route::post('/books/{book}/wiki-entries', [WikiController::class, 'storeEntry'])->name('wikiEntries.store');
 Route::patch('/books/{book}/wiki-entries/{wikiEntry}', [WikiController::class, 'updateEntry'])->name('wikiEntries.update');
 Route::delete('/books/{book}/wiki-entries/{wikiEntry}', [WikiController::class, 'destroyEntry'])->name('wikiEntries.destroy');
+Route::get('/books/{book}/wiki/panel', [WikiPanelController::class, 'index'])->name('wiki.panel.index');
+Route::post('/books/{book}/wiki/panel/connect', [WikiPanelController::class, 'connect'])->name('wiki.panel.connect');
+Route::post('/books/{book}/wiki/panel/disconnect', [WikiPanelController::class, 'disconnect'])->name('wiki.panel.disconnect');
+Route::patch('/books/{book}/wiki/panel/characters/{character}', [WikiPanelController::class, 'updateCharacter'])->name('wiki.panel.updateCharacter');
+Route::patch('/books/{book}/wiki/panel/characters/{character}/role', [WikiPanelController::class, 'updateRole'])->name('wiki.panel.updateRole');
+Route::patch('/books/{book}/wiki/panel/wiki-entries/{wikiEntry}', [WikiPanelController::class, 'updateWikiEntry'])->name('wiki.panel.updateWikiEntry');
 // Plot board routes are gated behind Pro (see license middleware group below)
 
 Route::get('/books/{book}/editor', [ChapterController::class, 'editor'])->name('books.editor');
 Route::post('/books/{book}/chapters', [ChapterController::class, 'store'])->name('chapters.store');
 Route::get('/books/{book}/chapters/{chapter}', [ChapterController::class, 'show'])->name('chapters.show');
+Route::get('/books/{book}/chapters/{chapter}/json', [ChapterController::class, 'showJson'])->name('chapters.show.json');
 Route::patch('/books/{book}/chapters/{chapter}/title', [ChapterController::class, 'updateTitle'])->name('chapters.updateTitle');
 Route::put('/books/{book}/chapters/{chapter}/content', [ChapterController::class, 'updateContent'])->name('chapters.updateContent');
 Route::get('/books/{book}/chapters/{chapter}/versions', [ChapterController::class, 'versions'])->name('chapters.versions');
@@ -106,6 +114,9 @@ Route::get('/settings', [SettingsController::class, 'index'])->name('settings.in
 Route::put('/settings', [AppSettingsController::class, 'update'])->name('settings.update');
 Route::put('/settings/writing-style', [SettingsController::class, 'updateWritingStyle'])->name('settings.writing-style.update');
 Route::put('/settings/prose-pass-rules', [SettingsController::class, 'updateProsePassRules'])->name('settings.prose-pass-rules.update');
+Route::put('/settings/proofreading', [SettingsController::class, 'updateProofreadingConfig'])->name('settings.proofreading.update');
+Route::put('/books/{book}/settings/custom-dictionary', [SettingsController::class, 'updateCustomDictionary'])->name('books.settings.custom-dictionary.update');
+Route::post('/books/{book}/settings/custom-dictionary/seed', [SettingsController::class, 'seedCustomDictionary'])->name('books.settings.custom-dictionary.seed');
 
 // Legacy routes — redirect to unified settings
 Route::get('/settings/appearance', fn () => redirect('/settings'))->name('settings.appearance');
