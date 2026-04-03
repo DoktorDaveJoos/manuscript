@@ -2,11 +2,11 @@ import { NotebookPen } from 'lucide-react';
 import MarkdownIt from 'markdown-it';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { updateNotes } from '@/actions/App/Http/Controllers/ChapterController';
 import NotesSlashMenu from '@/components/editor/NotesSlashMenu';
 import Kbd from '@/components/ui/Kbd';
 import PanelHeader from '@/components/ui/PanelHeader';
 import { jsonFetchHeaders } from '@/lib/utils';
+import { updateNotes } from '@/actions/App/Http/Controllers/ChapterController';
 
 const md = new MarkdownIt({ linkify: true });
 
@@ -204,7 +204,7 @@ export default function NotesPanel({
     const scheduleSave = useCallback(() => {
         pendingRef.current = 'dirty';
         if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(() => flushRef.current(), 1500);
+        timerRef.current = setTimeout(() => flushRef.current(), 500);
     }, []);
 
     useEffect(() => {
