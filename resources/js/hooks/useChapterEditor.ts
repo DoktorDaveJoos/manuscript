@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { ProofreadExtension } from '@/extensions/ProofreadExtension';
 import { SceneBridgeExtension } from '@/extensions/SceneBridgeExtension';
 import { SearchHighlightExtension } from '@/extensions/SearchHighlightExtension';
+import { SpellcheckContextMenu } from '@/extensions/SpellcheckContextMenu';
 import { TypewriterScrollExtension } from '@/extensions/TypewriterScrollExtension';
 import type { ProofreadingConfig } from '@/types/models';
 
@@ -19,8 +20,7 @@ export default function useChapterEditor({
     onExitUpRef,
     onExitDownRef,
     proofreadingConfig,
-    customDictionaryRef,
-    onAddToDictionary,
+    language,
 }: {
     content: string;
     onUpdate: (html: string, wordCount: number) => void;
@@ -29,19 +29,16 @@ export default function useChapterEditor({
     onExitUpRef: RefObject<(() => void) | null>;
     onExitDownRef: RefObject<(() => void) | null>;
     proofreadingConfig?: ProofreadingConfig;
-    customDictionaryRef?: RefObject<string[]>;
-    onAddToDictionary?: (word: string) => void;
+    language?: string;
 }) {
     const onUpdateRef = useRef(onUpdate);
     useEffect(() => {
         onUpdateRef.current = onUpdate;
     }, [onUpdate]);
 
-    // Stable key for proofreading config — only config changes re-create the editor.
-    // Dictionary uses a ref so adding words doesn't destroy cursor/undo state.
     const proofreadingKey = useMemo(
-        () => JSON.stringify(proofreadingConfig ?? null),
-        [proofreadingConfig],
+        () => JSON.stringify({ config: proofreadingConfig ?? null, language }),
+        [proofreadingConfig, language],
     );
 
     const editor = useEditor(
@@ -60,15 +57,13 @@ export default function useChapterEditor({
                     onExitDown: onExitDownRef,
                 }),
                 SearchHighlightExtension,
+                SpellcheckContextMenu,
 
                 ...(proofreadingConfig
                     ? [
                           ProofreadExtension.configure({
                               config: proofreadingConfig,
-                              customDictionaryRef: customDictionaryRef ?? {
-                                  current: [],
-                              },
-                              onAddToDictionary,
+                              language: language ?? 'en',
                           }),
                       ]
                     : []),

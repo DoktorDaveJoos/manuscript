@@ -26,8 +26,7 @@ export default function SceneEditor({
     scenesVisible = true,
     searchHighlight,
     proofreadingConfig,
-    customDictionaryRef,
-    onAddToDictionary,
+    bookLanguage,
 }: {
     scene: Scene;
     bookId: number;
@@ -44,8 +43,7 @@ export default function SceneEditor({
     scenesVisible?: boolean;
     searchHighlight?: SearchHighlight | null;
     proofreadingConfig?: ProofreadingConfig;
-    customDictionaryRef?: RefObject<string[]>;
-    onAddToDictionary?: (word: string) => void;
+    bookLanguage?: string;
 }) {
     // Stable refs for cross-scene navigation callbacks (avoids editor re-creation)
     const onExitUpRef = useRef<(() => void) | null>(onExitUp ?? null);
@@ -152,8 +150,7 @@ export default function SceneEditor({
         onExitUpRef,
         onExitDownRef,
         proofreadingConfig,
-        customDictionaryRef,
-        onAddToDictionary,
+        language: bookLanguage,
     });
 
     // Notify parent when this editor gains focus
