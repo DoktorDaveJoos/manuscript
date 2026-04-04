@@ -118,7 +118,6 @@ export default function NotesPanel({
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
     const inputRef = useRef<HTMLInputElement>(null);
     const abortRef = useRef<AbortController | null>(null);
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingRef = useRef<'dirty' | null>(null);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [slashMenu, setSlashMenu] = useState<{
@@ -154,10 +153,6 @@ export default function NotesPanel({
     }, [activeIndex]);
 
     const flush = useCallback(async () => {
-        if (timerRef.current) {
-            clearTimeout(timerRef.current);
-            timerRef.current = null;
-        }
         if (pendingRef.current === null) return;
         pendingRef.current = null;
         const value = serializeLines(linesRef.current);
@@ -201,15 +196,13 @@ export default function NotesPanel({
         flushRef.current = flush;
     }, [flush]);
 
-    const scheduleSave = useCallback(() => {
+    const save = useCallback(() => {
         pendingRef.current = 'dirty';
-        if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(() => flushRef.current(), 1500);
+        flushRef.current();
     }, []);
 
     useEffect(() => {
         return () => {
-            if (timerRef.current) clearTimeout(timerRef.current);
             if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
             abortRef.current?.abort();
             const value = serializeLines(linesRef.current);
@@ -238,9 +231,9 @@ export default function NotesPanel({
                 linesRef.current = next;
                 return next;
             });
-            scheduleSave();
+            save();
         },
-        [scheduleSave],
+        [save],
     );
 
     const toggleCheck = useCallback(
@@ -332,7 +325,7 @@ export default function NotesPanel({
                     });
                     cursorPosRef.current = 0;
                     setActiveIndex(activeIndex + 1);
-                    scheduleSave();
+                    save();
                     return;
                 }
 
@@ -360,7 +353,7 @@ export default function NotesPanel({
                     });
                     cursorPosRef.current = 0;
                     setActiveIndex(activeIndex + 1);
-                    scheduleSave();
+                    save();
                     return;
                 }
 
@@ -392,7 +385,7 @@ export default function NotesPanel({
                 });
                 cursorPosRef.current = 0;
                 setActiveIndex(activeIndex + 1);
-                scheduleSave();
+                save();
             } else if (e.key === 'Backspace') {
                 // Divider active → delete it
                 if (line.type === 'divider') {
@@ -409,7 +402,7 @@ export default function NotesPanel({
                     cursorPosRef.current =
                         linesRef.current[newIdx]?.text.length ?? 0;
                     setActiveIndex(newIdx);
-                    scheduleSave();
+                    save();
                     return;
                 }
 
@@ -451,7 +444,7 @@ export default function NotesPanel({
                             cursorPosRef.current = prevText.length;
                             setActiveIndex(activeIndex - 1);
                         }
-                        scheduleSave();
+                        save();
                     }
                 }
             } else if (e.key === 'ArrowUp' && activeIndex > 0) {
@@ -473,7 +466,7 @@ export default function NotesPanel({
                 setActiveIndex(activeIndex + 1);
             }
         },
-        [activeIndex, scheduleSave, updateLine],
+        [activeIndex, save, updateLine],
     );
 
     const handleSlashSelect = useCallback(
@@ -492,7 +485,7 @@ export default function NotesPanel({
                 });
                 cursorPosRef.current = 0;
                 setActiveIndex(activeIndex + 1);
-                scheduleSave();
+                save();
             } else {
                 updateLine(activeIndex, {
                     type: blockType,
@@ -503,7 +496,7 @@ export default function NotesPanel({
             setSlashMenu(null);
             requestAnimationFrame(() => inputRef.current?.focus());
         },
-        [activeIndex, updateLine, scheduleSave],
+        [activeIndex, updateLine, save],
     );
 
     const handleSlashClose = useCallback(() => {
@@ -553,9 +546,9 @@ export default function NotesPanel({
             const newActiveIndex = activeIndex + newLines.length - 1;
             cursorPosRef.current = newLines[newLines.length - 1].text.length;
             setActiveIndex(newActiveIndex);
-            scheduleSave();
+            save();
         },
-        [activeIndex, scheduleSave],
+        [activeIndex, save],
     );
 
     const handleClick = useCallback((index: number) => {

@@ -34,7 +34,7 @@ import type { ChapterData } from '@/hooks/useChapterData';
 import useChapterData from '@/hooks/useChapterData';
 import usePaneManager from '@/hooks/usePaneManager';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
-import { createChapter } from '@/lib/utils';
+import { createChapter, saveAppSetting } from '@/lib/utils';
 import type {
     AppSettings,
     Book,
@@ -69,6 +69,7 @@ function PaneWithData({
     onActiveEditorChange,
     onSaveStatusChange,
     onChapterDataReady,
+    scenesVisible,
     spellcheckEnabled,
 }: {
     bookId: number;
@@ -86,6 +87,7 @@ function PaneWithData({
     ) => void;
     onSaveStatusChange: (status: SaveStatus) => void;
     onChapterDataReady: (data: ChapterData) => void;
+    scenesVisible: boolean;
     spellcheckEnabled: boolean;
 }) {
     const { data, isLoading, error } = useChapterData(bookId, chapterId);
@@ -130,6 +132,7 @@ function PaneWithData({
             onClose={onClose}
             onActiveEditorChange={onActiveEditorChange}
             onSaveStatusChange={onSaveStatusChange}
+            scenesVisible={scenesVisible}
             spellcheckEnabled={spellcheckEnabled}
         />
     );
@@ -171,6 +174,15 @@ export default function EditorPage({
         [],
     );
 
+    // ── Scenes visibility ───────────────────────────────────────────────
+    const [scenesVisible, setScenesVisible] = useState(
+        app_settings.show_scenes,
+    );
+    const handleScenesVisibleChange = useCallback((visible: boolean) => {
+        setScenesVisible(visible);
+        saveAppSetting('show_scenes', visible);
+    }, []);
+
     // ── Active editor tracking (from focused pane) ───────────────────────
     const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
     const activeEditorRef = useRef<Editor | null>(null);
@@ -193,48 +205,28 @@ export default function EditorPage({
 
     const focusedChapterId = focusedPane?.chapterId ?? null;
 
-    // ── Save status (worst-case-wins) ────────────────────────────────────
-    const paneStatusesRef = useRef<Map<string, SaveStatus>>(new Map());
-    const [combinedSaveStatus, setCombinedSaveStatus] =
-        useState<SaveStatus>('saved');
-
-    const updateCombinedStatus = useCallback(() => {
-        const statuses = Array.from(paneStatusesRef.current.values());
-        if (statuses.includes('error')) setCombinedSaveStatus('error');
-        else if (statuses.includes('unsaved')) setCombinedSaveStatus('unsaved');
-        else if (statuses.includes('saving')) setCombinedSaveStatus('saving');
-        else setCombinedSaveStatus('saved');
-    }, []);
-
+    // ── Save status (per-pane tracking) ────────────────────────────────
     const saveStatusHandlersRef = useRef<
         Map<string, (status: SaveStatus) => void>
     >(new Map());
-    const getSaveStatusHandler = useCallback(
-        (paneId: string) => {
-            let handler = saveStatusHandlersRef.current.get(paneId);
-            if (!handler) {
-                handler = (status: SaveStatus) => {
-                    paneStatusesRef.current.set(paneId, status);
-                    updateCombinedStatus();
-                };
-                saveStatusHandlersRef.current.set(paneId, handler);
-            }
-            return handler;
-        },
-        [updateCombinedStatus],
-    );
+    const getSaveStatusHandler = useCallback((paneId: string) => {
+        let handler = saveStatusHandlersRef.current.get(paneId);
+        if (!handler) {
+            handler = () => {};
+            saveStatusHandlersRef.current.set(paneId, handler);
+        }
+        return handler;
+    }, []);
 
-    // Clean up statuses and cached handlers for removed panes
+    // Clean up cached handlers for removed panes
     useEffect(() => {
         const currentIds = new Set(panes.map((p) => p.id));
-        for (const key of paneStatusesRef.current.keys()) {
+        for (const key of saveStatusHandlersRef.current.keys()) {
             if (!currentIds.has(key)) {
-                paneStatusesRef.current.delete(key);
                 saveStatusHandlersRef.current.delete(key);
             }
         }
-        updateCombinedStatus();
-    }, [panes, updateCombinedStatus]);
+    }, [panes]);
 
     // ── Flush all panes ──────────────────────────────────────────────────
     const flushAllPanes = useCallback(async () => {
@@ -556,7 +548,8 @@ export default function EditorPage({
                     onSceneDelete={() => {}}
                     onSceneReorder={() => {}}
                     onSceneAdd={async () => {}}
-                    scenesVisible={app_settings.show_scenes}
+                    scenesVisible={scenesVisible}
+                    onScenesVisibleChange={handleScenesVisibleChange}
                     isFocusMode={isFocusMode}
                 />
 
@@ -589,6 +582,7 @@ export default function EditorPage({
                                         pane.id,
                                     )}
                                     onChapterDataReady={handleChapterDataReady}
+                                    scenesVisible={scenesVisible}
                                     spellcheckEnabled={isSpellcheckEnabled}
                                 />
                             </div>
@@ -681,6 +675,7 @@ export default function EditorPage({
                                 maxWidth={700}
                             >
                                 <AiChatDrawer
+                                    key={focusedChapter.id}
                                     book={book}
                                     chapter={focusedChapter}
                                     onClose={closeChat}

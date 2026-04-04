@@ -29,6 +29,7 @@ export default function ChapterPane({
     onClose,
     onActiveEditorChange,
     onSaveStatusChange,
+    scenesVisible,
     spellcheckEnabled,
 }: {
     bookId: number;
@@ -44,6 +45,7 @@ export default function ChapterPane({
         sceneId: number | null,
     ) => void;
     onSaveStatusChange: (status: SaveStatus) => void;
+    scenesVisible: boolean;
     spellcheckEnabled: boolean;
 }) {
     const { t } = useTranslation('editor');
@@ -96,8 +98,6 @@ export default function ChapterPane({
     const toggleTypewriterMode = useCallback(() => {
         setIsTypewriterMode((prev) => !prev);
     }, []);
-
-    const [scenesVisible] = useState(appSettings.show_scenes);
 
     const editorFont = appSettings.editor_font;
     const editorFontSize = appSettings.editor_font_size;
@@ -164,15 +164,9 @@ export default function ChapterPane({
 
     // ── Chapter title auto-save ──────────────────────────────────────────
     const titleAbortRef = useRef<AbortController | null>(null);
-    const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingTitleRef = useRef<string | null>(null);
 
     const flushTitleSave = useCallback(async () => {
-        if (titleTimerRef.current) {
-            clearTimeout(titleTimerRef.current);
-            titleTimerRef.current = null;
-        }
-
         const title = pendingTitleRef.current;
         if (title === null) return;
         pendingTitleRef.current = null;
@@ -209,14 +203,7 @@ export default function ChapterPane({
             setChapterTitle(title);
             handleLocalSaveStatusChange('unsaved');
             pendingTitleRef.current = title;
-
-            if (titleTimerRef.current) {
-                clearTimeout(titleTimerRef.current);
-            }
-
-            titleTimerRef.current = setTimeout(() => {
-                flushTitleSave();
-            }, 1500);
+            flushTitleSave();
         },
         [flushTitleSave, handleLocalSaveStatusChange],
     );
@@ -226,7 +213,6 @@ export default function ChapterPane({
     flushTitleRef.current = flushTitleSave;
     useEffect(() => {
         return () => {
-            if (titleTimerRef.current) clearTimeout(titleTimerRef.current);
             flushTitleRef.current();
         };
     }, []);
@@ -270,9 +256,7 @@ export default function ChapterPane({
             ref={paneRef}
             data-pane-chapter={chapter.id}
             className={`relative flex min-w-[400px] flex-1 flex-col transition-opacity duration-200 ${
-                isFocused
-                    ? 'border-t-2 border-t-accent opacity-100'
-                    : 'border-t-2 border-t-transparent opacity-75'
+                isFocused ? 'opacity-100' : 'opacity-75'
             }`}
             onMouseDown={onFocus}
         >
@@ -301,6 +285,7 @@ export default function ChapterPane({
                     </div>
                     <button
                         type="button"
+                        onMouseDown={(e) => e.stopPropagation()}
                         onClick={(e) => {
                             e.stopPropagation();
                             onClose();
@@ -323,12 +308,12 @@ export default function ChapterPane({
 
             {/* Formatting toolbar — only for the focused pane */}
             <div
-                className={`transition-[height,opacity] duration-300 ${
+                className={`h-[38px] transition-opacity duration-200 ${
                     isFocusMode ||
                     appSettings.hide_formatting_toolbar ||
                     !isFocused
-                        ? 'h-0 overflow-hidden opacity-0'
-                        : 'h-[38px]'
+                        ? 'pointer-events-none invisible opacity-0'
+                        : 'opacity-100'
                 }`}
             >
                 <FormattingToolbar
