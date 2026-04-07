@@ -30,8 +30,8 @@
     "palette.closeEditorialReview": "Lektoratsbewertung schließen",
     "palette.enableTypewriterMode": "Schreibmaschinenmodus aktivieren",
     "palette.disableTypewriterMode": "Schreibmaschinenmodus deaktivieren",
-    "palette.enableProofreading": "Korrekturlesen aktivieren",
-    "palette.disableProofreading": "Korrekturlesen deaktivieren",
+    "palette.enableSpellCheck": "Rechtschreibprüfung aktivieren",
+    "palette.disableSpellCheck": "Rechtschreibprüfung deaktivieren",
     "palette.bold": "Fett",
     "palette.italic": "Kursiv",
     "palette.generateNextParagraph": "Nächsten Absatz generieren",
@@ -176,5 +176,7 @@
     "renameDialog.labelName": "Name",
     "renameDialog.labelTitle": "Titel",
     "renameDialog.cancel": "Abbrechen",
-    "renameDialog.save": "Speichern"
+    "renameDialog.save": "Speichern",
+    "spellcheck.noSuggestions": "Keine Vorschläge",
+    "spellcheck.addToDictionary": "Zum Wörterbuch hinzufügen"
 }

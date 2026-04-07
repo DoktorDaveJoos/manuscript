@@ -51,8 +51,8 @@ export default function WritingSurface({
     autoSelectTitle,
     onTitleSelectHandled,
     proofreadingConfig,
-    customDictionaryRef,
-    onAddToDictionary,
+    bookLanguage,
+    spellcheckEnabled,
 }: {
     scenes: Scene[];
     bookId: number;
@@ -79,8 +79,8 @@ export default function WritingSurface({
     localFindShowReplace?: boolean;
     onLocalFindClose?: () => void;
     proofreadingConfig?: ProofreadingConfig;
-    customDictionaryRef?: RefObject<string[]>;
-    onAddToDictionary?: (word: string) => void;
+    bookLanguage?: string;
+    spellcheckEnabled?: boolean;
 }) {
     const { t } = useTranslation('editor');
 
@@ -421,8 +421,8 @@ export default function WritingSurface({
                                     isLocalFindOpen ? null : searchHighlight
                                 }
                                 proofreadingConfig={proofreadingConfig}
-                                customDictionaryRef={customDictionaryRef}
-                                onAddToDictionary={onAddToDictionary}
+                                bookLanguage={bookLanguage}
+                                spellcheckEnabled={spellcheckEnabled}
                             />
                         ))}
                     </div>

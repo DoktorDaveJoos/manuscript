@@ -32,8 +32,8 @@
     "palette.closeEditorialReview": "Close Editorial Review",
     "palette.enableTypewriterMode": "Enable Typewriter Mode",
     "palette.disableTypewriterMode": "Disable Typewriter Mode",
-    "palette.enableProofreading": "Enable Proofreading",
-    "palette.disableProofreading": "Disable Proofreading",
+    "palette.enableSpellCheck": "Enable Spell Check",
+    "palette.disableSpellCheck": "Disable Spell Check",
     "palette.bold": "Bold",
     "palette.italic": "Italic",
     "palette.generateNextParagraph": "Generate next paragraph",
@@ -179,5 +179,7 @@
     "renameDialog.labelName": "Name",
     "renameDialog.labelTitle": "Title",
     "renameDialog.cancel": "Cancel",
-    "renameDialog.save": "Save"
+    "renameDialog.save": "Save",
+    "spellcheck.noSuggestions": "No suggestions",
+    "spellcheck.addToDictionary": "Add to Dictionary"
 }

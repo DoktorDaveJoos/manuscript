@@ -29,13 +29,13 @@ use Inertia\Response;
 
 class ChapterController extends Controller
 {
-    public function editor(Book $book): RedirectResponse|Response
+    public function editor(Request $request, Book $book): RedirectResponse|Response
     {
         $firstChapter = $book->chapters()
             ->orderBy('reader_order')
             ->first();
 
-        if (! $firstChapter) {
+        if (! $firstChapter && ! $request->query('panes')) {
             $book->load('storylines:id,book_id,name');
 
             return Inertia::render('chapters/empty', [
@@ -43,7 +43,21 @@ class ChapterController extends Controller
             ]);
         }
 
-        return redirect()->route('chapters.show', [$book, $firstChapter]);
+        $book->load([
+            'storylines' => fn ($q) => $q->orderBy('sort_order'),
+            'storylines.chapters' => fn ($q) => $q
+                ->select('id', 'book_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count')
+                ->orderBy('reader_order'),
+            'storylines.chapters.scenes' => fn ($q) => $q
+                ->select('id', 'chapter_id', 'title', 'sort_order', 'word_count')
+                ->orderBy('sort_order'),
+        ]);
+
+        return Inertia::render('chapters/editor', [
+            'book' => $book,
+            'initialPanes' => $request->query('panes'),
+            'fallbackChapterId' => $firstChapter?->id,
+        ]);
     }
 
     public function store(StoreChapterRequest $request, Book $book): RedirectResponse
@@ -85,18 +99,13 @@ class ChapterController extends Controller
         return redirect()->route('chapters.show', [$book, $chapter]);
     }
 
-    public function show(Book $book, Chapter $chapter): Response
+    public function show(Book $book, Chapter $chapter): RedirectResponse
     {
-        $book->load([
-            'storylines' => fn ($q) => $q->orderBy('sort_order'),
-            'storylines.chapters' => fn ($q) => $q
-                ->select('id', 'book_id', 'storyline_id', 'title', 'reader_order', 'status', 'word_count')
-                ->orderBy('reader_order'),
-            'storylines.chapters.scenes' => fn ($q) => $q
-                ->select('id', 'chapter_id', 'title', 'sort_order', 'word_count')
-                ->orderBy('sort_order'),
-        ]);
+        return redirect()->route('books.editor', ['book' => $book, 'panes' => $chapter->id]);
+    }
 
+    public function showJson(Book $book, Chapter $chapter): JsonResponse
+    {
         $chapter->load([
             'currentVersion:id,chapter_id,version_number,content,source,is_current',
             'pendingVersion:id,chapter_id,version_number,content,source,change_summary,status',
@@ -106,27 +115,12 @@ class ChapterController extends Controller
             'characters' => fn ($q) => $q->select('characters.id', 'characters.name'),
         ]);
 
-        return Inertia::render('chapters/show', [
-            'book' => $book,
+        return response()->json([
             'chapter' => $chapter,
             'versionCount' => $chapter->versions()->count(),
             'prosePassRules' => Book::globalProsePassRules(),
             'proofreadingConfig' => Book::globalProofreadingConfig(),
             'customDictionary' => $book->custom_dictionary ?? [],
-            'chapterPlotPoints' => $book->plotPoints()
-                ->where('intended_chapter_id', $chapter->id)
-                ->orderBy('sort_order')
-                ->get(),
-            'chapterAnalyses' => Inertia::defer(fn () => $chapter->analyses()
-                ->get()
-                ->keyBy(fn ($a) => $a->type->value)),
-            'editorialReview' => Inertia::defer(function () use ($book, $chapter) {
-                return $book->editorialReviews()
-                    ->where('status', 'completed')
-                    ->latest()
-                    ->with(['chapterNotes' => fn ($q) => $q->where('chapter_id', $chapter->id)])
-                    ->first();
-            }),
         ]);
     }
 

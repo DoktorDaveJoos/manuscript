@@ -89,8 +89,8 @@ export default function CommandPalette({
     onTogglePanel,
     isTypewriterMode,
     onToggleTypewriterMode,
-    isProofreadingEnabled,
-    onToggleProofreading,
+    isSpellcheckEnabled,
+    onToggleSpellcheck,
 }: {
     editor: Editor | null;
     isOpen: boolean;
@@ -106,8 +106,8 @@ export default function CommandPalette({
     onTogglePanel: (panel: PanelId) => void;
     isTypewriterMode?: boolean;
     onToggleTypewriterMode?: () => void;
-    isProofreadingEnabled?: boolean;
-    onToggleProofreading?: () => void;
+    isSpellcheckEnabled?: boolean;
+    onToggleSpellcheck?: () => void;
 }) {
     const { t } = useTranslation('editor');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -128,9 +128,9 @@ export default function CommandPalette({
         ? t('palette.disableTypewriterMode')
         : t('palette.enableTypewriterMode');
 
-    const proofreadingLabel = isProofreadingEnabled
-        ? t('palette.disableProofreading')
-        : t('palette.enableProofreading');
+    const spellcheckLabel = isSpellcheckEnabled
+        ? t('palette.disableSpellCheck')
+        : t('palette.enableSpellCheck');
 
     const handleSelect = (action: () => void) => {
         action();
@@ -209,16 +209,16 @@ export default function CommandPalette({
                             </CommandItem>
 
                             <CommandItem
-                                value={proofreadingLabel}
+                                value={spellcheckLabel}
                                 onSelect={() =>
-                                    handleSelect(() => onToggleProofreading?.())
+                                    handleSelect(() => onToggleSpellcheck?.())
                                 }
                             >
                                 <PaletteIcon>
                                     <SpellCheck size={16} />
                                 </PaletteIcon>
                                 <span className="flex-1">
-                                    {proofreadingLabel}
+                                    {spellcheckLabel}
                                 </span>
                             </CommandItem>
                         </CommandGroup>
