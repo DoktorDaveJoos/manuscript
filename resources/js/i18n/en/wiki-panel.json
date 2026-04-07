@@ -1,0 +1,20 @@
+{
+    "headerTitle": "Wiki",
+    "searchPlaceholder": "Search wiki...",
+    "connectedToChapter": "Connected to chapter",
+    "recentlyViewed": "Recently viewed",
+    "aliases": "Aliases",
+    "description": "Description",
+    "aiDescription": "AI Description",
+    "addAlias": "Add",
+    "connectToChapter": "Connect to chapter",
+    "disconnectFromChapter": "Disconnect from chapter",
+    "changeRole": "Change role",
+    "openInWiki": "Open in wiki",
+    "dismiss": "Dismiss",
+    "searchEmpty": "No results found",
+    "emptyState": "Search your wiki to reference entries while writing.",
+    "roles.protagonist": "Protagonist",
+    "roles.supporting": "Supporting",
+    "roles.mentioned": "Mentioned"
+}

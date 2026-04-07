@@ -10,6 +10,7 @@ import deEditorialReview from './de/editorial-review.json';
 import deExport from './de/export.json';
 import deOnboarding from './de/onboarding.json';
 import dePlot from './de/plot.json';
+import dePublish from './de/publish.json';
 import deSettings from './de/settings.json';
 import deWiki from './de/wiki.json';
 import enAiDashboard from './en/ai-dashboard.json';
@@ -23,6 +24,7 @@ import enOnboarding from './en/onboarding.json';
 import enPlot from './en/plot.json';
 import enPublish from './en/publish.json';
 import enSettings from './en/settings.json';
+import enWikiPanel from './en/wiki-panel.json';
 import enWiki from './en/wiki.json';
 
 import esAiDashboard from './es/ai-dashboard.json';
@@ -34,6 +36,7 @@ import esEditorialReview from './es/editorial-review.json';
 import esExport from './es/export.json';
 import esOnboarding from './es/onboarding.json';
 import esPlot from './es/plot.json';
+import esPublish from './es/publish.json';
 import esSettings from './es/settings.json';
 import esWiki from './es/wiki.json';
 
@@ -48,6 +51,7 @@ i18n.use(initReactI18next).init({
             plot: enPlot,
             publish: enPublish,
             wiki: enWiki,
+            'wiki-panel': enWikiPanel,
             ai: enAi,
             export: enExport,
             'editorial-review': enEditorialReview,
@@ -60,6 +64,7 @@ i18n.use(initReactI18next).init({
             settings: deSettings,
             onboarding: deOnboarding,
             plot: dePlot,
+            publish: dePublish,
             wiki: deWiki,
             ai: deAi,
             export: deExport,
@@ -73,6 +78,7 @@ i18n.use(initReactI18next).init({
             settings: esSettings,
             onboarding: esOnboarding,
             plot: esPlot,
+            publish: esPublish,
             wiki: esWiki,
             ai: esAi,
             export: esExport,
@@ -92,6 +98,7 @@ i18n.use(initReactI18next).init({
         'plot',
         'publish',
         'wiki',
+        'wiki-panel',
         'ai',
         'export',
         'editorial-review',

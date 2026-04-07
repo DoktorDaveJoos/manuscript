@@ -7,7 +7,8 @@
     },
     "type": "module",
     "scripts": {
-        "build": "vite build",
+        "dictionaries:copy": "mkdir -p public/dictionaries/en && cp node_modules/dictionary-en/index.aff public/dictionaries/en/en_US.aff && cp node_modules/dictionary-en/index.dic public/dictionaries/en/en_US.dic",
+        "build": "npm run dictionaries:copy && vite build",
         "build:ssr": "vite build && vite build --ssr",
         "dev": "vite",
         "format": "prettier --write resources/",
@@ -22,6 +23,7 @@
         "@sentry/vite-plugin": "^5.1.1",
         "@types/diff": "^7.0.2",
         "@types/node": "^22.13.5",
+        "all-the-german-words": "^1.1.0",
         "babel-plugin-react-compiler": "^1.0.0",
         "eslint": "^9.17.0",
         "eslint-config-prettier": "^10.0.1",
@@ -29,6 +31,7 @@
         "eslint-plugin-import": "^2.32.0",
         "eslint-plugin-react": "^7.37.3",
         "eslint-plugin-react-hooks": "^7.0.0",
+        "hunspell-asm": "^4.0.2",
         "prettier": "^3.4.2",
         "prettier-plugin-tailwindcss": "^0.6.11",
         "typescript-eslint": "^8.23.0"
@@ -62,6 +65,7 @@
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
         "concurrently": "^9.0.1",
+        "dictionary-en": "^4.0.0",
         "diff": "^8.0.3",
         "globals": "^15.14.0",
         "i18next": "^25.8.18",
@@ -69,6 +73,7 @@
         "lucide-react": "^0.577.0",
         "pdfjs-dist": "^5.5.207",
         "playwright": "^1.58.2",
+        "prosemirror-proofread": "^0.3.0",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
         "react-i18next": "^16.5.8",
@@ -76,7 +81,8 @@
         "tailwind-merge": "^3.0.1",
         "tailwindcss": "^4.0.0",
         "typescript": "^5.7.2",
-        "vite": "^7.0.4"
+        "vite": "^7.0.4",
+        "write-good": "^1.0.8"
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "4.9.5",

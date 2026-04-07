@@ -89,10 +89,10 @@ class EditorialSummaryAgent implements Agent, BelongsToBook, HasMiddleware, HasS
     public function schema(JsonSchema $schema): array
     {
         return [
-            'overall_score' => $schema->integer()->min(0)->max(100)->required(),
+            'overall_score' => $schema->integer()->required(),
             'executive_summary' => $schema->string()->required(),
-            'top_strengths' => $schema->array()->items($schema->string())->min(0)->max(5)->required(),
-            'top_improvements' => $schema->array()->items($schema->string())->min(1)->max(5)->required(),
+            'top_strengths' => $schema->array()->items($schema->string())->required(),
+            'top_improvements' => $schema->array()->items($schema->string())->required(),
             'is_pre_editorial' => $schema->boolean()->required(),
         ];
     }

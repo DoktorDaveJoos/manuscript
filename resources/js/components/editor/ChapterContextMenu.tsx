@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { ArrowRight, Circle, Pencil, Trash2 } from 'lucide-react';
+import { ArrowRight, Circle, PanelLeft, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
     reorder,
@@ -25,6 +25,7 @@ export default function ChapterContextMenu({
     onClose,
     onRename,
     onDelete,
+    onOpenInNewPane,
 }: {
     bookId: number;
     chapter: Chapter;
@@ -33,6 +34,7 @@ export default function ChapterContextMenu({
     onClose: () => void;
     onRename: () => void;
     onDelete: () => void;
+    onOpenInNewPane?: (chapterId: number) => void;
 }) {
     const { t } = useTranslation('editor');
 
@@ -137,6 +139,22 @@ export default function ChapterContextMenu({
                         </ContextMenu.Item>
                     ))}
                 </ContextMenu.Submenu>
+            )}
+
+            {onOpenInNewPane && (
+                <ContextMenu.Item
+                    icon={
+                        <PanelLeft
+                            size={14}
+                            className="shrink-0 text-ink-muted"
+                        />
+                    }
+                    label={t('contextMenu.openInNewPane', 'Open in New Pane')}
+                    onClick={() => {
+                        onClose();
+                        onOpenInNewPane(chapter.id);
+                    }}
+                />
             )}
 
             <ContextMenu.Separator />

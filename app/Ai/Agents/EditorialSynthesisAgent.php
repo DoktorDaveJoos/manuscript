@@ -102,7 +102,7 @@ class EditorialSynthesisAgent implements Agent, BelongsToBook, HasMiddleware, Ha
     public function schema(JsonSchema $schema): array
     {
         return [
-            'score' => $schema->integer()->min(0)->max(100)->required(),
+            'score' => $schema->integer()->required(),
             'summary' => $schema->string()->required(),
             'findings' => $schema->array()->items(
                 $schema->object([

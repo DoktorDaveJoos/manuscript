@@ -81,7 +81,7 @@ class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStru
     public function schema(JsonSchema $schema): array
     {
         $base = [
-            'score' => $schema->integer()->min(1)->max(10)->required(),
+            'score' => $schema->integer()->required(),
             'findings' => $schema->array()->items($schema->string())->required(),
             'recommendations' => $schema->array()->items($schema->string())->required(),
         ];
