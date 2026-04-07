@@ -90,7 +90,10 @@ function PaneWithData({
     scenesVisible: boolean;
     spellcheckEnabled: boolean;
 }) {
-    const { data, isLoading, error } = useChapterData(bookId, chapterId);
+    const { data, isLoading, error, softRefresh } = useChapterData(
+        bookId,
+        chapterId,
+    );
 
     const onFocus = useCallback(
         () => setFocusedPaneId(paneId),
@@ -103,6 +106,14 @@ function PaneWithData({
             onChapterDataReady(data);
         }
     }, [isFocused, data, onChapterDataReady]);
+
+    const prevFocusedRef = useRef(isFocused);
+    useEffect(() => {
+        if (isFocused && !prevFocusedRef.current) {
+            softRefresh();
+        }
+        prevFocusedRef.current = isFocused;
+    }, [isFocused, softRefresh]);
 
     if (isLoading || !data) {
         return (
