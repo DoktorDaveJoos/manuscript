@@ -2,7 +2,6 @@ import type { Editor } from '@tiptap/react';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
 import type { ChapterData } from '@/hooks/useChapterData';
 import { useProofreading } from '@/hooks/useProofreading';
 import { jsonFetchHeaders } from '@/lib/utils';
@@ -13,6 +12,7 @@ import type { SaveStatus } from './EditorBar';
 import FormattingToolbar from './FormattingToolbar';
 import VersionHistoryOverlay from './VersionHistoryOverlay';
 import WritingSurface from './WritingSurface';
+import { updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
 
 export function firstLine(text: string): string {
     return text.split('\n')[0];
@@ -255,7 +255,7 @@ export default function ChapterPane({
         <div
             ref={paneRef}
             data-pane-chapter={chapter.id}
-            className={`relative flex min-w-[400px] flex-1 flex-col transition-opacity duration-200 ${
+            className={`relative flex min-w-0 flex-1 flex-col transition-opacity duration-200 ${
                 isFocused ? 'opacity-100' : 'opacity-75'
             }`}
             onMouseDown={onFocus}

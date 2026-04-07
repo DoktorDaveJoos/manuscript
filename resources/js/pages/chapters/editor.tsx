@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
 import AccessBar from '@/components/editor/AccessBar';
 import type {
     AccessBarItemConfig,
@@ -41,6 +40,7 @@ import type {
     Character,
     CharacterChapterPivot,
 } from '@/types/models';
+import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -106,7 +106,7 @@ function PaneWithData({
 
     if (isLoading || !data) {
         return (
-            <div className="flex min-w-[400px] flex-1 items-center justify-center">
+            <div className="flex min-w-0 flex-1 items-center justify-center">
                 <div className="size-5 animate-spin rounded-full border-2 border-ink-faint border-t-transparent" />
             </div>
         );
@@ -114,7 +114,7 @@ function PaneWithData({
 
     if (error) {
         return (
-            <div className="flex min-w-[400px] flex-1 items-center justify-center text-sm text-ink-muted">
+            <div className="flex min-w-0 flex-1 items-center justify-center text-sm text-ink-muted">
                 Failed to load chapter
             </div>
         );
@@ -559,7 +559,10 @@ export default function EditorPage({
                         <PaneEmptyState onCreateChapter={handleCreateChapter} />
                     ) : (
                         panes.map((pane, index) => (
-                            <div key={pane.id} className="flex min-w-0 flex-1">
+                            <div
+                                key={pane.id}
+                                className="flex min-w-0 flex-1 overflow-hidden"
+                            >
                                 {index > 0 && (
                                     <div className="w-px shrink-0 bg-border-light" />
                                 )}
