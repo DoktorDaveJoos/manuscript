@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
 import AccessBar from '@/components/editor/AccessBar';
 import type {
     AccessBarItemConfig,
@@ -41,6 +40,7 @@ import type {
     Character,
     CharacterChapterPivot,
 } from '@/types/models';
+import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -90,7 +90,10 @@ function PaneWithData({
     scenesVisible: boolean;
     spellcheckEnabled: boolean;
 }) {
-    const { data, isLoading, error } = useChapterData(bookId, chapterId);
+    const { data, isLoading, error, softRefresh } = useChapterData(
+        bookId,
+        chapterId,
+    );
 
     const onFocus = useCallback(
         () => setFocusedPaneId(paneId),
@@ -103,6 +106,14 @@ function PaneWithData({
             onChapterDataReady(data);
         }
     }, [isFocused, data, onChapterDataReady]);
+
+    const prevFocusedRef = useRef(isFocused);
+    useEffect(() => {
+        if (isFocused && !prevFocusedRef.current) {
+            softRefresh();
+        }
+        prevFocusedRef.current = isFocused;
+    }, [isFocused, softRefresh]);
 
     if (isLoading || !data) {
         return (
