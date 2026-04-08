@@ -7,7 +7,7 @@
     },
     "type": "module",
     "scripts": {
-        "dictionaries:copy": "mkdir -p public/dictionaries/en && cp node_modules/dictionary-en/index.aff public/dictionaries/en/en_US.aff && cp node_modules/dictionary-en/index.dic public/dictionaries/en/en_US.dic",
+        "dictionaries:copy": "node -e \"const fs=require('fs');fs.mkdirSync('public/dictionaries/en',{recursive:true});fs.copyFileSync('node_modules/dictionary-en/index.aff','public/dictionaries/en/en_US.aff');fs.copyFileSync('node_modules/dictionary-en/index.dic','public/dictionaries/en/en_US.dic');\"",
         "build": "npm run dictionaries:copy && vite build",
         "build:ssr": "vite build && vite build --ssr",
         "dev": "vite",
