@@ -137,6 +137,21 @@ export default function NotesPanel({
     }, [lines]);
     const savedNotesRef = useRef(initialNotes);
 
+    // Sync local state when initialNotes prop changes externally
+    // (e.g., pane regains focus and softRefresh returns fresh data).
+    // Guarded against clobbering in-flight user edits.
+    useEffect(() => {
+        if (pendingRef.current === 'dirty') return;
+        const incoming = initialNotes ?? '';
+        const current = savedNotesRef.current ?? '';
+        if (incoming === current) return;
+        savedNotesRef.current = initialNotes;
+        const nextLines = parseLines(incoming);
+        setLines(nextLines);
+        setActiveIndex(nextLines.length - 1);
+        setSlashMenu(null);
+    }, [initialNotes]);
+
     useEffect(() => {
         requestAnimationFrame(() => {
             const input = inputRef.current;
