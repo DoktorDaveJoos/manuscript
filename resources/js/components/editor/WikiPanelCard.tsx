@@ -88,7 +88,6 @@ export default function WikiPanelCard({
     chapterRole,
     wikiUrl,
 }: WikiPanelCardProps) {
-    const { t } = useTranslation('wiki-panel');
     const tab = kindToTab(
         entryType === 'character' ? 'character' : (entry as WikiEntry).kind,
     );

@@ -3,10 +3,7 @@ import {
     createProofreadPlugin,
     createSpellCheckEnabledStore,
 } from 'prosemirror-proofread';
-import type {
-    GenerateProofreadErrorsResponse,
-    CreateSuggestionBox,
-} from 'prosemirror-proofread';
+import type { GenerateProofreadErrorsResponse } from 'prosemirror-proofread';
 // @ts-expect-error — write-good has no ESM export or type declarations
 import writeGood from 'write-good';
 import { createSuggestionBoxElement } from '@/components/editor/SuggestionPopover';

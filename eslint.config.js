@@ -45,6 +45,19 @@ export default [
         },
         rules: {
             '@typescript-eslint/no-explicit-any': 'off',
+            '@typescript-eslint/no-unused-vars': [
+                'error',
+                {
+                    argsIgnorePattern: '^_',
+                    varsIgnorePattern: '^_',
+                    caughtErrorsIgnorePattern: '^_',
+                },
+            ],
+            // The codebase intentionally syncs refs to state during render
+            // (e.g. `myRef.current = state`) as an escape hatch for callbacks
+            // that need the latest value without re-creating. This rule from
+            // react-hooks recommended-latest is too strict for that pattern.
+            'react-hooks/refs': 'off',
             '@typescript-eslint/consistent-type-imports': [
                 'error',
                 {
@@ -87,6 +100,8 @@ export default [
             'resources/js/actions/**',
             'resources/js/components/ui/*',
             'resources/js/routes/**',
+            'nativephp/electron/**',
+            'scripts/nativephp-patches/**',
         ],
     },
     prettier, // Turn off all rules that might conflict with Prettier

@@ -39,6 +39,9 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
+      - name: Apply NativePHP vendor patches
+        run: bash scripts/nativephp-patches/apply.sh
+
       - name: Generate application key
         run: php artisan key:generate
 
@@ -155,6 +158,10 @@ jobs:
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Apply NativePHP vendor patches
+        shell: bash
+        run: bash scripts/nativephp-patches/apply.sh
 
       - name: Generate application key
         run: php artisan key:generate

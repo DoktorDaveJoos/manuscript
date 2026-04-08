@@ -28,7 +28,9 @@ export default function WikiPanelSearch({
     const [query, setQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+        undefined,
+    );
 
     const handleChange = useCallback(
         (value: string) => {

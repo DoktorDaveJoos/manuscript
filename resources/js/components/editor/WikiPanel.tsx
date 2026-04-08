@@ -67,8 +67,8 @@ export default function WikiPanel({
         }
     });
     const [loading, setLoading] = useState(false);
-    const abortRef = useRef<AbortController>();
-    const searchAbortRef = useRef<AbortController>();
+    const abortRef = useRef<AbortController | null>(null);
+    const searchAbortRef = useRef<AbortController | null>(null);
 
     const wikiUrl = wikiIndex.url({ book: book.id });
 

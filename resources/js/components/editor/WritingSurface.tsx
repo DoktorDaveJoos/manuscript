@@ -1,5 +1,4 @@
 import type { Editor } from '@tiptap/core';
-import type { RefObject } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SaveStatus } from '@/components/editor/EditorBar';
