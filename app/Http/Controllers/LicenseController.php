@@ -102,7 +102,10 @@ class LicenseController extends Controller
             ], 422);
         }
 
+        // Mass delete via query builder bypasses Eloquent events, so the
+        // model's saved/deleted hooks won't fire — clear the cache by hand.
         License::query()->delete();
+        License::clearActiveCache();
 
         return response()->json([
             'message' => __('License deactivated.'),

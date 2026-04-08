@@ -1,5 +1,13 @@
 @import 'tailwindcss';
 
+/* Bundled locally so the desktop app launches deterministically without
+   waiting on a font CDN (replaces the previous fonts.bunny.net <link>). */
+@import '@fontsource-variable/geist/index.css';
+@import '@fontsource/eb-garamond/400.css';
+@import '@fontsource/eb-garamond/500.css';
+@import '@fontsource/eb-garamond/600.css';
+@import '@fontsource/eb-garamond/400-italic.css';
+
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 

@@ -19,6 +19,19 @@ class SqliteVecConnector extends SQLiteConnector
     {
         $pdo = parent::connect($config);
 
+        // PRAGMAs are set per PDO instance, not per file. Apply them here so
+        // they run once per connection (not once per request) and so the
+        // runtime `nativephp` connection gets them too — its config entry
+        // doesn't carry the `pragmas` array that the default sqlite config has.
+        $pdo->exec(
+            'PRAGMA journal_mode = WAL;'
+            .'PRAGMA synchronous = NORMAL;'
+            .'PRAGMA cache_size = -64000;'
+            .'PRAGMA mmap_size = 268435456;'
+            .'PRAGMA temp_store = MEMORY;'
+            .'PRAGMA busy_timeout = 5000;'
+        );
+
         try {
             $this->sqliteVec->load($pdo);
         } catch (\Throwable $e) {
