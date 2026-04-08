@@ -1,5 +1,49 @@
 # Changelog
 
+## v0.4.5 (2026-04-08)
+
+### Features
+
+- splitscreen editor refinements + multilingual spellcheck dictionaries (93eb903)
+- wire sidebar for splitscreen — Cmd+click and context menu support (2c11a68)
+- route editor through new pane-based EditorPage (527833f)
+- add EditorPage pane manager as new editor entry point (c3545e3)
+- extract ChapterPane component from ChapterShow (0932afd)
+- add PaneEmptyState component for all-panes-closed state (b0ef1c2)
+- add usePaneManager hook for splitscreen pane orchestration (f3fb60a)
+- add useChapterData hook for fetch-based chapter loading (c3679e3)
+- add JSON endpoint for chapter data (splitscreen support) (fb4d073)
+
+### Fixes
+
+- pass absolute URL to loading window in production (ac969b3)
+- cross-platform dictionaries:copy for Windows builds (30d667d)
+- sync notes panel content after switching panes (d3dcb74)
+- refresh chapter data when pane regains focus (f82c0ed)
+- prevent splitscreen panes from overlapping their close buttons (f569b63)
+- remove unsupported JSON Schema constraints from AI agent schemas (f7a799f)
+- restore ChapterController@show as redirect to preserve Wayfinder types (27f47a1)
+
+### Other Changes
+
+- update changelog for v0.4.4 (82594ca)
+- enable OPcache in CLI + bundle fonts + reduce per-request queries (9e1b842)
+- update changelog for v0.4.3 (696ad49)
+- vendor-fallback nativephp/electron with patch layer (4c2127e)
+- Merge pull request #98 from DoktorDaveJoos/fix/chapter-data-soft-refresh-on-focus (8e39b23)
+- Merge pull request #97 from DoktorDaveJoos/worktree-agent-aa0717bd (7849615)
+- Merge branch 'dev' into worktree-agent-aa0717bd (00a699e)
+- Improve splitscreen editor: lift scenes state, remove save debounce, add i18n (b890b17)
+- Add spellcheck context menu, command palette toggle, and i18n support (4dcde3f)
+- simplify splitscreen code after review (bad2cfc)
+- Replace typo-js spell checking with native Electron OS spellchecker (469d46c)
+- add integration tests for splitscreen editor routing (2063f75)
+- convert ChapterShow to thin redirect for backward compat (5cac268)
+- Add wiki panel to editor for quick-reference while writing (61e0c16)
+- Add real-time spell and grammar checking with typo-js and write-good (1739c2d)
+- Fix invalid enum values in MarketingSeeder (ec98174)
+
+
 ## v0.4.4 (2026-04-08)
 
 ### Features

@@ -29,7 +29,10 @@ class NativeAppServiceProvider implements ProvidesPhpIni
             ->webPreferences(['spellcheck' => true]);
 
         if (app()->isProduction()) {
-            $pending->url('/loading');
+            // Must be an absolute URL — NativePHP forwards the string straight
+            // to Electron's window.loadURL(), which rejects bare paths. The
+            // Window constructor's default uses url('/') for the same reason.
+            $pending->url(url('/loading'));
         }
 
         // PendingOpenWindow uses __destruct to actually open the window;
