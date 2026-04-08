@@ -11,6 +11,24 @@ class License extends Model
 
     protected $guarded = [];
 
+    /**
+     * Per-request cache for the active-license lookup. License state rarely
+     * changes within a single request, so reusing the result avoids the 3+
+     * duplicate queries that previously happened (HandleInertiaRequests::share,
+     * RequiresLicense middleware, free_tier closure all hit it).
+     *
+     * Use the `false` sentinel to distinguish "not yet looked up" from
+     * "looked up and the result was null".
+     */
+    private static self|false|null $activeCache = false;
+
+    protected static function booted(): void
+    {
+        // Mass deletes via the query builder bypass these — see LicenseController::deactivate.
+        static::saved(fn () => self::clearActiveCache());
+        static::deleted(fn () => self::clearActiveCache());
+    }
+
     protected function casts(): array
     {
         return [
@@ -27,7 +45,11 @@ class License extends Model
      */
     public static function active(): ?self
     {
-        return self::query()->where('activated', true)->first();
+        if (self::$activeCache !== false) {
+            return self::$activeCache;
+        }
+
+        return self::$activeCache = self::query()->where('activated', true)->first();
     }
 
     /**
@@ -36,6 +58,15 @@ class License extends Model
     public static function isActive(): bool
     {
         return self::active() !== null;
+    }
+
+    /**
+     * Reset the per-request active-license cache. Call after activate /
+     * deactivate / revalidate operations so subsequent reads see fresh state.
+     */
+    public static function clearActiveCache(): void
+    {
+        self::$activeCache = false;
     }
 
     /**

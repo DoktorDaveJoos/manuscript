@@ -40,8 +40,25 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $savedLocale = AppSetting::get('locale', config('app.locale', 'en'));
-        app()->setLocale($savedLocale);
+        // SetLocale middleware runs before Inertia and has already applied
+        // the saved locale, so app()->getLocale() is authoritative here
+        // (no second AppSetting query needed for locale).
+        $locale = app()->getLocale();
+
+        // Pre-load all the AppSetting keys this middleware needs in one
+        // query so the closures below read from the per-request cache
+        // instead of issuing N separate SELECTs.
+        AppSetting::warmCache([
+            'show_ai_features',
+            'hide_formatting_toolbar',
+            'typewriter_mode',
+            'show_scenes',
+            'send_error_reports',
+            'crash_report_prompted',
+            'language_prompted',
+            'editor_font',
+            'editor_font_size',
+        ]);
 
         return [
             ...parent::share($request),
@@ -69,7 +86,7 @@ class HandleInertiaRequests extends Middleware
                 'send_error_reports' => AppSetting::get('send_error_reports', false),
                 'crash_report_prompted' => AppSetting::get('crash_report_prompted', false),
                 'language_prompted' => AppSetting::get('language_prompted', false),
-                'locale' => $savedLocale,
+                'locale' => $locale,
                 'editor_font' => AppSetting::get('editor_font', 'eb-garamond'),
                 'editor_font_size' => (int) AppSetting::get('editor_font_size', 18),
             ],

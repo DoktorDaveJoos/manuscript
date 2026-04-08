@@ -24,7 +24,8 @@ use Tests\TestCase;
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->beforeEach(function () {
-        AppSetting::clearCache();
+        // AppSetting/License caches are reset in TestCase::setUp(); only the
+        // locale needs to be re-applied here since it's request state.
         app()->setLocale(config('app.locale', 'en'));
     })
     ->in('Feature');

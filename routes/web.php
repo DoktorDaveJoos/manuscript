@@ -32,6 +32,12 @@ use App\Http\Controllers\WikiPanelController;
 use App\Http\Controllers\WritingGoalController;
 use Illuminate\Support\Facades\Route;
 
+// Lightweight loading page that the NativePHP window opens first.
+// Renders instantly (no DB, no Inertia, no JS bundle) and then redirects
+// to '/'. Gives the user immediate visual feedback while Laravel + the
+// React bundle warm up on cold start.
+Route::get('/loading', fn () => view('loading'))->name('loading');
+
 Route::get('/', [BookController::class, 'index'])->name('books.index');
 Route::post('/books', [BookController::class, 'store'])->name('books.store');
 Route::patch('/books/{book}', [BookController::class, 'update'])->name('books.update');
