@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { showJson } from '@/actions/App/Http/Controllers/ChapterController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type {
     Chapter,
@@ -8,7 +9,6 @@ import type {
     ProsePassRule,
     Scene,
 } from '@/types/models';
-import { showJson } from '@/actions/App/Http/Controllers/ChapterController';
 
 type ChapterWithRelations = Chapter & {
     characters?: (Character & { pivot: CharacterChapterPivot })[];
@@ -17,7 +17,6 @@ type ChapterWithRelations = Chapter & {
 
 export type ChapterData = {
     chapter: ChapterWithRelations;
-    versionCount: number;
     prosePassRules?: ProsePassRule[];
     proofreadingConfig?: ProofreadingConfig;
     customDictionary?: string[];
@@ -69,11 +68,13 @@ export default function useChapterData(
                 if (controller.signal.aborted) return;
                 setData(json);
                 setError(null);
-                setIsLoading(false);
             } catch (e) {
                 if (controller.signal.aborted) return;
                 if (!soft) {
                     setError((e as Error).message);
+                }
+            } finally {
+                if (!controller.signal.aborted) {
                     setIsLoading(false);
                 }
             }

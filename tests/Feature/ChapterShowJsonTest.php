@@ -11,8 +11,7 @@ it('returns chapter data as json', function () {
 
     $response->assertOk()
         ->assertJsonStructure([
-            'chapter' => ['id', 'title', 'scenes'],
-            'versionCount',
+            'chapter' => ['id', 'title', 'scenes', 'current_version'],
             'prosePassRules',
             'proofreadingConfig',
             'customDictionary',

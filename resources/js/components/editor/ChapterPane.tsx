@@ -2,6 +2,7 @@ import type { Editor } from '@tiptap/react';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
 import type { ChapterData } from '@/hooks/useChapterData';
 import { useProofreading } from '@/hooks/useProofreading';
 import { jsonFetchHeaders } from '@/lib/utils';
@@ -12,7 +13,6 @@ import type { SaveStatus } from './EditorBar';
 import FormattingToolbar from './FormattingToolbar';
 import VersionHistoryOverlay from './VersionHistoryOverlay';
 import WritingSurface from './WritingSurface';
-import { updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
 
 export function firstLine(text: string): string {
     return text.split('\n')[0];
@@ -29,6 +29,7 @@ export default function ChapterPane({
     onClose,
     onActiveEditorChange,
     onSaveStatusChange,
+    onVersionsChanged,
     scenesVisible,
     spellcheckEnabled,
 }: {
@@ -45,15 +46,13 @@ export default function ChapterPane({
         sceneId: number | null,
     ) => void;
     onSaveStatusChange: (status: SaveStatus) => void;
+    onVersionsChanged: () => void;
     scenesVisible: boolean;
     spellcheckEnabled: boolean;
 }) {
     const { t } = useTranslation('editor');
-    const {
-        chapter,
-        versionCount,
-        proofreadingConfig: initialProofreadingConfig,
-    } = chapterData;
+    const { chapter, proofreadingConfig: initialProofreadingConfig } =
+        chapterData;
 
     const { config: proofreadingConfig } = useProofreading(
         initialProofreadingConfig ?? DEFAULT_PROOFREADING_CONFIG,
@@ -260,51 +259,53 @@ export default function ChapterPane({
             }`}
             onMouseDown={onFocus}
         >
-            {/* Editor bar with close button */}
-            <div
-                className={`overflow-hidden transition-[height,opacity] duration-300 ${
-                    isFocusMode ? 'h-0 opacity-0' : 'h-[38px]'
-                }`}
-            >
-                <div className="flex items-center">
-                    <div className="min-w-0 flex-1">
-                        <EditorBar
-                            chapter={chapter}
-                            chapterTitle={displayTitle}
-                            storylineName={
-                                chapter.storyline?.name ??
-                                t('show.untitledStoryline')
-                            }
-                            wordCount={wordCount}
-                            saveStatus={saveStatus}
-                            versionCount={versionCount}
-                            onVersionClick={() =>
-                                setShowVersions(!showVersions)
-                            }
-                        />
+            {/* Anchors VersionHistoryOverlay's `top-full` to the 38px editor bar, not the full-height pane (the pane root is also `relative`, but anchoring there clips the dropdown below the viewport). */}
+            <div className="relative">
+                <div
+                    className={`overflow-hidden transition-[height,opacity] duration-300 ${
+                        isFocusMode ? 'h-0 opacity-0' : 'h-[38px]'
+                    }`}
+                >
+                    <div className="flex items-center">
+                        <div className="min-w-0 flex-1">
+                            <EditorBar
+                                chapter={chapter}
+                                chapterTitle={displayTitle}
+                                storylineName={
+                                    chapter.storyline?.name ??
+                                    t('show.untitledStoryline')
+                                }
+                                wordCount={wordCount}
+                                saveStatus={saveStatus}
+                                onVersionClick={() =>
+                                    setShowVersions(!showVersions)
+                                }
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onClose();
+                            }}
+                            className="mr-2 flex h-6 w-6 shrink-0 items-center justify-center rounded text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink"
+                        >
+                            <X size={14} />
+                        </button>
                     </div>
-                    <button
-                        type="button"
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onClose();
-                        }}
-                        className="mr-2 flex h-6 w-6 shrink-0 items-center justify-center rounded text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink"
-                    >
-                        <X size={14} />
-                    </button>
                 </div>
-            </div>
 
-            {/* Version history overlay */}
-            {showVersions && !isFocusMode && (
-                <VersionHistoryOverlay
-                    bookId={bookId}
-                    chapterId={chapter.id}
-                    onClose={() => setShowVersions(false)}
-                />
-            )}
+                {/* Version history overlay */}
+                {showVersions && !isFocusMode && (
+                    <VersionHistoryOverlay
+                        bookId={bookId}
+                        chapterId={chapter.id}
+                        onClose={() => setShowVersions(false)}
+                        onVersionsChanged={onVersionsChanged}
+                    />
+                )}
+            </div>
 
             {/* Formatting toolbar — only for the focused pane */}
             <div

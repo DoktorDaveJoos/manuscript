@@ -11,7 +11,6 @@ export default function EditorBar({
     storylineName,
     wordCount,
     saveStatus,
-    versionCount,
     onVersionClick,
 }: {
     chapter: Chapter;
@@ -19,10 +18,10 @@ export default function EditorBar({
     storylineName: string;
     wordCount: number;
     saveStatus: SaveStatus;
-    versionCount: number;
     onVersionClick: () => void;
 }) {
     const { t, i18n } = useTranslation('editor');
+    const versionNumber = chapter.current_version?.version_number ?? 1;
 
     return (
         <div className="@container flex h-[38px] shrink-0 items-center justify-between px-8">
@@ -57,7 +56,7 @@ export default function EditorBar({
                     onClick={onVersionClick}
                     className="text-[12px] text-ink-faint transition-colors hover:text-ink"
                 >
-                    v{versionCount}
+                    v{versionNumber}
                 </button>
                 <Kbd keys="⌘P" className="hidden @xl:inline-flex" />
             </div>

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
 import AccessBar from '@/components/editor/AccessBar';
 import type {
     AccessBarItemConfig,
@@ -40,7 +41,6 @@ import type {
     Character,
     CharacterChapterPivot,
 } from '@/types/models';
-import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -143,6 +143,7 @@ function PaneWithData({
             onClose={onClose}
             onActiveEditorChange={onActiveEditorChange}
             onSaveStatusChange={onSaveStatusChange}
+            onVersionsChanged={softRefresh}
             scenesVisible={scenesVisible}
             spellcheckEnabled={spellcheckEnabled}
         />
@@ -403,10 +404,9 @@ export default function EditorPage({
     // ── Find / Replace ───────────────────────────────────────────────────
     const [isFindOpen, setIsFindOpen] = useState(false);
     const [findShowReplace, setFindShowReplace] = useState(false);
-    const [searchHighlight, setSearchHighlight] =
-        useState<SearchHighlight | null>(null);
-    const [isLocalFindOpen, setIsLocalFindOpen] = useState(false);
-    const [localFindShowReplace, setLocalFindShowReplace] = useState(false);
+    const [, setSearchHighlight] = useState<SearchHighlight | null>(null);
+    const [, setIsLocalFindOpen] = useState(false);
+    const [, setLocalFindShowReplace] = useState(false);
 
     // ── Command palette ──────────────────────────────────────────────────
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
