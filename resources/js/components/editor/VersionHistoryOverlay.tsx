@@ -30,10 +30,12 @@ export default function VersionHistoryOverlay({
     bookId,
     chapterId,
     onClose,
+    onVersionsChanged,
 }: {
     bookId: number;
     chapterId: number;
     onClose: () => void;
+    onVersionsChanged: () => void;
 }) {
     const [versionList, setVersionList] = useState<ChapterVersion[] | null>(
         null,
@@ -102,12 +104,13 @@ export default function VersionHistoryOverlay({
                 {
                     onFinish: () => {
                         setRestoring(null);
+                        onVersionsChanged();
                         onClose();
                     },
                 },
             );
         },
-        [bookId, chapterId, onClose],
+        [bookId, chapterId, onClose, onVersionsChanged],
     );
 
     const handleDelete = useCallback(
@@ -149,9 +152,10 @@ export default function VersionHistoryOverlay({
                 setShowForm(false);
                 setSummary('');
                 fetchVersions();
+                onVersionsChanged();
             });
         },
-        [bookId, chapterId, summary, fetchVersions],
+        [bookId, chapterId, summary, fetchVersions, onVersionsChanged],
     );
 
     return (

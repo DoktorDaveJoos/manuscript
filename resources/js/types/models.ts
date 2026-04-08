@@ -128,6 +128,39 @@ export type ProsePassRule = {
     enabled: boolean;
 };
 
+export type GrammarCheckKey =
+    | 'illusion'
+    | 'so'
+    | 'thereIs'
+    | 'tooWordy'
+    | 'passive'
+    | 'weasel'
+    | 'adverb'
+    | 'cliches'
+    | 'eprime';
+
+export type ProofreadingConfig = {
+    spelling_enabled: boolean;
+    grammar_enabled: boolean;
+    grammar_checks: Record<GrammarCheckKey, boolean>;
+};
+
+export const DEFAULT_PROOFREADING_CONFIG: ProofreadingConfig = {
+    spelling_enabled: true,
+    grammar_enabled: true,
+    grammar_checks: {
+        illusion: true,
+        so: true,
+        thereIs: true,
+        tooWordy: true,
+        passive: false,
+        weasel: false,
+        adverb: false,
+        cliches: false,
+        eprime: false,
+    },
+};
+
 export type License = {
     active: boolean;
     masked_key: string | null;
@@ -179,6 +212,7 @@ export type Book = {
     isbn?: string | null;
     cover_image_path?: string | null;
     cover_image_url?: string | null;
+    custom_dictionary?: string[] | null;
     created_at: string;
     updated_at: string;
     storylines?: Storyline[];

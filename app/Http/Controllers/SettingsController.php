@@ -44,6 +44,7 @@ class SettingsController extends Controller
             'ai_providers' => $aiProviders,
             'writing_style_text' => $writingStyleText,
             'prose_pass_rules' => Book::globalProsePassRules(),
+            'proofreading_config' => Book::globalProofreadingConfig(),
             'version' => config('app.version', '0.0.0'),
         ]);
     }
@@ -72,5 +73,59 @@ class SettingsController extends Controller
         AppSetting::set('prose_pass_rules', json_encode($request->input('rules')));
 
         return response()->json(['message' => __('Prose pass rules updated.')]);
+    }
+
+    public function updateProofreadingConfig(Request $request): JsonResponse
+    {
+        $request->validate([
+            'config' => ['required', 'array'],
+            'config.spelling_enabled' => ['required', 'boolean'],
+            'config.grammar_enabled' => ['required', 'boolean'],
+            'config.grammar_checks' => ['required', 'array'],
+        ]);
+
+        AppSetting::set('proofreading_config', json_encode($request->input('config')));
+
+        return response()->json(['message' => __('Proofreading settings updated.')]);
+    }
+
+    public function updateCustomDictionary(Request $request, Book $book): JsonResponse
+    {
+        $request->validate([
+            'words' => ['required', 'array'],
+            'words.*' => ['required', 'string', 'max:100'],
+        ]);
+
+        $book->update(['custom_dictionary' => $request->input('words')]);
+
+        return response()->json(['message' => __('Custom dictionary updated.')]);
+    }
+
+    public function seedCustomDictionary(Book $book): JsonResponse
+    {
+        $names = collect();
+
+        $book->characters()->get(['name', 'aliases'])->each(function ($char) use ($names) {
+            $names->push($char->name);
+            if ($char->aliases) {
+                foreach ($char->aliases as $alias) {
+                    $names->push($alias);
+                }
+            }
+        });
+
+        $book->wikiEntries()->get(['name'])->each(function ($entry) use ($names) {
+            $names->push($entry->name);
+        });
+
+        $existing = $book->custom_dictionary ?? [];
+        $merged = collect($existing)->merge($names)->unique()->sort()->values()->all();
+
+        $book->update(['custom_dictionary' => $merged]);
+
+        return response()->json([
+            'message' => __('Dictionary seeded with :count entity names.', ['count' => count($merged) - count($existing)]),
+            'words' => $merged,
+        ]);
     }
 }

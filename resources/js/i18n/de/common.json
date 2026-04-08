@@ -21,7 +21,10 @@
     "nav.settings": "Einstellungen",
     "nav.library": "Bibliothek",
     "nav.ai": "KI",
+    "nav.publish": "Veröffentlichen",
     "nav.export": "Export",
+    "nav.general": "Allgemein",
+    "nav.book": "Buch",
     "preview": "Vorschau",
     "sidebar.expand": "Seitenleiste ausklappen",
     "sidebar.collapse": "Seitenleiste einklappen"

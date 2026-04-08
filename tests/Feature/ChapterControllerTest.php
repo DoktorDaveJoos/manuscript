@@ -9,7 +9,7 @@ use App\Models\PlotPoint;
 use App\Models\Scene;
 use App\Models\Storyline;
 
-test('editor redirects to first chapter by reader_order', function () {
+test('editor renders editor page with first chapter as fallback', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
 
@@ -17,7 +17,13 @@ test('editor redirects to first chapter by reader_order', function () {
     $first = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0, 'title' => 'First']);
 
     $this->get(route('books.editor', $book))
-        ->assertRedirect(route('chapters.show', [$book, $first]));
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('chapters/editor')
+            ->where('book.id', $book->id)
+            ->where('fallbackChapterId', $first->id)
+            ->where('initialPanes', null)
+        );
 });
 
 test('editor renders empty state when no chapters exist', function () {
@@ -44,7 +50,7 @@ test('editor includes storylines in empty state response', function () {
         );
 });
 
-test('show renders chapter with book, storylines, and version count', function () {
+test('show redirects to editor page with chapter as pane', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
@@ -52,15 +58,7 @@ test('show renders chapter with book, storylines, and version count', function (
     ChapterVersion::factory()->for($chapter)->create(['is_current' => false, 'version_number' => 2]);
 
     $this->get(route('chapters.show', [$book, $chapter]))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('chapters/show')
-            ->where('book.id', $book->id)
-            ->has('book.storylines', 1)
-            ->where('chapter.id', $chapter->id)
-            ->has('chapter.current_version')
-            ->where('versionCount', 2)
-        );
+        ->assertRedirect(route('books.editor', ['book' => $book, 'panes' => $chapter->id]));
 });
 
 test('updateContent saves content and returns word count', function () {
@@ -728,7 +726,7 @@ test('rejectVersion rejects non-pending version', function () {
         ->assertForbidden();
 });
 
-test('show includes pending version when one exists', function () {
+test('show redirects to editor with chapter as pane (pending version)', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
@@ -747,16 +745,10 @@ test('show includes pending version when one exists', function () {
     ]);
 
     $this->get(route('chapters.show', [$book, $chapter]))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('chapters/show')
-            ->has('chapter.pending_version')
-            ->where('chapter.pending_version.version_number', 2)
-            ->where('chapter.pending_version.content', 'Pending content')
-        );
+        ->assertRedirect(route('books.editor', ['book' => $book, 'panes' => $chapter->id]));
 });
 
-test('show does not include pending version when none exists', function () {
+test('show redirects to editor with chapter as pane (no pending version)', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
@@ -767,39 +759,27 @@ test('show does not include pending version when none exists', function () {
     ]);
 
     $this->get(route('chapters.show', [$book, $chapter]))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('chapters/show')
-            ->where('chapter.pending_version', null)
-        );
+        ->assertRedirect(route('books.editor', ['book' => $book, 'panes' => $chapter->id]));
 });
 
-test('show includes notes in response', function () {
+test('show redirects to editor (notes in chapter)', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['notes' => 'Test note']);
     ChapterVersion::factory()->for($chapter)->create(['is_current' => true]);
 
     $this->get(route('chapters.show', [$book, $chapter]))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('chapters/show')
-            ->where('chapter.notes', 'Test note')
-        );
+        ->assertRedirect(route('books.editor', ['book' => $book, 'panes' => $chapter->id]));
 });
 
-test('show includes prose pass rules', function () {
+test('show redirects to editor (prose pass rules via json endpoint)', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
     ChapterVersion::factory()->for($chapter)->create(['is_current' => true]);
 
     $this->get(route('chapters.show', [$book, $chapter]))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('chapters/show')
-            ->has('prosePassRules')
-        );
+        ->assertRedirect(route('books.editor', ['book' => $book, 'panes' => $chapter->id]));
 });
 
 test('acceptVersion preserves scenes with hr boundaries', function () {

@@ -11,6 +11,7 @@
 /storage/*.key
 /storage/pail
 /vendor
+/nativephp/electron/
 .env
 .env.backup
 .env.production
@@ -28,3 +29,5 @@ yarn-error.log
 /.zed
 /.worktrees
 .claude/worktrees/
+.DS_Store
+/screenshots

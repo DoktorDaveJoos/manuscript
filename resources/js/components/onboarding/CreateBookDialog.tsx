@@ -6,13 +6,7 @@ import Dialog from '@/components/ui/Dialog';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
-
-const LANGUAGES = [
-    { value: 'de', label: 'Deutsch' },
-    { value: 'en', label: 'English' },
-    { value: 'fr', label: 'Fran\u00E7ais' },
-    { value: 'es', label: 'Espa\u00F1ol' },
-];
+import { BOOK_LANGUAGES } from '@/lib/languages';
 
 const GENRES = [
     { value: 'thriller', label: 'Thriller' },
@@ -100,7 +94,7 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                                 form.setData('language', e.target.value)
                             }
                         >
-                            {LANGUAGES.map((lang) => (
+                            {BOOK_LANGUAGES.map((lang) => (
                                 <option key={lang.value} value={lang.value}>
                                     {lang.label}
                                 </option>

@@ -35,6 +35,7 @@ class Book extends Model
             'genre' => Genre::class,
             'secondary_genres' => 'array',
             'export_drop_caps' => 'boolean',
+            'custom_dictionary' => 'array',
         ];
     }
 
@@ -149,6 +150,46 @@ class Book extends Model
         }
 
         return self::defaultProsePassRules();
+    }
+
+    /**
+     * @return array{spelling_enabled: bool, grammar_enabled: bool, grammar_checks: array<string, bool>}
+     */
+    public static function defaultProofreadingConfig(): array
+    {
+        return [
+            'spelling_enabled' => true,
+            'grammar_enabled' => true,
+            'grammar_checks' => [
+                'illusion' => true,
+                'so' => true,
+                'thereIs' => true,
+                'tooWordy' => true,
+                'passive' => false,
+                'weasel' => false,
+                'adverb' => false,
+                'cliches' => false,
+                'eprime' => false,
+            ],
+        ];
+    }
+
+    /**
+     * @return array{spelling_enabled: bool, grammar_enabled: bool, grammar_checks: array<string, bool>}
+     */
+    public static function globalProofreadingConfig(): array
+    {
+        $json = AppSetting::get('proofreading_config');
+
+        if ($json) {
+            $decoded = is_string($json) ? json_decode($json, true) : $json;
+
+            if (is_array($decoded) && ! empty($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return self::defaultProofreadingConfig();
     }
 
     /**

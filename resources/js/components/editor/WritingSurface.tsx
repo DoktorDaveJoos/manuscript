@@ -8,7 +8,7 @@ import {
     cancelTypewriterAnimation,
     centerCursorInContainer,
 } from '@/extensions/TypewriterScrollExtension';
-import type { Scene } from '@/types/models';
+import type { ProofreadingConfig, Scene } from '@/types/models';
 import ChapterFindBar from './ChapterFindBar';
 import { DEFAULT_FONT_ID, getFontFamily } from './FontSelector';
 import { DEFAULT_FONT_SIZE } from './FontSizeSelector';
@@ -49,6 +49,9 @@ export default function WritingSurface({
     onLocalFindClose,
     autoSelectTitle,
     onTitleSelectHandled,
+    proofreadingConfig,
+    bookLanguage,
+    spellcheckEnabled,
 }: {
     scenes: Scene[];
     bookId: number;
@@ -74,6 +77,9 @@ export default function WritingSurface({
     isLocalFindOpen?: boolean;
     localFindShowReplace?: boolean;
     onLocalFindClose?: () => void;
+    proofreadingConfig?: ProofreadingConfig;
+    bookLanguage?: string;
+    spellcheckEnabled?: boolean;
 }) {
     const { t } = useTranslation('editor');
 
@@ -413,6 +419,9 @@ export default function WritingSurface({
                                 searchHighlight={
                                     isLocalFindOpen ? null : searchHighlight
                                 }
+                                proofreadingConfig={proofreadingConfig}
+                                bookLanguage={bookLanguage}
+                                spellcheckEnabled={spellcheckEnabled}
                             />
                         ))}
                     </div>
