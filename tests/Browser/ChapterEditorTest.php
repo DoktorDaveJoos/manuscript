@@ -102,3 +102,17 @@ it('ai panel remounts cleanly when switching panes in splitscreen', function () 
         ->click("[data-pane-chapter='{$chapters[0]->id}']")
         ->assertNoJavaScriptErrors();
 });
+
+it('ai chat drawer remounts cleanly when switching panes in splitscreen', function () {
+    [$book, $chapters] = createBookWithChapters(2);
+
+    $page = visit("/books/{$book->id}/editor?panes={$chapters[0]->id},{$chapters[1]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->click('[data-access-bar="chat"]')
+        ->assertNoJavaScriptErrors()
+        ->click("[data-pane-chapter='{$chapters[1]->id}']")
+        ->assertNoJavaScriptErrors()
+        ->click("[data-pane-chapter='{$chapters[0]->id}']")
+        ->assertNoJavaScriptErrors();
+});
