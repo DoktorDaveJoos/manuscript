@@ -115,11 +115,25 @@ class ChapterController extends Controller
             'characters' => fn ($q) => $q->select('characters.id', 'characters.name'),
         ]);
 
+        $latestCompletedReview = $book->editorialReviews()
+            ->where('status', 'completed')
+            ->latest()
+            ->first();
+
+        $editorialChapterNote = null;
+        if ($latestCompletedReview) {
+            $reviewNote = $latestCompletedReview->chapterNotes()
+                ->where('chapter_id', $chapter->id)
+                ->first();
+            $editorialChapterNote = $reviewNote?->notes['chapter_note'] ?? null;
+        }
+
         return response()->json([
             'chapter' => $chapter,
             'prosePassRules' => Book::globalProsePassRules(),
             'proofreadingConfig' => Book::globalProofreadingConfig(),
             'customDictionary' => $book->custom_dictionary ?? [],
+            'editorialChapterNote' => $editorialChapterNote,
         ]);
     }
 

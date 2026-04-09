@@ -2,6 +2,9 @@
 
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\EditorialReview;
+use App\Models\EditorialReviewChapterNote;
+use App\Models\License;
 use App\Models\Storyline;
 
 it('shows empty state when book has no chapters', function () {
@@ -115,4 +118,38 @@ it('ai chat drawer remounts cleanly when switching panes in splitscreen', functi
         ->assertNoJavaScriptErrors()
         ->click("[data-pane-chapter='{$chapters[0]->id}']")
         ->assertNoJavaScriptErrors();
+});
+
+it('editorial panel shows chapter-specific note in splitscreen', function () {
+    License::factory()->create();
+
+    [$book, $chapters] = createBookWithChapters(2);
+
+    $review = EditorialReview::factory()->for($book)->create([
+        'status' => 'completed',
+    ]);
+
+    EditorialReviewChapterNote::factory()
+        ->for($review)
+        ->for($chapters[0])
+        ->create([
+            'notes' => ['chapter_note' => 'Note for chapter one'],
+        ]);
+
+    EditorialReviewChapterNote::factory()
+        ->for($review)
+        ->for($chapters[1])
+        ->create([
+            'notes' => ['chapter_note' => 'Note for chapter two'],
+        ]);
+
+    $page = visit("/books/{$book->id}/editor?panes={$chapters[0]->id},{$chapters[1]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->click('[data-access-bar="editorial"]')
+        ->assertSee('Note for chapter one')
+        ->click("[data-pane-chapter='{$chapters[1]->id}']")
+        ->assertSee('Note for chapter two')
+        ->click("[data-pane-chapter='{$chapters[0]->id}']")
+        ->assertSee('Note for chapter one');
 });

@@ -712,13 +712,19 @@ export default function EditorPage({
                             storageKey="manuscript:editorial-panel-width"
                             defaultWidth={280}
                         >
-                            <EditorialReviewPanel
-                                chapterNote={null}
-                                editorialReviewUrl={editorialReviewIndex.url(
-                                    book,
-                                )}
-                                onClose={closeEditorial}
-                            />
+                            {focusedChapter && (
+                                <EditorialReviewPanel
+                                    key={focusedChapter.id}
+                                    chapterNote={
+                                        focusedChapterData?.editorialChapterNote ??
+                                        null
+                                    }
+                                    editorialReviewUrl={editorialReviewIndex.url(
+                                        book,
+                                    )}
+                                    onClose={closeEditorial}
+                                />
+                            )}
                         </SlidePanel>
 
                         <AccessBar
