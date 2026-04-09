@@ -20,6 +20,7 @@ export type ChapterData = {
     prosePassRules?: ProsePassRule[];
     proofreadingConfig?: ProofreadingConfig;
     customDictionary?: string[];
+    editorialChapterNote?: string | null;
 };
 
 type UseChapterDataReturn = {
