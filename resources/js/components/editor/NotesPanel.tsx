@@ -677,6 +677,7 @@ export default function NotesPanel({
                                 {bullet}
                                 <input
                                     ref={inputRef}
+                                    data-notes-input
                                     type="text"
                                     value={line.text}
                                     onChange={handleLineChange}

@@ -11,12 +11,14 @@ export type AccessBarItemConfig = {
 };
 
 function AccessBarItem({
+    id,
     icon: Icon,
     label,
     isActive,
     badge,
     onClick,
 }: {
+    id: PanelId;
     icon: React.ComponentType<{ size?: number }>;
     label: string;
     isActive: boolean;
@@ -27,6 +29,7 @@ function AccessBarItem({
         <div className="group relative">
             <button
                 type="button"
+                data-access-bar={id}
                 onClick={onClick}
                 className={cn(
                     'flex size-8 items-center justify-center rounded-md transition-colors',
@@ -63,6 +66,7 @@ export default function AccessBar({
             {items.map((item) => (
                 <AccessBarItem
                     key={item.id}
+                    id={item.id}
                     icon={item.icon}
                     label={item.label}
                     isActive={openPanels.has(item.id)}
