@@ -216,9 +216,10 @@ export default function EditorPage({
     }, []);
 
     const handleNotesChange = useCallback((notes: string | null) => {
-        setFocusedChapterData((prev) =>
-            prev ? { ...prev, chapter: { ...prev.chapter, notes } } : prev,
-        );
+        setFocusedChapterData((prev) => {
+            if (!prev || prev.chapter.notes === notes) return prev;
+            return { ...prev, chapter: { ...prev.chapter, notes } };
+        });
     }, []);
 
     const focusedChapterId = focusedPane?.chapterId ?? null;
@@ -706,13 +707,13 @@ export default function EditorPage({
                             </SlidePanel>
                         )}
 
-                        <SlidePanel
-                            open={openPanels.has('editorial') && aiVisible}
-                            onClose={closeEditorial}
-                            storageKey="manuscript:editorial-panel-width"
-                            defaultWidth={280}
-                        >
-                            {focusedChapter && (
+                        {focusedChapter && (
+                            <SlidePanel
+                                open={openPanels.has('editorial') && aiVisible}
+                                onClose={closeEditorial}
+                                storageKey="manuscript:editorial-panel-width"
+                                defaultWidth={280}
+                            >
                                 <EditorialReviewPanel
                                     key={focusedChapter.id}
                                     chapterNote={
@@ -724,8 +725,8 @@ export default function EditorPage({
                                     )}
                                     onClose={closeEditorial}
                                 />
-                            )}
-                        </SlidePanel>
+                            </SlidePanel>
+                        )}
 
                         <AccessBar
                             items={accessBarItems}
