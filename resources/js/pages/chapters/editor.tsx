@@ -215,6 +215,13 @@ export default function EditorPage({
         setFocusedChapterData(data);
     }, []);
 
+    const handleNotesChange = useCallback((notes: string | null) => {
+        setFocusedChapterData((prev) => {
+            if (!prev || prev.chapter.notes === notes) return prev;
+            return { ...prev, chapter: { ...prev.chapter, notes } };
+        });
+    }, []);
+
     const focusedChapterId = focusedPane?.chapterId ?? null;
 
     // ── Save status (per-pane tracking) ────────────────────────────────
@@ -617,6 +624,7 @@ export default function EditorPage({
                                 maxWidth={600}
                             >
                                 <WikiPanel
+                                    key={focusedChapter.id}
                                     book={book}
                                     chapter={focusedChapter}
                                     onClose={closeWiki}
@@ -636,6 +644,7 @@ export default function EditorPage({
                                     bookId={book.id}
                                     chapterId={focusedChapter.id}
                                     initialNotes={focusedChapter.notes}
+                                    onNotesChange={handleNotesChange}
                                     onClose={closeNotes}
                                 />
                             </SlidePanel>
@@ -663,6 +672,7 @@ export default function EditorPage({
                                 defaultWidth={272}
                             >
                                 <AiPanel
+                                    key={focusedChapter.id}
                                     characters={
                                         (focusedChapter.characters as
                                             | (Character & {
@@ -697,20 +707,26 @@ export default function EditorPage({
                             </SlidePanel>
                         )}
 
-                        <SlidePanel
-                            open={openPanels.has('editorial') && aiVisible}
-                            onClose={closeEditorial}
-                            storageKey="manuscript:editorial-panel-width"
-                            defaultWidth={280}
-                        >
-                            <EditorialReviewPanel
-                                chapterNote={null}
-                                editorialReviewUrl={editorialReviewIndex.url(
-                                    book,
-                                )}
+                        {focusedChapter && (
+                            <SlidePanel
+                                open={openPanels.has('editorial') && aiVisible}
                                 onClose={closeEditorial}
-                            />
-                        </SlidePanel>
+                                storageKey="manuscript:editorial-panel-width"
+                                defaultWidth={280}
+                            >
+                                <EditorialReviewPanel
+                                    key={focusedChapter.id}
+                                    chapterNote={
+                                        focusedChapterData?.editorialChapterNote ??
+                                        null
+                                    }
+                                    editorialReviewUrl={editorialReviewIndex.url(
+                                        book,
+                                    )}
+                                    onClose={closeEditorial}
+                                />
+                            </SlidePanel>
+                        )}
 
                         <AccessBar
                             items={accessBarItems}

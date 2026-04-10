@@ -23,6 +23,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
 import SectionLabel from '@/components/ui/SectionLabel';
+import Textarea from '@/components/ui/Textarea';
 import WikiAvatar from '@/components/wiki/WikiAvatar';
 import type { WikiTab } from '@/components/wiki/WikiTabBar';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
@@ -332,10 +333,18 @@ function EditableDescription({
 }) {
     const [localValue, setLocalValue] = useState(value);
     const debouncedOnChange = useDebouncedCallback(onChange, 1500);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         setLocalValue(value);
     }, [value]);
+
+    useEffect(() => {
+        const el = textareaRef.current;
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = `${el.scrollHeight}px`;
+    }, [localValue]);
 
     const handleChange = useCallback(
         (newValue: string) => {
@@ -348,14 +357,12 @@ function EditableDescription({
     return (
         <div className="flex flex-col gap-1.5">
             <SectionLabel variant="section">{label}</SectionLabel>
-            <textarea
+            <Textarea
+                ref={textareaRef}
                 value={localValue}
                 onChange={(e) => handleChange(e.target.value)}
-                rows={3}
-                className={cn(
-                    'w-full resize-none rounded-md border border-transparent bg-transparent text-[12px] leading-relaxed text-ink',
-                    'placeholder:text-ink-faint focus:border-border focus:outline-none',
-                )}
+                rows={1}
+                className="border-transparent bg-transparent text-[12px] leading-relaxed focus:border-border focus:ring-0"
                 placeholder="Add a description..."
             />
         </div>

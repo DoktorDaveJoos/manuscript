@@ -40,6 +40,7 @@ import NavItem from '@/components/ui/NavItem';
 import PageHeader from '@/components/ui/PageHeader';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/RadioGroup';
 import SectionLabel from '@/components/ui/SectionLabel';
+import Textarea from '@/components/ui/Textarea';
 import Toggle from '@/components/ui/Toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
@@ -838,12 +839,12 @@ function MarkdownTextareaSection({
                                 </span>
                             )}
                         </div>
-                        <textarea
+                        <Textarea
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                             onBlur={handleSave}
                             placeholder={t(`${i18nPrefix}.placeholder`)}
-                            className="h-[200px] w-full resize-y rounded-b-md border border-t-0 border-border bg-surface-card px-3 py-2.5 font-mono text-[13px] leading-[1.7] text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
+                            className="h-[200px] resize-y rounded-t-none border-t-0 font-mono leading-[1.7]"
                         />
                     </div>
                 </div>

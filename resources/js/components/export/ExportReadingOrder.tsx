@@ -284,7 +284,7 @@ export default function ExportReadingOrder({
     return (
         <aside
             ref={panelRef}
-            className="relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border-subtle bg-white transition-[width] duration-200 ease-out dark:bg-surface-card"
+            className="relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border-subtle bg-surface-card transition-[width] duration-200 ease-out"
             style={{ width }}
         >
             {isCollapsed ? (
@@ -413,7 +413,7 @@ export default function ExportReadingOrder({
 
                                             <DragOverlay>
                                                 {activeChapter && (
-                                                    <div className="flex items-center gap-2 rounded bg-white px-2 py-1 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A] dark:bg-surface-card">
+                                                    <div className="flex items-center gap-2 rounded bg-surface-card px-2 py-1 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
                                                         <span className="flex shrink-0 items-center text-ink-faint">
                                                             <GripVertical className="h-3 w-3" />
                                                         </span>

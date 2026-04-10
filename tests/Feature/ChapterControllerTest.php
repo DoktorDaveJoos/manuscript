@@ -488,6 +488,20 @@ test('updateNotes validates max length', function () {
     ])->assertUnprocessable();
 });
 
+test('notes survive round-trip through showJson endpoint', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['notes' => null]);
+
+    $this->patchJson(route('chapters.updateNotes', [$book, $chapter]), [
+        'notes' => 'Round-trip test note',
+    ])->assertOk();
+
+    $this->getJson(route('chapters.show.json', [$book, $chapter]))
+        ->assertOk()
+        ->assertJsonPath('chapter.notes', 'Round-trip test note');
+});
+
 test('createSnapshot creates new version with snapshot source', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();

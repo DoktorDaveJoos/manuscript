@@ -3,7 +3,7 @@ import { forwardRef, type TextareaHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 const textareaVariants = cva(
-    'w-full rounded-md border border-border bg-white dark:bg-surface-card text-ink placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-ink resize-none disabled:opacity-60',
+    'w-full rounded-md border border-border bg-surface-card text-ink placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-ink resize-none disabled:opacity-60',
     {
         variants: {
             variant: {

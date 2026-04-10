@@ -283,3 +283,57 @@ Wayfinder generates TypeScript functions for Laravel routes. Import from `@/acti
 
 - When the user asks for implementation, prioritize code changes over planning documents. Only produce a plan if explicitly asked for one.
 - Try the simplest approach first. Before committing to a complex solution, briefly state the approach and wait for confirmation if there are multiple options.
+
+## Worktree Bootstrap (CRITICAL)
+
+The main repo's `.env` is sacred — its `APP_KEY` decrypts the user's runtime AI provider credentials in `database/nativephp.sqlite`. If overwritten, the data is **unrecoverable**. A `~/.claude/hooks/protect-manuscript-env.py` PreToolUse hook now blocks the most dangerous patterns, but you must ALSO follow these rules so the hook is a backstop, not the only line of defense:
+
+- Bash tool calls do **NOT** inherit `cwd` from a previous Bash call. Each invocation starts in the parent shell's default cwd (the main repo). Any worktree-targeting bootstrap command MUST start with `cd <full-worktree-path> && ...` — chained in a single Bash call.
+- Bootstrap commands that REQUIRE a leading `cd <worktree>`:
+  - `cp .env.example .env`
+  - `php artisan key:generate`
+  - `php artisan migrate:fresh`, `migrate:reset`, `db:wipe`
+  - Any redirect/tee/sed targeting `.env`
+- Before any bootstrap, verify: `pwd && [ -f .env ] && echo "EXISTS — DO NOT OVERWRITE" || echo "ok to bootstrap"`.
+- If a worktree already has a `.env`, do not overwrite it. Reuse it.
+- The `protect-manuscript-env.py` hook will block these patterns when cwd is the main repo. If it blocks you, that means you forgot the `cd` — fix the command, do not bypass the hook.
+
+## Batch Workflow (`/batch`) Rules
+
+When orchestrating parallel agents via `/batch`:
+
+### Decomposition
+- **Foundation-first**: Identify any shared infrastructure (test selectors like `data-*` attributes, type changes, factory additions, shared imports) BEFORE splitting work. Land it as Unit 0 in a single PR. Sibling units depend on Unit 0 having merged. Never let two agents add the same line to the same file — git's auto-merge will silently produce duplicates.
+- **Slice by file or by module, never by line**. Two units touching different functions in `editor.tsx` is fine; two units touching the same JSX element is not.
+
+### Concurrency
+- **Cap parallel agents at 3**. API 529 overload during the multi-panel batch killed 4/7 agents in flight. Three at a time roughly doubles wall time but the recovery path is much shorter when one dies.
+- **Stagger launches** if you must exceed 3 — give each subagent a few seconds head start before launching the next.
+
+### Verification (mandatory after each agent notification)
+The `<task-notification>` "completed" status only means the agent process exited. It does NOT mean the work landed. After every notification, before marking a unit "done":
+1. `gh pr view <num> --json state,mergeable` — must return a real PR (not empty/error)
+2. `git -C <worktree-path> status -s` — must be clean if the agent claims a PR
+3. `git -C <worktree-path> log --oneline -1` — must show a unit-specific commit, not just the base
+4. If ANY check fails → unit is "incomplete," not "done." Either retry or salvage carefully (see Salvage Protocol below).
+5. **Never trust the agent's `PR: <url>` text alone** — verify with `gh pr view`.
+
+### Salvage Protocol (failed worktree pickup)
+
+When an agent dies mid-task with uncommitted work in its worktree, picking up the work is risky. Auto-merge from rebases and post-Edit format hooks can introduce duplicate lines, broken imports, or unmerged conflict markers that the diff alone won't catch. Mandatory steps:
+
+1. `git -C <worktree> status -s` — list every uncommitted file
+2. **Read every uncommitted file fully with the Read tool** — do not trust the diff or auto-merge output. Look for: duplicate lines, unmerged `<<<<<<<` markers, format-hook artifacts (e.g., duplicate imports, repeated attributes).
+3. Run the unit's tests in the worktree before committing
+4. Commit + push + `gh pr create`
+5. Verify with `gh pr view <num>`
+6. If the worktree was bootstrapped by the failed agent, **never re-run bootstrap** — trust the existing `.env` / `vendor` / `node_modules`. Re-bootstrap risks the cwd-confusion class of bug.
+
+### Conflict resolution after sibling-PR merges
+
+When rebasing a sibling PR onto a freshly merged base:
+1. Run `git rebase origin/dev` — it will fail with conflicts
+2. For EACH conflicted file: `Read` it fully (not just the conflict region), resolve, save with `Write`
+3. After `git add` + `git rebase --continue`, **`Read` the rebased file again** to check for auto-merge artifacts (duplicate lines from line-adjacent edits)
+4. Run the affected tests before force-pushing
+5. Force-push with `--force-with-lease` (never `--force`)

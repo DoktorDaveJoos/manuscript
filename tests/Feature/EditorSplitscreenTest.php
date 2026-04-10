@@ -2,6 +2,7 @@
 
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\Storyline;
 
 it('loads editor page with single pane from query', function () {
     $book = Book::factory()->create();
@@ -60,4 +61,22 @@ it('shows empty state when book has no chapters', function () {
 
     $response->assertOk()
         ->assertInertia(fn ($page) => $page->component('chapters/empty'));
+});
+
+it('saves notes independently for two chapters in splitscreen', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapterA = Chapter::factory()->for($book)->for($storyline)->create(['notes' => null]);
+    $chapterB = Chapter::factory()->for($book)->for($storyline)->create(['notes' => null]);
+
+    $this->patchJson(route('chapters.updateNotes', [$book, $chapterA]), [
+        'notes' => 'Notes for A',
+    ])->assertOk();
+
+    $this->patchJson(route('chapters.updateNotes', [$book, $chapterB]), [
+        'notes' => 'Notes for B',
+    ])->assertOk();
+
+    expect($chapterA->fresh()->notes)->toBe('Notes for A');
+    expect($chapterB->fresh()->notes)->toBe('Notes for B');
 });

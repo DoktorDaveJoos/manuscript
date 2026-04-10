@@ -327,8 +327,15 @@ push_merge_and_tag() {
     echo "  Commits:  ${COMMIT_COUNT}"
     echo "  Checks:   all passed"
     echo ""
-    echo "  The publish workflow will build the DMGs and create the release."
-    echo "  Monitor: ${DIM}gh run watch${RESET}"
+    echo "  The publish workflow will build the DMGs and upload them as a"
+    echo "  ${BOLD}draft${RESET} release. The release stays a draft until you verify it."
+    echo ""
+    echo "  Next steps:"
+    echo "    1. Wait for CI to finish:        ${DIM}gh run watch${RESET}"
+    echo "    2. Install + verify the draft on macOS and Windows"
+    echo "    3. Promote the draft to live:    ${DIM}composer release:promote v${NEW_VERSION}${RESET}"
+    echo ""
+    echo "  See ${DIM}docs/releasing.md${RESET} for the verification checklist."
     echo ""
 }
 

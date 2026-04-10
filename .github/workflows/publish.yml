@@ -213,16 +213,3 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
           SENTRY_RELEASE: ${{ github.ref_name }}
         run: php artisan native:publish win x64 --no-interaction
-
-  publish-release:
-    needs: [build-macos, build-windows]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Publish release
-        run: gh release edit ${{ github.ref_name }} --draft=false --title "Manuscript ${{ github.ref_name }}" --repo ${{ github.repository }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

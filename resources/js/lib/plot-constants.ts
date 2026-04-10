@@ -25,14 +25,37 @@ export const NEXT_STATUS: Record<PlotPointStatus, PlotPointStatus> = {
     abandoned: 'planned',
 };
 
-// TODO: These decorative act-specific color gradations have no direct token matches.
-// Consider defining CSS variables (--color-act-1-bg, etc.) if they need dark mode support.
 export const ACT_COLORS = [
-    { bg: '#FAF3EB', border: '#E8D5BE', label: '#C49A6C', track: '#EDE5DA' },
-    { bg: '#F8EDE2', border: '#D4B89A', label: '#B87333', track: '#EDE0D2' },
-    { bg: '#F3ECE4', border: '#C4B8A8', label: '#8B6F47', track: '#E2DCD4' },
-    { bg: '#F0E8DF', border: '#C8B8A4', label: '#8B6F47', track: '#E5DDD4' },
-    { bg: '#EBE4DB', border: '#BAA996', label: '#6B5A40', track: '#DDD6CC' },
+    {
+        bg: 'var(--color-act-1-bg)',
+        border: 'var(--color-act-1-border)',
+        label: 'var(--color-act-1-label)',
+        track: 'var(--color-act-1-track)',
+    },
+    {
+        bg: 'var(--color-act-2-bg)',
+        border: 'var(--color-act-2-border)',
+        label: 'var(--color-act-2-label)',
+        track: 'var(--color-act-2-track)',
+    },
+    {
+        bg: 'var(--color-act-3-bg)',
+        border: 'var(--color-act-3-border)',
+        label: 'var(--color-act-3-label)',
+        track: 'var(--color-act-3-track)',
+    },
+    {
+        bg: 'var(--color-act-4-bg)',
+        border: 'var(--color-act-4-border)',
+        label: 'var(--color-act-4-label)',
+        track: 'var(--color-act-4-track)',
+    },
+    {
+        bg: 'var(--color-act-5-bg)',
+        border: 'var(--color-act-5-border)',
+        label: 'var(--color-act-5-label)',
+        track: 'var(--color-act-5-track)',
+    },
 ] as const;
 
 export function getActColor(index: number) {

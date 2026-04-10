@@ -46,7 +46,7 @@ export default function ChapterCombobox({
                 <PopoverTrigger asChild>
                     <button
                         type="button"
-                        className="flex w-full items-center gap-2 rounded-md border border-border bg-white px-3 py-2 text-[13px] text-ink-faint transition-colors hover:border-ink-faint dark:bg-surface-card"
+                        className="flex w-full items-center gap-2 rounded-md border border-border bg-surface-card px-3 py-2 text-[13px] text-ink-faint transition-colors hover:border-ink-faint"
                     >
                         <span>{t('field.searchChapters')}</span>
                     </button>
