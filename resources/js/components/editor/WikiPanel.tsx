@@ -57,13 +57,14 @@ export default function WikiPanel({
     });
     const [sessionEntries, setSessionEntries] = useState<PanelEntry[]>([]);
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-    const [expandedId, setExpandedId] = useState<string | null>(() => {
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
         try {
-            return localStorage.getItem(
+            const stored = localStorage.getItem(
                 `manuscript:wiki-expanded:${chapter.id}`,
             );
+            return stored ? new Set(JSON.parse(stored) as string[]) : new Set();
         } catch {
-            return null;
+            return new Set();
         }
     });
     const [loading, setLoading] = useState(false);
@@ -104,11 +105,14 @@ export default function WikiPanel({
         setSessionEntries([]);
         // Restore expanded state for the new chapter
         try {
-            setExpandedId(
-                localStorage.getItem(`manuscript:wiki-expanded:${chapter.id}`),
+            const stored = localStorage.getItem(
+                `manuscript:wiki-expanded:${chapter.id}`,
+            );
+            setExpandedIds(
+                stored ? new Set(JSON.parse(stored) as string[]) : new Set(),
             );
         } catch {
-            setExpandedId(null);
+            setExpandedIds(new Set());
         }
     }, [fetchConnected]);
 
@@ -116,15 +120,15 @@ export default function WikiPanel({
     useEffect(() => {
         try {
             const key = `manuscript:wiki-expanded:${chapter.id}`;
-            if (expandedId) {
-                localStorage.setItem(key, expandedId);
+            if (expandedIds.size > 0) {
+                localStorage.setItem(key, JSON.stringify([...expandedIds]));
             } else {
                 localStorage.removeItem(key);
             }
         } catch {
             /* no-op */
         }
-    }, [expandedId, chapter.id]);
+    }, [expandedIds, chapter.id]);
 
     useEffect(() => {
         return () => {
@@ -331,6 +335,13 @@ export default function WikiPanel({
     );
 
     const makeCardKey = (entryType: string, id: number) => `${entryType}-${id}`;
+    const toggleExpanded = (key: string) =>
+        setExpandedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
     const isEmpty = connectedList.length === 0 && sessionEntries.length === 0;
 
     return (
@@ -362,11 +373,9 @@ export default function WikiPanel({
                                         entry={entry}
                                         entryType={entryType}
                                         isConnected
-                                        isExpanded={expandedId === key}
+                                        isExpanded={expandedIds.has(key)}
                                         onToggleExpand={() =>
-                                            setExpandedId(
-                                                expandedId === key ? null : key,
-                                            )
+                                            toggleExpanded(key)
                                         }
                                         onDisconnect={() =>
                                             handleDisconnect(
@@ -417,10 +426,8 @@ export default function WikiPanel({
                             entry={entry}
                             entryType={entryType}
                             isConnected={false}
-                            isExpanded={expandedId === key}
-                            onToggleExpand={() =>
-                                setExpandedId(expandedId === key ? null : key)
-                            }
+                            isExpanded={expandedIds.has(key)}
+                            onToggleExpand={() => toggleExpanded(key)}
                             onDismiss={() => handleDismiss(entryType, entry.id)}
                             onConnect={(role) =>
                                 handleConnect(entryType, entry.id, role)

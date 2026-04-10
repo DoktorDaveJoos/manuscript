@@ -332,10 +332,18 @@ function EditableDescription({
 }) {
     const [localValue, setLocalValue] = useState(value);
     const debouncedOnChange = useDebouncedCallback(onChange, 1500);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         setLocalValue(value);
     }, [value]);
+
+    useEffect(() => {
+        const el = textareaRef.current;
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = `${el.scrollHeight}px`;
+    }, [localValue]);
 
     const handleChange = useCallback(
         (newValue: string) => {
@@ -349,9 +357,10 @@ function EditableDescription({
         <div className="flex flex-col gap-1.5">
             <SectionLabel variant="section">{label}</SectionLabel>
             <textarea
+                ref={textareaRef}
                 value={localValue}
                 onChange={(e) => handleChange(e.target.value)}
-                rows={3}
+                rows={1}
                 className={cn(
                     'w-full resize-none rounded-md border border-transparent bg-transparent text-[12px] leading-relaxed text-ink',
                     'placeholder:text-ink-faint focus:border-border focus:outline-none',
