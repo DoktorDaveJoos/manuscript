@@ -115,6 +115,10 @@
         "release": [
             "Composer\\Config::disableProcessTimeout",
             "bash scripts/release.sh"
+        ],
+        "release:promote": [
+            "Composer\\Config::disableProcessTimeout",
+            "bash scripts/release-promote.sh"
         ]
     },
     "extra": {
