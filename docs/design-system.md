@@ -94,6 +94,20 @@ Defined in `resources/css/app.css` via `@theme` (light) and `html.dark` (dark ov
 
 **Always use these tokens for plot point colors** — never hardcode hex values. The tokens have dark mode variants.
 
+### Act Colors (5 rotating sets)
+
+Used for act header backgrounds, top borders, label text, and progress bar tracks. Consumed via `ACT_COLORS` in `lib/plot-constants.ts` as CSS `var()` references.
+
+| Set | Bg | Border | Label | Track |
+|---|---|---|---|---|
+| Act 1 | `--color-act-1-bg` | `--color-act-1-border` | `--color-act-1-label` | `--color-act-1-track` |
+| Act 2 | `--color-act-2-bg` | `--color-act-2-border` | `--color-act-2-label` | `--color-act-2-track` |
+| Act 3 | `--color-act-3-bg` | `--color-act-3-border` | `--color-act-3-label` | `--color-act-3-track` |
+| Act 4 | `--color-act-4-bg` | `--color-act-4-border` | `--color-act-4-label` | `--color-act-4-track` |
+| Act 5 | `--color-act-5-bg` | `--color-act-5-border` | `--color-act-5-label` | `--color-act-5-track` |
+
+Acts cycle through these 5 sets (`index % 5`). Both light and dark variants are defined in `app.css`.
+
 ### Color Psychology
 
 - White (#ffffff) for UI chrome = clarity, openness, trust
