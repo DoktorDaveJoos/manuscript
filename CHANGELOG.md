@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.4.6 (2026-04-10)
+
+### Features
+
+- two-step release with draft gate and promote script (aca08cd)
+- multi-expand cards + auto-resize descriptions (eb94b09)
+- wire EditorialReviewPanel chapter note from latest review (cd36322)
+
+### Fixes
+
+- audit and fix dark mode across all shared components and pages (522a66e)
+- keep panel state in sync across chapters in single + split view (46db6eb)
+
+### Other Changes
+
+- replace hardcoded act colors with CSS custom properties (5c4efed)
+- update features and adopt clean literary tone (3c5bf7d)
+- batch workflow rules + salvage protocol + worktree bootstrap (012ff3e)
+- guard handleNotesChange + align EditorialReviewPanel wrap (af8fbba)
+- regression test for AiChatDrawer multi-pane behavior (638b041)
+- splitscreen notes per-chapter regression test (39fa70c)
+- add notes round-trip regression test (af031d9)
+
+
 ## v0.4.5 (2026-04-08)
 
 ### Features
