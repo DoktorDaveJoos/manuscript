@@ -21,11 +21,11 @@ export default function TemplateCard({
             onClick={onClick}
             className={cn(
                 'flex h-[200px] w-[160px] shrink-0 flex-col overflow-hidden rounded-lg border p-4 text-left transition-all',
-                'bg-white',
+                'bg-surface-card',
                 'shadow-[0_2px_8px_#00000008] dark:shadow-[0_2px_8px_#00000020]',
                 isSelected
                     ? 'border-accent ring-2 ring-accent'
-                    : 'hover:border-border-strong border-border-light',
+                    : 'border-border-light hover:border-ink-faint',
             )}
         >
             <span

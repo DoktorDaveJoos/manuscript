@@ -647,7 +647,7 @@ export default function Plot({
 
                                     <DragOverlay>
                                         {activeItem?.type === 'beat' && (
-                                            <div className="flex items-center gap-2 rounded bg-white px-2 py-1 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A] dark:bg-surface-card">
+                                            <div className="flex items-center gap-2 rounded bg-surface-card px-2 py-1 opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
                                                 <span className="flex shrink-0 items-center text-ink-faint">
                                                     <GripVertical className="h-3 w-3" />
                                                 </span>

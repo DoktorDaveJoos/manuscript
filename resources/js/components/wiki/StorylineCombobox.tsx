@@ -39,7 +39,7 @@ export default function StorylineCombobox({
                 <PopoverTrigger asChild>
                     <button
                         type="button"
-                        className="flex w-full flex-wrap items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-left text-[13px] transition-colors hover:border-ink-faint dark:bg-surface-card"
+                        className="flex w-full flex-wrap items-center gap-1.5 rounded-md border border-border bg-surface-card px-3 py-2 text-left text-[13px] transition-colors hover:border-ink-faint"
                     >
                         {hasSelected ? (
                             selectedStorylines.map((s) => (

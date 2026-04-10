@@ -62,7 +62,7 @@ export default function AccessBar({
     onToggle: (panel: PanelId) => void;
 }) {
     return (
-        <aside className="flex h-full w-12 shrink-0 flex-col items-center gap-1 border-l border-border-light bg-white pt-3 dark:bg-surface-card">
+        <aside className="flex h-full w-12 shrink-0 flex-col items-center gap-1 border-l border-border-light bg-surface-card pt-3">
             {items.map((item) => (
                 <AccessBarItem
                     key={item.id}

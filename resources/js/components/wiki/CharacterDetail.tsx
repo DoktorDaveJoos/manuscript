@@ -79,7 +79,7 @@ export default function CharacterDetail({
 
             {/* AI Description */}
             {character.ai_description && (
-                <Card className="bg-surface-base flex flex-col gap-3 border-border-subtle p-6">
+                <Card className="flex flex-col gap-3 border-border-subtle bg-neutral-bg p-6">
                     <SectionLabel>{t('description.ai')}</SectionLabel>
                     <DescriptionBlock
                         text={character.ai_description}

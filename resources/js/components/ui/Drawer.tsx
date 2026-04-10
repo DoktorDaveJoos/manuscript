@@ -14,7 +14,7 @@ export default function Drawer({ onClose, className, children }: DrawerProps) {
                 <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/5" />
                 <DialogPrimitive.Content
                     className={cn(
-                        'fixed top-0 right-0 bottom-0 z-50 flex w-[320px] flex-col border-l border-border bg-surface-card shadow-[-4px_0_24px_rgba(0,0,0,0.06)] animate-[slideInRight_150ms_ease-out]',
+                        'fixed top-0 right-0 bottom-0 z-50 flex w-[320px] flex-col border-l border-border bg-surface-card shadow-[-4px_0_24px_rgba(0,0,0,0.06)] dark:shadow-[-4px_0_24px_rgba(0,0,0,0.3)] animate-[slideInRight_150ms_ease-out]',
                         className,
                     )}
                 >

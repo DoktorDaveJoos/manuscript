@@ -13,7 +13,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
         >
             <SwitchPrimitive.Thumb
                 className={cn(
-                    'inline-block h-[14px] w-[14px] rounded-full bg-white shadow-sm transition-transform',
+                    'inline-block h-[14px] w-[14px] rounded-full bg-white shadow-sm transition-transform dark:bg-surface',
                     checked ? 'translate-x-[17px]' : 'translate-x-[3px]',
                 )}
             />

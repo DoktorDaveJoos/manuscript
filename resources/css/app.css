@@ -179,6 +179,26 @@
     --color-plot-worldbuilding-bg: #e8ecf2;
     --color-plot-worldbuilding-text: #586582;
     --color-surface-sidebar: #ffffff;
+    --color-act-1-bg: #faf3eb;
+    --color-act-1-border: #e8d5be;
+    --color-act-1-label: #c49a6c;
+    --color-act-1-track: #ede5da;
+    --color-act-2-bg: #f8ede2;
+    --color-act-2-border: #d4b89a;
+    --color-act-2-label: #b87333;
+    --color-act-2-track: #ede0d2;
+    --color-act-3-bg: #f3ece4;
+    --color-act-3-border: #c4b8a8;
+    --color-act-3-label: #8b6f47;
+    --color-act-3-track: #e2dcd4;
+    --color-act-4-bg: #f0e8df;
+    --color-act-4-border: #c8b8a4;
+    --color-act-4-label: #8b6f47;
+    --color-act-4-track: #e5ddd4;
+    --color-act-5-bg: #ebe4db;
+    --color-act-5-border: #baa996;
+    --color-act-5-label: #6b5a40;
+    --color-act-5-track: #ddd6cc;
 }
 
 html.dark {
@@ -221,6 +241,31 @@ html.dark {
     --color-plot-worldbuilding-bg: #282e38;
     --color-plot-worldbuilding-text: #8ea8c0;
     --color-surface-sidebar: var(--color-surface-card);
+    --color-act-1-bg: #2a2520;
+    --color-act-1-border: #4a3d30;
+    --color-act-1-label: #d4a878;
+    --color-act-1-track: #332c24;
+    --color-act-2-bg: #2e2620;
+    --color-act-2-border: #4e3e2e;
+    --color-act-2-label: #d4956a;
+    --color-act-2-track: #362e26;
+    --color-act-3-bg: #2c2822;
+    --color-act-3-border: #4a4035;
+    --color-act-3-label: #b89a6d;
+    --color-act-3-track: #342e28;
+    --color-act-4-bg: #2a2620;
+    --color-act-4-border: #4c4034;
+    --color-act-4-label: #b89a6d;
+    --color-act-4-track: #322c26;
+    --color-act-5-bg: #282420;
+    --color-act-5-border: #46392c;
+    --color-act-5-label: #a8916a;
+    --color-act-5-track: #302a24;
+
+    option {
+        background-color: var(--color-surface-card);
+        color: var(--color-ink);
+    }
 }
 
 @keyframes collapsible-down {

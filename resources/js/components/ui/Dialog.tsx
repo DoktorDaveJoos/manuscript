@@ -24,7 +24,7 @@ export default function Dialog({ onClose, width = 480, backdrop = 'dark', classN
                 <DialogPrimitive.Content
                     aria-describedby={undefined}
                     className={cn(
-                        'fixed top-1/2 left-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl bg-surface-card p-10 shadow-[0_8px_40px_rgba(0,0,0,0.08)]',
+                        'fixed top-1/2 left-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl bg-surface-card p-10 shadow-[0_8px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)]',
                         className,
                     )}
                     style={width ? { width } : undefined}

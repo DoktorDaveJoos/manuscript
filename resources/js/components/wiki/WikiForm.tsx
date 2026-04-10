@@ -313,7 +313,7 @@ export default function WikiForm({
                     label={t('field.aliases')}
                     labelClassName={wikiLabelClass}
                 >
-                    <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 dark:bg-surface-card">
+                    <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-surface-card px-3 py-2">
                         {characterForm.data.aliases.map((alias) => (
                             <Badge
                                 key={alias}
@@ -425,7 +425,7 @@ export default function WikiForm({
                     <span className={wikiLabelClass}>
                         {t('description.ai')}
                     </span>
-                    <div className="bg-surface-base rounded-md border border-border-subtle px-3 py-2.5">
+                    <div className="rounded-md border border-border-subtle bg-neutral-bg px-3 py-2.5">
                         <DescriptionBlock
                             text={item.ai_description}
                             className="text-[13px] leading-relaxed text-ink-muted"

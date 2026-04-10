@@ -24,7 +24,7 @@ const selectVariants = {
 };
 
 const selectBase =
-    'w-full cursor-pointer appearance-none border border-border-subtle bg-white dark:bg-surface-card text-ink transition-colors hover:border-border-strong focus:outline-none focus:ring-1 focus:ring-ink disabled:cursor-not-allowed disabled:opacity-50 dark:border-border';
+    'w-full cursor-pointer appearance-none border border-border bg-surface-card text-ink transition-colors hover:border-ink-faint focus:outline-none focus:ring-1 focus:ring-ink disabled:cursor-not-allowed disabled:opacity-50';
 
 type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
     variant?: 'default' | 'compact' | 'dialog';
