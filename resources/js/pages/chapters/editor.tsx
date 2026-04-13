@@ -165,7 +165,7 @@ export default function EditorPage({
     const { t: tAi } = useTranslation('ai');
     const { t: tEditorial } = useTranslation('editorial-review');
     const sidebarStorylines = useSidebarStorylines();
-    const { visible: aiVisible } = useAiFeatures();
+    const { usable: aiVisible } = useAiFeatures();
     const { app_settings } = usePage<{ app_settings: AppSettings }>().props;
 
     // ── Pane management ──────────────────────────────────────────────────
@@ -527,11 +527,12 @@ export default function EditorPage({
 
     // ── Create chapter from empty state / palette ────────────────────────
     const handleCreateChapter = useCallback(() => {
-        const firstStoryline = sidebarStorylines[0];
-        if (firstStoryline) {
-            createChapter(book.id, firstStoryline.id, sidebarStorylines);
+        const storylineId =
+            focusedChapter?.storyline_id ?? sidebarStorylines[0]?.id;
+        if (storylineId) {
+            createChapter(book.id, storylineId, sidebarStorylines);
         }
-    }, [book.id, sidebarStorylines]);
+    }, [book.id, focusedChapter?.storyline_id, sidebarStorylines]);
 
     // ── Find navigate ────────────────────────────────────────────────────
     const handleFindNavigate = useCallback(

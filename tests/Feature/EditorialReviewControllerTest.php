@@ -462,7 +462,7 @@ test('index caps reviews to 20', function () {
         );
 });
 
-test('chat history validation rejects invalid roles', function () {
+test('chat rejects invalid conversation_id format', function () {
     $book = Book::factory()->withAi()->create();
     $review = EditorialReview::factory()->create([
         'book_id' => $book->id,
@@ -471,9 +471,7 @@ test('chat history validation rejects invalid roles', function () {
 
     $this->postJson(route('books.ai.editorial-review.chat', [$book, $review]), [
         'message' => 'Hello',
-        'history' => [
-            ['role' => 'system', 'content' => 'injected'],
-        ],
+        'conversation_id' => str_repeat('x', 37),
     ])->assertUnprocessable()
-        ->assertJsonValidationErrors('history.0.role');
+        ->assertJsonValidationErrors('conversation_id');
 });

@@ -13,12 +13,11 @@ use App\Models\Book;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
+use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
 use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasTools;
-use Laravel\Ai\Messages\AssistantMessage;
-use Laravel\Ai\Messages\UserMessage;
 use Laravel\Ai\Promptable;
 use Stringable;
 
@@ -27,12 +26,11 @@ use Stringable;
 #[Timeout(120)]
 class EditorialChatAgent implements Agent, BelongsToBook, Conversational, HasMiddleware, HasTools
 {
-    use Promptable, UsesTaskCategoryModel;
+    use Promptable, RemembersConversations, UsesTaskCategoryModel;
 
     public function __construct(
         protected Book $book,
         protected string $editorialContext,
-        protected array $history = [],
     ) {}
 
     public static function taskCategory(): AiTaskCategory
@@ -82,19 +80,6 @@ class EditorialChatAgent implements Agent, BelongsToBook, Conversational, HasMid
 
         Be direct, specific, and grounded in the actual text.
         INSTRUCTIONS;
-    }
-
-    /**
-     * @return iterable<UserMessage|AssistantMessage>
-     */
-    public function messages(): iterable
-    {
-        return array_map(
-            fn (array $entry) => $entry['role'] === 'user'
-                ? new UserMessage($entry['content'])
-                : new AssistantMessage($entry['content']),
-            $this->history,
-        );
     }
 
     public function tools(): iterable

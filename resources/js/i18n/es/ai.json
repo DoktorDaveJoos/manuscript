@@ -80,6 +80,7 @@
     "role.mentioned": "Mencionado",
 
     "chat.connectionFailed": "La conexión falló. Por favor, intenta de nuevo.",
+    "chat.requestFailed": "Algo salió mal. Por favor, intenta de nuevo.",
     "chat.emptyState": "Pregunta lo que quieras sobre este capítulo — personajes, trama, estilo o ideas.",
     "chat.senderYou": "Tú",
     "chat.senderAi": "IA",
@@ -90,6 +91,8 @@
     "chat.bookContext": "Contexto del libro",
     "chat.thinking": "Pensando…",
     "chat.chapter": "Cap. {{number}}",
+    "chat.newConversation": "Nueva conversación",
+    "chat.loadingHistory": "Cargando conversación…",
 
     "preparation.title": "Preparación de IA",
     "preparation.requiresPro": "Requiere Pro",

@@ -81,6 +81,7 @@
     "role.mentioned": "Mentioned",
 
     "chat.connectionFailed": "Connection failed. Please try again.",
+    "chat.requestFailed": "Something went wrong. Please try again.",
     "chat.emptyState": "Ask anything about this chapter — characters, plot, style, or ideas.",
     "chat.senderYou": "You",
     "chat.senderAi": "AI",
@@ -92,6 +93,8 @@
     "chat.bookContext": "Book context",
     "chat.thinking": "Thinking…",
     "chat.chapter": "Ch. {{number}}",
+    "chat.newConversation": "New conversation",
+    "chat.loadingHistory": "Loading conversation…",
 
     "preparation.title": "AI Preparation",
     "preparation.requiresPro": "Requires Pro",

@@ -4,16 +4,21 @@ import {
     BookSearch,
     Loader,
     MessageCircle,
+    RotateCcw,
     Sparkles,
 } from 'lucide-react';
 import MarkdownIt from 'markdown-it';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { chat } from '@/actions/App/Http/Controllers/AiController';
+import {
+    destroy as destroyConversation,
+    messages as fetchConversationMessages,
+} from '@/actions/App/Http/Controllers/AiConversationController';
 import { chat as editorialChat } from '@/actions/App/Http/Controllers/EditorialReviewController';
 import PanelHeader from '@/components/ui/PanelHeader';
 import { severityDotColor } from '@/lib/editorial-constants';
-import { jsonFetchHeaders } from '@/lib/utils';
+import { extractErrorMessage, jsonFetchHeaders } from '@/lib/utils';
 import type {
     Book,
     Chapter,
@@ -32,15 +37,22 @@ type Message = {
 
 const AssistantMessage = memo(function AssistantMessage({
     content,
+    streaming,
 }: {
     content: string;
+    streaming?: boolean;
 }) {
-    const html = useMemo(() => md.render(content), [content]);
-    return (
+    const html = useMemo(
+        () => (streaming ? null : md.render(content)),
+        [content, streaming],
+    );
+    return html ? (
         <div
             className="ai-chat-markdown"
             dangerouslySetInnerHTML={{ __html: html }}
         />
+    ) : (
+        <div className="ai-chat-markdown whitespace-pre-wrap">{content}</div>
     );
 });
 
@@ -51,6 +63,19 @@ function ContextStatus({ label }: { label: string }) {
             <span className="text-[11px] text-ink-muted">{label}</span>
         </div>
     );
+}
+
+function storageKey(
+    bookId: number,
+    chapterId: number | undefined,
+    reviewId: number | undefined,
+    sectionType: string | undefined,
+    findingIndex: number | undefined,
+): string {
+    if (reviewId !== undefined) {
+        return `manuscript:convo:review:${reviewId}:${sectionType ?? 'general'}:${findingIndex ?? 'none'}`;
+    }
+    return `manuscript:convo:book:${bookId}:ch:${chapterId ?? 'general'}`;
 }
 
 type ChapterWithCharacters = Chapter & {
@@ -81,8 +106,62 @@ export default function AiChatDrawer({
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isStreaming, setIsStreaming] = useState(false);
+    const isStreamingRef = useRef(false);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const conversationIdRef = useRef<string | null>(null);
+
+    const lsKey = useMemo(
+        () =>
+            storageKey(
+                book.id,
+                chapter?.id,
+                editorialReview?.reviewId,
+                editorialReview?.sectionType,
+                editorialReview?.findingIndex,
+            ),
+        [
+            book.id,
+            chapter?.id,
+            editorialReview?.reviewId,
+            editorialReview?.sectionType,
+            editorialReview?.findingIndex,
+        ],
+    );
+
+    useEffect(() => {
+        const savedId = localStorage.getItem(lsKey);
+        if (!savedId) return;
+
+        const controller = new AbortController();
+        setIsLoadingHistory(true);
+        conversationIdRef.current = savedId;
+
+        const url = fetchConversationMessages.url({
+            book: book.id,
+            conversation: savedId,
+        });
+
+        fetch(url, { headers: jsonFetchHeaders(), signal: controller.signal })
+            .then((res) => {
+                if (!res.ok) throw new Error('Not found');
+                return res.json();
+            })
+            .then((data: Message[]) => {
+                if (data.length > 0) {
+                    setMessages(data);
+                }
+            })
+            .catch((err) => {
+                if (err.name === 'AbortError') return;
+                localStorage.removeItem(lsKey);
+                conversationIdRef.current = null;
+            })
+            .finally(() => setIsLoadingHistory(false));
+
+        return () => controller.abort();
+    }, [lsKey, book.id]);
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -95,20 +174,18 @@ export default function AiChatDrawer({
     const inputValueRef = useRef(input);
     inputValueRef.current = input;
 
-    const messagesRef = useRef(messages);
-    messagesRef.current = messages;
-
     const handleSend = useCallback(async () => {
         const trimmed = inputValueRef.current.trim();
-        if (!trimmed || isStreaming) return;
-
-        const history = messagesRef.current.filter((m) => m.content.length > 0);
+        if (!trimmed || isStreamingRef.current) return;
 
         setInput('');
-        setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);
+        setMessages((prev) => [
+            ...prev,
+            { role: 'user', content: trimmed },
+            { role: 'assistant', content: '' },
+        ]);
+        isStreamingRef.current = true;
         setIsStreaming(true);
-
-        setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
         try {
             const chatUrl = editorialReview
@@ -120,7 +197,7 @@ export default function AiChatDrawer({
 
             const body: Record<string, unknown> = {
                 message: trimmed,
-                history: history.length > 0 ? history : undefined,
+                conversation_id: conversationIdRef.current ?? undefined,
             };
 
             if (editorialReview) {
@@ -139,34 +216,51 @@ export default function AiChatDrawer({
                 headers: {
                     ...jsonFetchHeaders(),
                     Accept: 'text/event-stream',
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
                 body: JSON.stringify(body),
             });
 
             if (!response.ok) {
-                const errorText = await response
-                    .text()
-                    .catch(() => 'Chat request failed');
+                const errorText = await response.text().catch(() => '');
+                const errorMessage = extractErrorMessage(
+                    errorText,
+                    t('chat.requestFailed'),
+                );
                 setMessages((prev) => {
                     const updated = [...prev];
                     updated[updated.length - 1] = {
                         role: 'assistant',
-                        content: `Error: ${errorText}`,
+                        content: errorMessage,
                     };
                     return updated;
                 });
+                isStreamingRef.current = false;
                 setIsStreaming(false);
                 return;
             }
 
             const reader = response.body?.getReader();
             if (!reader) {
+                isStreamingRef.current = false;
                 setIsStreaming(false);
                 return;
             }
 
             const decoder = new TextDecoder();
             let buffer = '';
+
+            const appendChunk = (text: string) => {
+                setMessages((prev) => {
+                    const updated = [...prev];
+                    const last = updated[updated.length - 1];
+                    updated[updated.length - 1] = {
+                        ...last,
+                        content: last.content + text,
+                    };
+                    return updated;
+                });
+            };
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -177,17 +271,7 @@ export default function AiChatDrawer({
                 const lines = buffer.split('\n');
                 buffer = lines.pop() ?? '';
 
-                const appendChunk = (text: string) => {
-                    setMessages((prev) => {
-                        const updated = [...prev];
-                        const last = updated[updated.length - 1];
-                        updated[updated.length - 1] = {
-                            ...last,
-                            content: last.content + text,
-                        };
-                        return updated;
-                    });
-                };
+                let pendingText = '';
 
                 for (const line of lines) {
                     if (line.startsWith('data: ')) {
@@ -195,17 +279,41 @@ export default function AiChatDrawer({
                         if (data === '[DONE]') continue;
                         try {
                             const parsed = JSON.parse(data);
+
+                            if (
+                                parsed.conversation_id &&
+                                !conversationIdRef.current
+                            ) {
+                                conversationIdRef.current =
+                                    parsed.conversation_id;
+                                localStorage.setItem(
+                                    lsKey,
+                                    parsed.conversation_id,
+                                );
+                                continue;
+                            }
+
+                            if (parsed.error) {
+                                pendingText += parsed.error;
+                                continue;
+                            }
+
                             const text =
                                 parsed.text ??
                                 parsed.content ??
                                 parsed.delta ??
                                 '';
-                            if (text) appendChunk(text);
+                            if (text) pendingText += text;
                         } catch {
-                            if (data.trim()) appendChunk(data);
+                            const trimmed = data.trim();
+                            if (trimmed && !trimmed.startsWith('<')) {
+                                pendingText += trimmed;
+                            }
                         }
                     }
                 }
+
+                if (pendingText) appendChunk(pendingText);
             }
         } catch {
             setMessages((prev) => {
@@ -224,9 +332,31 @@ export default function AiChatDrawer({
                 return updated;
             });
         } finally {
+            isStreamingRef.current = false;
             setIsStreaming(false);
         }
-    }, [book.id, chapter?.id, editorialReview, isStreaming, t]);
+    }, [book.id, chapter?.id, editorialReview, lsKey, t]);
+
+    const handleReset = useCallback(() => {
+        const currentId = conversationIdRef.current;
+
+        if (currentId) {
+            const url = destroyConversation.url({
+                book: book.id,
+                conversation: currentId,
+            });
+            fetch(url, {
+                method: 'DELETE',
+                headers: jsonFetchHeaders(),
+            }).catch(() => {});
+        }
+
+        localStorage.removeItem(lsKey);
+        conversationIdRef.current = null;
+        setMessages([]);
+        setInput('');
+        inputRef.current?.focus();
+    }, [book.id, lsKey]);
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
@@ -249,6 +379,18 @@ export default function AiChatDrawer({
                 title={title ?? t('askAi')}
                 icon={<MessageCircle size={14} className="text-ink-muted" />}
                 onClose={onClose}
+                suffix={
+                    messages.length > 0 && !isStreaming ? (
+                        <button
+                            type="button"
+                            onClick={handleReset}
+                            className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:text-ink"
+                            title={t('chat.newConversation')}
+                        >
+                            <RotateCcw size={13} />
+                        </button>
+                    ) : undefined
+                }
             />
 
             {/* Chapter Context */}
@@ -337,7 +479,18 @@ export default function AiChatDrawer({
 
             {/* Messages */}
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-5">
-                {messages.length === 0 && (
+                {isLoadingHistory && messages.length === 0 && (
+                    <div className="flex items-center justify-center gap-2 py-4">
+                        <Loader
+                            size={14}
+                            className="animate-spin text-accent"
+                        />
+                        <span className="text-xs text-ink-muted">
+                            {t('chat.loadingHistory')}
+                        </span>
+                    </div>
+                )}
+                {!isLoadingHistory && messages.length === 0 && (
                     <p className="text-center text-xs leading-relaxed text-ink-faint">
                         {t('chat.emptyState')}
                     </p>
@@ -354,7 +507,13 @@ export default function AiChatDrawer({
                             <Sparkles size={14} className="text-accent" />
                             <div className="max-w-[85%] rounded-2xl border border-border-light bg-surface-card px-4 py-3 text-sm leading-relaxed text-ink">
                                 {msg.content ? (
-                                    <AssistantMessage content={msg.content} />
+                                    <AssistantMessage
+                                        content={msg.content}
+                                        streaming={
+                                            isStreaming &&
+                                            i === messages.length - 1
+                                        }
+                                    />
                                 ) : isStreaming && i === messages.length - 1 ? (
                                     <div className="flex items-center gap-[5px]">
                                         <Loader

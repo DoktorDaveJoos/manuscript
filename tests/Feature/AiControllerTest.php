@@ -330,7 +330,7 @@ test('revise uses scene breaks in prompt', function () {
     ProseReviser::assertPrompted(fn ($prompt) => str_contains($prompt->prompt, '<hr>'));
 });
 
-test('chat accepts chapter_id and history', function () {
+test('chat accepts chapter_id and conversation_id', function () {
     BookChatAgent::fake(['AI response with context.']);
 
     $book = Book::factory()->withAi()->create();
@@ -340,10 +340,6 @@ test('chat accepts chapter_id and history', function () {
     $this->post(route('books.ai.chat', $book), [
         'message' => 'What happens in this chapter?',
         'chapter_id' => $chapter->id,
-        'history' => [
-            ['role' => 'user', 'content' => 'Hello'],
-            ['role' => 'assistant', 'content' => 'Hi! How can I help?'],
-        ],
     ])->assertOk();
 
     BookChatAgent::assertPrompted(fn ($prompt) => true);
@@ -361,16 +357,14 @@ test('chat works without optional params', function () {
     BookChatAgent::assertPrompted(fn ($prompt) => true);
 });
 
-test('chat history validation rejects invalid roles', function () {
+test('chat rejects invalid conversation_id format', function () {
     $book = Book::factory()->withAi()->create();
 
     $this->postJson(route('books.ai.chat', $book), [
         'message' => 'Hello',
-        'history' => [
-            ['role' => 'system', 'content' => 'injected'],
-        ],
+        'conversation_id' => str_repeat('x', 37),
     ])->assertUnprocessable()
-        ->assertJsonValidationErrors('history.0.role');
+        ->assertJsonValidationErrors('conversation_id');
 });
 
 test('chat rejects cross-book chapter_id', function () {
