@@ -45,25 +45,54 @@ class HandleInertiaRequests extends Middleware
         // (no second AppSetting query needed for locale).
         $locale = app()->getLocale();
 
-        // Pre-load all the AppSetting keys this middleware needs in one
-        // query so the closures below read from the per-request cache
-        // instead of issuing N separate SELECTs.
-        AppSetting::warmCache([
-            'show_ai_features',
-            'hide_formatting_toolbar',
-            'typewriter_mode',
-            'show_scenes',
-            'send_error_reports',
-            'crash_report_prompted',
-            'language_prompted',
-            'editor_font',
-            'editor_font_size',
-        ]);
+        try {
+            // Pre-load all the AppSetting keys this middleware needs in one
+            // query so the closures below read from the per-request cache
+            // instead of issuing N separate SELECTs.
+            AppSetting::warmCache([
+                'show_ai_features',
+                'hide_formatting_toolbar',
+                'typewriter_mode',
+                'show_scenes',
+                'send_error_reports',
+                'crash_report_prompted',
+                'language_prompted',
+                'editor_font',
+                'editor_font_size',
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            // Database is probably unavailable (failed migration, corrupt file).
+            // Return minimal props so the frontend can render a recovery page
+            // instead of a raw 500.
+            return [
+                ...parent::share($request),
+                'name' => config('app.name'),
+                'app_version' => config('app.version', '0.0.0'),
+                'boot_error' => true,
+            ];
+        }
+
+        // If the connector repaired a corrupt database on this boot, pass
+        // the recovery details so the frontend can show a one-time notification.
+        // The dialog is dismissed via React state in app.tsx (it lives above the
+        // Inertia router and is never unmounted during SPA navigation).
+        $repairInfo = app()->bound('database.repaired')
+            ? app()->make('database.repaired')
+            : null;
 
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'app_version' => config('app.version', '0.0.0'),
+            ...($repairInfo ? [
+                'database_repaired' => true,
+                'repair_details' => [
+                    'recovered' => $repairInfo['recovered'] ?? [],
+                    'failed' => $repairInfo['failed'] ?? [],
+                ],
+            ] : []),
             'auth' => [
                 'user' => $request->user(),
             ],

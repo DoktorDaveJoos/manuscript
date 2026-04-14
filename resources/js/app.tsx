@@ -1,6 +1,8 @@
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
+import BootErrorScreen from '@/components/BootErrorScreen';
+import DatabaseRepairedDialog from '@/components/DatabaseRepairedDialog';
 import DebugOverlay from '@/components/ui/DebugOverlay';
 import UpdateDialog from '@/components/ui/UpdateDialog';
 import { checkForUpdates } from '@/hooks/useAutoUpdater';
@@ -21,6 +23,13 @@ createInertiaApp({
             import.meta.glob('./pages/**/*.tsx'),
         ),
     setup({ el, App, props }) {
+        const bootError = props.initialPage.props.boot_error as
+            | boolean
+            | undefined;
+        const databaseRepaired = props.initialPage.props.database_repaired as
+            | boolean
+            | undefined;
+
         const settings = props.initialPage.props.app_settings as
             | AppSettings
             | undefined;
@@ -48,10 +57,18 @@ createInertiaApp({
         }
         const root = createRoot(el);
 
+        // If the database is completely unavailable, show a standalone error
+        // screen that bypasses Inertia page resolution entirely.
+        if (bootError) {
+            root.render(<BootErrorScreen />);
+            return;
+        }
+
         root.render(
             <DebugOverlay>
                 <App {...props} />
                 <UpdateDialog currentVersion={appVersion} />
+                {databaseRepaired && <DatabaseRepairedDialog />}
             </DebugOverlay>,
         );
 

@@ -13,10 +13,24 @@ return [
     // @see https://docs.sentry.io/concepts/key-terms/dsn-explainer/
     'dsn' => env('SENTRY_LARAVEL_DSN', env('SENTRY_DSN')),
 
-    // Only send events when the user has opted in
+    // Always send unhandled exceptions (app crashes) so we're never blind to
+    // boot-time failures. For handled errors, respect the user's opt-in.
     'before_send' => function (Event $event): ?Event {
-        if (! AppSetting::get('send_error_reports', false)) {
-            return null;
+        foreach ($event->getExceptions() as $exception) {
+            $mechanism = $exception->getMechanism();
+
+            if ($mechanism !== null && $mechanism->isHandled() === false) {
+                return $event;
+            }
+        }
+
+        try {
+            if (! AppSetting::get('send_error_reports', false)) {
+                return null;
+            }
+        } catch (Throwable) {
+            // Can't read setting (DB down) = critical failure — send it.
+            return $event;
         }
 
         return $event;

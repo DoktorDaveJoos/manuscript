@@ -10,6 +10,12 @@ declare module '@inertiajs/core' {
             sidebarOpen: boolean;
             locale: string;
             sidebar_storylines: Storyline[] | null;
+            boot_error?: boolean;
+            database_repaired?: boolean;
+            repair_details?: {
+                recovered: string[];
+                failed: string[];
+            };
             [key: string]: unknown;
         };
     }

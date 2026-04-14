@@ -11,7 +11,11 @@ class SetLocale
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = AppSetting::get('locale', 'en');
+        try {
+            $locale = AppSetting::get('locale', 'en');
+        } catch (\Throwable) {
+            $locale = config('app.locale', 'en');
+        }
 
         if (in_array($locale, ['en', 'de', 'es'])) {
             app()->setLocale($locale);
