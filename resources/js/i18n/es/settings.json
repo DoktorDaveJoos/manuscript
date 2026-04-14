@@ -55,6 +55,8 @@
     "appearance.update.currentVersion": "Actual: {{version}}",
     "appearance.update.updateNow": "Actualizar ahora",
     "appearance.update.later": "Más tarde",
+    "appearance.update.retry": "Reintentar",
+    "appearance.update.errorGeneric": "Algo salió mal al buscar actualizaciones.",
 
     "privacy.sectionLabel": "PRIVACIDAD",
     "privacy.navLabel": "Privacidad",
