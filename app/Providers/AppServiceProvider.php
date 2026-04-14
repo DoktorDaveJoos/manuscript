@@ -18,6 +18,8 @@ use Illuminate\Validation\Rules\Password;
 use Laravel\Ai\Events\AgentPrompted;
 use Laravel\Ai\Events\AgentStreamed;
 use Sentry\Laravel\Integration;
+use Sentry\Severity;
+use Sentry\State\Scope;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -108,7 +110,9 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        if ($this->app->runningUnitTests()) {
+        // NativePHP's bundled PHP runs as cli-server so runningInConsole() is
+        // false there; any real CLI context must leave migrations to the dev.
+        if ($this->app->runningInConsole()) {
             return;
         }
 
@@ -134,8 +138,45 @@ class AppServiceProvider extends ServiceProvider
 
                 // Update the repair info with recovery results so middleware
                 // can pass it to the frontend.
-                $this->app->instance('database.repaired', array_merge($repairInfo, $result));
+                $repairInfo = array_merge($repairInfo, $result);
+                $this->app->instance('database.repaired', $repairInfo);
             }
+
+            @unlink(SqliteVecConnector::markerPath());
+
+            $this->reportRepairToSentry($repairInfo);
         }
+    }
+
+    /**
+     * Emit a Sentry event so operators see auto-repair activity — without this,
+     * silent "Ok" recoveries never reach monitoring and a growing rate of
+     * corrupt-DB events across the user base could go unnoticed.
+     */
+    protected function reportRepairToSentry(array $repairInfo): void
+    {
+        if (! $this->app->bound('sentry')) {
+            return;
+        }
+
+        \Sentry\withScope(function (Scope $scope) use ($repairInfo) {
+            $recovered = $repairInfo['recovered'] ?? [];
+            $failed = $repairInfo['failed'] ?? [];
+
+            $scope->setTag('database_integrity', $failed === [] ? 'repaired' : 'repaired_partial');
+            $scope->setContext('repair', [
+                'backup' => $repairInfo['backup'] ?? null,
+                'trigger' => $repairInfo['trigger'] ?? null,
+                'recovered_tables' => $recovered,
+                'failed_tables' => $failed,
+                'recovered_count' => count($recovered),
+                'failed_count' => count($failed),
+            ]);
+
+            \Sentry\captureMessage(
+                'Database corruption detected and auto-repaired',
+                Severity::error(),
+            );
+        });
     }
 }

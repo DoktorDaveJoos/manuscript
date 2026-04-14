@@ -37,6 +37,17 @@ class SqliteVecConnector extends SQLiteConnector
                     throw new \RuntimeException("PRAGMA quick_check failed: {$result}");
                 }
             } catch (\Throwable $e) {
+                // Transient errors (locks, IO, permissions) must surface so we
+                // don't wipe a healthy DB because of a momentary disk hiccup.
+                if (! $this->isCorruptionError($e)) {
+                    Log::error('DatabaseIntegrity: non-corruption error during quick_check, surfacing as boot failure.', [
+                        'path' => $database,
+                        'error' => $e->getMessage(),
+                    ]);
+
+                    throw $e;
+                }
+
                 $pdo = $this->repairDatabase($config, $e);
             }
         }
@@ -66,7 +77,35 @@ class SqliteVecConnector extends SQLiteConnector
     }
 
     /**
+     * Return true iff the exception signals actual DB-file corruption (not a
+     * transient lock / IO / permission problem). Corruption signatures come
+     * from SQLite: either `PRAGMA quick_check` returned non-'ok', or the
+     * driver raised SQLITE_CORRUPT / SQLITE_NOTADB.
+     */
+    private function isCorruptionError(\Throwable $e): bool
+    {
+        // Our own RuntimeException from a non-'ok' quick_check result.
+        if ($e instanceof \RuntimeException && str_starts_with($e->getMessage(), 'PRAGMA quick_check failed:')) {
+            return true;
+        }
+
+        $message = strtolower($e->getMessage());
+
+        foreach (['malformed', 'database disk image', 'not a database', 'file is encrypted', 'corrupt'] as $needle) {
+            if (str_contains($message, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Back up the corrupt database file and return a fresh PDO connection.
+     *
+     * The main `.sqlite` rename is a hard prerequisite — if it fails (file in
+     * use on Windows, permission denied, etc.) we MUST NOT create a fresh file
+     * on top of the user's data. We raise, boot fails, user's data is preserved.
      */
     private function repairDatabase(array $config, \Throwable $cause): \PDO
     {
@@ -80,8 +119,35 @@ class SqliteVecConnector extends SQLiteConnector
             'error' => $cause->getMessage(),
         ]);
 
-        // Back up corrupt file and its WAL/SHM companions.
-        @rename($path, $backupPath);
+        // Marker read by /repair-status so the loading screen can show an
+        // accurate "restoring your data…" state.
+        @file_put_contents(self::markerPath($path), (string) json_encode([
+            'started_at' => date('c'),
+            'trigger' => $cause->getMessage(),
+        ]));
+
+        $renamed = @rename($path, $backupPath);
+
+        if (! $renamed) {
+            $lastError = error_get_last()['message'] ?? 'unknown error';
+
+            Log::error('DatabaseIntegrity: cannot back up corrupt database, aborting repair.', [
+                'path' => $path,
+                'backup' => $backupPath,
+                'rename_error' => $lastError,
+            ]);
+
+            @unlink(self::markerPath($path));
+
+            throw new \RuntimeException(
+                "Database corruption detected but backup failed ({$lastError}). "
+                ."Original file preserved at {$path}.",
+                0,
+                $cause,
+            );
+        }
+
+        // Best-effort: WAL/SHM are recreated automatically on next open.
         @rename("{$path}-wal", "{$backupPath}-wal");
         @rename("{$path}-shm", "{$backupPath}-shm");
 
@@ -92,6 +158,7 @@ class SqliteVecConnector extends SQLiteConnector
         // and middleware can notify the frontend.
         app()->instance('database.repaired', [
             'backup' => $backupPath,
+            'trigger' => $cause->getMessage(),
             'recovered' => [],
             'failed' => [],
         ]);
@@ -105,5 +172,18 @@ class SqliteVecConnector extends SQLiteConnector
     public static function resetIntegrityFlag(): void
     {
         self::$integrityChecked = false;
+    }
+
+    /**
+     * Path of the repair marker. Derived from the actual database file so it
+     * works under NativePHP, which stores the SQLite file in the user-data
+     * directory — `database_path()` would point at the bundled project dir
+     * and miss the marker written next to the real DB.
+     */
+    public static function markerPath(?string $databasePath = null): string
+    {
+        $databasePath ??= (string) config('database.connections.'.config('database.default').'.database');
+
+        return dirname($databasePath).DIRECTORY_SEPARATOR.'.repairing';
     }
 }

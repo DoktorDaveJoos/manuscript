@@ -58,6 +58,13 @@ test('corrupt database triggers backup and fresh file', function () {
     expect(app()->bound('database.repaired'))->toBeTrue();
     $info = app('database.repaired');
     expect($info['backup'])->toContain('.corrupt.');
+
+    // Marker is the signal /repair-status uses to show "Restoring your data"
+    // in the loading view. Must be on disk by the time repair finishes.
+    expect(file_exists($this->tempDir.'/.repairing'))->toBeTrue();
+    $marker = json_decode(file_get_contents($this->tempDir.'/.repairing'), true);
+    expect($marker)->toHaveKey('started_at');
+    expect($marker)->toHaveKey('trigger');
 });
 
 test('integrity check runs only once per boot', function () {
@@ -135,7 +142,124 @@ test('recovery skips tables that do not exist in fresh schema', function () {
     expect($result['failed'])->not->toContain('nonexistent_table_xyz');
 });
 
-test('recovery skips migrations table', function () {
+test('recovery overwrites seeded defaults with the user\'s customized backup values', function () {
+    // The fresh DB is already seeded by migrations — show_ai_features defaults
+    // to 'true'. If the user had customized it to 'false' pre-corruption, the
+    // backup's value must win over the seed default or we silently reset
+    // user preferences on every recovery.
+    $seededValue = DB::table('app_settings')->where('key', 'show_ai_features')->value('value');
+    expect($seededValue)->toBe('true');
+
+    $backupPath = $this->tempDir.'/backup.sqlite';
+    $pdo = new PDO("sqlite:{$backupPath}");
+    $pdo->exec('CREATE TABLE app_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL, value TEXT, created_at DATETIME, updated_at DATETIME)');
+    $pdo->exec("INSERT INTO app_settings (key, value, created_at, updated_at) VALUES ('show_ai_features', 'false', '2026-01-01 00:00:00', '2026-01-01 00:00:00')");
+    $pdo->exec("INSERT INTO app_settings (key, value, created_at, updated_at) VALUES ('typewriter_mode', 'true', '2026-01-01 00:00:00', '2026-01-01 00:00:00')");
+    unset($pdo);
+
+    $service = new DatabaseRepairService;
+    $result = $service->recoverData($backupPath);
+
+    expect($result['recovered'])->toContain('app_settings');
+    expect(DB::table('app_settings')->where('key', 'show_ai_features')->value('value'))->toBe('false');
+    expect(DB::table('app_settings')->where('key', 'typewriter_mode')->value('value'))->toBe('true');
+});
+
+test('recovery preserves seed defaults when the backup table has no rows', function () {
+    $seedCount = DB::table('app_settings')->count();
+    expect($seedCount)->toBeGreaterThan(0);
+
+    $backupPath = $this->tempDir.'/backup.sqlite';
+    $pdo = new PDO("sqlite:{$backupPath}");
+    $pdo->exec('CREATE TABLE app_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL, value TEXT, created_at DATETIME, updated_at DATETIME)');
+    unset($pdo);
+
+    $service = new DatabaseRepairService;
+    $service->recoverData($backupPath);
+
+    // Empty backup table must not wipe seed data.
+    expect(DB::table('app_settings')->count())->toBe($seedCount);
+});
+
+test('recovery filters dropped columns so pre-migration backups still import', function () {
+    $backupPath = $this->tempDir.'/backup.sqlite';
+
+    // Backup has a legacy column `deprecated_field` that no longer exists in
+    // the fresh schema. Without column filtering the INSERT would fail on
+    // "no such column" and the whole table would land in $failed.
+    $backupPdo = new PDO("sqlite:{$backupPath}");
+    $backupPdo->exec('CREATE TABLE app_settings (id INTEGER PRIMARY KEY, key TEXT, value TEXT, deprecated_field TEXT)');
+    $backupPdo->exec("INSERT INTO app_settings (key, value, deprecated_field) VALUES ('locale', 'de', 'legacy')");
+    unset($backupPdo);
+
+    if (Schema::hasTable('app_settings')) {
+        DB::table('app_settings')->truncate();
+    }
+
+    $service = new DatabaseRepairService;
+    $result = $service->recoverData($backupPath);
+
+    expect($result['recovered'])->toContain('app_settings');
+    expect($result['failed'])->not->toContain('app_settings');
+    expect(DB::table('app_settings')->where('key', 'locale')->value('value'))->toBe('de');
+});
+
+test('recovery skips FTS5 and vec0 shadow tables', function () {
+    $backupPath = $this->tempDir.'/backup.sqlite';
+
+    // Create tables that look like FTS5/vec0 shadow tables. These are real
+    // tables in sqlite_master (so Schema::hasTable() returns true in the fresh
+    // DB when the real FTS/vec virtual tables are created), but inserting into
+    // them directly corrupts the virtual-table indices.
+    $backupPdo = new PDO("sqlite:{$backupPath}");
+    $backupPdo->exec('CREATE TABLE chunks_fts_data (id INTEGER PRIMARY KEY, block BLOB)');
+    $backupPdo->exec('CREATE TABLE chunks_fts_idx (segid INTEGER, term TEXT)');
+    $backupPdo->exec('CREATE TABLE chunk_embeddings_rowids (rowid INTEGER PRIMARY KEY, id INTEGER)');
+    $backupPdo->exec('CREATE TABLE chunk_embeddings_chunks (chunk_id INTEGER PRIMARY KEY, validity BLOB)');
+    unset($backupPdo);
+
+    $service = new DatabaseRepairService;
+    $result = $service->recoverData($backupPath);
+
+    foreach (['chunks_fts_data', 'chunks_fts_idx', 'chunk_embeddings_rowids', 'chunk_embeddings_chunks'] as $shadow) {
+        expect($result['recovered'])->not->toContain($shadow);
+        expect($result['failed'])->not->toContain($shadow);
+    }
+});
+
+test('unopenable database surfaces as boot error without wiping data', function () {
+    $dbPath = $this->tempDir.'/healthy.sqlite';
+
+    $pdo = new PDO("sqlite:{$dbPath}");
+    $pdo->exec('CREATE TABLE test (id INTEGER PRIMARY KEY)');
+    unset($pdo);
+
+    // chmod 000 makes PDO open fail — the resulting error is NOT corruption,
+    // so the connector must surface the throwable rather than call the
+    // destructive repair path on a healthy file.
+    chmod($dbPath, 0o000);
+
+    $connector = app(SqliteVecConnector::class);
+
+    try {
+        $connector->connect(['database' => $dbPath]);
+        $this->fail('Expected a throwable to propagate for a non-corruption open error.');
+    } catch (Throwable) {
+        // Expected.
+    } finally {
+        chmod($dbPath, 0o644);
+    }
+
+    // File must still exist (not renamed .corrupt.*) and still contain the table.
+    expect(file_exists($dbPath))->toBeTrue();
+    expect(glob($this->tempDir.'/*.corrupt.*'))->toBeEmpty();
+
+    $verify = new PDO("sqlite:{$dbPath}");
+    $tables = $verify->query("SELECT name FROM sqlite_master WHERE type='table' AND name='test'")->fetchColumn();
+    expect($tables)->toBe('test');
+});
+
+test('migrations table is skipped during recovery', function () {
     $backupPath = $this->tempDir.'/backup.sqlite';
 
     $backupPdo = new PDO("sqlite:{$backupPath}");

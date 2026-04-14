@@ -1,5 +1,6 @@
 <?php
 
+use App\Database\SqliteVecConnector;
 use App\Http\Controllers\ActController;
 use App\Http\Controllers\AiController;
 use App\Http\Controllers\AiConversationController;
@@ -31,6 +32,8 @@ use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\WikiController;
 use App\Http\Controllers\WikiPanelController;
 use App\Http\Controllers\WritingGoalController;
+use App\Http\Middleware\HandleInertiaRequests;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 // Lightweight loading page that the NativePHP window opens first.
@@ -38,6 +41,35 @@ use Illuminate\Support\Facades\Route;
 // to '/'. Gives the user immediate visual feedback while Laravel + the
 // React bundle warm up on cold start.
 Route::get('/loading', fn () => view('loading'))->name('loading');
+
+// Skip Inertia's share() — both endpoints are plain JSON and share() runs
+// an AppSetting::getMany that would fire on every loading-screen poll.
+Route::withoutMiddleware(HandleInertiaRequests::class)->group(function () {
+    Route::get('/ready', function () {
+        try {
+            DB::select('SELECT 1');
+        } catch (Throwable) {
+            return response()->json(['ready' => false], 503);
+        }
+
+        return response()->json(['ready' => true]);
+    })->name('ready');
+
+    Route::get('/repair-status', function () {
+        $marker = SqliteVecConnector::markerPath();
+
+        if (! file_exists($marker)) {
+            return response()->json(['state' => 'idle']);
+        }
+
+        $payload = json_decode((string) @file_get_contents($marker), true) ?: [];
+
+        return response()->json([
+            'state' => 'repairing',
+            'started_at' => $payload['started_at'] ?? null,
+        ]);
+    })->name('repair-status');
+});
 
 Route::get('/', [BookController::class, 'index'])->name('books.index');
 Route::post('/books', [BookController::class, 'store'])->name('books.store');

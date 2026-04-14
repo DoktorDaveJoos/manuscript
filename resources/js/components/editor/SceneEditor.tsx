@@ -175,11 +175,13 @@ export default function SceneEditor({
             onWordCountChange(scene.id, words);
             onSaveStatusChange?.('saving');
 
-            // Cancel any in-flight retry — the new debounce supersedes it
+            // Cancel any in-flight retry — the new debounce supersedes it.
+            // Preserve retryCountRef so sustained outages actually back off
+            // instead of restarting a 3-attempt cycle on every keystroke.
+            // The counter resets on successful save (above) or on exhaustion.
             if (retryTimerRef.current) {
                 clearTimeout(retryTimerRef.current);
                 retryTimerRef.current = null;
-                retryCountRef.current = 0;
             }
 
             if (contentTimerRef.current) {

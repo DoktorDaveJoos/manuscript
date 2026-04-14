@@ -20,6 +20,17 @@ class DatabaseRepairService
     ];
 
     /**
+     * Prefixes identifying FTS5 / vec0 shadow tables. These tables appear in
+     * `sqlite_master` as real tables and pass `Schema::hasTable()`, but direct
+     * INSERT into them corrupts the virtual-table indices — they are managed
+     * internally by the FTS/vec extensions and must be rebuilt, not copied.
+     */
+    private const SKIP_TABLE_PREFIXES = [
+        'chunks_fts_',
+        'chunk_embeddings_',
+    ];
+
+    /**
      * Attempt to recover data from a corrupt database backup into the current
      * (fresh, migrated) database. Best-effort: tables with corrupted pages are
      * skipped and logged. Never throws — a failed recovery must not crash boot.
@@ -70,7 +81,7 @@ class DatabaseRepairService
 
         try {
             foreach ($tables as $table) {
-                if (in_array($table, self::SKIP_TABLES, true)) {
+                if ($this->shouldSkipTable($table)) {
                     continue;
                 }
 
@@ -101,29 +112,64 @@ class DatabaseRepairService
         return compact('recovered', 'failed');
     }
 
+    private function shouldSkipTable(string $table): bool
+    {
+        if (in_array($table, self::SKIP_TABLES, true)) {
+            return true;
+        }
+
+        foreach (self::SKIP_TABLE_PREFIXES as $prefix) {
+            if (str_starts_with($table, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Copy all readable rows from a single table in the corrupt database.
-     * Wrapped in a transaction for performance (single fsync per table).
-     * Uses insertOrIgnore so recovery is idempotent if called twice.
+     *
+     * If the backup table has ANY rows, the fresh table is truncated first so
+     * the user's customized values (e.g., app_settings.key='show_ai_features'
+     * set to 'false') win over the seed defaults from migrations. `insertOrIgnore`
+     * silently drops conflicting backup rows and would reset every user
+     * preference on every recovery.
+     *
+     * If the backup table is empty, we leave the seed rows alone — an empty
+     * backup of a seeded table would otherwise wipe it to nothing.
+     *
+     * All in a single transaction: if any insert fails, the truncate rolls
+     * back too and the table stays in its seed state.
+     *
+     * Columns are filtered to the fresh schema so rows from a pre-migration
+     * backup (which may carry dropped/renamed columns) still insert cleanly.
      */
     private function recoverTable(\PDO $corruptPdo, string $table): void
     {
+        $freshColumns = array_flip(Schema::getColumnListing($table));
         $stmt = $corruptPdo->query("SELECT * FROM \"{$table}\"");
 
-        DB::transaction(function () use ($stmt, $table) {
+        DB::transaction(function () use ($stmt, $table, $freshColumns) {
+            $truncated = false;
             $batch = [];
 
             while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $batch[] = $row;
+                if (! $truncated) {
+                    DB::table($table)->truncate();
+                    $truncated = true;
+                }
+
+                $batch[] = array_intersect_key($row, $freshColumns);
 
                 if (count($batch) >= 500) {
-                    DB::table($table)->insertOrIgnore($batch);
+                    DB::table($table)->insert($batch);
                     $batch = [];
                 }
             }
 
             if (! empty($batch)) {
-                DB::table($table)->insertOrIgnore($batch);
+                DB::table($table)->insert($batch);
             }
         });
     }
