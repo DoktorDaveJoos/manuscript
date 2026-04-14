@@ -10,7 +10,6 @@ use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Contracts\Tool;
-use Laravel\Ai\Reranking;
 use Laravel\Ai\Tools\Request;
 use Stringable;
 
@@ -119,16 +118,7 @@ class SearchSimilarChunks implements Tool
             $cohereKey = AppSetting::get('cohere_api_key');
             config()->set('ai.providers.cohere.key', $cohereKey);
 
-            $documents = $chunks->pluck('content')->all();
-
-            $response = Reranking::of($documents)->limit($limit)->rerank($query);
-
-            $rerankedChunks = new Collection;
-            foreach ($response->results as $result) {
-                $rerankedChunks->push($chunks->values()->get($result->index));
-            }
-
-            return $rerankedChunks;
+            return $chunks->rerank('content', $query, limit: $limit);
         } catch (\Throwable) {
             // Silently fall back to KNN order on reranking failure
             return $chunks->take($limit)->values();

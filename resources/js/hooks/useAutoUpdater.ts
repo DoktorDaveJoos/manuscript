@@ -155,9 +155,18 @@ function ensureNativeListeners() {
 // ---------------------------------------------------------------------------
 // Actions
 // ---------------------------------------------------------------------------
-function postAction(url: string, errorMsg: string) {
+const RETRY_DELAYS = [2000, 5000, 10000];
+
+function postAction(url: string, errorMsg: string, retries = 0) {
     fetch(url, { method: 'POST', headers: jsonFetchHeaders() }).catch(() => {
-        setState((prev) => ({ ...prev, status: 'error', error: errorMsg }));
+        if (retries < RETRY_DELAYS.length) {
+            setTimeout(
+                () => postAction(url, errorMsg, retries + 1),
+                RETRY_DELAYS[retries]!,
+            );
+        } else {
+            setState((prev) => ({ ...prev, status: 'error', error: errorMsg }));
+        }
     });
 }
 
@@ -180,7 +189,15 @@ function downloadUpdate() {
 }
 
 function installUpdate() {
-    postAction(install.url(), 'Failed to install update');
+    fetch(install.url(), { method: 'POST', headers: jsonFetchHeaders() }).catch(
+        () => {
+            setState((prev) => ({
+                ...prev,
+                status: 'error',
+                error: 'Failed to install update',
+            }));
+        },
+    );
 }
 
 const IDLE_STATE: UpdateState = {
@@ -194,6 +211,9 @@ const IDLE_STATE: UpdateState = {
 function dismissUpdate() {
     setState(() => IDLE_STATE);
 }
+
+// Exported for use outside React components (e.g. periodic check in app.tsx)
+export { checkForUpdates };
 
 // ---------------------------------------------------------------------------
 // Hook — thin wrapper around the singleton store

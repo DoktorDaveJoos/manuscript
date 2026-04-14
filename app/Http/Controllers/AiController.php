@@ -10,6 +10,7 @@ use App\Enums\AnalysisType;
 use App\Enums\BulkRevisionType;
 use App\Enums\VersionSource;
 use App\Enums\VersionStatus;
+use App\Http\Controllers\Concerns\StreamsConversation;
 use App\Http\Requests\RunAnalysisRequest;
 use App\Jobs\AnalyzeChapterJob;
 use App\Jobs\BulkRevisionJob;
@@ -25,9 +26,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Responses\StreamableAgentResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AiController extends Controller
 {
+    use StreamsConversation;
+
     public function analyzeChapter(Book $book, Chapter $chapter): JsonResponse
     {
         $chapter->update([
@@ -69,25 +73,31 @@ class AiController extends Controller
         ]);
     }
 
-    public function chat(Request $request, Book $book): StreamableAgentResponse
+    public function chat(Request $request, Book $book): JsonResponse|StreamedResponse
     {
-        $this->ensureAiConfigured();
+        return $this->streamChat(function () use ($request, $book) {
+            $this->ensureAiConfigured();
 
-        $request->validate([
-            'message' => ['required', 'string', 'max:2000'],
-            'chapter_id' => ['nullable', 'integer'],
-            'history' => ['nullable', 'array', 'max:50'],
-            'history.*.role' => ['required_with:history', 'string', 'in:user,assistant'],
-            'history.*.content' => ['required_with:history', 'string', 'max:10000'],
-        ]);
+            $request->validate([
+                'message' => ['required', 'string', 'max:2000'],
+                'chapter_id' => ['nullable', 'integer'],
+                'conversation_id' => ['nullable', 'string', 'max:36'],
+            ]);
 
-        $chapter = $request->input('chapter_id')
-            ? $book->chapters()->findOrFail($request->input('chapter_id'))
-            : null;
+            $chapter = $request->input('chapter_id')
+                ? $book->chapters()->findOrFail($request->input('chapter_id'))
+                : null;
 
-        $agent = new BookChatAgent($book, $chapter, $request->input('history', []));
+            $conversationId = $this->resolveConversation($request);
 
-        return $agent->stream($request->input('message'));
+            $agent = new BookChatAgent($book, $chapter);
+            $agent->continue($conversationId, $request->user() ?? (object) ['id' => 0]);
+
+            return $this->streamWithConversationId(
+                $agent->stream($request->input('message')),
+                $conversationId,
+            );
+        });
     }
 
     public function analyze(RunAnalysisRequest $request, Book $book): JsonResponse

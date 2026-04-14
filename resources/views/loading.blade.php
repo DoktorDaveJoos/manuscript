@@ -37,10 +37,39 @@
             @include('partials.loader', ['delay' => 100, 'fontFamily' => 'Georgia, serif'])
         </div>
         <script>
-            // Hand off to the real entry point after the typing animation has
-            // had a moment to start, so users always see *something* even when
-            // the '/' route is near-instant.
-            setTimeout(function() { window.location.replace('/'); }, 600);
+            // Poll the health endpoint until Laravel is ready, then redirect.
+            // This replaces a fixed 600ms delay which could miss slow startups
+            // (migrations, cache warmup on first launch).
+            (function() {
+                var elapsed = 0;
+                var MAX_WAIT = 20000;
+                var INTERVAL = 300;
+                var msgEl = null;
+
+                function showManualReload() {
+                    if (msgEl) return;
+                    msgEl = document.createElement('div');
+                    msgEl.style.cssText = 'position:fixed;bottom:32px;left:0;right:0;text-align:center;font-family:system-ui,sans-serif;font-size:13px;color:#888;';
+                    msgEl.innerHTML = 'Still loading\u2026 <a href="/" style="color:#aaa;text-decoration:underline;">Reload</a>';
+                    document.body.appendChild(msgEl);
+                }
+
+                function poll() {
+                    fetch('/up', { cache: 'no-store' })
+                        .then(function(r) {
+                            if (r.ok) { window.location.replace('/'); return; }
+                            throw 0;
+                        })
+                        .catch(function() {
+                            elapsed += INTERVAL;
+                            if (elapsed >= MAX_WAIT) { showManualReload(); }
+                            setTimeout(poll, INTERVAL);
+                        });
+                }
+
+                // Give the loading animation a moment to start before first poll
+                setTimeout(poll, 100);
+            })();
         </script>
     </body>
 </html>

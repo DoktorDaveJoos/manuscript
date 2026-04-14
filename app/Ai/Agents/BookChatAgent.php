@@ -12,12 +12,11 @@ use App\Models\Book;
 use App\Models\Chapter;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
+use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
 use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasTools;
-use Laravel\Ai\Messages\AssistantMessage;
-use Laravel\Ai\Messages\UserMessage;
 use Laravel\Ai\Promptable;
 use Stringable;
 
@@ -25,7 +24,7 @@ use Stringable;
 #[Timeout(120)]
 class BookChatAgent implements Agent, BelongsToBook, Conversational, HasMiddleware, HasTools
 {
-    use Promptable, UsesTaskCategoryModel;
+    use Promptable, RemembersConversations, UsesTaskCategoryModel;
 
     public static function taskCategory(): AiTaskCategory
     {
@@ -35,7 +34,6 @@ class BookChatAgent implements Agent, BelongsToBook, Conversational, HasMiddlewa
     public function __construct(
         protected Book $book,
         protected ?Chapter $chapter = null,
-        protected array $history = [],
     ) {}
 
     public function book(): Book
@@ -68,16 +66,6 @@ class BookChatAgent implements Agent, BelongsToBook, Conversational, HasMiddlewa
         Be concise, helpful, and grounded in the actual text. If you're unsure about something, say so rather than guessing.
         When referencing specific parts of the manuscript, mention the chapter title or number.{$writingStyle}{$chapterContext}
         INSTRUCTIONS;
-    }
-
-    public function messages(): iterable
-    {
-        return array_map(
-            fn (array $entry) => $entry['role'] === 'user'
-                ? new UserMessage($entry['content'])
-                : new AssistantMessage($entry['content']),
-            $this->history,
-        );
     }
 
     public function tools(): iterable

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActController;
 use App\Http\Controllers\AiController;
+use App\Http\Controllers\AiConversationController;
 use App\Http\Controllers\AiDashboardController;
 use App\Http\Controllers\AiPreparationController;
 use App\Http\Controllers\AiSettingsController;
@@ -182,6 +183,8 @@ Route::middleware('license')->group(function () {
     Route::post('/books/{book}/chapters/{chapter}/ai/analyze-chapter', [AiController::class, 'analyzeChapter'])->name('chapters.ai.analyzeChapter');
     Route::get('/books/{book}/chapters/{chapter}/ai/analysis-status', [AiController::class, 'chapterAnalysisStatus'])->name('chapters.ai.analysisStatus');
     Route::post('/books/{book}/ai/chat', [AiController::class, 'chat'])->name('books.ai.chat');
+    Route::get('/books/{book}/ai/conversations/{conversation}/messages', [AiConversationController::class, 'messages'])->name('books.ai.conversations.messages');
+    Route::delete('/books/{book}/ai/conversations/{conversation}', [AiConversationController::class, 'destroy'])->name('books.ai.conversations.destroy');
     Route::post('/books/{book}/ai/beautify-all', [AiController::class, 'beautifyAll'])->name('books.ai.beautifyAll');
     Route::post('/books/{book}/ai/revise-all', [AiController::class, 'reviseAll'])->name('books.ai.reviseAll');
     Route::get('/books/{book}/ai/bulk-revision-status', [AiController::class, 'bulkRevisionStatus'])->name('books.ai.bulkRevisionStatus');
