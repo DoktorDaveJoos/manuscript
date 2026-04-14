@@ -210,15 +210,15 @@ Use Wayfinder to generate TypeScript functions for Laravel routes. Import from `
 
 This app has NO authentication or authorization. Users exist in the schema but are unused. Rules:
 
-- **No auth checks.** Never add `auth()->user()`, `auth()->check()`, `Auth::` facade, `->middleware('auth')`, Policies, `Gate::define`, or `$this->authorize()`. Scope data by domain FK (`book_id`, `chapter_id`), not by user. Grandfathered call sites live in `AiController`, `EditorialReviewController`, `StreamsConversation`, `HandleInertiaRequests` — do not extend to new controllers. Enforced by `tests/Feature/GuardrailsTest.php` and by `~/.claude/hooks/protect-manuscript-authz.py` (blocks `Edit`/`Write`).
+- **No auth checks.** Never add `auth()->user()`, `auth()->check()`, `Auth::` facade, `->middleware('auth')`, Policies, `Gate::define`, or `$this->authorize()`. Scope data by domain FK (`book_id`, `chapter_id`), not by user. Grandfathered call sites live in `AiController`, `EditorialReviewController`, `StreamsConversation`, `HandleInertiaRequests` — do not extend to new controllers. Enforced by `tests/Unit/GuardrailsTest.php` (CI + local) and, for this operator, by `~/.claude/hooks/protect-manuscript-authz.py` (blocks `Edit`/`Write`).
 
-- **Every controller has a Feature test.** `App\Http\Controllers\FooController` ⇒ `tests/Feature/FooControllerTest.php`. Enforced by `tests/Feature/GuardrailsTest.php`. 7 existing controllers are grandfathered (see the test for the list) — new controllers follow the convention.
+- **Every controller has a Feature test.** `App\Http\Controllers\FooController` ⇒ `tests/Feature/FooControllerTest.php`. Enforced by `tests/Unit/GuardrailsTest.php`. 7 existing controllers are grandfathered (see the test for the list) — new controllers follow the convention.
 
 - **Browser test per feature, not per page.** The first page added under a new feature gets a `tests/Browser/<Feature>Test.php`. Subsequent tweaks under the same feature do not need a new browser test, but the existing one must still pass.
 
 - **Bugfixes are red-green.** Commit a failing test that reproduces the bug BEFORE the fix commit — or include `// red-green: see <test name>` in the fix commit message.
 
-- **Migrations run against BOTH databases.** `native:run` does NOT auto-migrate. After `php artisan make:migration`: run `php artisan migrate`, then `DB_DATABASE=database/nativephp.sqlite php artisan migrate --no-interaction` (from the main repo the shorthand is `php artisan native:migrate`). A `PostToolUse` hook at `~/.claude/hooks/remind-native-migrate.py` nudges once per session.
+- **Migrations run against BOTH databases.** `native:run` does NOT auto-migrate. After `php artisan make:migration`: run `php artisan migrate`, then `DB_DATABASE=database/nativephp.sqlite php artisan migrate --no-interaction` (from the main repo the shorthand is `php artisan native:migrate`). For this operator, a `PostToolUse` hook at `~/.claude/hooks/remind-native-migrate.py` nudges once per session.
 
 - **PR-time verification.** Any PR touching `app/Http/Controllers/`, `app/Http/Requests/`, or `database/migrations/` must invoke `superpowers:verification-before-completion` with proof that `php artisan test --compact` passes AND that `native:migrate` ran.
 

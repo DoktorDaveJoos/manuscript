@@ -1,6 +1,9 @@
 <?php
 
 use Symfony\Component\Finder\Finder;
+use Tests\TestCase;
+
+uses(TestCase::class);
 
 /*
 |--------------------------------------------------------------------------
@@ -26,7 +29,7 @@ it('has no forbidden auth calls outside the allowlist', function () {
         'auth\(\)->check\(' => 'auth()->check()',
         'auth\(\)->guest\(' => 'auth()->guest()',
         '\bAuth::' => 'Auth:: facade',
-        "->middleware\(['\"]auth\\b" => "->middleware('auth')",
+        "->middleware\(\s*['\"]auth\\b" => "->middleware('auth')",
         "middleware\(\[\s*['\"]auth\\b" => "middleware(['auth', ...])",
         '\bGate::define' => 'Gate::define',
         '\$this->authorize\(' => '$this->authorize()',
