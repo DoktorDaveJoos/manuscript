@@ -42,6 +42,15 @@ jobs:
       - name: Apply NativePHP vendor patches
         run: bash scripts/nativephp-patches/apply.sh
 
+      # nativephp/desktop is pinned to a dev branch that ships package.json and
+      # package-lock.json out of sync, so native:publish's internal `npm ci`
+      # fails and the rest of the build runs without node_modules — then
+      # silently exits green with no DMG produced. Reconcile the lockfile here.
+      - name: Reconcile electron lockfile
+        run: |
+          cd vendor/nativephp/desktop/resources/electron
+          npm install --package-lock-only --no-audit --no-fund
+
       - name: Generate application key
         run: php artisan key:generate
 
@@ -170,6 +179,16 @@ jobs:
       - name: Apply NativePHP vendor patches
         shell: bash
         run: bash scripts/nativephp-patches/apply.sh
+
+      # nativephp/desktop is pinned to a dev branch that ships package.json and
+      # package-lock.json out of sync, so native:publish's internal `npm ci`
+      # fails and the rest of the build runs without node_modules — then
+      # silently exits green with no DMG produced. Reconcile the lockfile here.
+      - name: Reconcile electron lockfile
+        shell: bash
+        run: |
+          cd vendor/nativephp/desktop/resources/electron
+          npm install --package-lock-only --no-audit --no-fund
 
       - name: Generate application key
         run: php artisan key:generate
