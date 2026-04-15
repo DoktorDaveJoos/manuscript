@@ -64,6 +64,9 @@ export default function SceneEditor({
     const retryCountRef = useRef(0);
     const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const mountedRef = useRef(true);
+    // Declared before flushContentSave so scheduleRetry can re-invoke it via
+    // the ref without referencing the const before its initializer completes.
+    const flushSelfRef = useRef<() => void | Promise<void>>(() => {});
 
     const flushContentSave = useCallback(async () => {
         if (contentTimerRef.current) {
@@ -123,7 +126,7 @@ export default function SceneEditor({
                 onSaveStatusChange?.('saving');
                 retryTimerRef.current = setTimeout(() => {
                     retryTimerRef.current = null;
-                    flushContentSave();
+                    flushSelfRef.current();
                 }, delay);
             } else {
                 retryCountRef.current = 0;
@@ -132,10 +135,11 @@ export default function SceneEditor({
         }
     }, [bookId, chapterId, scene.id, onSaveStatusChange]);
 
-    // Expose flush for parent
+    // Expose flush for parent + keep flushSelfRef pointed at the latest closure.
     const flushRef = useRef({ flushContentSave });
     useEffect(() => {
         flushRef.current = { flushContentSave };
+        flushSelfRef.current = flushContentSave;
     }, [flushContentSave]);
 
     // Attach flush + pending-content accessor to the DOM node so parent can call it
