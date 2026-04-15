@@ -54,6 +54,15 @@ export function saveAppSetting(
 }
 
 export function extractErrorMessage(error: unknown, fallback: string): string {
+    if (typeof error === 'string') {
+        try {
+            const parsed = JSON.parse(error);
+            if (typeof parsed.message === 'string' && parsed.message)
+                return parsed.message;
+        } catch {
+            // fall through
+        }
+    }
     if (error instanceof Error && 'response' in error) {
         const resp = (error as Record<string, unknown>).response;
         if (resp && typeof resp === 'object' && 'data' in resp) {

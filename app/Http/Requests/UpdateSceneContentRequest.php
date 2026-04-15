@@ -17,7 +17,7 @@ class UpdateSceneContentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'content' => ['required', 'string'],
+            'content' => ['required', 'string', 'max:5000000'],
         ];
     }
 }

@@ -55,6 +55,8 @@
     "appearance.update.currentVersion": "Current: {{version}}",
     "appearance.update.updateNow": "Update Now",
     "appearance.update.later": "Later",
+    "appearance.update.retry": "Try Again",
+    "appearance.update.errorGeneric": "Something went wrong while checking for updates.",
 
     "privacy.sectionLabel": "PRIVACY",
     "privacy.navLabel": "Privacy",

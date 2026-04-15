@@ -1,7 +1,9 @@
 <?php
 
+use App\Database\SqliteVecConnector;
 use App\Http\Controllers\ActController;
 use App\Http\Controllers\AiController;
+use App\Http\Controllers\AiConversationController;
 use App\Http\Controllers\AiDashboardController;
 use App\Http\Controllers\AiPreparationController;
 use App\Http\Controllers\AiSettingsController;
@@ -30,6 +32,8 @@ use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\WikiController;
 use App\Http\Controllers\WikiPanelController;
 use App\Http\Controllers\WritingGoalController;
+use App\Http\Middleware\HandleInertiaRequests;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 // Lightweight loading page that the NativePHP window opens first.
@@ -37,6 +41,35 @@ use Illuminate\Support\Facades\Route;
 // to '/'. Gives the user immediate visual feedback while Laravel + the
 // React bundle warm up on cold start.
 Route::get('/loading', fn () => view('loading'))->name('loading');
+
+// Skip Inertia's share() — both endpoints are plain JSON and share() runs
+// an AppSetting::getMany that would fire on every loading-screen poll.
+Route::withoutMiddleware(HandleInertiaRequests::class)->group(function () {
+    Route::get('/ready', function () {
+        try {
+            DB::select('SELECT 1');
+        } catch (Throwable) {
+            return response()->json(['ready' => false], 503);
+        }
+
+        return response()->json(['ready' => true]);
+    })->name('ready');
+
+    Route::get('/repair-status', function () {
+        $marker = SqliteVecConnector::markerPath();
+
+        if (! file_exists($marker)) {
+            return response()->json(['state' => 'idle']);
+        }
+
+        $payload = json_decode((string) @file_get_contents($marker), true) ?: [];
+
+        return response()->json([
+            'state' => 'repairing',
+            'started_at' => $payload['started_at'] ?? null,
+        ]);
+    })->name('repair-status');
+});
 
 Route::get('/', [BookController::class, 'index'])->name('books.index');
 Route::post('/books', [BookController::class, 'store'])->name('books.store');
@@ -182,6 +215,8 @@ Route::middleware('license')->group(function () {
     Route::post('/books/{book}/chapters/{chapter}/ai/analyze-chapter', [AiController::class, 'analyzeChapter'])->name('chapters.ai.analyzeChapter');
     Route::get('/books/{book}/chapters/{chapter}/ai/analysis-status', [AiController::class, 'chapterAnalysisStatus'])->name('chapters.ai.analysisStatus');
     Route::post('/books/{book}/ai/chat', [AiController::class, 'chat'])->name('books.ai.chat');
+    Route::get('/books/{book}/ai/conversations/{conversation}/messages', [AiConversationController::class, 'messages'])->name('books.ai.conversations.messages');
+    Route::delete('/books/{book}/ai/conversations/{conversation}', [AiConversationController::class, 'destroy'])->name('books.ai.conversations.destroy');
     Route::post('/books/{book}/ai/beautify-all', [AiController::class, 'beautifyAll'])->name('books.ai.beautifyAll');
     Route::post('/books/{book}/ai/revise-all', [AiController::class, 'reviseAll'])->name('books.ai.reviseAll');
     Route::get('/books/{book}/ai/bulk-revision-status', [AiController::class, 'bulkRevisionStatus'])->name('books.ai.bulkRevisionStatus');

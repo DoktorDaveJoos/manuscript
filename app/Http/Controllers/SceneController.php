@@ -88,21 +88,23 @@ class SceneController extends Controller
 
     public function reorder(ReorderScenesRequest $request, Book $book, Chapter $chapter): JsonResponse
     {
-        $order = $request->validated('order');
+        DB::transaction(function () use ($request, $chapter) {
+            $order = $request->validated('order');
 
-        if (count($order) > 0) {
-            $cases = '';
-            $ids = [];
-            foreach ($order as $index => $sceneId) {
-                $id = (int) $sceneId;
-                $ids[] = $id;
-                $cases .= "WHEN {$id} THEN {$index} ";
+            if (count($order) > 0) {
+                $cases = '';
+                $ids = [];
+                foreach ($order as $index => $sceneId) {
+                    $id = (int) $sceneId;
+                    $ids[] = $id;
+                    $cases .= "WHEN {$id} THEN {$index} ";
+                }
+                $idList = implode(',', $ids);
+                DB::statement("UPDATE scenes SET sort_order = CASE id {$cases}END WHERE id IN ({$idList})");
             }
-            $idList = implode(',', $ids);
-            DB::statement("UPDATE scenes SET sort_order = CASE id {$cases}END WHERE id IN ({$idList})");
-        }
 
-        $chapter->refreshContentHash();
+            $chapter->refreshContentHash();
+        });
 
         return response()->json(['success' => true]);
     }
@@ -113,21 +115,23 @@ class SceneController extends Controller
             return response()->json(['error' => __('Cannot delete the last scene')], 422);
         }
 
-        $scene->delete();
-        $chapter->recalculateWordCount();
+        DB::transaction(function () use ($chapter, $scene) {
+            $scene->delete();
+            $chapter->recalculateWordCount();
 
-        // Recompact sort_order in a single query
-        $remaining = $chapter->scenes()->orderBy('sort_order')->pluck('id');
-        if ($remaining->isNotEmpty()) {
-            $cases = '';
-            $ids = [];
-            foreach ($remaining as $index => $id) {
-                $ids[] = $id;
-                $cases .= "WHEN {$id} THEN {$index} ";
+            // Recompact sort_order in a single query
+            $remaining = $chapter->scenes()->orderBy('sort_order')->pluck('id');
+            if ($remaining->isNotEmpty()) {
+                $cases = '';
+                $ids = [];
+                foreach ($remaining as $index => $id) {
+                    $ids[] = $id;
+                    $cases .= "WHEN {$id} THEN {$index} ";
+                }
+                $idList = implode(',', $ids);
+                DB::statement("UPDATE scenes SET sort_order = CASE id {$cases}END WHERE id IN ({$idList})");
             }
-            $idList = implode(',', $ids);
-            DB::statement("UPDATE scenes SET sort_order = CASE id {$cases}END WHERE id IN ({$idList})");
-        }
+        });
 
         return response()->json(['success' => true]);
     }

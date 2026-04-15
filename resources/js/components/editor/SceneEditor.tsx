@@ -10,6 +10,8 @@ import useChapterEditor from '@/hooks/useChapterEditor';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { ProofreadingConfig, Scene } from '@/types/models';
 
+const SAVE_RETRY_DELAYS = [1000, 3000, 7000];
+
 export default function SceneEditor({
     scene,
     bookId,
@@ -59,6 +61,12 @@ export default function SceneEditor({
     const contentAbortRef = useRef<AbortController | null>(null);
     const contentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingContentRef = useRef<string | null>(null);
+    const retryCountRef = useRef(0);
+    const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const mountedRef = useRef(true);
+    // Declared before flushContentSave so scheduleRetry can re-invoke it via
+    // the ref without referencing the const before its initializer completes.
+    const flushSelfRef = useRef<() => void | Promise<void>>(() => {});
 
     const flushContentSave = useCallback(async () => {
         if (contentTimerRef.current) {
@@ -96,34 +104,71 @@ export default function SceneEditor({
                     pendingContentRef.current = null;
                     onSaveStatusChange?.('saved');
                 }
+                retryCountRef.current = 0;
+                if (retryTimerRef.current) {
+                    clearTimeout(retryTimerRef.current);
+                    retryTimerRef.current = null;
+                }
             } else {
-                onSaveStatusChange?.('error');
+                scheduleRetry();
             }
         } catch (e) {
             if ((e as Error).name !== 'AbortError') {
+                scheduleRetry();
+            }
+        }
+
+        function scheduleRetry() {
+            if (!mountedRef.current) return;
+            if (retryCountRef.current < SAVE_RETRY_DELAYS.length) {
+                const delay = SAVE_RETRY_DELAYS[retryCountRef.current]!;
+                retryCountRef.current += 1;
+                onSaveStatusChange?.('saving');
+                retryTimerRef.current = setTimeout(() => {
+                    retryTimerRef.current = null;
+                    flushSelfRef.current();
+                }, delay);
+            } else {
+                retryCountRef.current = 0;
                 onSaveStatusChange?.('error');
             }
         }
-    }, [bookId, chapterId, scene.id, onWordCountChange, onSaveStatusChange]);
+    }, [bookId, chapterId, scene.id, onSaveStatusChange]);
 
-    // Expose flush for parent
+    // Expose flush for parent + keep flushSelfRef pointed at the latest closure.
     const flushRef = useRef({ flushContentSave });
     useEffect(() => {
         flushRef.current = { flushContentSave };
+        flushSelfRef.current = flushContentSave;
     }, [flushContentSave]);
 
-    // Attach flush to the DOM node so parent can call it
+    // Attach flush + pending-content accessor to the DOM node so parent can call it
     const containerRef = useRef<HTMLDivElement>(null);
+    const saveUrl = updateContent.url({
+        book: bookId,
+        chapter: chapterId,
+        scene: scene.id,
+    });
+    const saveUrlRef = useRef(saveUrl);
+    saveUrlRef.current = saveUrl;
+
     useEffect(() => {
         const el = containerRef.current;
         if (el) {
             (el as unknown as Record<string, unknown>).__flush = () =>
                 flushRef.current.flushContentSave();
+            (el as unknown as Record<string, unknown>).__getPending = () => {
+                const content = pendingContentRef.current;
+                if (content === null) return null;
+                return { url: saveUrlRef.current, content };
+            };
         }
 
         // Flush pending saves on unmount
         return () => {
+            mountedRef.current = false;
             if (contentTimerRef.current) clearTimeout(contentTimerRef.current);
+            if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
             flushRef.current.flushContentSave();
         };
     }, []);
@@ -133,6 +178,15 @@ export default function SceneEditor({
             pendingContentRef.current = html;
             onWordCountChange(scene.id, words);
             onSaveStatusChange?.('saving');
+
+            // Cancel any in-flight retry — the new debounce supersedes it.
+            // Preserve retryCountRef so sustained outages actually back off
+            // instead of restarting a 3-attempt cycle on every keystroke.
+            // The counter resets on successful save (above) or on exhaustion.
+            if (retryTimerRef.current) {
+                clearTimeout(retryTimerRef.current);
+                retryTimerRef.current = null;
+            }
 
             if (contentTimerRef.current) {
                 clearTimeout(contentTimerRef.current);

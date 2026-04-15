@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Ai\Agents\EditorialChatAgent;
 use App\Enums\EditorialSectionType;
+use App\Http\Controllers\Concerns\StreamsConversation;
 use App\Jobs\RunEditorialReviewJob;
 use App\Models\AiSetting;
 use App\Models\Book;
@@ -16,10 +17,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use Laravel\Ai\Responses\StreamableAgentResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EditorialReviewController extends Controller
 {
+    use StreamsConversation;
+
     public function index(Book $book): Response
     {
         $reviews = $book->editorialReviews()
@@ -122,33 +125,34 @@ class EditorialReviewController extends Controller
         return response()->json(['resolved_findings' => $resolved]);
     }
 
-    public function chat(Request $request, Book $book, EditorialReview $review): StreamableAgentResponse
+    public function chat(Request $request, Book $book, EditorialReview $review): JsonResponse|StreamedResponse
     {
-        set_time_limit(300);
+        return $this->streamChat(function () use ($request, $book, $review) {
+            set_time_limit(300);
 
-        $this->ensureAiConfigured();
+            $this->ensureAiConfigured();
 
-        abort_if($review->book_id !== $book->id, 404);
-        abort_if($review->status !== 'completed', 422, __('Editorial review is not yet completed.'));
+            abort_if($review->book_id !== $book->id, 404);
+            abort_if($review->status !== 'completed', 422, __('Editorial review is not yet completed.'));
 
-        $request->validate([
-            'message' => ['required', 'string', 'max:2000'],
-            'history' => ['nullable', 'array', 'max:50'],
-            'history.*.role' => ['required_with:history', 'string', 'in:user,assistant'],
-            'history.*.content' => ['required_with:history', 'string', 'max:10000'],
-            'section_type' => ['nullable', 'string', Rule::enum(EditorialSectionType::class)],
-            'finding_index' => ['nullable', 'integer', 'min:0'],
-        ]);
+            $request->validate([
+                'message' => ['required', 'string', 'max:2000'],
+                'conversation_id' => ['nullable', 'string', 'max:36'],
+                'section_type' => ['nullable', 'string', Rule::enum(EditorialSectionType::class)],
+                'finding_index' => ['nullable', 'integer', 'min:0'],
+            ]);
 
-        $context = $this->buildEditorialContext($review, $request);
+            $conversationId = $this->resolveConversation($request);
+            $context = $this->buildEditorialContext($review, $request);
 
-        $agent = new EditorialChatAgent(
-            $book,
-            $context,
-            $request->input('history', []),
-        );
+            $agent = new EditorialChatAgent($book, $context);
+            $agent->continue($conversationId, $request->user() ?? (object) ['id' => 0]);
 
-        return $agent->stream($request->input('message'));
+            return $this->streamWithConversationId(
+                $agent->stream($request->input('message')),
+                $conversationId,
+            );
+        });
     }
 
     /**

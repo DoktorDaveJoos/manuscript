@@ -84,6 +84,7 @@
     "role.mentioned": "Erwähnt",
 
     "chat.connectionFailed": "Verbindung fehlgeschlagen. Bitte erneut versuchen.",
+    "chat.requestFailed": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
     "chat.emptyState": "Frage alles über dieses Kapitel — Figuren, Handlung, Stil oder Ideen.",
     "chat.senderYou": "Du",
     "chat.senderAi": "KI",
@@ -94,6 +95,8 @@
     "chat.bookContext": "Buchkontext",
     "chat.thinking": "Denke nach…",
     "chat.chapter": "Kap. {{number}}",
+    "chat.newConversation": "Neues Gespräch",
+    "chat.loadingHistory": "Lade Gespräch…",
 
     "preparation.title": "KI-Vorbereitung",
     "preparation.requiresPro": "Erfordert Pro",

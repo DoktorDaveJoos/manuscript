@@ -62,6 +62,13 @@ jobs:
           sed -i '' "s|POLAR_ACCESS_TOKEN=.*|POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN}|" .env
           sed -i '' "s|POLAR_ORGANIZATION_ID=.*|POLAR_ORGANIZATION_ID=${POLAR_ORGANIZATION_ID}|" .env
 
+      - name: Verify Sentry DSN is configured
+        run: |
+          if ! grep -q 'SENTRY_LARAVEL_DSN=https' .env; then
+            echo "::error::SENTRY_LARAVEL_DSN is empty or missing. Check GitHub secrets."
+            exit 1
+          fi
+
       - name: Build frontend assets
         env:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
@@ -183,6 +190,13 @@ jobs:
           sed -i "s|VITE_SENTRY_DSN=.*|VITE_SENTRY_DSN=${VITE_SENTRY_DSN}|" .env
           sed -i "s|POLAR_ACCESS_TOKEN=.*|POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN}|" .env
           sed -i "s|POLAR_ORGANIZATION_ID=.*|POLAR_ORGANIZATION_ID=${POLAR_ORGANIZATION_ID}|" .env
+
+      - name: Verify Sentry DSN is configured
+        run: |
+          if ! grep -q 'SENTRY_LARAVEL_DSN=https' .env; then
+            echo "::error::SENTRY_LARAVEL_DSN is empty or missing. Check GitHub secrets."
+            exit 1
+          fi
 
       - name: Build frontend assets
         env:

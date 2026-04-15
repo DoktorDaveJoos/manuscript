@@ -26,6 +26,7 @@ import NotesPanel from '@/components/editor/NotesPanel';
 import PaneEmptyState from '@/components/editor/PaneEmptyState';
 import Sidebar from '@/components/editor/Sidebar';
 import WikiPanel from '@/components/editor/WikiPanel';
+import Button from '@/components/ui/Button';
 import Kbd from '@/components/ui/Kbd';
 import SlidePanel from '@/components/ui/SlidePanel';
 import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
@@ -34,7 +35,7 @@ import type { ChapterData } from '@/hooks/useChapterData';
 import useChapterData from '@/hooks/useChapterData';
 import usePaneManager from '@/hooks/usePaneManager';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
-import { createChapter, saveAppSetting } from '@/lib/utils';
+import { createChapter, jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
 import type {
     AppSettings,
     Book,
@@ -90,7 +91,7 @@ function PaneWithData({
     scenesVisible: boolean;
     spellcheckEnabled: boolean;
 }) {
-    const { data, isLoading, error, softRefresh } = useChapterData(
+    const { data, isLoading, error, refresh, softRefresh } = useChapterData(
         bookId,
         chapterId,
     );
@@ -125,8 +126,11 @@ function PaneWithData({
 
     if (error) {
         return (
-            <div className="flex min-w-0 flex-1 items-center justify-center text-sm text-ink-muted">
+            <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-3 text-sm text-ink-muted">
                 Failed to load chapter
+                <Button variant="secondary" size="sm" onClick={refresh}>
+                    Try again
+                </Button>
             </div>
         );
     }
@@ -165,7 +169,7 @@ export default function EditorPage({
     const { t: tAi } = useTranslation('ai');
     const { t: tEditorial } = useTranslation('editorial-review');
     const sidebarStorylines = useSidebarStorylines();
-    const { visible: aiVisible } = useAiFeatures();
+    const { usable: aiVisible } = useAiFeatures();
     const { app_settings } = usePage<{ app_settings: AppSettings }>().props;
 
     // ── Pane management ──────────────────────────────────────────────────
@@ -266,10 +270,36 @@ export default function EditorPage({
         return removeListener;
     }, [flushAllPanes]);
 
-    // Flush on beforeunload
+    // Flush on beforeunload — fire keepalive fetches as a last-resort safety net
+    // (the browser may kill the page before async flushAllPanes completes)
     useEffect(() => {
         const handler = () => {
+            // Best-effort async flush (may not complete before unload)
             flushAllPanes();
+
+            // Keepalive fetches survive page teardown (64KB body limit per request)
+            const paneEls = document.querySelectorAll('[data-pane-chapter]');
+            paneEls.forEach((el) => {
+                const getPendingAll = (
+                    el as unknown as Record<
+                        string,
+                        () => { url: string; content: string }[]
+                    >
+                ).__getPendingAll;
+                if (typeof getPendingAll !== 'function') return;
+                for (const { url, content } of getPendingAll()) {
+                    try {
+                        fetch(url, {
+                            method: 'PUT',
+                            headers: jsonFetchHeaders(),
+                            body: JSON.stringify({ content }),
+                            keepalive: true,
+                        });
+                    } catch {
+                        // Best effort — nothing more we can do during unload
+                    }
+                }
+            });
         };
         window.addEventListener('beforeunload', handler);
         return () => window.removeEventListener('beforeunload', handler);
@@ -527,11 +557,12 @@ export default function EditorPage({
 
     // ── Create chapter from empty state / palette ────────────────────────
     const handleCreateChapter = useCallback(() => {
-        const firstStoryline = sidebarStorylines[0];
-        if (firstStoryline) {
-            createChapter(book.id, firstStoryline.id, sidebarStorylines);
+        const storylineId =
+            focusedChapter?.storyline_id ?? sidebarStorylines[0]?.id;
+        if (storylineId) {
+            createChapter(book.id, storylineId, sidebarStorylines);
         }
-    }, [book.id, sidebarStorylines]);
+    }, [book.id, focusedChapter?.storyline_id, sidebarStorylines]);
 
     // ── Find navigate ────────────────────────────────────────────────────
     const handleFindNavigate = useCallback(

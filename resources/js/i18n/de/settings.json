@@ -55,6 +55,8 @@
     "appearance.update.currentVersion": "Aktuell: {{version}}",
     "appearance.update.updateNow": "Jetzt aktualisieren",
     "appearance.update.later": "Später",
+    "appearance.update.retry": "Erneut versuchen",
+    "appearance.update.errorGeneric": "Beim Suchen nach Updates ist ein Fehler aufgetreten.",
 
     "privacy.sectionLabel": "DATENSCHUTZ",
     "privacy.navLabel": "Datenschutz",

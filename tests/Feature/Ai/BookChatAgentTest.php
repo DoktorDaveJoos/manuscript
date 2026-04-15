@@ -4,8 +4,10 @@ use App\Ai\Agents\BookChatAgent;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\Storyline;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Laravel\Ai\Contracts\ConversationStore;
 use Laravel\Ai\Messages\AssistantMessage;
-use Laravel\Ai\Messages\UserMessage;
 
 test('book chat agent includes book title in instructions', function () {
     $book = Book::factory()->create(['title' => 'My Great Novel']);
@@ -83,23 +85,25 @@ test('book chat agent omits chapter context when no chapter given', function () 
     expect($instructions)->not->toContain('currently editing');
 });
 
-test('book chat agent messages converts history to message objects', function () {
+test('book chat agent loads messages from conversation store', function () {
     $book = Book::factory()->create();
-    $history = [
-        ['role' => 'user', 'content' => 'Who is the protagonist?'],
-        ['role' => 'assistant', 'content' => 'The protagonist is Elena.'],
-        ['role' => 'user', 'content' => 'Tell me more about her.'],
-    ];
 
-    $agent = new BookChatAgent($book, null, $history);
+    $conversationId = resolve(ConversationStore::class)
+        ->storeConversation(null, 'Test conversation');
+
+    DB::table('agent_conversation_messages')->insert([
+        ['id' => Str::uuid7()->toString(), 'conversation_id' => $conversationId, 'user_id' => null, 'agent' => BookChatAgent::class, 'role' => 'user', 'content' => 'Who is the protagonist?', 'attachments' => '[]', 'tool_calls' => '[]', 'tool_results' => '[]', 'usage' => '[]', 'meta' => '[]', 'created_at' => now(), 'updated_at' => now()],
+        ['id' => Str::uuid7()->toString(), 'conversation_id' => $conversationId, 'user_id' => null, 'agent' => BookChatAgent::class, 'role' => 'assistant', 'content' => 'The protagonist is Elena.', 'attachments' => '[]', 'tool_calls' => '[]', 'tool_results' => '[]', 'usage' => '[]', 'meta' => '[]', 'created_at' => now(), 'updated_at' => now()],
+    ]);
+
+    $agent = new BookChatAgent($book);
+    $agent->continue($conversationId, (object) ['id' => 1]);
     $messages = iterator_to_array($agent->messages());
 
-    expect($messages)->toHaveCount(3);
-    expect($messages[0])->toBeInstanceOf(UserMessage::class);
+    expect($messages)->toHaveCount(2);
     expect($messages[0]->content)->toBe('Who is the protagonist?');
     expect($messages[1])->toBeInstanceOf(AssistantMessage::class);
     expect($messages[1]->content)->toBe('The protagonist is Elena.');
-    expect($messages[2])->toBeInstanceOf(UserMessage::class);
 });
 
 test('book chat agent messages returns empty when no history', function () {

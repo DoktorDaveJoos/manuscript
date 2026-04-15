@@ -234,15 +234,31 @@ export default function ChapterPane({
         await Promise.all(flushes);
     }, [flushTitleSave]);
 
-    // Expose flushAll on the pane root div for the parent to call
+    // Expose flushAll + pending-content collector on the pane root div
     const flushAllRef = useRef(flushAll);
     flushAllRef.current = flushAll;
     useEffect(() => {
         const el = paneRef.current;
-        if (el) {
-            (el as unknown as Record<string, unknown>).__flushPane = () =>
-                flushAllRef.current();
-        }
+        if (!el) return;
+        (el as unknown as Record<string, unknown>).__flushPane = () =>
+            flushAllRef.current();
+        (el as unknown as Record<string, unknown>).__getPendingAll = () => {
+            const sceneEls = el.querySelectorAll('[id^="scene-"]');
+            const pending: { url: string; content: string }[] = [];
+            sceneEls.forEach((sceneEl) => {
+                const getPending = (
+                    sceneEl as unknown as Record<
+                        string,
+                        () => { url: string; content: string } | null
+                    >
+                ).__getPending;
+                if (typeof getPending === 'function') {
+                    const p = getPending();
+                    if (p) pending.push(p);
+                }
+            });
+            return pending;
+        };
     }, []);
 
     // ── Derived values ───────────────────────────────────────────────────
