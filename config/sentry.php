@@ -1,7 +1,6 @@
 <?php
 
-use App\Models\AppSetting;
-use Sentry\Event;
+use App\Sentry\BeforeSend;
 
 /**
  * Sentry Laravel SDK configuration file.
@@ -13,28 +12,10 @@ return [
     // @see https://docs.sentry.io/concepts/key-terms/dsn-explainer/
     'dsn' => env('SENTRY_LARAVEL_DSN', env('SENTRY_DSN')),
 
-    // Always send unhandled exceptions (app crashes) so we're never blind to
-    // boot-time failures. For handled errors, respect the user's opt-in.
-    'before_send' => function (Event $event): ?Event {
-        foreach ($event->getExceptions() as $exception) {
-            $mechanism = $exception->getMechanism();
-
-            if ($mechanism !== null && $mechanism->isHandled() === false) {
-                return $event;
-            }
-        }
-
-        try {
-            if (! AppSetting::get('send_error_reports', false)) {
-                return null;
-            }
-        } catch (Throwable) {
-            // Can't read setting (DB down) = critical failure — send it.
-            return $event;
-        }
-
-        return $event;
-    },
+    // Static-method callable (var_export-serializable) so `config:cache`
+    // succeeds in the NativePHP packaged build. A Closure here would crash
+    // the publish pipeline with "value at 'sentry.before_send' is non-serializable".
+    'before_send' => [BeforeSend::class, 'handle'],
 
     // @see https://spotlightjs.com/
     // 'spotlight' => env('SENTRY_SPOTLIGHT', false),
