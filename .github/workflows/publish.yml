@@ -42,6 +42,15 @@ jobs:
       - name: Apply NativePHP vendor patches
         run: bash scripts/nativephp-patches/apply.sh
 
+      # nativephp/desktop is pinned to a dev branch that ships package.json and
+      # package-lock.json out of sync, so native:publish's internal `npm ci`
+      # fails and the rest of the build runs without node_modules — then
+      # silently exits green with no DMG produced. Reconcile the lockfile here.
+      - name: Reconcile electron lockfile
+        run: |
+          cd vendor/nativephp/desktop/resources/electron
+          npm install --package-lock-only --no-audit --no-fund
+
       - name: Generate application key
         run: php artisan key:generate
 
@@ -136,6 +145,21 @@ jobs:
           SENTRY_RELEASE: ${{ github.ref_name }}
         run: php artisan native:publish mac x64 --no-interaction
 
+      # native:publish can silently exit 0 if its internal npm steps fail
+      # (e.g. cross-env missing because npm ci errored). Without this guard
+      # the workflow goes green with no DMG uploaded.
+      - name: Verify DMG artifacts were produced
+        shell: bash
+        run: |
+          DIST=vendor/nativephp/desktop/resources/electron/dist
+          if [ ! -d "$DIST" ] || [ -z "$(find $DIST -maxdepth 2 -type f -name '*.dmg' 2>/dev/null)" ]; then
+            echo "::error::No .dmg artifacts in $DIST — native:publish silently failed."
+            ls -la "$DIST" 2>/dev/null || echo "(dist/ does not exist)"
+            exit 1
+          fi
+          echo "macOS DMGs produced:"
+          find "$DIST" -maxdepth 2 -type f -name '*.dmg'
+
   build-windows:
     runs-on: windows-latest
 
@@ -170,6 +194,16 @@ jobs:
       - name: Apply NativePHP vendor patches
         shell: bash
         run: bash scripts/nativephp-patches/apply.sh
+
+      # nativephp/desktop is pinned to a dev branch that ships package.json and
+      # package-lock.json out of sync, so native:publish's internal `npm ci`
+      # fails and the rest of the build runs without node_modules — then
+      # silently exits green with no DMG produced. Reconcile the lockfile here.
+      - name: Reconcile electron lockfile
+        shell: bash
+        run: |
+          cd vendor/nativephp/desktop/resources/electron
+          npm install --package-lock-only --no-audit --no-fund
 
       - name: Generate application key
         run: php artisan key:generate
@@ -229,3 +263,18 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
           SENTRY_RELEASE: ${{ github.ref_name }}
         run: php artisan native:publish win x64 --no-interaction
+
+      # native:publish can silently exit 0 if its internal npm steps fail
+      # (e.g. cross-env missing because npm ci errored). Without this guard
+      # the workflow goes green with no installer uploaded.
+      - name: Verify installer artifacts were produced
+        shell: bash
+        run: |
+          DIST=vendor/nativephp/desktop/resources/electron/dist
+          if [ ! -d "$DIST" ] || [ -z "$(find $DIST -maxdepth 2 -type f \( -name '*.exe' -o -name '*.msi' \) 2>/dev/null)" ]; then
+            echo "::error::No .exe/.msi artifacts in $DIST — native:publish silently failed."
+            ls -la "$DIST" 2>/dev/null || echo "(dist/ does not exist)"
+            exit 1
+          fi
+          echo "Windows installers produced:"
+          find "$DIST" -maxdepth 2 -type f \( -name '*.exe' -o -name '*.msi' \)
