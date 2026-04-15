@@ -57,7 +57,10 @@ class NativeAppServiceProvider implements ProvidesPhpIni
     {
         $ini = [
             'memory_limit' => '1G',
-            'max_execution_time' => '300',
+            // CLI default. Per-job ceilings come from Laravel's queue --timeout
+            // (SIGALRM, fails the job and keeps the worker alive) instead of
+            // PHP's hard limit (FatalError, kills the worker).
+            'max_execution_time' => '0',
             'post_max_size' => '100M',
             'upload_max_filesize' => '100M',
             'pcre.backtrack_limit' => '5000000',
