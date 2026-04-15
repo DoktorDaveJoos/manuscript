@@ -49,7 +49,7 @@ jobs:
       - name: Reconcile electron lockfile
         run: |
           cd vendor/nativephp/desktop/resources/electron
-          npm install --package-lock-only --no-audit --no-fund
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
       - name: Generate application key
         run: php artisan key:generate
@@ -203,7 +203,7 @@ jobs:
         shell: bash
         run: |
           cd vendor/nativephp/desktop/resources/electron
-          npm install --package-lock-only --no-audit --no-fund
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
       - name: Generate application key
         run: php artisan key:generate
