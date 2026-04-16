@@ -1,5 +1,65 @@
 # Changelog
 
+## v0.4.9 (2026-04-16)
+
+### Features
+
+- database integrity check, auto-repair, and data recovery on startup (36fbd29)
+- add repo-side guardrails enforcement (dfb7e44)
+- harden editor, startup, and updater reliability (6a7181b)
+- server-side AI conversation persistence and streaming improvements (3e06dee)
+- upgrade to Laravel 13 (3949c7d)
+
+### Fixes
+
+- tolerate rotated APP_KEY on encrypted ai_settings.api_key (e30a0be)
+- let queue workers outrun PHP's max_execution_time (454f0d9)
+- move sentry before_send Closure into a static-method callable (b2a845a)
+- break self-reference in SceneEditor retry closure (4eeee56)
+- harden database auto-repair against data-loss bugs (8e292c0)
+
+### Other Changes
+
+- feat(ui): surface api-key recovery banner on AI settings (37a70f8)
+- fix(native): override optimize task list to skip route:cache (a456da0)
+- update changelog for v0.4.8 (3485c51)
+- add sentry-php-sdk skill (7efa34f)
+- fix(native): drop route:cache from prebuild (c0a6f75)
+- update changelog for v0.4.7 (35148c2)
+- fix(ci): skip postinstall during electron lockfile reconcile (e4a74c3)
+- clean up failed release artifacts (ae5ae3c)
+- update changelog for v0.4.10 (7123b98)
+- fail loudly when native:publish produces no artifacts (c66442b)
+- fix(ci): reconcile electron lockfile before native:publish (7627d9e)
+- update changelog for v0.4.9 (6c70683)
+- fix(ci): force bash on Sentry DSN verify step so the Windows build runs (c1398fa)
+- update changelog for v0.4.8 (302cc5f)
+- update changelog for v0.4.7 (aee2f8a)
+- align AiConversationController with no-auth guardrail (a135789)
+- add guardrails plan (4fc580a)
+- Merge pull request #110 from DoktorDaveJoos/feat/guardrails (eb2bcae)
+- fix(guardrails): address review feedback (e0782a7)
+- update changelog for v0.4.6 (19baf96)
+- feat(release): two-step release with draft gate and promote script (aca08cd)
+- replace hardcoded act colors with CSS custom properties (5c4efed)
+- fix(ui): audit and fix dark mode across all shared components and pages (522a66e)
+- feat(wiki-panel): multi-expand cards + auto-resize descriptions (eb94b09)
+- update features and adopt clean literary tone (3c5bf7d)
+- batch workflow rules + salvage protocol + worktree bootstrap (012ff3e)
+- Merge pull request #108 from DoktorDaveJoos/chore/post-merge-cleanup (98ab88f)
+- guard handleNotesChange + align EditorialReviewPanel wrap (af8fbba)
+- Merge pull request #107 from DoktorDaveJoos/worktree-agent-aeb5e79e (8950497)
+- feat(editor): wire EditorialReviewPanel chapter note from latest review (cd36322)
+- Merge pull request #105 from DoktorDaveJoos/worktree-agent-a2ca00d1 (76e3876)
+- regression test for AiChatDrawer multi-pane behavior (638b041)
+- Merge pull request #106 from DoktorDaveJoos/fix/editor-panels-multi-chapter (77712a3)
+- Merge pull request #104 from DoktorDaveJoos/worktree-agent-a041e96e (aa7730b)
+- Merge pull request #103 from DoktorDaveJoos/worktree-agent-ae2b887c (2f8edc6)
+- fix(editor): keep panel state in sync across chapters in single + split view (46db6eb)
+- splitscreen notes per-chapter regression test (39fa70c)
+- add notes round-trip regression test (af031d9)
+
+
 ## v0.4.8 (2026-04-15)
 
 ### Features
