@@ -1,24 +1,3 @@
-// Type augmentation for ES2025 Map.getOrInsertComputed
-declare global {
-    interface Map<K, V> {
-        getOrInsertComputed(key: K, cb: (k: K) => V): V;
-    }
-}
-
-// Polyfill Map.getOrInsertComputed (ES2025) — needed for pdfjs in older Electron/Chromium
-if (!Map.prototype.getOrInsertComputed) {
-    Map.prototype.getOrInsertComputed = function (
-        key: unknown,
-        cb: (k: unknown) => unknown,
-    ) {
-        if (this.has(key)) return this.get(key);
-        const v = cb(key);
-        this.set(key, v);
-        return v;
-    };
-}
-
-import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -30,12 +9,8 @@ import type {
 } from '@/components/export/types';
 import { VISUAL_FORMATS } from '@/components/export/types';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
+import { pdfjsLib } from '@/lib/pdfjs';
 import { jsonFetchHeaders } from '@/lib/utils';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.mjs',
-    import.meta.url,
-).toString();
 
 const PAGE_GAP = 12;
 const PAGE_PADDING = 56; // px-7 = 28px each side

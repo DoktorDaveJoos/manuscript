@@ -16,6 +16,7 @@ import Input from '@/components/ui/Input';
 import PageHeader from '@/components/ui/PageHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
+import { Spinner } from '@/components/ui/spinner';
 import Textarea from '@/components/ui/Textarea';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
@@ -48,6 +49,8 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
     });
 
     const [showSaved, setShowSaved] = useState(false);
+    const [isConvertingPdf, setIsConvertingPdf] = useState(false);
+    const [coverError, setCoverError] = useState<string | null>(null);
     const savedTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
     const formDataRef = useRef(form.data);
     useEffect(() => {
@@ -77,17 +80,36 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
     };
 
     const handleCoverUpload = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
+        async (e: React.ChangeEvent<HTMLInputElement>) => {
             const file = e.target.files?.[0];
+            if (fileInputRef.current) fileInputRef.current.value = '';
             if (!file) return;
+
+            setCoverError(null);
+
+            let payload = file;
+            if (file.type === 'application/pdf') {
+                setIsConvertingPdf(true);
+                try {
+                    const { renderPdfFirstPageToPng } =
+                        await import('@/lib/pdfjs');
+                    payload = await renderPdfFirstPageToPng(file);
+                } catch (err) {
+                    console.error('PDF cover conversion failed', err);
+                    setCoverError(t('cover.conversionError'));
+                    setIsConvertingPdf(false);
+                    return;
+                }
+                setIsConvertingPdf(false);
+            }
+
             router.post(
                 uploadCover.url(book.id),
-                { cover_image: file } as Record<string, File>,
+                { cover_image: payload } as Record<string, File>,
                 { forceFormData: true, preserveScroll: true },
             );
-            if (fileInputRef.current) fileInputRef.current.value = '';
         },
-        [book.id],
+        [book.id, t],
     );
 
     const handleCoverRemove = useCallback(() => {
@@ -167,9 +189,22 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                                         onClick={() =>
                                                             fileInputRef.current?.click()
                                                         }
+                                                        disabled={
+                                                            isConvertingPdf
+                                                        }
                                                     >
-                                                        <Upload size={14} />
-                                                        {t('cover.replace')}
+                                                        {isConvertingPdf ? (
+                                                            <Spinner className="size-[14px]" />
+                                                        ) : (
+                                                            <Upload size={14} />
+                                                        )}
+                                                        {isConvertingPdf
+                                                            ? t(
+                                                                  'cover.converting',
+                                                              )
+                                                            : t(
+                                                                  'cover.replace',
+                                                              )}
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
@@ -178,6 +213,9 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                                             handleCoverRemove
                                                         }
                                                         className="text-delete hover:text-delete/80"
+                                                        disabled={
+                                                            isConvertingPdf
+                                                        }
                                                     >
                                                         <Trash2 size={14} />
                                                         {t('cover.remove')}
@@ -190,24 +228,37 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                                 onClick={() =>
                                                     fileInputRef.current?.click()
                                                 }
-                                                className="flex h-48 w-36 flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border-dashed transition-colors hover:border-ink-faint hover:bg-neutral-bg"
+                                                disabled={isConvertingPdf}
+                                                className="flex h-48 w-36 flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border-dashed transition-colors hover:border-ink-faint hover:bg-neutral-bg disabled:cursor-not-allowed disabled:opacity-60"
                                             >
                                                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-bg">
-                                                    <ImagePlus
-                                                        size={18}
-                                                        className="text-ink-muted"
-                                                    />
+                                                    {isConvertingPdf ? (
+                                                        <Spinner className="size-[18px] text-ink-muted" />
+                                                    ) : (
+                                                        <ImagePlus
+                                                            size={18}
+                                                            className="text-ink-muted"
+                                                        />
+                                                    )}
                                                 </div>
                                                 <span className="text-xs font-medium text-ink-muted">
-                                                    {t('cover.upload')}
+                                                    {isConvertingPdf
+                                                        ? t('cover.converting')
+                                                        : t('cover.upload')}
                                                 </span>
                                             </button>
+                                        )}
+
+                                        {coverError && (
+                                            <p className="mt-3 text-xs text-danger">
+                                                {coverError}
+                                            </p>
                                         )}
 
                                         <input
                                             ref={fileInputRef}
                                             type="file"
-                                            accept="image/jpeg,image/png,image/webp"
+                                            accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf"
                                             onChange={handleCoverUpload}
                                             className="hidden"
                                         />

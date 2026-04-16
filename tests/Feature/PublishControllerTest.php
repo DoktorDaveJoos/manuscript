@@ -60,6 +60,21 @@ it('uploads a cover image', function () {
     Storage::disk('local')->assertExists($this->book->cover_image_path);
 });
 
+it('rejects a raw PDF upload at the backend', function () {
+    Storage::fake('local');
+
+    $pdf = UploadedFile::fake()->create('cover.pdf', 200, 'application/pdf');
+
+    $response = $this->post(route('books.publish.cover', $this->book), [
+        'cover_image' => $pdf,
+    ]);
+
+    $response->assertSessionHasErrors('cover_image');
+
+    $this->book->refresh();
+    expect($this->book->cover_image_path)->toBeNull();
+});
+
 it('deletes a cover image', function () {
     Storage::fake('local');
     Storage::disk('local')->put('covers/old.jpg', 'fake');
