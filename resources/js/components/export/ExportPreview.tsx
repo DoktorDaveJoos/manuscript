@@ -47,7 +47,6 @@ interface ExportPreviewProps {
     fontPairing?: string;
     sceneBreakStyle?: string;
     dropCaps?: boolean;
-    includeCover?: boolean;
 }
 
 function SkeletonPage({ width, height }: { width: number; height: number }) {
@@ -158,7 +157,6 @@ export default function ExportPreview({
     fontPairing = 'classic-serif',
     sceneBreakStyle = 'asterisks',
     dropCaps = true,
-    includeCover = false,
 }: ExportPreviewProps) {
     const { t } = useTranslation('export');
 
@@ -255,7 +253,6 @@ export default function ExportPreview({
                     font_pairing: fontPairing,
                     scene_break_style: sceneBreakStyle,
                     drop_caps: dropCaps,
-                    include_cover: includeCover,
                 }),
             })
                 .then(async (res) => {
@@ -333,7 +330,6 @@ export default function ExportPreview({
         fontPairing,
         sceneBreakStyle,
         dropCaps,
-        includeCover,
     ]);
 
     useEffect(() => {

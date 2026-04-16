@@ -23,6 +23,7 @@
 
     "exportAs": "Exportar como .{{format}}",
     "exporting": "Exportando…",
+    "exportError": "Exportación fallida",
     "previewInBrowser": "Vista previa en el navegador",
     "proRequired": "Requiere licencia PRO.",
     "learnMore": "Más información",

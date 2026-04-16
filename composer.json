@@ -36,6 +36,7 @@
     },
     "autoload": {
         "files": [
+            "app/Polyfills/load.php",
             "app/helpers.php"
         ],
         "psr-4": {

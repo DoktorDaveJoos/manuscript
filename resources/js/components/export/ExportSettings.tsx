@@ -52,6 +52,7 @@ type ExportSettingsProps = {
     includeCover: boolean;
     onIncludeCoverChange: (v: boolean) => void;
     hasCover: boolean;
+    error: string | null;
 };
 
 const FORMATS: Format[] = ['epub', 'pdf', 'docx', 'txt'];
@@ -88,6 +89,7 @@ export default function ExportSettings({
     includeCover,
     onIncludeCoverChange,
     hasCover,
+    error,
 }: ExportSettingsProps) {
     const { t } = useTranslation('export');
     const { canExportFormat } = useFreeTier();
@@ -274,7 +276,13 @@ export default function ExportSettings({
                 <div className="flex-1" />
 
                 {/* Export button + preview link */}
-                <div className="flex items-center gap-3 pt-4">
+                <div className="flex flex-col items-start gap-3 pt-4">
+                    {error && (
+                        <Alert variant="destructive">
+                            <AlertTitle>{t('exportError')}</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
                     <Button
                         variant="primary"
                         size="lg"

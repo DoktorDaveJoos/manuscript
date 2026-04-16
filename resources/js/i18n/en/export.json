@@ -33,6 +33,7 @@
 
     "exportAs": "Export as .{{format}}",
     "exporting": "Exporting…",
+    "exportError": "Export failed",
     "previewInBrowser": "Preview in browser",
     "proRequired": "Requires PRO license.",
     "learnMore": "Learn more",
