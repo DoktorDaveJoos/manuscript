@@ -11,6 +11,10 @@ use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Middleware\TrustProxies;
 use Sentry\Laravel\Integration;
 
+require_once __DIR__.'/../app/helpers.php';
+
+clear_stale_route_cache();
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
