@@ -38,5 +38,7 @@
     "backMatter.epilogue": "Capítulo de epílogo",
     "backMatter.epilogueHint": "Selecciona un capítulo como epílogo. Aparecerá en las páginas finales durante la exportación.",
     "backMatter.noEpilogue": "Ninguno",
-    "saved": "Guardado"
+    "saveStatus.saving": "Guardando…",
+    "saveStatus.saved": "Guardado",
+    "saveStatus.error": "Error al guardar"
 }

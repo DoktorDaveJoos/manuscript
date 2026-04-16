@@ -38,5 +38,7 @@
     "backMatter.epilogue": "Epilogue Chapter",
     "backMatter.epilogueHint": "Select a chapter to treat as an epilogue. It will appear in back matter during export.",
     "backMatter.noEpilogue": "None",
-    "saved": "Saved"
+    "saveStatus.saving": "Saving…",
+    "saveStatus.saved": "Saved",
+    "saveStatus.error": "Save error"
 }

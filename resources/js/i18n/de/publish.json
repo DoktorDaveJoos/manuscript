@@ -38,5 +38,7 @@
     "backMatter.epilogue": "Epilog-Kapitel",
     "backMatter.epilogueHint": "Wähle ein Kapitel als Epilog aus. Es erscheint beim Export im Nachspann.",
     "backMatter.noEpilogue": "Keines",
-    "saved": "Gespeichert"
+    "saveStatus.saving": "Speichere…",
+    "saveStatus.saved": "Gespeichert",
+    "saveStatus.error": "Fehler beim Speichern"
 }

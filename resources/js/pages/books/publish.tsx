@@ -14,6 +14,8 @@ import { Card } from '@/components/ui/Card';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import PageHeader from '@/components/ui/PageHeader';
+import SaveStatusIndicator from '@/components/ui/SaveStatusIndicator';
+import type { SaveStatus } from '@/components/ui/SaveStatusIndicator';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
 import { Spinner } from '@/components/ui/spinner';
@@ -48,26 +50,20 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
         isbn: book.isbn ?? '',
     });
 
-    const [showSaved, setShowSaved] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
     const [isConvertingPdf, setIsConvertingPdf] = useState(false);
     const [coverError, setCoverError] = useState<string | null>(null);
-    const savedTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
     const formDataRef = useRef(form.data);
     useEffect(() => {
         formDataRef.current = form.data;
     }, [form.data]);
 
-    const showSavedBriefly = useCallback(() => {
-        setShowSaved(true);
-        if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
-        savedTimeoutRef.current = setTimeout(() => setShowSaved(false), 2000);
-    }, []);
-
     const debouncedSave = useDebouncedCallback(() => {
         router.put(update.url(book.id), formDataRef.current, {
             preserveScroll: true,
             preserveState: true,
-            onSuccess: showSavedBriefly,
+            onSuccess: () => setSaveStatus('saved'),
+            onError: () => setSaveStatus('error'),
         });
     }, 1000);
 
@@ -76,6 +72,7 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
         value: string,
     ) => {
         form.setData(field, value);
+        setSaveStatus('saving');
         debouncedSave();
     };
 
@@ -103,17 +100,28 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                 setIsConvertingPdf(false);
             }
 
+            setSaveStatus('saving');
             router.post(
                 uploadCover.url(book.id),
                 { cover_image: payload } as Record<string, File>,
-                { forceFormData: true, preserveScroll: true },
+                {
+                    forceFormData: true,
+                    preserveScroll: true,
+                    onSuccess: () => setSaveStatus('saved'),
+                    onError: () => setSaveStatus('error'),
+                },
             );
         },
         [book.id, t],
     );
 
     const handleCoverRemove = useCallback(() => {
-        router.delete(deleteCover.url(book.id), { preserveScroll: true });
+        setSaveStatus('saving');
+        router.delete(deleteCover.url(book.id), {
+            preserveScroll: true,
+            onSuccess: () => setSaveStatus('saved'),
+            onError: () => setSaveStatus('error'),
+        });
     }, [book.id]);
 
     useEffect(() => {
@@ -129,10 +137,15 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
     const handleEpilogueChange = useCallback(
         (e: React.ChangeEvent<HTMLSelectElement>) => {
             const value = e.target.value;
+            setSaveStatus('saving');
             router.put(
                 updateEpilogue.url(book.id),
                 { chapter_id: value === 'none' ? null : Number(value) },
-                { preserveScroll: true },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => setSaveStatus('saved'),
+                    onError: () => setSaveStatus('error'),
+                },
             );
         },
         [book.id],
@@ -155,11 +168,7 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                             title={t('title')}
                             subtitle={t('subtitle')}
                             actions={
-                                showSaved && (
-                                    <span className="animate-in fade-in rounded-full bg-status-final/10 px-3 py-1 text-xs font-medium text-status-final">
-                                        {t('saved')}
-                                    </span>
-                                )
+                                <SaveStatusIndicator status={saveStatus} />
                             }
                         />
 
