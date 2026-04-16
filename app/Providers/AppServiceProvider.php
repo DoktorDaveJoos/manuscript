@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Console\Commands\OptimizeCommand;
 use App\Database\SqliteVecConnector;
 use App\Listeners\RecordAiTokenUsage;
 use App\Services\DatabaseRepairService;
@@ -32,6 +33,12 @@ class AppServiceProvider extends ServiceProvider
         // performance pragmas on every PDO connect, so it covers both the
         // default 'sqlite' connection and NativePHP's runtime 'nativephp' one.
         $this->app->bind('db.connector.sqlite', SqliteVecConnector::class);
+
+        // Override Laravel's OptimizeCommand so `php artisan optimize` (invoked
+        // on every production launch by NativePHP's Electron main process) does
+        // NOT run route:cache. See App\Console\Commands\OptimizeCommand for the
+        // full rationale and Sentry issue 112195649.
+        $this->app->singleton('command.optimize', OptimizeCommand::class);
 
         // After all service providers boot (including NativePHP's database
         // rewrite), run pending migrations and attempt data recovery if the

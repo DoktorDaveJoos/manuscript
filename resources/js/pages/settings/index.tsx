@@ -31,6 +31,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '@/components/ui/Accordion';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -558,6 +559,16 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
     return (
         <form onSubmit={handleSave} className="pb-1">
             <div className="flex flex-col gap-5 pl-[30px]">
+                {setting.api_key_recovery_needed && (
+                    <Alert variant="destructive">
+                        <AlertTitle>
+                            {t('aiProviders.keyRecovery.title')}
+                        </AlertTitle>
+                        <AlertDescription>
+                            {t('aiProviders.keyRecovery.description')}
+                        </AlertDescription>
+                    </Alert>
+                )}
                 {setting.requires_api_key && (
                     <FormField label={t('aiProviders.apiKey')}>
                         {setting.has_api_key && !apiKey ? (

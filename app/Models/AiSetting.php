@@ -4,9 +4,12 @@ namespace App\Models;
 
 use App\Enums\AiProvider;
 use App\Enums\AiTaskCategory;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Sentry\State\Scope;
 
 class AiSetting extends Model
 {
@@ -24,7 +27,20 @@ class AiSetting extends Model
             'api_key' => 'encrypted',
             'enabled' => 'boolean',
             'embedding_dimensions' => 'integer',
+            'api_key_recovery_needed' => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // Writing a fresh api_key clears the recovery flag — once the user
+        // re-enters their key under the current APP_KEY, the row is healthy
+        // again and the UI banner should disappear.
+        static::saving(function (self $model): void {
+            if ($model->isDirty('api_key') && filled($model->getAttributes()['api_key'] ?? null)) {
+                $model->api_key_recovery_needed = false;
+            }
+        });
     }
 
     /**
@@ -39,11 +55,71 @@ class AiSetting extends Model
     }
 
     /**
+     * Read the decrypted api_key, tolerating a rotated APP_KEY.
+     *
+     * Why: NativePHP desktop builds have historically shipped fresh APP_KEYs per
+     * release, making previously-encrypted rows undecryptable after auto-update
+     * (Sentry issue 112306879). Instead of crashing every Inertia render, we
+     * null the stale cipher, flag the row for recovery, and surface the state
+     * to the UI so the user can re-enter the key.
+     */
+    public function decryptedApiKey(): ?string
+    {
+        if (blank($this->getRawOriginal('api_key'))) {
+            return null;
+        }
+
+        try {
+            return $this->api_key;
+        } catch (DecryptException $e) {
+            $this->markApiKeyUnrecoverable($e);
+
+            return null;
+        }
+    }
+
+    /**
+     * Null the stale cipher and flag the row so the UI can prompt a re-entry.
+     * Uses a direct DB update to bypass the encrypted cast, and guards the
+     * Sentry report so we fire once per row instead of once per page render.
+     */
+    protected function markApiKeyUnrecoverable(\Throwable $e): void
+    {
+        if ($this->api_key_recovery_needed) {
+            return;
+        }
+
+        DB::table($this->getTable())
+            ->where('id', $this->id)
+            ->update([
+                'api_key' => null,
+                'api_key_recovery_needed' => true,
+                'updated_at' => $this->freshTimestamp(),
+            ]);
+
+        $this->setRawAttributes(array_merge($this->getAttributes(), [
+            'api_key' => null,
+            'api_key_recovery_needed' => true,
+        ]), true);
+
+        if (app()->bound('sentry')) {
+            \Sentry\withScope(function (Scope $scope) use ($e) {
+                $scope->setTag('ai_setting.api_key_recovery', 'triggered');
+                $scope->setContext('ai_setting', [
+                    'id' => $this->id,
+                    'provider' => $this->provider?->value,
+                ]);
+                \Sentry\captureException($e);
+            });
+        }
+    }
+
+    /**
      * Check if this provider has a configured API key.
      */
     public function hasApiKey(): bool
     {
-        return filled($this->api_key);
+        return filled($this->decryptedApiKey());
     }
 
     /**
@@ -51,11 +127,12 @@ class AiSetting extends Model
      */
     public function maskedApiKey(): ?string
     {
-        if (! $this->hasApiKey()) {
+        $key = $this->decryptedApiKey();
+
+        if (! filled($key)) {
             return null;
         }
 
-        $key = $this->api_key;
         $length = strlen($key);
 
         if ($length <= 8) {
@@ -94,8 +171,9 @@ class AiSetting extends Model
 
         config(['ai.default' => $key]);
 
-        if ($this->api_key) {
-            config(["ai.providers.{$key}.key" => $this->api_key]);
+        $apiKey = $this->decryptedApiKey();
+        if ($apiKey) {
+            config(["ai.providers.{$key}.key" => $apiKey]);
         }
 
         if ($this->base_url) {
@@ -179,6 +257,7 @@ class AiSetting extends Model
             'enabled' => $this->enabled,
             'requires_api_key' => $this->provider->requiresApiKey(),
             'requires_base_url' => $this->provider->requiresBaseUrl(),
+            'api_key_recovery_needed' => (bool) $this->api_key_recovery_needed,
         ];
     }
 }

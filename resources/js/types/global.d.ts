@@ -16,6 +16,8 @@ declare module '@inertiajs/core' {
                 recovered: string[];
                 failed: string[];
             };
+            ai_configured?: boolean;
+            ai_key_recovery_needed?: boolean;
             [key: string]: unknown;
         };
     }

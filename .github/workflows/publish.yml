@@ -51,11 +51,13 @@ jobs:
           cd vendor/nativephp/desktop/resources/electron
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
-      - name: Generate application key
-        run: php artisan key:generate
-
+      # APP_KEY must stay stable across releases so persisted encrypted columns
+      # (e.g. ai_settings.api_key) remain decryptable after users auto-update.
+      # See Sentry issue 112306879 — regenerating the key per build orphaned
+      # every user's stored AI provider credentials.
       - name: Set version and secrets in .env
         env:
+          APP_KEY: ${{ secrets.APP_KEY }}
           SENTRY_LARAVEL_DSN: ${{ secrets.SENTRY_LARAVEL_DSN }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
@@ -66,14 +68,19 @@ jobs:
           sed -i '' "s/APP_DEBUG=.*/APP_DEBUG=false/" .env
           sed -i '' "s/LOG_LEVEL=.*/LOG_LEVEL=error/" .env
           sed -i '' "s/NATIVEPHP_APP_VERSION=.*/NATIVEPHP_APP_VERSION=${VERSION}/" .env
+          sed -i '' "s|APP_KEY=.*|APP_KEY=${APP_KEY}|" .env
           sed -i '' "s|SENTRY_LARAVEL_DSN=.*|SENTRY_LARAVEL_DSN=${SENTRY_LARAVEL_DSN}|" .env
           sed -i '' "s|VITE_SENTRY_DSN=.*|VITE_SENTRY_DSN=${VITE_SENTRY_DSN}|" .env
           sed -i '' "s|POLAR_ACCESS_TOKEN=.*|POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN}|" .env
           sed -i '' "s|POLAR_ORGANIZATION_ID=.*|POLAR_ORGANIZATION_ID=${POLAR_ORGANIZATION_ID}|" .env
 
-      - name: Verify Sentry DSN is configured
+      - name: Verify release secrets are configured
         shell: bash
         run: |
+          if ! grep -q '^APP_KEY=base64:' .env; then
+            echo "::error::APP_KEY secret is empty or malformed. Generate one with 'php artisan key:generate --show' and store it as the APP_KEY repo secret."
+            exit 1
+          fi
           if ! grep -q 'SENTRY_LARAVEL_DSN=https' .env; then
             echo "::error::SENTRY_LARAVEL_DSN is empty or missing. Check GitHub secrets."
             exit 1
@@ -205,11 +212,13 @@ jobs:
           cd vendor/nativephp/desktop/resources/electron
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
-      - name: Generate application key
-        run: php artisan key:generate
-
+      # APP_KEY must stay stable across releases so persisted encrypted columns
+      # (e.g. ai_settings.api_key) remain decryptable after users auto-update.
+      # See Sentry issue 112306879 — regenerating the key per build orphaned
+      # every user's stored AI provider credentials.
       - name: Set version and secrets in .env
         env:
+          APP_KEY: ${{ secrets.APP_KEY }}
           SENTRY_LARAVEL_DSN: ${{ secrets.SENTRY_LARAVEL_DSN }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
@@ -221,14 +230,19 @@ jobs:
           sed -i "s/APP_DEBUG=.*/APP_DEBUG=false/" .env
           sed -i "s/LOG_LEVEL=.*/LOG_LEVEL=error/" .env
           sed -i "s/NATIVEPHP_APP_VERSION=.*/NATIVEPHP_APP_VERSION=${VERSION}/" .env
+          sed -i "s|APP_KEY=.*|APP_KEY=${APP_KEY}|" .env
           sed -i "s|SENTRY_LARAVEL_DSN=.*|SENTRY_LARAVEL_DSN=${SENTRY_LARAVEL_DSN}|" .env
           sed -i "s|VITE_SENTRY_DSN=.*|VITE_SENTRY_DSN=${VITE_SENTRY_DSN}|" .env
           sed -i "s|POLAR_ACCESS_TOKEN=.*|POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN}|" .env
           sed -i "s|POLAR_ORGANIZATION_ID=.*|POLAR_ORGANIZATION_ID=${POLAR_ORGANIZATION_ID}|" .env
 
-      - name: Verify Sentry DSN is configured
+      - name: Verify release secrets are configured
         shell: bash
         run: |
+          if ! grep -q '^APP_KEY=base64:' .env; then
+            echo "::error::APP_KEY secret is empty or malformed. Generate one with 'php artisan key:generate --show' and store it as the APP_KEY repo secret."
+            exit 1
+          fi
           if ! grep -q 'SENTRY_LARAVEL_DSN=https' .env; then
             echo "::error::SENTRY_LARAVEL_DSN is empty or missing. Check GitHub secrets."
             exit 1

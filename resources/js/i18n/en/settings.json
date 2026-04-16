@@ -89,6 +89,8 @@
     "aiProviders.notConfigured": "Not configured",
     "aiProviders.apiKey": "API Key",
     "aiProviders.apiKeyPlaceholder": "Enter API key",
+    "aiProviders.keyRecovery.title": "Re-enter your API key",
+    "aiProviders.keyRecovery.description": "Your saved API key could not be loaded after an app update. Paste it again to re-enable AI features.",
     "aiProviders.apiKeyMask": "••••••••••••••••",
     "aiProviders.currentKey": "Current key: {{key}}",
     "aiProviders.baseUrl": "Base URL",
