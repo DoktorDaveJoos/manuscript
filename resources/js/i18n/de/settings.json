@@ -89,6 +89,8 @@
     "aiProviders.notConfigured": "Nicht konfiguriert",
     "aiProviders.apiKey": "API-Schlüssel",
     "aiProviders.apiKeyPlaceholder": "API-Schlüssel eingeben",
+    "aiProviders.keyRecovery.title": "API-Schlüssel erneut eingeben",
+    "aiProviders.keyRecovery.description": "Dein gespeicherter API-Schlüssel konnte nach dem App-Update nicht geladen werden. Füge ihn erneut ein, um die KI-Funktionen zu aktivieren.",
     "aiProviders.apiKeyMask": "••••••••••••••••",
     "aiProviders.currentKey": "Aktueller Schlüssel: {{key}}",
     "aiProviders.baseUrl": "Basis-URL",

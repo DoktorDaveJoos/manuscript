@@ -89,6 +89,8 @@
     "aiProviders.notConfigured": "Sin configurar",
     "aiProviders.apiKey": "Clave de API",
     "aiProviders.apiKeyPlaceholder": "Ingresa la clave de API",
+    "aiProviders.keyRecovery.title": "Vuelve a introducir tu clave de API",
+    "aiProviders.keyRecovery.description": "No pudimos cargar tu clave de API guardada tras la actualización. Pégala de nuevo para restaurar las funciones de IA.",
     "aiProviders.apiKeyMask": "••••••••••••••••",
     "aiProviders.currentKey": "Clave actual: {{key}}",
     "aiProviders.baseUrl": "URL base",

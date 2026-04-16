@@ -585,6 +585,7 @@ export type AiSetting = {
     enabled: boolean;
     requires_api_key: boolean;
     requires_base_url: boolean;
+    api_key_recovery_needed: boolean;
     created_at: string;
     updated_at: string;
 };
