@@ -120,6 +120,7 @@ class HandleInertiaRequests extends Middleware
                 'editor_font_size' => (int) AppSetting::get('editor_font_size', 18),
             ],
             'ai_configured' => fn () => AiSetting::activeProvider()?->isConfigured() ?? false,
+            'ai_key_recovery_needed' => fn () => (bool) AiSetting::activeProvider()?->api_key_recovery_needed,
             'free_tier' => function () use ($request) {
                 if (License::isActive()) {
                     return null;
