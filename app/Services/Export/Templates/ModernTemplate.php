@@ -195,6 +195,7 @@ class ModernTemplate implements ExportTemplate
             text-indent: 0;
         }
         .matter-section {{$matterSectionPage}
+            page-break-before: always;
             break-before: page;
         }
         .chapter-section {
