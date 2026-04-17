@@ -23,7 +23,7 @@ class ExtractWritingStyle implements ShouldQueue
     /** @var list<int> */
     public array $backoff = [15];
 
-    public int $timeout = 120;
+    public int $timeout = 180;
 
     public function __construct(
         private Book $book,
@@ -71,6 +71,7 @@ class ExtractWritingStyle implements ShouldQueue
                 throw $e;
             }
 
+            report($e);
             $this->preparation->appendPhaseError('writing_style', null, $e->getMessage());
             $this->preparation->increment('current_phase_progress');
         }
@@ -78,6 +79,7 @@ class ExtractWritingStyle implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
+        report($exception);
         $this->preparation->appendPhaseError('writing_style', null, $exception->getMessage());
         $this->preparation->increment('current_phase_progress');
     }

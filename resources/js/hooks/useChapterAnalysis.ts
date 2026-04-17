@@ -14,7 +14,13 @@ import type {
 } from '@/types/models';
 
 type AnalysisStatusResponse = {
-    analysis_status: 'pending' | 'running' | 'completed' | 'failed' | null;
+    analysis_status:
+        | 'pending'
+        | 'running'
+        | 'completed'
+        | 'partial'
+        | 'failed'
+        | null;
     analysis_error: string | null;
     analyzed_at: string | null;
     tension_score: number | null;
@@ -40,7 +46,13 @@ const MAX_POLL_COUNT = 150; // ~5 minutes at 2s intervals
 export function useChapterAnalysis(
     bookId: number,
     chapterId: number,
-    initialStatus: 'pending' | 'running' | 'completed' | 'failed' | null,
+    initialStatus:
+        | 'pending'
+        | 'running'
+        | 'completed'
+        | 'partial'
+        | 'failed'
+        | null,
     initialAnalyses?: Record<string, Analysis>,
 ) {
     const [status, setStatus] = useState(initialStatus);
@@ -105,6 +117,7 @@ export function useChapterAnalysis(
 
                 if (
                     data.analysis_status === 'completed' ||
+                    data.analysis_status === 'partial' ||
                     data.analysis_status === 'failed'
                 ) {
                     router.reload({ only: ['chapter', 'chapterAnalyses'] });

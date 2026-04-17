@@ -44,6 +44,7 @@ class BuildStoryBible implements ShouldQueue
                 throw $e;
             }
 
+            report($e);
             $this->preparation->appendPhaseError('story_bible', null, $e->getMessage());
             $this->preparation->increment('current_phase_progress');
         }
@@ -51,6 +52,7 @@ class BuildStoryBible implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
+        report($exception);
         $this->preparation->appendPhaseError('story_bible', null, $exception->getMessage());
         $this->preparation->increment('current_phase_progress');
     }

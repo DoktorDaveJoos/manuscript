@@ -315,7 +315,13 @@ export type Chapter = {
     exit_hook_score: number | null;
     sensory_grounding: number | null;
     information_delivery: InformationDelivery | null;
-    analysis_status: 'pending' | 'running' | 'completed' | 'failed' | null;
+    analysis_status:
+        | 'pending'
+        | 'running'
+        | 'completed'
+        | 'partial'
+        | 'failed'
+        | null;
     analysis_error: string | null;
     analyzed_at: string | null;
     is_epilogue?: boolean;
@@ -545,11 +551,13 @@ export type PreparationPhase =
     | 'chapter_analysis'
     | 'entity_extraction'
     | 'story_bible'
-    | 'health_analysis';
+    | 'health_analysis'
+    | 'retry';
 
 export type PhaseError = {
     phase: string;
     chapter: string | null;
+    chapter_id: number | null;
     error: string;
 };
 

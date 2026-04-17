@@ -62,7 +62,7 @@ class ConsolidateEntities implements ShouldQueue
         try {
             $prompt = $this->buildPrompt($characters, $wikiEntries);
             $agent = new EntityConsolidator($this->book);
-            $response = $agent->prompt($prompt);
+            $response = $agent->prompt($prompt, timeout: 100);
             $result = $response->toArray();
 
             $this->applyCharacterMerges($result['character_merges'] ?? []);
@@ -74,6 +74,7 @@ class ConsolidateEntities implements ShouldQueue
                 throw $e;
             }
 
+            report($e);
             $this->preparation->appendPhaseError('entity_extraction', null, 'Consolidation: '.$e->getMessage());
             $this->preparation->increment('current_phase_progress');
         }
@@ -81,6 +82,7 @@ class ConsolidateEntities implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
+        report($exception);
         $this->preparation->appendPhaseError('entity_extraction', null, 'Consolidation: '.$exception->getMessage());
         $this->preparation->increment('current_phase_progress');
     }

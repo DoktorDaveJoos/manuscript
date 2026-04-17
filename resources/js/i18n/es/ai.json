@@ -131,6 +131,9 @@
     "preparationProgress.overallProgress": "{{percent}}% general",
     "preparationProgress.warning": "{{count}} advertencia(s)",
     "preparationProgress.warningParens": "({{count}} advertencia(s))",
+    "preparationProgress.viewDetails": "Ver detalles",
+    "preparationProgress.retryFailed": "Reintentar {{count}} tarea(s) fallida(s)",
+    "preparationProgress.retrying": "Reintentando…",
 
     "phase.chunking": "Dividiendo fragmentos",
     "phase.embedding": "Generando embeddings",

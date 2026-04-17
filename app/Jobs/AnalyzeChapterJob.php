@@ -56,26 +56,39 @@ class AnalyzeChapterJob implements ShouldQueue
             throw $e;
         }
 
+        $partialFailures = [];
+
         try {
             $this->runEntityExtraction();
         } catch (Throwable $e) {
-            // Log but continue — analysis already succeeded
             report($e);
+            $partialFailures[] = 'entity extraction: '.$e->getMessage();
         }
 
         try {
             $this->runManuscriptAnalyses($this->book, $this->chapter);
         } catch (Throwable $e) {
             report($e);
+            $partialFailures[] = 'manuscript analysis: '.$e->getMessage();
         }
 
-        // Sync preparation state so "Prepare manuscript" won't redo this chapter
         $this->chapter->refreshContentHash();
+
+        if (empty($partialFailures)) {
+            $this->chapter->update([
+                'analysis_status' => 'completed',
+                'analysis_error' => null,
+                'prepared_content_hash' => $this->chapter->content_hash,
+                'ai_prepared_at' => now(),
+            ]);
+
+            return;
+        }
+
+        // Don't advance prepared_content_hash — re-runs should retry the failed step.
         $this->chapter->update([
-            'analysis_status' => 'completed',
-            'analysis_error' => null,
-            'prepared_content_hash' => $this->chapter->content_hash,
-            'ai_prepared_at' => now(),
+            'analysis_status' => 'partial',
+            'analysis_error' => implode('; ', $partialFailures),
         ]);
     }
 
@@ -108,7 +121,7 @@ class AnalyzeChapterJob implements ShouldQueue
         }
 
         $agent = new ChapterAnalyzer($this->book, $rollingContext);
-        $response = $agent->prompt("Analyze this chapter:\n\nTitle: {$this->chapter->title}\n\n{$capped}");
+        $response = $agent->prompt("Analyze this chapter:\n\nTitle: {$this->chapter->title}\n\n{$capped}", timeout: 180);
 
         $this->persistChapterAnalysis($this->book, $this->chapter, $response->toArray());
     }
@@ -124,7 +137,7 @@ class AnalyzeChapterJob implements ShouldQueue
         $capped = TextPrep::plainTextCapped($content);
 
         $agent = new EntityExtractor($this->book);
-        $response = $agent->prompt("Extract all characters and narratively important entities from the following chapter text:\n\n{$capped}");
+        $response = $agent->prompt("Extract all characters and narratively important entities from the following chapter text:\n\n{$capped}", timeout: 180);
 
         $this->persistExtractedEntities($this->book, $this->chapter, $response->toArray());
     }

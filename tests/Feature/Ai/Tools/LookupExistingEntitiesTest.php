@@ -88,3 +88,45 @@ it('returns only characters when no entities exist', function () {
         ->toContain('Solo Character')
         ->not->toContain('Existing World Entities');
 });
+
+it('truncates long descriptions to keep the tool payload small', function () {
+    $book = Book::factory()->create();
+    $longDescription = str_repeat('A very detailed character description. ', 50); // ~1900 chars
+
+    Character::factory()->for($book)->create([
+        'name' => 'Verbose Character',
+        'description' => $longDescription,
+    ]);
+    WikiEntry::factory()->for($book)->create([
+        'name' => 'Ancient Order',
+        'kind' => WikiEntryKind::Organization,
+        'description' => $longDescription,
+    ]);
+
+    $tool = new LookupExistingEntities;
+    $request = new Request(['book_id' => $book->id]);
+
+    $result = (string) $tool->handle($request);
+
+    // Each line should be capped well under the original description length
+    expect(strlen($result))->toBeLessThan(1000)
+        ->and($result)->toContain('Verbose Character')
+        ->and($result)->toContain('Ancient Order')
+        ->and($result)->toContain('...');
+});
+
+it('renders a placeholder when description is empty', function () {
+    $book = Book::factory()->create();
+    Character::factory()->for($book)->create([
+        'name' => 'Nameless Hero',
+        'description' => null,
+        'ai_description' => null,
+    ]);
+
+    $tool = new LookupExistingEntities;
+    $request = new Request(['book_id' => $book->id]);
+
+    $result = (string) $tool->handle($request);
+
+    expect($result)->toContain('Nameless Hero: (no description)');
+});

@@ -1,4 +1,4 @@
-import { Check, Lock } from 'lucide-react';
+import { Check, ChevronDown, Lock, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
@@ -17,7 +17,7 @@ export default function AiPreparationProgress({
     licensed?: boolean;
 }) {
     const { t } = useTranslation('ai');
-    const { status, isRunning, starting, error, handleStart } =
+    const { status, isRunning, starting, error, handleStart, handleRetry } =
         useAiPreparation(bookId, initialStatus);
 
     if (!licensed) {
@@ -49,6 +49,14 @@ export default function AiPreparationProgress({
             </button>
         );
     }
+
+    const phaseErrorTooltip = (status?.phase_errors ?? [])
+        .map((err) =>
+            err.chapter
+                ? `• [${err.phase}] ${err.chapter}: ${err.error}`
+                : `• [${err.phase}] ${err.error}`,
+        )
+        .join('\n');
 
     if (isRunning && status) {
         const completedCount = status.completed_phases?.length ?? 0;
@@ -98,7 +106,10 @@ export default function AiPreparationProgress({
                             })}
                         </span>
                         {hasErrors && (
-                            <span className="text-xs text-amber-600">
+                            <span
+                                className="cursor-help text-xs text-amber-600"
+                                title={phaseErrorTooltip}
+                            >
                                 &middot;{' '}
                                 {t('preparationProgress.warning', {
                                     count: status.phase_errors!.length,
@@ -112,32 +123,85 @@ export default function AiPreparationProgress({
     }
 
     if (status?.status === 'completed') {
-        const hasErrors = status.phase_errors && status.phase_errors.length > 0;
+        const errors = status.phase_errors ?? [];
+        const hasErrors = errors.length > 0;
 
         return (
-            <div className="flex items-center gap-2 rounded-md border border-border bg-surface-card px-4 py-2">
-                <Check
-                    size={14}
-                    strokeWidth={2.5}
-                    className="text-status-final"
-                />
-                <span className="text-sm text-ink-muted">
-                    {t('preparation.aiReady')}
-                </span>
-                {hasErrors && (
-                    <span className="text-xs text-amber-600">
-                        {t('preparationProgress.warningParens', {
-                            count: status.phase_errors!.length,
-                        })}
+            <div className="flex flex-col gap-2 rounded-md border border-border bg-surface-card px-4 py-2">
+                <div className="flex items-center gap-2">
+                    <Check
+                        size={14}
+                        strokeWidth={2.5}
+                        className="text-status-final"
+                    />
+                    <span className="text-sm text-ink-muted">
+                        {t('preparation.aiReady')}
                     </span>
+                    {hasErrors && (
+                        <span className="text-xs text-amber-600">
+                            {t('preparationProgress.warningParens', {
+                                count: errors.length,
+                            })}
+                        </span>
+                    )}
+                    <button
+                        type="button"
+                        onClick={handleStart}
+                        className="ml-auto text-xs text-ink-faint transition-colors hover:text-ink"
+                    >
+                        {t('preparation.reRun')}
+                    </button>
+                </div>
+                {hasErrors && (
+                    <details className="group">
+                        <summary className="flex cursor-pointer items-center gap-1 text-xs text-ink-faint transition-colors hover:text-ink">
+                            <ChevronDown
+                                size={12}
+                                className="transition-transform group-open:rotate-180"
+                            />
+                            {t('preparationProgress.viewDetails')}
+                        </summary>
+                        <ul className="mt-2 max-h-48 space-y-1 overflow-y-auto pl-4 text-xs text-ink-muted">
+                            {errors.map((err, idx) => (
+                                <li
+                                    key={`${err.phase}-${err.chapter_id ?? 'null'}-${idx}`}
+                                    className="border-l-2 border-amber-400 pl-2"
+                                >
+                                    <span className="font-medium text-ink">
+                                        {t(`phase.${err.phase}`, {
+                                            defaultValue: err.phase,
+                                        })}
+                                    </span>
+                                    {err.chapter && (
+                                        <span className="text-ink-faint">
+                                            {' '}
+                                            — {err.chapter}
+                                        </span>
+                                    )}
+                                    <div className="text-ink-faint">
+                                        {err.error}
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                        <button
+                            type="button"
+                            onClick={handleRetry}
+                            disabled={starting}
+                            className="mt-2 flex items-center gap-1 text-xs text-amber-700 transition-colors hover:text-amber-900 disabled:opacity-50"
+                        >
+                            <RefreshCw
+                                size={12}
+                                className={starting ? 'animate-spin' : ''}
+                            />
+                            {starting
+                                ? t('preparationProgress.retrying')
+                                : t('preparationProgress.retryFailed', {
+                                      count: errors.length,
+                                  })}
+                        </button>
+                    </details>
                 )}
-                <button
-                    type="button"
-                    onClick={handleStart}
-                    className="ml-2 text-xs text-ink-faint transition-colors hover:text-ink"
-                >
-                    {t('preparation.reRun')}
-                </button>
             </div>
         );
     }

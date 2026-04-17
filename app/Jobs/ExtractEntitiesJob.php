@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Ai\Agents\EntityExtractor;
 use App\Ai\Support\TextPrep;
 use App\Jobs\Concerns\PersistsExtractedEntities;
+use App\Jobs\Concerns\ReportsJobFailures;
 use App\Models\AiSetting;
 use App\Models\Book;
 use App\Models\Chapter;
@@ -13,14 +14,15 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Throwable;
 
 class ExtractEntitiesJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, PersistsExtractedEntities, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, PersistsExtractedEntities, Queueable, ReportsJobFailures, SerializesModels;
 
     public int $tries = 1;
 
-    public int $timeout = 120;
+    public int $timeout = 240;
 
     public function __construct(
         private Book $book,
@@ -44,9 +46,18 @@ class ExtractEntitiesJob implements ShouldQueue
 
         $capped = TextPrep::plainTextCapped($content);
 
-        $agent = new EntityExtractor($this->book);
-        $response = $agent->prompt("Extract all characters and narratively important entities from the following chapter text:\n\n{$capped}");
+        try {
+            $agent = new EntityExtractor($this->book);
+            $response = $agent->prompt(
+                "Extract all characters and narratively important entities from the following chapter text:\n\n{$capped}",
+                timeout: 180,
+            );
 
-        $this->persistExtractedEntities($this->book, $this->chapter, $response->toArray());
+            $this->persistExtractedEntities($this->book, $this->chapter, $response->toArray());
+        } catch (Throwable $e) {
+            report($e);
+
+            throw $e;
+        }
     }
 }

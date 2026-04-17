@@ -5,12 +5,15 @@ namespace App\Ai\Tools;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
+use Illuminate\Support\Str;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Stringable;
 
 class LookupExistingEntities implements Tool
 {
+    private const DESCRIPTION_CHAR_LIMIT = 200;
+
     public function description(): Stringable|string
     {
         return 'Looks up existing characters and world entities for a book, including names, aliases, and descriptions. Useful for avoiding duplicate extraction and matching aliases.';
@@ -42,7 +45,8 @@ class LookupExistingEntities implements Tool
             $results = [];
             foreach ($characters as $character) {
                 $aliases = ! empty($character->aliases) ? ' (aliases: '.implode(', ', $character->aliases).')' : '';
-                $results[] = "- {$character->name}{$aliases}: {$character->fullDescription()}";
+                $description = $this->truncate($character->fullDescription());
+                $results[] = "- {$character->name}{$aliases}: {$description}";
             }
             $sections[] = "## Existing Characters\n\n".implode("\n", $results);
         }
@@ -52,11 +56,21 @@ class LookupExistingEntities implements Tool
             foreach ($wikiEntries as $entry) {
                 $type = $entry->type ? " ({$entry->type})" : '';
                 $aliases = ! empty($entry->metadata['aliases']) ? ' (aliases: '.implode(', ', $entry->metadata['aliases']).')' : '';
-                $results[] = "- [{$entry->kind->value}] {$entry->name}{$aliases}{$type}: {$entry->fullDescription()}";
+                $description = $this->truncate($entry->fullDescription());
+                $results[] = "- [{$entry->kind->value}] {$entry->name}{$aliases}{$type}: {$description}";
             }
             $sections[] = "## Existing World Entities\n\n".implode("\n", $results);
         }
 
         return implode("\n\n", $sections);
+    }
+
+    private function truncate(?string $description): string
+    {
+        if ($description === null || $description === '') {
+            return '(no description)';
+        }
+
+        return Str::limit(Str::squish($description), self::DESCRIPTION_CHAR_LIMIT);
     }
 }

@@ -71,6 +71,7 @@ class WritingStyleService
             "Study this {$langName} manuscript excerpt and extract the prose style. For each field, describe the pattern concretely enough that another writer could reproduce it.\n\n{$sampleText}",
             provider: $provider,
             model: $model,
+            timeout: 150,
         );
 
         $usage = $response->usage;

@@ -42,14 +42,61 @@ class AiPreparation extends Model
 
     /**
      * Atomically append a phase error using a transaction to avoid race conditions.
+     *
+     * Accepts a Chapter model or a label string (for non-chapter-specific errors).
+     * Storing the chapter_id enables targeted retries from the UI.
      */
-    public function appendPhaseError(string $phase, ?string $chapter, string $error): void
+    public function appendPhaseError(string $phase, Chapter|string|null $chapter, string $error): void
     {
-        DB::transaction(function () use ($phase, $chapter, $error) {
+        $chapterId = $chapter instanceof Chapter ? $chapter->id : null;
+        $chapterLabel = match (true) {
+            $chapter instanceof Chapter => $chapter->title,
+            is_string($chapter) => $chapter,
+            default => null,
+        };
+
+        DB::transaction(function () use ($phase, $chapterId, $chapterLabel, $error) {
             $record = self::query()->lockForUpdate()->find($this->id);
             $errors = $record->phase_errors ?? [];
-            $errors[] = ['phase' => $phase, 'chapter' => $chapter, 'error' => $error];
+            $errors[] = [
+                'phase' => $phase,
+                'chapter' => $chapterLabel,
+                'chapter_id' => $chapterId,
+                'error' => $error,
+            ];
             $record->update(['phase_errors' => $errors]);
+        });
+
+        $this->refresh();
+    }
+
+    /**
+     * Remove phase-error entries matching the given phase + chapter_id pairs.
+     * Used when the user retries specific failures.
+     *
+     * @param  list<array{phase: string, chapter_id: ?int}>  $matches
+     */
+    public function clearPhaseErrors(array $matches): void
+    {
+        DB::transaction(function () use ($matches) {
+            $record = self::query()->lockForUpdate()->find($this->id);
+            $remaining = collect($record->phase_errors ?? [])
+                ->reject(function (array $entry) use ($matches) {
+                    foreach ($matches as $match) {
+                        if (
+                            ($entry['phase'] ?? null) === $match['phase']
+                            && ($entry['chapter_id'] ?? null) === $match['chapter_id']
+                        ) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                })
+                ->values()
+                ->all();
+
+            $record->update(['phase_errors' => $remaining]);
         });
 
         $this->refresh();

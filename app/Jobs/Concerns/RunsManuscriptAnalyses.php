@@ -22,7 +22,7 @@ trait RunsManuscriptAnalyses
             $prompt = "Perform a {$type->value} analysis of the manuscript (book ID: {$book->id})."
                 ." Focus on chapter {$chapter->reader_order}, '{$chapter->title}'.";
 
-            $response = $agent->prompt($prompt);
+            $response = $agent->prompt($prompt, timeout: 90);
 
             $book->analyses()->updateOrCreate(
                 [

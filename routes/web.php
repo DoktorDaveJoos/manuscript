@@ -201,6 +201,7 @@ Route::middleware('license')->group(function () {
 
     Route::post('/books/{book}/ai/prepare', [AiPreparationController::class, 'start'])->name('books.ai.prepare');
     Route::get('/books/{book}/ai/prepare/status', [AiPreparationController::class, 'status'])->name('books.ai.prepare.status');
+    Route::post('/books/{book}/ai/prepare/retry', [AiPreparationController::class, 'retry'])->name('books.ai.prepare.retry');
 
     Route::put('/settings/ai/{provider}', [AiSettingsController::class, 'update'])->name('ai-settings.update');
     Route::delete('/settings/ai/{provider}/key', [AiSettingsController::class, 'deleteKey'])->name('ai-settings.delete-key');

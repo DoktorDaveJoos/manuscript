@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+    retry as retryPreparation,
     start as startPreparation,
     status as preparationStatus,
 } from '@/actions/App/Http/Controllers/AiPreparationController';
@@ -67,29 +68,42 @@ export function useAiPreparation(
         };
     }, [bookId, isRunning]);
 
-    const handleStart = useCallback(async () => {
-        setStarting(true);
-        setError(null);
+    const dispatch = useCallback(
+        async (url: string, fallbackMessage: string) => {
+            setStarting(true);
+            setError(null);
 
-        try {
-            const res = await fetch(startPreparation.url(bookId), {
-                method: 'POST',
-                headers: jsonFetchHeaders(),
-            });
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: jsonFetchHeaders(),
+                });
 
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data.message || 'Failed to start');
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    throw new Error(data.message || fallbackMessage);
+                }
+
+                const data = await res.json();
+                setStatus(data);
+            } catch (e) {
+                setError((e as Error).message);
+            } finally {
+                setStarting(false);
             }
+        },
+        [],
+    );
 
-            const data = await res.json();
-            setStatus(data);
-        } catch (e) {
-            setError((e as Error).message);
-        } finally {
-            setStarting(false);
-        }
-    }, [bookId]);
+    const handleStart = useCallback(
+        () => dispatch(startPreparation.url(bookId), 'Failed to start'),
+        [bookId, dispatch],
+    );
 
-    return { status, isRunning, starting, error, handleStart };
+    const handleRetry = useCallback(
+        () => dispatch(retryPreparation.url(bookId), 'Failed to retry'),
+        [bookId, dispatch],
+    );
+
+    return { status, isRunning, starting, error, handleStart, handleRetry };
 }
