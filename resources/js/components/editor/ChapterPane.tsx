@@ -32,6 +32,8 @@ export default function ChapterPane({
     onVersionsChanged,
     scenesVisible,
     spellcheckEnabled,
+    isTypewriterMode,
+    onToggleTypewriterMode,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -49,6 +51,8 @@ export default function ChapterPane({
     onVersionsChanged: () => void;
     scenesVisible: boolean;
     spellcheckEnabled: boolean;
+    isTypewriterMode: boolean;
+    onToggleTypewriterMode: () => void;
 }) {
     const { t } = useTranslation('editor');
     const { chapter, proofreadingConfig: initialProofreadingConfig } =
@@ -89,14 +93,6 @@ export default function ChapterPane({
         () => setPendingTitleSelect(false),
         [],
     );
-
-    // Typewriter mode — per-pane, initialized from app settings
-    const [isTypewriterMode, setIsTypewriterMode] = useState(
-        appSettings.typewriter_mode,
-    );
-    const toggleTypewriterMode = useCallback(() => {
-        setIsTypewriterMode((prev) => !prev);
-    }, []);
 
     const editorFont = appSettings.editor_font;
     const editorFontSize = appSettings.editor_font_size;
@@ -339,7 +335,7 @@ export default function ChapterPane({
                         /* focus mode is handled by parent */
                     }}
                     isTypewriterMode={isTypewriterMode}
-                    onToggleTypewriterMode={toggleTypewriterMode}
+                    onToggleTypewriterMode={onToggleTypewriterMode}
                 />
             </div>
 

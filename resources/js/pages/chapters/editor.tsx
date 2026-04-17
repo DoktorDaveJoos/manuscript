@@ -72,6 +72,8 @@ function PaneWithData({
     onChapterDataReady,
     scenesVisible,
     spellcheckEnabled,
+    isTypewriterMode,
+    onToggleTypewriterMode,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -90,6 +92,8 @@ function PaneWithData({
     onChapterDataReady: (data: ChapterData) => void;
     scenesVisible: boolean;
     spellcheckEnabled: boolean;
+    isTypewriterMode: boolean;
+    onToggleTypewriterMode: () => void;
 }) {
     const { data, isLoading, error, refresh, softRefresh } = useChapterData(
         bookId,
@@ -150,6 +154,8 @@ function PaneWithData({
             onVersionsChanged={softRefresh}
             scenesVisible={scenesVisible}
             spellcheckEnabled={spellcheckEnabled}
+            isTypewriterMode={isTypewriterMode}
+            onToggleTypewriterMode={onToggleTypewriterMode}
         />
     );
 }
@@ -187,6 +193,15 @@ export default function EditorPage({
     const [isSpellcheckEnabled, setIsSpellcheckEnabled] = useState(true);
     const toggleSpellcheck = useCallback(
         () => setIsSpellcheckEnabled((prev) => !prev),
+        [],
+    );
+
+    // ── Typewriter mode toggle (shared across panes) ───────────────────────
+    const [isTypewriterMode, setIsTypewriterMode] = useState(
+        app_settings.typewriter_mode,
+    );
+    const toggleTypewriterMode = useCallback(
+        () => setIsTypewriterMode((prev) => !prev),
         [],
     );
 
@@ -636,6 +651,10 @@ export default function EditorPage({
                                     onChapterDataReady={handleChapterDataReady}
                                     scenesVisible={scenesVisible}
                                     spellcheckEnabled={isSpellcheckEnabled}
+                                    isTypewriterMode={isTypewriterMode}
+                                    onToggleTypewriterMode={
+                                        toggleTypewriterMode
+                                    }
                                 />
                             </div>
                         ))
@@ -783,6 +802,8 @@ export default function EditorPage({
                 onTogglePanel={togglePanel}
                 isSpellcheckEnabled={isSpellcheckEnabled}
                 onToggleSpellcheck={toggleSpellcheck}
+                isTypewriterMode={isTypewriterMode}
+                onToggleTypewriterMode={toggleTypewriterMode}
             />
 
             {/* Focus mode whisper chrome */}

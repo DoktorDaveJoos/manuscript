@@ -21,12 +21,14 @@ function ToolbarButton({
     onClick,
     title,
     children,
+    testId,
 }: {
     active?: boolean;
     disabled?: boolean;
     onClick: () => void;
     title: string;
     children: React.ReactNode;
+    testId?: string;
 }) {
     return (
         <div className="group relative">
@@ -34,6 +36,8 @@ function ToolbarButton({
                 type="button"
                 onClick={onClick}
                 disabled={disabled}
+                aria-pressed={active ? true : undefined}
+                data-testid={testId}
                 className={cn(
                     'flex h-7 w-7 items-center justify-center rounded text-xs transition-colors',
                     active
@@ -217,6 +221,7 @@ export default function FormattingToolbar({
                     active={isTypewriterMode}
                     onClick={() => onToggleTypewriterMode?.()}
                     title={t('toolbar.typewriterMode')}
+                    testId="typewriter-toggle"
                 >
                     <Keyboard size={15} />
                 </ToolbarButton>

@@ -153,3 +153,16 @@ it('editorial panel shows chapter-specific note in splitscreen', function () {
         ->click("[data-pane-chapter='{$chapters[0]->id}']")
         ->assertSee('Note for chapter one');
 });
+
+it('toggles typewriter mode from the formatting toolbar', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertAttributeMissing('[data-testid="typewriter-toggle"]', 'aria-pressed')
+        ->click('[data-testid="typewriter-toggle"]')
+        ->assertAttribute('[data-testid="typewriter-toggle"]', 'aria-pressed', 'true')
+        ->click('[data-testid="typewriter-toggle"]')
+        ->assertAttributeMissing('[data-testid="typewriter-toggle"]', 'aria-pressed');
+});
