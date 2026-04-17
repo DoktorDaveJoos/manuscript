@@ -1,18 +1,17 @@
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
-import type { RefObject } from 'react';
 
 const DEAD_ZONE = 2;
 const LERP_SPEED = 0.18;
+// Measured in document positions, not pixels. Selection moves ≤ this get
+// instant scroll (caret pinned for typing/arrow keys); larger jumps animate.
+const JUMP_THRESHOLD = 40;
 
-// Module-level state — shared across all editor instances
-// since they all scroll the same container.
 let animationId: number | null = null;
 let targetScrollTop: number | null = null;
 let isMouseDriven = false;
 let mouseUpTimerId: ReturnType<typeof setTimeout> | null = null;
-let pendingUpdateRaf: number | null = null;
 let activeInstances = 0;
 
 export function cancelTypewriterAnimation(): void {
@@ -28,7 +27,6 @@ export function centerCursorInContainer(
     container: HTMLElement,
     instant: boolean,
 ): void {
-    // Track the moving end of the selection, not the anchor.
     const { head } = view.state.selection;
     let coords: { top: number };
     try {
@@ -49,7 +47,6 @@ export function centerCursorInContainer(
         Math.min(container.scrollTop + delta, maxScroll),
     );
 
-    // Avoid starting a no-op animation on sub-pixel rounding differences
     if (Math.abs(desired - container.scrollTop) < 0.5) return;
 
     if (instant) {
@@ -58,7 +55,6 @@ export function centerCursorInContainer(
         return;
     }
 
-    // Retarget the in-flight animation (or start a new one)
     targetScrollTop = desired;
 
     if (animationId === null) {
@@ -83,29 +79,35 @@ export function centerCursorInContainer(
     }
 }
 
+// IMPORTANT: TipTap's `configure()` uses `mergeDeep` on options, which
+// recursively clones plain objects. React refs (`{ current: ... }`) are plain
+// objects, so passing them here would disconnect the plugin from React's
+// updates. We pass GETTER FUNCTIONS instead — functions aren't plain objects,
+// so mergeDeep replaces them atomically, and each call reads the live state.
 export const TypewriterScrollExtension = Extension.create<{
-    scrollContainerRef: RefObject<HTMLDivElement | null>;
-    enabledRef: RefObject<boolean>;
+    isEnabled: () => boolean;
+    getScrollContainer: () => HTMLElement | null;
 }>({
     name: 'typewriterScroll',
 
     addOptions() {
         return {
-            scrollContainerRef: { current: null },
-            enabledRef: { current: false },
+            isEnabled: () => false,
+            getScrollContainer: () => null,
         };
     },
 
     addProseMirrorPlugins() {
-        const { scrollContainerRef, enabledRef } = this.options;
+        const { isEnabled, getScrollContainer } = this.options;
+        let lastHead: number | null = null;
 
         return [
             new Plugin({
                 key: new PluginKey('typewriterScroll'),
                 props: {
                     handleScrollToSelection() {
-                        if (!enabledRef.current) return false;
-                        return true;
+                        // Suppress PM's built-in scroll when we're in control.
+                        return isEnabled();
                     },
                     handleDOMEvents: {
                         mousedown() {
@@ -127,8 +129,15 @@ export const TypewriterScrollExtension = Extension.create<{
                     activeInstances++;
                     return {
                         update(view, prevState) {
-                            if (!enabledRef.current) return;
-                            if (isMouseDriven) return;
+                            if (!isEnabled()) {
+                                lastHead = null;
+                                return;
+                            }
+                            if (view.composing) return;
+                            if (isMouseDriven) {
+                                lastHead = view.state.selection.head;
+                                return;
+                            }
 
                             if (
                                 view.state.selection.eq(prevState.selection) &&
@@ -137,33 +146,29 @@ export const TypewriterScrollExtension = Extension.create<{
                                 return;
                             }
 
-                            // Deduplicate rapid transactions within the same frame
-                            if (pendingUpdateRaf !== null)
-                                cancelAnimationFrame(pendingUpdateRaf);
-                            pendingUpdateRaf = requestAnimationFrame(() => {
-                                pendingUpdateRaf = null;
-                                if (!enabledRef.current) return;
-                                // Re-check: mouse click may have occurred between
-                                // the synchronous check above and this rAF callback.
-                                if (isMouseDriven) return;
-                                const container = scrollContainerRef.current;
-                                if (!container) return;
-                                centerCursorInContainer(view, container, false);
-                            });
+                            const container = getScrollContainer();
+                            if (!container) return;
+
+                            const head = view.state.selection.head;
+                            const jump =
+                                lastHead === null
+                                    ? 0
+                                    : Math.abs(head - lastHead);
+                            lastHead = head;
+
+                            const instant = jump <= JUMP_THRESHOLD;
+                            centerCursorInContainer(view, container, instant);
                         },
                         destroy() {
                             activeInstances--;
                             if (activeInstances <= 0) {
                                 activeInstances = 0;
-                                if (pendingUpdateRaf !== null) {
-                                    cancelAnimationFrame(pendingUpdateRaf);
-                                    pendingUpdateRaf = null;
-                                }
                                 if (mouseUpTimerId !== null) {
                                     clearTimeout(mouseUpTimerId);
                                     mouseUpTimerId = null;
                                 }
                                 isMouseDriven = false;
+                                lastHead = null;
                                 cancelTypewriterAnimation();
                             }
                         },

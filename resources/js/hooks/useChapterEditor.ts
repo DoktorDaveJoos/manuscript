@@ -58,8 +58,8 @@ export default function useChapterEditor({
                 CharacterCount,
                 Typography,
                 TypewriterScrollExtension.configure({
-                    scrollContainerRef,
-                    enabledRef: typewriterEnabledRef,
+                    isEnabled: () => typewriterEnabledRef.current,
+                    getScrollContainer: () => scrollContainerRef.current,
                 }),
                 SceneBridgeExtension.configure({
                     onExitUp: onExitUpRef,
