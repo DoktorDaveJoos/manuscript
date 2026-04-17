@@ -29,5 +29,6 @@ yarn-error.log
 /.zed
 /.worktrees
 .claude/worktrees/
+.claude/*.lock
 .DS_Store
 /screenshots
