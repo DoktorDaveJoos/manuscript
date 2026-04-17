@@ -462,14 +462,25 @@ export default function EditorPage({
 
     // ── Command palette ──────────────────────────────────────────────────
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-    const closePalette = useCallback(() => setIsPaletteOpen(false), []);
+    const closePalette = useCallback(() => {
+        setIsPaletteOpen(false);
+        // Return focus to the active editor at its prior selection so the
+        // user can keep typing without clicking back into the canvas.
+        requestAnimationFrame(() => {
+            activeEditorRef.current?.commands.focus();
+        });
+    }, []);
 
     // ── Keyboard shortcuts ───────────────────────────────────────────────
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             if (e.key === 'p' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
-                setIsPaletteOpen((prev) => !prev);
+                if (isPaletteOpen) {
+                    closePalette();
+                } else {
+                    setIsPaletteOpen(true);
+                }
             } else if (
                 e.key === 'f' &&
                 (e.metaKey || e.ctrlKey) &&
@@ -516,7 +527,7 @@ export default function EditorPage({
         document.addEventListener('keydown', handler, { capture: true });
         return () =>
             document.removeEventListener('keydown', handler, { capture: true });
-    }, [isFocusMode, isPaletteOpen, exitFocusMode]);
+    }, [isFocusMode, isPaletteOpen, closePalette, exitFocusMode]);
 
     // ── AccessBar items ──────────────────────────────────────────────────
     const accessBarItems = useMemo(() => {
