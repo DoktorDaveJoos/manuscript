@@ -67,6 +67,7 @@ class RunEditorialReviewJob implements ShouldQueue
             $this->synthesizeSections($chapters);
             $this->generateExecutiveSummary();
         } catch (Throwable $e) {
+            report($e);
             $this->markFailed($e->getMessage());
         }
     }
@@ -96,20 +97,29 @@ class RunEditorialReviewJob implements ShouldQueue
             $current++;
             $this->updateProgress('refreshing', current_chapter: $current, total_chapters: $total);
 
-            $content = $chapter->getFullContent();
-            if (empty($content)) {
-                continue;
+            try {
+                $content = $chapter->getFullContent();
+                if (empty($content)) {
+                    continue;
+                }
+
+                $capped = TextPrep::plainTextCapped($content);
+                $agent = new ChapterAnalyzer($this->book);
+                $response = $agent->prompt("Analyze this chapter:\n\nTitle: {$chapter->title}\n\n{$capped}", timeout: 180);
+
+                $this->persistChapterAnalysis($this->book, $chapter, $response->toArray());
+
+                $chapter->update([
+                    'prepared_content_hash' => $chapter->content_hash,
+                ]);
+            } catch (Throwable $e) {
+                report($e);
+                Log::warning("Editorial review: chapter refresh failed for chapter {$chapter->id}", [
+                    'review_id' => $this->review->id,
+                    'chapter_id' => $chapter->id,
+                    'error' => $e->getMessage(),
+                ]);
             }
-
-            $capped = TextPrep::plainTextCapped($content);
-            $agent = new ChapterAnalyzer($this->book);
-            $response = $agent->prompt("Analyze this chapter:\n\nTitle: {$chapter->title}\n\n{$capped}");
-
-            $this->persistChapterAnalysis($this->book, $chapter, $response->toArray());
-
-            $chapter->update([
-                'prepared_content_hash' => $chapter->content_hash,
-            ]);
         }
     }
 
@@ -146,13 +156,14 @@ class RunEditorialReviewJob implements ShouldQueue
                     characterData: $characterData,
                 );
 
-                $response = $agent->prompt($capped);
+                $response = $agent->prompt($capped, timeout: 180);
 
                 $this->review->chapterNotes()->create([
                     'chapter_id' => $chapter->id,
                     'notes' => $response->toArray(),
                 ]);
             } catch (Throwable $e) {
+                report($e);
                 Log::warning("Editorial review: chapter gap-fill failed for chapter {$chapter->id}", [
                     'review_id' => $this->review->id,
                     'chapter_id' => $chapter->id,
@@ -184,7 +195,7 @@ class RunEditorialReviewJob implements ShouldQueue
                 aggregatedData: $aggregatedData,
             );
 
-            $response = $agent->prompt('Synthesize the editorial review for this section.');
+            $response = $agent->prompt('Synthesize the editorial review for this section.', timeout: 180);
             $result = $response->toArray();
 
             $section = $this->review->sections()->create([
@@ -215,7 +226,7 @@ class RunEditorialReviewJob implements ShouldQueue
             sectionSummaries: $summariesString,
         );
 
-        $response = $agent->prompt('Generate the executive summary.');
+        $response = $agent->prompt('Generate the executive summary.', timeout: 180);
         $result = $response->toArray();
 
         $this->review->update([
@@ -474,6 +485,10 @@ class RunEditorialReviewJob implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
+        if ($exception) {
+            report($exception);
+        }
+
         $this->markFailed($exception?->getMessage() ?? 'Unknown error');
     }
 }

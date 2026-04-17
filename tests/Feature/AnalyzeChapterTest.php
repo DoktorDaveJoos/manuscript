@@ -161,7 +161,7 @@ test('AnalyzeChapterJob marks chapter as failed when no AI provider configured',
         ->and($chapter->fresh()->analysis_error)->toBe('No AI provider configured.');
 });
 
-test('AnalyzeChapterJob completes even if ManuscriptAnalyzer throws', function () {
+test('AnalyzeChapterJob marks chapter partial when ManuscriptAnalyzer throws but core analysis succeeded', function () {
     ChapterAnalyzer::fake(function () {
         return [
             'summary' => 'A test chapter summary.',
@@ -206,8 +206,57 @@ test('AnalyzeChapterJob completes even if ManuscriptAnalyzer throws', function (
     $job->handle();
 
     $chapter->refresh();
-    expect($chapter->analysis_status)->toBe('completed')
-        ->and($chapter->summary)->toBe('A test chapter summary.');
+    expect($chapter->analysis_status)->toBe('partial')
+        ->and($chapter->summary)->toBe('A test chapter summary.')
+        ->and($chapter->analysis_error)->toContain('manuscript analysis')
+        ->and($chapter->prepared_content_hash)->toBeNull()
+        ->and($chapter->ai_prepared_at)->toBeNull();
+});
+
+test('AnalyzeChapterJob marks chapter partial when EntityExtractor fails', function () {
+    ChapterAnalyzer::fake(fn () => [
+        'summary' => 'A summary.',
+        'key_events' => [],
+        'characters_present' => [],
+        'tension_score' => 5,
+        'micro_tension_score' => 4,
+        'scene_purpose' => 'deepening',
+        'value_shift' => null,
+        'emotional_state_open' => 'calm',
+        'emotional_state_close' => 'calm',
+        'emotional_shift_magnitude' => 1,
+        'hook_score' => 5,
+        'hook_type' => 'closed',
+        'hook_reasoning' => 'OK.',
+        'entry_hook_score' => 5,
+        'exit_hook_score' => 5,
+        'pacing_feel' => 'measured',
+        'sensory_grounding' => 2,
+        'information_delivery' => 'mixed',
+        'plot_points' => [],
+    ]);
+    EntityExtractor::fake(function () {
+        throw new RuntimeException('cURL error 28: Operation timed out');
+    });
+    ManuscriptAnalyzer::fake(fn () => ['score' => 5, 'findings' => [], 'recommendations' => []]);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create([
+        'analysis_status' => 'pending',
+    ]);
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'content' => '<p>Some chapter content for analysis.</p>',
+    ]);
+
+    (new AnalyzeChapterJob($book, $chapter))->handle();
+
+    $chapter->refresh();
+    expect($chapter->analysis_status)->toBe('partial')
+        ->and($chapter->analysis_error)->toContain('entity extraction')
+        ->and($chapter->analysis_error)->toContain('timed out')
+        ->and($chapter->prepared_content_hash)->toBeNull();
 });
 
 // --- Chat endpoint tests ---

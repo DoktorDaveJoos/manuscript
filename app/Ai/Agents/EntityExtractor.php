@@ -22,7 +22,7 @@ use Laravel\Ai\Promptable;
 use Stringable;
 
 #[Temperature(0.2)]
-#[Timeout(120)]
+#[Timeout(180)]
 #[UseCheapestModel]
 class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput, HasTools
 {

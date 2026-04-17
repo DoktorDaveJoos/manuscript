@@ -41,6 +41,7 @@ class ChunkAndEmbedChapter implements ShouldQueue
         }
 
         $this->preparation->refresh();
+
         if ($this->preparation->shouldCircuitBreak()) {
             $this->preparation->appendPhaseError('chunking', "Chapter #{$this->chapterId}", 'Skipped: too many consecutive failures.');
             $this->preparation->increment('current_phase_progress');
@@ -79,7 +80,8 @@ class ChunkAndEmbedChapter implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
-        $this->preparation->appendPhaseError('chunking', "Chapter #{$this->chapterId}", $exception->getMessage());
+        $chapter = $this->book->chapters()->find($this->chapterId);
+        $this->preparation->appendPhaseError('chunking', $chapter ?? "Chapter #{$this->chapterId}", $exception->getMessage());
         $this->preparation->increment('current_phase_progress');
 
         $failures = $this->preparation->recordConsecutiveFailure();

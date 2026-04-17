@@ -135,6 +135,9 @@
     "preparationProgress.overallProgress": "{{percent}}% gesamt",
     "preparationProgress.warning": "{{count}} Warnung(en)",
     "preparationProgress.warningParens": "({{count}} Warnung(en))",
+    "preparationProgress.viewDetails": "Details anzeigen",
+    "preparationProgress.retryFailed": "{{count}} fehlgeschlagene Aufgabe(n) erneut versuchen",
+    "preparationProgress.retrying": "Erneuter Versuch…",
 
     "phase.chunking": "Textabschnitte aufteilen",
     "phase.embedding": "Embeddings erzeugen",

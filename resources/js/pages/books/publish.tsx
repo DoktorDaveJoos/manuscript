@@ -14,8 +14,11 @@ import { Card } from '@/components/ui/Card';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import PageHeader from '@/components/ui/PageHeader';
+import SaveStatusIndicator from '@/components/ui/SaveStatusIndicator';
+import type { SaveStatus } from '@/components/ui/SaveStatusIndicator';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
+import { Spinner } from '@/components/ui/spinner';
 import Textarea from '@/components/ui/Textarea';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
@@ -47,24 +50,20 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
         isbn: book.isbn ?? '',
     });
 
-    const [showSaved, setShowSaved] = useState(false);
-    const savedTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+    const [isConvertingPdf, setIsConvertingPdf] = useState(false);
+    const [coverError, setCoverError] = useState<string | null>(null);
     const formDataRef = useRef(form.data);
     useEffect(() => {
         formDataRef.current = form.data;
     }, [form.data]);
 
-    const showSavedBriefly = useCallback(() => {
-        setShowSaved(true);
-        if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
-        savedTimeoutRef.current = setTimeout(() => setShowSaved(false), 2000);
-    }, []);
-
     const debouncedSave = useDebouncedCallback(() => {
         router.put(update.url(book.id), formDataRef.current, {
             preserveScroll: true,
             preserveState: true,
-            onSuccess: showSavedBriefly,
+            onSuccess: () => setSaveStatus('saved'),
+            onError: () => setSaveStatus('error'),
         });
     }, 1000);
 
@@ -73,25 +72,56 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
         value: string,
     ) => {
         form.setData(field, value);
+        setSaveStatus('saving');
         debouncedSave();
     };
 
     const handleCoverUpload = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
+        async (e: React.ChangeEvent<HTMLInputElement>) => {
             const file = e.target.files?.[0];
+            if (fileInputRef.current) fileInputRef.current.value = '';
             if (!file) return;
+
+            setCoverError(null);
+
+            let payload = file;
+            if (file.type === 'application/pdf') {
+                setIsConvertingPdf(true);
+                try {
+                    const { renderPdfFirstPageToPng } =
+                        await import('@/lib/pdfjs');
+                    payload = await renderPdfFirstPageToPng(file);
+                } catch (err) {
+                    console.error('PDF cover conversion failed', err);
+                    setCoverError(t('cover.conversionError'));
+                    setIsConvertingPdf(false);
+                    return;
+                }
+                setIsConvertingPdf(false);
+            }
+
+            setSaveStatus('saving');
             router.post(
                 uploadCover.url(book.id),
-                { cover_image: file } as Record<string, File>,
-                { forceFormData: true, preserveScroll: true },
+                { cover_image: payload } as Record<string, File>,
+                {
+                    forceFormData: true,
+                    preserveScroll: true,
+                    onSuccess: () => setSaveStatus('saved'),
+                    onError: () => setSaveStatus('error'),
+                },
             );
-            if (fileInputRef.current) fileInputRef.current.value = '';
         },
-        [book.id],
+        [book.id, t],
     );
 
     const handleCoverRemove = useCallback(() => {
-        router.delete(deleteCover.url(book.id), { preserveScroll: true });
+        setSaveStatus('saving');
+        router.delete(deleteCover.url(book.id), {
+            preserveScroll: true,
+            onSuccess: () => setSaveStatus('saved'),
+            onError: () => setSaveStatus('error'),
+        });
     }, [book.id]);
 
     useEffect(() => {
@@ -107,10 +137,15 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
     const handleEpilogueChange = useCallback(
         (e: React.ChangeEvent<HTMLSelectElement>) => {
             const value = e.target.value;
+            setSaveStatus('saving');
             router.put(
                 updateEpilogue.url(book.id),
                 { chapter_id: value === 'none' ? null : Number(value) },
-                { preserveScroll: true },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => setSaveStatus('saved'),
+                    onError: () => setSaveStatus('error'),
+                },
             );
         },
         [book.id],
@@ -133,11 +168,7 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                             title={t('title')}
                             subtitle={t('subtitle')}
                             actions={
-                                showSaved && (
-                                    <span className="animate-in fade-in rounded-full bg-status-final/10 px-3 py-1 text-xs font-medium text-status-final">
-                                        {t('saved')}
-                                    </span>
-                                )
+                                <SaveStatusIndicator status={saveStatus} />
                             }
                         />
 
@@ -167,9 +198,22 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                                         onClick={() =>
                                                             fileInputRef.current?.click()
                                                         }
+                                                        disabled={
+                                                            isConvertingPdf
+                                                        }
                                                     >
-                                                        <Upload size={14} />
-                                                        {t('cover.replace')}
+                                                        {isConvertingPdf ? (
+                                                            <Spinner className="size-[14px]" />
+                                                        ) : (
+                                                            <Upload size={14} />
+                                                        )}
+                                                        {isConvertingPdf
+                                                            ? t(
+                                                                  'cover.converting',
+                                                              )
+                                                            : t(
+                                                                  'cover.replace',
+                                                              )}
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
@@ -178,6 +222,9 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                                             handleCoverRemove
                                                         }
                                                         className="text-delete hover:text-delete/80"
+                                                        disabled={
+                                                            isConvertingPdf
+                                                        }
                                                     >
                                                         <Trash2 size={14} />
                                                         {t('cover.remove')}
@@ -190,24 +237,37 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                                 onClick={() =>
                                                     fileInputRef.current?.click()
                                                 }
-                                                className="flex h-48 w-36 flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border-dashed transition-colors hover:border-ink-faint hover:bg-neutral-bg"
+                                                disabled={isConvertingPdf}
+                                                className="flex h-48 w-36 flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border-dashed transition-colors hover:border-ink-faint hover:bg-neutral-bg disabled:cursor-not-allowed disabled:opacity-60"
                                             >
                                                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-bg">
-                                                    <ImagePlus
-                                                        size={18}
-                                                        className="text-ink-muted"
-                                                    />
+                                                    {isConvertingPdf ? (
+                                                        <Spinner className="size-[18px] text-ink-muted" />
+                                                    ) : (
+                                                        <ImagePlus
+                                                            size={18}
+                                                            className="text-ink-muted"
+                                                        />
+                                                    )}
                                                 </div>
                                                 <span className="text-xs font-medium text-ink-muted">
-                                                    {t('cover.upload')}
+                                                    {isConvertingPdf
+                                                        ? t('cover.converting')
+                                                        : t('cover.upload')}
                                                 </span>
                                             </button>
+                                        )}
+
+                                        {coverError && (
+                                            <p className="mt-3 text-xs text-danger">
+                                                {coverError}
+                                            </p>
                                         )}
 
                                         <input
                                             ref={fileInputRef}
                                             type="file"
-                                            accept="image/jpeg,image/png,image/webp"
+                                            accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf"
                                             onChange={handleCoverUpload}
                                             className="hidden"
                                         />

@@ -1,33 +1,36 @@
 import { doExport } from '@/actions/App/Http/Controllers/BookSettingsController';
+import { jsonFetchHeaders } from '@/lib/utils';
 
-export function downloadExport(
+export async function downloadExport(
     book: { id: number; title: string },
     options: Record<string, unknown>,
 ): Promise<void> {
     const format = (options.format as string) ?? 'docx';
 
-    return fetch(doExport.url(book), {
+    const res = await fetch(doExport.url(book), {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            ...jsonFetchHeaders(),
             Accept: 'application/octet-stream, application/json',
         },
         body: JSON.stringify(options),
-    }).then(async (res) => {
-        if (!res.ok) throw new Error('Export failed');
-
-        const contentType = res.headers.get('content-type') ?? '';
-
-        if (contentType.includes('application/json')) {
-            return;
-        }
-
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${book.title}.${format}`;
-        a.click();
-        URL.revokeObjectURL(url);
     });
+
+    const contentType = res.headers.get('content-type') ?? '';
+    const isJson = contentType.includes('application/json');
+
+    if (!res.ok) {
+        const body = isJson ? await res.json().catch(() => null) : null;
+        throw new Error(body?.error ?? `Export failed (${res.status})`);
+    }
+
+    if (isJson) return;
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${book.title}.${format}`;
+    a.click();
+    URL.revokeObjectURL(url);
 }

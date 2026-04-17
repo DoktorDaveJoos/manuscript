@@ -9,11 +9,13 @@
     "metadata.isbnPlaceholder": "p. ej., 978-3-16-148410-0",
     "metadata.isbnHint": "Opcional. Déjalo en blanco si aún no tienes uno.",
     "cover.title": "Imagen de portada",
-    "cover.description": "Sube la portada de tu libro. Tamaño mínimo recomendado: 1600 × 2560 px, JPG o PNG.",
+    "cover.description": "Sube la portada de tu libro. JPG, PNG o PDF — los PDF se convierten automáticamente. Tamaño mínimo recomendado: 1600 × 2560 px.",
     "cover.upload": "Subir portada",
     "cover.replace": "Reemplazar",
     "cover.remove": "Eliminar",
     "cover.noCover": "No se ha subido imagen de portada",
+    "cover.converting": "Convirtiendo PDF…",
+    "cover.conversionError": "No se pudo leer ese PDF. Prueba con otro archivo o exporta la página 1 como imagen.",
     "frontMatter.title": "Páginas preliminares",
     "frontMatter.description": "Contenido que aparece antes del primer capítulo.",
     "frontMatter.copyright": "Derechos de autor",
@@ -36,5 +38,7 @@
     "backMatter.epilogue": "Capítulo de epílogo",
     "backMatter.epilogueHint": "Selecciona un capítulo como epílogo. Aparecerá en las páginas finales durante la exportación.",
     "backMatter.noEpilogue": "Ninguno",
-    "saved": "Guardado"
+    "saveStatus.saving": "Guardando…",
+    "saveStatus.saved": "Guardado",
+    "saveStatus.error": "Error al guardar"
 }

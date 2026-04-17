@@ -190,11 +190,12 @@ class BookSettingsController extends Controller
     {
         $format = ExportFormat::from($validated['format'] ?? 'docx');
         $downloadName = ExportService::downloadName($book, $format);
-
-        // Generate the export file first so the user doesn't wait on both generation + dialog
-        $tempPath = $service->exportToPath($book, $validated);
+        $tempPath = null;
 
         try {
+            // Generate the export file first so the user doesn't wait on both generation + dialog
+            $tempPath = $service->exportToPath($book, $validated);
+
             $savePath = app(Dialog::class)
                 ->title(__('Save Export'))
                 ->defaultPath($downloadName)
@@ -207,15 +208,22 @@ class BookSettingsController extends Controller
                 return response()->json(['cancelled' => true]);
             }
 
+            error_clear_last();
             if (! @copy($tempPath, $savePath)) {
-                return response()->json(['error' => 'Failed to save export file'], 500);
+                $copyError = error_get_last()['message'] ?? 'unknown error';
+
+                return response()->json(['error' => $copyError], 500);
             }
 
             return response()->json(['success' => true]);
-        } catch (\Throwable) {
-            return response()->json(['error' => 'Save dialog unavailable'], 500);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json(['error' => $e->getMessage()], 500);
         } finally {
-            @unlink($tempPath);
+            if ($tempPath !== null) {
+                @unlink($tempPath);
+            }
         }
     }
 
@@ -227,6 +235,7 @@ class BookSettingsController extends Controller
 
         $validated = $request->validated();
         $validated['preview_format'] = ExportFormat::from($validated['format'] ?? 'pdf')->value;
+        $validated['include_cover'] = false;
         $chapters = ExportService::resolveChapters($book, $validated);
         ExportService::injectMatterText($validated, $book);
         $options = ExportOptions::fromArray($validated);

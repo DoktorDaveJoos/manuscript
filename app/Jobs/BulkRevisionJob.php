@@ -59,6 +59,7 @@ class BulkRevisionJob implements ShouldQueue
                 $processed++;
                 $this->updateStatus('running', total: $processable->count(), processed: $processed);
             } catch (\Throwable $e) {
+                report($e);
                 Log::warning("Bulk {$this->type->value} failed for chapter {$chapter->id}: {$e->getMessage()}");
             }
         }
@@ -72,7 +73,7 @@ class BulkRevisionJob implements ShouldQueue
 
         $agent = $this->type->agent($this->book, $chapter);
 
-        $response = $agent->prompt("{$this->type->promptPrefix()}\n\n{$content}");
+        $response = $agent->prompt("{$this->type->promptPrefix()}\n\n{$content}", timeout: 240);
 
         $chapter->syncCurrentVersionContent();
         $currentVersion = $chapter->currentVersion;
@@ -118,6 +119,10 @@ class BulkRevisionJob implements ShouldQueue
 
     public function failed(?\Throwable $exception): void
     {
+        if ($exception) {
+            report($exception);
+        }
+
         $this->updateStatus('failed', error: $exception?->getMessage() ?? 'Unknown error');
     }
 }

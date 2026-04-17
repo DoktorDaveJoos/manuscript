@@ -683,7 +683,8 @@ export default function AiPanel({
                             </div>
                         ) : (
                             <p className="text-[11px] leading-[1.4] text-ink-muted italic">
-                                {analysisStatus === 'completed'
+                                {analysisStatus === 'completed' ||
+                                analysisStatus === 'partial'
                                     ? t('findings.none')
                                     : t('findings.noAnalysis')}
                             </p>

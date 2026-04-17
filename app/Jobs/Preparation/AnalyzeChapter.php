@@ -30,7 +30,7 @@ class AnalyzeChapter implements ShouldQueue
     /** @var list<int> */
     public array $backoff = [15];
 
-    public int $timeout = 300;
+    public int $timeout = 480;
 
     public function __construct(
         private Book $book,
@@ -45,6 +45,7 @@ class AnalyzeChapter implements ShouldQueue
         }
 
         $this->preparation->refresh();
+
         if ($this->preparation->shouldCircuitBreak()) {
             $this->preparation->appendPhaseError('chapter_analysis', "Chapter #{$this->chapterId}", 'Skipped: too many consecutive failures.');
             $this->preparation->increment('current_phase_progress');
@@ -78,7 +79,8 @@ class AnalyzeChapter implements ShouldQueue
         try {
             $this->runManuscriptAnalyses($this->book, $chapter);
         } catch (Throwable $e) {
-            $this->preparation->appendPhaseError('manuscript_analysis', $chapter->title, $e->getMessage());
+            report($e);
+            $this->preparation->appendPhaseError('manuscript_analysis', $chapter, $e->getMessage());
         }
 
         if ($analysisOk && $entitiesOk) {
@@ -97,10 +99,15 @@ class AnalyzeChapter implements ShouldQueue
      */
     public function failed(Throwable $exception): void
     {
-        $chapter = $this->book->chapters()->find($this->chapterId);
-        $chapterLabel = $chapter?->title ?? "Chapter #{$this->chapterId}";
+        report($exception);
 
-        $this->preparation->appendPhaseError('chapter_analysis', $chapterLabel, $exception->getMessage());
+        $chapter = $this->book->chapters()->find($this->chapterId);
+
+        $this->preparation->appendPhaseError(
+            'chapter_analysis',
+            $chapter ?? "Chapter #{$this->chapterId}",
+            $exception->getMessage(),
+        );
         $this->preparation->increment('current_phase_progress');
 
         $failures = $this->preparation->recordConsecutiveFailure();
@@ -130,7 +137,7 @@ class AnalyzeChapter implements ShouldQueue
 
         try {
             $agent = new ChapterAnalyzer($this->book, $rollingContext);
-            $response = $agent->prompt("Analyze this chapter:\n\nTitle: {$chapter->title}\n\n{$capped}");
+            $response = $agent->prompt("Analyze this chapter:\n\nTitle: {$chapter->title}\n\n{$capped}", timeout: 90);
 
             $this->persistChapterAnalysis($this->book, $chapter, $response->toArray());
 
@@ -140,7 +147,8 @@ class AnalyzeChapter implements ShouldQueue
                 throw $e;
             }
 
-            $this->preparation->appendPhaseError('chapter_analysis', $chapter->title, $e->getMessage());
+            report($e);
+            $this->preparation->appendPhaseError('chapter_analysis', $chapter, $e->getMessage());
 
             return false;
         }
@@ -150,7 +158,7 @@ class AnalyzeChapter implements ShouldQueue
     {
         try {
             $agent = new EntityExtractor($this->book);
-            $response = $agent->prompt("Extract all characters and narratively important entities from the following chapter text:\n\n{$capped}");
+            $response = $agent->prompt("Extract all characters and narratively important entities from the following chapter text:\n\n{$capped}", timeout: 180);
 
             $this->persistExtractedEntities($this->book, $chapter, $response->toArray());
 
@@ -160,7 +168,8 @@ class AnalyzeChapter implements ShouldQueue
                 throw $e;
             }
 
-            $this->preparation->appendPhaseError('entity_extraction', $chapter->title, $e->getMessage());
+            report($e);
+            $this->preparation->appendPhaseError('entity_extraction', $chapter, $e->getMessage());
 
             return false;
         }

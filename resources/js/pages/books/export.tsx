@@ -120,6 +120,7 @@ export default function Export({
     const [fontSize, setFontSize] = useState(11);
     const [includeCover, setIncludeCover] = useState(!!book.cover_image_path);
     const [exporting, setExporting] = useState(false);
+    const [exportError, setExportError] = useState<string | null>(null);
 
     const hasCover = !!book.cover_image_path;
 
@@ -274,6 +275,7 @@ export default function Export({
 
     const handleExport = useCallback(() => {
         setExporting(true);
+        setExportError(null);
 
         const checkedOrdered = orderedChapters
             .filter((ch) => selectedChapterIds.has(ch.id))
@@ -304,7 +306,11 @@ export default function Export({
         data.back_matter = backMatter.filter((i) => i.checked).map((i) => i.id);
 
         downloadExport(book, data)
-            .catch(() => {})
+            .catch((err: unknown) => {
+                setExportError(
+                    err instanceof Error ? err.message : String(err),
+                );
+            })
             .finally(() => setExporting(false));
     }, [
         book,
@@ -368,6 +374,7 @@ export default function Export({
                     onShowPageNumbersChange={handleTogglePageNumbers}
                     exporting={exporting}
                     onExport={handleExport}
+                    error={exportError}
                     templates={templates}
                     fontPairings={fontPairings}
                     sceneBreakStyles={sceneBreakStyles}
@@ -400,7 +407,6 @@ export default function Export({
                     fontPairing={fontPairing}
                     sceneBreakStyle={sceneBreakStyle}
                     dropCaps={dropCaps}
-                    includeCover={includeCover}
                 />
             </div>
         </>

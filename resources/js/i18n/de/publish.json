@@ -9,11 +9,13 @@
     "metadata.isbnPlaceholder": "z. B. 978-3-16-148410-0",
     "metadata.isbnHint": "Optional. Leer lassen, wenn du noch keine hast.",
     "cover.title": "Coverbild",
-    "cover.description": "Lade dein Buchcover hoch. Empfohlene Mindestgröße: 1600 × 2560 px, JPG oder PNG.",
+    "cover.description": "Lade dein Buchcover hoch. JPG, PNG oder PDF — PDFs werden automatisch umgewandelt. Empfohlene Mindestgröße: 1600 × 2560 px.",
     "cover.upload": "Cover hochladen",
     "cover.replace": "Ersetzen",
     "cover.remove": "Entfernen",
     "cover.noCover": "Kein Coverbild hochgeladen",
+    "cover.converting": "PDF wird umgewandelt…",
+    "cover.conversionError": "Diese PDF konnte nicht gelesen werden. Probiere eine andere Datei oder exportiere Seite 1 als Bild.",
     "frontMatter.title": "Titelei",
     "frontMatter.description": "Inhalte, die vor dem ersten Kapitel erscheinen.",
     "frontMatter.copyright": "Copyright",
@@ -36,5 +38,7 @@
     "backMatter.epilogue": "Epilog-Kapitel",
     "backMatter.epilogueHint": "Wähle ein Kapitel als Epilog aus. Es erscheint beim Export im Nachspann.",
     "backMatter.noEpilogue": "Keines",
-    "saved": "Gespeichert"
+    "saveStatus.saving": "Speichere…",
+    "saveStatus.saved": "Gespeichert",
+    "saveStatus.error": "Fehler beim Speichern"
 }

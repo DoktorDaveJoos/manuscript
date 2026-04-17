@@ -9,11 +9,13 @@
     "metadata.isbnPlaceholder": "e.g., 978-3-16-148410-0",
     "metadata.isbnHint": "Optional. Leave blank if you don't have one yet.",
     "cover.title": "Cover Image",
-    "cover.description": "Upload your book cover. Recommended minimum: 1600 × 2560px, JPG or PNG.",
+    "cover.description": "Upload your book cover. JPG, PNG, or PDF — PDFs are converted automatically. Recommended minimum: 1600 × 2560px.",
     "cover.upload": "Upload Cover",
     "cover.replace": "Replace",
     "cover.remove": "Remove",
     "cover.noCover": "No cover image uploaded",
+    "cover.converting": "Converting PDF…",
+    "cover.conversionError": "Couldn't read that PDF. Try a different file or export page 1 as an image.",
     "frontMatter.title": "Front Matter",
     "frontMatter.description": "Content that appears before the first chapter.",
     "frontMatter.copyright": "Copyright",
@@ -36,5 +38,7 @@
     "backMatter.epilogue": "Epilogue Chapter",
     "backMatter.epilogueHint": "Select a chapter to treat as an epilogue. It will appear in back matter during export.",
     "backMatter.noEpilogue": "None",
-    "saved": "Saved"
+    "saveStatus.saving": "Saving…",
+    "saveStatus.saved": "Saved",
+    "saveStatus.error": "Save error"
 }

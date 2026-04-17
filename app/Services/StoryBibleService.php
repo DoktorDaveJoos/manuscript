@@ -26,7 +26,10 @@ class StoryBibleService
         $context = $this->assembleContext($book);
 
         $agent = new StoryBibleBuilder($book);
-        $response = $agent->prompt("Extract themes, style rules, genre rules, and timeline from the following manuscript data:\n\n{$context}");
+        $response = $agent->prompt(
+            "Extract themes, style rules, genre rules, and timeline from the following manuscript data:\n\n{$context}",
+            timeout: 150,
+        );
 
         $storyBible = $response->toArray();
         $book->update(['story_bible' => $storyBible]);

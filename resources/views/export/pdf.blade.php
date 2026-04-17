@@ -77,6 +77,7 @@
         @unless ($isEbook)
         .act-break {
             page: matter;
+            page-break-before: always;
             break-before: page;
         }
         @endunless
