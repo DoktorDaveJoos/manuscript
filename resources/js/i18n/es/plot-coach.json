@@ -1,0 +1,16 @@
+{
+    "mode.coach": "Coach",
+    "mode.board": "Tablero",
+
+    "gate.no_pro.title": "Plot Coach \u2014 una funci\u00f3n Pro",
+    "gate.no_pro.body": "Dialoga con un coach editorial para dar forma a tu trama.",
+    "gate.no_pro.cta": "Pasar a Pro",
+
+    "gate.no_ai.title": "Plot Coach \u2014 configura la IA para empezar",
+    "gate.no_ai.body": "El coach necesita un proveedor de IA configurado para conversar contigo.",
+    "gate.no_ai.cta": "Configurar IA",
+
+    "empty_state.title": "Empieza a plotear con Coach",
+    "empty_state.body": "Describe tu libro o haz una pregunta. Yo te gu\u00edo.",
+    "empty_state.placeholder": "Mensaje para Coach\u2026"
+}

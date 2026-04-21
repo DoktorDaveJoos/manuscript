@@ -1,0 +1,16 @@
+{
+    "mode.coach": "Coach",
+    "mode.board": "Board",
+
+    "gate.no_pro.title": "Plot Coach — a Pro feature",
+    "gate.no_pro.body": "Dialogue your plot into shape with an editorial coach.",
+    "gate.no_pro.cta": "Upgrade to Pro",
+
+    "gate.no_ai.title": "Plot Coach — configure AI to start",
+    "gate.no_ai.body": "The coach needs an AI provider configured to converse with you.",
+    "gate.no_ai.cta": "Configure AI",
+
+    "empty_state.title": "Start plotting with Coach",
+    "empty_state.body": "Describe your book or ask a question. I'll guide you.",
+    "empty_state.placeholder": "Message Coach\u2026"
+}

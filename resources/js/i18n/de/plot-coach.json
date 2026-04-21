@@ -1,0 +1,16 @@
+{
+    "mode.coach": "Coach",
+    "mode.board": "Board",
+
+    "gate.no_pro.title": "Plot-Coach \u2014 eine Pro-Funktion",
+    "gate.no_pro.body": "Entwickle deine Handlung im Dialog mit einem redaktionellen Coach.",
+    "gate.no_pro.cta": "Auf Pro upgraden",
+
+    "gate.no_ai.title": "Plot-Coach \u2014 KI einrichten, um loszulegen",
+    "gate.no_ai.body": "Der Coach braucht einen konfigurierten KI-Anbieter, um mit dir zu sprechen.",
+    "gate.no_ai.cta": "KI einrichten",
+
+    "empty_state.title": "Starte das Plotten mit Coach",
+    "empty_state.body": "Beschreibe dein Buch oder stell eine Frage. Ich begleite dich.",
+    "empty_state.placeholder": "Nachricht an Coach\u2026"
+}

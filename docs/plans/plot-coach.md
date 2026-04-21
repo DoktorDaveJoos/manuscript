@@ -2,9 +2,13 @@
 
 Interactive AI-coached plotting. A creative dialogue between the author and an editorial-grade AI that shapes a book's plot structure, characters, storylines, and beats on the existing plot board. Hop-on/hop-off, resumable, per-book.
 
-Status: Design locked (grilled 2026-04-21). Pencil designs landed. Implementation not started.
+Status: Design locked (grilled 2026-04-21). Pencil designs landed. Phase 1 in progress.
 
 Branch: `feat/plot-coach` off `dev`.
+
+## Phase 1 status
+
+Foundation + agent skeleton + frontend shell landed on `feat/plot-coach` (commits `efb76a4f`, `83d5ceb7`, `4c253d35`). Next: Phase 2 (mutation & batch flow).
 
 ## Pencil designs
 
@@ -182,20 +186,20 @@ No changes to `acts`, `plot_points`, `beats`, `storylines`, `characters`, `wiki_
 
 ### Phase 1 — Foundation (no user-visible mutation)
 
-- Migrations: `plot_coach_sessions`, `plot_coach_batches`, `books.premise`.
-- Models: `PlotCoachSession`, `PlotCoachBatch`.
-- `PlotCoachAgent` skeleton with read-only tools: `GetPlotBoardState` + shared `LookupExistingEntities` + shared `RetrieveManuscriptContext`.
-- `PlotCoachController` with `stream`, `sessionIndex`, `sessionShow`, `sessionArchive` endpoints.
-- Wayfinder route generation.
-- Coach panel UI shell on `plot/index.tsx` with `⌘\` mode toggle.
-- Gate/degradation rendering (the three AI-config states).
+- ✓ Migrations: `plot_coach_sessions`, `plot_coach_batches`, `books.premise`.
+- ✓ Models: `PlotCoachSession`, `PlotCoachBatch`.
+- ✓ `PlotCoachAgent` skeleton with read-only tools: `GetPlotBoardState` + shared `LookupExistingEntities` + shared `RetrieveManuscriptContext`.
+- ✓ `PlotCoachController` with `stream`, `sessionIndex`, `sessionShow`, `sessionArchive` endpoints.
+- ✓ Wayfinder route generation.
+- ✓ Coach panel UI shell on `plot/index.tsx` with `⌘\` mode toggle.
+- ✓ Gate/degradation rendering (the three AI-config states).
 - Intake stage prompt composition (blockers 1–6 handled in dialogue, no board writes yet).
-- i18n strings for en/de/es.
+- ✓ i18n strings for en/de/es.
 
 Tests:
-- `tests/Feature/PlotCoachControllerTest.php` (required by guardrails).
-- `tests/Feature/Ai/PlotCoachAgentTest.php` — agent registration, prompt composition, tool set correctness.
-- `tests/Browser/PlotCoachTest.php` (required by guardrails).
+- ✓ `tests/Feature/PlotCoachControllerTest.php` (required by guardrails).
+- ✓ `tests/Feature/Ai/PlotCoachAgentTest.php` — agent registration, prompt composition, tool set correctness.
+- ✓ `tests/Browser/PlotCoachTest.php` (required by guardrails).
 - Agent can hold a full intake conversation without writes. Streaming works. Resume works.
 
 ### Phase 2 — Mutation & batch flow

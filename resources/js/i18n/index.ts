@@ -9,6 +9,7 @@ import deEditor from './de/editor.json';
 import deEditorialReview from './de/editorial-review.json';
 import deExport from './de/export.json';
 import deOnboarding from './de/onboarding.json';
+import dePlotCoach from './de/plot-coach.json';
 import dePlot from './de/plot.json';
 import dePublish from './de/publish.json';
 import deSettings from './de/settings.json';
@@ -21,6 +22,7 @@ import enEditor from './en/editor.json';
 import enEditorialReview from './en/editorial-review.json';
 import enExport from './en/export.json';
 import enOnboarding from './en/onboarding.json';
+import enPlotCoach from './en/plot-coach.json';
 import enPlot from './en/plot.json';
 import enPublish from './en/publish.json';
 import enSettings from './en/settings.json';
@@ -35,6 +37,7 @@ import esEditor from './es/editor.json';
 import esEditorialReview from './es/editorial-review.json';
 import esExport from './es/export.json';
 import esOnboarding from './es/onboarding.json';
+import esPlotCoach from './es/plot-coach.json';
 import esPlot from './es/plot.json';
 import esPublish from './es/publish.json';
 import esSettings from './es/settings.json';
@@ -49,6 +52,7 @@ i18n.use(initReactI18next).init({
             settings: enSettings,
             onboarding: enOnboarding,
             plot: enPlot,
+            'plot-coach': enPlotCoach,
             publish: enPublish,
             wiki: enWiki,
             'wiki-panel': enWikiPanel,
@@ -64,6 +68,7 @@ i18n.use(initReactI18next).init({
             settings: deSettings,
             onboarding: deOnboarding,
             plot: dePlot,
+            'plot-coach': dePlotCoach,
             publish: dePublish,
             wiki: deWiki,
             ai: deAi,
@@ -78,6 +83,7 @@ i18n.use(initReactI18next).init({
             settings: esSettings,
             onboarding: esOnboarding,
             plot: esPlot,
+            'plot-coach': esPlotCoach,
             publish: esPublish,
             wiki: esWiki,
             ai: esAi,
@@ -96,6 +102,7 @@ i18n.use(initReactI18next).init({
         'settings',
         'onboarding',
         'plot',
+        'plot-coach',
         'publish',
         'wiki',
         'wiki-panel',

@@ -12,8 +12,8 @@ import type {
     DragStartEvent,
 } from '@dnd-kit/core';
 import { Head, router } from '@inertiajs/react';
-import { GripVertical, Plus } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { GripVertical, LayoutGrid, MessageSquare, Plus } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     move as beatMove,
@@ -26,14 +26,17 @@ import ActContextMenu from '@/components/plot/ActContextMenu';
 import ActDetailPanel from '@/components/plot/ActDetailPanel';
 import BeatContextMenu from '@/components/plot/BeatContextMenu';
 import BeatDetailPanel from '@/components/plot/BeatDetailPanel';
+import CoachPanel from '@/components/plot/CoachPanel';
 import DeleteActDialog from '@/components/plot/DeleteActDialog';
 import PlotEmptyState from '@/components/plot/PlotEmptyState';
 import PlotPointContextMenu from '@/components/plot/PlotPointContextMenu';
 import PlotPointDetailPanel from '@/components/plot/PlotPointDetailPanel';
 import PlotWizardModal from '@/components/plot/PlotWizardModal';
 import Button from '@/components/ui/Button';
+import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { PlotTemplate } from '@/lib/plot-templates';
+import { cn } from '@/lib/utils';
 import type {
     Act,
     Beat,
@@ -61,7 +64,12 @@ type PlotPageProps = {
     })[];
     chapters: ChapterSummary[];
     characters: Character[];
+    active_coach_session: boolean;
 };
+
+type PlotMode = 'coach' | 'board';
+
+const PLOT_MODE_STORAGE_KEY = (bookId: number) => `plot-coach-mode-${bookId}`;
 
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } };
 
@@ -76,9 +84,55 @@ export default function Plot({
     plotPoints,
     chapters,
     characters,
+    active_coach_session: activeCoachSession,
 }: PlotPageProps) {
     const { t } = useTranslation('plot');
+    const { t: tCoach } = useTranslation('plot-coach');
     const sidebarStorylines = useSidebarStorylines();
+    const { configured: aiConfigured } = useAiFeatures();
+
+    // Plot mode — Coach chat or Board view. Persisted per-book in localStorage.
+    // Default: Coach if an active unfinished session exists, Board otherwise.
+    const [mode, setMode] = useState<PlotMode>(() => {
+        if (typeof window === 'undefined') {
+            return activeCoachSession ? 'coach' : 'board';
+        }
+        const stored = window.localStorage.getItem(
+            PLOT_MODE_STORAGE_KEY(book.id),
+        );
+        if (stored === 'coach' || stored === 'board') {
+            return stored;
+        }
+        return activeCoachSession ? 'coach' : 'board';
+    });
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        window.localStorage.setItem(PLOT_MODE_STORAGE_KEY(book.id), mode);
+    }, [book.id, mode]);
+
+    // Cmd+\ / Ctrl+\ toggles between Coach and Board.
+    useEffect(() => {
+        const handler = (event: KeyboardEvent) => {
+            if (event.key !== '\\') return;
+            if (!(event.metaKey || event.ctrlKey)) return;
+            // Ignore when focus is in an editable surface (contenteditable,
+            // inputs, textareas) so the shortcut never swallows user typing.
+            const target = event.target as HTMLElement | null;
+            const tag = target?.tagName;
+            if (
+                target?.isContentEditable ||
+                tag === 'INPUT' ||
+                tag === 'TEXTAREA'
+            ) {
+                return;
+            }
+            event.preventDefault();
+            setMode((prev) => (prev === 'coach' ? 'board' : 'coach'));
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, []);
 
     // Unified selection state (from #20)
     const [selection, setSelection] = useState<{
@@ -565,23 +619,35 @@ export default function Plot({
                 />
 
                 <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-                    {hasActs ? (
-                        <>
-                            {/* Header bar */}
-                            <div className="flex h-12 items-center justify-between border-b border-border px-6">
-                                <h1 className="text-sm font-medium text-ink">
-                                    {t('page.tabs.timeline', 'Plot')}
-                                </h1>
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={handleAddAct}
-                                >
-                                    <Plus size={14} />
-                                    {t('act.addAct')}
-                                </Button>
-                            </div>
+                    {/* Header bar */}
+                    <div className="flex h-12 items-center justify-between border-b border-border px-6">
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-sm font-medium text-ink">
+                                {t('page.tabs.timeline', 'Plot')}
+                            </h1>
+                            <ModeToggle
+                                mode={mode}
+                                onChange={setMode}
+                                coachLabel={tCoach('mode.coach')}
+                                boardLabel={tCoach('mode.board')}
+                            />
+                        </div>
+                        {mode === 'board' && hasActs && (
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={handleAddAct}
+                            >
+                                <Plus size={14} />
+                                {t('act.addAct')}
+                            </Button>
+                        )}
+                    </div>
 
+                    {mode === 'coach' ? (
+                        <CoachPanel aiConfigured={aiConfigured} />
+                    ) : hasActs ? (
+                        <>
                             {/* Act columns + detail panel */}
                             <div className="flex min-h-0 flex-1">
                                 <DndContext
@@ -792,5 +858,65 @@ export default function Plot({
                 )}
             </div>
         </>
+    );
+}
+
+type ModeToggleProps = {
+    mode: PlotMode;
+    onChange: (mode: PlotMode) => void;
+    coachLabel: string;
+    boardLabel: string;
+};
+
+function ModeToggle({
+    mode,
+    onChange,
+    coachLabel,
+    boardLabel,
+}: ModeToggleProps) {
+    return (
+        <div className="inline-flex items-center gap-0.5 rounded-md border border-border-light bg-surface-card p-0.5">
+            <ModeToggleButton
+                active={mode === 'coach'}
+                onClick={() => onChange('coach')}
+                label={coachLabel}
+                icon={<MessageSquare className="h-3.5 w-3.5" />}
+            />
+            <ModeToggleButton
+                active={mode === 'board'}
+                onClick={() => onChange('board')}
+                label={boardLabel}
+                icon={<LayoutGrid className="h-3.5 w-3.5" />}
+            />
+        </div>
+    );
+}
+
+function ModeToggleButton({
+    active,
+    onClick,
+    label,
+    icon,
+}: {
+    active: boolean;
+    onClick: () => void;
+    label: string;
+    icon: React.ReactNode;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            aria-pressed={active}
+            className={cn(
+                'inline-flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-[12px] font-medium transition-colors',
+                active
+                    ? 'border border-border-light bg-surface text-ink shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
+                    : 'border border-transparent text-ink-muted hover:text-ink',
+            )}
+        >
+            {icon}
+            {label}
+        </button>
     );
 }

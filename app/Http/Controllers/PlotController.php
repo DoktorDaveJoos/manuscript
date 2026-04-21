@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlotCoachSessionStatus;
 use App\Models\Book;
+use App\Models\PlotCoachSession;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,6 +29,11 @@ class PlotController extends Controller
             ->orderBy('reader_order')
             ->get();
 
+        $activeCoachSession = PlotCoachSession::query()
+            ->where('book_id', $book->id)
+            ->where('status', PlotCoachSessionStatus::Active)
+            ->exists();
+
         return Inertia::render('plot/index', [
             'book' => $book,
             'storylines' => $book->storylines,
@@ -34,6 +41,7 @@ class PlotController extends Controller
             'plotPoints' => $book->plotPoints,
             'characters' => $characters,
             'chapters' => $chapters,
+            'active_coach_session' => $activeCoachSession,
         ]);
     }
 }
