@@ -8,7 +8,7 @@ Branch: `feat/plot-coach` off `dev`.
 
 ## Phase 1 status
 
-Foundation + agent skeleton + frontend shell landed on `feat/plot-coach` (commits `efb76a4f`, `83d5ceb7`, `4c253d35`). Next: Phase 2 (mutation & batch flow).
+Foundation + agent skeleton + frontend shell landed on `feat/plot-coach` (commits `efb76a4f`, `83d5ceb7`, `7c69bca2`). Next: Phase 2 (mutation & batch flow).
 
 ## Pencil designs
 

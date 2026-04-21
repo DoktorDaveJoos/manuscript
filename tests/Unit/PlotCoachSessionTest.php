@@ -4,6 +4,7 @@ use App\Enums\PlotCoachSessionStatus;
 use App\Enums\PlotCoachStage;
 use App\Models\Book;
 use App\Models\PlotCoachSession;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -74,4 +75,36 @@ it('belongs to a book', function () {
 
     expect($session->book)->not->toBeNull();
     expect($session->book->id)->toBe($book->id);
+});
+
+it('enforces only one active session per book via partial unique index', function () {
+    $book = Book::factory()->create();
+
+    PlotCoachSession::factory()->for($book)->create([
+        'status' => PlotCoachSessionStatus::Active,
+    ]);
+
+    expect(fn () => PlotCoachSession::factory()->for($book)->create([
+        'status' => PlotCoachSessionStatus::Active,
+    ]))->toThrow(QueryException::class);
+});
+
+it('allows a new active session after archiving the previous one', function () {
+    $book = Book::factory()->create();
+
+    $first = PlotCoachSession::factory()->for($book)->create([
+        'status' => PlotCoachSessionStatus::Active,
+    ]);
+
+    $first->update([
+        'status' => PlotCoachSessionStatus::Archived,
+        'archived_at' => now(),
+    ]);
+
+    $second = PlotCoachSession::factory()->for($book)->create([
+        'status' => PlotCoachSessionStatus::Active,
+    ]);
+
+    expect($second->exists)->toBeTrue();
+    expect(PlotCoachSession::query()->active()->where('book_id', $book->id)->count())->toBe(1);
 });
