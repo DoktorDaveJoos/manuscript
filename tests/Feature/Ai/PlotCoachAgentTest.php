@@ -2,7 +2,10 @@
 
 use App\Ai\Agents\PlotCoachAgent;
 use App\Ai\Tools\LookupExistingEntities;
+use App\Ai\Tools\Plot\ApplyPlotCoachBatch;
 use App\Ai\Tools\Plot\GetPlotBoardState;
+use App\Ai\Tools\Plot\ProposeBatch;
+use App\Ai\Tools\Plot\UndoLastBatch;
 use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Enums\Genre;
 use App\Enums\PlotCoachStage;
@@ -16,13 +19,39 @@ test('plot coach agent registers GetPlotBoardState and related tools', function 
     $agent = new PlotCoachAgent($book, $session);
     $tools = iterator_to_array($agent->tools());
 
-    expect($tools)->toHaveCount(3);
+    expect($tools)->toHaveCount(6);
 
     $toolClasses = array_map(fn ($t) => $t::class, $tools);
 
     expect($toolClasses)->toContain(GetPlotBoardState::class);
     expect($toolClasses)->toContain(RetrieveManuscriptContext::class);
     expect($toolClasses)->toContain(LookupExistingEntities::class);
+});
+
+test('plot coach agent registers the batch tools', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+
+    $agent = new PlotCoachAgent($book, $session);
+    $toolClasses = array_map(fn ($t) => $t::class, iterator_to_array($agent->tools()));
+
+    expect($toolClasses)->toContain(ProposeBatch::class);
+    expect($toolClasses)->toContain(ApplyPlotCoachBatch::class);
+    expect($toolClasses)->toContain(UndoLastBatch::class);
+});
+
+test('plot coach agent emits plotting guidance when session is in Plotting stage', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create([
+        'stage' => PlotCoachStage::Plotting,
+    ]);
+
+    $agent = new PlotCoachAgent($book, $session);
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)
+        ->toContain('Current stage: Plotting')
+        ->toContain('Batch discipline');
 });
 
 test('plot coach agent composes intake-stage instructions with session state', function () {
@@ -46,10 +75,10 @@ test('plot coach agent composes intake-stage instructions with session state', f
         ->toContain('## Session state');
 });
 
-test('plot coach agent returns empty stage-guidance for non-intake stages', function () {
+test('plot coach agent returns empty stage-guidance for stages without dedicated prompts', function () {
     $book = Book::factory()->create();
     $session = PlotCoachSession::factory()->for($book, 'book')->create([
-        'stage' => PlotCoachStage::Plotting,
+        'stage' => PlotCoachStage::Structure,
     ]);
 
     $agent = new PlotCoachAgent($book, $session);
@@ -57,6 +86,7 @@ test('plot coach agent returns empty stage-guidance for non-intake stages', func
 
     expect($instructions)
         ->not->toContain('We need to pin down')
+        ->not->toContain('Batch discipline')
         ->toContain('editorial plot coach');
 });
 

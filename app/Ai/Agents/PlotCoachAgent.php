@@ -6,7 +6,10 @@ use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\LookupExistingEntities;
+use App\Ai\Tools\Plot\ApplyPlotCoachBatch;
 use App\Ai\Tools\Plot\GetPlotBoardState;
+use App\Ai\Tools\Plot\ProposeBatch;
+use App\Ai\Tools\Plot\UndoLastBatch;
 use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Enums\AiTaskCategory;
 use App\Enums\PlotCoachStage;
@@ -63,6 +66,9 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
             new GetPlotBoardState,
             new RetrieveManuscriptContext,
             new LookupExistingEntities,
+            new ProposeBatch,
+            new ApplyPlotCoachBatch,
+            new UndoLastBatch,
         ];
     }
 
@@ -100,12 +106,31 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
     {
         return match ($this->session->stage) {
             PlotCoachStage::Intake => $this->intakeGuidance(),
+            PlotCoachStage::Plotting => $this->plottingGuidance(),
             PlotCoachStage::Structure,
-            PlotCoachStage::Plotting,
             PlotCoachStage::Entities,
             PlotCoachStage::Refinement,
             PlotCoachStage::Complete => '',
         };
+    }
+
+    private function plottingGuidance(): string
+    {
+        return <<<'PLOTTING'
+        Current stage: Plotting.
+
+        The structure is locked. The board is open. Fill plot points and beats collaboratively.
+
+        Batch discipline:
+        - ProposeBatch only when the user has agreed to something concrete AND you have 1+ coherent writes ready. Micro-commits (single item) are fine.
+        - Show the preview in chat via ProposeBatch's output. Wait for explicit approval ("yes", "go ahead", "approve all", or a free-text edit).
+        - When approved, call ApplyPlotCoachBatch with the same writes. On failure, explain briefly and re-propose.
+        - If the user asks to undo, call UndoLastBatch. Do not offer undo unsolicited.
+
+        Speculative riffs:
+        - You can riff on 2–3 "what if" directions mid-conversation without proposing a batch. Keep those exploratory. Only propose writes when one lands.
+        - Never ask "want me to save that?" reflexively. If the user says something strong, you can offer: "Let me add that beat." One short line.
+        PLOTTING;
     }
 
     private function intakeGuidance(): string
