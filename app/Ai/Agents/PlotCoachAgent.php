@@ -99,6 +99,9 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         - Micro-commits are fine — one character, one beat, one storyline. Low friction, one line.
         - Do not re-summarize the structured state unsolicited. The user doesn't need the recap.
         - Tools are for fetching state and (later) applying writes. Call them when useful, not to pad turns.
+
+        Tool output rules:
+        - When ProposeBatch fires, the tool's output includes a machine-readable HTML comment block (starting with "<!-- PLOT_COACH_BATCH_PROPOSAL"). Do NOT paraphrase, echo, or strip that block. Pass the tool output through with at most a brief line of your own commentary ("Here's the preview:") so the frontend can render the approval card.
         PERSONA;
     }
 
@@ -127,6 +130,12 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         - When approved, call ApplyPlotCoachBatch with the same writes. On failure, explain briefly and re-propose.
         - If the user asks to undo, call UndoLastBatch. Do not offer undo unsolicited.
 
+        Approval signals:
+        - When the user sends "APPROVE:batch:<id>", treat it as explicit approval of the most recent ProposeBatch proposal. Immediately call ApplyPlotCoachBatch with the same writes array from that proposal. Do not re-ask. Do not propose again.
+        - When the user sends "CANCEL:batch:<id>", acknowledge briefly (one short line) and do not call ApplyPlotCoachBatch.
+        - The user may also approve or cancel in free text ("yes, go ahead", "approve", "skip that"). Parse intent.
+        - When the user sends "UNDO:last" or types a short "undo", call UndoLastBatch.
+
         Speculative riffs:
         - You can riff on 2–3 "what if" directions mid-conversation without proposing a batch. Keep those exploratory. Only propose writes when one lands.
         - Never ask "want me to save that?" reflexively. If the user says something strong, you can offer: "Let me add that beat." One short line.
@@ -153,6 +162,11 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         6. Coaching mode — ask once: "Pitch freely" (suggestive) or "Keep it structural" (guided).
 
         Absorb multiple answers in one user message if they give them. Don't re-ask what's already known. Don't ask them in rigid order — conversational. When 1–5 are satisfied, propose 2–3 candidate structures (later phase).
+
+        Approval signals:
+        - When the user sends "APPROVE:batch:<id>", treat it as explicit approval of the most recent ProposeBatch proposal. Immediately call ApplyPlotCoachBatch with the same writes array from that proposal. Do not re-ask.
+        - When the user sends "CANCEL:batch:<id>", acknowledge briefly and do not call ApplyPlotCoachBatch.
+        - When the user sends "UNDO:last" or types a short "undo", call UndoLastBatch.
         INTAKE;
     }
 

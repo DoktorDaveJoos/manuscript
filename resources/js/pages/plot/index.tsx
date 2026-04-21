@@ -12,7 +12,13 @@ import type {
     DragStartEvent,
 } from '@dnd-kit/core';
 import { Head, router } from '@inertiajs/react';
-import { GripVertical, LayoutGrid, MessageSquare, Plus } from 'lucide-react';
+import {
+    GripVertical,
+    LayoutGrid,
+    MessageSquare,
+    Plus,
+    Undo2,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -27,6 +33,7 @@ import ActDetailPanel from '@/components/plot/ActDetailPanel';
 import BeatContextMenu from '@/components/plot/BeatContextMenu';
 import BeatDetailPanel from '@/components/plot/BeatDetailPanel';
 import CoachPanel from '@/components/plot/CoachPanel';
+import type { CoachPanelHandle } from '@/components/plot/CoachPanel';
 import DeleteActDialog from '@/components/plot/DeleteActDialog';
 import PlotEmptyState from '@/components/plot/PlotEmptyState';
 import PlotPointContextMenu from '@/components/plot/PlotPointContextMenu';
@@ -90,6 +97,10 @@ export default function Plot({
     const { t: tCoach } = useTranslation('plot-coach');
     const sidebarStorylines = useSidebarStorylines();
     const { configured: aiConfigured } = useAiFeatures();
+
+    // Ref for dispatching conversational signals into the coach chat
+    // ("UNDO:last" from the top-bar Undo button).
+    const coachPanelRef = useRef<CoachPanelHandle>(null);
 
     // Tracks the active coach session id. Starts from the page-prop and is
     // updated locally when the chat surface creates a new session so the
@@ -637,12 +648,29 @@ export default function Plot({
                             <h1 className="text-sm font-medium text-ink">
                                 {t('page.tabs.timeline', 'Plot')}
                             </h1>
-                            <ModeToggle
-                                mode={mode}
-                                onChange={setMode}
-                                coachLabel={tCoach('mode.coach')}
-                                boardLabel={tCoach('mode.board')}
-                            />
+                            <div className="flex items-center gap-2">
+                                {mode === 'coach' &&
+                                    coachSessionId !== null && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                coachPanelRef.current?.sendSystemSignal(
+                                                    'UNDO:last',
+                                                );
+                                            }}
+                                            className="inline-flex items-center gap-1.5 rounded-md border border-border-light px-2.5 py-1 text-[12px] font-medium text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
+                                        >
+                                            <Undo2 className="h-3.5 w-3.5" />
+                                            {tCoach('undo.button')}
+                                        </button>
+                                    )}
+                                <ModeToggle
+                                    mode={mode}
+                                    onChange={setMode}
+                                    coachLabel={tCoach('mode.coach')}
+                                    boardLabel={tCoach('mode.board')}
+                                />
+                            </div>
                         </div>
                         {mode === 'board' && hasActs && (
                             <Button
@@ -658,6 +686,7 @@ export default function Plot({
 
                     {mode === 'coach' ? (
                         <CoachPanel
+                            ref={coachPanelRef}
                             aiConfigured={aiConfigured}
                             bookId={book.id}
                             activeSessionId={coachSessionId}

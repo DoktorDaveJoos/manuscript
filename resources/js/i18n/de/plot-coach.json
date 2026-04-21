@@ -22,5 +22,22 @@
 
     "status.streaming": "Coach denkt nach\u2026",
     "status.error.retry": "Erneut versuchen",
-    "status.error.body": "Etwas ist schiefgelaufen. Versuch es noch einmal."
+    "status.error.body": "Etwas ist schiefgelaufen. Versuch es noch einmal.",
+
+    "batch.preview.title": "Batch-Vorschau",
+    "batch.preview.approve": "Alle \u00fcbernehmen",
+    "batch.preview.cancel": "Abbrechen",
+    "batch.preview.hint": "oder antworte mit \u00c4nderungen",
+    "batch.preview.items_one": "{{count}} Eintrag",
+    "batch.preview.items_other": "{{count}} Eintr\u00e4ge",
+    "batch.section.characters": "Figuren",
+    "batch.section.storylines": "Handlungsstr\u00e4nge",
+    "batch.section.plot_points": "Plot-Punkte",
+    "batch.section.beats": "Beats",
+    "batch.section.wiki_entries": "Wiki-Eintr\u00e4ge",
+
+    "undo.button": "Letzten Batch r\u00fcckg\u00e4ngig",
+
+    "board_changes.count_one": "{{count}} Board-\u00c4nderung seit der letzten Runde",
+    "board_changes.count_other": "{{count}} Board-\u00c4nderungen seit der letzten Runde"
 }

@@ -1,7 +1,9 @@
 import { Link } from '@inertiajs/react';
 import { Lock, Sparkles } from 'lucide-react';
+import { forwardRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import ChatSurface from '@/components/plot/ChatSurface';
+import type { ChatSurfaceHandle } from '@/components/plot/ChatSurface';
 import Button from '@/components/ui/Button';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 
@@ -12,6 +14,8 @@ type CoachPanelProps = {
     onSessionCreated?: (sessionId: number) => void;
 };
 
+export type CoachPanelHandle = ChatSurfaceHandle;
+
 /**
  * The Coach panel shell. Renders one of four states:
  *
@@ -21,51 +25,54 @@ type CoachPanelProps = {
  *                                   message creates the session server-side)
  *   4. Pro + AI + active session → ChatSurface with hydrated history
  */
-export default function CoachPanel({
-    aiConfigured,
-    bookId,
-    activeSessionId,
-    onSessionCreated,
-}: CoachPanelProps) {
-    const { t } = useTranslation('plot-coach');
-    const { licensed } = useAiFeatures();
+const CoachPanel = forwardRef<CoachPanelHandle, CoachPanelProps>(
+    function CoachPanel(
+        { aiConfigured, bookId, activeSessionId, onSessionCreated },
+        ref,
+    ) {
+        const { t } = useTranslation('plot-coach');
+        const { licensed } = useAiFeatures();
 
-    if (!licensed) {
+        if (!licensed) {
+            return (
+                <GateShell>
+                    <GateCard
+                        icon={<Lock className="h-4 w-4" />}
+                        title={t('gate.no_pro.title')}
+                        body={t('gate.no_pro.body')}
+                        cta={t('gate.no_pro.cta')}
+                        href="/settings/license"
+                    />
+                </GateShell>
+            );
+        }
+
+        if (!aiConfigured) {
+            return (
+                <GateShell>
+                    <GateCard
+                        icon={<Sparkles className="h-4 w-4" />}
+                        title={t('gate.no_ai.title')}
+                        body={t('gate.no_ai.body')}
+                        cta={t('gate.no_ai.cta')}
+                        href="/settings/ai"
+                    />
+                </GateShell>
+            );
+        }
+
         return (
-            <GateShell>
-                <GateCard
-                    icon={<Lock className="h-4 w-4" />}
-                    title={t('gate.no_pro.title')}
-                    body={t('gate.no_pro.body')}
-                    cta={t('gate.no_pro.cta')}
-                    href="/settings/license"
-                />
-            </GateShell>
+            <ChatSurface
+                ref={ref}
+                bookId={bookId}
+                sessionId={activeSessionId}
+                onSessionCreated={onSessionCreated}
+            />
         );
-    }
+    },
+);
 
-    if (!aiConfigured) {
-        return (
-            <GateShell>
-                <GateCard
-                    icon={<Sparkles className="h-4 w-4" />}
-                    title={t('gate.no_ai.title')}
-                    body={t('gate.no_ai.body')}
-                    cta={t('gate.no_ai.cta')}
-                    href="/settings/ai"
-                />
-            </GateShell>
-        );
-    }
-
-    return (
-        <ChatSurface
-            bookId={bookId}
-            sessionId={activeSessionId}
-            onSessionCreated={onSessionCreated}
-        />
-    );
-}
+export default CoachPanel;
 
 function GateShell({ children }: { children: React.ReactNode }) {
     return (

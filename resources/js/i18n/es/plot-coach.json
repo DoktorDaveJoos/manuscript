@@ -22,5 +22,22 @@
 
     "status.streaming": "Coach est\u00e1 pensando\u2026",
     "status.error.retry": "Reintentar",
-    "status.error.body": "Algo sali\u00f3 mal. Int\u00e9ntalo de nuevo."
+    "status.error.body": "Algo sali\u00f3 mal. Int\u00e9ntalo de nuevo.",
+
+    "batch.preview.title": "Vista previa del lote",
+    "batch.preview.approve": "Aprobar todo",
+    "batch.preview.cancel": "Cancelar",
+    "batch.preview.hint": "o responde con ediciones",
+    "batch.preview.items_one": "{{count}} elemento",
+    "batch.preview.items_other": "{{count}} elementos",
+    "batch.section.characters": "Personajes",
+    "batch.section.storylines": "L\u00edneas argumentales",
+    "batch.section.plot_points": "Puntos de la trama",
+    "batch.section.beats": "Beats",
+    "batch.section.wiki_entries": "Entradas de la wiki",
+
+    "undo.button": "Deshacer \u00faltimo lote",
+
+    "board_changes.count_one": "{{count}} cambio en el tablero desde el \u00faltimo turno",
+    "board_changes.count_other": "{{count}} cambios en el tablero desde el \u00faltimo turno"
 }

@@ -22,5 +22,22 @@
 
     "status.streaming": "Coach is thinking\u2026",
     "status.error.retry": "Retry",
-    "status.error.body": "Something went wrong. Try again."
+    "status.error.body": "Something went wrong. Try again.",
+
+    "batch.preview.title": "Batch preview",
+    "batch.preview.approve": "Approve all",
+    "batch.preview.cancel": "Cancel",
+    "batch.preview.hint": "or reply with edits",
+    "batch.preview.items_one": "{{count}} item",
+    "batch.preview.items_other": "{{count}} items",
+    "batch.section.characters": "Characters",
+    "batch.section.storylines": "Storylines",
+    "batch.section.plot_points": "Plot points",
+    "batch.section.beats": "Beats",
+    "batch.section.wiki_entries": "Wiki entries",
+
+    "undo.button": "Undo last batch",
+
+    "board_changes.count_one": "{{count}} board change since last turn",
+    "board_changes.count_other": "{{count}} board changes since last turn"
 }

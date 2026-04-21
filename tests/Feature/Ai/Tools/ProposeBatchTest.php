@@ -70,3 +70,56 @@ it('handles an empty writes array gracefully', function () {
 
     expect($result)->toContain('Batch preview: (empty)');
 });
+
+it('appends a machine-readable sentinel block with proposal_id, writes, summary', function () {
+    $tool = new ProposeBatch;
+    $writes = [
+        ['type' => 'character', 'data' => ['name' => 'Mara']],
+        ['type' => 'storyline', 'data' => ['name' => 'Resistance arc', 'type' => 'main']],
+    ];
+
+    $result = (string) $tool->handle(new Request([
+        'summary' => 'Seed resistance arc',
+        'writes' => $writes,
+    ]));
+
+    expect($result)
+        ->toContain('<!-- PLOT_COACH_BATCH_PROPOSAL')
+        ->toContain('-->');
+
+    // Extract the JSON payload between the delimiters and make sure it parses
+    // into the expected shape.
+    $matched = preg_match(
+        '/<!-- PLOT_COACH_BATCH_PROPOSAL\n(.*?)\n-->/s',
+        $result,
+        $matches,
+    );
+
+    expect($matched)->toBe(1);
+
+    $payload = json_decode($matches[1], true);
+
+    expect($payload)
+        ->toBeArray()
+        ->toHaveKeys(['proposal_id', 'writes', 'summary']);
+
+    expect($payload['summary'])->toBe('Seed resistance arc');
+    expect($payload['writes'])->toBe($writes);
+    expect($payload['proposal_id'])->toBeString()->not->toBeEmpty();
+});
+
+it('produces a unique proposal_id per invocation', function () {
+    $tool = new ProposeBatch;
+    $req = new Request([
+        'summary' => 'x',
+        'writes' => [['type' => 'character', 'data' => ['name' => 'A']]],
+    ]);
+
+    $a = (string) $tool->handle($req);
+    $b = (string) $tool->handle($req);
+
+    preg_match('/"proposal_id":"([^"]+)"/', $a, $mA);
+    preg_match('/"proposal_id":"([^"]+)"/', $b, $mB);
+
+    expect($mA[1])->not->toBe($mB[1]);
+});

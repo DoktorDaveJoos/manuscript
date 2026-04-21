@@ -4,6 +4,7 @@ namespace App\Ai\Tools\Plot;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
+use Illuminate\Support\Str;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Stringable;
@@ -82,7 +83,27 @@ class ProposeBatch implements Tool
         $total = array_sum(array_map('count', $grouped));
         $sections[] = "\n_{$total} item".($total === 1 ? '' : 's').' — awaiting approval._';
 
+        $sections[] = $this->renderSentinel($writes, $summary);
+
         return implode("\n", $sections);
+    }
+
+    /**
+     * Renders a machine-readable sentinel block that the frontend parses out
+     * of the assistant message to render the BatchProposalCard. The AI is
+     * instructed (via agent persona) not to paraphrase this block.
+     *
+     * @param  array<int, array<string, mixed>>  $writes
+     */
+    private function renderSentinel(array $writes, string $summary): string
+    {
+        $payload = json_encode([
+            'proposal_id' => (string) Str::uuid(),
+            'writes' => $writes,
+            'summary' => $summary,
+        ], JSON_UNESCAPED_SLASHES);
+
+        return "\n<!-- PLOT_COACH_BATCH_PROPOSAL\n{$payload}\n-->";
     }
 
     /**
