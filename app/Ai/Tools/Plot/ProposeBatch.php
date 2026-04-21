@@ -2,6 +2,8 @@
 
 namespace App\Ai\Tools\Plot;
 
+use App\Models\Character;
+use App\Models\WikiEntry;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Illuminate\Support\Str;
@@ -29,6 +31,7 @@ class ProposeBatch implements Tool
     public function schema(JsonSchema $schema): array
     {
         return [
+            'book_id' => $schema->integer()->required(),
             'writes' => $schema->array()->required(),
             'summary' => $schema->string()->required(),
         ];
@@ -36,6 +39,7 @@ class ProposeBatch implements Tool
 
     public function handle(Request $request): Stringable|string
     {
+        $bookId = $request['book_id'] ?? null;
         $writes = $request['writes'] ?? [];
         $summary = $request['summary'] ?? '';
 
@@ -58,6 +62,8 @@ class ProposeBatch implements Tool
             $grouped[$write['type']][] = $write['data'] ?? [];
         }
 
+        $duplicates = $this->detectDuplicates($bookId, $grouped);
+
         $sections = [];
         $sections[] = "## Proposed batch\n\n_{$summary}_";
 
@@ -76,16 +82,99 @@ class ProposeBatch implements Tool
 
             $sections[] = "### {$label}";
             foreach ($grouped[$type] as $data) {
-                $sections[] = '- '.$this->renderLine($type, $data);
+                $line = '- '.$this->renderLine($type, $data);
+                if ($this->isDuplicate($type, $data, $duplicates)) {
+                    $line .= ' _(name already exists — will create a duplicate)_';
+                }
+                $sections[] = $line;
             }
         }
 
         $total = array_sum(array_map('count', $grouped));
         $sections[] = "\n_{$total} item".($total === 1 ? '' : 's').' — awaiting approval._';
 
+        if ($duplicates['count'] > 0) {
+            $sections[] = "_{$duplicates['count']} proposed name".($duplicates['count'] === 1 ? '' : 's').' already exist on this book. Consider asking the user whether to reuse an existing entity or confirm the duplicate.__';
+        }
+
         $sections[] = $this->renderSentinel($writes, $summary);
 
         return implode("\n", $sections);
+    }
+
+    /**
+     * Build a lookup of existing character + wiki-entry names for this book.
+     *
+     * @param  array<string, array<int, array<string, mixed>>>  $grouped
+     * @return array{characters: array<string, true>, wiki_entries: array<string, true>, count: int}
+     */
+    private function detectDuplicates(?int $bookId, array $grouped): array
+    {
+        $result = ['characters' => [], 'wiki_entries' => [], 'count' => 0];
+
+        if (! $bookId) {
+            return $result;
+        }
+
+        $characterNames = array_values(array_filter(array_map(
+            fn ($c) => is_string($c['name'] ?? null) ? mb_strtolower(trim($c['name'])) : null,
+            $grouped['character'] ?? []
+        )));
+
+        $wikiNames = array_values(array_filter(array_map(
+            fn ($w) => is_string($w['name'] ?? null) ? mb_strtolower(trim($w['name'])) : null,
+            $grouped['wiki_entry'] ?? []
+        )));
+
+        if ($characterNames) {
+            $existing = Character::query()
+                ->where('book_id', $bookId)
+                ->pluck('name')
+                ->map(fn ($n) => mb_strtolower(trim((string) $n)))
+                ->all();
+            foreach ($characterNames as $name) {
+                if (in_array($name, $existing, true)) {
+                    $result['characters'][$name] = true;
+                    $result['count']++;
+                }
+            }
+        }
+
+        if ($wikiNames) {
+            $existing = WikiEntry::query()
+                ->where('book_id', $bookId)
+                ->pluck('name')
+                ->map(fn ($n) => mb_strtolower(trim((string) $n)))
+                ->all();
+            foreach ($wikiNames as $name) {
+                if (in_array($name, $existing, true)) {
+                    $result['wiki_entries'][$name] = true;
+                    $result['count']++;
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  array{characters: array<string, true>, wiki_entries: array<string, true>, count: int}  $duplicates
+     */
+    private function isDuplicate(string $type, array $data, array $duplicates): bool
+    {
+        $name = $data['name'] ?? null;
+        if (! is_string($name)) {
+            return false;
+        }
+
+        $key = mb_strtolower(trim($name));
+
+        return match ($type) {
+            'character' => isset($duplicates['characters'][$key]),
+            'wiki_entry' => isset($duplicates['wiki_entries'][$key]),
+            default => false,
+        };
     }
 
     /**

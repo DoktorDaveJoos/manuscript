@@ -1,10 +1,12 @@
 <?php
 
 use App\Ai\Tools\Plot\ProposeBatch;
+use App\Enums\WikiEntryKind;
 use App\Models\Book;
 use App\Models\Character;
 use App\Models\PlotPoint;
 use App\Models\Storyline;
+use App\Models\WikiEntry;
 use Laravel\Ai\Tools\Request;
 
 it('returns a markdown preview with sections grouped by type', function () {
@@ -106,6 +108,94 @@ it('appends a machine-readable sentinel block with proposal_id, writes, summary'
     expect($payload['summary'])->toBe('Seed resistance arc');
     expect($payload['writes'])->toBe($writes);
     expect($payload['proposal_id'])->toBeString()->not->toBeEmpty();
+});
+
+it('flags duplicate character names against the book when book_id is provided', function () {
+    $book = Book::factory()->create();
+    Character::factory()->for($book)->create(['name' => 'Mara']);
+
+    $tool = new ProposeBatch;
+    $result = (string) $tool->handle(new Request([
+        'book_id' => $book->id,
+        'summary' => 'Add cast',
+        'writes' => [
+            ['type' => 'character', 'data' => ['name' => 'Mara', 'ai_description' => 'new write']],
+            ['type' => 'character', 'data' => ['name' => 'Kael']],
+        ],
+    ]));
+
+    expect($result)
+        ->toContain('name already exists')
+        ->toContain('1 proposed name already exist');
+});
+
+it('flags duplicate wiki entry names too', function () {
+    $book = Book::factory()->create();
+    WikiEntry::factory()->for($book)->create([
+        'name' => 'The Archive',
+        'kind' => WikiEntryKind::Location,
+    ]);
+
+    $tool = new ProposeBatch;
+    $result = (string) $tool->handle(new Request([
+        'book_id' => $book->id,
+        'summary' => 'Add location',
+        'writes' => [
+            ['type' => 'wiki_entry', 'data' => ['kind' => 'location', 'name' => 'The Archive']],
+        ],
+    ]));
+
+    expect($result)->toContain('name already exists');
+});
+
+it('is case and whitespace insensitive when detecting duplicates', function () {
+    $book = Book::factory()->create();
+    Character::factory()->for($book)->create(['name' => 'Mara']);
+
+    $tool = new ProposeBatch;
+    $result = (string) $tool->handle(new Request([
+        'book_id' => $book->id,
+        'summary' => 'Test',
+        'writes' => [
+            ['type' => 'character', 'data' => ['name' => '  MARA  ']],
+        ],
+    ]));
+
+    expect($result)->toContain('name already exists');
+});
+
+it('does not flag duplicates when book_id is omitted', function () {
+    $book = Book::factory()->create();
+    Character::factory()->for($book)->create(['name' => 'Mara']);
+
+    $tool = new ProposeBatch;
+    $result = (string) $tool->handle(new Request([
+        'summary' => 'Test',
+        'writes' => [
+            ['type' => 'character', 'data' => ['name' => 'Mara']],
+        ],
+    ]));
+
+    expect($result)->not->toContain('name already exists');
+});
+
+it('scopes duplicate detection to the given book', function () {
+    $bookA = Book::factory()->create();
+    $bookB = Book::factory()->create();
+    Character::factory()->for($bookA)->create(['name' => 'Mara']);
+
+    $tool = new ProposeBatch;
+
+    // Same name proposed against a different book — not a duplicate.
+    $result = (string) $tool->handle(new Request([
+        'book_id' => $bookB->id,
+        'summary' => 'Test',
+        'writes' => [
+            ['type' => 'character', 'data' => ['name' => 'Mara']],
+        ],
+    ]));
+
+    expect($result)->not->toContain('name already exists');
 });
 
 it('produces a unique proposal_id per invocation', function () {

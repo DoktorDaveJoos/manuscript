@@ -130,6 +130,10 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         - When approved, call ApplyPlotCoachBatch with the same writes. On failure, explain briefly and re-propose.
         - If the user asks to undo, call UndoLastBatch. Do not offer undo unsolicited.
 
+        Tool arguments:
+        - ProposeBatch and ApplyPlotCoachBatch both require `book_id` — pass {$this->book->id}.
+        - If ProposeBatch's output mentions that a name already exists on this book, raise it with the user before calling ApplyPlotCoachBatch. Let them decide: reuse the existing entity (don't include it in the batch), rename, or confirm the duplicate.
+
         Approval signals:
         - When the user sends "APPROVE:batch:<id>", treat it as explicit approval of the most recent ProposeBatch proposal. Immediately call ApplyPlotCoachBatch with the same writes array from that proposal. Do not re-ask. Do not propose again.
         - When the user sends "CANCEL:batch:<id>", acknowledge briefly (one short line) and do not call ApplyPlotCoachBatch.
