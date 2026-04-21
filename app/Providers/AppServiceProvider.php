@@ -55,9 +55,41 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureSentry();
+        $this->healStaleNativePhpSecret();
 
         Event::listen(AgentPrompted::class, RecordAiTokenUsage::class);
         Event::listen(AgentStreamed::class, RecordAiTokenUsage::class);
+    }
+
+    /**
+     * Reconcile a stale NativePHP secret cache at request time.
+     *
+     * Electron generates a fresh `NATIVEPHP_SECRET` per launch and hands it to
+     * PHP via the process env. NativePHP regenerates the config cache on each
+     * boot via `artisan optimize`, but that call is non-fatal in vendor code
+     * (vendor/nativephp/desktop/resources/electron/electron-plugin/src/server/php.ts:437).
+     * If optimize ever fails, the server boots against the previous launch's
+     * cached secret and `PreventRegularBrowserAccess` 403s every
+     * `/_native/api/events` call until the user relaunches — see Sentry issue
+     * 113317190. Reading env() directly sidesteps the cache.
+     */
+    protected function healStaleNativePhpSecret(): void
+    {
+        if (! config('nativephp-internal.running')) {
+            return;
+        }
+
+        $runtimeSecret = env('NATIVEPHP_SECRET');
+
+        if ($runtimeSecret === null || $runtimeSecret === '') {
+            return;
+        }
+
+        if (config('nativephp-internal.secret') === $runtimeSecret) {
+            return;
+        }
+
+        config()->set('nativephp-internal.secret', $runtimeSecret);
     }
 
     /**
