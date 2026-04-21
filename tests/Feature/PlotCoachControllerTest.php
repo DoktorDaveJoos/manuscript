@@ -77,6 +77,26 @@ test('stream reuses the active session across calls', function () {
     expect(PlotCoachSession::query()->where('book_id', $book->id)->count())->toBe(1);
 });
 
+test('stream returns 404 when an unknown session_id is provided', function () {
+    $book = Book::factory()->withAi()->create();
+
+    $this->postJson(route('books.plotCoach.stream', $book), [
+        'message' => 'Hello.',
+        'session_id' => 999999,
+    ])->assertNotFound();
+});
+
+test('stream returns 404 when session_id belongs to a different book', function () {
+    $bookA = Book::factory()->withAi()->create();
+    $bookB = Book::factory()->create();
+    $otherSession = PlotCoachSession::factory()->for($bookB, 'book')->create();
+
+    $this->postJson(route('books.plotCoach.stream', $bookA), [
+        'message' => 'Hello.',
+        'session_id' => $otherSession->id,
+    ])->assertNotFound();
+});
+
 test('stream validates message is required', function () {
     $book = Book::factory()->withAi()->create();
 

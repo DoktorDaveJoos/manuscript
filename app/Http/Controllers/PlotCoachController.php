@@ -105,9 +105,9 @@ class PlotCoachController extends Controller
                 ->where('book_id', $book->id)
                 ->find($sessionId);
 
-            if ($session) {
-                return $session;
-            }
+            abort_unless($session, 404);
+
+            return $session;
         }
 
         $session = PlotCoachSession::query()
