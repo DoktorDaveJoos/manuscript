@@ -18,6 +18,7 @@ use App\Http\Controllers\EditorialReviewController;
 use App\Http\Controllers\LicenseController;
 use App\Http\Controllers\NormalizationController;
 use App\Http\Controllers\PlotAiController;
+use App\Http\Controllers\PlotCoachController;
 use App\Http\Controllers\PlotController;
 use App\Http\Controllers\PlotPointConnectionController;
 use App\Http\Controllers\PlotPointController;
@@ -230,6 +231,11 @@ Route::middleware('license')->group(function () {
     Route::post('/books/{book}/ai/editorial-review/{review}/toggle-finding', [EditorialReviewController::class, 'toggleFinding'])->name('books.ai.editorial-review.toggle-finding');
 
     Route::post('/books/{book}/settings/writing-style/regenerate', [BookSettingsController::class, 'regenerateWritingStyle'])->name('books.settings.writing-style.regenerate');
+
+    Route::post('/books/{book}/plot-coach/stream', [PlotCoachController::class, 'stream'])->name('books.plotCoach.stream');
+    Route::get('/books/{book}/plot-coach/sessions', [PlotCoachController::class, 'sessionIndex'])->name('books.plotCoach.sessions.index');
+    Route::get('/books/{book}/plot-coach/sessions/{session}', [PlotCoachController::class, 'sessionShow'])->name('books.plotCoach.sessions.show');
+    Route::patch('/books/{book}/plot-coach/sessions/{session}/archive', [PlotCoachController::class, 'sessionArchive'])->name('books.plotCoach.sessions.archive');
 
     Route::post('/books/{book}/plot/ai/health', [PlotAiController::class, 'runPlotHealth'])->name('books.plot.ai.health');
     Route::post('/books/{book}/plot/ai/holes', [PlotAiController::class, 'detectPlotHoles'])->name('books.plot.ai.holes');
