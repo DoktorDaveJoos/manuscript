@@ -12,5 +12,15 @@
 
     "empty_state.title": "Start plotting with Coach",
     "empty_state.body": "Describe your book or ask a question. I'll guide you.",
-    "empty_state.placeholder": "Message Coach\u2026"
+    "empty_state.placeholder": "Message Coach\u2026",
+
+    "intake.welcome.hello": "Hi.",
+    "intake.welcome.body": "I'll be your plot coach. Tell me about the story you're working on — the premise, the characters, the conflict — and we'll shape the plot together.",
+
+    "input.placeholder": "Message Coach\u2026",
+    "input.send": "Send",
+
+    "status.streaming": "Coach is thinking\u2026",
+    "status.error.retry": "Retry",
+    "status.error.body": "Something went wrong. Try again."
 }

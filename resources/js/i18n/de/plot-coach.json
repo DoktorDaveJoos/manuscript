@@ -12,5 +12,15 @@
 
     "empty_state.title": "Starte das Plotten mit Coach",
     "empty_state.body": "Beschreibe dein Buch oder stell eine Frage. Ich begleite dich.",
-    "empty_state.placeholder": "Nachricht an Coach\u2026"
+    "empty_state.placeholder": "Nachricht an Coach\u2026",
+
+    "intake.welcome.hello": "Hallo.",
+    "intake.welcome.body": "Ich bin dein Plot-Coach. Erz\u00e4hl mir von deiner Geschichte \u2014 die Pr\u00e4misse, die Figuren, der Konflikt \u2014 und wir formen die Handlung gemeinsam.",
+
+    "input.placeholder": "Nachricht an Coach\u2026",
+    "input.send": "Senden",
+
+    "status.streaming": "Coach denkt nach\u2026",
+    "status.error.retry": "Erneut versuchen",
+    "status.error.body": "Etwas ist schiefgelaufen. Versuch es noch einmal."
 }

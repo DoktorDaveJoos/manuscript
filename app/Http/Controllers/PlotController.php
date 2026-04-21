@@ -29,10 +29,11 @@ class PlotController extends Controller
             ->orderBy('reader_order')
             ->get();
 
-        $activeCoachSession = PlotCoachSession::query()
+        $activeCoachSessionId = PlotCoachSession::query()
             ->where('book_id', $book->id)
             ->where('status', PlotCoachSessionStatus::Active)
-            ->exists();
+            ->orderByDesc('updated_at')
+            ->value('id');
 
         return Inertia::render('plot/index', [
             'book' => $book,
@@ -41,7 +42,7 @@ class PlotController extends Controller
             'plotPoints' => $book->plotPoints,
             'characters' => $characters,
             'chapters' => $chapters,
-            'active_coach_session' => $activeCoachSession,
+            'active_coach_session' => $activeCoachSessionId,
         ]);
     }
 }

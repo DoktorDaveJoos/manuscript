@@ -64,7 +64,7 @@ type PlotPageProps = {
     })[];
     chapters: ChapterSummary[];
     characters: Character[];
-    active_coach_session: boolean;
+    active_coach_session: number | null;
 };
 
 type PlotMode = 'coach' | 'board';
@@ -84,18 +84,30 @@ export default function Plot({
     plotPoints,
     chapters,
     characters,
-    active_coach_session: activeCoachSession,
+    active_coach_session: activeCoachSessionId,
 }: PlotPageProps) {
     const { t } = useTranslation('plot');
     const { t: tCoach } = useTranslation('plot-coach');
     const sidebarStorylines = useSidebarStorylines();
     const { configured: aiConfigured } = useAiFeatures();
 
+    // Tracks the active coach session id. Starts from the page-prop and is
+    // updated locally when the chat surface creates a new session so the
+    // hydrate/stream wiring stays correct without a page reload.
+    const [coachSessionId, setCoachSessionId] = useState<number | null>(
+        activeCoachSessionId ?? null,
+    );
+
+    useEffect(() => {
+        setCoachSessionId(activeCoachSessionId ?? null);
+    }, [activeCoachSessionId]);
+
     // Plot mode — Coach chat or Board view. Persisted per-book in localStorage.
     // Default: Coach if an active unfinished session exists, Board otherwise.
     const [mode, setMode] = useState<PlotMode>(() => {
+        const hasSession = activeCoachSessionId !== null;
         if (typeof window === 'undefined') {
-            return activeCoachSession ? 'coach' : 'board';
+            return hasSession ? 'coach' : 'board';
         }
         const stored = window.localStorage.getItem(
             PLOT_MODE_STORAGE_KEY(book.id),
@@ -103,7 +115,7 @@ export default function Plot({
         if (stored === 'coach' || stored === 'board') {
             return stored;
         }
-        return activeCoachSession ? 'coach' : 'board';
+        return hasSession ? 'coach' : 'board';
     });
 
     useEffect(() => {
@@ -645,7 +657,12 @@ export default function Plot({
                     </div>
 
                     {mode === 'coach' ? (
-                        <CoachPanel aiConfigured={aiConfigured} />
+                        <CoachPanel
+                            aiConfigured={aiConfigured}
+                            bookId={book.id}
+                            activeSessionId={coachSessionId}
+                            onSessionCreated={setCoachSessionId}
+                        />
                     ) : hasActs ? (
                         <>
                             {/* Act columns + detail panel */}
