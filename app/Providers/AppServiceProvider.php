@@ -5,6 +5,11 @@ namespace App\Providers;
 use App\Console\Commands\OptimizeCommand;
 use App\Database\SqliteVecConnector;
 use App\Listeners\RecordAiTokenUsage;
+use App\Models\Act;
+use App\Models\Beat;
+use App\Models\PlotPoint;
+use App\Models\Storyline;
+use App\Observers\BoardChangeObserver;
 use App\Services\DatabaseRepairService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -59,6 +64,11 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(AgentPrompted::class, RecordAiTokenUsage::class);
         Event::listen(AgentStreamed::class, RecordAiTokenUsage::class);
+
+        PlotPoint::observe(BoardChangeObserver::class);
+        Beat::observe(BoardChangeObserver::class);
+        Storyline::observe(BoardChangeObserver::class);
+        Act::observe(BoardChangeObserver::class);
     }
 
     /**

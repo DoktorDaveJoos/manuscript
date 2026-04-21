@@ -2,6 +2,7 @@
 
 use App\Ai\Agents\PlotCoachAgent;
 use App\Enums\AiProvider;
+use App\Enums\CoachingMode;
 use App\Enums\PlotCoachSessionStatus;
 use App\Enums\PlotCoachStage;
 use App\Models\AiSetting;
@@ -158,4 +159,116 @@ test('sessionArchive returns 404 when session does not belong to the book', func
 
     $this->patchJson(route('books.plotCoach.sessions.archive', [$bookB, $session]))
         ->assertNotFound();
+});
+
+test('stream flushes pending_board_changes after successful stream', function () {
+    PlotCoachAgent::fake(['Got it.']);
+
+    $book = Book::factory()->withAi()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create([
+        'pending_board_changes' => [
+            ['kind' => 'updated', 'type' => 'plot_point', 'id' => 1, 'summary' => 'X updated', 'at' => now()->toIso8601String()],
+        ],
+    ]);
+
+    $response = $this->post(route('books.plotCoach.stream', $book), [
+        'message' => 'Please continue.',
+        'session_id' => $session->id,
+    ])->assertOk();
+
+    // Consume the SSE stream so the then() hook fires.
+    $response->streamedContent();
+
+    $session->refresh();
+
+    expect($session->pending_board_changes)->toBe([]);
+});
+
+test('stream accumulates per-session token usage after successful stream', function () {
+    PlotCoachAgent::fake(['Got it.']);
+
+    $book = Book::factory()->withAi()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create([
+        'input_tokens' => 10,
+        'output_tokens' => 20,
+    ]);
+
+    $response = $this->post(route('books.plotCoach.stream', $book), [
+        'message' => 'Continue.',
+        'session_id' => $session->id,
+    ])->assertOk();
+
+    $response->streamedContent();
+
+    $session->refresh();
+
+    // Fake gateway emits zero-valued usage, so counters must still exist and
+    // be numeric (non-null) after accumulation.
+    expect($session->input_tokens)->toBeGreaterThanOrEqual(10);
+    expect($session->output_tokens)->toBeGreaterThanOrEqual(20);
+});
+
+// TODO: add a red-green test for "stream errors leaves queue intact" once the
+// fake gateway supports exception injection. Laravel\Ai\Gateway\FakeTextGateway
+// only accepts string/array/Closure responses — it does not accept
+// Throwable instances — so the stream-error path cannot yet be exercised
+// without a custom gateway stub. Tracking: TODO plot-coach P2 followup.
+
+test('sessionMode updates the coaching mode and logs the change', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create([
+        'coaching_mode' => null,
+        'decisions' => [],
+    ]);
+
+    $this->patchJson(route('books.plotCoach.sessions.mode', [$book, $session]), [
+        'mode' => 'suggestive',
+    ])->assertOk()
+        ->assertJsonPath('coaching_mode', 'suggestive');
+
+    $session->refresh();
+
+    expect($session->coaching_mode)->toBe(CoachingMode::Suggestive);
+    expect($session->decisions['mode_changes'])->toHaveCount(1);
+    expect($session->decisions['mode_changes'][0]['from'])->toBeNull();
+    expect($session->decisions['mode_changes'][0]['to'])->toBe('suggestive');
+});
+
+test('sessionMode appends subsequent mode changes to the log', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create([
+        'coaching_mode' => CoachingMode::Suggestive,
+        'decisions' => [],
+    ]);
+
+    $this->patchJson(route('books.plotCoach.sessions.mode', [$book, $session]), [
+        'mode' => 'guided',
+    ])->assertOk();
+
+    $session->refresh();
+
+    expect($session->coaching_mode)->toBe(CoachingMode::Guided);
+    expect($session->decisions['mode_changes'])->toHaveCount(1);
+    expect($session->decisions['mode_changes'][0]['from'])->toBe('suggestive');
+    expect($session->decisions['mode_changes'][0]['to'])->toBe('guided');
+});
+
+test('sessionMode validates the mode enum', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+
+    $this->patchJson(route('books.plotCoach.sessions.mode', [$book, $session]), [
+        'mode' => 'bogus',
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('mode');
+});
+
+test('sessionMode returns 404 when session is not in book', function () {
+    $bookA = Book::factory()->create();
+    $bookB = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($bookA, 'book')->create();
+
+    $this->patchJson(route('books.plotCoach.sessions.mode', [$bookB, $session]), [
+        'mode' => 'guided',
+    ])->assertNotFound();
 });

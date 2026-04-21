@@ -14,6 +14,7 @@ use App\Models\PlotCoachSession;
 use App\Models\PlotPoint;
 use App\Models\Storyline;
 use App\Models\WikiEntry;
+use App\Observers\BoardChangeObserver;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -34,20 +35,22 @@ class PlotCoachBatchService
      */
     public function apply(PlotCoachSession $session, array $writes, string $summary): PlotCoachBatch
     {
-        return DB::transaction(function () use ($session, $writes, $summary) {
-            $persisted = [];
+        return BoardChangeObserver::suppress(function () use ($session, $writes, $summary) {
+            return DB::transaction(function () use ($session, $writes, $summary) {
+                $persisted = [];
 
-            foreach ($writes as $write) {
-                $persisted[] = $this->dispatch($session, $write);
-            }
+                foreach ($writes as $write) {
+                    $persisted[] = $this->dispatch($session, $write);
+                }
 
-            return PlotCoachBatch::create([
-                'session_id' => $session->id,
-                'summary' => $summary,
-                'payload' => ['version' => 1, 'writes' => $persisted],
-                'applied_at' => now(),
-                'undo_window_expires_at' => now()->addMinutes(self::UNDO_WINDOW_MINUTES),
-            ]);
+                return PlotCoachBatch::create([
+                    'session_id' => $session->id,
+                    'summary' => $summary,
+                    'payload' => ['version' => 1, 'writes' => $persisted],
+                    'applied_at' => now(),
+                    'undo_window_expires_at' => now()->addMinutes(self::UNDO_WINDOW_MINUTES),
+                ]);
+            });
         });
     }
 
@@ -68,16 +71,18 @@ class PlotCoachBatchService
             return null;
         }
 
-        return DB::transaction(function () use ($batch) {
-            $writes = $batch->payload['writes'] ?? [];
+        return BoardChangeObserver::suppress(function () use ($batch) {
+            return DB::transaction(function () use ($batch) {
+                $writes = $batch->payload['writes'] ?? [];
 
-            foreach (array_reverse($writes) as $write) {
-                $this->deleteWrite($write);
-            }
+                foreach (array_reverse($writes) as $write) {
+                    $this->deleteWrite($write);
+                }
 
-            $batch->update(['reverted_at' => now()]);
+                $batch->update(['reverted_at' => now()]);
 
-            return $batch->fresh();
+                return $batch->fresh();
+            });
         });
     }
 
