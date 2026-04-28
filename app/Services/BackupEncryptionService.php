@@ -48,10 +48,6 @@ class BackupEncryptionService
      */
     public function encryptFile(string $sourcePath, string $destPath, string $passphrase): void
     {
-        if ($passphrase === '') {
-            throw new RuntimeException('Passphrase must not be empty.');
-        }
-
         $plaintext = @file_get_contents($sourcePath);
         if ($plaintext === false) {
             throw new RuntimeException("Could not read source file: {$sourcePath}");
@@ -97,10 +93,6 @@ class BackupEncryptionService
      */
     public function decryptFile(string $sourcePath, string $destPath, string $passphrase): void
     {
-        if ($passphrase === '') {
-            throw new RuntimeException('Passphrase must not be empty.');
-        }
-
         $blob = @file_get_contents($sourcePath);
         if ($blob === false) {
             throw new RuntimeException("Could not read source file: {$sourcePath}");

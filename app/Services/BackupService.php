@@ -27,6 +27,8 @@ class BackupService
 
     public const DISCARDED_PREFIX = '.discarded-';
 
+    public const LAST_EXPORT_AT_KEY = 'backup.last_export_at';
+
     public function __construct(
         private BackupEncryptionService $encryption,
         private string $databasePath,
@@ -69,7 +71,7 @@ class BackupService
             $this->encryption->encryptFile($live, $tempPathWithSuffix, $passphrase);
         }
 
-        AppSetting::set('backup.last_export_at', CarbonImmutable::now()->toIso8601String());
+        AppSetting::set(self::LAST_EXPORT_AT_KEY, CarbonImmutable::now()->toIso8601String());
 
         return $tempPathWithSuffix;
     }
@@ -103,21 +105,18 @@ class BackupService
         // 2. Sanity-check it is a real SQLite DB with at least the books table.
         try {
             $this->verifySqliteFile($validationPath);
-        } catch (\Throwable $e) {
+        } catch (RuntimeException $e) {
             @unlink($validationPath);
             throw $e;
         }
 
         // 3. Atomic-ish swap: move live → rollback, validated → pending-import.
+        // @unlink is silent on missing files, so no pre-check needed.
         $rollbackPath = $this->rollbackPath();
         $pendingPath = $this->pendingImportPath();
 
-        if (file_exists($rollbackPath)) {
-            @unlink($rollbackPath);
-        }
-        if (file_exists($pendingPath)) {
-            @unlink($pendingPath);
-        }
+        @unlink($rollbackPath);
+        @unlink($pendingPath);
 
         if (! @rename($this->databasePath, $rollbackPath)) {
             @unlink($validationPath);
@@ -159,9 +158,15 @@ class BackupService
      */
     public function applyPending(): void
     {
+        // Hot path: the vast majority of boots have nothing to do. Skip the
+        // sidecar-read + glob entirely when there's no sidecar — that's the
+        // signal "no backup operation has ever been started."
+        if (! file_exists($this->sidecarPath())) {
+            return;
+        }
+
         $state = $this->readSidecar();
 
-        // Prune any leftover .discarded-* files from a previous boot.
         $this->pruneDiscardedFiles();
 
         if (! empty($state['pending_revert'])) {
@@ -342,9 +347,13 @@ class BackupService
 
     /**
      * Verify the file is a SQLite database that looks like ours: at least
-     * the `books` table must exist. We don't check schema correctness
-     * exhaustively — migrations will run on next boot — but we do reject
-     * obvious garbage.
+     * the `books` table must exist. Migrations run on next boot, so we
+     * don't check schema exhaustively — only reject obvious garbage.
+     *
+     * Uses PRAGMA quick_check rather than integrity_check: quick_check
+     * skips the multi-second cross-table consistency walk and is what
+     * SqliteVecConnector::connect() uses for the same "is this readable?"
+     * question on every connection.
      */
     private function verifySqliteFile(string $path): void
     {
@@ -352,9 +361,9 @@ class BackupService
             $pdo = new PDO('sqlite:'.$path);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            $integrity = $pdo->query('PRAGMA integrity_check;')?->fetchColumn();
-            if ($integrity !== 'ok') {
-                throw new RuntimeException("SQLite integrity_check failed: {$integrity}");
+            $check = $pdo->query('PRAGMA quick_check;')?->fetchColumn();
+            if ($check !== 'ok') {
+                throw new RuntimeException("SQLite quick_check failed: {$check}");
             }
 
             $hasBooks = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='books'")?->fetchColumn();

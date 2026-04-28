@@ -51,7 +51,7 @@ class SettingsController extends Controller
             'version' => config('app.version', '0.0.0'),
             'backup' => [
                 'has_rollback' => $this->backups->state()['has_rollback'],
-                'last_export_at' => AppSetting::get('backup.last_export_at'),
+                'last_export_at' => AppSetting::get(BackupService::LAST_EXPORT_AT_KEY),
             ],
         ]);
     }
