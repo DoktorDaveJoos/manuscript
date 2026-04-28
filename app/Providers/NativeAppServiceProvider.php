@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\BackupService;
 use Native\Desktop\Contracts\ProvidesPhpIni;
 use Native\Desktop\Facades\AutoUpdater;
 use Native\Desktop\Facades\Window;
@@ -14,6 +15,11 @@ class NativeAppServiceProvider implements ProvidesPhpIni
      */
     public function boot(): void
     {
+        // Apply any pending backup import / revert BEFORE the rest of boot
+        // touches the DB. The swap renames files on disk and is safe to run
+        // unconditionally — when there is nothing pending it returns silently.
+        app(BackupService::class)->applyPending();
+
         // In the bundled release the framework boot + first JS bundle parse
         // costs a few hundred ms, so we open at a tiny static loading page
         // first and let it redirect to '/'. In dev that round-trip just

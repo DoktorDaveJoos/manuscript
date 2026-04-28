@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Console\Commands\OptimizeCommand;
 use App\Database\SqliteVecConnector;
 use App\Listeners\RecordAiTokenUsage;
+use App\Services\BackupEncryptionService;
+use App\Services\BackupService;
 use App\Services\DatabaseRepairService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -39,6 +41,20 @@ class AppServiceProvider extends ServiceProvider
         // NOT run route:cache. See App\Console\Commands\OptimizeCommand for the
         // full rationale and Sentry issue 112195649.
         $this->app->singleton('command.optimize', OptimizeCommand::class);
+
+        // BackupService operates on the runtime SQLite file. In production
+        // NativePHP rewrites the connection to nativephp.sqlite at its own
+        // boot; in tests/CLI the default DB is database.sqlite. Bind to the
+        // active connection's database name so both work without surgery.
+        $this->app->singleton(BackupService::class, function ($app) {
+            $databasePath = config('database.connections.sqlite.database')
+                ?: database_path('nativephp.sqlite');
+
+            return new BackupService(
+                $app->make(BackupEncryptionService::class),
+                $databasePath,
+            );
+        });
 
         // After all service providers boot (including NativePHP's database
         // rewrite), run pending migrations and attempt data recovery if the

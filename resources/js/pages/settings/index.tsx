@@ -9,6 +9,11 @@ import {
     test as testConnection,
 } from '@/actions/App/Http/Controllers/AiSettingsController';
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
+import {
+    exportMethod as backupExport,
+    importMethod as backupImport,
+    revert as backupRevert,
+} from '@/actions/App/Http/Controllers/BackupController';
 import { index as booksIndex } from '@/actions/App/Http/Controllers/BookController';
 import {
     activate,
@@ -69,6 +74,10 @@ interface Props {
     prose_pass_rules: ProsePassRule[];
     proofreading_config: ProofreadingConfig;
     version: string;
+    backup: {
+        has_rollback: boolean;
+        last_export_at: string | null;
+    };
 }
 
 const THEME_OPTIONS = [
@@ -1264,6 +1273,313 @@ function UpdatesSection({
     );
 }
 
+// ─── Backup Section ──────────────────────────────────────────────────
+
+function BackupSection({
+    backup,
+}: {
+    backup: { has_rollback: boolean; last_export_at: string | null };
+}) {
+    const { t } = useTranslation('settings');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [exportPassphrase, setExportPassphrase] = useState('');
+    const [exporting, setExporting] = useState(false);
+
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [importPassphrase, setImportPassphrase] = useState('');
+    const [importing, setImporting] = useState(false);
+
+    const [reverting, setReverting] = useState(false);
+    const [error, setError] = useState('');
+    const [pendingRestart, setPendingRestart] = useState<string | null>(null);
+
+    const lastExportLabel = backup.last_export_at
+        ? new Date(backup.last_export_at).toLocaleString()
+        : t('backup.neverExported');
+
+    const handleExport = useCallback(
+        async (e: FormEvent) => {
+            e.preventDefault();
+            setExporting(true);
+            setError('');
+            try {
+                const formData = new FormData();
+                if (exportPassphrase) {
+                    formData.append('passphrase', exportPassphrase);
+                }
+                const res = await fetch(backupExport.url(), {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN':
+                            document
+                                .querySelector('meta[name="csrf-token"]')
+                                ?.getAttribute('content') ?? '',
+                    },
+                    body: formData,
+                });
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    setError(json.message || t('backup.error.exportFailed'));
+                    return;
+                }
+                const blob = await res.blob();
+                const filenameMatch = res.headers
+                    .get('content-disposition')
+                    ?.match(/filename="([^"]+)"/);
+                const filename = filenameMatch?.[1] || 'manuscript-backup';
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                setExportPassphrase('');
+                router.reload({ only: ['backup'] });
+            } catch {
+                setError(t('backup.error.exportFailed'));
+            } finally {
+                setExporting(false);
+            }
+        },
+        [exportPassphrase, t],
+    );
+
+    const handleImport = useCallback(
+        async (e: FormEvent) => {
+            e.preventDefault();
+            if (!importFile) return;
+            setImporting(true);
+            setError('');
+            try {
+                const formData = new FormData();
+                formData.append('backup', importFile);
+                if (importPassphrase) {
+                    formData.append('passphrase', importPassphrase);
+                }
+                const res = await fetch(backupImport.url(), {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN':
+                            document
+                                .querySelector('meta[name="csrf-token"]')
+                                ?.getAttribute('content') ?? '',
+                    },
+                    body: formData,
+                });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    setError(json.message || t('backup.error.importFailed'));
+                    return;
+                }
+                setImportFile(null);
+                setImportPassphrase('');
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+                setPendingRestart(json.message || t('backup.restart.import'));
+            } catch {
+                setError(t('backup.error.importFailed'));
+            } finally {
+                setImporting(false);
+            }
+        },
+        [importFile, importPassphrase, t],
+    );
+
+    const handleRevert = useCallback(async () => {
+        if (!window.confirm(t('backup.revertConfirm'))) {
+            return;
+        }
+        setReverting(true);
+        setError('');
+        try {
+            const res = await fetch(backupRevert.url(), {
+                method: 'POST',
+                headers: jsonFetchHeaders(),
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                setError(json.message || t('backup.error.revertFailed'));
+                return;
+            }
+            setPendingRestart(json.message || t('backup.restart.revert'));
+        } catch {
+            setError(t('backup.error.revertFailed'));
+        } finally {
+            setReverting(false);
+        }
+    }, [t]);
+
+    if (pendingRestart) {
+        return (
+            <div>
+                <SectionLabel variant="section">
+                    {t('backup.sectionLabel')}
+                </SectionLabel>
+                <Card className="mt-3 px-6 py-5">
+                    <p className="text-[14px] font-medium text-ink">
+                        {pendingRestart}
+                    </p>
+                    <p className="mt-2 text-[13px] text-ink-muted">
+                        {t('backup.restart.hint')}
+                    </p>
+                </Card>
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            <SectionLabel variant="section">
+                {t('backup.sectionLabel')}
+            </SectionLabel>
+            <Card className="mt-3">
+                {/* Save backup */}
+                <form
+                    onSubmit={handleExport}
+                    className="flex flex-col gap-3 px-6 py-5"
+                >
+                    <div>
+                        <span className="text-[14px] font-medium text-ink">
+                            {t('backup.save.title')}
+                        </span>
+                        <p className="mt-0.5 text-[13px] text-ink-muted">
+                            {t('backup.save.description')}
+                        </p>
+                        <p className="mt-1 text-[12px] text-ink-muted">
+                            {t('backup.lastExport', {
+                                value: lastExportLabel,
+                            })}
+                        </p>
+                    </div>
+                    <FormField label={t('backup.passphrase.label')}>
+                        <Input
+                            type="password"
+                            value={exportPassphrase}
+                            onChange={(e) =>
+                                setExportPassphrase(e.target.value)
+                            }
+                            placeholder={t('backup.passphrase.placeholder')}
+                            autoComplete="new-password"
+                        />
+                    </FormField>
+                    <p className="text-[12px] text-ink-muted">
+                        {t('backup.passphrase.hint')}
+                    </p>
+                    <div className="flex justify-end">
+                        <Button
+                            type="submit"
+                            variant="accent"
+                            disabled={exporting}
+                        >
+                            {exporting
+                                ? t('backup.save.busy')
+                                : t('backup.save.button')}
+                        </Button>
+                    </div>
+                </form>
+
+                <div className="border-t border-border" />
+
+                {/* Import backup */}
+                <form
+                    onSubmit={handleImport}
+                    className="flex flex-col gap-3 px-6 py-5"
+                >
+                    <div>
+                        <span className="text-[14px] font-medium text-ink">
+                            {t('backup.import.title')}
+                        </span>
+                        <p className="mt-0.5 text-[13px] text-ink-muted">
+                            {t('backup.import.description')}
+                        </p>
+                    </div>
+                    <FormField label={t('backup.import.fileLabel')}>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".msbk,.sqlite"
+                            onChange={(e) =>
+                                setImportFile(e.target.files?.[0] ?? null)
+                            }
+                            className="hover:file:bg-surface-hover block w-full text-[13px] text-ink file:mr-4 file:rounded-md file:border file:border-border file:bg-surface-card file:px-3 file:py-1.5 file:text-[13px] file:font-medium file:text-ink"
+                        />
+                    </FormField>
+                    <FormField label={t('backup.import.passphraseLabel')}>
+                        <Input
+                            type="password"
+                            value={importPassphrase}
+                            onChange={(e) =>
+                                setImportPassphrase(e.target.value)
+                            }
+                            placeholder={t(
+                                'backup.import.passphrasePlaceholder',
+                            )}
+                            autoComplete="new-password"
+                        />
+                    </FormField>
+                    <p className="text-[12px] text-ink-muted">
+                        {t('backup.import.warning')}
+                    </p>
+                    <div className="flex justify-end">
+                        <Button
+                            type="submit"
+                            variant="secondary"
+                            disabled={!importFile || importing}
+                        >
+                            {importing
+                                ? t('backup.import.busy')
+                                : t('backup.import.button')}
+                        </Button>
+                    </div>
+                </form>
+
+                {backup.has_rollback && (
+                    <>
+                        <div className="border-t border-border" />
+                        <div className="flex flex-col gap-3 px-6 py-5">
+                            <div>
+                                <span className="text-[14px] font-medium text-ink">
+                                    {t('backup.revert.title')}
+                                </span>
+                                <p className="mt-0.5 text-[13px] text-ink-muted">
+                                    {t('backup.revert.description')}
+                                </p>
+                            </div>
+                            <div className="flex justify-end">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={handleRevert}
+                                    disabled={reverting}
+                                >
+                                    {reverting
+                                        ? t('backup.revert.busy')
+                                        : t('backup.revert.button')}
+                                </Button>
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {error && (
+                    <>
+                        <div className="border-t border-border" />
+                        <div className="px-6 py-3">
+                            <p className="text-[13px] text-delete">{error}</p>
+                        </div>
+                    </>
+                )}
+            </Card>
+        </div>
+    );
+}
+
 // ─── Sidebar ─────────────────────────────────────────────────────────
 
 type SectionKey =
@@ -1276,7 +1592,8 @@ type SectionKey =
     | 'revision-rules'
     | 'proofreading'
     | 'privacy'
-    | 'updates';
+    | 'updates'
+    | 'backup';
 
 type NavSection = { key: SectionKey; label: string; groupKey?: string };
 
@@ -1315,6 +1632,7 @@ const NAV_ITEMS: NavSection[] = [
     },
     { key: 'privacy', label: 'privacy.navLabel', groupKey: 'sidebar.account' },
     { key: 'updates', label: 'updates.navLabel', groupKey: 'sidebar.account' },
+    { key: 'backup', label: 'backup.navLabel', groupKey: 'sidebar.account' },
 ];
 
 function SettingsSidebar({
@@ -1394,6 +1712,7 @@ export default function Settings({
     prose_pass_rules,
     proofreading_config,
     version,
+    backup,
 }: Props) {
     const { t } = useTranslation('settings');
 
@@ -1407,6 +1726,7 @@ export default function Settings({
     const proofreadingRef = useRef<HTMLDivElement>(null);
     const privacyRef = useRef<HTMLDivElement>(null);
     const updatesRef = useRef<HTMLDivElement>(null);
+    const backupRef = useRef<HTMLDivElement>(null);
 
     const sectionRefs = useRef<
         Record<SectionKey, React.RefObject<HTMLDivElement | null>>
@@ -1421,6 +1741,7 @@ export default function Settings({
         proofreading: proofreadingRef,
         privacy: privacyRef,
         updates: updatesRef,
+        backup: backupRef,
     });
 
     const [activeSection, setActiveSection] = useState<SectionKey>(() => {
@@ -1611,6 +1932,9 @@ export default function Settings({
                                             settings={settings}
                                             saveSetting={saveSetting}
                                         />
+                                    </div>
+                                    <div ref={backupRef} data-section="backup">
+                                        <BackupSection backup={backup} />
                                     </div>
                                 </div>
                             </div>
