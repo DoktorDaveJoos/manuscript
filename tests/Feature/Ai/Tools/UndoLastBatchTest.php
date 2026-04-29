@@ -12,16 +12,15 @@ it('delegates to the batch service and returns undo confirmation', function () {
     PlotCoachSession::factory()->for($book, 'book')->create();
 
     // Apply something first.
-    (new ApplyPlotCoachBatch)->handle(new Request([
-        'book_id' => $book->id,
+    (new ApplyPlotCoachBatch($book->id))->handle(new Request([
         'summary' => 'Add Rae',
         'writes' => [['type' => 'character', 'data' => ['name' => 'Rae']]],
     ]));
 
     expect(Character::query()->where('book_id', $book->id)->count())->toBe(1);
 
-    $tool = new UndoLastBatch;
-    $result = (string) $tool->handle(new Request(['book_id' => $book->id]));
+    $tool = new UndoLastBatch($book->id);
+    $result = (string) $tool->handle(new Request([]));
 
     expect($result)
         ->toContain('Undone batch #')
@@ -33,8 +32,8 @@ it('returns a no-op message when nothing to undo', function () {
     $book = Book::factory()->create();
     PlotCoachSession::factory()->for($book, 'book')->create();
 
-    $tool = new UndoLastBatch;
-    $result = (string) $tool->handle(new Request(['book_id' => $book->id]));
+    $tool = new UndoLastBatch($book->id);
+    $result = (string) $tool->handle(new Request([]));
 
     expect($result)->toBe('No batch to undo in this session.');
 });
@@ -42,8 +41,8 @@ it('returns a no-op message when nothing to undo', function () {
 it('returns a failure message when no active session exists', function () {
     $book = Book::factory()->create();
 
-    $tool = new UndoLastBatch;
-    $result = (string) $tool->handle(new Request(['book_id' => $book->id]));
+    $tool = new UndoLastBatch($book->id);
+    $result = (string) $tool->handle(new Request([]));
 
     expect($result)->toContain('no active plot coach session');
 });

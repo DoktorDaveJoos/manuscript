@@ -193,14 +193,15 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
     public function tools(): iterable
     {
         return [
-            new GetPlotBoardState,
-            new GetEntityDetails,
-            new RetrieveManuscriptContext,
-            new LookupExistingEntities,
-            new ProposeBatch,
+            new GetPlotBoardState($this->book->id),
+            new GetEntityDetails($this->book->id),
+            new RetrieveManuscriptContext($this->book->id),
+            new LookupExistingEntities($this->book->id),
+            new ProposeBatch($this->book->id),
+            // ProposeChapterPlan uses CoercesBookId trait — book_id from payload, not constructor.
             new ProposeChapterPlan,
-            new ApplyPlotCoachBatch,
-            new UndoLastBatch,
+            new ApplyPlotCoachBatch($this->book->id),
+            new UndoLastBatch($this->book->id),
         ];
     }
 
@@ -503,7 +504,7 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         - If the user asks to undo, call UndoLastBatch. Do not offer undo unsolicited.
 
         Tool arguments:
-        - ProposeBatch and ApplyPlotCoachBatch both require `book_id` — always pass {$bookId}. Never guess another number.
+        - ProposeChapterPlan still accepts `book_id` in its schema — pass {$bookId}. Never guess another number. (ProposeBatch / ApplyPlotCoachBatch / GetPlotBoardState / etc. now bind book_id at construction; you don't pass it in the call.)
         - For references (plot_point.act_id, beat.plot_point_id, chapter.storyline_id, chapter.beat_ids, chapter.pov_character_id, chapter.act_id) use ONLY the numeric ids from the `saved_entities` block at the top of this prompt. Do not invent small ids like 1/2/3 — they almost certainly point to another book. If the id you need isn't in `saved_entities`, that entity doesn't exist yet; propose it first.
         - `plot_point` accepts `act_number` as a fallback if you don't have the `act_id` handy ({"type":"plot_point","data":{"act_number":1,"title":"…"}}). Prefer `act_id` when you have it.
         - `beat` accepts `plot_point_title` as a fallback so you can propose a `plot_point` + its opening `beat`(s) in the SAME batch — the server resolves the title after the plot_point is persisted in the transaction. Shape: `[{"type":"plot_point","data":{"act_number":1,"title":"Auslöser"}},{"type":"beat","data":{"plot_point_title":"Auslöser","title":"First cut"}}]`. Do NOT split into two batches for this case.

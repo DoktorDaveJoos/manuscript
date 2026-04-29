@@ -10,7 +10,9 @@ use App\Models\WikiEntry;
 use Laravel\Ai\Tools\Request;
 
 it('returns a markdown preview with sections grouped by type', function () {
-    $tool = new ProposeBatch;
+    $book = Book::factory()->create();
+
+    $tool = new ProposeBatch($book->id);
     $request = new Request([
         'summary' => 'Seed resistance arc',
         'writes' => [
@@ -49,7 +51,7 @@ it('does not persist anything', function () {
     $storylineCountBefore = Storyline::query()->count();
     $plotPointCountBefore = PlotPoint::query()->count();
 
-    $tool = new ProposeBatch;
+    $tool = new ProposeBatch($book->id);
     $tool->handle(new Request([
         'summary' => 'Would-be writes',
         'writes' => [
@@ -64,7 +66,9 @@ it('does not persist anything', function () {
 });
 
 it('handles an empty writes array gracefully', function () {
-    $tool = new ProposeBatch;
+    $book = Book::factory()->create();
+
+    $tool = new ProposeBatch($book->id);
     $result = (string) $tool->handle(new Request([
         'summary' => 'empty',
         'writes' => [],
@@ -94,7 +98,9 @@ it('returns an explicit parse error when writes is a malformed JSON string', fun
 });
 
 it('appends a machine-readable sentinel block with proposal_id, writes, summary', function () {
-    $tool = new ProposeBatch;
+    $book = Book::factory()->create();
+
+    $tool = new ProposeBatch($book->id);
     $writes = [
         ['type' => 'character', 'data' => ['name' => 'Mara']],
         ['type' => 'storyline', 'data' => ['name' => 'Resistance arc', 'type' => 'main']],
@@ -130,13 +136,12 @@ it('appends a machine-readable sentinel block with proposal_id, writes, summary'
     expect($payload['proposal_id'])->toBeString()->not->toBeEmpty();
 });
 
-it('flags duplicate character names against the book when book_id is provided', function () {
+it('flags duplicate character names against the book', function () {
     $book = Book::factory()->create();
     Character::factory()->for($book)->create(['name' => 'Mara']);
 
-    $tool = new ProposeBatch;
+    $tool = new ProposeBatch($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'Add cast',
         'writes' => [
             ['type' => 'character', 'data' => ['name' => 'Mara', 'ai_description' => 'new write']],
@@ -156,9 +161,8 @@ it('flags duplicate wiki entry names too', function () {
         'kind' => WikiEntryKind::Location,
     ]);
 
-    $tool = new ProposeBatch;
+    $tool = new ProposeBatch($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'Add location',
         'writes' => [
             ['type' => 'wiki_entry', 'data' => ['kind' => 'location', 'name' => 'The Archive']],
@@ -172,9 +176,8 @@ it('is case and whitespace insensitive when detecting duplicates', function () {
     $book = Book::factory()->create();
     Character::factory()->for($book)->create(['name' => 'Mara']);
 
-    $tool = new ProposeBatch;
+    $tool = new ProposeBatch($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'Test',
         'writes' => [
             ['type' => 'character', 'data' => ['name' => '  MARA  ']],
@@ -184,31 +187,14 @@ it('is case and whitespace insensitive when detecting duplicates', function () {
     expect($result)->toContain('name already exists');
 });
 
-it('does not flag duplicates when book_id is omitted', function () {
-    $book = Book::factory()->create();
-    Character::factory()->for($book)->create(['name' => 'Mara']);
-
-    $tool = new ProposeBatch;
-    $result = (string) $tool->handle(new Request([
-        'summary' => 'Test',
-        'writes' => [
-            ['type' => 'character', 'data' => ['name' => 'Mara']],
-        ],
-    ]));
-
-    expect($result)->not->toContain('name already exists');
-});
-
 it('scopes duplicate detection to the given book', function () {
     $bookA = Book::factory()->create();
     $bookB = Book::factory()->create();
     Character::factory()->for($bookA)->create(['name' => 'Mara']);
 
-    $tool = new ProposeBatch;
-
     // Same name proposed against a different book — not a duplicate.
+    $tool = new ProposeBatch($bookB->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $bookB->id,
         'summary' => 'Test',
         'writes' => [
             ['type' => 'character', 'data' => ['name' => 'Mara']],
@@ -292,7 +278,9 @@ it('does not enrich writes when book_id is omitted', function () {
 });
 
 it('produces a unique proposal_id per invocation', function () {
-    $tool = new ProposeBatch;
+    $book = Book::factory()->create();
+
+    $tool = new ProposeBatch($book->id);
     $req = new Request([
         'summary' => 'x',
         'writes' => [['type' => 'character', 'data' => ['name' => 'A']]],

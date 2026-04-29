@@ -86,8 +86,6 @@ class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructu
 
         Before extracting, use the lookup tool to check existing characters and entities to avoid duplicates and match aliases.
 
-        The book ID is {$this->book->id}. Use this when calling the lookup tool.
-
         The manuscript '{$this->book->title}' is written in {$this->book->language}.
         Return names as they appear in the text (respect the original language).
         INSTRUCTIONS;
@@ -121,7 +119,7 @@ class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructu
     public function tools(): iterable
     {
         return [
-            new LookupExistingEntities,
+            new LookupExistingEntities($this->book->id),
         ];
     }
 

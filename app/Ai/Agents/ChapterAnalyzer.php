@@ -88,7 +88,6 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
         17. information_delivery: How is new information revealed? One of: organic (through action/dialogue), mostly_organic, mixed, exposition_heavy, info_dump.
 
         Use the search tool to find related passages from other chapters when cross-referencing themes or plot threads.
-        The book ID is {$this->book->id}. Use this when calling the search tool.
 
         {$persona->languageRule($this->book->language)}
 
@@ -125,7 +124,7 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
     public function tools(): iterable
     {
         return [
-            new SearchSimilarChunks,
+            new SearchSimilarChunks($this->book->id),
         ];
     }
 

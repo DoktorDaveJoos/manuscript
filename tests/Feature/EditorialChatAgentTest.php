@@ -53,8 +53,7 @@ test('EditorialChatAgent instructions include editorial context and book details
         ->toContain('Jane Author')
         ->toContain('English')
         ->toContain('Executive Summary: The manuscript shows promise.')
-        ->toContain('Plot hole in chapter 3.')
-        ->toContain((string) $book->id);
+        ->toContain('Plot hole in chapter 3.');
 });
 
 test('EditorialChatAgent loads messages from conversation store', function () {

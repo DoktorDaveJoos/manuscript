@@ -21,8 +21,8 @@ it('returns formatted list of existing characters and entities', function () {
         'description' => 'A recurring meeting place.',
     ]);
 
-    $tool = new LookupExistingEntities;
-    $request = new Request(['book_id' => $book->id]);
+    $tool = new LookupExistingEntities($book->id);
+    $request = new Request([]);
 
     $result = $tool->handle($request);
 
@@ -42,8 +42,8 @@ it('returns formatted list of existing characters and entities', function () {
 it('returns message when no characters or entities exist', function () {
     $book = Book::factory()->create();
 
-    $tool = new LookupExistingEntities;
-    $request = new Request(['book_id' => $book->id]);
+    $tool = new LookupExistingEntities($book->id);
+    $request = new Request([]);
 
     $result = $tool->handle($request);
 
@@ -64,8 +64,8 @@ it('only returns data for the specified book', function () {
         'kind' => WikiEntryKind::Location,
     ]);
 
-    $tool = new LookupExistingEntities;
-    $request = new Request(['book_id' => $bookA->id]);
+    $tool = new LookupExistingEntities($bookA->id);
+    $request = new Request([]);
 
     $result = $tool->handle($request);
 
@@ -80,8 +80,8 @@ it('returns only characters when no entities exist', function () {
     $book = Book::factory()->create();
     Character::factory()->for($book)->create(['name' => 'Solo Character']);
 
-    $tool = new LookupExistingEntities;
-    $request = new Request(['book_id' => $book->id]);
+    $tool = new LookupExistingEntities($book->id);
+    $request = new Request([]);
 
     $result = $tool->handle($request);
 
@@ -105,8 +105,8 @@ it('truncates long descriptions to keep the tool payload small', function () {
         'description' => $longDescription,
     ]);
 
-    $tool = new LookupExistingEntities;
-    $request = new Request(['book_id' => $book->id]);
+    $tool = new LookupExistingEntities($book->id);
+    $request = new Request([]);
 
     $result = (string) $tool->handle($request);
 
@@ -125,8 +125,8 @@ it('renders a placeholder when description is empty', function () {
         'ai_description' => null,
     ]);
 
-    $tool = new LookupExistingEntities;
-    $request = new Request(['book_id' => $book->id]);
+    $tool = new LookupExistingEntities($book->id);
+    $request = new Request([]);
 
     $result = (string) $tool->handle($request);
 

@@ -70,8 +70,8 @@ class NextChapterAdvisor implements Agent, BelongsToBook, HasMiddleware, HasStru
     public function tools(): iterable
     {
         return [
-            new RetrieveManuscriptContext,
-            new SearchSimilarChunks,
+            new RetrieveManuscriptContext($this->book->id),
+            new SearchSimilarChunks($this->book->id),
         ];
     }
 

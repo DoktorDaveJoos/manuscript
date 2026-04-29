@@ -32,9 +32,8 @@ beforeEach(function () {
 });
 
 it('returns no results message when no chunks exist', function () {
-    $tool = new SearchSimilarChunks;
+    $tool = new SearchSimilarChunks($this->book->id);
     $request = new Request([
-        'book_id' => $this->book->id,
         'query' => 'test query',
         'search_mode' => 'semantic',
     ]);
@@ -53,9 +52,8 @@ it('does not rerank when reranking is disabled', function () {
     ]);
     $chunk->storeEmbedding(array_fill(0, 1536, 0.5), $this->book->id);
 
-    $tool = new SearchSimilarChunks;
+    $tool = new SearchSimilarChunks($this->book->id);
     $request = new Request([
-        'book_id' => $this->book->id,
         'query' => 'test',
         'search_mode' => 'semantic',
     ]);
@@ -85,9 +83,8 @@ it('falls back to KNN order when reranking fails', function () {
     $chunkA->storeEmbedding(array_fill(0, 1536, 0.5), $this->book->id);
     $chunkB->storeEmbedding(array_fill(0, 1536, 0.4), $this->book->id);
 
-    $tool = new SearchSimilarChunks;
+    $tool = new SearchSimilarChunks($this->book->id);
     $request = new Request([
-        'book_id' => $this->book->id,
         'query' => 'test',
         'limit' => 2,
         'search_mode' => 'semantic',
@@ -111,9 +108,8 @@ it('includes scene title when chunk has a scene', function () {
     ]);
     $chunk->storeEmbedding(array_fill(0, 1536, 0.5), $this->book->id);
 
-    $tool = new SearchSimilarChunks;
+    $tool = new SearchSimilarChunks($this->book->id);
     $request = new Request([
-        'book_id' => $this->book->id,
         'query' => 'test',
         'search_mode' => 'semantic',
     ]);
@@ -130,9 +126,8 @@ it('uses keyword search mode when specified', function () {
         'position' => 0,
     ]);
 
-    $tool = new SearchSimilarChunks;
+    $tool = new SearchSimilarChunks($this->book->id);
     $request = new Request([
-        'book_id' => $this->book->id,
         'query' => 'Varys cavalry',
         'search_mode' => 'keyword',
     ]);
@@ -150,9 +145,8 @@ it('defaults to hybrid search mode', function () {
     ]);
     $chunk->storeEmbedding(array_fill(0, 1536, 0.5), $this->book->id);
 
-    $tool = new SearchSimilarChunks;
+    $tool = new SearchSimilarChunks($this->book->id);
     $request = new Request([
-        'book_id' => $this->book->id,
         'query' => 'ancient swords',
     ]);
 

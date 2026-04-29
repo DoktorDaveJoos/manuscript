@@ -14,9 +14,8 @@ it('invokes the batch service and returns a confirmation string', function () {
     $book = Book::factory()->create();
     $session = PlotCoachSession::factory()->for($book, 'book')->create();
 
-    $tool = new ApplyPlotCoachBatch;
+    $tool = new ApplyPlotCoachBatch($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'Add Mara',
         'writes' => [
             ['type' => 'character', 'data' => ['name' => 'Mara']],
@@ -57,9 +56,8 @@ it('returns a failure message when the batch throws', function () {
     $book = Book::factory()->create();
     PlotCoachSession::factory()->for($book, 'book')->create();
 
-    $tool = new ApplyPlotCoachBatch;
+    $tool = new ApplyPlotCoachBatch($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'Bad batch',
         'writes' => [
             // Missing act_id — must roll back.
@@ -177,9 +175,8 @@ it('accepts book_id as a numeric string', function () {
 it('returns a failure message when no active session exists for the book', function () {
     $book = Book::factory()->create();
 
-    $tool = new ApplyPlotCoachBatch;
+    $tool = new ApplyPlotCoachBatch($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'No session',
         'writes' => [['type' => 'character', 'data' => ['name' => 'Mara']]],
     ]));

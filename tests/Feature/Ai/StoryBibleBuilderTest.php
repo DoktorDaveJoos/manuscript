@@ -1,6 +1,7 @@
 <?php
 
 use App\Ai\Agents\StoryBibleBuilder;
+use App\Ai\Tools\SearchSimilarChunks;
 use App\Models\Book;
 
 test('story bible builder returns structured story bible', function () {
@@ -28,13 +29,14 @@ test('story bible builder includes book title in instructions', function () {
     expect((string) $instructions)->toContain('Epic Fantasy');
 });
 
-test('story bible builder includes book id in instructions for search tool', function () {
+test('story bible builder registers SearchSimilarChunks scoped to its book', function () {
     $book = Book::factory()->create();
 
     $agent = new StoryBibleBuilder($book);
-    $instructions = $agent->instructions();
+    $tools = iterator_to_array($agent->tools());
 
-    expect((string) $instructions)->toContain("The book ID is {$book->id}");
+    expect($tools)->toHaveCount(1)
+        ->and($tools[0])->toBeInstanceOf(SearchSimilarChunks::class);
 });
 
 test('story bible builder includes middleware', function () {

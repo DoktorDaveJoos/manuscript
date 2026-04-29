@@ -54,8 +54,6 @@ class BookChatAgent implements Agent, BelongsToBook, Conversational, HasMiddlewa
         You can answer questions about the manuscript, its characters, plot, themes, and writing style.
         Use the available tools to search through the manuscript and retrieve relevant context before answering.
 
-        The book ID is {$this->book->id}. Use this when calling tools.
-
         LANGUAGE RULE: ALL text content you produce MUST be written in {$this->book->language}. Do not mix languages.
 
         Be concise, helpful, and grounded in the actual text. If you're unsure about something, say so rather than guessing.
