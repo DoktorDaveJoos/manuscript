@@ -30,6 +30,11 @@ class PlotCoachSession extends Model
         'output_tokens',
         'cost_cents',
         'archived_at',
+        'user_turn_count',
+        'archive_summary',
+        'parent_session_id',
+        'rolling_digest',
+        'rolling_digest_through_turn',
     ];
 
     /**
@@ -44,6 +49,9 @@ class PlotCoachSession extends Model
             'decisions' => 'array',
             'pending_board_changes' => 'array',
             'archived_at' => 'datetime',
+            'user_turn_count' => 'integer',
+            'parent_session_id' => 'integer',
+            'rolling_digest_through_turn' => 'integer',
         ];
     }
 
@@ -70,5 +78,13 @@ class PlotCoachSession extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', PlotCoachSessionStatus::Active);
+    }
+
+    public static function activeForBook(int $bookId): ?self
+    {
+        return self::query()
+            ->where('book_id', $bookId)
+            ->active()
+            ->first();
     }
 }

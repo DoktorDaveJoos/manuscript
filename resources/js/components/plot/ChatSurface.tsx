@@ -1,5 +1,4 @@
 import { ArrowUp, Loader, Sparkles } from 'lucide-react';
-import MarkdownIt from 'markdown-it';
 import {
     forwardRef,
     memo,
@@ -17,20 +16,45 @@ import {
     stream,
 } from '@/actions/App/Http/Controllers/PlotCoachController';
 import BatchProposalCard from '@/components/plot/BatchProposalCard';
-import type { BatchWrite } from '@/components/plot/BatchProposalCard';
+import type {
+    BatchWrite,
+    ProposalState,
+} from '@/components/plot/BatchProposalCard';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
+import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import Textarea from '@/components/ui/Textarea';
+import { useAiErrorToast } from '@/hooks/useAiErrorToast';
+import { md } from '@/lib/markdown';
 import { extractErrorMessage, jsonFetchHeaders } from '@/lib/utils';
-
-const md = new MarkdownIt({ linkify: true, breaks: true });
 
 const SENTINEL_OPEN = '<!-- PLOT_COACH_BATCH_PROPOSAL';
 const SENTINEL_CLOSE = '-->';
 
 /**
- * Matches a PLOT_COACH_BATCH_PROPOSAL sentinel block in an assistant message.
- * Used to split the message into preamble / proposal / postscript so the card
- * can replace the raw comment in the DOM.
+ * Matches the internal wire signals emitted by approval-card buttons. These
+ * are not human-typed input — the card press IS the UI — so we never render
+ * them as user bubbles.
  */
-const SENTINEL_RE = /<!-- PLOT_COACH_BATCH_PROPOSAL\n([\s\S]*?)\n-->/;
+const WIRE_SIGNAL_RE =
+    /^(APPROVE:batch:[0-9a-f-]{36}|CANCEL:batch:[0-9a-f-]{36}|UNDO:proposal:[0-9a-f-]{36}|UNDO:last)$/i;
+
+/**
+ * Matches a PLOT_COACH_BATCH_PROPOSAL sentinel block in an assistant message.
+ * Global flag so we can scan for every occurrence — the model occasionally
+ * mimics a fake sentinel before the real tool output arrives; we pick the
+ * last one because that's the tool's append.
+ */
+const SENTINEL_RE_GLOBAL = /<!-- PLOT_COACH_BATCH_PROPOSAL\n([\s\S]*?)\n-->/g;
+
+/**
+ * A mimicked preview block the model sometimes writes verbatim. Used to strip
+ * noise from the preamble when the model echoes the tool output. Matches from
+ * `## Proposed batch` or `## Proposed chapter plan` up to (but not including)
+ * the next sentinel opener or end of string.
+ */
+const MIMICKED_PREVIEW_RE =
+    /\n*##\s+Proposed (batch|chapter plan)[\s\S]*?(?=<!-- PLOT_COACH_BATCH_PROPOSAL|$)/;
 
 type ChatMessage = {
     role: 'user' | 'assistant';
@@ -56,6 +80,7 @@ type CoachSessionShowResponse = {
     id: number;
     messages: ChatMessage[];
     pending_board_changes?: unknown[];
+    proposal_states?: Record<string, ProposalState>;
 };
 
 type ParsedProposal = {
@@ -72,50 +97,119 @@ type ParsedProposal = {
 
 /**
  * Extract a PLOT_COACH_BATCH_PROPOSAL sentinel from an assistant message.
- * During streaming, a sentinel may be partially received — if we see the
- * opener without a closer, we hide the partial so malformed JSON never
- * flashes. Once complete, the JSON is parsed and the sections returned.
+ *
+ * Behaviour:
+ * - Picks the LAST parseable sentinel in the message. The model occasionally
+ *   writes a mimicked preview with a hallucinated proposal_id before the
+ *   real tool output arrives; the real tool output is always appended last,
+ *   so last-wins guarantees the uuid on the card matches one the server
+ *   persisted.
+ * - Discards any content between the first sentinel opener and the last
+ *   sentinel closer (that span is either noise from a mimicked preview or an
+ *   earlier hallucinated block).
+ * - Strips a mimicked `## Proposed batch`/`## Proposed chapter plan` block
+ *   from the preamble so the model's paraphrase of the tool output doesn't
+ *   render alongside the card.
+ * - During streaming, if a sentinel opener has been emitted but no closer yet,
+ *   we buffer so malformed JSON never flashes.
  */
 export function parseAssistantMessage(content: string): ParsedProposal {
-    const openIdx = content.indexOf(SENTINEL_OPEN);
-    if (openIdx === -1) {
+    const firstOpenIdx = content.indexOf(SENTINEL_OPEN);
+    if (firstOpenIdx === -1) {
         return {
-            preamble: content,
+            preamble: stripMimickedPreview(content),
             proposal: null,
             postscript: '',
             streamingSentinel: false,
         };
     }
 
-    const closeIdx = content.indexOf(
-        SENTINEL_CLOSE,
-        openIdx + SENTINEL_OPEN.length,
-    );
-    if (closeIdx === -1) {
-        // Buffer: sentinel is mid-stream, don't render a half-block.
+    // Collect every complete sentinel and pick the last parseable one.
+    const matches: Array<{
+        match: RegExpExecArray;
+        parsed: ParsedProposal['proposal'];
+    }> = [];
+    SENTINEL_RE_GLOBAL.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = SENTINEL_RE_GLOBAL.exec(content)) !== null) {
+        const parsed = tryParseSentinelJson(m[1]);
+        matches.push({ match: m, parsed });
+    }
+
+    if (matches.length === 0) {
+        // Opener is present but no closer yet — sentinel mid-stream.
         return {
-            preamble: content.slice(0, openIdx),
+            preamble: stripMimickedPreview(content.slice(0, firstOpenIdx)),
             proposal: null,
             postscript: '',
             streamingSentinel: true,
         };
     }
 
-    const match = SENTINEL_RE.exec(content);
-    if (!match) {
-        return {
-            preamble: content.slice(0, openIdx),
-            proposal: null,
-            postscript: content.slice(closeIdx + SENTINEL_CLOSE.length),
-            streamingSentinel: false,
-        };
+    // Prefer the last parseable match; fall back to the last match overall.
+    let chosen = matches[matches.length - 1];
+    for (let i = matches.length - 1; i >= 0; i--) {
+        if (matches[i].parsed) {
+            chosen = matches[i];
+            break;
+        }
     }
 
-    const preamble = content.slice(0, match.index);
-    const postscript = content.slice(match.index + match[0].length);
+    const preamble = stripMimickedPreview(content.slice(0, firstOpenIdx));
+    const postscript = content.slice(
+        chosen.match.index + chosen.match[0].length,
+    );
 
+    return {
+        preamble,
+        proposal: chosen.parsed,
+        postscript,
+        streamingSentinel: false,
+    };
+}
+
+/**
+ * Merge server-reported proposal states into local React state without firing
+ * a re-render when nothing changed. Optimistic local clicks beat the server
+ * briefly, so we skip keys whose state is already identical.
+ */
+/**
+ * Parse a string as JSON without throwing. Used to peek at structured
+ * error responses (`{kind, message, provider}`) before falling back to
+ * plain-text rendering.
+ */
+function safeJson(text: string): Record<string, unknown> | null {
+    if (!text) return null;
     try {
-        const parsed = JSON.parse(match[1]);
+        const parsed = JSON.parse(text);
+        return typeof parsed === 'object' && parsed !== null
+            ? (parsed as Record<string, unknown>)
+            : null;
+    } catch {
+        return null;
+    }
+}
+
+function mergeProposalStates(
+    setter: React.Dispatch<React.SetStateAction<Record<string, ProposalState>>>,
+    incoming: Record<string, ProposalState>,
+): void {
+    setter((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        for (const [id, state] of Object.entries(incoming)) {
+            if (next[id] !== state) {
+                next[id] = state;
+                changed = true;
+            }
+        }
+        return changed ? next : prev;
+    });
+}
+
+function tryParseSentinelJson(body: string): ParsedProposal['proposal'] {
+    try {
+        const parsed = JSON.parse(body);
         if (
             parsed &&
             typeof parsed === 'object' &&
@@ -124,48 +218,32 @@ export function parseAssistantMessage(content: string): ParsedProposal {
             typeof parsed.summary === 'string'
         ) {
             return {
-                preamble,
-                proposal: {
-                    proposalId: parsed.proposal_id,
-                    writes: parsed.writes as BatchWrite[],
-                    summary: parsed.summary,
-                },
-                postscript,
-                streamingSentinel: false,
+                proposalId: parsed.proposal_id,
+                writes: parsed.writes as BatchWrite[],
+                summary: parsed.summary,
             };
         }
     } catch {
-        // fall through — malformed JSON, treat as no proposal
+        // fall through
     }
+    return null;
+}
 
-    return {
-        preamble,
-        proposal: null,
-        postscript,
-        streamingSentinel: false,
-    };
+function stripMimickedPreview(text: string): string {
+    return text.replace(MIMICKED_PREVIEW_RE, '').replace(/\s+$/g, '');
 }
 
 const AssistantMessage = memo(function AssistantMessage({
     content,
-    streaming,
 }: {
     content: string;
-    streaming?: boolean;
 }) {
-    const html = useMemo(
-        () => (streaming ? null : md.render(content)),
-        [content, streaming],
-    );
-    return html ? (
+    const html = useMemo(() => md.render(content), [content]);
+    return (
         <div
-            className="ai-chat-markdown text-[14px] leading-[1.55] text-ink"
+            className="ai-chat-markdown text-sm leading-[1.55] text-ink"
             dangerouslySetInnerHTML={{ __html: html }}
         />
-    ) : (
-        <div className="ai-chat-markdown text-[14px] leading-[1.55] whitespace-pre-wrap text-ink">
-            {content}
-        </div>
     );
 });
 
@@ -191,20 +269,43 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
         const [isStreaming, setIsStreaming] = useState(false);
         const [isLoadingHistory, setIsLoadingHistory] = useState(false);
         const [streamError, setStreamError] = useState<string | null>(null);
+        const showAiErrorToast = useAiErrorToast();
         const [pendingBoardChanges, setPendingBoardChanges] =
             useState<number>(0);
-        const [handledProposals, setHandledProposals] = useState<Set<string>>(
-            () => new Set(),
+        const [proposalStates, setProposalStates] = useState<
+            Record<string, ProposalState>
+        >({});
+        const [currentToolName, setCurrentToolName] = useState<string | null>(
+            null,
         );
 
         const isStreamingRef = useRef(false);
+        // Inflight tool calls keyed by tool_id → tool_name. The latest still
+        // inflight is what we surface in the status line.
+        const inflightToolsRef = useRef<Map<string, string>>(new Map());
+        // Suppresses sub-threshold flicker for tools that complete quickly:
+        // we delay revealing the status text until the call is still inflight
+        // after this window.
+        const toolStatusTimerRef = useRef<number | null>(null);
+        // Mirrors `currentToolName` so callbacks can read the latest value
+        // without subscribing to state changes.
+        const currentToolNameRef = useRef<string | null>(null);
         const inputValueRef = useRef(input);
         inputValueRef.current = input;
 
         const messagesEndRef = useRef<HTMLDivElement>(null);
-        const inputRef = useRef<HTMLInputElement>(null);
+        const inputRef = useRef<HTMLTextAreaElement>(null);
         const abortRef = useRef<AbortController | null>(null);
         const lastSentMessageRef = useRef<string | null>(null);
+
+        // Auto-grow textarea height with content, capped to ~6 lines.
+        useEffect(() => {
+            const el = inputRef.current;
+            if (!el) return;
+            el.style.height = 'auto';
+            const max = 160;
+            el.style.height = `${Math.min(el.scrollHeight, max)}px`;
+        }, [input]);
 
         // Hydrate history for an existing session. Abort on unmount / id change.
         useEffect(() => {
@@ -233,6 +334,7 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
                         ? data.pending_board_changes.length
                         : 0;
                     setPendingBoardChanges(changes);
+                    setProposalStates(data.proposal_states ?? {});
                 })
                 .catch((err) => {
                     if (err?.name === 'AbortError') return;
@@ -251,10 +353,15 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, [messages]);
 
-        // Abort any in-flight stream on unmount.
+        // Abort any in-flight stream + clear the tool-status delay timer on
+        // unmount.
         useEffect(() => {
             return () => {
                 abortRef.current?.abort();
+                if (toolStatusTimerRef.current !== null) {
+                    window.clearTimeout(toolStatusTimerRef.current);
+                    toolStatusTimerRef.current = null;
+                }
             };
         }, []);
 
@@ -275,7 +382,15 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
                         const count = Array.isArray(data.pending_board_changes)
                             ? data.pending_board_changes.length
                             : 0;
-                        setPendingBoardChanges(count);
+                        setPendingBoardChanges((prev) =>
+                            prev === count ? prev : count,
+                        );
+                        if (data.proposal_states) {
+                            mergeProposalStates(
+                                setProposalStates,
+                                data.proposal_states,
+                            );
+                        }
                     })
                     .catch(() => {
                         // non-fatal
@@ -285,6 +400,79 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
             return () => window.clearInterval(interval);
         }, [bookId, sessionId, isStreaming]);
 
+        const clearToolStatusTimer = useCallback(() => {
+            if (toolStatusTimerRef.current !== null) {
+                window.clearTimeout(toolStatusTimerRef.current);
+                toolStatusTimerRef.current = null;
+            }
+        }, []);
+
+        const writeCurrentToolName = useCallback((next: string | null) => {
+            currentToolNameRef.current = next;
+            setCurrentToolName(next);
+        }, []);
+
+        const refreshToolStatus = useCallback(() => {
+            const inflight = inflightToolsRef.current;
+            if (inflight.size === 0) {
+                clearToolStatusTimer();
+                writeCurrentToolName(null);
+                return;
+            }
+            // Latest insertion wins — JS Maps preserve insertion order, so the
+            // most recent tool_call is at the tail.
+            let latest: string | null = null;
+            for (const name of inflight.values()) latest = name;
+            writeCurrentToolName(latest);
+        }, [clearToolStatusTimer, writeCurrentToolName]);
+
+        const handleToolCall = useCallback(
+            (toolId: string, toolName: string) => {
+                // Tools whose UI is the approval card itself never surface a
+                // status line — the card already telegraphs what's happening.
+                if (
+                    toolName === 'ProposeBatch' ||
+                    toolName === 'ProposeChapterPlan'
+                ) {
+                    return;
+                }
+
+                inflightToolsRef.current.set(toolId, toolName);
+
+                // Already showing a label → swap immediately and let any
+                // pending grace timer fall away (its work is now redundant).
+                if (currentToolNameRef.current !== null) {
+                    clearToolStatusTimer();
+                    writeCurrentToolName(toolName);
+                    return;
+                }
+
+                // First inflight tool of a quiet stream → wait the grace
+                // window so fast tools never flash a label.
+                if (toolStatusTimerRef.current !== null) return;
+
+                toolStatusTimerRef.current = window.setTimeout(() => {
+                    toolStatusTimerRef.current = null;
+                    refreshToolStatus();
+                }, 250);
+            },
+            [clearToolStatusTimer, refreshToolStatus, writeCurrentToolName],
+        );
+
+        const handleToolResult = useCallback(
+            (toolId: string) => {
+                inflightToolsRef.current.delete(toolId);
+                refreshToolStatus();
+            },
+            [refreshToolStatus],
+        );
+
+        const resetToolTracking = useCallback(() => {
+            inflightToolsRef.current.clear();
+            clearToolStatusTimer();
+            writeCurrentToolName(null);
+        }, [clearToolStatusTimer, writeCurrentToolName]);
+
         const sendMessage = useCallback(
             async (rawMessage: string) => {
                 const trimmed = rawMessage.trim();
@@ -293,13 +481,22 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
                 setStreamError(null);
                 setInput('');
                 lastSentMessageRef.current = trimmed;
+                resetToolTracking();
 
                 const hadSessionBeforeSend = sessionId !== null;
 
+                // Approval card buttons send bare wire signals (APPROVE:batch /
+                // CANCEL:batch / UNDO:last). Those aren't something the user
+                // typed — the card itself is the UI for them — so we skip the
+                // user bubble entirely and go straight to the assistant turn.
+                const isWireSignal = WIRE_SIGNAL_RE.test(trimmed);
+
                 setMessages((prev) => [
                     ...prev,
-                    { role: 'user', content: trimmed },
-                    { role: 'assistant', content: '' },
+                    ...(isWireSignal
+                        ? []
+                        : [{ role: 'user' as const, content: trimmed }]),
+                    { role: 'assistant' as const, content: '' },
                 ]);
                 isStreamingRef.current = true;
                 setIsStreaming(true);
@@ -330,10 +527,27 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
 
                     if (!response.ok) {
                         const errorText = await response.text().catch(() => '');
+                        // Backend returns {message, kind, provider} on AI
+                        // errors. If we can parse a kind, render a toast;
+                        // otherwise fall back to the inline error UI.
+                        const parsed = safeJson(errorText);
                         const errorMessage = extractErrorMessage(
                             errorText,
                             t('status.error.body'),
                         );
+                        if (parsed && typeof parsed.kind === 'string') {
+                            showAiErrorToast({
+                                kind: parsed.kind,
+                                message:
+                                    typeof parsed.message === 'string'
+                                        ? parsed.message
+                                        : null,
+                                provider:
+                                    typeof parsed.provider === 'string'
+                                        ? parsed.provider
+                                        : null,
+                            });
+                        }
                         setStreamError(errorMessage);
                         setMessages((prev) => {
                             // Drop the trailing empty assistant placeholder.
@@ -402,7 +616,61 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
                                 }
 
                                 if (parsed.error) {
-                                    pendingText += parsed.error;
+                                    if (typeof parsed.kind === 'string') {
+                                        showAiErrorToast({
+                                            kind: parsed.kind,
+                                            message: parsed.error,
+                                            provider: parsed.provider,
+                                        });
+                                    } else {
+                                        pendingText += parsed.error;
+                                    }
+                                    continue;
+                                }
+
+                                // Track inflight tool calls so we can surface
+                                // a humanized status line ("Re-reading the
+                                // prose…"). tool_call carries no text — done
+                                // after dispatching.
+                                if (
+                                    parsed.type === 'tool_call' &&
+                                    typeof parsed.tool_id === 'string' &&
+                                    typeof parsed.tool_name === 'string'
+                                ) {
+                                    handleToolCall(
+                                        parsed.tool_id,
+                                        parsed.tool_name,
+                                    );
+                                    continue;
+                                }
+
+                                // tool_result clears the inflight entry. We
+                                // fall through afterwards so ProposeBatch /
+                                // ProposeChapterPlan can still splice their
+                                // preview into the message stream below.
+                                if (
+                                    parsed.type === 'tool_result' &&
+                                    typeof parsed.tool_id === 'string'
+                                ) {
+                                    handleToolResult(parsed.tool_id);
+                                }
+
+                                // ProposeBatch / ProposeChapterPlan emit their
+                                // preview + sentinel in the tool `result` —
+                                // splice it into the assistant's text stream so
+                                // the BatchProposalCard renders. Without this,
+                                // a well-behaved agent that doesn't paraphrase
+                                // its own tool output has no visible card.
+                                if (
+                                    parsed.type === 'tool_result' &&
+                                    parsed.successful !== false &&
+                                    (parsed.tool_name === 'ProposeBatch' ||
+                                        parsed.tool_name ===
+                                            'ProposeChapterPlan') &&
+                                    typeof parsed.result === 'string' &&
+                                    parsed.result !== ''
+                                ) {
+                                    pendingText += '\n\n' + parsed.result;
                                     continue;
                                 }
 
@@ -473,9 +741,18 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
                     isStreamingRef.current = false;
                     setIsStreaming(false);
                     abortRef.current = null;
+                    resetToolTracking();
                 }
             },
-            [bookId, sessionId, onSessionCreated, t],
+            [
+                bookId,
+                sessionId,
+                onSessionCreated,
+                t,
+                handleToolCall,
+                handleToolResult,
+                resetToolTracking,
+            ],
         );
 
         const handleSend = useCallback(() => {
@@ -489,29 +766,37 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
             void sendMessage(last);
         }, [sendMessage]);
 
-        const markHandled = useCallback((id: string) => {
-            setHandledProposals((prev) => {
-                if (prev.has(id)) return prev;
-                const next = new Set(prev);
-                next.add(id);
-                return next;
-            });
-        }, []);
+        const setProposalState = useCallback(
+            (id: string, state: ProposalState) => {
+                setProposalStates((prev) =>
+                    prev[id] === state ? prev : { ...prev, [id]: state },
+                );
+            },
+            [],
+        );
 
         const handleBatchApprove = useCallback(
             (proposalId: string) => {
-                markHandled(proposalId);
+                setProposalState(proposalId, 'approved');
                 void sendMessage(`APPROVE:batch:${proposalId}`);
             },
-            [markHandled, sendMessage],
+            [setProposalState, sendMessage],
         );
 
         const handleBatchCancel = useCallback(
             (proposalId: string) => {
-                markHandled(proposalId);
+                setProposalState(proposalId, 'cancelled');
                 void sendMessage(`CANCEL:batch:${proposalId}`);
             },
-            [markHandled, sendMessage],
+            [setProposalState, sendMessage],
+        );
+
+        const handleBatchUndo = useCallback(
+            (proposalId: string) => {
+                setProposalState(proposalId, 'reverted');
+                void sendMessage(`UNDO:proposal:${proposalId}`);
+            },
+            [setProposalState, sendMessage],
         );
 
         useImperativeHandle(
@@ -537,23 +822,23 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
         const hasHistory = messages.length > 0;
         const showIntakeOpener = !hasHistory && !isLoadingHistory;
 
-        // Identify the index of the most recent assistant message that contains a
-        // still-unresolved batch proposal. Earlier/already-handled proposals
-        // render in a disabled state to avoid stale approvals.
+        // Index of the most recent assistant message holding a still-pending
+        // proposal. Older pending proposals render dimmed so the author isn't
+        // tempted to approve a superseded one.
         const latestActiveProposalIndex = useMemo(() => {
             for (let i = messages.length - 1; i >= 0; i--) {
                 const m = messages[i];
                 if (m.role !== 'assistant') continue;
                 const parsed = parseAssistantMessage(m.content);
-                if (
-                    parsed.proposal &&
-                    !handledProposals.has(parsed.proposal.proposalId)
-                ) {
+                if (!parsed.proposal) continue;
+                const state =
+                    proposalStates[parsed.proposal.proposalId] ?? 'pending';
+                if (state === 'pending') {
                     return i;
                 }
             }
             return -1;
-        }, [messages, handledProposals]);
+        }, [messages, proposalStates]);
 
         return (
             <div className="flex min-h-0 flex-1 flex-col bg-surface">
@@ -590,12 +875,24 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
                                     content={msg.content}
                                     streaming={isStreaming && isLastAssistant}
                                     thinkingLabel={t('status.streaming')}
+                                    toolStatusLabel={
+                                        isLastAssistant && currentToolName
+                                            ? t(
+                                                  `status.tool.${currentToolName}`,
+                                                  {
+                                                      defaultValue:
+                                                          t('status.streaming'),
+                                                  },
+                                              )
+                                            : null
+                                    }
                                     isActiveProposalRow={
                                         i === latestActiveProposalIndex
                                     }
-                                    handledProposals={handledProposals}
+                                    proposalStates={proposalStates}
                                     onApprove={handleBatchApprove}
                                     onCancel={handleBatchCancel}
+                                    onUndo={handleBatchUndo}
                                 />
                             );
                         })}
@@ -613,10 +910,10 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
                 </div>
 
                 {/* Board-changes indicator + Input bar, stick to bottom */}
-                <div className="border-t border-border-light bg-surface">
+                <div className="bg-surface">
                     {pendingBoardChanges > 0 && !isStreaming && (
                         <div
-                            className="bg-accent-light px-6 py-1.5 text-center text-[12px] text-accent"
+                            className="bg-accent-light px-6 py-1.5 text-center text-xs text-accent"
                             data-testid="board-changes-indicator"
                         >
                             {t('board_changes.count', {
@@ -626,26 +923,28 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
                     )}
                     <div className="mx-auto w-full max-w-[720px] px-6 py-4">
                         <div className="relative">
-                            <input
+                            <Textarea
                                 ref={inputRef}
-                                type="text"
+                                rows={1}
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 placeholder={t('input.placeholder')}
                                 aria-label={t('input.placeholder')}
                                 disabled={isStreaming}
-                                className="h-12 w-full rounded-xl border border-border-light bg-surface-card pr-14 pl-4 text-[14px] text-ink placeholder:text-ink-faint focus:ring-1 focus:ring-accent/40 focus:outline-none disabled:opacity-60"
+                                className="block max-h-40 min-h-12 overflow-y-auto py-3 pr-14 pl-4 text-sm leading-[1.4]"
                             />
-                            <button
+                            <Button
                                 type="button"
+                                variant="accent"
+                                size="icon"
                                 onClick={handleSend}
                                 disabled={!input.trim() || isStreaming}
                                 aria-label={t('input.send')}
-                                className="absolute top-1/2 right-1.5 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-accent text-white transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-50"
+                                className="absolute right-1.5 bottom-1.5"
                             >
-                                <ArrowUp className="h-4 w-4" />
-                            </button>
+                                <ArrowUp className="size-4" />
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -661,10 +960,10 @@ function IntakeOpener({ hello, body }: { hello: string; body: string }) {
         <div className="flex gap-3">
             <CoachAvatar />
             <div className="flex-1">
-                <p className="text-[14px] leading-[1.55] font-medium text-ink">
+                <p className="text-sm leading-[1.55] font-medium text-ink">
                     {hello}
                 </p>
-                <p className="mt-1 text-[14px] leading-[1.55] text-ink-muted">
+                <p className="mt-1 text-sm leading-[1.55] text-ink-muted">
                     {body}
                 </p>
             </div>
@@ -675,9 +974,9 @@ function IntakeOpener({ hello, body }: { hello: string; body: string }) {
 function UserBubble({ content }: { content: string }) {
     return (
         <div className="flex justify-end">
-            <div className="max-w-[480px] rounded-xl border border-border-light bg-surface-card px-4 py-3 text-[14px] leading-[1.55] text-ink">
+            <Card className="max-w-[480px] px-4 py-3 text-sm leading-[1.55] text-ink">
                 <p className="whitespace-pre-wrap">{content}</p>
-            </div>
+            </Card>
         </div>
     );
 }
@@ -686,20 +985,25 @@ type AssistantRowProps = {
     content: string;
     streaming?: boolean;
     thinkingLabel: string;
+    /** Humanized label for the currently-running tool, or null if none. */
+    toolStatusLabel?: string | null;
     isActiveProposalRow: boolean;
-    handledProposals: Set<string>;
+    proposalStates: Record<string, ProposalState>;
     onApprove: (id: string) => void;
     onCancel: (id: string) => void;
+    onUndo: (id: string) => void;
 };
 
 function AssistantRow({
     content,
     streaming,
     thinkingLabel,
+    toolStatusLabel,
     isActiveProposalRow,
-    handledProposals,
+    proposalStates,
     onApprove,
     onCancel,
+    onUndo,
 }: AssistantRowProps) {
     const parsed = useMemo(() => parseAssistantMessage(content), [content]);
 
@@ -716,10 +1020,7 @@ function AssistantRow({
                     <div className="flex flex-col gap-3">
                         {parsed.preamble && (
                             <div className="flex items-start gap-1">
-                                <AssistantMessage
-                                    content={parsed.preamble}
-                                    streaming={streaming}
-                                />
+                                <AssistantMessage content={parsed.preamble} />
                                 {streaming &&
                                     !parsed.proposal &&
                                     !parsed.postscript && <StreamingDot />}
@@ -731,35 +1032,43 @@ function AssistantRow({
                                 proposalId={parsed.proposal.proposalId}
                                 writes={parsed.proposal.writes}
                                 summary={parsed.proposal.summary}
+                                state={
+                                    proposalStates[
+                                        parsed.proposal.proposalId
+                                    ] ?? 'pending'
+                                }
                                 onApprove={onApprove}
                                 onCancel={onCancel}
-                                disabled={
-                                    !isActiveProposalRow ||
-                                    handledProposals.has(
-                                        parsed.proposal.proposalId,
-                                    )
-                                }
+                                onUndo={onUndo}
+                                dimmed={!isActiveProposalRow}
                             />
                         )}
 
                         {parsed.postscript && (
                             <div className="flex items-start gap-1">
-                                <AssistantMessage
-                                    content={parsed.postscript}
-                                    streaming={streaming}
-                                />
+                                <AssistantMessage content={parsed.postscript} />
                                 {streaming && <StreamingDot />}
+                            </div>
+                        )}
+
+                        {streaming && toolStatusLabel && (
+                            <div className="flex items-center gap-1.5 text-xs text-ink-muted">
+                                <Loader
+                                    size={12}
+                                    className="animate-spin text-accent"
+                                />
+                                <span>{toolStatusLabel}</span>
                             </div>
                         )}
                     </div>
                 ) : streaming ? (
-                    <div className="flex items-center gap-[5px]">
+                    <div className="flex items-center gap-1.5">
                         <Loader
-                            size={13}
+                            size={14}
                             className="animate-spin text-accent"
                         />
-                        <span className="text-[12px] tracking-[0.01em] text-ink-muted">
-                            {thinkingLabel}
+                        <span className="text-xs text-ink-muted">
+                            {toolStatusLabel ?? thinkingLabel}
                         </span>
                     </div>
                 ) : null}
@@ -770,8 +1079,8 @@ function AssistantRow({
 
 function CoachAvatar() {
     return (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-light text-accent">
-            <Sparkles className="h-3.5 w-3.5" />
+        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-light text-accent">
+            <Sparkles className="size-3.5" />
         </div>
     );
 }
@@ -780,7 +1089,7 @@ function StreamingDot() {
     return (
         <span
             aria-hidden="true"
-            className="ml-1 inline-block h-1.5 w-1.5 shrink-0 translate-y-[7px] animate-pulse rounded-full bg-accent"
+            className="ml-1 inline-block size-1.5 shrink-0 translate-y-[7px] animate-pulse rounded-full bg-accent"
         />
     );
 }
@@ -795,17 +1104,20 @@ function ErrorCard({
     onRetry: () => void;
 }) {
     return (
-        <div className="flex items-start gap-3 rounded-lg border border-danger/30 bg-danger/5 px-4 py-3">
-            <div className="flex-1 text-[13px] leading-[1.5] text-danger">
-                {message}
+        <Alert variant="destructive">
+            <div className="flex items-start gap-3">
+                <AlertDescription className="flex-1 text-[13px]">
+                    {message}
+                </AlertDescription>
+                <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={onRetry}
+                >
+                    {retryLabel}
+                </Button>
             </div>
-            <button
-                type="button"
-                onClick={onRetry}
-                className="shrink-0 rounded-md border border-danger/30 px-2.5 py-1 text-[12px] font-medium text-danger transition-colors hover:bg-danger/10"
-            >
-                {retryLabel}
-            </button>
-        </div>
+        </Alert>
     );
 }

@@ -1,6 +1,8 @@
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Toaster } from 'sonner';
 import BootErrorScreen from '@/components/BootErrorScreen';
 import DatabaseRepairedDialog from '@/components/DatabaseRepairedDialog';
 import DebugOverlay from '@/components/ui/DebugOverlay';
@@ -68,14 +70,29 @@ createInertiaApp({
             <DebugOverlay>
                 <App {...props} />
                 <UpdateDialog currentVersion={appVersion} />
+                <UpdateScheduler />
                 {databaseRepaired && <DatabaseRepairedDialog />}
+                <Toaster
+                    position="top-right"
+                    closeButton
+                    richColors
+                    theme="system"
+                />
             </DebugOverlay>,
         );
-
-        // Check for updates every 4 hours (apps that stay open for days would otherwise miss updates)
-        setInterval(checkForUpdates, 4 * 60 * 60 * 1000);
     },
     progress: {
         color: 'var(--color-ink-muted)',
     },
 });
+
+// Polls for app updates every 4 hours. Lives inside the React tree so its
+// interval is cleaned up if the renderer ever full-reloads — module-level
+// setInterval would stack a new timer on each boot.
+function UpdateScheduler() {
+    useEffect(() => {
+        const id = window.setInterval(checkForUpdates, 4 * 60 * 60 * 1000);
+        return () => window.clearInterval(id);
+    }, []);
+    return null;
+}

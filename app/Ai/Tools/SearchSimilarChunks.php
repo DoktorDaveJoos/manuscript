@@ -15,9 +15,11 @@ use Stringable;
 
 class SearchSimilarChunks implements Tool
 {
+    public function __construct(private int $bookId) {}
+
     public function description(): Stringable|string
     {
-        return 'Searches for text chunks in the manuscript using semantic similarity, keyword matching, or hybrid (both). Useful for finding related passages, character names, themes, or specific references.';
+        return 'Searches for text chunks in the current manuscript using semantic similarity, keyword matching, or hybrid (both). Useful for finding related passages, character names, themes, or specific references.';
     }
 
     /**
@@ -26,7 +28,6 @@ class SearchSimilarChunks implements Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'book_id' => $schema->integer()->required(),
             'query' => $schema->string()->required(),
             'limit' => $schema->integer()->nullable()->required(),
             'search_mode' => $schema->string()->enum(['semantic', 'keyword', 'hybrid'])->nullable()->required(),
@@ -35,18 +36,17 @@ class SearchSimilarChunks implements Tool
 
     public function handle(Request $request): Stringable|string
     {
-        $bookId = $request['book_id'];
         $query = $request['query'];
         $limit = min($request['limit'] ?? 5, 20);
         $searchMode = $request['search_mode'] ?? 'hybrid';
 
         try {
-            $chunks = $this->search($bookId, $query, $limit, $searchMode);
+            $chunks = $this->search($this->bookId, $query, $limit, $searchMode);
         } catch (\Throwable) {
             // Semantic/hybrid search may fail if sqlite-vec isn't loaded or embeddings don't exist.
             // Fall back to keyword search which uses FTS5 (built into SQLite).
             try {
-                $chunks = Chunk::findByKeywordForBook($bookId, $query, $limit);
+                $chunks = Chunk::findByKeywordForBook($this->bookId, $query, $limit);
             } catch (\Throwable) {
                 return 'No manuscript chunks available. The manuscript may need to be prepared first.';
             }

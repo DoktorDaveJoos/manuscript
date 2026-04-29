@@ -9,12 +9,12 @@ use Laravel\Ai\Tools\Request;
 
 it('returns formatted list of existing characters and entities', function () {
     $book = Book::factory()->create();
-    Character::factory()->for($book)->create([
+    $character = Character::factory()->for($book)->create([
         'name' => 'John Smith',
         'aliases' => ['Johnny', 'JS'],
         'description' => 'The protagonist',
     ]);
-    WikiEntry::factory()->for($book)->create([
+    $entry = WikiEntry::factory()->for($book)->create([
         'name' => 'The Brass Lantern',
         'kind' => WikiEntryKind::Location,
         'type' => 'Tavern',
@@ -34,7 +34,9 @@ it('returns formatted list of existing characters and entities', function () {
         ->toContain('The Brass Lantern')
         ->toContain('[location]')
         ->toContain('(Tavern)')
-        ->toContain('Existing World Entities');
+        ->toContain('Existing World Entities')
+        ->toContain("id={$character->id}")
+        ->toContain("id={$entry->id}");
 });
 
 it('returns message when no characters or entities exist', function () {

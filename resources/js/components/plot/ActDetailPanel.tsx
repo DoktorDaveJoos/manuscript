@@ -97,7 +97,7 @@ export default function ActDetailPanel({
     };
 
     return (
-        <Drawer onClose={onClose}>
+        <Drawer onClose={onClose} className="w-[480px]">
             <PanelHeader title={t('act.details', 'Act')} onClose={onClose} />
 
             <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-5">

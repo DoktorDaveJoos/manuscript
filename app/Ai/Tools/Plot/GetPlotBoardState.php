@@ -11,9 +11,11 @@ use Stringable;
 
 class GetPlotBoardState implements Tool
 {
+    public function __construct(private int $bookId) {}
+
     public function description(): Stringable|string
     {
-        return 'Retrieves the current plot board state for a book — acts, plot points, beats, storylines, and existing characters. Call this when you need to reason about structure or recent writes.';
+        return 'Retrieves the current plot board state for the book — acts, plot points, beats, storylines, and existing characters. Call this when you need to reason about structure or recent writes.';
     }
 
     /**
@@ -22,7 +24,6 @@ class GetPlotBoardState implements Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'book_id' => $schema->integer()->required(),
             'include_characters' => $schema->boolean()->nullable()->required(),
             'include_storylines' => $schema->boolean()->nullable()->required(),
         ];
@@ -41,7 +42,7 @@ class GetPlotBoardState implements Tool
                 'storylines' => fn ($q) => $q->orderBy('sort_order'),
                 'characters',
             ])
-            ->findOrFail($request['book_id']);
+            ->findOrFail($this->bookId);
 
         $sections = [];
 
@@ -63,7 +64,7 @@ class GetPlotBoardState implements Tool
             } else {
                 foreach ($book->storylines as $storyline) {
                     $type = $storyline->type?->value ?? 'unspecified';
-                    $sections[] = "- [{$type}] {$storyline->name}";
+                    $sections[] = "- id={$storyline->id} [{$type}] {$storyline->name}";
                 }
             }
         }
@@ -75,7 +76,7 @@ class GetPlotBoardState implements Tool
             $plotPointsByAct = $book->plotPoints->groupBy('act_id');
 
             foreach ($book->acts as $act) {
-                $sections[] = "\n### Act {$act->number}: {$act->title}";
+                $sections[] = "\n### id={$act->id} Act {$act->number}: {$act->title}";
                 $actPlotPoints = $plotPointsByAct->get($act->id, collect());
 
                 if ($actPlotPoints->isEmpty()) {
@@ -87,12 +88,12 @@ class GetPlotBoardState implements Tool
                 foreach ($actPlotPoints as $plotPoint) {
                     $status = $plotPoint->status?->value ?? 'unknown';
                     $description = $plotPoint->description ? " — {$plotPoint->description}" : '';
-                    $sections[] = "- [{$status}] {$plotPoint->title}{$description}";
+                    $sections[] = "- id={$plotPoint->id} [{$status}] {$plotPoint->title}{$description}";
 
                     foreach ($plotPoint->beats as $beat) {
                         $beatStatus = $beat->status?->value ?? 'unknown';
                         $beatDescription = $beat->description ? " — {$beat->description}" : '';
-                        $sections[] = "  - [{$beatStatus}] {$beat->title}{$beatDescription}";
+                        $sections[] = "  - id={$beat->id} [{$beatStatus}] {$beat->title}{$beatDescription}";
                     }
                 }
             }
@@ -103,7 +104,7 @@ class GetPlotBoardState implements Tool
                 $sections[] = "\n### Unassigned plot points";
                 foreach ($orphanPoints as $plotPoint) {
                     $status = $plotPoint->status?->value ?? 'unknown';
-                    $sections[] = "- [{$status}] {$plotPoint->title}";
+                    $sections[] = "- id={$plotPoint->id} [{$status}] {$plotPoint->title}";
                 }
             }
         }
@@ -116,10 +117,12 @@ class GetPlotBoardState implements Tool
                 foreach ($book->characters as $character) {
                     $aliases = ! empty($character->aliases) ? ' (aliases: '.implode(', ', $character->aliases).')' : '';
                     $description = $character->description ? ": {$character->description}" : '';
-                    $sections[] = "- {$character->name}{$aliases}{$description}";
+                    $sections[] = "- id={$character->id} {$character->name}{$aliases}{$description}";
                 }
             }
         }
+
+        $sections[] = "\n_Use the `id` values when proposing updates (e.g. `{\"type\":\"plot_point\",\"data\":{\"id\":42,...}}`)._";
 
         return implode("\n", $sections);
     }

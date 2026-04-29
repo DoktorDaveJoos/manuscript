@@ -29,7 +29,6 @@ type Props = {
         position: { x: number; y: number },
     ) => void;
     onSelectAct?: (actId: number) => void;
-    isLast?: boolean;
 };
 
 export default function ActColumn({
@@ -47,7 +46,6 @@ export default function ActColumn({
     onBeatContextMenu,
     onActContextMenu,
     onPlotPointContextMenu,
-    isLast = false,
 }: Props) {
     const { t } = useTranslation('plot');
     const color = getActColor(colorIndex);
@@ -81,15 +79,9 @@ export default function ActColumn({
     );
 
     return (
-        <div
-            className="flex min-w-[300px] flex-1 flex-col"
-            style={{
-                borderRight: isLast ? 'none' : '1px solid var(--color-border)',
-            }}
-        >
-            {/* Header */}
+        <div className="flex flex-col border-r border-border last:border-r-0">
             <div
-                className="flex items-center justify-between px-4 py-3"
+                className="sticky top-0 z-10 flex items-center justify-between px-4 py-3"
                 style={{
                     backgroundColor: color.bg,
                     borderTop: `3px solid ${color.border}`,
@@ -123,26 +115,20 @@ export default function ActColumn({
                     <button
                         type="button"
                         onClick={() => onCreatePlotPoint(act.id)}
-                        className="flex items-center justify-center rounded transition-colors hover:bg-black/5"
-                        style={{ width: 20, height: 20 }}
+                        className="flex h-5 w-5 items-center justify-center rounded transition-colors hover:bg-black/5"
                     >
                         <Plus size={14} className="text-ink-faint" />
                     </button>
                 </div>
             </div>
 
-            {/* Description preview */}
             {plainDescription && (
                 <p className="line-clamp-2 px-4 pt-2 text-[11px] text-ink-muted italic">
                     {plainDescription}
                 </p>
             )}
 
-            {/* Progress bar */}
-            <div
-                className="flex items-center gap-2.5 px-4 pb-2"
-                style={{ paddingTop: 8 }}
-            >
+            <div className="flex items-center gap-2.5 px-4 py-2">
                 <div
                     className="h-1.5 flex-1 overflow-hidden rounded"
                     style={{ backgroundColor: color.track }}
@@ -170,10 +156,9 @@ export default function ActColumn({
                 )}
             </div>
 
-            {/* Plot points */}
             <div
                 ref={setDroppableRef}
-                className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+                className="flex flex-1 flex-col gap-4 p-4"
             >
                 <SortableContext
                     items={plotPointIds}

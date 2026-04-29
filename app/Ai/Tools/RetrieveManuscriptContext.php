@@ -12,9 +12,11 @@ use Stringable;
 
 class RetrieveManuscriptContext implements Tool
 {
+    public function __construct(private int $bookId) {}
+
     public function description(): Stringable|string
     {
-        return 'Retrieves manuscript context including characters, chapter summaries, plot points, story bible, and active chapter text for a given book.';
+        return 'Retrieves manuscript context including characters, chapter summaries, plot points, story bible, and active chapter text for the current book.';
     }
 
     /**
@@ -23,7 +25,6 @@ class RetrieveManuscriptContext implements Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'book_id' => $schema->integer()->required(),
             'chapter_id' => $schema->integer()->nullable()->required(),
             'include_characters' => $schema->boolean()->nullable()->required(),
             'include_plot_points' => $schema->boolean()->nullable()->required(),
@@ -32,7 +33,7 @@ class RetrieveManuscriptContext implements Tool
 
     public function handle(Request $request): Stringable|string
     {
-        $book = Book::query()->findOrFail($request['book_id']);
+        $book = Book::query()->findOrFail($this->bookId);
         $sections = [];
 
         $sections[] = "Book: {$book->title} by {$book->author} (Language: {$book->language})";

@@ -2,7 +2,6 @@
 
 namespace App\Observers;
 
-use App\Enums\PlotCoachSessionStatus;
 use App\Models\Act;
 use App\Models\Beat;
 use App\Models\PlotCoachSession;
@@ -72,22 +71,13 @@ class BoardChangeObserver
             return;
         }
 
-        // Defensive — the types we observe never include PlotCoachSession,
-        // but guard anyway in case the observer is attached elsewhere.
-        if ($model instanceof PlotCoachSession) {
-            return;
-        }
-
         [$type, $bookId] = $this->resolveTypeAndBook($model);
 
         if ($type === null || $bookId === null) {
             return;
         }
 
-        $session = PlotCoachSession::query()
-            ->where('book_id', $bookId)
-            ->where('status', PlotCoachSessionStatus::Active)
-            ->first();
+        $session = PlotCoachSession::activeForBook($bookId);
 
         if (! $session) {
             return;
@@ -123,21 +113,13 @@ class BoardChangeObserver
 
     private function beatBookId(Beat $beat): ?int
     {
-        // On delete, the related plotPoint is still resolvable by FK. Fall
-        // back to a direct table lookup to avoid lazy-load restrictions.
-        $plotPoint = $beat->plotPoint;
-
-        if ($plotPoint) {
-            return $plotPoint->book_id;
+        if (! $beat->plot_point_id) {
+            return null;
         }
 
-        if ($beat->plot_point_id) {
-            return PlotPoint::query()
-                ->where('id', $beat->plot_point_id)
-                ->value('book_id');
-        }
-
-        return null;
+        return PlotPoint::query()
+            ->where('id', $beat->plot_point_id)
+            ->value('book_id');
     }
 
     private function summarize(Model $model, string $type, string $kind): string
@@ -151,16 +133,10 @@ class BoardChangeObserver
         };
 
         $name = $this->displayName($model, $type);
-        $verb = match ($kind) {
-            'created' => 'created',
-            'updated' => 'updated',
-            'deleted' => 'deleted',
-            default => $kind,
-        };
 
         $summary = $name !== ''
-            ? "{$label} '{$name}' {$verb}"
-            : "{$label} {$verb}";
+            ? "{$label} '{$name}' {$kind}"
+            : "{$label} {$kind}";
 
         return mb_substr($summary, 0, 100);
     }

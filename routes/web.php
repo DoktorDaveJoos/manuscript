@@ -236,7 +236,7 @@ Route::middleware('license')->group(function () {
     Route::get('/books/{book}/plot-coach/sessions', [PlotCoachController::class, 'sessionIndex'])->name('books.plotCoach.sessions.index');
     Route::get('/books/{book}/plot-coach/sessions/{session}', [PlotCoachController::class, 'sessionShow'])->name('books.plotCoach.sessions.show');
     Route::patch('/books/{book}/plot-coach/sessions/{session}/archive', [PlotCoachController::class, 'sessionArchive'])->name('books.plotCoach.sessions.archive');
-    Route::patch('/books/{book}/plot-coach/sessions/{session}/mode', [PlotCoachController::class, 'sessionMode'])->name('books.plotCoach.sessions.mode');
+    Route::get('/books/{book}/plot-coach/sessions/{session}/export', [PlotCoachController::class, 'sessionExport'])->name('books.plotCoach.sessions.export');
 
     Route::post('/books/{book}/plot/ai/health', [PlotAiController::class, 'runPlotHealth'])->name('books.plot.ai.health');
     Route::post('/books/{book}/plot/ai/holes', [PlotAiController::class, 'detectPlotHoles'])->name('books.plot.ai.holes');

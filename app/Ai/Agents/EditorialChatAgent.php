@@ -2,17 +2,16 @@
 
 namespace App\Ai\Agents;
 
-use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Ai\Tools\SearchSimilarChunks;
-use App\Enums\AiTaskCategory;
 use App\Enums\EditorialPersona;
 use App\Models\Book;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
+use Laravel\Ai\Attributes\UseSmartestModel;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
@@ -24,19 +23,15 @@ use Stringable;
 #[Temperature(0.5)]
 #[MaxTokens(4096)]
 #[Timeout(120)]
+#[UseSmartestModel]
 class EditorialChatAgent implements Agent, BelongsToBook, Conversational, HasMiddleware, HasTools
 {
-    use Promptable, RemembersConversations, UsesTaskCategoryModel;
+    use Promptable, RemembersConversations;
 
     public function __construct(
         protected Book $book,
         protected string $editorialContext,
     ) {}
-
-    public static function taskCategory(): AiTaskCategory
-    {
-        return AiTaskCategory::Analysis;
-    }
 
     public function book(): Book
     {

@@ -22,7 +22,7 @@ class UpdatePlotPointRequest extends FormRequest
         return [
             'title' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'type' => ['sometimes', Rule::enum(PlotPointType::class)],
+            'type' => ['sometimes', 'nullable', Rule::enum(PlotPointType::class)],
             'status' => ['sometimes', Rule::enum(PlotPointStatus::class)],
             'act_id' => ['nullable', 'exists:acts,id'],
             'characters' => ['sometimes', 'array'],

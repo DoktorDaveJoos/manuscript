@@ -2,7 +2,6 @@
 
 namespace App\Ai\Tools\Plot;
 
-use App\Enums\PlotCoachSessionStatus;
 use App\Models\PlotCoachSession;
 use App\Services\PlotCoachBatchService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -19,10 +18,10 @@ use Throwable;
  */
 class UndoLastBatch implements Tool
 {
-    public function __construct(private ?PlotCoachBatchService $service = null)
-    {
-        $this->service = $service ?? new PlotCoachBatchService;
-    }
+    public function __construct(
+        private int $bookId,
+        private PlotCoachBatchService $service = new PlotCoachBatchService,
+    ) {}
 
     public function description(): Stringable|string
     {
@@ -34,23 +33,15 @@ class UndoLastBatch implements Tool
      */
     public function schema(JsonSchema $schema): array
     {
-        return [
-            'book_id' => $schema->integer()->required(),
-        ];
+        return [];
     }
 
     public function handle(Request $request): Stringable|string
     {
-        $bookId = $request['book_id'] ?? null;
-
-        if (! is_int($bookId)) {
-            return 'Undo failed: invalid arguments.';
-        }
-
-        $session = $this->resolveSession($bookId);
+        $session = PlotCoachSession::activeForBook($this->bookId);
 
         if (! $session) {
-            return "Undo failed: no active plot coach session for book {$bookId}.";
+            return "Undo failed: no active plot coach session for book {$this->bookId}.";
         }
 
         try {
@@ -64,13 +55,5 @@ class UndoLastBatch implements Tool
         }
 
         return "Undone batch #{$batch->id}: {$batch->summary}.";
-    }
-
-    private function resolveSession(int $bookId): ?PlotCoachSession
-    {
-        return PlotCoachSession::query()
-            ->where('book_id', $bookId)
-            ->where('status', PlotCoachSessionStatus::Active)
-            ->first();
     }
 }

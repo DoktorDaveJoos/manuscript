@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Enums\AiTaskCategory;
 use App\Models\AiSetting;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Laravel\Ai\Ai;
 use Laravel\Ai\Responses\AgentResponse;
 
 use function Laravel\Ai\agent;
@@ -27,8 +27,12 @@ class WritingStyleService
         $setting->injectConfig();
 
         $langName = $book->language === 'de' ? 'German' : 'English';
-        $provider = $setting->provider->toLab()->value;
-        $model = $setting->modelForCategory(AiTaskCategory::Extraction);
+        $providerName = $setting->provider->toLab()->value;
+        // Style extraction is mechanical pattern-spotting — pick the cheapest
+        // text model the active provider exposes. Tracks SDK defaults, so when
+        // a new "cheap" model lands (Haiku 4.7, gpt-5-nano, …) we get it for
+        // free on next composer update.
+        $model = Ai::textProvider($providerName)->cheapestTextModel();
 
         /** @var AgentResponse $response */
         $response = agent(
@@ -69,7 +73,7 @@ class WritingStyleService
             ],
         )->prompt(
             "Study this {$langName} manuscript excerpt and extract the prose style. For each field, describe the pattern concretely enough that another writer could reproduce it.\n\n{$sampleText}",
-            provider: $provider,
+            provider: $providerName,
             model: $model,
             timeout: 150,
         );

@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
     build: {
         sourcemap: !!process.env.SENTRY_AUTH_TOKEN,
     },
@@ -17,7 +17,13 @@ export default defineConfig({
         }),
         react({
             babel: {
-                plugins: ['babel-plugin-react-compiler'],
+                // React Compiler does whole-program AST analysis on every
+                // transform. In Vite dev that compounds with HMR and balloons
+                // the Node process to multi-GB over long sessions. Keep it
+                // production-only — dev still gets fast, prod still gets the
+                // memoization wins.
+                plugins:
+                    command === 'build' ? ['babel-plugin-react-compiler'] : [],
             },
         }),
         tailwindcss(),
@@ -40,4 +46,4 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
-});
+}));

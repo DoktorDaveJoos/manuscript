@@ -73,6 +73,26 @@ it('handles an empty writes array gracefully', function () {
     expect($result)->toContain('Batch preview: (empty)');
 });
 
+it('returns an explicit parse error when writes is a malformed JSON string', function () {
+    // Real failure mode: the LLM emits a JSON-encoded writes string with an
+    // unescaped " in a description value, breaking the parse silently.
+    $malformed = '[{"type":"beat","data":{"title":"Signal","description":"He says: **"Wenn ich es sage: Kopf."** then they move."}}]';
+
+    $tool = new ProposeBatch;
+    $result = (string) $tool->handle(new Request([
+        'book_id' => 1,
+        'summary' => 'malformed',
+        'writes' => $malformed,
+    ]));
+
+    expect($result)
+        ->toContain('Batch failed')
+        ->toContain('writes')
+        ->toContain('JSON')
+        ->not->toContain('Batch preview: (empty)')
+        ->not->toContain('PLOT_COACH_BATCH_PROPOSAL');
+});
+
 it('appends a machine-readable sentinel block with proposal_id, writes, summary', function () {
     $tool = new ProposeBatch;
     $writes = [
@@ -196,6 +216,79 @@ it('scopes duplicate detection to the given book', function () {
     ]));
 
     expect($result)->not->toContain('name already exists');
+});
+
+it('renders a Book details section for a book_update write', function () {
+    $tool = new ProposeBatch;
+    $result = (string) $tool->handle(new Request([
+        'summary' => 'Pin intake',
+        'writes' => [
+            ['type' => 'book_update', 'data' => [
+                'premise' => 'A retired cellist investigates a drowning.',
+                'target_word_count' => 85000,
+                'genre' => 'literary_fiction',
+            ]],
+        ],
+    ]));
+
+    expect($result)
+        ->toContain('### Book details')
+        ->toContain('premise: A retired cellist investigates a drowning.')
+        ->toContain('target length: 85,000 words')
+        ->toContain('genre: literary_fiction');
+});
+
+it('enriches update writes with the existing entity name + kind for the preview', function () {
+    $book = Book::factory()->create();
+    $character = Character::factory()->for($book)->create(['name' => 'Maja']);
+    $entry = WikiEntry::factory()->for($book)->create([
+        'name' => 'Jakutsk',
+        'kind' => WikiEntryKind::Location,
+    ]);
+
+    $tool = new ProposeBatch;
+    $result = (string) $tool->handle(new Request([
+        'book_id' => $book->id,
+        'summary' => 'Refine entries',
+        'writes' => [
+            ['type' => 'character', 'data' => ['id' => $character->id, 'ai_description' => 'tighter']],
+            ['type' => 'wiki_entry', 'data' => ['id' => $entry->id, 'ai_description' => 'merged']],
+        ],
+    ]));
+
+    // Markdown preview falls back to the existing name instead of "(unnamed)".
+    expect($result)
+        ->toContain('_Update_ Maja — tighter')
+        ->toContain('_Update_ [location] Jakutsk — merged');
+
+    // Sentinel payload carries the same hint fields so the React card can use them.
+    preg_match('/<!-- PLOT_COACH_BATCH_PROPOSAL\n(.*?)\n-->/s', $result, $matches);
+    $payload = json_decode($matches[1], true);
+
+    expect($payload['writes'][0]['data'])->toMatchArray([
+        'id' => $character->id,
+        '_existing_name' => 'Maja',
+    ]);
+    expect($payload['writes'][1]['data'])->toMatchArray([
+        'id' => $entry->id,
+        '_existing_name' => 'Jakutsk',
+        '_existing_kind' => 'location',
+    ]);
+});
+
+it('does not enrich writes when book_id is omitted', function () {
+    $book = Book::factory()->create();
+    $character = Character::factory()->for($book)->create(['name' => 'Maja']);
+
+    $tool = new ProposeBatch;
+    $result = (string) $tool->handle(new Request([
+        'summary' => 'No book_id',
+        'writes' => [
+            ['type' => 'character', 'data' => ['id' => $character->id, 'ai_description' => 'tighter']],
+        ],
+    ]));
+
+    expect($result)->not->toContain('Maja');
 });
 
 it('produces a unique proposal_id per invocation', function () {

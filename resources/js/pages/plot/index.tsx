@@ -2,15 +2,17 @@ import {
     DndContext,
     DragOverlay,
     PointerSensor,
-    closestCenter,
+    closestCorners,
+    pointerWithin,
     useSensor,
     useSensors,
 } from '@dnd-kit/core';
 import type {
+    CollisionDetection,
     DragEndEvent,
-    DragOverEvent,
     DragStartEvent,
 } from '@dnd-kit/core';
+import { arrayMove } from '@dnd-kit/sortable';
 import { Head, router } from '@inertiajs/react';
 import {
     GripVertical,
@@ -84,15 +86,130 @@ type DragItem =
     | { type: 'beat'; beat: Beat }
     | { type: 'plotpoint'; plotPoint: PlotPoint };
 
+// Filters droppable containers by what's compatible with the active item's
+// type. PlotPointSection registers two droppables on the same DOM node — a
+// `plotpoint` sortable and a `plotpoint-drop` zone for beats — so without
+// filtering, collision detection randomly picks one and drops silently fail.
+// Uses pointerWithin first so drops in container empty space (e.g. below the
+// last card) reliably hit `act-drop` / `plotpoint-drop`; falls back to
+// closestCorners when the pointer is outside any droppable. When the pointer
+// is over both an item and its container, the item wins.
+const collisionDetectionStrategy: CollisionDetection = (args) => {
+    const activeType = args.active?.data.current?.type as string | undefined;
+    if (!activeType) return closestCorners(args);
+
+    const droppableContainers = args.droppableContainers.filter((container) => {
+        const type = container.data.current?.type as string | undefined;
+        if (activeType === 'plotpoint') {
+            return type === 'plotpoint' || type === 'act-drop';
+        }
+        if (activeType === 'beat') {
+            return type === 'beat' || type === 'plotpoint-drop';
+        }
+        return true;
+    });
+
+    const pointerCollisions = pointerWithin({ ...args, droppableContainers });
+    if (pointerCollisions.length > 0) {
+        const containerById = new Map(
+            droppableContainers.map((c) => [c.id, c] as const),
+        );
+        const itemMatches = pointerCollisions.filter((collision) => {
+            const type = containerById.get(collision.id)?.data.current?.type as
+                | string
+                | undefined;
+            return type === 'plotpoint' || type === 'beat';
+        });
+        return itemMatches.length > 0 ? itemMatches : pointerCollisions;
+    }
+
+    return closestCorners({ ...args, droppableContainers });
+};
+
+type PlotPointWithBeats = PlotPageProps['plotPoints'][number];
+
+function sortPlotPoints(items: PlotPointWithBeats[]): PlotPointWithBeats[] {
+    return [...items].sort((a, b) => {
+        const aAct = a.act_id ?? Number.MAX_SAFE_INTEGER;
+        const bAct = b.act_id ?? Number.MAX_SAFE_INTEGER;
+        if (aAct !== bAct) return aAct - bAct;
+        return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+    });
+}
+
+function applyPlotPointReorder(
+    plotPoints: PlotPointWithBeats[],
+    items: { id: number; sort_order: number; act_id: number | null }[],
+): PlotPointWithBeats[] {
+    const updates = new Map(items.map((it) => [it.id, it]));
+    return sortPlotPoints(
+        plotPoints.map((pp) => {
+            const update = updates.get(pp.id);
+            if (!update) return pp;
+            return {
+                ...pp,
+                sort_order: update.sort_order,
+                act_id: update.act_id,
+            };
+        }),
+    );
+}
+
+function applyBeatReorder(
+    plotPoints: PlotPointWithBeats[],
+    plotPointId: number,
+    beats: NonNullable<PlotPointWithBeats['beats']>,
+): PlotPointWithBeats[] {
+    return plotPoints.map((pp) =>
+        pp.id === plotPointId ? { ...pp, beats } : pp,
+    );
+}
+
+function applyBeatMove(
+    plotPoints: PlotPointWithBeats[],
+    beatId: number,
+    sourcePlotPointId: number,
+    targetPlotPointId: number,
+    targetIndex: number,
+): PlotPointWithBeats[] {
+    const sourcePP = plotPoints.find((pp) => pp.id === sourcePlotPointId);
+    const beat = sourcePP?.beats?.find((b) => b.id === beatId);
+    if (!beat) return plotPoints;
+
+    return plotPoints.map((pp) => {
+        if (pp.id === sourcePlotPointId) {
+            return {
+                ...pp,
+                beats: (pp.beats ?? []).filter((b) => b.id !== beatId),
+            };
+        }
+        if (pp.id === targetPlotPointId) {
+            const beats = [...(pp.beats ?? [])];
+            beats.splice(targetIndex, 0, {
+                ...beat,
+                plot_point_id: targetPlotPointId,
+            });
+            return { ...pp, beats };
+        }
+        return pp;
+    });
+}
+
 export default function Plot({
     book,
     storylines,
     acts,
-    plotPoints,
+    plotPoints: serverPlotPoints,
     chapters,
     characters,
     active_coach_session: activeCoachSessionId,
 }: PlotPageProps) {
+    const [plotPoints, setPlotPoints] = useState(serverPlotPoints);
+
+    useEffect(() => {
+        setPlotPoints(serverPlotPoints);
+    }, [serverPlotPoints]);
+
     const { t } = useTranslation('plot');
     const { t: tCoach } = useTranslation('plot-coach');
     const sidebarStorylines = useSidebarStorylines();
@@ -280,7 +397,6 @@ export default function Plot({
                 `/books/${book.id}/plot-points`,
                 {
                     title: t('page.newPlotPointTitle', 'New plot point'),
-                    type: 'setup',
                     act_id: actId,
                 },
                 {
@@ -402,42 +518,9 @@ export default function Plot({
         }
     }, []);
 
-    /** Track which container a dragged item is currently over */
-    const overContainerRef = useRef<{
-        plotPointId?: number;
-        actId?: number;
-    }>({});
-
-    const handleDragOver = useCallback((event: DragOverEvent) => {
-        const overData = event.over?.data.current;
-        if (!overData) {
-            overContainerRef.current = {};
-            return;
-        }
-
-        if (overData.type === 'beat') {
-            overContainerRef.current = {
-                plotPointId: overData.beat.plot_point_id,
-            };
-        } else if (overData.type === 'plotpoint-drop') {
-            overContainerRef.current = {
-                plotPointId: overData.plotPointId,
-            };
-        } else if (overData.type === 'plotpoint') {
-            overContainerRef.current = {
-                actId: overData.plotPoint.act_id ?? undefined,
-            };
-        } else if (overData.type === 'act-drop') {
-            overContainerRef.current = {
-                actId: overData.actId,
-            };
-        }
-    }, []);
-
     const handleDragEnd = useCallback(
         (event: DragEndEvent) => {
             setActiveItem(null);
-            overContainerRef.current = {};
 
             const { active, over } = event;
             if (!over) return;
@@ -481,26 +564,34 @@ export default function Plot({
                 }
 
                 if (sourcePlotPointId === targetPlotPointId) {
-                    // Reorder within same plot point
                     const pp = plotPointMap.get(sourcePlotPointId);
-                    const beats = [...(pp?.beats ?? [])];
+                    const beats = pp?.beats ?? [];
                     const oldIndex = beats.findIndex(
                         (b) => b.id === draggedBeat.id,
                     );
                     if (oldIndex === -1) return;
 
-                    beats.splice(oldIndex, 1);
-                    const newIndex = beats.findIndex(
+                    const overIndex = beats.findIndex(
                         (b) => `beat-${b.id}` === (over.id as string),
                     );
-                    const insertAt = newIndex === -1 ? beats.length : newIndex;
-                    beats.splice(insertAt, 0, draggedBeat);
+                    const reordered =
+                        overIndex === -1
+                            ? [
+                                  ...beats.filter(
+                                      (b) => b.id !== draggedBeat.id,
+                                  ),
+                                  draggedBeat,
+                              ]
+                            : arrayMove(beats, oldIndex, overIndex);
 
-                    const items = beats.map((b, i) => ({
+                    const items = reordered.map((b, i) => ({
                         id: b.id,
                         sort_order: i,
                     }));
 
+                    setPlotPoints((prev) =>
+                        applyBeatReorder(prev, sourcePlotPointId, reordered),
+                    );
                     router.post(
                         beatReorder.url({
                             book: book.id,
@@ -510,7 +601,15 @@ export default function Plot({
                         { preserveScroll: true },
                     );
                 } else {
-                    // Move to different plot point
+                    setPlotPoints((prev) =>
+                        applyBeatMove(
+                            prev,
+                            draggedBeat.id,
+                            sourcePlotPointId,
+                            targetPlotPointId,
+                            targetIndex,
+                        ),
+                    );
                     router.patch(
                         beatMove.url({
                             book: book.id,
@@ -559,23 +658,26 @@ export default function Plot({
                 }[] = [];
 
                 if (sourceActId === targetActId) {
-                    // Reorder within same act
-                    const actPPs = [
-                        ...(plotPointsByAct.get(sourceActId ?? -1) ?? []),
-                    ];
+                    const actPPs = plotPointsByAct.get(sourceActId ?? -1) ?? [];
                     const oldIdx = actPPs.findIndex(
                         (pp) => pp.id === draggedPP.id,
                     );
                     if (oldIdx === -1) return;
 
-                    actPPs.splice(oldIdx, 1);
-                    const newIdx = actPPs.findIndex(
+                    const overIdx = actPPs.findIndex(
                         (pp) => `plotpoint-${pp.id}` === (over.id as string),
                     );
-                    const insertAt = newIdx === -1 ? actPPs.length : newIdx;
-                    actPPs.splice(insertAt, 0, draggedPP);
+                    const reordered =
+                        overIdx === -1
+                            ? [
+                                  ...actPPs.filter(
+                                      (pp) => pp.id !== draggedPP.id,
+                                  ),
+                                  draggedPP,
+                              ]
+                            : arrayMove(actPPs, oldIdx, overIdx);
 
-                    actPPs.forEach((pp, i) => {
+                    reordered.forEach((pp, i) => {
                         allItems.push({
                             id: pp.id,
                             sort_order: i,
@@ -616,6 +718,7 @@ export default function Plot({
                     });
                 }
 
+                setPlotPoints((prev) => applyPlotPointReorder(prev, allItems));
                 router.post(
                     plotPointReorder.url({ book: book.id }),
                     { items: allItems },
@@ -691,19 +794,20 @@ export default function Plot({
                             bookId={book.id}
                             activeSessionId={coachSessionId}
                             onSessionCreated={setCoachSessionId}
+                            onSessionEnded={() => setCoachSessionId(null)}
                         />
                     ) : hasActs ? (
                         <>
-                            {/* Act columns + detail panel */}
-                            <div className="flex min-h-0 flex-1">
+                            <div className="flex min-h-0 flex-1 overflow-hidden">
                                 <DndContext
                                     sensors={sensors}
-                                    collisionDetection={closestCenter}
+                                    collisionDetection={
+                                        collisionDetectionStrategy
+                                    }
                                     onDragStart={handleDragStart}
-                                    onDragOver={handleDragOver}
                                     onDragEnd={handleDragEnd}
                                 >
-                                    <div className="flex flex-1 overflow-x-auto">
+                                    <div className="grid h-full min-w-0 flex-1 auto-cols-[minmax(320px,1fr)] grid-flow-col overflow-auto">
                                         {acts.map((act, index) => (
                                             <ActColumn
                                                 key={act.id}
@@ -719,9 +823,6 @@ export default function Plot({
                                                     selectedPlotPointId
                                                 }
                                                 titleOverrides={titleOverrides}
-                                                isLast={
-                                                    index === acts.length - 1
-                                                }
                                                 onSelectBeat={(beat) =>
                                                     setSelection({
                                                         type: 'beat',

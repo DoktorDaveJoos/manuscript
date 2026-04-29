@@ -2,10 +2,8 @@
 
 namespace App\Ai\Agents;
 
-use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
-use App\Enums\AiTaskCategory;
 use App\Models\Book;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
@@ -22,12 +20,7 @@ use Stringable;
 #[UseSmartestModel]
 class TextBeautifier implements Agent, BelongsToBook, HasMiddleware
 {
-    use Promptable, UsesTaskCategoryModel;
-
-    public static function taskCategory(): AiTaskCategory
-    {
-        return AiTaskCategory::Writing;
-    }
+    use Promptable;
 
     public function __construct(protected Book $book) {}
 

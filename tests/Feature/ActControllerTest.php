@@ -64,7 +64,7 @@ it('deletes an act', function () {
     $this->deleteJson(route('acts.destroy', [$book, $act]))
         ->assertRedirect();
 
-    $this->assertDatabaseMissing('acts', ['id' => $act->id]);
+    $this->assertSoftDeleted('acts', ['id' => $act->id]);
 });
 
 it('cascade deletes plot points when act is deleted', function () {
@@ -74,7 +74,7 @@ it('cascade deletes plot points when act is deleted', function () {
 
     $this->deleteJson(route('acts.destroy', [$book, $act]))->assertRedirect();
 
-    $this->assertDatabaseMissing('plot_points', ['id' => $plotPoint->id]);
+    $this->assertSoftDeleted('plot_points', ['id' => $plotPoint->id]);
 });
 
 it('cascade deletes beats when act is deleted', function () {
@@ -85,8 +85,8 @@ it('cascade deletes beats when act is deleted', function () {
 
     $this->deleteJson(route('acts.destroy', [$book, $act]))->assertRedirect();
 
-    $this->assertDatabaseMissing('beats', ['id' => $beat->id]);
-    $this->assertDatabaseMissing('plot_points', ['id' => $plotPoint->id]);
+    $this->assertSoftDeleted('beats', ['id' => $beat->id]);
+    $this->assertSoftDeleted('plot_points', ['id' => $plotPoint->id]);
 });
 
 it('does not delete plot points from other acts', function () {
@@ -98,8 +98,8 @@ it('does not delete plot points from other acts', function () {
 
     $this->deleteJson(route('acts.destroy', [$book, $act1]))->assertRedirect();
 
-    $this->assertDatabaseMissing('plot_points', ['id' => $plotPoint1->id]);
-    $this->assertDatabaseHas('plot_points', ['id' => $plotPoint2->id]);
+    $this->assertSoftDeleted('plot_points', ['id' => $plotPoint1->id]);
+    $this->assertDatabaseHas('plot_points', ['id' => $plotPoint2->id, 'deleted_at' => null]);
 });
 
 it('rejects updating an act from another book', function () {

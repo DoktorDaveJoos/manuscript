@@ -2,11 +2,9 @@
 
 namespace App\Ai\Agents;
 
-use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\LookupExistingEntities;
-use App\Enums\AiTaskCategory;
 use App\Enums\WikiEntryKind;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -26,12 +24,7 @@ use Stringable;
 #[UseCheapestModel]
 class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput, HasTools
 {
-    use Promptable, UsesTaskCategoryModel;
-
-    public static function taskCategory(): AiTaskCategory
-    {
-        return AiTaskCategory::Extraction;
-    }
+    use Promptable;
 
     public function __construct(protected Book $book) {}
 

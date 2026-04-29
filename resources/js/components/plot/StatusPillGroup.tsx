@@ -9,7 +9,7 @@ type StatusOption<T extends string> = {
 
 type Props<T extends string> = {
     options: StatusOption<T>[];
-    value: T;
+    value: T | null;
     onChange: (value: T) => void;
 };
 

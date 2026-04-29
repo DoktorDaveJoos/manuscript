@@ -2,16 +2,15 @@
 
 namespace App\Ai\Agents;
 
-use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Ai\Tools\SearchSimilarChunks;
-use App\Enums\AiTaskCategory;
 use App\Models\Book;
 use App\Models\Chapter;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
+use Laravel\Ai\Attributes\UseSmartestModel;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
@@ -22,14 +21,10 @@ use Stringable;
 
 #[Temperature(0.5)]
 #[Timeout(120)]
+#[UseSmartestModel]
 class BookChatAgent implements Agent, BelongsToBook, Conversational, HasMiddleware, HasTools
 {
-    use Promptable, RemembersConversations, UsesTaskCategoryModel;
-
-    public static function taskCategory(): AiTaskCategory
-    {
-        return AiTaskCategory::Analysis;
-    }
+    use Promptable, RemembersConversations;
 
     public function __construct(
         protected Book $book,
@@ -71,8 +66,8 @@ class BookChatAgent implements Agent, BelongsToBook, Conversational, HasMiddlewa
     public function tools(): iterable
     {
         return [
-            new RetrieveManuscriptContext,
-            new SearchSimilarChunks,
+            new RetrieveManuscriptContext($this->book->id),
+            new SearchSimilarChunks($this->book->id),
         ];
     }
 

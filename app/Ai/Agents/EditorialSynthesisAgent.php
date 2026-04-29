@@ -2,10 +2,8 @@
 
 namespace App\Ai\Agents;
 
-use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
-use App\Enums\AiTaskCategory;
 use App\Enums\EditorialPersona;
 use App\Enums\EditorialSectionType;
 use App\Models\Book;
@@ -14,6 +12,7 @@ use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
+use Laravel\Ai\Attributes\UseSmartestModel;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasStructuredOutput;
@@ -23,14 +22,10 @@ use Stringable;
 #[Temperature(0.4)]
 #[MaxTokens(8192)]
 #[Timeout(300)]
+#[UseSmartestModel]
 class EditorialSynthesisAgent implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput
 {
-    use Promptable, UsesTaskCategoryModel;
-
-    public static function taskCategory(): AiTaskCategory
-    {
-        return AiTaskCategory::Analysis;
-    }
+    use Promptable;
 
     public function __construct(
         public Book $book,

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\AiProvider;
-use App\Enums\AiTaskCategory;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -185,8 +184,8 @@ class AiSetting extends Model
                 config(["ai.providers.{$key}.api_version" => $this->api_version]);
             }
 
-            if ($this->text_model) {
-                config(["ai.providers.{$key}.deployment" => $this->text_model]);
+            if ($this->azure_deployment) {
+                config(["ai.providers.{$key}.deployment" => $this->azure_deployment]);
             }
 
             if ($this->embedding_model) {
@@ -227,14 +226,6 @@ class AiSetting extends Model
     }
 
     /**
-     * Get the user-configured model for a task category, or null to use SDK defaults.
-     */
-    public function modelForCategory(AiTaskCategory $category): ?string
-    {
-        return $this->{$category->column()};
-    }
-
-    /**
      * Serialize this setting for frontend consumption (never exposes the raw API key).
      *
      * @return array<string, mixed>
@@ -248,10 +239,7 @@ class AiSetting extends Model
             'masked_api_key' => $this->maskedApiKey(),
             'base_url' => $this->base_url,
             'api_version' => $this->api_version,
-            'text_model' => $this->text_model,
-            'writing_model' => $this->writing_model,
-            'analysis_model' => $this->analysis_model,
-            'extraction_model' => $this->extraction_model,
+            'azure_deployment' => $this->azure_deployment,
             'embedding_model' => $this->embedding_model,
             'embedding_dimensions' => $this->embedding_dimensions,
             'enabled' => $this->enabled,
