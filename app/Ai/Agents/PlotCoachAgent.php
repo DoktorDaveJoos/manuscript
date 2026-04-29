@@ -301,9 +301,15 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
             return null;
         }
 
-        // config('ai.default') is `mixed`; coerce to a known provider name
-        // so a stale/null config never reaches Ai::textProvider().
-        $providerName = (string) (config('ai.default') ?: Lab::Anthropic->value);
+        // No active provider in config means AI isn't fully wired up yet.
+        // Returning null hands control back to #[UseSmartestModel] (the
+        // safety net) instead of fabricating a provider that has no
+        // credentials.
+        $providerName = config('ai.default');
+
+        if (! is_string($providerName) || $providerName === '') {
+            return null;
+        }
 
         return Ai::textProvider($providerName)->cheapestTextModel();
     }

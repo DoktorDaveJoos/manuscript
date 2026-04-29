@@ -285,6 +285,28 @@ test('plot coach instructions remain byte-stable for cacheable prefix when only 
     expect($beforeStatic2)->toBe($beforeStatic1);
 });
 
+test('plot coach instructions are memoized within an agent instance', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+
+    $agent = new PlotCoachAgent($book, $session);
+
+    // Cache is empty before any call.
+    $cacheProperty = new ReflectionProperty($agent, 'cachedInstructions');
+    expect($cacheProperty->getValue($agent))->toBeNull();
+
+    $first = (string) $agent->instructions();
+
+    // After the first call, the cache holds the rendered string.
+    expect($cacheProperty->getValue($agent))->toBe($first);
+
+    // A second call returns the cached value verbatim (catches a regression
+    // where memoization gets dropped — string equality alone wouldn't).
+    $second = (string) $agent->instructions();
+    expect($second)->toBe($first);
+    expect($cacheProperty->getValue($agent))->toBe($first);
+});
+
 test('plot coach agent returns empty stage-guidance for stages without dedicated prompts', function () {
     $book = Book::factory()->create();
     $session = PlotCoachSession::factory()->for($book, 'book')->create([

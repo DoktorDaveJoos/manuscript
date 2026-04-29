@@ -528,13 +528,17 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
                     if (!response.ok) {
                         const errorText = await response.text().catch(() => '');
                         // Backend returns {message, kind, provider} on AI
-                        // errors. If we can parse a kind, render a toast;
-                        // otherwise fall back to the inline error UI.
+                        // errors. If we can parse a kind, show the toast and
+                        // reuse parsed.message for the inline UI; otherwise
+                        // let extractErrorMessage do its own parsing pass.
                         const parsed = safeJson(errorText);
-                        const errorMessage = extractErrorMessage(
-                            errorText,
-                            t('status.error.body'),
-                        );
+                        const errorMessage =
+                            parsed && typeof parsed.message === 'string'
+                                ? parsed.message
+                                : extractErrorMessage(
+                                      errorText,
+                                      t('status.error.body'),
+                                  );
                         if (parsed && typeof parsed.kind === 'string') {
                             showAiErrorToast({
                                 kind: parsed.kind,

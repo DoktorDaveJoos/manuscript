@@ -42,7 +42,7 @@ trait StreamsConversation
         } catch (\Throwable $e) {
             report($e);
 
-            $classified = AiErrorClassifier::classify($e, AiSetting::activeProvider()?->provider->value);
+            $classified = $this->classifyAiError($e);
 
             $status = $e instanceof HttpExceptionInterface
                 ? $e->getStatusCode()
@@ -70,7 +70,7 @@ trait StreamsConversation
             } catch (\Throwable $e) {
                 report($e);
 
-                $classified = AiErrorClassifier::classify($e, AiSetting::activeProvider()?->provider->value);
+                $classified = $this->classifyAiError($e);
 
                 echo 'data: '.json_encode([
                     'error' => $classified['message'] ?: 'An unexpected error occurred.',
@@ -83,6 +83,17 @@ trait StreamsConversation
             echo "data: [DONE]\n\n";
             $this->sseFlush();
         }, headers: ['Content-Type' => 'text/event-stream']);
+    }
+
+    /**
+     * @return array{kind: string, message: string, status_code: int, provider: ?string}
+     */
+    private function classifyAiError(\Throwable $e): array
+    {
+        return AiErrorClassifier::classify(
+            $e,
+            AiSetting::activeProvider()?->provider->value,
+        );
     }
 
     private function sseFlush(): void
