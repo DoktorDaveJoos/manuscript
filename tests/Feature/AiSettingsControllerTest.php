@@ -103,10 +103,11 @@ test('update azure setting saves api_version', function () {
         'api_key' => 'sk-azure-key',
         'base_url' => 'https://my-resource.openai.azure.com',
         'api_version' => '2024-10-21',
-        'text_model' => 'gpt-4o',
+        'azure_deployment' => 'gpt-4o',
         'enabled' => true,
     ])->assertOk()
-        ->assertJsonPath('setting.api_version', '2024-10-21');
+        ->assertJsonPath('setting.api_version', '2024-10-21')
+        ->assertJsonPath('setting.azure_deployment', 'gpt-4o');
 
     $setting = AiSetting::query()->where('provider', 'azure')->first();
     expect($setting->api_version)->toBe('2024-10-21')
