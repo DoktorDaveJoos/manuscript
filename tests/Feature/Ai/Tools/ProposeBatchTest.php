@@ -80,11 +80,12 @@ it('handles an empty writes array gracefully', function () {
 it('returns an explicit parse error when writes is a malformed JSON string', function () {
     // Real failure mode: the LLM emits a JSON-encoded writes string with an
     // unescaped " in a description value, breaking the parse silently.
+    $book = Book::factory()->create();
     $malformed = '[{"type":"beat","data":{"title":"Signal","description":"He says: **"Wenn ich es sage: Kopf."** then they move."}}]';
 
-    $tool = new ProposeBatch;
+    $tool = new ProposeBatch($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => 1,
+        'book_id' => $book->id,
         'summary' => 'malformed',
         'writes' => $malformed,
     ]));
@@ -205,7 +206,8 @@ it('scopes duplicate detection to the given book', function () {
 });
 
 it('renders a Book details section for a book_update write', function () {
-    $tool = new ProposeBatch;
+    $book = Book::factory()->create();
+    $tool = new ProposeBatch($book->id);
     $result = (string) $tool->handle(new Request([
         'summary' => 'Pin intake',
         'writes' => [
@@ -232,7 +234,7 @@ it('enriches update writes with the existing entity name + kind for the preview'
         'kind' => WikiEntryKind::Location,
     ]);
 
-    $tool = new ProposeBatch;
+    $tool = new ProposeBatch($book->id);
     $result = (string) $tool->handle(new Request([
         'book_id' => $book->id,
         'summary' => 'Refine entries',
@@ -260,21 +262,6 @@ it('enriches update writes with the existing entity name + kind for the preview'
         '_existing_name' => 'Jakutsk',
         '_existing_kind' => 'location',
     ]);
-});
-
-it('does not enrich writes when book_id is omitted', function () {
-    $book = Book::factory()->create();
-    $character = Character::factory()->for($book)->create(['name' => 'Maja']);
-
-    $tool = new ProposeBatch;
-    $result = (string) $tool->handle(new Request([
-        'summary' => 'No book_id',
-        'writes' => [
-            ['type' => 'character', 'data' => ['id' => $character->id, 'ai_description' => 'tighter']],
-        ],
-    ]));
-
-    expect($result)->not->toContain('Maja');
 });
 
 it('produces a unique proposal_id per invocation', function () {

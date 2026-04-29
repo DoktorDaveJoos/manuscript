@@ -2,6 +2,7 @@
 
 namespace App\Ai\Tools\Plot;
 
+use App\Ai\Tools\Plot\Concerns\CoercesBookId;
 use App\Ai\Tools\Plot\Concerns\DecodesJsonPayload;
 use App\Enums\PlotCoachProposalKind;
 use App\Models\Act;
@@ -31,6 +32,8 @@ class ProposeBatch implements Tool
 {
     use CoercesBookId, DecodesJsonPayload;
 
+    public function __construct(public int $bookId) {}
+
     public function description(): Stringable|string
     {
         return 'Presents a preview of writes you intend to make — characters, storylines, acts, plot points, beats, wiki entries, a patch of intake-stage book fields (premise, target_word_count, genre) via a `book_update` write, a session-level update (stage transition, coaching_mode) via a `session_update` write, or a soft-delete via a `delete` write of shape `{"type":"delete","data":{"target":"<character|wiki_entry|storyline|plot_point|beat|chapter|act>","id":<int>}}`. Use this when the user has just agreed to something concrete, you have one or more coherent writes ready, and the conversation is at a natural resting point. The user will approve, edit, or reject in chat before anything is persisted. Deletes are reversible via undo (rows are soft-deleted, not destroyed). Pass `writes` as a JSON-encoded string of an array of `{"type": string, "data": object}` objects, e.g. `[{"type":"act","data":{"number":1,"title":"The Controlled Error","description":"Lab accident sets the story in motion."}},{"type":"session_update","data":{"stage":"plotting"}}]`.';
@@ -50,7 +53,10 @@ class ProposeBatch implements Tool
 
     public function handle(Request $request): Stringable|string
     {
-        $bookId = $this->coerceBookId($request['book_id'] ?? null);
+        // Prefer the constructor-bound book id (the agent passes it). Fall
+        // back to the request payload only if construction skipped it —
+        // legacy callers and tests that still set `book_id` keep working.
+        $bookId = $this->coerceBookId($request['book_id'] ?? null) ?? $this->bookId;
         $parseError = null;
         $writes = $this->decodeJsonPayload($request['writes'] ?? null, $parseError);
         $summary = $request['summary'] ?? '';

@@ -37,7 +37,7 @@ it('returns an explicit parse error when writes is a malformed JSON string', fun
 
     $malformed = '[{"type":"beat","data":{"title":"Signal","description":"He says: **"hello."**"}}]';
 
-    $result = (string) (new ApplyPlotCoachBatch)->handle(new Request([
+    $result = (string) (new ApplyPlotCoachBatch($book->id))->handle(new Request([
         'book_id' => $book->id,
         'summary' => 'malformed',
         'writes' => $malformed,
@@ -82,7 +82,7 @@ it('applies a batch via proposal_id (looking writes up from the proposal table)'
         'summary' => 'Save Mara',
     ]);
 
-    $tool = new ApplyPlotCoachBatch;
+    $tool = new ApplyPlotCoachBatch($book->id);
     $result = (string) $tool->handle(new Request([
         'book_id' => $book->id,
         'proposal_id' => $proposal->public_id,
@@ -108,7 +108,7 @@ it('does not use the caller-supplied writes when proposal_id is set — writes c
         'summary' => 'Persisted writes',
     ]);
 
-    $tool = new ApplyPlotCoachBatch;
+    $tool = new ApplyPlotCoachBatch($book->id);
     $tool->handle(new Request([
         'book_id' => $book->id,
         'proposal_id' => $proposal->public_id,
@@ -127,7 +127,7 @@ it('refuses to apply an unknown proposal_id', function () {
     $book = Book::factory()->create();
     PlotCoachSession::factory()->for($book, 'book')->create();
 
-    $tool = new ApplyPlotCoachBatch;
+    $tool = new ApplyPlotCoachBatch($book->id);
     $result = (string) $tool->handle(new Request([
         'book_id' => $book->id,
         'proposal_id' => (string) Str::uuid(),
@@ -149,7 +149,7 @@ it('is idempotent when re-applying an already-approved proposal', function () {
         'summary' => 'Save Ivo',
     ]);
 
-    $tool = new ApplyPlotCoachBatch;
+    $tool = new ApplyPlotCoachBatch($book->id);
 
     $tool->handle(new Request(['book_id' => $book->id, 'proposal_id' => $proposal->public_id]));
     $second = (string) $tool->handle(new Request(['book_id' => $book->id, 'proposal_id' => $proposal->public_id]));
@@ -162,7 +162,7 @@ it('accepts book_id as a numeric string', function () {
     $book = Book::factory()->create();
     PlotCoachSession::factory()->for($book, 'book')->create();
 
-    $tool = new ApplyPlotCoachBatch;
+    $tool = new ApplyPlotCoachBatch($book->id);
     $result = (string) $tool->handle(new Request([
         'book_id' => (string) $book->id,
         'summary' => 'String coerced',
