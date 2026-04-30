@@ -53,9 +53,9 @@ class PlotCoachController extends Controller
 
             // Pick the cheapest provider model for trivial turns (system
             // acks, free-text approvals/cancels/undos). All other turns
-            // pass null so the SDK uses #[UseSmartestModel] as configured
-            // on the agent. See PlotCoachAgent::isTrivialTurn for the
-            // classification rules.
+            // pass null so the SDK falls back to the provider's default text
+            // model. See PlotCoachAgent::isTrivialTurn for the classification
+            // rules.
             $stream = $agent->stream($message, model: $agent->modelForTurn($message));
 
             // Clear queued board changes + accrue per-session token usage only

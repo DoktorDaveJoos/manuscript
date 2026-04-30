@@ -12,7 +12,6 @@ use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
-use Laravel\Ai\Attributes\UseSmartestModel;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasStructuredOutput;
@@ -22,7 +21,6 @@ use Stringable;
 #[Temperature(0.4)]
 #[MaxTokens(8192)]
 #[Timeout(300)]
-#[UseSmartestModel]
 class EditorialSynthesisAgent implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput
 {
     use Promptable;

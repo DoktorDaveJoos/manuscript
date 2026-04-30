@@ -10,7 +10,6 @@ use App\Models\Book;
 use App\Models\Chapter;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
-use Laravel\Ai\Attributes\UseSmartestModel;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
@@ -21,7 +20,6 @@ use Stringable;
 
 #[Temperature(0.5)]
 #[Timeout(120)]
-#[UseSmartestModel]
 class BookChatAgent implements Agent, BelongsToBook, Conversational, HasMiddleware, HasTools
 {
     use Promptable, RemembersConversations;

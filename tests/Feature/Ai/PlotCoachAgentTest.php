@@ -13,6 +13,7 @@ use App\Enums\Genre;
 use App\Enums\PlotCoachSessionStatus;
 use App\Enums\PlotCoachStage;
 use App\Enums\WikiEntryKind;
+use App\Models\Act;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\Character;
@@ -254,13 +255,14 @@ test('plot coach providerOptions emits Anthropic cache_control markers on the st
     }
 });
 
-test('plot coach providerOptions returns empty for non-Anthropic providers (auto-caching handles them)', function () {
+test('plot coach providerOptions returns empty for providers with no per-request knobs', function () {
     $book = Book::factory()->create();
     $session = PlotCoachSession::factory()->for($book, 'book')->create();
 
     $agent = new PlotCoachAgent($book, $session);
 
     expect($agent->providerOptions(Lab::OpenAI))->toBe([]);
+    expect($agent->providerOptions('openai'))->toBe([]);
     expect($agent->providerOptions(Lab::Gemini))->toBe([]);
     expect($agent->providerOptions('openrouter'))->toBe([]);
 });
@@ -337,6 +339,19 @@ test('plot coach agent includes static persona in all stages', function () {
         expect($instructions)->toContain('Discipline rules');
     }
 });
+
+test('plot coach agent declares the book language and a language rule', function (string $language) {
+    $book = Book::factory()->create(['language' => $language]);
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+
+    $agent = new PlotCoachAgent($book, $session);
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)
+        ->toContain("manuscript is written in {$language}")
+        ->toContain("MUST be written in {$language}")
+        ->toContain('Do not mix languages');
+})->with(['de', 'en', 'es']);
 
 test('plot coach agent surfaces book_id in every stage so tools receive the correct value', function () {
     foreach (PlotCoachStage::cases() as $stage) {
@@ -502,10 +517,10 @@ test('plot coach agent renders wiki_entry kind as its string value so enum casts
     $agent = new PlotCoachAgent($book, $session);
     $instructions = (string) $agent->instructions();
 
+    // Wiki entries are id+name+kind only — body is on-demand via GetEntityDetails.
     expect($instructions)
         ->toContain('Majas Herkunft')
-        ->toContain('kind=lore')
-        ->toContain('Schutzreaktion');
+        ->toContain('kind=lore');
 });
 
 test('plot coach agent surfaces entity descriptions so saved entities carry meaning, not just titles', function () {
@@ -659,33 +674,29 @@ test('plot coach agent surfaces full character descriptions so the coach stays c
         ->toContain('still dreams of him');
 });
 
-test('plot coach agent surfaces full wiki entry descriptions for the story bible', function () {
+test('plot coach agent omits wiki entry bodies from the state block (lazy-loaded via GetEntityDetails)', function () {
     $book = Book::factory()->create();
     $session = PlotCoachSession::factory()->for($book, 'book')->create();
-
-    // ~280-char lore entry — would have been truncated at 120 before.
-    $description = '### What it is'."\n".'A communication channel that opens only under controlled error conditions.'."\n\n"
-        .'### Why it matters'."\n".'The story turns on Maja\'s decision to trigger one — and the cost it carries.'."\n\n"
-        .'### Limits'."\n".'Each opening narrows the next.';
 
     WikiEntry::create([
         'book_id' => $book->id,
         'kind' => WikiEntryKind::Lore->value,
         'name' => 'The interface phenomenon',
-        'ai_description' => $description,
+        'ai_description' => 'A communication channel that opens only under controlled error conditions. The cost compounds.',
     ]);
 
     $agent = new PlotCoachAgent($book, $session);
     $instructions = (string) $agent->instructions();
 
+    // Name + kind surface for discoverability; body is suppressed — the agent
+    // must call GetEntityDetails when a specific entry comes up.
     expect($instructions)
         ->toContain('The interface phenomenon')
-        ->toContain('controlled error conditions')
-        ->toContain('Why it matters')
-        ->toContain('Each opening narrows the next');
+        ->toContain('lore');
+    expect($instructions)->not->toContain('controlled error conditions');
 });
 
-test('plot coach agent omits beat prose from the state block (lazy-loaded via GetEntityDetails)', function () {
+test('plot coach agent inlines beat descriptions in the state block so the coach knows the whole plot', function () {
     $book = Book::factory()->create();
     $session = PlotCoachSession::factory()->for($book, 'book')->create();
 
@@ -694,7 +705,7 @@ test('plot coach agent omits beat prose from the state block (lazy-loaded via Ge
     DB::table('beats')->insert([
         'plot_point_id' => $point->id,
         'title' => 'First cut',
-        'description' => 'A long beat description that should never reach the prompt unless asked.',
+        'description' => 'Maja triggers the controlled error and the lab burns.',
         'sort_order' => 1,
         'created_at' => now(),
         'updated_at' => now(),
@@ -703,8 +714,9 @@ test('plot coach agent omits beat prose from the state block (lazy-loaded via Ge
     $agent = new PlotCoachAgent($book, $session);
     $instructions = (string) $agent->instructions();
 
-    expect($instructions)->toContain('First cut');
-    expect($instructions)->not->toContain('A long beat description');
+    expect($instructions)
+        ->toContain('First cut')
+        ->toContain('Maja triggers the controlled error and the lab burns.');
 });
 
 test('plot coach agent omits chapter summary from the state block (lazy-loaded via GetEntityDetails)', function () {
@@ -728,24 +740,61 @@ test('plot coach agent omits chapter summary from the state block (lazy-loaded v
     expect($instructions)->not->toContain('Detailed prose summary');
 });
 
-test('plot coach agent omits plot point prose from the state block (lazy-loaded via GetEntityDetails)', function () {
+test('plot coach agent inlines plot point descriptions in the state block', function () {
     $book = Book::factory()->create();
     $session = PlotCoachSession::factory()->for($book, 'book')->create();
 
-    $longDescription = str_repeat('Maja boards the plane in heavy snow. ', 12);
-
     PlotPoint::factory()->for($book)->create([
         'title' => 'Pulled to Jakutsk',
-        'description' => $longDescription,
+        'description' => 'Maja boards the plane in heavy snow.',
     ]);
 
     $agent = new PlotCoachAgent($book, $session);
     $instructions = (string) $agent->instructions();
 
-    // Title and id surface in state; the body is fully suppressed — the agent
-    // must call GetEntityDetails when it needs the prose.
-    expect($instructions)->toContain('Pulled to Jakutsk');
-    expect($instructions)->not->toContain('Maja boards the plane in heavy snow.');
+    expect($instructions)
+        ->toContain('Pulled to Jakutsk')
+        ->toContain('Maja boards the plane in heavy snow.');
+});
+
+test('plot coach agent orders beats by act → plot point → beat sort_order so the coach reads them as the story unfolds', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+
+    $actI = Act::factory()->for($book)->create(['number' => 1, 'title' => 'Act I']);
+    $actII = Act::factory()->for($book)->create(['number' => 2, 'title' => 'Act II']);
+
+    $ppOpen = PlotPoint::factory()->for($book)->create([
+        'act_id' => $actI->id,
+        'title' => 'Opening',
+        'sort_order' => 1,
+    ]);
+    $ppMid = PlotPoint::factory()->for($book)->create([
+        'act_id' => $actII->id,
+        'title' => 'Midpoint',
+        'sort_order' => 1,
+    ]);
+
+    DB::table('beats')->insert([
+        ['plot_point_id' => $ppMid->id, 'title' => 'Beat Mid-A', 'description' => 'Maja arrives.', 'sort_order' => 1, 'created_at' => now(), 'updated_at' => now()],
+        ['plot_point_id' => $ppOpen->id, 'title' => 'Beat Open-B', 'description' => 'Lab clears out.', 'sort_order' => 2, 'created_at' => now(), 'updated_at' => now()],
+        ['plot_point_id' => $ppOpen->id, 'title' => 'Beat Open-A', 'description' => 'Lab erupts.', 'sort_order' => 1, 'created_at' => now(), 'updated_at' => now()],
+    ]);
+
+    $agent = new PlotCoachAgent($book, $session);
+    $instructions = (string) $agent->instructions();
+
+    $posOpenA = strpos($instructions, 'Beat Open-A');
+    $posOpenB = strpos($instructions, 'Beat Open-B');
+    $posMidA = strpos($instructions, 'Beat Mid-A');
+
+    expect($posOpenA)->not->toBeFalse();
+    expect($posOpenB)->not->toBeFalse();
+    expect($posMidA)->not->toBeFalse();
+
+    // Narrative order: Act I beats first (Open-A before Open-B by sort_order), then Act II.
+    expect($posOpenA)->toBeLessThan($posOpenB);
+    expect($posOpenB)->toBeLessThan($posMidA);
 });
 
 test('plot coach agent truncates pathologically long character descriptions at the per-type budget', function () {
@@ -769,7 +818,7 @@ test('plot coach agent truncates pathologically long character descriptions at t
         ->toContain('…');
 });
 
-test('plot coach agent guides the coach toward GetEntityDetails for deep prose lookups', function () {
+test('plot coach agent guides the coach toward GetEntityDetails for on-demand wiki lookups', function () {
     $book = Book::factory()->create();
     $session = PlotCoachSession::factory()->for($book, 'book')->create([
         'stage' => PlotCoachStage::Plotting,
@@ -781,5 +830,18 @@ test('plot coach agent guides the coach toward GetEntityDetails for deep prose l
     expect($instructions)
         ->toContain('Staying consistent with what')
         ->toContain('GetEntityDetails')
-        ->toContain('plot_point_ids');
+        ->toContain('wiki_entry_ids');
+});
+
+test('plot coach agent skips temperature on OpenAI to avoid reasoning-model rejection', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+
+    $agent = new PlotCoachAgent($book, $session);
+
+    config(['ai.default' => 'openai']);
+    expect($agent->temperature())->toBeNull();
+
+    config(['ai.default' => 'anthropic']);
+    expect($agent->temperature())->toBe(0.6);
 });

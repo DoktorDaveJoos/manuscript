@@ -13,6 +13,7 @@ use App\Ai\Tools\Plot\ProposeBatch;
 use App\Ai\Tools\Plot\ProposeChapterPlan;
 use App\Ai\Tools\Plot\UndoLastBatch;
 use App\Ai\Tools\RetrieveManuscriptContext;
+use App\Enums\EditorialPersona;
 use App\Enums\PlotCoachProposalKind;
 use App\Enums\PlotCoachStage;
 use App\Models\Act;
@@ -28,9 +29,7 @@ use App\Models\Storyline;
 use App\Models\WikiEntry;
 use App\Services\PlotCoachSessionSummarizer;
 use Laravel\Ai\Ai;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
-use Laravel\Ai\Attributes\UseSmartestModel;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
@@ -41,9 +40,7 @@ use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-#[Temperature(0.6)]
 #[Timeout(180)]
-#[UseSmartestModel]
 class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddleware, HasProviderOptions, HasTools
 {
     use Promptable, RemembersConversations;
@@ -288,12 +285,32 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
     }
 
     /**
+     * Skip temperature when the active provider is OpenAI. The gpt-5 family
+     * (default `gpt-5.4`, plus `gpt-5.4-nano` for trivial turns) rejects the
+     * `temperature` parameter outright ("Unsupported parameter: 'temperature'
+     * is not supported with this model"). Anthropic and other providers still
+     * honor 0.6 for moderate creativity. Wired via method instead of a
+     * `#[Temperature]` attribute because the SDK only consults the attribute
+     * if this method returns null — see Laravel\Ai\Gateway\TextGenerationOptions::resolve.
+     */
+    public function temperature(): ?float
+    {
+        $providerName = config('ai.default');
+
+        if ($providerName === 'openai') {
+            return null;
+        }
+
+        return 0.6;
+    }
+
+    /**
      * Resolve the model name for a given turn. Trivial turns (acks,
-     * approvals, undos) drop to the active provider's cheapest text model;
-     * everything else returns null so the SDK falls through to the
-     * `#[UseSmartestModel]` attribute. Tracking SDK defaults means new
-     * Haiku / Nano / etc. releases bubble up automatically on
-     * `composer update laravel/ai` without code changes.
+     * approvals, undos) drop to the active provider's cheapest text model
+     * to save cost on one-line acknowledgments; everything else returns null
+     * so the SDK falls through to the provider's default text model.
+     * Tracking SDK defaults means new Haiku / Nano / etc. releases bubble up
+     * automatically on `composer update laravel/ai` without code changes.
      */
     public function modelForTurn(string $message): ?string
     {
@@ -302,9 +319,8 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         }
 
         // No active provider in config means AI isn't fully wired up yet.
-        // Returning null hands control back to #[UseSmartestModel] (the
-        // safety net) instead of fabricating a provider that has no
-        // credentials.
+        // Returning null hands control back to the SDK default-model fallback
+        // instead of fabricating a provider that has no credentials.
         $providerName = config('ai.default');
 
         if (! is_string($providerName) || $providerName === '') {
@@ -315,15 +331,17 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
     }
 
     /**
-     * Inject Anthropic prompt-cache markers into the system block. The
-     * Laravel AI SDK treats `system` as a plain string by default, which
-     * Anthropic does NOT auto-cache — markers are required. Splitting our
-     * `instructions()` on the two cache breakpoint sentinels yields three
-     * blocks; we tag the first two with `cache_control: ephemeral` so the
-     * static persona/stage prefix and the bible cache across turns. The
-     * third block (volatile counters, recent batches, rolling digest) is
-     * left uncached. Other providers cache byte-stable prefixes
-     * automatically and do not need this transform — return [] for them.
+     * Per-provider request options.
+     *
+     * - Anthropic: inject prompt-cache markers into the system block. The SDK
+     *   treats `system` as a plain string by default, which Anthropic does NOT
+     *   auto-cache — markers are required. Splitting `instructions()` on the
+     *   two cache breakpoint sentinels yields three blocks; we tag the first
+     *   two with `cache_control: ephemeral` so the static persona/stage prefix
+     *   and the bible cache across turns. The third (volatile counters,
+     *   recent batches, rolling digest) is left uncached.
+     * - Other providers cache byte-stable prefixes automatically and have no
+     *   per-request knobs we want to set — return [].
      *
      * @return array<string, mixed>
      */
@@ -331,10 +349,17 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
     {
         $lab = $provider instanceof Lab ? $provider : Lab::tryFrom($provider);
 
-        if ($lab !== Lab::Anthropic) {
-            return [];
-        }
+        return match ($lab) {
+            Lab::Anthropic => $this->anthropicCacheControlOptions(),
+            default => [],
+        };
+    }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function anthropicCacheControlOptions(): array
+    {
         $instructions = (string) $this->instructions();
 
         [$static, $rest] = $this->splitOnSentinel($instructions, self::CACHE_BREAKPOINT_STATIC);
@@ -401,9 +426,11 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         $title = $this->book->title;
         $author = $this->book->author;
         $bookId = $this->book->id;
+        $language = $this->book->language;
+        $languageRule = EditorialPersona::languageRule($language);
 
         return <<<PERSONA
-        You are an editorial plot coach working with the author of '{$title}' by {$author} (book_id: {$bookId} — always use this exact integer whenever a tool asks for `book_id`; never guess another). Think of yourself as a seasoned old editor who has read a thousand manuscripts and still delights in a good one. You're warm, unhurried, a little bit of a storyteller yourself, and you carry the gentle humor of someone who has watched every kind of book get made. You've seen every mistake an author can make and you have kind words for each of them — but you also have taste, and you tell the truth.
+        You are an editorial plot coach working with the author of '{$title}' by {$author} (book_id: {$bookId} — always use this exact integer whenever a tool asks for `book_id`; never guess another). The manuscript is written in {$language}. Think of yourself as a seasoned old editor who has read a thousand manuscripts and still delights in a good one. You're warm, unhurried, a little bit of a storyteller yourself, and you carry the gentle humor of someone who has watched every kind of book get made. You've seen every mistake an author can make and you have kind words for each of them — but you also have taste, and you tell the truth.
 
         Voice rules:
         - Warm and patient. You're in no hurry.
@@ -473,6 +500,10 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         - On apply failure: one short line stating the problem plainly (no ids, no long restatement) and help resolve it — rename, reuse, drop the conflict.
         - For free-text approvals ("yes, go ahead", "approve", "save it") where there is no system prefix, call ApplyPlotCoachBatch with `proposal_id` set to the uuid from your most recent ProposeBatch/ProposeChapterPlan sentinel. Do NOT re-emit the writes array — the tool looks up the exact writes the user saw. Passing only `proposal_id` is the safest call shape.
         - For free-text undo ("undo", "revert that"), call UndoLastBatch.
+
+        Language:
+        - {$languageRule}
+        - The English example phrases above ("I believe you, but I don't quite believe him yet — what is he afraid of?", "Hmm, the dead father — I've met him a hundred times.", "Could be that he lets her go because he's already decided she's expendable…", "Let me save Maja.", etc.) are illustrative of tone and structure only — render the spirit of them in {$language} when you reply. Never echo an English example phrase verbatim inside a {$language} response. The same goes for craft terms ("show, don't tell", "stakes", "beat") — use the {$language} equivalent.
         PERSONA;
     }
 
@@ -554,9 +585,10 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         - Looking up an `id` you don't have: `saved_entities` carries the most recent items but is sampled. If the entity you need to update isn't there (older entry, near-duplicate the author flagged for cleanup, etc.), call `LookupExistingEntities` (characters + wiki entries) or `GetPlotBoardState` (acts, plot points, beats, storylines, characters) — both now print `id=<n>` in front of every row. Use those ids in the update.
 
         Staying consistent with what's already written:
-        - `saved_entities` carries FULL descriptions for characters and wiki entries (the consistency anchors — wound, voice, lore rules, location's role). Trust that block; don't re-fetch a character's wound just to be sure.
-        - Plot points, beats, and chapters in `saved_entities` are id+title only (no body). Whenever you need the prose of a specific beat / plot point / chapter — to push back on what comes next, to spot a contradiction, to refine the next beat in the same voice — call `GetEntityDetails` with the relevant `plot_point_ids` / `beat_ids` / `chapter_ids`. One call, up to 10 ids per list.
-        - Don't refuse to call `GetEntityDetails` because "the agent should already know." It shouldn't — the state block deliberately omits the prose to keep prompts cheap.
+        - `saved_entities` already carries the FULL plot in narrative order: every act, every plot_point, every beat, with their descriptions. It also carries full character bibles (wound, voice, role). Trust that block — when the author refers to "the airport beat" or "Maja's wound", the answer is already in the prompt. Don't reflexively call `GetEntityDetails` for things you can already see.
+        - Wiki entries (locations, items, organizations, lore) are id+name+kind only — bodies are NOT inlined, because most of them won't matter on a given turn. When a specific wiki entry comes up ("tell me about Jakutsk", "what's the alien material rule again?"), call `GetEntityDetails` with `wiki_entry_ids`. One call, up to 10 ids.
+        - Chapters in `saved_entities` are id+title only. If you're touching chapter prose (rare — chapters are prose containers, not plot structure), call `GetEntityDetails` with `chapter_ids`.
+        - If you genuinely need details on something missing from `saved_entities` (older entry, near-duplicate, an id past the cap), `LookupExistingEntities` and `GetPlotBoardState` are still there.
 
         Speculative riffs:
         - You can riff on 2–3 "what if" directions mid-conversation without proposing a batch. Keep those exploratory. Only propose writes when one lands.
@@ -724,30 +756,42 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
     /**
      * Per-type cap on how many rows are inlined into the state block. Two
      * tiers:
-     *  - Bible anchors (characters, wiki_entries) — full descriptions inlined
-     *    because the coach must hold the wound / location's role / lore rules
-     *    in working memory to stay consistent. Cap kept moderate.
-     *  - Volumetric structure (plot_points, beats, chapters) — title + parent
-     *    id only by default. Caps tightened because per-row cost is small
-     *    AND the agent should reach for GetEntityDetails / GetPlotBoardState
-     *    when it needs full prose. Past the cap the agent must call a tool.
+     *  - Always-inline anchors (characters + the full plot — acts, plot_points,
+     *    beats): the coach can't push back on the next beat without seeing the
+     *    surrounding ones, and can't stay consistent with a character's wound
+     *    without holding it in working memory. Caps generous; past them the
+     *    coach must reach for `LookupExistingEntities` / `GetEntityDetails`.
+     *  - On-demand only (wiki_entries, chapters, storylines): id+name (or
+     *    id+title) only. Wiki bodies can be huge and rarely need to be in
+     *    every turn — fetched via `GetEntityDetails` when a specific entity
+     *    comes up. Chapters are prose containers, not plot structure.
      */
     private const SAVED_ENTITIES_CAPS = [
         'acts' => 50,
         'storylines' => 60,
         'characters' => 100,
-        'plot_points' => 150,
-        'beats' => 200,
-        'wiki_entries' => 150,
+        'plot_points' => 200,
+        'beats' => 400,
+        'wiki_entries' => 200,
         'chapters' => 200,
     ];
 
     /**
      * Live snapshot of what's persisted for this book. Returns a structured
-     * map per entity type so the agent can see ids, names, and primary-key
-     * relations without a tool call. Non-bible types are intentionally slim
-     * (no description bodies) — the agent calls `GetEntityDetails` to fetch
-     * full prose for specific ids when it needs them.
+     * map per entity type so the coach can see ids, names, prose, and
+     * primary-key relations without a tool call.
+     *
+     * What's inlined with prose (always known to the model):
+     *  - acts (number + description)
+     *  - characters (full bible body — wound, voice, role)
+     *  - plot_points and beats (description, in narrative order: act number →
+     *    plot_point.sort_order → beat.sort_order)
+     *
+     * What's id+name only (model fetches body via tool when needed):
+     *  - storylines (lightweight metadata)
+     *  - wiki_entries (locations, items, organizations, lore — fetched via
+     *    GetEntityDetails when one becomes relevant)
+     *  - chapters (id+title — chapters are prose containers, not plot)
      *
      * @return array<string, array<string, mixed>>
      */
@@ -782,25 +826,36 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
                     self::CHARACTER_BODY_BUDGET,
                 )),
             'plot_points' => PlotPoint::query()
-                ->where('book_id', $bookId)
-                ->orderBy('id')
-                ->get(['id', 'act_id', 'title'])
-                ->map(fn ($p) => "id={$p->id} act_id={$p->act_id} \"{$p->title}\""),
+                ->leftJoin('acts', 'acts.id', '=', 'plot_points.act_id')
+                ->where('plot_points.book_id', $bookId)
+                ->orderByRaw('acts.number IS NULL, acts.number')
+                ->orderBy('plot_points.sort_order')
+                ->orderBy('plot_points.id')
+                ->get(['plot_points.id', 'plot_points.act_id', 'plot_points.title', 'plot_points.description'])
+                ->map(fn ($p) => $this->formatEntityLine(
+                    "id={$p->id} act_id={$p->act_id} \"{$p->title}\"",
+                    $p->description,
+                    self::PLOT_BODY_BUDGET,
+                )),
             'beats' => Beat::query()
                 ->join('plot_points', 'plot_points.id', '=', 'beats.plot_point_id')
+                ->leftJoin('acts', 'acts.id', '=', 'plot_points.act_id')
                 ->where('plot_points.book_id', $bookId)
+                ->orderByRaw('acts.number IS NULL, acts.number')
+                ->orderBy('plot_points.sort_order')
+                ->orderBy('beats.sort_order')
                 ->orderBy('beats.id')
-                ->get(['beats.id', 'beats.plot_point_id', 'beats.title'])
-                ->map(fn ($b) => "id={$b->id} plot_point_id={$b->plot_point_id} \"{$b->title}\""),
+                ->get(['beats.id', 'beats.plot_point_id', 'beats.title', 'beats.description'])
+                ->map(fn ($b) => $this->formatEntityLine(
+                    "id={$b->id} plot_point_id={$b->plot_point_id} \"{$b->title}\"",
+                    $b->description,
+                    self::PLOT_BODY_BUDGET,
+                )),
             'wiki_entries' => WikiEntry::query()
                 ->where('book_id', $bookId)
                 ->orderBy('id')
-                ->get(['id', 'name', 'kind', 'description', 'ai_description'])
-                ->map(fn ($w) => $this->formatEntityLine(
-                    "id={$w->id} kind={$w->kind?->value} \"{$w->name}\"",
-                    $w->fullDescription(),
-                    self::WIKI_BODY_BUDGET,
-                )),
+                ->get(['id', 'name', 'kind'])
+                ->map(fn ($w) => "id={$w->id} kind={$w->kind?->value} \"{$w->name}\""),
             'chapters' => Chapter::query()
                 ->where('book_id', $bookId)
                 ->orderBy('id')
@@ -834,16 +889,16 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
     private const ENTITY_BODY_BUDGET = 120;
 
     /**
-     * Per-type body budget (in characters). Characters and wiki entries are
-     * the consistency anchors of the story bible — the coach must remember
-     * the wound, the lore rule, the location's role in the plot — so they
-     * get a generous budget that fits a structured Role/Wants/Wound/Voice
-     * block. Volumetric structure (plot points, beats, chapters) stays at
-     * the default budget and is fetched on demand via GetEntityDetails.
+     * Per-type body budget (in characters).
+     *  - Characters: generous so the coach can hold a structured
+     *    Role/Wants/Wound/Voice block in working memory.
+     *  - Plot points + beats: a tight per-line cap (long enough for "what
+     *    happens + why it matters" but short enough that the full plot fits
+     *    in the prompt without exploding tokens).
      */
     private const CHARACTER_BODY_BUDGET = 800;
 
-    private const WIKI_BODY_BUDGET = 600;
+    private const PLOT_BODY_BUDGET = 240;
 
     private function formatEntityLine(string $head, mixed $body, int $budget = self::ENTITY_BODY_BUDGET): string
     {

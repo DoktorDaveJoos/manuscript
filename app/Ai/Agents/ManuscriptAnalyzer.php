@@ -13,7 +13,6 @@ use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
-use Laravel\Ai\Attributes\UseSmartestModel;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasStructuredOutput;
@@ -23,7 +22,6 @@ use Stringable;
 
 #[Temperature(0.3)]
 #[Timeout(120)]
-#[UseSmartestModel]
 class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput, HasTools
 {
     use Promptable;

@@ -11,7 +11,6 @@ use App\Models\Book;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
-use Laravel\Ai\Attributes\UseSmartestModel;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
@@ -23,7 +22,6 @@ use Stringable;
 #[Temperature(0.5)]
 #[MaxTokens(4096)]
 #[Timeout(120)]
-#[UseSmartestModel]
 class EditorialChatAgent implements Agent, BelongsToBook, Conversational, HasMiddleware, HasTools
 {
     use Promptable, RemembersConversations;
