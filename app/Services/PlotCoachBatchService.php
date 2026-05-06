@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\BeatStatus;
 use App\Enums\ChapterStatus;
+use App\Enums\CharacterRole;
 use App\Enums\CoachingMode;
 use App\Enums\Genre;
 use App\Enums\PlotCoachStage;
@@ -1052,10 +1053,7 @@ class PlotCoachBatchService
         }
 
         if ($povCharacterId !== null) {
-            $chapter->characters()->syncWithoutDetaching([
-                $povCharacterId => ['role' => 'protagonist'],
-            ]);
-            $chapter->characters()->updateExistingPivot($povCharacterId, ['role' => 'protagonist']);
+            $this->attachPovAsProtagonist($chapter, $povCharacterId);
         }
 
         return ['type' => 'chapter', 'id' => $chapter->id];
@@ -1160,11 +1158,9 @@ class PlotCoachBatchService
         }
 
         if ($chapter->pov_character_id !== null) {
-            // The pivot-resync loop above only snapshots `character_ids` when
-            // it appears in the agent's payload. When the agent passes
-            // `pov_character_id` alone, the auto-include below would add a
-            // pivot row that undo wouldn't know to remove. Capture the
-            // current pivot state into $previous so undo can sync it back.
+            // Snapshot existing pivot so undo can restore it when the agent passed
+            // `pov_character_id` without `character_ids` (the resync loop above
+            // wouldn't have captured it).
             if (! array_key_exists('character_ids', $previous)) {
                 $previous['character_ids'] = $chapter->characters()
                     ->pluck('characters.id')
@@ -1173,13 +1169,22 @@ class PlotCoachBatchService
                     ->all();
             }
 
-            $chapter->characters()->syncWithoutDetaching([
-                $chapter->pov_character_id => ['role' => 'protagonist'],
-            ]);
-            $chapter->characters()->updateExistingPivot($chapter->pov_character_id, ['role' => 'protagonist']);
+            $this->attachPovAsProtagonist($chapter, $chapter->pov_character_id);
         }
 
         return ['type' => 'chapter', 'id' => $chapter->id, 'updated' => true, 'previous' => $previous];
+    }
+
+    /**
+     * Ensure the POV character sits in `character_chapter` with role=protagonist.
+     * `syncWithoutDetaching` with the pivot-attribute hash both inserts the row
+     * if missing and updates `role` on a pre-existing row, so one call suffices.
+     */
+    private function attachPovAsProtagonist(Chapter $chapter, int $povCharacterId): void
+    {
+        $chapter->characters()->syncWithoutDetaching([
+            $povCharacterId => ['role' => CharacterRole::Protagonist->value],
+        ]);
     }
 
     /**

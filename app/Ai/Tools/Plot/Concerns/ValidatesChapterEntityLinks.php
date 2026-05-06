@@ -80,8 +80,8 @@ trait ValidatesChapterEntityLinks
             $referencedChars = $scanner->findReferenced($beatDescriptions, $characters);
             $referencedWiki = $scanner->findReferenced($beatDescriptions, $wikiEntries);
 
-            $charsListEmpty = empty($chapter['character_ids']);
-            $wikiListEmpty = empty($chapter['wiki_entry_ids']);
+            $charsListEmpty = ($chapter['character_ids'] ?? []) === [];
+            $wikiListEmpty = ($chapter['wiki_entry_ids'] ?? []) === [];
 
             if ($referencedChars !== [] && $charsListEmpty) {
                 $errors[] = $this->renderChapterError(

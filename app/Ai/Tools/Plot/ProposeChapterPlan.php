@@ -94,7 +94,6 @@ class ProposeChapterPlan implements Tool
             $writes[] = ['type' => 'chapter', 'data' => $data];
         }
 
-        // Validate entity links before producing the preview / persisting.
         if ($bookId !== null) {
             $chapterDataForValidation = array_map(fn ($w) => $w['data'], $writes);
             $rejection = $this->validateChapterEntityLinks($bookId, $chapterDataForValidation);
