@@ -78,7 +78,7 @@ test('updateContent tracks writing session for word count increase', function ()
     expect($session->goal_met)->toBeFalse();
 });
 
-test('updateContent does not track session on word decrease', function () {
+test('updateContent does not create session on word decrease when none exists', function () {
     $book = Book::factory()->create(['daily_word_count_goal' => 100]);
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 10]);
@@ -89,6 +89,65 @@ test('updateContent does not track session on word decrease', function () {
     ])->assertOk();
 
     expect(WritingSession::where('book_id', $book->id)->first())->toBeNull();
+});
+
+test('updateContent subtracts deletions from existing session', function () {
+    $book = Book::factory()->create(['daily_word_count_goal' => 100]);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 0]);
+    $scene = Scene::factory()->for($chapter)->create(['word_count' => 0, 'content' => '']);
+
+    // Write 12 words today.
+    $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
+        'content' => '<p>one two three four five six seven eight nine ten eleven twelve</p>',
+    ])->assertOk();
+
+    // Delete down to 5 words — net should be 5, not 12.
+    $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
+        'content' => '<p>one two three four five</p>',
+    ])->assertOk();
+
+    $session = WritingSession::where('book_id', $book->id)->first();
+    expect($session->words_written)->toBe(5);
+});
+
+test('updateContent clamps session at zero when deletions exceed words written today', function () {
+    $book = Book::factory()->create(['daily_word_count_goal' => 100]);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 10]);
+    $scene = Scene::factory()->for($chapter)->create(['word_count' => 10, 'content' => '<p>one two three four five six seven eight nine ten</p>']);
+    WritingSession::factory()->for($book)->create([
+        'date' => now()->toDateString(),
+        'words_written' => 3,
+    ]);
+
+    // Wipe the scene — delta is -10, but session only has 3 words today.
+    $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
+        'content' => '<p></p>',
+    ])->assertOk();
+
+    $session = WritingSession::where('book_id', $book->id)->first();
+    expect($session->words_written)->toBe(0);
+});
+
+test('updateContent preserves goal_met when deletions drop count below goal', function () {
+    $book = Book::factory()->create(['daily_word_count_goal' => 5]);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 10]);
+    $scene = Scene::factory()->for($chapter)->create(['word_count' => 10, 'content' => '<p>one two three four five six seven eight nine ten</p>']);
+    WritingSession::factory()->for($book)->goalMet()->create([
+        'date' => now()->toDateString(),
+        'words_written' => 10,
+    ]);
+
+    // Delete down to 2 words.
+    $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
+        'content' => '<p>one two</p>',
+    ])->assertOk();
+
+    $session = WritingSession::where('book_id', $book->id)->first();
+    expect($session->words_written)->toBe(2);
+    expect($session->goal_met)->toBeTrue();
 });
 
 test('updateTitle saves scene title', function () {
