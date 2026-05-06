@@ -1666,8 +1666,9 @@ test('it wires character_ids and wiki_entry_ids on chapter creation', function (
     expect($chapter)->not->toBeNull();
     expect($chapter->pov_character_id)->toBe($pov->id);
     expect($chapter->beats()->pluck('beats.id')->all())->toBe([$beat->id]);
+    // POV is auto-included in the character_chapter pivot alongside the supporting cast.
     expect($chapter->characters()->pluck('characters.id')->sort()->values()->all())
-        ->toBe(collect([$supportA->id, $supportB->id])->sort()->values()->all());
+        ->toBe(collect([$pov->id, $supportA->id, $supportB->id])->sort()->values()->all());
     expect($chapter->wikiEntries()->pluck('wiki_entries.id')->sort()->values()->all())
         ->toBe(collect([$location->id, $item->id])->sort()->values()->all());
 });
