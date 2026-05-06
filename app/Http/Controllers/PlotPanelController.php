@@ -24,7 +24,7 @@ class PlotPanelController extends Controller
         $connectedBeats = Beat::query()
             ->whereHas('chapters', fn ($q) => $q->where('chapters.id', $chapterId))
             ->whereHas('plotPoint', fn ($q) => $q->where('book_id', $book->id))
-            ->with(['plotPoint', 'chapters:id,title,storyline_id,reader_order'])
+            ->with('plotPoint')
             ->get();
 
         $sessionBeats = collect();
@@ -35,7 +35,7 @@ class PlotPanelController extends Controller
                 ->where(fn ($qq) => $qq
                     ->where('title', 'like', "%{$query}%")
                     ->orWhere('description', 'like', "%{$query}%"))
-                ->with(['plotPoint', 'chapters:id,title,storyline_id,reader_order'])
+                ->with('plotPoint')
                 ->limit(50)
                 ->get();
         }
@@ -109,12 +109,6 @@ class PlotPanelController extends Controller
             'status' => $beat->status->value,
             'sort_order' => $beat->sort_order,
             'plot_point_id' => $beat->plot_point_id,
-            'chapters' => $beat->chapters->map(fn ($c) => [
-                'id' => $c->id,
-                'title' => $c->title,
-                'storyline_id' => $c->storyline_id,
-                'reader_order' => $c->reader_order,
-            ])->all(),
         ];
     }
 }

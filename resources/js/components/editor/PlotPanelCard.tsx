@@ -5,7 +5,6 @@ import {
     ExternalLink,
     Link2Off,
     Plus,
-    X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -31,7 +30,6 @@ export type PlotPanelBeat = {
     status: BeatStatus;
     sort_order: number;
     plot_point_id: number;
-    chapters: { id: number; title: string }[];
 };
 
 type Props = {
@@ -42,7 +40,6 @@ type Props = {
     onToggleExpand: () => void;
     onConnect?: () => void;
     onDisconnect?: () => void;
-    onDismiss?: () => void;
     plotBoardUrl: string;
 };
 
@@ -54,7 +51,6 @@ export default function PlotPanelCard({
     onToggleExpand,
     onConnect,
     onDisconnect,
-    onDismiss,
     plotBoardUrl,
 }: Props) {
     const { t } = useTranslation('plot-panel');
@@ -89,31 +85,12 @@ export default function PlotPanelCard({
                 >
                     {t(`status.${beat.status}`)}
                 </span>
-                {isConnected ? (
+                {isConnected && (
                     <CardMenu
                         plotBoardUrl={plotBoardUrl}
                         onDisconnect={onDisconnect}
                     />
-                ) : onDismiss ? (
-                    <span
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onDismiss();
-                        }}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.stopPropagation();
-                                onDismiss();
-                            }
-                        }}
-                        aria-label={t('dismiss')}
-                        className="shrink-0 rounded-md p-1 text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink"
-                    >
-                        <X className="size-3.5" />
-                    </span>
-                ) : null}
+                )}
             </button>
 
             {isExpanded && (

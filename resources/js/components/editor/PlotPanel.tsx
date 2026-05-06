@@ -12,7 +12,7 @@ import SectionLabel from '@/components/ui/SectionLabel';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Book, Chapter } from '@/types/models';
 import PlotPanelCard from './PlotPanelCard';
-import type {PlotPanelBeat} from './PlotPanelCard';
+import type { PlotPanelBeat } from './PlotPanelCard';
 import PlotPanelSearch from './PlotPanelSearch';
 
 type PlotPointGroup = {
@@ -141,6 +141,25 @@ export default function PlotPanel({
     const sessionBeats = useMemo(() => flatten(data.session), [data.session]);
     const isEmpty = connectedBeats.length === 0 && sessionBeats.length === 0;
 
+    const renderBeat = (
+        { beat, plotPointTitle }: FlatBeat,
+        isConnected: boolean,
+    ) => (
+        <PlotPanelCard
+            key={`${isConnected ? 'c' : 's'}-${beat.id}`}
+            beat={beat}
+            plotPointTitle={plotPointTitle}
+            isConnected={isConnected}
+            isExpanded={expandedBeatIds.has(beat.id)}
+            onToggleExpand={() => toggleBeat(beat.id)}
+            onConnect={isConnected ? undefined : () => handleConnect(beat.id)}
+            onDisconnect={
+                isConnected ? () => handleDisconnect(beat.id) : undefined
+            }
+            plotBoardUrl={plotBoardUrl}
+        />
+    );
+
     return (
         <aside className="flex h-full shrink-0 flex-col border-l border-border-light bg-surface-sidebar">
             <PanelHeader
@@ -157,18 +176,7 @@ export default function PlotPanel({
                         <SectionLabel variant="section">
                             {t('connectedToChapter')}
                         </SectionLabel>
-                        {connectedBeats.map(({ beat, plotPointTitle }) => (
-                            <PlotPanelCard
-                                key={`c-${beat.id}`}
-                                beat={beat}
-                                plotPointTitle={plotPointTitle}
-                                isConnected
-                                isExpanded={expandedBeatIds.has(beat.id)}
-                                onToggleExpand={() => toggleBeat(beat.id)}
-                                onDisconnect={() => handleDisconnect(beat.id)}
-                                plotBoardUrl={plotBoardUrl}
-                            />
-                        ))}
+                        {connectedBeats.map((b) => renderBeat(b, true))}
                     </>
                 )}
 
@@ -183,18 +191,7 @@ export default function PlotPanel({
                                 <div className="h-px flex-1 bg-border-light" />
                             </div>
                         )}
-                        {sessionBeats.map(({ beat, plotPointTitle }) => (
-                            <PlotPanelCard
-                                key={`s-${beat.id}`}
-                                beat={beat}
-                                plotPointTitle={plotPointTitle}
-                                isConnected={false}
-                                isExpanded={expandedBeatIds.has(beat.id)}
-                                onToggleExpand={() => toggleBeat(beat.id)}
-                                onConnect={() => handleConnect(beat.id)}
-                                plotBoardUrl={plotBoardUrl}
-                            />
-                        ))}
+                        {sessionBeats.map((b) => renderBeat(b, false))}
                     </>
                 )}
 

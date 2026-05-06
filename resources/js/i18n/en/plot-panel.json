@@ -7,7 +7,6 @@
     "connectToChapter": "Connect to chapter",
     "disconnectFromChapter": "Disconnect from chapter",
     "viewOnPlotBoard": "View on plot board",
-    "dismiss": "Dismiss",
     "searchEmpty": "No beats found",
     "emptyState": "Search for beats to connect to this chapter.",
     "status.planned": "Planned",
