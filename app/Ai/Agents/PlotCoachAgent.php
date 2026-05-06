@@ -631,13 +631,14 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         - Only propose chapters when beats exist and have titles + descriptions. Don't push it early.
         - When the author asks "turn this into chapters" or clearly signals they're ready, call ProposeChapterPlan. Do not apply directly — the author approves in chat first.
         - Storylines are required. Every chapter needs a `storyline_id`. If no storyline exists yet (the author has been working at the act/plot_point level only), propose a `storyline` write in the SAME batch that creates the first chapters — do not split it into two round-trips. Apply will roll back if a chapter references a missing storyline_id, so wire the storyline first or use a single ProposeBatch that creates the storyline + chapters together (chapters can reference the storyline by id once it's persisted in-batch).
-        - Each proposed chapter must specify title + storyline_id. ALWAYS wire what you know:
-          - `beat_ids` — every beat this chapter dramatizes (N:1 is fine).
-          - `pov_character_id` — the POV for the chapter (single character).
-          - `character_ids` — every other character that appears or is implicated in this chapter (supporting cast). Pull these from the beat descriptions and from `plot_point.character_ids` on the beats' parent plot points. POV does NOT need to be repeated here — it's a separate pivot.
-          - `wiki_entry_ids` — every location, item, organization, or lore concept the chapter touches. Pull these from the beat descriptions and from the bible. A chapter set in Jakutsk that references the alien material and ETH Zurich attaches all three.
-          - `act_id` — the act this chapter sits in. Inherit from the beats' parent plot_points.
+        - Each proposed chapter must specify title + storyline_id. Per-chapter checklist — work through this for EVERY chapter you propose:
+          1. `beat_ids` — every beat this chapter dramatizes (N:1 is fine).
+          2. `pov_character_id` — the POV for the chapter (single character). The server adds this to the supporting cast pivot automatically; do NOT repeat it in `character_ids`.
+          3. `character_ids` — REQUIRED. Read each attached beat's description. List every supporting character whose name appears, plus any character on the beats' parent `plot_point.character_ids`. Empty array `[]` is valid ONLY if no beats reference any known character. Otherwise the tool rejects the proposal and you retry.
+          4. `wiki_entry_ids` — REQUIRED. Read each attached beat's description. List every location, item, organization, or lore concept whose name appears, plus any relevant entries from the bible. A chapter set in Jakutsk that references the alien material and ETH Zurich attaches all three. Empty array `[]` is valid ONLY if no beats reference any known wiki entry.
+          5. `act_id` — the act this chapter sits in. Inherit from the beats' parent plot_points.
         - The goal is a fully-wired stub: when the author opens the chapter, the storyline / act / POV / supporting cast / beats / wiki entries are ALL pre-attached. They only have to write the prose. Don't leave wiring for "later" if you can infer it from the saved entities now.
+        - Example fully-wired chapter: `{"title": "Madeira: Apparat-Anflug", "storyline_id": 12, "act_id": 3, "pov_character_id": 44, "beat_ids": [88, 89], "character_ids": [42, 47], "wiki_entry_ids": [12, 18]}`.
         - Chapters are additive. If a title already exists on a storyline, ProposeChapterPlan marks it as reused — beats / characters / wiki entries are re-attached without detaching, metadata is left alone. Never propose a "rename" or "delete" of an existing chapter silently.
         - Cross-storyline chapters are fine. Multiple beats per chapter (N:1) are fine.
         - After the author approves, call ApplyPlotCoachBatch with the exact writes array from the ProposeChapterPlan sentinel. On failure explain briefly and re-propose.
