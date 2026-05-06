@@ -1051,6 +1051,13 @@ class PlotCoachBatchService
             }
         }
 
+        if ($povCharacterId !== null) {
+            $chapter->characters()->syncWithoutDetaching([
+                $povCharacterId => ['role' => 'protagonist'],
+            ]);
+            $chapter->characters()->updateExistingPivot($povCharacterId, ['role' => 'protagonist']);
+        }
+
         return ['type' => 'chapter', 'id' => $chapter->id];
     }
 
@@ -1150,6 +1157,13 @@ class PlotCoachBatchService
 
         foreach ($pivotSyncs as $relation => $ids) {
             $chapter->{$relation}()->sync($ids);
+        }
+
+        if ($chapter->pov_character_id !== null) {
+            $chapter->characters()->syncWithoutDetaching([
+                $chapter->pov_character_id => ['role' => 'protagonist'],
+            ]);
+            $chapter->characters()->updateExistingPivot($chapter->pov_character_id, ['role' => 'protagonist']);
         }
 
         return ['type' => 'chapter', 'id' => $chapter->id, 'updated' => true, 'previous' => $previous];
