@@ -40,9 +40,6 @@ export default function PlotPanel({
     const { t } = useTranslation('plot-panel');
     const [data, setData] = useState<PanelData>(EMPTY);
     const [query, setQuery] = useState('');
-    const [expandedBeatIds, setExpandedBeatIds] = useState<Set<number>>(() =>
-        loadSet(`manuscript:plot-expanded-beats:${chapter.id}`),
-    );
     const [collapsedGroupIds, setCollapsedGroupIds] = useState<Set<number>>(
         () => loadSet(`manuscript:plot-collapsed-groups:${chapter.id}`),
     );
@@ -80,26 +77,10 @@ export default function PlotPanel({
 
     useEffect(() => {
         persistSet(
-            `manuscript:plot-expanded-beats:${chapter.id}`,
-            expandedBeatIds,
-        );
-    }, [expandedBeatIds, chapter.id]);
-
-    useEffect(() => {
-        persistSet(
             `manuscript:plot-collapsed-groups:${chapter.id}`,
             collapsedGroupIds,
         );
     }, [collapsedGroupIds, chapter.id]);
-
-    const toggleBeat = useCallback((id: number) => {
-        setExpandedBeatIds((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
-            return next;
-        });
-    }, []);
 
     const toggleGroup = useCallback((id: number) => {
         setCollapsedGroupIds((prev) => {
@@ -192,12 +173,6 @@ export default function PlotPanel({
                                         key={beat.id}
                                         beat={beat}
                                         isConnected
-                                        isExpanded={expandedBeatIds.has(
-                                            beat.id,
-                                        )}
-                                        onToggleExpand={() =>
-                                            toggleBeat(beat.id)
-                                        }
                                         onDisconnect={() =>
                                             handleDisconnect(beat.id)
                                         }
@@ -238,12 +213,6 @@ export default function PlotPanel({
                                         key={beat.id}
                                         beat={beat}
                                         isConnected={false}
-                                        isExpanded={expandedBeatIds.has(
-                                            beat.id,
-                                        )}
-                                        onToggleExpand={() =>
-                                            toggleBeat(beat.id)
-                                        }
                                         onConnect={() => handleConnect(beat.id)}
                                         plotBoardUrl={plotBoardUrl}
                                     />

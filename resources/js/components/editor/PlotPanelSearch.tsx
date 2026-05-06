@@ -1,6 +1,6 @@
-import { Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import SearchInput from '@/components/ui/SearchInput';
 
 export default function PlotPanelSearch({
     onChange,
@@ -29,33 +29,16 @@ export default function PlotPanelSearch({
         [fire],
     );
 
-    const handleClear = useCallback(() => {
-        setValue('');
-        clearTimeout(debounceRef.current);
-        onChange('');
-    }, [onChange]);
-
     useEffect(() => () => clearTimeout(debounceRef.current), []);
 
     return (
         <div className="relative border-b border-border">
-            <div className="flex items-center gap-2 px-4 py-3">
-                <Search size={14} className="shrink-0 text-ink-faint" />
-                <input
+            <div className="px-3 py-3">
+                <SearchInput
                     value={value}
-                    onChange={(e) => handleChange(e.target.value)}
+                    onChange={handleChange}
                     placeholder={t('searchPlaceholder')}
-                    className="min-w-0 flex-1 bg-transparent text-[13px] text-ink placeholder:text-ink-faint focus:outline-none"
                 />
-                {value && (
-                    <button
-                        type="button"
-                        onClick={handleClear}
-                        className="shrink-0 rounded p-0.5 text-ink-muted hover:text-ink"
-                    >
-                        <X size={14} />
-                    </button>
-                )}
             </div>
         </div>
     );

@@ -1,13 +1,5 @@
-import {
-    ChevronDown,
-    ChevronUp,
-    Ellipsis,
-    ExternalLink,
-    Link2Off,
-    Plus,
-    X,
-} from 'lucide-react';
-import { useState } from 'react';
+import { Ellipsis, ExternalLink, Link2Off, Plus, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     DropdownMenu,
@@ -15,7 +7,9 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
+import SectionLabel from '@/components/ui/SectionLabel';
 import Textarea from '@/components/ui/Textarea';
+import DescriptionBlock from '@/components/wiki/DescriptionBlock';
 import { cn } from '@/lib/utils';
 import type { BeatStatus } from '@/types/models';
 
@@ -23,8 +17,8 @@ const STATUS_OPTIONS: BeatStatus[] = ['planned', 'fulfilled', 'abandoned'];
 
 const STATUS_TONE: Record<BeatStatus, string> = {
     planned: 'bg-neutral-bg text-ink-muted',
-    fulfilled: 'bg-emerald-100 text-emerald-700',
-    abandoned: 'bg-zinc-100 text-zinc-500',
+    fulfilled: 'bg-plot-resolution-bg text-plot-resolution-text',
+    abandoned: 'bg-neutral-bg text-ink-faint',
 };
 
 export type PlotPanelBeat = {
@@ -40,8 +34,6 @@ export type PlotPanelBeat = {
 type Props = {
     beat: PlotPanelBeat;
     isConnected: boolean;
-    isExpanded: boolean;
-    onToggleExpand: () => void;
     onConnect?: () => void;
     onDisconnect?: () => void;
     onDismiss?: () => void;
@@ -56,8 +48,6 @@ type Props = {
 export default function PlotPanelCard({
     beat,
     isConnected,
-    isExpanded,
-    onToggleExpand,
     onConnect,
     onDisconnect,
     onDismiss,
@@ -65,173 +55,301 @@ export default function PlotPanelCard({
     plotBoardUrl,
 }: Props) {
     const { t } = useTranslation('plot-panel');
-    const [title, setTitle] = useState(beat.title);
-    const [description, setDescription] = useState(beat.description ?? '');
-    const [status, setStatus] = useState<BeatStatus>(beat.status);
-    const [syncedBeatId, setSyncedBeatId] = useState(beat.id);
-
-    if (beat.id !== syncedBeatId) {
-        setSyncedBeatId(beat.id);
-        setTitle(beat.title);
-        setDescription(beat.description ?? '');
-        setStatus(beat.status);
-    }
-
-    const commitTitle = () => {
-        if (!onUpdate) return;
-        const next = title.trim();
-        if (next && next !== beat.title) onUpdate({ title: next });
-    };
-
-    const commitDescription = () => {
-        if (!onUpdate) return;
-        const next = description;
-        if (next !== (beat.description ?? '')) {
-            onUpdate({ description: next === '' ? null : next });
-        }
-    };
-
-    const commitStatus = (next: BeatStatus) => {
-        setStatus(next);
-        onUpdate?.({ status: next });
-    };
 
     return (
-        <div className="rounded-lg bg-neutral-bg/50">
-            <button
-                type="button"
-                onClick={onToggleExpand}
-                className="flex w-full items-center gap-2.5 p-2.5 text-left"
-            >
-                <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-medium text-ink">
-                        {beat.title}
-                    </p>
-                </div>
-                <span
-                    className={cn(
-                        'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase',
-                        STATUS_TONE[beat.status],
-                    )}
-                >
-                    {t(`status.${beat.status}`)}
-                </span>
-                {!isConnected && onDismiss ? (
-                    <span
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onDismiss();
-                        }}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.stopPropagation();
-                                onDismiss();
-                            }
-                        }}
-                        className="shrink-0 rounded p-0.5 text-ink-faint hover:text-ink"
-                    >
-                        <X size={12} />
-                    </span>
-                ) : (
-                    <span className="shrink-0 text-ink-faint">
-                        {isExpanded ? (
-                            <ChevronUp size={14} />
-                        ) : (
-                            <ChevronDown size={14} />
-                        )}
-                    </span>
-                )}
-            </button>
-
-            {isExpanded && (
-                <div className="space-y-2.5 border-t border-border-light px-2.5 pt-2.5 pb-2.5">
-                    <input
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        onBlur={commitTitle}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                (e.target as HTMLInputElement).blur();
-                            }
-                        }}
-                        className="w-full rounded border border-border-light bg-surface px-2 py-1 text-[13px] font-medium text-ink focus:border-ink-muted focus:outline-none"
-                        readOnly={!onUpdate}
-                    />
-
-                    <Textarea
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        onBlur={commitDescription}
-                        rows={3}
-                        readOnly={!onUpdate}
-                        placeholder={t('description')}
-                        className="text-[13px]"
-                    />
-
-                    <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1">
-                            {STATUS_OPTIONS.map((opt) => (
-                                <button
-                                    key={opt}
-                                    type="button"
-                                    onClick={() => commitStatus(opt)}
-                                    disabled={!onUpdate}
-                                    className={cn(
-                                        'rounded px-1.5 py-0.5 text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-60',
-                                        status === opt
-                                            ? STATUS_TONE[opt]
-                                            : 'text-ink-faint hover:text-ink',
-                                    )}
-                                >
-                                    {t(`status.${opt}`)}
-                                </button>
-                            ))}
-                        </div>
-
-                        {isConnected && onDisconnect ? (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <button
-                                        type="button"
-                                        className="rounded p-1 text-ink-faint hover:bg-neutral-bg hover:text-ink"
-                                    >
-                                        <Ellipsis size={14} />
-                                    </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                        onClick={() =>
-                                            window.open(plotBoardUrl, '_blank')
-                                        }
-                                    >
-                                        <ExternalLink size={14} />
-                                        {t('viewOnPlotBoard')}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={onDisconnect}
-                                        className="text-red-600 focus:text-red-700"
-                                    >
-                                        <Link2Off size={14} />
-                                        {t('disconnectFromChapter')}
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        ) : onConnect ? (
+        <div className="flex flex-col gap-2.5 rounded-lg bg-surface-card p-3 ring-1 ring-border-light">
+            <div className="flex items-start gap-2">
+                <EditableTitle
+                    value={beat.title}
+                    onCommit={(next) => onUpdate?.({ title: next })}
+                    readOnly={!onUpdate}
+                />
+                <StatusBadge
+                    status={beat.status}
+                    onChange={
+                        onUpdate
+                            ? (next) => onUpdate({ status: next })
+                            : undefined
+                    }
+                />
+                {isConnected ? (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                             <button
                                 type="button"
-                                onClick={onConnect}
-                                className="flex items-center gap-1 rounded bg-ink px-2 py-1 text-[11px] text-surface hover:bg-ink-muted"
+                                aria-label="More actions"
+                                className="shrink-0 rounded-md p-1 text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink"
                             >
-                                <Plus size={12} />
-                                {t('connectToChapter')}
+                                <Ellipsis className="size-3.5" />
                             </button>
-                        ) : null}
-                    </div>
-                </div>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" sideOffset={4}>
+                            <DropdownMenuItem
+                                onClick={() =>
+                                    window.open(plotBoardUrl, '_blank')
+                                }
+                            >
+                                <ExternalLink className="size-3.5" />
+                                {t('viewOnPlotBoard')}
+                            </DropdownMenuItem>
+                            {onDisconnect && (
+                                <DropdownMenuItem
+                                    onClick={onDisconnect}
+                                    className="text-delete focus:text-delete"
+                                >
+                                    <Link2Off className="size-3.5" />
+                                    {t('disconnectFromChapter')}
+                                </DropdownMenuItem>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                ) : onDismiss ? (
+                    <button
+                        type="button"
+                        onClick={onDismiss}
+                        aria-label={t('dismiss')}
+                        className="shrink-0 rounded-md p-1 text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink"
+                    >
+                        <X className="size-3.5" />
+                    </button>
+                ) : null}
+            </div>
+
+            <EditableDescription
+                value={beat.description ?? ''}
+                onCommit={(next) =>
+                    onUpdate?.({ description: next === '' ? null : next })
+                }
+                readOnly={!onUpdate}
+                placeholder={t('description')}
+            />
+
+            {!isConnected && onConnect && (
+                <button
+                    type="button"
+                    onClick={onConnect}
+                    className="flex items-center justify-center gap-1.5 rounded-md bg-ink px-2.5 py-1 text-[12px] font-medium text-surface transition-colors hover:bg-ink-muted"
+                >
+                    <Plus className="size-3" />
+                    {t('connectToChapter')}
+                </button>
             )}
         </div>
+    );
+}
+
+function EditableTitle({
+    value,
+    onCommit,
+    readOnly,
+}: {
+    value: string;
+    onCommit: (next: string) => void;
+    readOnly?: boolean;
+}) {
+    const [editing, setEditing] = useState(false);
+    const [local, setLocal] = useState(value);
+    const [syncedValue, setSyncedValue] = useState(value);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    if (value !== syncedValue && !editing) {
+        setSyncedValue(value);
+        setLocal(value);
+    }
+
+    useEffect(() => {
+        if (editing) inputRef.current?.focus();
+    }, [editing]);
+
+    const commit = () => {
+        const next = local.trim();
+        if (next && next !== value) onCommit(next);
+        else setLocal(value);
+        setEditing(false);
+    };
+
+    if (readOnly || !editing) {
+        return (
+            <button
+                type="button"
+                onClick={() => !readOnly && setEditing(true)}
+                disabled={readOnly}
+                className="min-w-0 flex-1 truncate text-left text-[13px] font-medium text-ink disabled:cursor-default"
+            >
+                {value}
+            </button>
+        );
+    }
+
+    return (
+        <input
+            ref={inputRef}
+            value={local}
+            onChange={(e) => setLocal(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    commit();
+                } else if (e.key === 'Escape') {
+                    setLocal(value);
+                    setEditing(false);
+                }
+            }}
+            className="min-w-0 flex-1 rounded-md border border-border bg-surface-card px-1.5 py-0.5 text-[13px] font-medium text-ink focus:ring-1 focus:ring-ink focus:outline-none"
+        />
+    );
+}
+
+function EditableDescription({
+    value,
+    onCommit,
+    readOnly,
+    placeholder,
+}: {
+    value: string;
+    onCommit: (next: string) => void;
+    readOnly?: boolean;
+    placeholder: string;
+}) {
+    const [editing, setEditing] = useState(false);
+    const [local, setLocal] = useState(value);
+    const [syncedValue, setSyncedValue] = useState(value);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    if (value !== syncedValue && !editing) {
+        setSyncedValue(value);
+        setLocal(value);
+    }
+
+    useEffect(() => {
+        if (!editing) return;
+        const el = textareaRef.current;
+        if (!el) return;
+        el.focus();
+        el.style.height = 'auto';
+        el.style.height = `${el.scrollHeight}px`;
+    }, [editing]);
+
+    useEffect(() => {
+        if (!editing) return;
+        const el = textareaRef.current;
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = `${el.scrollHeight}px`;
+    }, [editing, local]);
+
+    const commit = () => {
+        if (local !== value) onCommit(local);
+        setEditing(false);
+    };
+
+    if (editing && !readOnly) {
+        return (
+            <Textarea
+                ref={textareaRef}
+                value={local}
+                onChange={(e) => setLocal(e.target.value)}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                        setLocal(value);
+                        setEditing(false);
+                    }
+                }}
+                placeholder={placeholder}
+                rows={1}
+                className="min-h-0 px-2 py-1.5 text-[12px] leading-relaxed"
+            />
+        );
+    }
+
+    if (value.trim() === '') {
+        return (
+            <button
+                type="button"
+                onClick={() => !readOnly && setEditing(true)}
+                disabled={readOnly}
+                className="rounded-md px-2 py-1.5 text-left text-[12px] text-ink-faint italic transition-colors hover:bg-neutral-bg disabled:cursor-default disabled:hover:bg-transparent"
+            >
+                {placeholder}
+            </button>
+        );
+    }
+
+    return (
+        <button
+            type="button"
+            onClick={() => !readOnly && setEditing(true)}
+            disabled={readOnly}
+            className="block w-full rounded-md px-2 py-1.5 text-left transition-colors hover:bg-neutral-bg disabled:cursor-default disabled:hover:bg-transparent"
+        >
+            <DescriptionBlock
+                text={value}
+                className="text-[12px] leading-relaxed text-ink-muted"
+            />
+        </button>
+    );
+}
+
+function StatusBadge({
+    status,
+    onChange,
+}: {
+    status: BeatStatus;
+    onChange?: (next: BeatStatus) => void;
+}) {
+    const { t } = useTranslation('plot-panel');
+
+    if (!onChange) {
+        return (
+            <span
+                className={cn(
+                    'shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase',
+                    STATUS_TONE[status],
+                )}
+            >
+                {t(`status.${status}`)}
+            </span>
+        );
+    }
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button
+                    type="button"
+                    className={cn(
+                        'shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase transition-colors',
+                        STATUS_TONE[status],
+                    )}
+                >
+                    {t(`status.${status}`)}
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" sideOffset={4}>
+                <SectionLabel
+                    variant="section"
+                    className="px-2 pt-1.5 pb-1 text-ink-faint"
+                >
+                    {t('status')}
+                </SectionLabel>
+                {STATUS_OPTIONS.map((opt) => (
+                    <DropdownMenuItem
+                        key={opt}
+                        onClick={() => onChange(opt)}
+                        className={cn(opt === status && 'font-medium')}
+                    >
+                        <span
+                            className={cn(
+                                'inline-block size-2 rounded-full',
+                                STATUS_TONE[opt].split(' ')[0],
+                            )}
+                        />
+                        {t(`status.${opt}`)}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }
