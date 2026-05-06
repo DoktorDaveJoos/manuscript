@@ -20,6 +20,7 @@ use App\Http\Controllers\NormalizationController;
 use App\Http\Controllers\PlotAiController;
 use App\Http\Controllers\PlotCoachController;
 use App\Http\Controllers\PlotController;
+use App\Http\Controllers\PlotPanelController;
 use App\Http\Controllers\PlotPointConnectionController;
 use App\Http\Controllers\PlotPointController;
 use App\Http\Controllers\PlotSetupController;
@@ -196,6 +197,11 @@ Route::middleware('license')->group(function () {
     Route::patch('/books/{book}/beats/{beat}/status', [BeatController::class, 'updateStatus'])->name('beats.updateStatus');
     Route::post('/books/{book}/beats/{beat}/chapters', [BeatController::class, 'linkChapter'])->name('beats.chapters.link');
     Route::delete('/books/{book}/beats/{beat}/chapters/{chapter}', [BeatController::class, 'unlinkChapter'])->name('beats.chapters.unlink');
+
+    Route::get('/books/{book}/plot/panel', [PlotPanelController::class, 'index'])->name('plot.panel.index');
+    Route::post('/books/{book}/plot/panel/connect', [PlotPanelController::class, 'connect'])->name('plot.panel.connect');
+    Route::post('/books/{book}/plot/panel/disconnect', [PlotPanelController::class, 'disconnect'])->name('plot.panel.disconnect');
+    Route::patch('/books/{book}/plot/panel/beats/{beat}', [PlotPanelController::class, 'updateBeat'])->name('plot.panel.updateBeat');
 
     Route::post('/books/{book}/plot-connections', [PlotPointConnectionController::class, 'store'])->name('plotConnections.store');
     Route::delete('/books/{book}/plot-connections/{plotPointConnection}', [PlotPointConnectionController::class, 'destroy'])->name('plotConnections.destroy');

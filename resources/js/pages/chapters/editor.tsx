@@ -6,6 +6,7 @@ import {
     NotebookPen,
     NotebookText,
     Sparkles,
+    Workflow,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +25,7 @@ import EditorialReviewPanel from '@/components/editor/EditorialReviewPanel';
 import GlobalFindDrawer from '@/components/editor/GlobalFindDrawer';
 import NotesPanel from '@/components/editor/NotesPanel';
 import PaneEmptyState from '@/components/editor/PaneEmptyState';
+import PlotPanel from '@/components/editor/PlotPanel';
 import Sidebar from '@/components/editor/Sidebar';
 import WikiPanel from '@/components/editor/WikiPanel';
 import Button from '@/components/ui/Button';
@@ -33,6 +35,7 @@ import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import type { ChapterData } from '@/hooks/useChapterData';
 import useChapterData from '@/hooks/useChapterData';
+import { useLicense } from '@/hooks/useLicense';
 import usePaneManager from '@/hooks/usePaneManager';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import { createChapter, jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
@@ -50,6 +53,7 @@ const NOOP_EDITOR_CHANGE = () => {};
 const VALID_PANELS: Set<PanelId> = new Set([
     'wiki',
     'notes',
+    'plot',
     'ai',
     'chat',
     'editorial',
@@ -174,8 +178,10 @@ export default function EditorPage({
     const { t } = useTranslation('editor');
     const { t: tAi } = useTranslation('ai');
     const { t: tEditorial } = useTranslation('editorial-review');
+    const { t: tPlotPanel } = useTranslation('plot-panel');
     const sidebarStorylines = useSidebarStorylines();
     const { usable: aiVisible } = useAiFeatures();
+    const { isActive: plotVisible } = useLicense();
     const { app_settings } = usePage<{ app_settings: AppSettings }>().props;
 
     // ── Pane management ──────────────────────────────────────────────────
@@ -383,6 +389,10 @@ export default function EditorPage({
         () => closePanelAndFocus('notes'),
         [closePanelAndFocus],
     );
+    const closePlot = useCallback(
+        () => closePanelAndFocus('plot'),
+        [closePanelAndFocus],
+    );
     const closeAi = useCallback(
         () => closePanelAndFocus('ai'),
         [closePanelAndFocus],
@@ -543,6 +553,13 @@ export default function EditorPage({
                 label: t('toolbar.notes'),
             },
         ];
+        if (plotVisible) {
+            items.push({
+                id: 'plot',
+                icon: Workflow,
+                label: tPlotPanel('headerTitle'),
+            });
+        }
         if (aiVisible) {
             items.push(
                 {
@@ -563,7 +580,7 @@ export default function EditorPage({
             );
         }
         return items;
-    }, [aiVisible, t, tAi, tEditorial]);
+    }, [aiVisible, plotVisible, t, tAi, tEditorial, tPlotPanel]);
 
     // ── Sidebar callbacks ────────────────────────────────────────────────
     const handleBeforeNavigate = useCallback(async () => {
@@ -707,6 +724,24 @@ export default function EditorPage({
                                     initialNotes={focusedChapter.notes}
                                     onNotesChange={handleNotesChange}
                                     onClose={closeNotes}
+                                />
+                            </SlidePanel>
+                        )}
+
+                        {focusedChapter && plotVisible && (
+                            <SlidePanel
+                                open={openPanels.has('plot')}
+                                onClose={closePlot}
+                                storageKey="manuscript:plot-panel-width"
+                                defaultWidth={300}
+                                minWidth={200}
+                                maxWidth={600}
+                            >
+                                <PlotPanel
+                                    key={focusedChapter.id}
+                                    book={book}
+                                    chapter={focusedChapter}
+                                    onClose={closePlot}
                                 />
                             </SlidePanel>
                         )}

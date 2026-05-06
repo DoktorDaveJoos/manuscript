@@ -24,6 +24,8 @@
     "palette.closeWiki": "Close Wiki",
     "palette.openNotes": "Open Notes",
     "palette.closeNotes": "Close Notes",
+    "palette.openPlot": "Open Plot",
+    "palette.closePlot": "Close Plot",
     "palette.openAiAssistant": "Open AI Assistant",
     "palette.closeAiAssistant": "Close AI Assistant",
     "palette.openChat": "Open Chat",

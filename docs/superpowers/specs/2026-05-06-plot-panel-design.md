@@ -105,7 +105,7 @@ type BeatShape = {
   id: number;
   title: string;
   description: string | null;
-  status: 'planned' | 'written' | 'revised';
+  status: 'planned' | 'fulfilled' | 'abandoned';
   sort_order: number;
   plot_point_id: number;
   chapters: { id: number; title: string; storyline_id: number; reader_order: number }[];

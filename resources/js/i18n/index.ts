@@ -23,6 +23,7 @@ import enEditorialReview from './en/editorial-review.json';
 import enExport from './en/export.json';
 import enOnboarding from './en/onboarding.json';
 import enPlotCoach from './en/plot-coach.json';
+import enPlotPanel from './en/plot-panel.json';
 import enPlot from './en/plot.json';
 import enPublish from './en/publish.json';
 import enSettings from './en/settings.json';
@@ -53,6 +54,7 @@ i18n.use(initReactI18next).init({
             onboarding: enOnboarding,
             plot: enPlot,
             'plot-coach': enPlotCoach,
+            'plot-panel': enPlotPanel,
             publish: enPublish,
             wiki: enWiki,
             'wiki-panel': enWikiPanel,
@@ -103,6 +105,7 @@ i18n.use(initReactI18next).init({
         'onboarding',
         'plot',
         'plot-coach',
+        'plot-panel',
         'publish',
         'wiki',
         'wiki-panel',

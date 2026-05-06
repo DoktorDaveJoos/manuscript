@@ -22,6 +22,8 @@
     "palette.leaveFocusMode": "Salir del modo enfoque",
     "palette.openNotes": "Abrir notas",
     "palette.closeNotes": "Cerrar notas",
+    "palette.openPlot": "Abrir trama",
+    "palette.closePlot": "Cerrar trama",
     "palette.openAiAssistant": "Abrir Asistente IA",
     "palette.closeAiAssistant": "Cerrar Asistente IA",
     "palette.openChat": "Abrir Chat",

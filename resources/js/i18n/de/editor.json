@@ -22,6 +22,8 @@
     "palette.leaveFocusMode": "Fokusmodus verlassen",
     "palette.openNotes": "Notizen öffnen",
     "palette.closeNotes": "Notizen schließen",
+    "palette.openPlot": "Handlung öffnen",
+    "palette.closePlot": "Handlung schließen",
     "palette.openAiAssistant": "KI-Assistent öffnen",
     "palette.closeAiAssistant": "KI-Assistent schließen",
     "palette.openChat": "Chat öffnen",
