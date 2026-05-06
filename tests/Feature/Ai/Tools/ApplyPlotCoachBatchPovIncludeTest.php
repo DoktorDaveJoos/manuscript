@@ -116,3 +116,37 @@ it('does not duplicate POV in the pivot when character_ids already includes the 
     expect($povRows)->toHaveCount(1);
     expect($povRows->first()->role)->toBe('protagonist');
 });
+
+it('undo of a pov-only update detaches the auto-included pivot row', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book, 'book')->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+    $newPov = Character::factory()->for($book, 'book')->create(['name' => 'Maja']);
+
+    // Existing chapter, no POV, no pivot rows.
+    $chapter = Chapter::factory()
+        ->for($book, 'book')
+        ->for($storyline, 'storyline')
+        ->create(['pov_character_id' => null]);
+
+    $service = app(PlotCoachBatchService::class);
+
+    // Apply a pov-only update — auto-include adds the pivot row.
+    $batch = $service->apply($session, [[
+        'type' => 'chapter',
+        'data' => [
+            'id' => $chapter->id,
+            'pov_character_id' => $newPov->id,
+        ],
+    ]], 'set pov');
+
+    expect(DB::table('character_chapter')->where('chapter_id', $chapter->id)->count())->toBe(1);
+
+    // Undo the update.
+    $service->undoBatch($batch);
+
+    // Both the FK and the pivot must revert together — no orphan row.
+    $chapter->refresh();
+    expect($chapter->pov_character_id)->toBeNull();
+    expect(DB::table('character_chapter')->where('chapter_id', $chapter->id)->count())->toBe(0);
+});

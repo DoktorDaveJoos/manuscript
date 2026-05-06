@@ -1160,6 +1160,19 @@ class PlotCoachBatchService
         }
 
         if ($chapter->pov_character_id !== null) {
+            // The pivot-resync loop above only snapshots `character_ids` when
+            // it appears in the agent's payload. When the agent passes
+            // `pov_character_id` alone, the auto-include below would add a
+            // pivot row that undo wouldn't know to remove. Capture the
+            // current pivot state into $previous so undo can sync it back.
+            if (! array_key_exists('character_ids', $previous)) {
+                $previous['character_ids'] = $chapter->characters()
+                    ->pluck('characters.id')
+                    ->map(fn ($id) => (int) $id)
+                    ->values()
+                    ->all();
+            }
+
             $chapter->characters()->syncWithoutDetaching([
                 $chapter->pov_character_id => ['role' => 'protagonist'],
             ]);
