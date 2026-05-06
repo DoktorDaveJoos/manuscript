@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\BeatStatus;
 use App\Models\Beat;
 use App\Models\Book;
 use Illuminate\Http\JsonResponse;
@@ -75,24 +74,6 @@ class PlotPanelController extends Controller
         $beat->chapters()->detach($data['chapter_id']);
 
         return response()->json(['ok' => true]);
-    }
-
-    public function updateBeat(Request $request, Book $book, Beat $beat): JsonResponse
-    {
-        $beat->loadMissing('plotPoint');
-        abort_unless($beat->plotPoint->book_id === $book->id, 404);
-
-        $data = $request->validate([
-            'title' => ['sometimes', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'status' => ['sometimes', Rule::enum(BeatStatus::class)],
-        ]);
-
-        $beat->update($data);
-
-        return response()->json([
-            'beat' => $this->beatShape($beat->fresh(['plotPoint', 'chapters:id,title,storyline_id,reader_order'])),
-        ]);
     }
 
     /**

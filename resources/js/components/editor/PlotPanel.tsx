@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Workflow } from 'lucide-react';
+import { Workflow } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { index as plotIndex } from '@/actions/App/Http/Controllers/PlotController';
@@ -6,14 +6,13 @@ import {
     connect as panelConnect,
     disconnect as panelDisconnect,
     index as panelIndex,
-    updateBeat as panelUpdateBeat,
 } from '@/actions/App/Http/Controllers/PlotPanelController';
 import PanelHeader from '@/components/ui/PanelHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
-import { cn, jsonFetchHeaders } from '@/lib/utils';
-import type { BeatStatus, Book, Chapter } from '@/types/models';
+import { jsonFetchHeaders } from '@/lib/utils';
+import type { Book, Chapter } from '@/types/models';
 import PlotPanelCard from './PlotPanelCard';
-import type { PlotPanelBeat } from './PlotPanelCard';
+import type {PlotPanelBeat} from './PlotPanelCard';
 import PlotPanelSearch from './PlotPanelSearch';
 
 type PlotPointGroup = {
@@ -26,7 +25,21 @@ type PanelData = {
     session: PlotPointGroup[];
 };
 
+type FlatBeat = {
+    beat: PlotPanelBeat;
+    plotPointTitle: string;
+};
+
 const EMPTY: PanelData = { connected: [], session: [] };
+
+function flatten(groups: PlotPointGroup[]): FlatBeat[] {
+    return groups.flatMap((group) =>
+        group.beats.map((beat) => ({
+            beat,
+            plotPointTitle: group.plot_point.title,
+        })),
+    );
+}
 
 export default function PlotPanel({
     book,
@@ -40,8 +53,8 @@ export default function PlotPanel({
     const { t } = useTranslation('plot-panel');
     const [data, setData] = useState<PanelData>(EMPTY);
     const [query, setQuery] = useState('');
-    const [collapsedGroupIds, setCollapsedGroupIds] = useState<Set<number>>(
-        () => loadSet(`manuscript:plot-collapsed-groups:${chapter.id}`),
+    const [expandedBeatIds, setExpandedBeatIds] = useState<Set<number>>(() =>
+        loadSet(`manuscript:plot-expanded-beats:${chapter.id}`),
     );
     const [refreshTick, setRefreshTick] = useState(0);
 
@@ -77,13 +90,13 @@ export default function PlotPanel({
 
     useEffect(() => {
         persistSet(
-            `manuscript:plot-collapsed-groups:${chapter.id}`,
-            collapsedGroupIds,
+            `manuscript:plot-expanded-beats:${chapter.id}`,
+            expandedBeatIds,
         );
-    }, [collapsedGroupIds, chapter.id]);
+    }, [expandedBeatIds, chapter.id]);
 
-    const toggleGroup = useCallback((id: number) => {
-        setCollapsedGroupIds((prev) => {
+    const toggleBeat = useCallback((id: number) => {
+        setExpandedBeatIds((prev) => {
             const next = new Set(prev);
             if (next.has(id)) next.delete(id);
             else next.add(id);
@@ -121,75 +134,47 @@ export default function PlotPanel({
         [book.id, chapter.id, refresh],
     );
 
-    const handleUpdateBeat = useCallback(
-        async (
-            beatId: number,
-            patch: {
-                title?: string;
-                description?: string | null;
-                status?: BeatStatus;
-            },
-        ) => {
-            await fetch(panelUpdateBeat.url({ book: book.id, beat: beatId }), {
-                method: 'PATCH',
-                headers: jsonFetchHeaders(),
-                body: JSON.stringify(patch),
-            });
-            refresh();
-        },
-        [book.id, refresh],
+    const connectedBeats = useMemo(
+        () => flatten(data.connected),
+        [data.connected],
     );
-
-    const isEmpty = data.connected.length === 0 && data.session.length === 0;
+    const sessionBeats = useMemo(() => flatten(data.session), [data.session]);
+    const isEmpty = connectedBeats.length === 0 && sessionBeats.length === 0;
 
     return (
         <aside className="flex h-full shrink-0 flex-col border-l border-border-light bg-surface-sidebar">
             <PanelHeader
                 title={t('headerTitle')}
-                icon={<Workflow size={14} className="text-ink-muted" />}
+                icon={<Workflow className="size-3.5 text-ink-muted" />}
                 onClose={onClose}
             />
 
             <PlotPanelSearch onChange={setQuery} />
 
-            <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
-                {data.connected.length > 0 && (
+            <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
+                {connectedBeats.length > 0 && (
                     <>
                         <SectionLabel variant="section">
                             {t('connectedToChapter')}
                         </SectionLabel>
-                        {data.connected.map((group) => (
-                            <PlotGroup
-                                key={`c-${group.plot_point.id}`}
-                                group={group}
-                                isCollapsed={collapsedGroupIds.has(
-                                    group.plot_point.id,
-                                )}
-                                onToggleGroup={() =>
-                                    toggleGroup(group.plot_point.id)
-                                }
-                                renderBeat={(beat) => (
-                                    <PlotPanelCard
-                                        key={beat.id}
-                                        beat={beat}
-                                        isConnected
-                                        onDisconnect={() =>
-                                            handleDisconnect(beat.id)
-                                        }
-                                        onUpdate={(patch) =>
-                                            handleUpdateBeat(beat.id, patch)
-                                        }
-                                        plotBoardUrl={plotBoardUrl}
-                                    />
-                                )}
+                        {connectedBeats.map(({ beat, plotPointTitle }) => (
+                            <PlotPanelCard
+                                key={`c-${beat.id}`}
+                                beat={beat}
+                                plotPointTitle={plotPointTitle}
+                                isConnected
+                                isExpanded={expandedBeatIds.has(beat.id)}
+                                onToggleExpand={() => toggleBeat(beat.id)}
+                                onDisconnect={() => handleDisconnect(beat.id)}
+                                plotBoardUrl={plotBoardUrl}
                             />
                         ))}
                     </>
                 )}
 
-                {data.session.length > 0 && (
+                {sessionBeats.length > 0 && (
                     <>
-                        {data.connected.length > 0 && (
+                        {connectedBeats.length > 0 && (
                             <div className="flex items-center gap-2 py-1">
                                 <div className="h-px flex-1 bg-border-light" />
                                 <SectionLabel variant="section">
@@ -198,25 +183,16 @@ export default function PlotPanel({
                                 <div className="h-px flex-1 bg-border-light" />
                             </div>
                         )}
-                        {data.session.map((group) => (
-                            <PlotGroup
-                                key={`s-${group.plot_point.id}`}
-                                group={group}
-                                isCollapsed={collapsedGroupIds.has(
-                                    group.plot_point.id,
-                                )}
-                                onToggleGroup={() =>
-                                    toggleGroup(group.plot_point.id)
-                                }
-                                renderBeat={(beat) => (
-                                    <PlotPanelCard
-                                        key={beat.id}
-                                        beat={beat}
-                                        isConnected={false}
-                                        onConnect={() => handleConnect(beat.id)}
-                                        plotBoardUrl={plotBoardUrl}
-                                    />
-                                )}
+                        {sessionBeats.map(({ beat, plotPointTitle }) => (
+                            <PlotPanelCard
+                                key={`s-${beat.id}`}
+                                beat={beat}
+                                plotPointTitle={plotPointTitle}
+                                isConnected={false}
+                                isExpanded={expandedBeatIds.has(beat.id)}
+                                onToggleExpand={() => toggleBeat(beat.id)}
+                                onConnect={() => handleConnect(beat.id)}
+                                plotBoardUrl={plotBoardUrl}
                             />
                         ))}
                     </>
@@ -229,49 +205,6 @@ export default function PlotPanel({
                 )}
             </div>
         </aside>
-    );
-}
-
-function PlotGroup({
-    group,
-    isCollapsed,
-    onToggleGroup,
-    renderBeat,
-}: {
-    group: PlotPointGroup;
-    isCollapsed: boolean;
-    onToggleGroup: () => void;
-    renderBeat: (beat: PlotPanelBeat) => React.ReactNode;
-}) {
-    return (
-        <div className="flex flex-col gap-2">
-            <button
-                type="button"
-                onClick={onToggleGroup}
-                className="flex items-center gap-1.5 text-left"
-            >
-                <span className="text-ink-faint">
-                    {isCollapsed ? (
-                        <ChevronRight size={12} />
-                    ) : (
-                        <ChevronDown size={12} />
-                    )}
-                </span>
-                <span
-                    className={cn(
-                        'truncate text-[12px] font-medium text-ink',
-                        isCollapsed && 'text-ink-muted',
-                    )}
-                >
-                    {group.plot_point.title}
-                </span>
-            </button>
-            {!isCollapsed && (
-                <div className="flex flex-col gap-1.5 pl-3">
-                    {group.beats.map((beat) => renderBeat(beat))}
-                </div>
-            )}
-        </div>
     );
 }
 

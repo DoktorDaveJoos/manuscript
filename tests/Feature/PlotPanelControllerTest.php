@@ -163,48 +163,6 @@ it('disconnect is safe when row does not exist', function () {
     ])->assertOk();
 });
 
-it('updateBeat patches title, description, status', function () {
-    $book = Book::factory()->create();
-    $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
-    $beat = Beat::factory()->create([
-        'plot_point_id' => $plotPoint->id,
-        'title' => 'Old',
-        'description' => 'Old desc',
-    ]);
-
-    $this->patchJson(route('plot.panel.updateBeat', [$book, $beat]), [
-        'title' => 'New',
-        'description' => 'New desc',
-        'status' => 'fulfilled',
-    ])->assertOk()->assertJsonPath('beat.title', 'New');
-
-    $beat->refresh();
-    expect($beat->title)->toBe('New')
-        ->and($beat->description)->toBe('New desc')
-        ->and($beat->status->value)->toBe('fulfilled');
-});
-
-it('updateBeat rejects an invalid status', function () {
-    $book = Book::factory()->create();
-    $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
-    $beat = Beat::factory()->create(['plot_point_id' => $plotPoint->id]);
-
-    $this->patchJson(route('plot.panel.updateBeat', [$book, $beat]), [
-        'status' => 'bogus',
-    ])->assertUnprocessable()->assertJsonValidationErrors(['status']);
-});
-
-it('updateBeat 404s when beat belongs to a different book', function () {
-    $book = Book::factory()->create();
-    $otherBook = Book::factory()->create();
-    $foreignPlotPoint = PlotPoint::factory()->create(['book_id' => $otherBook->id]);
-    $foreignBeat = Beat::factory()->create(['plot_point_id' => $foreignPlotPoint->id]);
-
-    $this->patchJson(route('plot.panel.updateBeat', [$book, $foreignBeat]), [
-        'title' => 'Hijack attempt',
-    ])->assertNotFound();
-});
-
 it('all panel endpoints redirect when license is inactive', function () {
     License::query()->delete();
     $book = Book::factory()->create();
@@ -223,6 +181,4 @@ it('all panel endpoints redirect when license is inactive', function () {
         'chapter_id' => $chapter->id,
         'beat_id' => $beat->id,
     ])->assertRedirect();
-    $this->patch(route('plot.panel.updateBeat', [$book, $beat]), ['title' => 'x'])
-        ->assertRedirect();
 });

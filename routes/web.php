@@ -201,7 +201,6 @@ Route::middleware('license')->group(function () {
     Route::get('/books/{book}/plot/panel', [PlotPanelController::class, 'index'])->name('plot.panel.index');
     Route::post('/books/{book}/plot/panel/connect', [PlotPanelController::class, 'connect'])->name('plot.panel.connect');
     Route::post('/books/{book}/plot/panel/disconnect', [PlotPanelController::class, 'disconnect'])->name('plot.panel.disconnect');
-    Route::patch('/books/{book}/plot/panel/beats/{beat}', [PlotPanelController::class, 'updateBeat'])->name('plot.panel.updateBeat');
 
     Route::post('/books/{book}/plot-connections', [PlotPointConnectionController::class, 'store'])->name('plotConnections.store');
     Route::delete('/books/{book}/plot-connections/{plotPointConnection}', [PlotPointConnectionController::class, 'destroy'])->name('plotConnections.destroy');
