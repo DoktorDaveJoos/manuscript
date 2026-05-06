@@ -4,6 +4,7 @@ namespace App\Ai\Tools\Plot;
 
 use App\Ai\Tools\Plot\Concerns\CoercesBookId;
 use App\Ai\Tools\Plot\Concerns\DecodesJsonPayload;
+use App\Ai\Tools\Plot\Concerns\ValidatesChapterEntityLinks;
 use App\Enums\PlotCoachProposalKind;
 use App\Models\Act;
 use App\Models\Beat;
@@ -30,7 +31,7 @@ use Stringable;
  */
 class ProposeBatch implements Tool
 {
-    use CoercesBookId, DecodesJsonPayload;
+    use CoercesBookId, DecodesJsonPayload, ValidatesChapterEntityLinks;
 
     public function __construct(public int $bookId) {}
 
@@ -70,6 +71,28 @@ class ProposeBatch implements Tool
         }
 
         $writes = $this->enrichWrites($bookId, $writes);
+
+        if ($bookId !== null) {
+            $chapterWrites = [];
+            foreach ($writes as $write) {
+                if (is_array($write) && ($write['type'] ?? null) === 'chapter' && is_array($write['data'] ?? null)) {
+                    // Skip update writes — they target an existing chapter, the
+                    // beats may already be linked, and the agent isn't adding
+                    // new beats. Only validate creates (no `id` key).
+                    if (! isset($write['data']['id'])) {
+                        $chapterWrites[] = $write['data'];
+                    }
+                }
+            }
+
+            if ($chapterWrites !== []) {
+                $rejection = $this->validateChapterEntityLinks($bookId, $chapterWrites);
+
+                if ($rejection !== null) {
+                    return $rejection;
+                }
+            }
+        }
 
         $grouped = [
             'book_update' => [],
