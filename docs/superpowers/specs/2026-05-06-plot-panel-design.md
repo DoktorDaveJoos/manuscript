@@ -265,14 +265,3 @@ No migrations. The `beat_chapter` pivot already exists from the plot-coach work.
 ### Auto-regenerated
 
 - `resources/js/actions/App/Http/Controllers/PlotPanelController.ts` (Wayfinder).
-
-## Open Questions Resolved
-
-All resolved during brainstorming. Recording for the record:
-
-- Hierarchy: grouped by plot point. ✓
-- Ad-hoc semantics: connect existing only. ✓
-- Plot-point linkage: auto-revealed by beats; no new pivot. ✓
-- Disconnect prominence: demoted to kebab. ✓
-- Pivot-write alignment: direct Eloquent like `BeatController`, not via `PlotCoachBatchService`. ✓
-- Resource shape: inline `->only()` matching `PlotController`'s shape. ✓
