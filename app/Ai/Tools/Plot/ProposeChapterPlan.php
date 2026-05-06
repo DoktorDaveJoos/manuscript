@@ -4,6 +4,7 @@ namespace App\Ai\Tools\Plot;
 
 use App\Ai\Tools\Plot\Concerns\CoercesBookId;
 use App\Ai\Tools\Plot\Concerns\DecodesJsonPayload;
+use App\Ai\Tools\Plot\Concerns\ValidatesChapterEntityLinks;
 use App\Enums\PlotCoachProposalKind;
 use App\Models\Chapter;
 use App\Models\PlotCoachProposal;
@@ -31,7 +32,7 @@ use Stringable;
  */
 class ProposeChapterPlan implements Tool
 {
-    use CoercesBookId, DecodesJsonPayload;
+    use CoercesBookId, DecodesJsonPayload, ValidatesChapterEntityLinks;
 
     public function description(): Stringable|string
     {
@@ -91,6 +92,16 @@ class ProposeChapterPlan implements Tool
 
             $lines[] = '- '.$this->renderLine($data, $reused);
             $writes[] = ['type' => 'chapter', 'data' => $data];
+        }
+
+        // Validate entity links before producing the preview / persisting.
+        if ($bookId !== null) {
+            $chapterDataForValidation = array_map(fn ($w) => $w['data'], $writes);
+            $rejection = $this->validateChapterEntityLinks($bookId, $chapterDataForValidation);
+
+            if ($rejection !== null) {
+                return $rejection;
+            }
         }
 
         $sections = [];
