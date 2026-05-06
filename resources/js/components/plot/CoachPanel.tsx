@@ -1,22 +1,27 @@
 import { Link } from '@inertiajs/react';
-import { Archive, CircleStop, Lock, Sparkles } from 'lucide-react';
-import { forwardRef, useCallback, useState } from 'react';
+import { Lock, Sparkles } from 'lucide-react';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sessionArchive } from '@/actions/App/Http/Controllers/PlotCoachController';
-import ArchiveDrawer from '@/components/plot/ArchiveDrawer';
 import ChatSurface from '@/components/plot/ChatSurface';
 import type { ChatSurfaceHandle } from '@/components/plot/ChatSurface';
+import CoachInsightsPanel from '@/components/plot/CoachInsightsPanel';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
-import { jsonFetchHeaders } from '@/lib/utils';
 
 type CoachPanelProps = {
     aiConfigured: boolean;
     bookId: number;
     activeSessionId: number | null;
     onSessionCreated?: (sessionId: number) => void;
-    onSessionEnded?: () => void;
+    contextCounts: {
+        acts: number;
+        plotPoints: number;
+        beats: number;
+        characters: number;
+        storylines: number;
+        chapters: number;
+    };
 };
 
 export type CoachPanelHandle = ChatSurfaceHandle;
@@ -37,39 +42,27 @@ const CoachPanel = forwardRef<CoachPanelHandle, CoachPanelProps>(
             bookId,
             activeSessionId,
             onSessionCreated,
-            onSessionEnded,
+            contextCounts,
         },
         ref,
     ) {
         const { t } = useTranslation('plot-coach');
-        const { licensed } = useAiFeatures();
-        const [archiveOpen, setArchiveOpen] = useState(false);
-        const [archiving, setArchiving] = useState(false);
+        const { licensed, providerLabel } = useAiFeatures();
 
-        const handleEndSession = useCallback(async () => {
-            if (activeSessionId === null || archiving) return;
-            if (!window.confirm(t('archive.end_session_confirm'))) return;
+        const chatRef = useRef<ChatSurfaceHandle>(null);
 
-            setArchiving(true);
-            try {
-                const res = await fetch(
-                    sessionArchive.url({
-                        book: bookId,
-                        session: activeSessionId,
-                    }),
-                    {
-                        method: 'PATCH',
-                        headers: jsonFetchHeaders(),
-                    },
-                );
-                if (!res.ok) throw new Error('archive failed');
-                onSessionEnded?.();
-            } catch {
-                window.alert(t('archive.end_session_error'));
-            } finally {
-                setArchiving(false);
-            }
-        }, [activeSessionId, archiving, bookId, onSessionEnded, t]);
+        useImperativeHandle(
+            ref,
+            () => ({
+                sendSystemSignal: (message: string) => {
+                    chatRef.current?.sendSystemSignal(message);
+                },
+                fillInput: (text: string) => {
+                    chatRef.current?.fillInput(text);
+                },
+            }),
+            [],
+        );
 
         if (!licensed) {
             return (
@@ -100,40 +93,18 @@ const CoachPanel = forwardRef<CoachPanelHandle, CoachPanelProps>(
         }
 
         return (
-            <div className="flex min-h-0 flex-1 flex-col">
-                <div className="flex items-center justify-end gap-1 border-b border-border-light bg-surface px-4 py-2">
-                    {activeSessionId !== null && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleEndSession}
-                            disabled={archiving}
-                        >
-                            <CircleStop className="size-3.5" />
-                            {t('archive.end_session')}
-                        </Button>
-                    )}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setArchiveOpen(true)}
-                    >
-                        <Archive className="size-3.5" />
-                        {t('archive.open')}
-                    </Button>
-                </div>
-
+            <div className="relative flex min-h-0 flex-1 flex-col">
+                <CoachInsightsPanel
+                    bookId={bookId}
+                    providerLabel={providerLabel}
+                    counts={contextCounts}
+                    onHintClick={(hint) => chatRef.current?.fillInput(hint)}
+                />
                 <ChatSurface
-                    ref={ref}
+                    ref={chatRef}
                     bookId={bookId}
                     sessionId={activeSessionId}
                     onSessionCreated={onSessionCreated}
-                />
-
-                <ArchiveDrawer
-                    bookId={bookId}
-                    open={archiveOpen}
-                    onClose={() => setArchiveOpen(false)}
                 />
             </div>
         );

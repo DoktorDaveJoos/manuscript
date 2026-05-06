@@ -1,5 +1,4 @@
 import {
-    ArrowUp,
     BookOpen,
     BookSearch,
     Loader,
@@ -16,6 +15,8 @@ import {
     messages as fetchConversationMessages,
 } from '@/actions/App/Http/Controllers/AiConversationController';
 import { chat as editorialChat } from '@/actions/App/Http/Controllers/EditorialReviewController';
+import AiChatInput from '@/components/ui/AiChatInput';
+import type { AiChatInputHandle } from '@/components/ui/AiChatInput';
 import PanelHeader from '@/components/ui/PanelHeader';
 import { severityDotColor } from '@/lib/editorial-constants';
 import { extractErrorMessage, jsonFetchHeaders } from '@/lib/utils';
@@ -109,7 +110,7 @@ export default function AiChatDrawer({
     const isStreamingRef = useRef(false);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<AiChatInputHandle>(null);
     const conversationIdRef = useRef<string | null>(null);
 
     const lsKey = useMemo(
@@ -358,16 +359,6 @@ export default function AiChatDrawer({
         inputRef.current?.focus();
     }, [book.id, lsKey]);
 
-    const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-            }
-        },
-        [handleSend],
-    );
-
     const characterNames = chapter
         ? (chapter.characters ?? []).map((c) => c.name).slice(0, 3)
         : [];
@@ -533,25 +524,16 @@ export default function AiChatDrawer({
             </div>
 
             {/* Input */}
-            <div className="flex items-center gap-2 border-t border-border-light px-5 py-3">
-                <input
+            <div className="px-5 py-3">
+                <AiChatInput
                     ref={inputRef}
-                    type="text"
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
+                    onChange={setInput}
+                    onSend={handleSend}
                     placeholder={t('chat.placeholder')}
+                    ariaLabel={t('chat.placeholder')}
                     disabled={isStreaming}
-                    className="h-10 flex-1 rounded-lg border border-border bg-surface px-3 text-[13px] text-ink placeholder:text-ink-faint focus:outline-none disabled:opacity-60"
                 />
-                <button
-                    type="button"
-                    onClick={handleSend}
-                    disabled={!input.trim() || isStreaming}
-                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ink text-surface transition-colors hover:bg-ink/90 disabled:opacity-50"
-                >
-                    <ArrowUp size={14} />
-                </button>
             </div>
         </aside>
     );

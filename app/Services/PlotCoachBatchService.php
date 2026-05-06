@@ -23,6 +23,7 @@ use App\Models\PlotPoint;
 use App\Models\Storyline;
 use App\Models\WikiEntry;
 use App\Observers\BoardChangeObserver;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -773,18 +774,21 @@ class PlotCoachBatchService
     }
 
     /**
-     * @param  array<int, int|string>  $raw
+     * Validate a list of ids belongs to the given book on the given model.
+     * Used by every pivot/FK validator that scopes by book_id.
+     *
+     * @param  class-string<Model>  $modelClass
      * @return list<int>
      */
-    private function validateCharacterIds(int $bookId, array $raw): array
+    private function validateBookOwnedIds(string $modelClass, int $bookId, mixed $raw, string $field, string $noun): array
     {
-        $ids = array_values(array_unique(array_map('intval', $raw)));
-
-        if ($ids === []) {
+        if (! is_array($raw) || empty($raw)) {
             return [];
         }
 
-        $valid = Character::query()
+        $ids = array_values(array_unique(array_map('intval', $raw)));
+
+        $valid = $modelClass::query()
             ->whereIn('id', $ids)
             ->where('book_id', $bookId)
             ->pluck('id')
@@ -794,11 +798,27 @@ class PlotCoachBatchService
 
         if ($missing) {
             throw new InvalidArgumentException(
-                'plot_point.character_ids references characters that do not belong to this book: '.implode(', ', $missing),
+                "{$field} references {$noun} that do not belong to this book: ".implode(', ', $missing),
             );
         }
 
         return array_map('intval', $valid);
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function validateCharacterIds(int $bookId, mixed $raw, string $field = 'plot_point.character_ids'): array
+    {
+        return $this->validateBookOwnedIds(Character::class, $bookId, $raw, $field, 'characters');
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function validateWikiEntryIds(int $bookId, mixed $raw, string $field = 'chapter.wiki_entry_ids'): array
+    {
+        return $this->validateBookOwnedIds(WikiEntry::class, $bookId, $raw, $field, 'wiki entries');
     }
 
     /**
@@ -968,9 +988,14 @@ class PlotCoachBatchService
             throw new InvalidArgumentException('chapter.storyline_id does not belong to this book.');
         }
 
-        $beatIds = $this->validateBeatIds($session->book_id, $data['beat_ids'] ?? []);
         $povCharacterId = $this->validatePovCharacterId($session->book_id, $data['pov_character_id'] ?? null);
         $actId = $this->validateActId($session->book_id, $data['act_id'] ?? null);
+
+        $pivotIds = [
+            'beats' => $this->validateBeatIds($session->book_id, $data['beat_ids'] ?? []),
+            'characters' => $this->validateCharacterIds($session->book_id, $data['character_ids'] ?? null, 'chapter.character_ids'),
+            'wikiEntries' => $this->validateWikiEntryIds($session->book_id, $data['wiki_entry_ids'] ?? null),
+        ];
 
         $existing = Chapter::query()
             ->where('book_id', $session->book_id)
@@ -979,8 +1004,10 @@ class PlotCoachBatchService
             ->first();
 
         if ($existing) {
-            if ($beatIds) {
-                $existing->beats()->syncWithoutDetaching($beatIds);
+            foreach ($pivotIds as $relation => $ids) {
+                if ($ids) {
+                    $existing->{$relation}()->syncWithoutDetaching($ids);
+                }
             }
 
             return ['type' => 'chapter', 'id' => $existing->id, 'reused' => true];
@@ -990,7 +1017,7 @@ class PlotCoachBatchService
             ->where('book_id', $session->book_id)
             ->max('reader_order') ?? -1) + 1;
 
-        $seedContent = $this->seedContentForStub($session, $beatIds);
+        $seedContent = $this->seedContentForStub($session, $pivotIds['beats']);
         $seedWords = $seedContent === '' ? 0 : str_word_count(strip_tags($seedContent));
 
         $chapter = Chapter::query()->create([
@@ -1018,8 +1045,10 @@ class PlotCoachBatchService
             'word_count' => $seedWords,
         ]);
 
-        if ($beatIds) {
-            $chapter->beats()->attach($beatIds);
+        foreach ($pivotIds as $relation => $ids) {
+            if ($ids) {
+                $chapter->{$relation}()->attach($ids);
+            }
         }
 
         return ['type' => 'chapter', 'id' => $chapter->id];
@@ -1027,9 +1056,10 @@ class PlotCoachBatchService
 
     /**
      * Update an existing chapter — title, storyline_id (move between
-     * storylines), pov_character_id, act_id, reader_order, and `beat_ids`
-     * for a full pivot resync. Captures previous field values plus the
-     * pre-update beat pivot so undo restores the chapter exactly.
+     * storylines), pov_character_id, act_id, reader_order, and pivot resync
+     * fields (beat_ids, character_ids, wiki_entry_ids — full replacement).
+     * Captures previous values for every changed field plus the pre-update
+     * pivots so undo restores the chapter exactly.
      *
      * Word counts and version content are intentionally NOT touched here:
      * those track the manuscript text, not the structural metadata the
@@ -1091,42 +1121,57 @@ class PlotCoachBatchService
             $patch['reader_order'] = $this->coerceInt($data, 'reader_order', 'chapter.reader_order');
         }
 
-        $syncBeats = false;
-        $newBeatIds = [];
+        $pivotSyncs = [];
 
-        if (array_key_exists('beat_ids', $data)) {
-            if (! is_array($data['beat_ids'])) {
-                throw new InvalidArgumentException('chapter.beat_ids must be an array.');
+        foreach (self::CHAPTER_PIVOT_FIELDS as $field => $spec) {
+            if (! array_key_exists($field, $data)) {
+                continue;
             }
-            $newBeatIds = $this->validateBeatIds($session->book_id, $data['beat_ids']);
-            $previous['beat_ids'] = $chapter->beats()
-                ->pluck('beats.id')
+
+            if (! is_array($data[$field])) {
+                throw new InvalidArgumentException("chapter.{$field} must be an array.");
+            }
+
+            $pivotSyncs[$spec['relation']] = $this->{$spec['validator']}($session->book_id, $data[$field], "chapter.{$field}");
+            $previous[$field] = $chapter->{$spec['relation']}()
+                ->pluck("{$spec['table']}.id")
                 ->map(fn ($id) => (int) $id)
                 ->values()
                 ->all();
-            $syncBeats = true;
         }
 
-        if ($patch === [] && ! $syncBeats) {
-            throw new InvalidArgumentException('chapter update requires at least one of: title, storyline_id, pov_character_id, act_id, reader_order, beat_ids.');
+        if ($patch === [] && $pivotSyncs === []) {
+            throw new InvalidArgumentException('chapter update requires at least one of: title, storyline_id, pov_character_id, act_id, reader_order, beat_ids, character_ids, wiki_entry_ids.');
         }
 
         if ($patch !== []) {
             $chapter->update($patch);
         }
 
-        if ($syncBeats) {
-            $chapter->beats()->sync($newBeatIds);
+        foreach ($pivotSyncs as $relation => $ids) {
+            $chapter->{$relation}()->sync($ids);
         }
 
         return ['type' => 'chapter', 'id' => $chapter->id, 'updated' => true, 'previous' => $previous];
     }
 
     /**
-     * @param  array<int, int|string>|mixed  $raw
+     * Pivot fields supported on a chapter update. Drives both the resync logic
+     * in updateChapter and the undo restore in deleteWrite. Adding a new pivot
+     * means one entry here, no further branching.
+     *
+     * @var array<string, array{relation: string, table: string, validator: string}>
+     */
+    private const CHAPTER_PIVOT_FIELDS = [
+        'beat_ids' => ['relation' => 'beats', 'table' => 'beats', 'validator' => 'validateBeatIds'],
+        'character_ids' => ['relation' => 'characters', 'table' => 'characters', 'validator' => 'validateCharacterIds'],
+        'wiki_entry_ids' => ['relation' => 'wikiEntries', 'table' => 'wiki_entries', 'validator' => 'validateWikiEntryIds'],
+    ];
+
+    /**
      * @return list<int>
      */
-    private function validateBeatIds(int $bookId, mixed $raw): array
+    private function validateBeatIds(int $bookId, mixed $raw, string $field = 'chapter.beat_ids'): array
     {
         if (! is_array($raw) || empty($raw)) {
             return [];
@@ -1145,7 +1190,7 @@ class PlotCoachBatchService
 
         if ($missing) {
             throw new InvalidArgumentException(
-                'chapter.beat_ids references beats that do not belong to this book: '.implode(', ', $missing)
+                "{$field} references beats that do not belong to this book: ".implode(', ', $missing)
             );
         }
 
@@ -1371,29 +1416,29 @@ class PlotCoachBatchService
                 return;
             }
 
-            $pivotCharacterIds = null;
-            $pivotBeatIds = null;
+            $pivotsToRestore = [];
 
             if ($write['type'] === 'plot_point' && array_key_exists('character_ids', $previous)) {
-                $pivotCharacterIds = is_array($previous['character_ids']) ? $previous['character_ids'] : [];
+                $pivotsToRestore['characters'] = is_array($previous['character_ids']) ? $previous['character_ids'] : [];
                 unset($previous['character_ids']);
             }
 
-            if ($write['type'] === 'chapter' && array_key_exists('beat_ids', $previous)) {
-                $pivotBeatIds = is_array($previous['beat_ids']) ? $previous['beat_ids'] : [];
-                unset($previous['beat_ids']);
+            if ($write['type'] === 'chapter') {
+                foreach (self::CHAPTER_PIVOT_FIELDS as $field => $spec) {
+                    if (! array_key_exists($field, $previous)) {
+                        continue;
+                    }
+                    $pivotsToRestore[$spec['relation']] = is_array($previous[$field]) ? $previous[$field] : [];
+                    unset($previous[$field]);
+                }
             }
 
             if ($previous !== []) {
                 $model->update($previous);
             }
 
-            if ($pivotCharacterIds !== null && $model instanceof PlotPoint) {
-                $model->characters()->sync($pivotCharacterIds);
-            }
-
-            if ($pivotBeatIds !== null && $model instanceof Chapter) {
-                $model->beats()->sync($pivotBeatIds);
+            foreach ($pivotsToRestore as $relation => $ids) {
+                $model->{$relation}()->sync($ids);
             }
 
             return;

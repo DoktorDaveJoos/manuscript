@@ -35,7 +35,7 @@ class ProposeChapterPlan implements Tool
 
     public function description(): Stringable|string
     {
-        return 'Presents a preview of chapter stubs you intend to add — one per proposed chapter, optionally linking beats, a POV character, and an act. Use this once beats exist and the author has agreed to break structure into chapters. The author will approve in chat before anything is persisted. Additive only: chapters whose (storyline, title) already exist will be reused, never renamed or deleted. Pass `chapters` as a JSON-encoded string of an array of `{"title": string, "storyline_id": int, "act_id"?: int, "pov_character_id"?: int, "beat_ids"?: int[]}` objects.';
+        return 'Presents a preview of chapter stubs you intend to add — one per proposed chapter, fully wiring beats, the POV character, supporting characters, the act, and any locations / items / lore / organizations (wiki entries) the chapter touches. Use this once beats exist and the author has agreed to break structure into chapters. The author will approve in chat before anything is persisted. Additive only: chapters whose (storyline, title) already exist will be reused (beats / characters / wiki entries re-attached without detaching), never renamed or deleted. Pass `chapters` as a JSON-encoded string of an array of `{"title": string, "storyline_id": int, "act_id"?: int, "pov_character_id"?: int, "beat_ids"?: int[], "character_ids"?: int[], "wiki_entry_ids"?: int[]}` objects.';
     }
 
     /**
@@ -172,7 +172,7 @@ class ProposeChapterPlan implements Tool
 
     /**
      * @param  array<string, mixed>  $chapter
-     * @return array{title: string, storyline_id: int, act_id?: int, pov_character_id?: int, beat_ids?: list<int>}|null
+     * @return array{title: string, storyline_id: int, act_id?: int, pov_character_id?: int, beat_ids?: list<int>, character_ids?: list<int>, wiki_entry_ids?: list<int>}|null
      */
     private function normalizeChapter(array $chapter): ?array
     {
@@ -200,11 +200,19 @@ class ProposeChapterPlan implements Tool
             $data['beat_ids'] = array_values(array_unique(array_map('intval', $chapter['beat_ids'])));
         }
 
+        if (isset($chapter['character_ids']) && is_array($chapter['character_ids'])) {
+            $data['character_ids'] = array_values(array_unique(array_map('intval', $chapter['character_ids'])));
+        }
+
+        if (isset($chapter['wiki_entry_ids']) && is_array($chapter['wiki_entry_ids'])) {
+            $data['wiki_entry_ids'] = array_values(array_unique(array_map('intval', $chapter['wiki_entry_ids'])));
+        }
+
         return $data;
     }
 
     /**
-     * @param  array{title: string, storyline_id: int, act_id?: int, pov_character_id?: int, beat_ids?: list<int>}  $data
+     * @param  array{title: string, storyline_id: int, act_id?: int, pov_character_id?: int, beat_ids?: list<int>, character_ids?: list<int>, wiki_entry_ids?: list<int>}  $data
      */
     private function renderLine(array $data, bool $reused): string
     {
@@ -214,11 +222,21 @@ class ProposeChapterPlan implements Tool
 
         if (! empty($data['beat_ids'])) {
             $count = count($data['beat_ids']);
-            $meta[] = $count.' beat'.($count === 1 ? '' : 's');
+            $meta[] = $count.' '.Str::plural('beat', $count);
         }
 
         if (! empty($data['pov_character_id'])) {
             $meta[] = 'POV #'.$data['pov_character_id'];
+        }
+
+        if (! empty($data['character_ids'])) {
+            $count = count($data['character_ids']);
+            $meta[] = $count.' supporting '.Str::plural('character', $count);
+        }
+
+        if (! empty($data['wiki_entry_ids'])) {
+            $count = count($data['wiki_entry_ids']);
+            $meta[] = $count.' wiki '.Str::plural('entry', $count);
         }
 
         if (! empty($data['act_id'])) {

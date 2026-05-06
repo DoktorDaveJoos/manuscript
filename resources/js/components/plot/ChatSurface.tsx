@@ -1,4 +1,4 @@
-import { ArrowUp, Loader, Sparkles } from 'lucide-react';
+import { Bot, Loader } from 'lucide-react';
 import {
     forwardRef,
     memo,
@@ -20,10 +20,11 @@ import type {
     BatchWrite,
     ProposalState,
 } from '@/components/plot/BatchProposalCard';
+import AiChatInput from '@/components/ui/AiChatInput';
+import type { AiChatInputHandle } from '@/components/ui/AiChatInput';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import Textarea from '@/components/ui/Textarea';
 import { useAiErrorToast } from '@/hooks/useAiErrorToast';
 import { md } from '@/lib/markdown';
 import { extractErrorMessage, jsonFetchHeaders } from '@/lib/utils';
@@ -254,6 +255,12 @@ export type ChatSurfaceHandle = {
      * conversational signal without the user typing it.
      */
     sendSystemSignal: (message: string) => void;
+    /**
+     * Populate the input field without sending it — used by the insights
+     * panel so a clicked hint becomes an editable starter, not an instant
+     * send.
+     */
+    fillInput: (text: string) => void;
 };
 
 /**
@@ -294,18 +301,9 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
         inputValueRef.current = input;
 
         const messagesEndRef = useRef<HTMLDivElement>(null);
-        const inputRef = useRef<HTMLTextAreaElement>(null);
+        const inputRef = useRef<AiChatInputHandle>(null);
         const abortRef = useRef<AbortController | null>(null);
         const lastSentMessageRef = useRef<string | null>(null);
-
-        // Auto-grow textarea height with content, capped to ~6 lines.
-        useEffect(() => {
-            const el = inputRef.current;
-            if (!el) return;
-            el.style.height = 'auto';
-            const max = 160;
-            el.style.height = `${Math.min(el.scrollHeight, max)}px`;
-        }, [input]);
 
         // Hydrate history for an existing session. Abort on unmount / id change.
         useEffect(() => {
@@ -809,18 +807,12 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
                 sendSystemSignal: (message: string) => {
                     void sendMessage(message);
                 },
+                fillInput: (text: string) => {
+                    setInput(text);
+                    inputRef.current?.focus();
+                },
             }),
             [sendMessage],
-        );
-
-        const handleKeyDown = useCallback(
-            (e: React.KeyboardEvent) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                }
-            },
-            [handleSend],
         );
 
         const hasHistory = messages.length > 0;
@@ -926,30 +918,16 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
                         </div>
                     )}
                     <div className="mx-auto w-full max-w-[720px] px-6 py-4">
-                        <div className="relative">
-                            <Textarea
-                                ref={inputRef}
-                                rows={1}
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder={t('input.placeholder')}
-                                aria-label={t('input.placeholder')}
-                                disabled={isStreaming}
-                                className="block max-h-40 min-h-12 overflow-y-auto py-3 pr-14 pl-4 text-sm leading-[1.4]"
-                            />
-                            <Button
-                                type="button"
-                                variant="accent"
-                                size="icon"
-                                onClick={handleSend}
-                                disabled={!input.trim() || isStreaming}
-                                aria-label={t('input.send')}
-                                className="absolute right-1.5 bottom-1.5"
-                            >
-                                <ArrowUp className="size-4" />
-                            </Button>
-                        </div>
+                        <AiChatInput
+                            ref={inputRef}
+                            value={input}
+                            onChange={setInput}
+                            onSend={handleSend}
+                            placeholder={t('input.placeholder')}
+                            ariaLabel={t('input.placeholder')}
+                            sendAriaLabel={t('input.send')}
+                            disabled={isStreaming}
+                        />
                     </div>
                 </div>
             </div>
@@ -1083,8 +1061,8 @@ function AssistantRow({
 
 function CoachAvatar() {
     return (
-        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-light text-accent">
-            <Sparkles className="size-3.5" />
+        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-neutral-bg text-ink">
+            <Bot className="size-3.5" />
         </div>
     );
 }

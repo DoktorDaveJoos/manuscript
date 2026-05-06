@@ -119,8 +119,9 @@ class HandleInertiaRequests extends Middleware
                 'editor_font' => AppSetting::get('editor_font', 'eb-garamond'),
                 'editor_font_size' => (int) AppSetting::get('editor_font_size', 18),
             ],
-            'ai_configured' => fn () => AiSetting::activeProvider()?->isConfigured() ?? false,
-            'ai_key_recovery_needed' => fn () => (bool) AiSetting::activeProvider()?->api_key_recovery_needed,
+            'ai_configured' => fn () => $this->activeAiSetting()?->isConfigured() ?? false,
+            'ai_key_recovery_needed' => fn () => (bool) $this->activeAiSetting()?->api_key_recovery_needed,
+            'ai_provider_label' => fn () => $this->activeAiSetting()?->provider->label(),
             'free_tier' => function () use ($request) {
                 if (License::isActive()) {
                     return null;
@@ -170,5 +171,15 @@ class HandleInertiaRequests extends Middleware
                 return $book->storylines;
             },
         ];
+    }
+
+    /**
+     * Resolve the active AI provider once per request. Three shared props read
+     * different fields off the same row — without memoization each Inertia
+     * render fires three separate `activeProvider()` queries.
+     */
+    private function activeAiSetting(): ?AiSetting
+    {
+        return once(fn () => AiSetting::activeProvider());
     }
 }

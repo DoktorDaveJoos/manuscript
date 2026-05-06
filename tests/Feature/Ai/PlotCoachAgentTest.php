@@ -23,6 +23,7 @@ use App\Models\PlotCoachSession;
 use App\Models\PlotPoint;
 use App\Models\Storyline;
 use App\Models\WikiEntry;
+use App\Services\PlotCoachSessionSummarizer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Ai\Ai;
@@ -151,19 +152,22 @@ test('plot coach instructions place volatile counters AFTER the cache breakpoint
 
     $staticAt = strpos($instructions, PlotCoachAgent::CACHE_BREAKPOINT_STATIC);
     $bibleAt = strpos($instructions, PlotCoachAgent::CACHE_BREAKPOINT_BIBLE);
+    $digestAt = strpos($instructions, PlotCoachAgent::CACHE_BREAKPOINT_DIGEST);
     $countersAt = strpos($instructions, '## Session counters');
 
     expect($staticAt)->not->toBeFalse();
     expect($bibleAt)->not->toBeFalse();
+    expect($digestAt)->not->toBeFalse();
     expect($countersAt)->not->toBeFalse();
 
-    // Order must be: persona/stage/handoff → STATIC marker → bible → BIBLE marker → counters
+    // Order: persona/stage/handoff → STATIC → bible → BIBLE → digest → DIGEST → counters
     expect($staticAt)->toBeLessThan($bibleAt);
-    expect($bibleAt)->toBeLessThan($countersAt);
+    expect($bibleAt)->toBeLessThan($digestAt);
+    expect($digestAt)->toBeLessThan($countersAt);
 
-    // Volatile counters MUST be after both breakpoints — otherwise the cache prefix breaks every turn.
+    // Volatile counters MUST be after every breakpoint — otherwise the cache prefix breaks every turn.
     expect(substr_count($instructions, '"user_turn_count": 17'))->toBe(1);
-    expect(strpos($instructions, '"user_turn_count": 17'))->toBeGreaterThan($bibleAt);
+    expect(strpos($instructions, '"user_turn_count": 17'))->toBeGreaterThan($digestAt);
 });
 
 test('plot coach isTrivialTurn classifies system-prefixed acks, wire signals, and short approvals/cancels/undos', function () {
@@ -232,6 +236,7 @@ test('plot coach providerOptions emits Anthropic cache_control markers on the st
     expect($options)->toHaveKey('system');
 
     $blocks = $options['system'];
+    // Short session: no digest content → digest block is skipped; static + bible + volatile.
     expect($blocks)->toHaveCount(3);
 
     // Block 1 — static persona/stage/handoff: cached.
@@ -252,7 +257,63 @@ test('plot coach providerOptions emits Anthropic cache_control markers on the st
     foreach ($blocks as $block) {
         expect($block['text'])->not->toContain(PlotCoachAgent::CACHE_BREAKPOINT_STATIC);
         expect($block['text'])->not->toContain(PlotCoachAgent::CACHE_BREAKPOINT_BIBLE);
+        expect($block['text'])->not->toContain(PlotCoachAgent::CACHE_BREAKPOINT_DIGEST);
     }
+});
+
+test('plot coach providerOptions caches the rolling digest as its own block when the session has pre-tail history', function () {
+    $book = Book::factory()->create();
+
+    $conversationId = (string) Str::uuid();
+    DB::table('agent_conversations')->insert([
+        'id' => $conversationId,
+        'user_id' => null,
+        'title' => 'long session',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $session = PlotCoachSession::factory()->for($book, 'book')->create([
+        'agent_conversation_id' => $conversationId,
+        'stage' => PlotCoachStage::Plotting,
+        'user_turn_count' => 30,
+    ]);
+
+    // 30 user + 30 assistant = 60 messages. With a 20-message verbatim tail,
+    // the first 40 are pre-tail and should be digested.
+    for ($i = 1; $i <= 30; $i++) {
+        foreach (['user', 'assistant'] as $role) {
+            DB::table('agent_conversation_messages')->insert([
+                'id' => (string) Str::uuid(),
+                'conversation_id' => $conversationId,
+                'agent' => PlotCoachAgent::class,
+                'role' => $role,
+                'content' => "turn {$i} {$role} line",
+                'attachments' => '[]',
+                'tool_calls' => '[]',
+                'tool_results' => '[]',
+                'usage' => '[]',
+                'meta' => '[]',
+                'created_at' => now()->addSeconds($i * 2 + ($role === 'assistant' ? 1 : 0)),
+                'updated_at' => now(),
+            ]);
+        }
+    }
+
+    $agent = new PlotCoachAgent($book, $session);
+    $options = $agent->providerOptions(Lab::Anthropic);
+
+    $blocks = $options['system'];
+    expect($blocks)->toHaveCount(4);
+
+    // Static, bible, digest all cached; volatile counters uncached.
+    expect($blocks[0]['cache_control'])->toBe(['type' => 'ephemeral']);
+    expect($blocks[1]['cache_control'])->toBe(['type' => 'ephemeral']);
+    expect($blocks[2]['cache_control'])->toBe(['type' => 'ephemeral']);
+    expect($blocks[3])->not->toHaveKey('cache_control');
+
+    // The digest block is the third one and contains the rolling digest header.
+    expect($blocks[2]['text'])->toContain('Earlier in this conversation');
 });
 
 test('plot coach providerOptions returns empty for providers with no per-request knobs', function () {
@@ -558,8 +619,8 @@ test('plot coach agent injects a rolling digest of older turns so long sessions 
         'user_turn_count' => 60,
     ]);
 
-    // 60 user turns + 60 assistant = 120 messages. First 80 are "pre-tail"
-    // (before the 40-message replay window) and should be digested.
+    // 60 user turns + 60 assistant = 120 messages. First 100 are "pre-tail"
+    // (before the 20-message replay window) and should be digested.
     for ($i = 1; $i <= 60; $i++) {
         foreach (['user', 'assistant'] as $role) {
             DB::table('agent_conversation_messages')->insert([
@@ -637,7 +698,7 @@ test('plot coach agent skips the rolling digest when the session is short enough
     expect($instructions)->not->toContain('Earlier in this conversation');
 });
 
-test('plot coach agent caps conversation window to 40 messages to resist long-session style drift', function () {
+test('plot coach agent caps conversation window to 20 messages and stays in sync with the digest tail', function () {
     $book = Book::factory()->create();
     $session = PlotCoachSession::factory()->for($book, 'book')->create();
 
@@ -646,7 +707,13 @@ test('plot coach agent caps conversation window to 40 messages to resist long-se
     $reflection = new ReflectionMethod($agent, 'maxConversationMessages');
     $reflection->setAccessible(true);
 
-    expect($reflection->invoke($agent))->toBe(40);
+    $cap = $reflection->invoke($agent);
+
+    expect($cap)->toBe(20);
+
+    // The summarizer's tail constant MUST equal the agent's cap — otherwise the
+    // digest either double-covers tail messages or leaves a gap.
+    expect(PlotCoachSessionSummarizer::ROLLING_DIGEST_TAIL_MESSAGES)->toBe($cap);
 });
 
 test('plot coach agent surfaces full character descriptions so the coach stays consistent with prior writing', function () {

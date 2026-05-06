@@ -15,6 +15,8 @@ import type {
 import { arrayMove } from '@dnd-kit/sortable';
 import { Head, router } from '@inertiajs/react';
 import {
+    Archive,
+    CircleStop,
     GripVertical,
     LayoutGrid,
     MessageSquare,
@@ -27,11 +29,13 @@ import {
     move as beatMove,
     reorder as beatReorder,
 } from '@/actions/App/Http/Controllers/BeatController';
+import { sessionArchive } from '@/actions/App/Http/Controllers/PlotCoachController';
 import { reorder as plotPointReorder } from '@/actions/App/Http/Controllers/PlotPointController';
 import Sidebar from '@/components/editor/Sidebar';
 import ActColumn from '@/components/plot/ActColumn';
 import ActContextMenu from '@/components/plot/ActContextMenu';
 import ActDetailPanel from '@/components/plot/ActDetailPanel';
+import ArchiveDrawer from '@/components/plot/ArchiveDrawer';
 import BeatContextMenu from '@/components/plot/BeatContextMenu';
 import BeatDetailPanel from '@/components/plot/BeatDetailPanel';
 import CoachPanel from '@/components/plot/CoachPanel';
@@ -42,10 +46,11 @@ import PlotPointContextMenu from '@/components/plot/PlotPointContextMenu';
 import PlotPointDetailPanel from '@/components/plot/PlotPointDetailPanel';
 import PlotWizardModal from '@/components/plot/PlotWizardModal';
 import Button from '@/components/ui/Button';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { PlotTemplate } from '@/lib/plot-templates';
-import { cn } from '@/lib/utils';
+import { jsonFetchHeaders } from '@/lib/utils';
 import type {
     Act,
     Beat,
@@ -230,6 +235,34 @@ export default function Plot({
         setCoachSessionId(activeCoachSessionId ?? null);
     }, [activeCoachSessionId]);
 
+    const [archiveOpen, setArchiveOpen] = useState(false);
+    const [archiving, setArchiving] = useState(false);
+
+    const handleEndSession = useCallback(async () => {
+        if (coachSessionId === null || archiving) return;
+        if (!window.confirm(tCoach('archive.end_session_confirm'))) return;
+
+        setArchiving(true);
+        try {
+            const res = await fetch(
+                sessionArchive.url({
+                    book: book.id,
+                    session: coachSessionId,
+                }),
+                {
+                    method: 'PATCH',
+                    headers: jsonFetchHeaders(),
+                },
+            );
+            if (!res.ok) throw new Error('archive failed');
+            setCoachSessionId(null);
+        } catch {
+            window.alert(tCoach('archive.end_session_error'));
+        } finally {
+            setArchiving(false);
+        }
+    }, [archiving, book.id, coachSessionId, tCoach]);
+
     // Plot mode — Coach chat or Board view. Persisted per-book in localStorage.
     // Default: Coach if an active unfinished session exists, Board otherwise.
     const [mode, setMode] = useState<PlotMode>(() => {
@@ -361,6 +394,21 @@ export default function Plot({
         }
         return map;
     }, [plotPoints]);
+
+    const coachContextCounts = useMemo(
+        () => ({
+            acts: acts.length,
+            plotPoints: plotPoints.length,
+            beats: plotPoints.reduce(
+                (sum, pp) => sum + (pp.beats?.length ?? 0),
+                0,
+            ),
+            characters: characters.length,
+            storylines: storylines.length,
+            chapters: chapters.length,
+        }),
+        [acts, plotPoints, characters, storylines, chapters],
+    );
 
     const handleCreateBeat = useCallback(
         (plotPointId: number) => {
@@ -747,44 +795,87 @@ export default function Plot({
                 <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
                     {/* Header bar */}
                     <div className="flex h-12 items-center justify-between border-b border-border px-6">
-                        <div className="flex items-center gap-4">
-                            <h1 className="text-sm font-medium text-ink">
-                                {t('page.tabs.timeline', 'Plot')}
-                            </h1>
-                            <div className="flex items-center gap-2">
-                                {mode === 'coach' &&
-                                    coachSessionId !== null && (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                coachPanelRef.current?.sendSystemSignal(
-                                                    'UNDO:last',
-                                                );
-                                            }}
-                                            className="inline-flex items-center gap-1.5 rounded-md border border-border-light px-2.5 py-1 text-[12px] font-medium text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
-                                        >
-                                            <Undo2 className="h-3.5 w-3.5" />
-                                            {tCoach('undo.button')}
-                                        </button>
-                                    )}
-                                <ModeToggle
-                                    mode={mode}
-                                    onChange={setMode}
-                                    coachLabel={tCoach('mode.coach')}
-                                    boardLabel={tCoach('mode.board')}
-                                />
-                            </div>
-                        </div>
-                        {mode === 'board' && hasActs && (
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={handleAddAct}
+                        <div className="flex items-center gap-2">
+                            <ToggleGroup
+                                type="single"
+                                value={mode}
+                                onValueChange={(next) => {
+                                    if (next === 'coach' || next === 'board') {
+                                        setMode(next);
+                                    }
+                                }}
+                                className="gap-0.5"
                             >
-                                <Plus size={14} />
-                                {t('act.addAct')}
-                            </Button>
-                        )}
+                                <ToggleGroupItem
+                                    value="coach"
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1"
+                                >
+                                    <MessageSquare className="size-3.5" />
+                                    {tCoach('mode.coach')}
+                                </ToggleGroupItem>
+                                <ToggleGroupItem
+                                    value="board"
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1"
+                                >
+                                    <LayoutGrid className="size-3.5" />
+                                    {tCoach('mode.board')}
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                            {mode === 'coach' && coachSessionId !== null && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                        coachPanelRef.current?.sendSystemSignal(
+                                            'UNDO:last',
+                                        );
+                                    }}
+                                >
+                                    <Undo2 className="size-3.5" />
+                                    {tCoach('undo.button')}
+                                </Button>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                            {mode === 'coach' && coachSessionId !== null && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleEndSession}
+                                    disabled={archiving}
+                                    aria-label={tCoach('archive.end_session')}
+                                    title={tCoach('archive.end_session')}
+                                    className="size-8 text-ink-faint hover:text-ink"
+                                >
+                                    <CircleStop className="size-3.5" />
+                                </Button>
+                            )}
+                            {mode === 'coach' && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setArchiveOpen(true)}
+                                    aria-label={tCoach('archive.open')}
+                                    title={tCoach('archive.open')}
+                                    className="size-8 text-ink-faint hover:text-ink"
+                                >
+                                    <Archive className="size-3.5" />
+                                </Button>
+                            )}
+                            {mode === 'board' && hasActs && (
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={handleAddAct}
+                                >
+                                    <Plus size={14} />
+                                    {t('act.addAct')}
+                                </Button>
+                            )}
+                        </div>
                     </div>
 
                     {mode === 'coach' ? (
@@ -794,7 +885,7 @@ export default function Plot({
                             bookId={book.id}
                             activeSessionId={coachSessionId}
                             onSessionCreated={setCoachSessionId}
-                            onSessionEnded={() => setCoachSessionId(null)}
+                            contextCounts={coachContextCounts}
                         />
                     ) : hasActs ? (
                         <>
@@ -946,6 +1037,12 @@ export default function Plot({
                     )}
                 </main>
 
+                <ArchiveDrawer
+                    bookId={book.id}
+                    open={archiveOpen}
+                    onClose={() => setArchiveOpen(false)}
+                />
+
                 {contextMenu && contextMenuBeat && (
                     <BeatContextMenu
                         beat={contextMenuBeat}
@@ -1005,65 +1102,5 @@ export default function Plot({
                 )}
             </div>
         </>
-    );
-}
-
-type ModeToggleProps = {
-    mode: PlotMode;
-    onChange: (mode: PlotMode) => void;
-    coachLabel: string;
-    boardLabel: string;
-};
-
-function ModeToggle({
-    mode,
-    onChange,
-    coachLabel,
-    boardLabel,
-}: ModeToggleProps) {
-    return (
-        <div className="inline-flex items-center gap-0.5 rounded-md border border-border-light bg-surface-card p-0.5">
-            <ModeToggleButton
-                active={mode === 'coach'}
-                onClick={() => onChange('coach')}
-                label={coachLabel}
-                icon={<MessageSquare className="h-3.5 w-3.5" />}
-            />
-            <ModeToggleButton
-                active={mode === 'board'}
-                onClick={() => onChange('board')}
-                label={boardLabel}
-                icon={<LayoutGrid className="h-3.5 w-3.5" />}
-            />
-        </div>
-    );
-}
-
-function ModeToggleButton({
-    active,
-    onClick,
-    label,
-    icon,
-}: {
-    active: boolean;
-    onClick: () => void;
-    label: string;
-    icon: React.ReactNode;
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            aria-pressed={active}
-            className={cn(
-                'inline-flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-[12px] font-medium transition-colors',
-                active
-                    ? 'border border-border-light bg-surface text-ink shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
-                    : 'border border-transparent text-ink-muted hover:text-ink',
-            )}
-        >
-            {icon}
-            {label}
-        </button>
     );
 }

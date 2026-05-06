@@ -290,24 +290,32 @@ All icons use **Lucide React** (`lucide-react`). Default stroke width is 2; use 
 
 ## Components
 
-### shadcn First
+### Reuse First, shadcn Second, Custom Last
 
-Always try to solve a UI problem with a shadcn component before building custom markup. Use `npx shadcn@latest search` to check registries. If a shadcn component exists for the pattern, install and adapt it to the project's design tokens.
+Components are not optional decoration — they are the design system. Before writing markup:
 
-### Reuse First
+1. **Check `resources/js/components/ui/` first.** If a component already exists for the pattern, use it. Never reinvent a component that lives in this folder.
+2. **If nothing matches, use shadcn** (`npx shadcn@latest search`). Install and adapt it to our tokens; do not pull in raw shadcn defaults.
+3. **Only build custom markup as a last resort**, and when you do, lift it into `components/ui/` the moment it appears in a second place.
+
+This rule is non-negotiable. A second copy of a button, input, or chat surface IS a bug — fix the duplication before it spreads. If you find yourself writing `<button className="…">`, `<input type="text" className="…">`, or assembling a textarea + send-button pair inline, stop and reach for the matching component.
+
+### Component Catalog
 
 Always check `resources/js/components/ui/` before creating new elements:
 
 | Component | Purpose | Key props |
 |---|---|---|
-| `Button` | All buttons | `variant: primary\|secondary\|ghost\|danger\|accent`, `size: sm\|default\|lg` |
+| `Button` | All buttons | `variant: primary\|secondary\|ghost\|danger\|accent`, `size: sm\|default\|lg\|icon` |
 | `Input` | Text inputs | `variant: default\|dialog` |
 | `Select` | Dropdowns | `variant: default\|dialog` |
 | `Textarea` | Multi-line input | `variant: default\|dialog` |
+| `SearchInput` | Search/filter inputs with magnifier + clear button | `value`, `onChange`, `placeholder`, `disabled?`, `onClear?` |
+| `AiChatInput` | AI chat compose surface (textarea + circular send button) | `value`, `onChange`, `onSend`, `placeholder`, `disabled`, `maxHeight?` |
 | `Dialog` | Modals | `onClose`, `width?`, `backdrop: none\|light\|dark` |
 | `Drawer` | Side panels | `onClose`, slides from right |
 | `PanelHeader` | Panel headers | `title`, `onClose?`, `suffix?` |
-| `SectionLabel` | Uppercase labels | `as: span\|label`, `className?` |
+| `SectionLabel` | Uppercase labels | `as: span\|label`, `variant: default\|section`, `className?` |
 | `ContextMenu` | Right-click menus | `.Item`, `.Submenu`, `.Separator` |
 | `FormField` | Label + input + error | `label`, `error?`, `children` |
 | `Card` | Content containers | `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter` |
@@ -316,6 +324,24 @@ Always check `resources/js/components/ui/` before creating new elements:
 | `Checkbox` | Multi-select | `checked`, `onChange` |
 | `Collapsible` | Expandable sections | Animated open/close |
 | `Kbd` | Keyboard shortcuts | Renders styled key cap |
+
+### AiChatInput
+
+The single source of truth for "talk to an AI agent" inputs (Plot Coach, editor AI chat, anywhere else AI is conversational). Renders an auto-growing textarea inside a soft `rounded-xl` card with a circular black send button in the bottom-right corner. Enter sends, Shift+Enter inserts a newline. Never roll your own textarea + send-button pair — extend `AiChatInput` instead.
+
+```tsx
+<AiChatInput
+    ref={inputRef}            // optional, for focus()/blur()
+    value={input}
+    onChange={setInput}
+    onSend={handleSend}
+    placeholder="Message Coach…"
+    ariaLabel="Message Coach"
+    sendAriaLabel="Send"
+    disabled={isStreaming}
+    maxHeight={160}           // optional, defaults to 160
+/>
+```
 
 ### Button Variants
 

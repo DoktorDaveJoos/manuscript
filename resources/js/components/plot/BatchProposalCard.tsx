@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import SectionLabel from '@/components/ui/SectionLabel';
 import { md } from '@/lib/markdown';
 import { cn } from '@/lib/utils';
 
@@ -264,9 +265,7 @@ type SectionProps = {
 function Section({ label, items, overflow, type }: SectionProps) {
     return (
         <div>
-            <div className="text-[11px] font-medium tracking-wider text-ink-faint uppercase">
-                {label}
-            </div>
+            <SectionLabel variant="section">{label}</SectionLabel>
             <ul className="mt-1 flex flex-col gap-1">
                 {items.map((item, i) => {
                     const isUpdate =

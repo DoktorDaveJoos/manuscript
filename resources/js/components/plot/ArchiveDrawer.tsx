@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import Drawer from '@/components/ui/Drawer';
 import PanelHeader from '@/components/ui/PanelHeader';
+import SectionLabel from '@/components/ui/SectionLabel';
 import { md } from '@/lib/markdown';
 import { jsonFetchHeaders } from '@/lib/utils';
 
@@ -174,11 +175,11 @@ export default function ArchiveDrawer({
                                             ),
                                         })}
                                     </span>
-                                    <span className="text-[11px] font-medium tracking-wide text-ink-muted uppercase">
+                                    <SectionLabel>
                                         {t('archive.stage_label', {
                                             stage: session.stage,
                                         })}
-                                    </span>
+                                    </SectionLabel>
                                 </div>
                                 <div className="mt-1 text-xs text-ink-muted">
                                     {t('archive.turn_count', {
@@ -258,8 +259,8 @@ function TranscriptView({
             </div>
 
             <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
-                <Card className="bg-surface px-3 py-2 text-[11px] font-medium tracking-wide text-ink-muted uppercase">
-                    {t('archive.read_only')}
+                <Card className="bg-surface px-3 py-2">
+                    <SectionLabel>{t('archive.read_only')}</SectionLabel>
                 </Card>
 
                 {loading && (
@@ -281,9 +282,7 @@ function TranscriptMessageView({ message }: { message: TranscriptMessage }) {
     if (message.role === 'user') {
         return (
             <Card className="bg-surface px-3 py-2 text-[13px] text-ink">
-                <span className="mr-1 text-[11px] font-medium tracking-wide text-ink-muted uppercase">
-                    You
-                </span>
+                <SectionLabel className="mr-1">You</SectionLabel>
                 <span className="whitespace-pre-wrap">{message.content}</span>
             </Card>
         );

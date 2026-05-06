@@ -36,7 +36,7 @@ class ProposeBatch implements Tool
 
     public function description(): Stringable|string
     {
-        return 'Presents a preview of writes you intend to make — characters, storylines, acts, plot points, beats, wiki entries, a patch of intake-stage book fields (premise, target_word_count, genre) via a `book_update` write, a session-level update (stage transition, coaching_mode) via a `session_update` write, or a soft-delete via a `delete` write of shape `{"type":"delete","data":{"target":"<character|wiki_entry|storyline|plot_point|beat|chapter|act>","id":<int>}}`. Use this when the user has just agreed to something concrete, you have one or more coherent writes ready, and the conversation is at a natural resting point. The user will approve, edit, or reject in chat before anything is persisted. Deletes are reversible via undo (rows are soft-deleted, not destroyed). Pass `writes` as a JSON-encoded string of an array of `{"type": string, "data": object}` objects, e.g. `[{"type":"act","data":{"number":1,"title":"The Controlled Error","description":"Lab accident sets the story in motion."}},{"type":"session_update","data":{"stage":"plotting"}}]`.';
+        return 'Presents a preview of writes you intend to make — characters, storylines, acts, plot points, beats, wiki entries, chapters (fully wired with storyline, beats, POV character, supporting characters via `character_ids`, locations/items/lore via `wiki_entry_ids`, and act), a patch of intake-stage book fields (premise, target_word_count, genre) via a `book_update` write, a session-level update (stage transition, coaching_mode) via a `session_update` write, or a soft-delete via a `delete` write of shape `{"type":"delete","data":{"target":"<character|wiki_entry|storyline|plot_point|beat|chapter|act>","id":<int>}}`. Use this when the user has just agreed to something concrete, you have one or more coherent writes ready, and the conversation is at a natural resting point. The user will approve, edit, or reject in chat before anything is persisted. Deletes are reversible via undo (rows are soft-deleted, not destroyed). Pass `writes` as a JSON-encoded string of an array of `{"type": string, "data": object}` objects, e.g. `[{"type":"act","data":{"number":1,"title":"The Controlled Error","description":"Lab accident sets the story in motion."}},{"type":"session_update","data":{"stage":"plotting"}}]`.';
     }
 
     /**
@@ -448,7 +448,16 @@ class ProposeBatch implements Tool
             $bits[] = 'act → '.$this->labelFor('act', (int) $data['act_id'], $bookId);
         }
         if (array_key_exists('beat_ids', $data) && is_array($data['beat_ids'])) {
-            $bits[] = count($data['beat_ids']).' beat'.(count($data['beat_ids']) === 1 ? '' : 's');
+            $count = count($data['beat_ids']);
+            $bits[] = $count.' '.Str::plural('beat', $count);
+        }
+        if (array_key_exists('character_ids', $data) && is_array($data['character_ids'])) {
+            $count = count($data['character_ids']);
+            $bits[] = $count.' supporting '.Str::plural('character', $count);
+        }
+        if (array_key_exists('wiki_entry_ids', $data) && is_array($data['wiki_entry_ids'])) {
+            $count = count($data['wiki_entry_ids']);
+            $bits[] = $count.' wiki '.Str::plural('entry', $count);
         }
 
         return $bits === [] ? $head : $head.' — '.implode(' · ', $bits);

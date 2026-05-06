@@ -43,7 +43,7 @@ class PlotCoachSessionSummarizer
      * replays verbatim each turn. Must stay in sync with
      * {@see PlotCoachAgent::maxConversationMessages()}.
      */
-    public const ROLLING_DIGEST_TAIL_MESSAGES = 40;
+    public const ROLLING_DIGEST_TAIL_MESSAGES = 20;
 
     /** Chars per message when rendering the rolling in-session digest. */
     private const ROLLING_DIGEST_BUDGET = 4000;

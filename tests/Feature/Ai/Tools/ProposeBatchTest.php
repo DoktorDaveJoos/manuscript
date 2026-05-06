@@ -281,3 +281,33 @@ it('produces a unique proposal_id per invocation', function () {
 
     expect($mA[1])->not->toBe($mB[1]);
 });
+
+it('renders chapter wiring (POV, supporting cast, wiki entries) in the chapter line', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book, 'book')->create(['name' => 'Main arc']);
+    $pov = Character::factory()->for($book, 'book')->create(['name' => 'Maja']);
+
+    $tool = new ProposeBatch($book->id);
+    $result = (string) $tool->handle(new Request([
+        'summary' => 'Wired stub',
+        'writes' => [
+            ['type' => 'chapter', 'data' => [
+                'title' => 'Opening',
+                'storyline_id' => $storyline->id,
+                'pov_character_id' => $pov->id,
+                'beat_ids' => [1, 2],
+                'character_ids' => [3, 4, 5],
+                'wiki_entry_ids' => [9],
+            ]],
+        ],
+    ]));
+
+    expect($result)
+        ->toContain('### Chapters')
+        ->toContain('Opening')
+        ->toContain('storyline → Main arc')
+        ->toContain('POV → Maja')
+        ->toContain('2 beats')
+        ->toContain('3 supporting characters')
+        ->toContain('1 wiki entry');
+});

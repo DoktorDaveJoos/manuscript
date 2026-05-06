@@ -73,11 +73,19 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
     /**
      * Sentinel marking the end of the slow-changing "story bible" — saved
      * characters and wiki entries. Invalidated only when the author edits a
-     * bible entity. Volatile session counters (turn count, recent batches,
-     * pending proposals, rolling digest) sit AFTER this marker so they do
-     * not break the bible cache hit.
+     * bible entity.
      */
     public const CACHE_BREAKPOINT_BIBLE = '<!-- pc:cache:bible -->';
+
+    /**
+     * Sentinel marking the end of the rolling digest — a condensed view of
+     * pre-tail conversation that the summarizer rebuilds every
+     * {@see self::ROLLING_DIGEST_REFRESH_EVERY_TURNS} turns. Stable between
+     * refreshes, so caching it earns a hit on most turns. Truly per-turn
+     * volatile state (turn counter, recent batches, pending proposals) sits
+     * AFTER this marker so its tiny delta does not break the digest cache hit.
+     */
+    public const CACHE_BREAKPOINT_DIGEST = '<!-- pc:cache:digest -->';
 
     /**
      * Cached for the lifetime of the agent instance (one HTTP turn). Both
@@ -100,6 +108,7 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         $stageGuidance = $this->stageGuidance();
         $handoff = $this->parentHandoffBlock();
         $bible = $this->bibleStateBlock();
+        $digest = $this->digestBlock();
         $volatile = $this->volatileStateBlock();
 
         $parts = [$persona, $stageGuidance];
@@ -111,6 +120,8 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         $parts[] = self::CACHE_BREAKPOINT_STATIC;
         $parts[] = $bible;
         $parts[] = self::CACHE_BREAKPOINT_BIBLE;
+        $parts[] = $digest;
+        $parts[] = self::CACHE_BREAKPOINT_DIGEST;
         $parts[] = $volatile;
 
         return trim(implode("\n\n", $parts));
@@ -120,9 +131,11 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
      * Refresh the stored rolling digest when the conversation has advanced far
      * enough that the digest's "through turn" marker is stale. Keeps the
      * coach's awareness of early/mid-session content without re-running
-     * the summarizer on every turn.
+     * the summarizer on every turn. Tighter than the verbatim replay window
+     * so the digest never lags more than a few turns behind what fell off
+     * the tail.
      */
-    private const ROLLING_DIGEST_REFRESH_EVERY_TURNS = 10;
+    private const ROLLING_DIGEST_REFRESH_EVERY_TURNS = 5;
 
     private function rollingDigestText(): string
     {
@@ -336,10 +349,10 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
      * - Anthropic: inject prompt-cache markers into the system block. The SDK
      *   treats `system` as a plain string by default, which Anthropic does NOT
      *   auto-cache — markers are required. Splitting `instructions()` on the
-     *   two cache breakpoint sentinels yields three blocks; we tag the first
-     *   two with `cache_control: ephemeral` so the static persona/stage prefix
-     *   and the bible cache across turns. The third (volatile counters,
-     *   recent batches, rolling digest) is left uncached.
+     *   three cache breakpoint sentinels yields up to four blocks; we tag the
+     *   first three (static persona/stage prefix, bible, rolling digest) with
+     *   `cache_control: ephemeral`. The fourth (turn counter, recent batches,
+     *   pending proposals) is left uncached.
      * - Other providers cache byte-stable prefixes automatically and have no
      *   per-request knobs we want to set — return [].
      *
@@ -362,8 +375,9 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
     {
         $instructions = (string) $this->instructions();
 
-        [$static, $rest] = $this->splitOnSentinel($instructions, self::CACHE_BREAKPOINT_STATIC);
-        [$bible, $volatile] = $this->splitOnSentinel($rest, self::CACHE_BREAKPOINT_BIBLE);
+        [$static, $rest1] = $this->splitOnSentinel($instructions, self::CACHE_BREAKPOINT_STATIC);
+        [$bible, $rest2] = $this->splitOnSentinel($rest1, self::CACHE_BREAKPOINT_BIBLE);
+        [$digest, $volatile] = $this->splitOnSentinel($rest2, self::CACHE_BREAKPOINT_DIGEST);
 
         $blocks = [];
 
@@ -379,6 +393,14 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
             $blocks[] = [
                 'type' => 'text',
                 'text' => trim($bible),
+                'cache_control' => ['type' => 'ephemeral'],
+            ];
+        }
+
+        if (trim($digest) !== '') {
+            $blocks[] = [
+                'type' => 'text',
+                'text' => trim($digest),
                 'cache_control' => ['type' => 'ephemeral'],
             ];
         }
@@ -579,8 +601,8 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         - Plot points support: `title`, `description`, `type`, `status`, `sort_order`, `act_id`/`act_number`, `character_ids` (full replace).
         - Acts support: `title`, `description`, `number`, `color`, `sort_order`. Renaming an act is loud — mention it in your forward line. Renumbering or reordering acts is structural; only do it when the author has clearly asked.
         - Storylines support: `name`, `type`, `color`, `sort_order`. Same rule — renames/retypes are loud, the author should know.
-        - Chapters support updates: `title`, `storyline_id` (move to a different storyline), `pov_character_id`, `act_id`, `reader_order`, `beat_ids` (full pivot resync — pass the full list of beats this chapter should cover, not a delta). Word counts and version content are not touched here — the coach edits structure, not manuscript text.
-        - Updates are reversible — undo restores the previous values (including the previous `plot_point_id`/`act_id` on a rehang, and the previous `character_ids`/`beat_ids` pivot on a sync). The author can iterate freely without the board growing extra rows.
+        - Chapters support updates: `title`, `storyline_id` (move to a different storyline), `pov_character_id`, `act_id`, `reader_order`, `beat_ids` (full pivot resync), `character_ids` (full pivot resync — supporting cast attached to this chapter), `wiki_entry_ids` (full pivot resync — every location, item, organization, or lore concept the chapter touches). Pivot fields are FULL replacements: pass the full list, not a delta; pass `[]` to clear. Word counts and version content are not touched here — the coach edits structure, not manuscript text.
+        - Updates are reversible — undo restores the previous values (including the previous `plot_point_id`/`act_id` on a rehang, and the previous `character_ids`/`beat_ids`/`wiki_entry_ids` pivots on a sync). The author can iterate freely without the board growing extra rows.
         - If the saved description is already correct, do NOT propose an update. Updates are for real revisions, not for re-stating the same thing.
         - Looking up an `id` you don't have: `saved_entities` carries the most recent items but is sampled. If the entity you need to update isn't there (older entry, near-duplicate the author flagged for cleanup, etc.), call `LookupExistingEntities` (characters + wiki entries) or `GetPlotBoardState` (acts, plot points, beats, storylines, characters) — both now print `id=<n>` in front of every row. Use those ids in the update.
 
@@ -603,18 +625,29 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         return <<<REFINE
         Current stage: Refinement.
 
-        The board is mostly filled. Polish rough edges, close open threads, and — when the author is ready — hand off to chapter stubs.
+        The board is mostly filled. Polish rough edges, close open threads, and — when the author is ready — hand off to fully-wired chapter stubs.
 
         Chapter handoff rules:
         - Only propose chapters when beats exist and have titles + descriptions. Don't push it early.
         - When the author asks "turn this into chapters" or clearly signals they're ready, call ProposeChapterPlan. Do not apply directly — the author approves in chat first.
-        - Each proposed chapter must specify (at minimum) title + storyline_id. Include beat_ids, pov_character_id, act_id when you know them.
-        - Chapters are additive. If a title already exists on a storyline, ProposeChapterPlan marks it as reused — beats are re-attached, metadata is left alone. Never propose a "rename" or "delete" of an existing chapter silently.
+        - Storylines are required. Every chapter needs a `storyline_id`. If no storyline exists yet (the author has been working at the act/plot_point level only), propose a `storyline` write in the SAME batch that creates the first chapters — do not split it into two round-trips. Apply will roll back if a chapter references a missing storyline_id, so wire the storyline first or use a single ProposeBatch that creates the storyline + chapters together (chapters can reference the storyline by id once it's persisted in-batch).
+        - Each proposed chapter must specify title + storyline_id. ALWAYS wire what you know:
+          - `beat_ids` — every beat this chapter dramatizes (N:1 is fine).
+          - `pov_character_id` — the POV for the chapter (single character).
+          - `character_ids` — every other character that appears or is implicated in this chapter (supporting cast). Pull these from the beat descriptions and from `plot_point.character_ids` on the beats' parent plot points. POV does NOT need to be repeated here — it's a separate pivot.
+          - `wiki_entry_ids` — every location, item, organization, or lore concept the chapter touches. Pull these from the beat descriptions and from the bible. A chapter set in Jakutsk that references the alien material and ETH Zurich attaches all three.
+          - `act_id` — the act this chapter sits in. Inherit from the beats' parent plot_points.
+        - The goal is a fully-wired stub: when the author opens the chapter, the storyline / act / POV / supporting cast / beats / wiki entries are ALL pre-attached. They only have to write the prose. Don't leave wiring for "later" if you can infer it from the saved entities now.
+        - Chapters are additive. If a title already exists on a storyline, ProposeChapterPlan marks it as reused — beats / characters / wiki entries are re-attached without detaching, metadata is left alone. Never propose a "rename" or "delete" of an existing chapter silently.
         - Cross-storyline chapters are fine. Multiple beats per chapter (N:1) are fine.
         - After the author approves, call ApplyPlotCoachBatch with the exact writes array from the ProposeChapterPlan sentinel. On failure explain briefly and re-propose.
 
+        Single chapters mid-conversation:
+        - For a single chapter (not a full plan), use ProposeBatch with one `chapter` write. All the same fields apply (`storyline_id`, `beat_ids`, `pov_character_id`, `character_ids`, `wiki_entry_ids`, `act_id`). Useful when the author wants to slice off one scene without committing to a full chapter plan.
+
         Tool arguments:
         - ProposeChapterPlan and ApplyPlotCoachBatch both require `book_id` — always pass {$bookId}. Never guess another number.
+        - For pivot ids (`beat_ids`, `character_ids`, `wiki_entry_ids`, `pov_character_id`, `storyline_id`, `act_id`) use ONLY the numeric ids from `saved_entities`. Wiki entry ids appear in `saved_entities.wiki_entries` as `id=<n>`.
         REFINE;
     }
 
@@ -722,15 +755,32 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
     }
 
     /**
-     * Per-turn volatile block — counters, recent batches, pending proposals,
-     * rolling digest. Sits AFTER the cache breakpoint, so each turn's tiny
-     * delta does not invalidate the (much larger) bible cache hit. Order
-     * inside this block does not need to be cache-friendly.
+     * Cacheable digest block — the rolling in-session summary of pre-tail
+     * conversation. Sits between the bible breakpoint and the truly volatile
+     * counters, with its own cache breakpoint after it: stable for
+     * {@see self::ROLLING_DIGEST_REFRESH_EVERY_TURNS} turns at a time, so most
+     * turns hit cache for this block. Returns '' when the session is short
+     * enough that the verbatim replay window already covers everything — the
+     * caller skips empty blocks.
      */
-    private function volatileStateBlock(): string
+    private function digestBlock(): string
     {
         $rolling = trim($this->rollingDigestText());
 
+        if ($rolling === '') {
+            return '';
+        }
+
+        return "## Earlier in this conversation (condensed — recent turns are replayed below verbatim)\n".$rolling;
+    }
+
+    /**
+     * Per-turn volatile block — turn counter, recent batches, pending
+     * proposals. Sits AFTER all cache breakpoints so each turn's tiny delta
+     * does not invalidate any cached prefix.
+     */
+    private function volatileStateBlock(): string
+    {
         $payload = [
             'user_turn_count' => (int) ($this->session->user_turn_count ?? 0),
             'recent_batches' => $this->recentBatchesSnapshot(),
@@ -742,15 +792,7 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
             static fn ($v) => $v !== null && $v !== [] && $v !== '',
         );
 
-        $sections = [];
-
-        if ($rolling !== '') {
-            $sections[] = "## Earlier in this conversation (condensed — recent turns are replayed below verbatim)\n".$rolling;
-        }
-
-        $sections[] = "## Session counters (this turn only)\n".json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
-        return implode("\n\n", $sections);
+        return "## Session counters (this turn only)\n".json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     }
 
     /**
@@ -966,10 +1008,13 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
     /**
      * Capped low so long sessions don't lead the LLM to imitate its own
      * earlier verbose turns — the structured state block carries the facts
-     * that would otherwise need to live in the transcript.
+     * that would otherwise need to live in the transcript, and the rolling
+     * digest carries pre-tail conversation continuity. Must stay in sync with
+     * {@see PlotCoachSessionSummarizer::ROLLING_DIGEST_TAIL_MESSAGES} so the
+     * digest covers exactly what falls off the tail (no gap, no overlap).
      */
     protected function maxConversationMessages(): int
     {
-        return 40;
+        return 20;
     }
 }

@@ -106,3 +106,56 @@ it('skips malformed chapter entries silently', function () {
     expect($result)->toContain('1 chapter — awaiting approval');
     expect($result)->toContain('Valid');
 });
+
+it('renders supporting character and wiki entry counts in the preview', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book, 'book')->create(['name' => 'Main arc']);
+
+    $tool = new ProposeChapterPlan;
+    $result = (string) $tool->handle(new Request([
+        'book_id' => $book->id,
+        'summary' => 'Wired stub',
+        'chapters' => [
+            [
+                'title' => 'Opening',
+                'storyline_id' => $storyline->id,
+                'beat_ids' => [10, 11],
+                'pov_character_id' => 7,
+                'character_ids' => [8, 9],
+                'wiki_entry_ids' => [42],
+            ],
+        ],
+    ]));
+
+    expect($result)
+        ->toContain('Opening')
+        ->toContain('2 beats')
+        ->toContain('POV #7')
+        ->toContain('2 supporting characters')
+        ->toContain('1 wiki entry');
+});
+
+it('passes character_ids and wiki_entry_ids through to the sentinel writes', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book, 'book')->create();
+
+    $tool = new ProposeChapterPlan;
+    $result = (string) $tool->handle(new Request([
+        'book_id' => $book->id,
+        'summary' => 'Stash',
+        'chapters' => [
+            [
+                'title' => 'Opening',
+                'storyline_id' => $storyline->id,
+                'character_ids' => [4, 5],
+                'wiki_entry_ids' => [11],
+            ],
+        ],
+    ]));
+
+    preg_match('/<!-- PLOT_COACH_BATCH_PROPOSAL\n(.+?)\n-->/s', $result, $matches);
+    $payload = json_decode($matches[1], true);
+
+    expect($payload['writes'][0]['data']['character_ids'])->toBe([4, 5]);
+    expect($payload['writes'][0]['data']['wiki_entry_ids'])->toBe([11]);
+});

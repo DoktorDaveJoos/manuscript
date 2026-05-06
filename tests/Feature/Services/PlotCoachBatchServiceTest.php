@@ -1634,3 +1634,200 @@ test('it rejects an empty chapter update', function () {
         ['type' => 'chapter', 'data' => ['id' => $chapter->id]],
     ], 'Empty'))->toThrow(InvalidArgumentException::class);
 });
+
+test('it wires character_ids and wiki_entry_ids on chapter creation', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+    $storyline = Storyline::factory()->for($book, 'book')->create();
+    $act = Act::factory()->for($book, 'book')->create();
+    $plotPoint = PlotPoint::factory()->for($book, 'book')->for($act, 'act')->create();
+    $beat = Beat::factory()->for($plotPoint, 'plotPoint')->create();
+    $pov = Character::factory()->for($book, 'book')->create();
+    $supportA = Character::factory()->for($book, 'book')->create();
+    $supportB = Character::factory()->for($book, 'book')->create();
+    $location = WikiEntry::factory()->for($book, 'book')->create();
+    $item = WikiEntry::factory()->for($book, 'book')->create();
+
+    $service = new PlotCoachBatchService;
+    $service->apply($session, [
+        ['type' => 'chapter', 'data' => [
+            'title' => 'Opening',
+            'storyline_id' => $storyline->id,
+            'act_id' => $act->id,
+            'pov_character_id' => $pov->id,
+            'beat_ids' => [$beat->id],
+            'character_ids' => [$supportA->id, $supportB->id],
+            'wiki_entry_ids' => [$location->id, $item->id],
+        ]],
+    ], 'Wire opening chapter');
+
+    $chapter = Chapter::query()->where('book_id', $book->id)->first();
+
+    expect($chapter)->not->toBeNull();
+    expect($chapter->pov_character_id)->toBe($pov->id);
+    expect($chapter->beats()->pluck('beats.id')->all())->toBe([$beat->id]);
+    expect($chapter->characters()->pluck('characters.id')->sort()->values()->all())
+        ->toBe(collect([$supportA->id, $supportB->id])->sort()->values()->all());
+    expect($chapter->wikiEntries()->pluck('wiki_entries.id')->sort()->values()->all())
+        ->toBe(collect([$location->id, $item->id])->sort()->values()->all());
+});
+
+test('it re-attaches characters and wiki entries to a reused chapter without detaching existing ones', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+    $storyline = Storyline::factory()->for($book, 'book')->create();
+    $charA = Character::factory()->for($book, 'book')->create();
+    $charB = Character::factory()->for($book, 'book')->create();
+    $charC = Character::factory()->for($book, 'book')->create();
+    $wikiA = WikiEntry::factory()->for($book, 'book')->create();
+    $wikiB = WikiEntry::factory()->for($book, 'book')->create();
+
+    $existing = Chapter::factory()
+        ->for($book, 'book')
+        ->for($storyline, 'storyline')
+        ->create(['title' => 'Opening']);
+    $existing->characters()->attach($charA->id);
+    $existing->wikiEntries()->attach($wikiA->id);
+
+    $service = new PlotCoachBatchService;
+    $service->apply($session, [
+        ['type' => 'chapter', 'data' => [
+            'title' => 'Opening',
+            'storyline_id' => $storyline->id,
+            'character_ids' => [$charB->id, $charC->id],
+            'wiki_entry_ids' => [$wikiB->id],
+        ]],
+    ], 'Re-propose with cast and bible');
+
+    $existing->refresh();
+    expect($existing->characters()->pluck('characters.id')->sort()->values()->all())
+        ->toBe(collect([$charA->id, $charB->id, $charC->id])->sort()->values()->all());
+    expect($existing->wikiEntries()->pluck('wiki_entries.id')->sort()->values()->all())
+        ->toBe(collect([$wikiA->id, $wikiB->id])->sort()->values()->all());
+});
+
+test('it rejects chapter writes that reference characters from another book', function () {
+    $book = Book::factory()->create();
+    $otherBook = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+    $storyline = Storyline::factory()->for($book, 'book')->create();
+    $foreignCharacter = Character::factory()->for($otherBook, 'book')->create();
+
+    $service = new PlotCoachBatchService;
+
+    expect(fn () => $service->apply($session, [
+        ['type' => 'chapter', 'data' => [
+            'title' => 'Opening',
+            'storyline_id' => $storyline->id,
+            'character_ids' => [$foreignCharacter->id],
+        ]],
+    ], 'Cross-book cast'))->toThrow(InvalidArgumentException::class);
+});
+
+test('it rejects chapter writes that reference wiki entries from another book', function () {
+    $book = Book::factory()->create();
+    $otherBook = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+    $storyline = Storyline::factory()->for($book, 'book')->create();
+    $foreignWiki = WikiEntry::factory()->for($otherBook, 'book')->create();
+
+    $service = new PlotCoachBatchService;
+
+    expect(fn () => $service->apply($session, [
+        ['type' => 'chapter', 'data' => [
+            'title' => 'Opening',
+            'storyline_id' => $storyline->id,
+            'wiki_entry_ids' => [$foreignWiki->id],
+        ]],
+    ], 'Cross-book bible'))->toThrow(InvalidArgumentException::class);
+});
+
+test('it resyncs chapter character_ids and wiki_entry_ids fully — replaces, never just appends', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+    $storyline = Storyline::factory()->for($book, 'book')->create();
+    $charA = Character::factory()->for($book, 'book')->create();
+    $charB = Character::factory()->for($book, 'book')->create();
+    $charC = Character::factory()->for($book, 'book')->create();
+    $wikiA = WikiEntry::factory()->for($book, 'book')->create();
+    $wikiB = WikiEntry::factory()->for($book, 'book')->create();
+    $wikiC = WikiEntry::factory()->for($book, 'book')->create();
+    $chapter = Chapter::factory()
+        ->for($book, 'book')
+        ->for($storyline, 'storyline')
+        ->create();
+    $chapter->characters()->attach([$charA->id, $charB->id]);
+    $chapter->wikiEntries()->attach([$wikiA->id, $wikiB->id]);
+
+    $service = new PlotCoachBatchService;
+    $service->apply($session, [
+        ['type' => 'chapter', 'data' => [
+            'id' => $chapter->id,
+            'character_ids' => [$charB->id, $charC->id],
+            'wiki_entry_ids' => [$wikiC->id],
+        ]],
+    ], 'Resync wiring');
+
+    expect($chapter->characters()->pluck('characters.id')->sort()->values()->all())
+        ->toBe(collect([$charB->id, $charC->id])->sort()->values()->all());
+    expect($chapter->wikiEntries()->pluck('wiki_entries.id')->all())->toBe([$wikiC->id]);
+});
+
+test('it clears chapter character_ids and wiki_entry_ids when an empty list is passed', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+    $storyline = Storyline::factory()->for($book, 'book')->create();
+    $char = Character::factory()->for($book, 'book')->create();
+    $wiki = WikiEntry::factory()->for($book, 'book')->create();
+    $chapter = Chapter::factory()
+        ->for($book, 'book')
+        ->for($storyline, 'storyline')
+        ->create();
+    $chapter->characters()->attach($char->id);
+    $chapter->wikiEntries()->attach($wiki->id);
+
+    $service = new PlotCoachBatchService;
+    $service->apply($session, [
+        ['type' => 'chapter', 'data' => [
+            'id' => $chapter->id,
+            'character_ids' => [],
+            'wiki_entry_ids' => [],
+        ]],
+    ], 'Clear wiring');
+
+    expect($chapter->characters()->count())->toBe(0);
+    expect($chapter->wikiEntries()->count())->toBe(0);
+});
+
+test('undo restores the previous chapter character and wiki pivots', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+    $storyline = Storyline::factory()->for($book, 'book')->create();
+    $charA = Character::factory()->for($book, 'book')->create();
+    $charB = Character::factory()->for($book, 'book')->create();
+    $charC = Character::factory()->for($book, 'book')->create();
+    $wikiA = WikiEntry::factory()->for($book, 'book')->create();
+    $wikiB = WikiEntry::factory()->for($book, 'book')->create();
+    $chapter = Chapter::factory()
+        ->for($book, 'book')
+        ->for($storyline, 'storyline')
+        ->create();
+    $chapter->characters()->attach([$charA->id, $charB->id]);
+    $chapter->wikiEntries()->attach([$wikiA->id]);
+
+    $service = new PlotCoachBatchService;
+    $service->apply($session, [
+        ['type' => 'chapter', 'data' => [
+            'id' => $chapter->id,
+            'character_ids' => [$charC->id],
+            'wiki_entry_ids' => [$wikiB->id],
+        ]],
+    ], 'Resync wiring');
+
+    $service->undo($session);
+
+    $chapter->refresh();
+    expect($chapter->characters()->pluck('characters.id')->sort()->values()->all())
+        ->toBe(collect([$charA->id, $charB->id])->sort()->values()->all());
+    expect($chapter->wikiEntries()->pluck('wiki_entries.id')->all())->toBe([$wikiA->id]);
+});

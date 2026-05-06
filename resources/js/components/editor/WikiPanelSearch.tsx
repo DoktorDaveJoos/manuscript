@@ -1,6 +1,6 @@
-import { Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import SearchInput from '@/components/ui/SearchInput';
 import WikiAvatar from '@/components/wiki/WikiAvatar';
 import { cn } from '@/lib/utils';
 import { capitalize, kindToTab } from './WikiPanelCard';
@@ -57,11 +57,6 @@ export default function WikiPanelSearch({
         [onSelect],
     );
 
-    const handleClear = useCallback(() => {
-        setQuery('');
-        setIsOpen(false);
-    }, []);
-
     // Close popover on outside click
     useEffect(() => {
         function handleClick(e: MouseEvent) {
@@ -83,23 +78,12 @@ export default function WikiPanelSearch({
 
     return (
         <div ref={containerRef} className="relative border-b border-border">
-            <div className="flex items-center gap-2 px-4 py-3">
-                <Search size={14} className="shrink-0 text-ink-faint" />
-                <input
+            <div className="px-3 py-3">
+                <SearchInput
                     value={query}
-                    onChange={(e) => handleChange(e.target.value)}
+                    onChange={handleChange}
                     placeholder={t('searchPlaceholder')}
-                    className="min-w-0 flex-1 bg-transparent text-[13px] text-ink placeholder:text-ink-faint focus:outline-none"
                 />
-                {query && (
-                    <button
-                        type="button"
-                        onClick={handleClear}
-                        className="shrink-0 rounded p-0.5 text-ink-muted hover:text-ink"
-                    >
-                        <X size={14} />
-                    </button>
-                )}
             </div>
 
             {isOpen && results.length > 0 && (
