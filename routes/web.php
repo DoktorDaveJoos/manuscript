@@ -13,6 +13,8 @@ use App\Http\Controllers\BookController;
 use App\Http\Controllers\BookSettingsController;
 use App\Http\Controllers\CanvasController;
 use App\Http\Controllers\ChapterController;
+use App\Http\Controllers\ChapterDiffController;
+use App\Http\Controllers\ContinueWritingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EditorialReviewController;
 use App\Http\Controllers\LicenseController;
@@ -219,6 +221,13 @@ Route::middleware('license')->group(function () {
     Route::post('/books/{book}/ai/embed', [AiController::class, 'embed'])->name('books.ai.embed');
     Route::post('/books/{book}/chapters/{chapter}/ai/revise', [AiController::class, 'revise'])->name('chapters.ai.revise');
     Route::post('/books/{book}/chapters/{chapter}/ai/beautify', [AiController::class, 'beautify'])->name('chapters.ai.beautify');
+    Route::post('/books/{book}/chapters/{chapter}/ai/continue-writing', [ContinueWritingController::class, 'stream'])->name('chapters.ai.continueWriting');
+    Route::post('/books/{book}/chapters/{chapter}/ai/continue-writing/commit', [ContinueWritingController::class, 'commit'])->name('chapters.ai.continueWriting.commit');
+    Route::post('/books/{book}/chapters/{chapter}/ai/continue-writing/refine/{version}', [ContinueWritingController::class, 'refine'])->name('chapters.ai.continueWriting.refine');
+
+    Route::get('/books/{book}/chapters/{chapter}/diff/{version}', [ChapterDiffController::class, 'show'])->name('chapters.diff.show');
+    Route::post('/books/{book}/chapters/{chapter}/diff/{version}/open', [ChapterDiffController::class, 'openWindow'])->name('chapters.diff.open');
+    Route::post('/chapters/{chapter}/diff/window/close', [ChapterDiffController::class, 'closeWindow'])->name('chapters.diff.close');
     Route::post('/books/{book}/chapters/{chapter}/ai/analyze-chapter', [AiController::class, 'analyzeChapter'])->name('chapters.ai.analyzeChapter');
     Route::get('/books/{book}/chapters/{chapter}/ai/analysis-status', [AiController::class, 'chapterAnalysisStatus'])->name('chapters.ai.analysisStatus');
     Route::post('/books/{book}/ai/chat', [AiController::class, 'chat'])->name('books.ai.chat');

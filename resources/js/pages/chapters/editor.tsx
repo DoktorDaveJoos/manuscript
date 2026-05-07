@@ -21,6 +21,7 @@ import AiPanel from '@/components/editor/AiPanel';
 import ChapterPane, { firstLine } from '@/components/editor/ChapterPane';
 import type { SaveStatus } from '@/components/editor/ChapterPane';
 import CommandPalette from '@/components/editor/CommandPalette';
+import ContinueWritingDialog from '@/components/editor/ContinueWritingDialog';
 import EditorialReviewPanel from '@/components/editor/EditorialReviewPanel';
 import GlobalFindDrawer from '@/components/editor/GlobalFindDrawer';
 import NotesPanel from '@/components/editor/NotesPanel';
@@ -35,6 +36,8 @@ import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import type { ChapterData } from '@/hooks/useChapterData';
 import useChapterData from '@/hooks/useChapterData';
+import type { ContinueWritingReview } from '@/hooks/useContinueWriting';
+import { useContinueWriting } from '@/hooks/useContinueWriting';
 import { useLicense } from '@/hooks/useLicense';
 import usePaneManager from '@/hooks/usePaneManager';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
@@ -78,6 +81,8 @@ function PaneWithData({
     spellcheckEnabled,
     isTypewriterMode,
     onToggleTypewriterMode,
+    review,
+    onReviewDismiss,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -98,11 +103,29 @@ function PaneWithData({
     spellcheckEnabled: boolean;
     isTypewriterMode: boolean;
     onToggleTypewriterMode: () => void;
+    review: ContinueWritingReview | null;
+    onReviewDismiss: () => void;
 }) {
     const { data, isLoading, error, refresh, softRefresh } = useChapterData(
         bookId,
         chapterId,
     );
+
+    const handleReviewApplied = useCallback(() => {
+        onReviewDismiss();
+        softRefresh();
+    }, [onReviewDismiss, softRefresh]);
+
+    // The diff window posts on this channel after a successful refine. Each
+    // pane listens for messages targeting its own chapter and soft-refreshes.
+    useEffect(() => {
+        if (typeof BroadcastChannel === 'undefined') return;
+        const channel = new BroadcastChannel('manuscript:diff-applied');
+        channel.onmessage = (event) => {
+            if (event.data?.chapterId === chapterId) softRefresh();
+        };
+        return () => channel.close();
+    }, [chapterId, softRefresh]);
 
     const onFocus = useCallback(
         () => setFocusedPaneId(paneId),
@@ -160,6 +183,9 @@ function PaneWithData({
             spellcheckEnabled={spellcheckEnabled}
             isTypewriterMode={isTypewriterMode}
             onToggleTypewriterMode={onToggleTypewriterMode}
+            review={review}
+            onReviewDismiss={onReviewDismiss}
+            onReviewApplied={handleReviewApplied}
         />
     );
 }
@@ -470,6 +496,18 @@ export default function EditorPage({
     const [, setIsLocalFindOpen] = useState(false);
     const [, setLocalFindShowReplace] = useState(false);
 
+    // ── Continue writing ─────────────────────────────────────────────────
+    const [isContinueWritingOpen, setIsContinueWritingOpen] = useState(false);
+    const continueWriting = useContinueWriting();
+
+    // Dismiss the per-chapter review banner once the diff window applied.
+    useEffect(() => {
+        if (typeof BroadcastChannel === 'undefined') return;
+        const channel = new BroadcastChannel('manuscript:diff-applied');
+        channel.onmessage = () => continueWriting.dismissReview();
+        return () => channel.close();
+    }, [continueWriting]);
+
     // ── Command palette ──────────────────────────────────────────────────
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
     const closePalette = useCallback(() => {
@@ -683,6 +721,16 @@ export default function EditorPage({
                                     onToggleTypewriterMode={
                                         toggleTypewriterMode
                                     }
+                                    review={
+                                        continueWriting.review &&
+                                        continueWriting.review.chapterId ===
+                                            pane.chapterId
+                                            ? continueWriting.review
+                                            : null
+                                    }
+                                    onReviewDismiss={
+                                        continueWriting.dismissReview
+                                    }
                                 />
                             </div>
                         ))
@@ -850,7 +898,27 @@ export default function EditorPage({
                 onToggleSpellcheck={toggleSpellcheck}
                 isTypewriterMode={isTypewriterMode}
                 onToggleTypewriterMode={toggleTypewriterMode}
+                onContinueWriting={
+                    aiVisible && activeEditor && focusedChapter
+                        ? () => setIsContinueWritingOpen(true)
+                        : undefined
+                }
             />
+
+            {isContinueWritingOpen && activeEditor && focusedChapter && (
+                <ContinueWritingDialog
+                    onClose={() => setIsContinueWritingOpen(false)}
+                    onSubmit={({ hint, wordGoal }) => {
+                        continueWriting.start({
+                            editor: activeEditor,
+                            bookId: book.id,
+                            chapterId: focusedChapter.id,
+                            hint,
+                            wordGoal,
+                        });
+                    }}
+                />
+            )}
 
             {/* Focus mode whisper chrome */}
             {isFocusMode && focusedChapter && (

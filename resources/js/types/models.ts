@@ -79,7 +79,8 @@ export type VersionSource =
     | 'manual_edit'
     | 'normalization'
     | 'beautify'
-    | 'snapshot';
+    | 'snapshot'
+    | 'continue_writing';
 export type VersionStatus = 'accepted' | 'pending';
 export type PlotPointType =
     | 'setup'

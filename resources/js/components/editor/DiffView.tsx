@@ -15,14 +15,18 @@ import {
     acceptVersion,
     rejectVersion,
 } from '@/actions/App/Http/Controllers/ChapterController';
+import { refine as refineContinueWriting } from '@/actions/App/Http/Controllers/ContinueWritingController';
 import Button from '@/components/ui/Button';
 import { ruleCheckers, RULE_THRESHOLDS, stripTags } from '@/lib/ruleCheckers';
+import { jsonFetchHeaders } from '@/lib/utils';
 import type {
     ChapterVersion,
     ProsePassRule,
     VersionSource,
 } from '@/types/models';
 import { getFontFamily } from './FontSelector';
+
+export type DiffMode = 'pending' | 'refine';
 
 function splitParagraphs(html: string | null): string[] {
     if (!html) return [];
@@ -266,6 +270,9 @@ export default function DiffView({
     pendingVersion,
     prosePassRules,
     editorFont,
+    mode = 'pending',
+    onClose,
+    onApplied,
 }: {
     bookId: number;
     chapterId: number;
@@ -274,6 +281,9 @@ export default function DiffView({
     pendingVersion: ChapterVersion;
     prosePassRules?: ProsePassRule[];
     editorFont?: string;
+    mode?: DiffMode;
+    onClose?: () => void;
+    onApplied?: () => void;
 }) {
     const { t, i18n } = useTranslation('editor');
     const [isAccepting, setIsAccepting] = useState(false);
@@ -368,6 +378,29 @@ export default function DiffView({
     const handleAccept = useCallback(async () => {
         setIsAccepting(true);
         try {
+            if (mode === 'refine') {
+                const mergedContent = mergeParagraphs(
+                    diff.aligned,
+                    selectedParagraphs,
+                    currentVersion.content,
+                    pendingVersion.content,
+                );
+                const response = await fetch(
+                    refineContinueWriting.url({
+                        book: bookId,
+                        chapter: chapterId,
+                        version: pendingVersion.id,
+                    }),
+                    {
+                        method: 'POST',
+                        headers: jsonFetchHeaders(),
+                        body: JSON.stringify({ content: mergedContent }),
+                    },
+                );
+                if (!response.ok) throw new Error('Refine failed');
+                onApplied?.();
+                return;
+            }
             if (isPartial) {
                 const mergedContent = mergeParagraphs(
                     diff.aligned,
@@ -407,11 +440,15 @@ export default function DiffView({
                 );
                 if (!response.ok) throw new Error('Accept failed');
             }
+            // Inertia router.reload preserves component state, so callers must
+            // be told to clear their "diff is open" flag explicitly.
+            onApplied?.();
             router.reload();
         } catch {
             setIsAccepting(false);
         }
     }, [
+        mode,
         bookId,
         chapterId,
         pendingVersion.id,
@@ -420,9 +457,14 @@ export default function DiffView({
         isPartial,
         selectedParagraphs,
         diff.aligned,
+        onApplied,
     ]);
 
     const handleReject = useCallback(async () => {
+        if (mode === 'refine') {
+            onClose?.();
+            return;
+        }
         setIsRejecting(true);
         try {
             const response = await fetch(
@@ -439,11 +481,12 @@ export default function DiffView({
                 },
             );
             if (!response.ok) throw new Error('Reject failed');
+            onClose?.();
             router.reload();
         } catch {
             setIsRejecting(false);
         }
-    }, [bookId, chapterId, pendingVersion.id]);
+    }, [mode, bookId, chapterId, pendingVersion.id, onClose]);
 
     // Synchronized scrolling with height-matched spacers
     const leftPanelRef = useRef<HTMLDivElement>(null);
@@ -535,12 +578,35 @@ export default function DiffView({
     const sourceLabel = (source: VersionSource) =>
         t(`diff.sourceLabel.${source}`);
 
-    const acceptLabel = isPartial
-        ? t('diff.acceptPartial', {
-              selected: selectedCount,
-              total: totalChanged,
-          })
-        : t('diff.acceptAll');
+    const isRefine = mode === 'refine';
+
+    // In refine mode, "apply" only makes sense if at least one paragraph was
+    // deselected — otherwise the merged content matches the current version
+    // and applying would create a no-op duplicate.
+    let acceptLabel: string;
+    let rejectLabel: string;
+    let acceptDisabled: boolean;
+    let acceptInProgressLabel: string;
+    if (isRefine) {
+        acceptLabel = t('diff.refine.apply', {
+            defaultValue: 'Apply selection',
+        });
+        rejectLabel = t('diff.refine.close', { defaultValue: 'Close' });
+        acceptDisabled = isAccepting || !isPartial || selectedCount === 0;
+        acceptInProgressLabel = t('diff.refine.applying', {
+            defaultValue: 'Applying…',
+        });
+    } else {
+        acceptLabel = isPartial
+            ? t('diff.acceptPartial', {
+                  selected: selectedCount,
+                  total: totalChanged,
+              })
+            : t('diff.acceptAll');
+        rejectLabel = isRejecting ? t('diff.rejecting') : t('diff.rejectAll');
+        acceptDisabled = isAccepting || isRejecting || selectedCount === 0;
+        acceptInProgressLabel = t('diff.accepting');
+    }
 
     return (
         <div className="flex flex-1 flex-col overflow-hidden">
@@ -577,20 +643,16 @@ export default function DiffView({
                         onClick={handleReject}
                         disabled={isRejecting || isAccepting}
                     >
-                        {isRejecting
-                            ? t('diff.rejecting')
-                            : t('diff.rejectAll')}
+                        {rejectLabel}
                     </Button>
                     <Button
                         variant="primary"
                         size="sm"
                         type="button"
                         onClick={handleAccept}
-                        disabled={
-                            isAccepting || isRejecting || selectedCount === 0
-                        }
+                        disabled={acceptDisabled}
                     >
-                        {isAccepting ? t('diff.accepting') : acceptLabel}
+                        {isAccepting ? acceptInProgressLabel : acceptLabel}
                     </Button>
                 </div>
             </div>

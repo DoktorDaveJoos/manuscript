@@ -10,6 +10,13 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
+export function escapeHtml(text: string): string {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 export function formatCompactCount(count: number): string {
     if (count >= 1_000_000) {
         return `${(count / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;

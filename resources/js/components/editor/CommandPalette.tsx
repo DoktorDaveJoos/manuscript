@@ -9,6 +9,7 @@ import {
     Maximize,
     Minus,
     Plus,
+    Sparkles,
     SpellCheck,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -92,6 +93,7 @@ export default function CommandPalette({
     onToggleTypewriterMode,
     isSpellcheckEnabled,
     onToggleSpellcheck,
+    onContinueWriting,
 }: {
     editor: Editor | null;
     isOpen: boolean;
@@ -109,6 +111,7 @@ export default function CommandPalette({
     onToggleTypewriterMode?: () => void;
     isSpellcheckEnabled?: boolean;
     onToggleSpellcheck?: () => void;
+    onContinueWriting?: () => void;
 }) {
     const { t } = useTranslation('editor');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -227,6 +230,25 @@ export default function CommandPalette({
                         <CommandSeparator />
 
                         <CommandGroup heading={t('palette.section.assistance')}>
+                            <CommandItem
+                                value={t('palette.continueWriting', {
+                                    defaultValue: 'Continue writing',
+                                })}
+                                disabled={!onContinueWriting}
+                                onSelect={() =>
+                                    handleSelect(() => onContinueWriting?.())
+                                }
+                            >
+                                <PaletteIcon>
+                                    <Sparkles size={16} />
+                                </PaletteIcon>
+                                <span className="flex-1">
+                                    {t('palette.continueWriting', {
+                                        defaultValue: 'Continue writing',
+                                    })}
+                                </span>
+                            </CommandItem>
+
                             {panelItems.map((item) => {
                                 const isActive = openPanels.has(item.id);
                                 const keys = panelLabelKeys[item.id];

@@ -10,6 +10,7 @@ use App\Enums\AnalysisType;
 use App\Enums\BulkRevisionType;
 use App\Enums\VersionSource;
 use App\Enums\VersionStatus;
+use App\Http\Controllers\Concerns\EnsuresAiConfigured;
 use App\Http\Controllers\Concerns\StreamsConversation;
 use App\Http\Requests\RunAnalysisRequest;
 use App\Jobs\AnalyzeChapterJob;
@@ -17,7 +18,6 @@ use App\Jobs\BulkRevisionJob;
 use App\Jobs\ExtractEntitiesJob;
 use App\Jobs\GenerateEmbeddingsJob;
 use App\Jobs\RunAnalysisJob;
-use App\Models\AiSetting;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Services\Normalization\NormalizationService;
@@ -30,7 +30,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AiController extends Controller
 {
-    use StreamsConversation;
+    use EnsuresAiConfigured, StreamsConversation;
 
     public function analyzeChapter(Book $book, Chapter $chapter): JsonResponse
     {
@@ -266,20 +266,5 @@ class AiController extends Controller
         }
 
         return response()->json(['status' => 'started', 'type' => $type->value]);
-    }
-
-    private function ensureAiConfigured(): void
-    {
-        set_time_limit(300);
-
-        $setting = AiSetting::activeProvider();
-
-        abort_if(
-            ! $setting || ! $setting->isConfigured(),
-            422,
-            __('No AI provider configured.'),
-        );
-
-        $setting->injectConfig();
     }
 }
