@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
+import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import AccessBar from '@/components/editor/AccessBar';
 import type {
     AccessBarItemConfig,
@@ -121,6 +122,16 @@ function PaneWithData({
     useEffect(() => {
         if (typeof BroadcastChannel === 'undefined') return;
         const channel = new BroadcastChannel('manuscript:diff-applied');
+        channel.onmessage = (event) => {
+            if (event.data?.chapterId === chapterId) softRefresh();
+        };
+        return () => channel.close();
+    }, [chapterId, softRefresh]);
+
+    // Refresh when chapter data changed locally (e.g. scene added via palette).
+    useEffect(() => {
+        if (typeof BroadcastChannel === 'undefined') return;
+        const channel = new BroadcastChannel('manuscript:chapter-data-changed');
         channel.onmessage = (event) => {
             if (event.data?.chapterId === chapterId) softRefresh();
         };
@@ -645,6 +656,33 @@ export default function EditorPage({
         }
     }, [book.id, focusedChapter?.storyline_id, sidebarStorylines]);
 
+    // ── Create scene in focused chapter from palette ────────────────────
+    const focusedSceneCount = focusedScenes.length;
+    const handleAddScene = useCallback(async () => {
+        if (!focusedChapter) return;
+        await fetch(
+            storeScene.url({ book: book.id, chapter: focusedChapter.id }),
+            {
+                method: 'POST',
+                headers: jsonFetchHeaders(),
+                body: JSON.stringify({
+                    title: t('chapterList.sceneDefault', {
+                        number: focusedSceneCount + 1,
+                    }),
+                    position: focusedSceneCount,
+                }),
+            },
+        );
+        router.reload({ only: ['book'] });
+        if (typeof BroadcastChannel !== 'undefined') {
+            const channel = new BroadcastChannel(
+                'manuscript:chapter-data-changed',
+            );
+            channel.postMessage({ chapterId: focusedChapter.id });
+            channel.close();
+        }
+    }, [book.id, focusedChapter, focusedSceneCount, t]);
+
     // ── Find navigate ────────────────────────────────────────────────────
     const handleFindNavigate = useCallback(
         async (chapterId: number, _sceneId: number) => {
@@ -889,6 +927,7 @@ export default function EditorPage({
                 onSplitScene={async () => {}}
                 onSplitChapter={async () => {}}
                 onNewChapter={handleCreateChapter}
+                onAddScene={focusedChapter ? handleAddScene : undefined}
                 onEnterFocusMode={toggleFocusMode}
                 isFocusMode={isFocusMode}
                 panelItems={accessBarItems}
