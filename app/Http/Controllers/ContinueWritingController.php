@@ -15,6 +15,7 @@ use App\Models\Chapter;
 use App\Models\ChapterVersion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Laravel\Ai\Streaming\Events\TextDelta;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ContinueWritingController extends Controller
@@ -43,11 +44,10 @@ class ContinueWritingController extends Controller
         return response()->stream(function () use ($streamable) {
             try {
                 foreach ($streamable as $event) {
-                    $delta = (string) $event;
-                    if ($delta === '') {
+                    if (! $event instanceof TextDelta || $event->delta === '') {
                         continue;
                     }
-                    echo 'data: '.json_encode(['delta' => $delta])."\n\n";
+                    echo 'data: '.json_encode(['delta' => $event->delta])."\n\n";
                     $this->sseFlush();
                 }
             } catch (\Throwable $e) {

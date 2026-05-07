@@ -40,8 +40,22 @@ test('continue writing streams a paragraph as SSE', function () {
     expect($response->headers->get('Content-Type'))->toContain('text/event-stream');
 
     $body = $response->streamedContent();
-    expect($body)->toContain('data: ');
     expect($body)->toContain('[DONE]');
+
+    $combined = '';
+    foreach (preg_split('/\r?\n/', $body) as $line) {
+        if (! str_starts_with($line, 'data: ')) {
+            continue;
+        }
+        $payload = substr($line, 6);
+        if ($payload === '[DONE]') {
+            continue;
+        }
+        $decoded = json_decode($payload, true);
+        $combined .= $decoded['delta'];
+    }
+
+    expect($combined)->toBe('She turned away from the window. ');
 
     ContinueWritingAgent::assertPrompted(fn ($prompt) => true);
 });
