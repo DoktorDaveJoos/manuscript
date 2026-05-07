@@ -7,7 +7,6 @@ use App\Ai\Middleware\InjectProviderCredentials;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Services\StoryBibleService;
-use Illuminate\Support\Str;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
@@ -123,9 +122,8 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
         $grouped = $this->chapter->wikiEntries->groupBy(fn ($entry) => $entry->kind->value);
 
         $lines = ["\n### World Entities in This Chapter"];
-        foreach ($grouped as $kind => $entries) {
-            $label = Str::plural(Str::ucfirst($kind));
-            $lines[] = "\n**{$label}:**";
+        foreach ($grouped as $entries) {
+            $lines[] = "\n**{$entries->first()->kind->pluralLabel()}:**";
             foreach ($entries as $entry) {
                 $line = "- {$entry->name}";
                 $desc = $entry->fullDescription();

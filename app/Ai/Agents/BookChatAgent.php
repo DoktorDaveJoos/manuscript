@@ -43,6 +43,7 @@ class BookChatAgent implements Agent, BelongsToBook, Conversational, HasMiddlewa
             $chapterContext = "\n\nThe user is currently editing Chapter {$this->chapter->reader_order}: \"{$this->chapter->title}\".";
             $chapterContext .= "\nWhen they refer to \"this chapter\", they mean this one.";
             $chapterContext .= "\nTo retrieve its content, use the RetrieveManuscriptContext tool with chapter_id={$this->chapter->id}.";
+            $chapterContext .= "\nThat call also returns any plot beats and wiki entries connected to this chapter — treat them as authoritative context when discussing what happens here, who is present, and what world details apply.";
         }
 
         return <<<INSTRUCTIONS

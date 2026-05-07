@@ -130,6 +130,7 @@ class Chapter extends Model
     {
         return $this->belongsToMany(Beat::class, 'beat_chapter')
             ->withPivot(['sort_order'])
+            ->orderByPivot('sort_order')
             ->withTimestamps();
     }
 
