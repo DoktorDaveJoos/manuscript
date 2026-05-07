@@ -546,14 +546,26 @@ export default function DiffView({
         measureHeights();
     }, [measureHeights]);
 
-    // Re-measure on resize (font load, window resize, etc.)
+    // Re-measure on resize (font load, window resize, etc.).
+    // The observer callback writes min-heights, which the observer would
+    // immediately notice — schedule the measure on rAF and coalesce bursts so
+    // we never produce "ResizeObserver loop completed with undelivered
+    // notifications" warnings.
     useEffect(() => {
+        let rafId: number | null = null;
         const observer = new ResizeObserver(() => {
-            if (!isMeasuring.current) measureHeights();
+            if (isMeasuring.current || rafId !== null) return;
+            rafId = requestAnimationFrame(() => {
+                rafId = null;
+                if (!isMeasuring.current) measureHeights();
+            });
         });
         if (leftContentRef.current) observer.observe(leftContentRef.current);
         if (rightContentRef.current) observer.observe(rightContentRef.current);
-        return () => observer.disconnect();
+        return () => {
+            observer.disconnect();
+            if (rafId !== null) cancelAnimationFrame(rafId);
+        };
     }, [measureHeights]);
 
     // Pixel-based scroll sync (panels have identical total height)
