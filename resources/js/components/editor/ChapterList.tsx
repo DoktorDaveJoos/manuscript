@@ -37,7 +37,6 @@ import {
 import {
     destroy as destroyScene,
     reorder as reorderScenes,
-    store as storeScene,
     updateTitle as updateSceneTitle,
 } from '@/actions/App/Http/Controllers/SceneController';
 import {
@@ -46,7 +45,12 @@ import {
 } from '@/actions/App/Http/Controllers/StorylineController';
 import { Collapsible, CollapsibleTrigger } from '@/components/ui/Collapsible';
 import { typedClosestCenter } from '@/lib/dnd';
-import { cn, formatCompactCount, jsonFetchHeaders } from '@/lib/utils';
+import {
+    addSceneToChapter,
+    cn,
+    formatCompactCount,
+    jsonFetchHeaders,
+} from '@/lib/utils';
 import type { Chapter, Scene, Storyline } from '@/types/models';
 import ChapterContextMenu from './ChapterContextMenu';
 import ChapterListItem from './ChapterListItem';
@@ -862,19 +866,8 @@ export default function ChapterList({
     );
 
     const handleAddScene = useCallback(
-        async (chapterId: number, sceneCount: number) => {
-            await fetch(storeScene.url({ book: bookId, chapter: chapterId }), {
-                method: 'POST',
-                headers: jsonFetchHeaders(),
-                body: JSON.stringify({
-                    title: t('chapterList.sceneDefault', {
-                        number: sceneCount + 1,
-                    }),
-                    position: sceneCount,
-                }),
-            });
-            router.reload({ only: ['book'] });
-        },
+        (chapterId: number, sceneCount: number) =>
+            addSceneToChapter(bookId, chapterId, sceneCount, t),
         [bookId, t],
     );
 

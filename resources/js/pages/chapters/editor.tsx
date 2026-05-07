@@ -11,7 +11,6 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
-import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import AccessBar from '@/components/editor/AccessBar';
 import type {
     AccessBarItemConfig,
@@ -42,7 +41,14 @@ import { useContinueWriting } from '@/hooks/useContinueWriting';
 import { useLicense } from '@/hooks/useLicense';
 import usePaneManager from '@/hooks/usePaneManager';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
-import { createChapter, jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
+import {
+    addSceneToChapter,
+    CHANNEL_CHAPTER_DATA_CHANGED,
+    CHANNEL_DIFF_APPLIED,
+    createChapter,
+    jsonFetchHeaders,
+    saveAppSetting,
+} from '@/lib/utils';
 import type {
     AppSettings,
     Book,
@@ -53,6 +59,21 @@ import type {
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const NOOP_EDITOR_CHANGE = () => {};
+
+function useChapterRefreshChannel(
+    channelName: string,
+    chapterId: number,
+    softRefresh: () => void,
+) {
+    useEffect(() => {
+        if (typeof BroadcastChannel === 'undefined') return;
+        const channel = new BroadcastChannel(channelName);
+        channel.onmessage = (event) => {
+            if (event.data?.chapterId === chapterId) softRefresh();
+        };
+        return () => channel.close();
+    }, [channelName, chapterId, softRefresh]);
+}
 
 const VALID_PANELS: Set<PanelId> = new Set([
     'wiki',
@@ -117,26 +138,14 @@ function PaneWithData({
         softRefresh();
     }, [onReviewDismiss, softRefresh]);
 
-    // The diff window posts on this channel after a successful refine. Each
-    // pane listens for messages targeting its own chapter and soft-refreshes.
-    useEffect(() => {
-        if (typeof BroadcastChannel === 'undefined') return;
-        const channel = new BroadcastChannel('manuscript:diff-applied');
-        channel.onmessage = (event) => {
-            if (event.data?.chapterId === chapterId) softRefresh();
-        };
-        return () => channel.close();
-    }, [chapterId, softRefresh]);
-
-    // Refresh when chapter data changed locally (e.g. scene added via palette).
-    useEffect(() => {
-        if (typeof BroadcastChannel === 'undefined') return;
-        const channel = new BroadcastChannel('manuscript:chapter-data-changed');
-        channel.onmessage = (event) => {
-            if (event.data?.chapterId === chapterId) softRefresh();
-        };
-        return () => channel.close();
-    }, [chapterId, softRefresh]);
+    // Refresh on cross-window diff-applied (from the diff window) and on
+    // local chapter-data changes (e.g. scene added via palette).
+    useChapterRefreshChannel(CHANNEL_DIFF_APPLIED, chapterId, softRefresh);
+    useChapterRefreshChannel(
+        CHANNEL_CHAPTER_DATA_CHANGED,
+        chapterId,
+        softRefresh,
+    );
 
     const onFocus = useCallback(
         () => setFocusedPaneId(paneId),
@@ -514,7 +523,7 @@ export default function EditorPage({
     // Dismiss the per-chapter review banner once the diff window applied.
     useEffect(() => {
         if (typeof BroadcastChannel === 'undefined') return;
-        const channel = new BroadcastChannel('manuscript:diff-applied');
+        const channel = new BroadcastChannel(CHANNEL_DIFF_APPLIED);
         channel.onmessage = () => continueWriting.dismissReview();
         return () => channel.close();
     }, [continueWriting]);
@@ -660,27 +669,12 @@ export default function EditorPage({
     const focusedSceneCount = focusedScenes.length;
     const handleAddScene = useCallback(async () => {
         if (!focusedChapter) return;
-        await fetch(
-            storeScene.url({ book: book.id, chapter: focusedChapter.id }),
-            {
-                method: 'POST',
-                headers: jsonFetchHeaders(),
-                body: JSON.stringify({
-                    title: t('chapterList.sceneDefault', {
-                        number: focusedSceneCount + 1,
-                    }),
-                    position: focusedSceneCount,
-                }),
-            },
+        await addSceneToChapter(
+            book.id,
+            focusedChapter.id,
+            focusedSceneCount,
+            t,
         );
-        router.reload({ only: ['book'] });
-        if (typeof BroadcastChannel !== 'undefined') {
-            const channel = new BroadcastChannel(
-                'manuscript:chapter-data-changed',
-            );
-            channel.postMessage({ chapterId: focusedChapter.id });
-            channel.close();
-        }
     }, [book.id, focusedChapter, focusedSceneCount, t]);
 
     // ── Find navigate ────────────────────────────────────────────────────

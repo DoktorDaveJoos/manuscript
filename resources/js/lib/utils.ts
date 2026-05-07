@@ -4,7 +4,11 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import { store } from '@/actions/App/Http/Controllers/ChapterController';
+import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import type { Storyline } from '@/types/models';
+
+export const CHANNEL_DIFF_APPLIED = 'manuscript:diff-applied';
+export const CHANNEL_CHAPTER_DATA_CHANGED = 'manuscript:chapter-data-changed';
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -40,6 +44,28 @@ export function createChapter(
         title: `Chapter ${totalChapters + 1}`,
         storyline_id: storylineId,
     });
+}
+
+export async function addSceneToChapter(
+    bookId: number,
+    chapterId: number,
+    sceneCount: number,
+    t: (key: string, options?: Record<string, unknown>) => string,
+): Promise<void> {
+    await fetch(storeScene.url({ book: bookId, chapter: chapterId }), {
+        method: 'POST',
+        headers: jsonFetchHeaders(),
+        body: JSON.stringify({
+            title: t('chapterList.sceneDefault', { number: sceneCount + 1 }),
+            position: sceneCount,
+        }),
+    });
+    router.reload({ only: ['book'] });
+    if (typeof BroadcastChannel !== 'undefined') {
+        const channel = new BroadcastChannel(CHANNEL_CHAPTER_DATA_CHANGED);
+        channel.postMessage({ chapterId });
+        channel.close();
+    }
 }
 
 export function jsonFetchHeaders(): Record<string, string> {
