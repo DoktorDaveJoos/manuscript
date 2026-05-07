@@ -705,11 +705,6 @@ export default function EditorPage({
                     onChapterNavigate={navigateToChapter}
                     onOpenInNewPane={openInNewPane}
                     activeScenes={focusedScenes}
-                    onChapterRename={() => {}}
-                    onSceneRename={() => {}}
-                    onSceneDelete={() => {}}
-                    onSceneReorder={() => {}}
-                    onSceneAdd={async () => {}}
                     scenesVisible={scenesVisible}
                     onScenesVisibleChange={handleScenesVisibleChange}
                     isFocusMode={isFocusMode}

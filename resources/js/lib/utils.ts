@@ -10,6 +10,13 @@ import type { Storyline } from '@/types/models';
 export const CHANNEL_DIFF_APPLIED = 'manuscript:diff-applied';
 export const CHANNEL_CHAPTER_DATA_CHANGED = 'manuscript:chapter-data-changed';
 
+export function broadcastChapterDataChanged(chapterId: number): void {
+    if (typeof BroadcastChannel === 'undefined') return;
+    const channel = new BroadcastChannel(CHANNEL_CHAPTER_DATA_CHANGED);
+    channel.postMessage({ chapterId });
+    channel.close();
+}
+
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
@@ -61,11 +68,7 @@ export async function addSceneToChapter(
         }),
     });
     router.reload({ only: ['book'] });
-    if (typeof BroadcastChannel !== 'undefined') {
-        const channel = new BroadcastChannel(CHANNEL_CHAPTER_DATA_CHANGED);
-        channel.postMessage({ chapterId });
-        channel.close();
-    }
+    broadcastChapterDataChanged(chapterId);
 }
 
 export function jsonFetchHeaders(): Record<string, string> {

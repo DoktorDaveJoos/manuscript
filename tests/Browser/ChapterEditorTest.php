@@ -7,6 +7,7 @@ use App\Models\EditorialReview;
 use App\Models\EditorialReviewChapterNote;
 use App\Models\License;
 use App\Models\PlotPoint;
+use App\Models\Scene;
 use App\Models\Storyline;
 
 it('shows empty state when book has no chapters', function () {
@@ -172,6 +173,49 @@ it('plot panel connects a beat to the active chapter', function () {
         ->wait(1)
         ->assertSee('Murder of the duke')
         ->assertSee('Inciting incident');
+});
+
+it('creates a scene from the chapter list "+ Add scene" button', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+
+    expect(Scene::where('chapter_id', $chapters[0]->id)->count())->toBe(1);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->click('[data-testid="add-scene-button"]')
+        ->wait(1)
+        ->assertNoJavaScriptErrors();
+
+    expect(Scene::where('chapter_id', $chapters[0]->id)->count())->toBe(2);
+});
+
+it('removes a deleted scene from the sidebar without a page refresh', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+
+    Scene::factory()->for($chapters[0])->create([
+        'title' => 'Second Scene',
+        'sort_order' => 1,
+        'word_count' => 0,
+    ]);
+
+    expect(Scene::where('chapter_id', $chapters[0]->id)->count())->toBe(2);
+
+    $secondSceneId = Scene::where('chapter_id', $chapters[0]->id)
+        ->where('sort_order', 1)
+        ->value('id');
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertCount('[data-sidebar-scene]', 2)
+        ->rightClick("[data-sidebar-scene='{$secondSceneId}']")
+        ->click('Delete')
+        ->wait(1)
+        ->assertNoJavaScriptErrors()
+        ->assertCount('[data-sidebar-scene]', 1);
+
+    expect(Scene::where('chapter_id', $chapters[0]->id)->count())->toBe(1);
 });
 
 it('toggles typewriter mode from the formatting toolbar', function () {

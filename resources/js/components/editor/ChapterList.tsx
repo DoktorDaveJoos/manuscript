@@ -47,6 +47,7 @@ import { Collapsible, CollapsibleTrigger } from '@/components/ui/Collapsible';
 import { typedClosestCenter } from '@/lib/dnd';
 import {
     addSceneToChapter,
+    broadcastChapterDataChanged,
     cn,
     formatCompactCount,
     jsonFetchHeaders,
@@ -362,11 +363,8 @@ function SceneList({
                 },
             );
 
-            if (onReorder) {
-                onReorder(reordered.map((s) => s.id));
-            } else {
-                router.reload({ only: ['book'] });
-            }
+            broadcastChapterDataChanged(chapterId);
+            onReorder?.(reordered.map((s) => s.id));
         },
         [scenes, bookId, chapterId, onReorder],
     );
@@ -812,11 +810,8 @@ export default function ChapterList({
                             body: JSON.stringify({ title: newValue }),
                         },
                     );
-                    if (onSceneRename) {
-                        onSceneRename(renaming.scene.id, newValue);
-                    } else {
-                        router.reload({ only: ['book'] });
-                    }
+                    broadcastChapterDataChanged(renaming.chapterId);
+                    onSceneRename?.(renaming.scene.id, newValue);
                     break;
             }
         },
@@ -856,11 +851,8 @@ export default function ChapterList({
                 },
             );
 
-            if (onSceneDelete) {
-                onSceneDelete(sceneId);
-            } else {
-                router.reload({ only: ['book'] });
-            }
+            broadcastChapterDataChanged(chapterId);
+            onSceneDelete?.(sceneId);
         },
         [bookId, onSceneDelete],
     );
@@ -1098,6 +1090,7 @@ export default function ChapterList({
                                                                         isExpanded && (
                                                                             <button
                                                                                 type="button"
+                                                                                data-testid="add-scene-button"
                                                                                 onClick={() => {
                                                                                     if (
                                                                                         onSceneAdd
