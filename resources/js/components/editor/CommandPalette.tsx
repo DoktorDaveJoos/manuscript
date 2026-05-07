@@ -143,7 +143,7 @@ export default function CommandPalette({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-start justify-center bg-surface/40 pt-[20vh]"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-surface/40"
             onClick={onClose}
         >
             <div
