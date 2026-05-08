@@ -16,8 +16,7 @@ beforeEach(function () {
 // --- Authorization tests ---
 
 test('index requires license', function () {
-    License::query()->delete();
-    License::clearActiveCache();
+    clearLicense();
 
     $book = Book::factory()->create();
 
@@ -26,8 +25,7 @@ test('index requires license', function () {
 });
 
 test('store requires license', function () {
-    License::query()->delete();
-    License::clearActiveCache();
+    clearLicense();
 
     $book = Book::factory()->create();
 

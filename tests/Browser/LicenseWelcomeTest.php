@@ -2,11 +2,7 @@
 
 use App\Models\License;
 
-beforeEach(function () {
-    // Pest's beforeEach seeds a license; clear it so the gate kicks in.
-    License::query()->delete();
-    License::clearActiveCache();
-});
+beforeEach(fn () => clearLicense());
 
 it('shows the welcome screen on cold start without a license', function () {
     $page = visit('/');

@@ -3,11 +3,7 @@
 use App\Models\Book;
 use App\Models\License;
 
-beforeEach(function () {
-    // The Pest beforeEach hook seeds a license; clear it so the gate kicks in.
-    License::query()->delete();
-    License::clearActiveCache();
-});
+beforeEach(fn () => clearLicense());
 
 test('unlicensed root redirects to license welcome', function () {
     $this->get(route('books.index'))

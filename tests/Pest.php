@@ -76,6 +76,16 @@ expect()->extend('toBeOne', function () {
 |
 */
 
+/**
+ * Drop the license seeded by Pest's beforeEach hook so tests can exercise
+ * the unlicensed path through the global RequiresLicense middleware.
+ */
+function clearLicense(): void
+{
+    License::query()->delete();
+    License::clearActiveCache();
+}
+
 function createBookWithChapters(int $chapterCount = 3): array
 {
     $book = Book::factory()->withAi()->create();

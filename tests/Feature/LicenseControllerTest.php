@@ -42,16 +42,6 @@ function fakePolarActivation(string $key, array $overrides = []): array
     return array_replace_recursive($defaults, $overrides);
 }
 
-/**
- * The Pest beforeEach hook seeds a license by default. Tests that exercise the
- * activation/unlicensed flow need to start fresh.
- */
-function clearLicense(): void
-{
-    License::query()->delete();
-    License::clearActiveCache();
-}
-
 test('activate with valid key stores license', function () {
     clearLicense();
     $key = 'MANU-AAAA-BBBB-CCCC';
@@ -149,8 +139,7 @@ test('deactivate returns 503 when offline and keeps license', function () {
 });
 
 test('revalidate updates last_validated_at on success', function () {
-    License::query()->delete();
-    License::clearActiveCache();
+    clearLicense();
     $license = License::factory()->stale()->create();
 
     Http::fake([
@@ -170,8 +159,7 @@ test('revalidate updates last_validated_at on success', function () {
 });
 
 test('revalidate silently skips when offline', function () {
-    License::query()->delete();
-    License::clearActiveCache();
+    clearLicense();
     License::factory()->stale()->create();
 
     Http::fake(fn (Request $request) => throw new ConnectionException('Connection refused'));

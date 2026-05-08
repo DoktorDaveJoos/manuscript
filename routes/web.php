@@ -39,7 +39,6 @@ use App\Http\Controllers\WritingGoalController;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 // Lightweight loading page that the NativePHP window opens first.
 // Renders instantly (no DB, no Inertia, no JS bundle) and then redirects
@@ -168,7 +167,7 @@ Route::get('/settings/ai', fn () => redirect('/settings'))->name('ai-settings.in
 Route::get('/settings/license', fn () => redirect('/settings'))->name('settings.license');
 
 // License gate — full-screen page shown when no license is active
-Route::get('/license/welcome', fn () => Inertia::render('license/welcome'))->name('license.welcome');
+Route::inertia('/license/welcome', 'license/welcome')->name('license.welcome');
 Route::post('/license/activate', [LicenseController::class, 'activate'])->name('license.activate');
 Route::post('/license/deactivate', [LicenseController::class, 'deactivate'])->name('license.deactivate');
 Route::post('/license/revalidate', [LicenseController::class, 'revalidate'])->name('license.revalidate');

@@ -12,8 +12,7 @@ beforeEach(function () {
 });
 
 test('ai dashboard requires license', function () {
-    License::query()->delete();
-    License::clearActiveCache();
+    clearLicense();
 
     $book = Book::factory()->create();
 
