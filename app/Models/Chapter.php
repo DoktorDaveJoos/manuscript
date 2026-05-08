@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ChapterStatus;
+use App\Enums\CharacterRole;
 use App\Enums\VersionStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,6 +19,26 @@ class Chapter extends Model
     use HasFactory, SoftDeletes;
 
     protected $guarded = [];
+
+    protected static function booted(): void
+    {
+        static::saved(function (Chapter $chapter): void {
+            if ($chapter->pov_character_id === null) {
+                return;
+            }
+
+            $changedOnUpdate = $chapter->wasChanged('pov_character_id');
+            $createdWithPov = $chapter->wasRecentlyCreated;
+
+            if (! $changedOnUpdate && ! $createdWithPov) {
+                return;
+            }
+
+            $chapter->characters()->syncWithoutDetaching([
+                $chapter->pov_character_id => ['role' => CharacterRole::Protagonist->value],
+            ]);
+        });
+    }
 
     /**
      * @return array<string, string>

@@ -1,21 +1,9 @@
-import {
-    ChevronDown,
-    ChevronUp,
-    Ellipsis,
-    ExternalLink,
-    Link2Off,
-    Plus,
-} from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/DropdownMenu';
 import DescriptionBlock from '@/components/wiki/DescriptionBlock';
 import { cn } from '@/lib/utils';
 import type { BeatStatus } from '@/types/models';
+import PanelCardMenu from './PanelCardMenu';
 
 const STATUS_TONE: Record<BeatStatus, string> = {
     planned: 'bg-neutral-bg text-ink-muted',
@@ -56,45 +44,48 @@ export default function PlotPanelCard({
     const { t } = useTranslation('plot-panel');
 
     return (
-        <div className="flex flex-col rounded-lg bg-surface-card ring-1 ring-border-light">
+        <div className="flex flex-col rounded-lg bg-neutral-bg/50">
             <button
                 type="button"
                 onClick={onToggleExpand}
-                className="flex items-start gap-2 p-3 text-left"
+                className="flex w-full items-center gap-2.5 p-2.5 text-left"
             >
-                <span className="mt-0.5 shrink-0 text-ink-faint">
-                    {isExpanded ? (
-                        <ChevronUp className="size-3.5" />
-                    ) : (
-                        <ChevronDown className="size-3.5" />
-                    )}
-                </span>
-                <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <p className="truncate text-[13px] font-medium text-ink">
                         {beat.title}
                     </p>
                     <p className="truncate text-[11px] text-ink-faint">
                         {plotPointTitle}
                     </p>
+                    <span
+                        className={cn(
+                            'mt-0.5 self-start rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase',
+                            STATUS_TONE[beat.status],
+                        )}
+                    >
+                        {t(`status.${beat.status}`)}
+                    </span>
                 </div>
-                <span
-                    className={cn(
-                        'shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase',
-                        STATUS_TONE[beat.status],
-                    )}
-                >
-                    {t(`status.${beat.status}`)}
-                </span>
                 {isConnected && (
-                    <CardMenu
-                        plotBoardUrl={plotBoardUrl}
+                    <PanelCardMenu
+                        openUrl={plotBoardUrl}
+                        openLabel={t('viewOnPlotBoard')}
+                        disconnectLabel={t('disconnectFromChapter')}
                         onDisconnect={onDisconnect}
+                    />
+                )}
+                {isExpanded ? (
+                    <ChevronUp size={14} className="shrink-0 text-ink-faint" />
+                ) : (
+                    <ChevronDown
+                        size={14}
+                        className="shrink-0 text-ink-faint"
                     />
                 )}
             </button>
 
             {isExpanded && (
-                <div className="flex flex-col gap-2.5 border-t border-border-light px-3 pt-2.5 pb-3">
+                <div className="flex flex-col gap-2.5 px-3 pb-3">
                     {beat.description?.trim() ? (
                         <DescriptionBlock
                             text={beat.description}
@@ -119,53 +110,5 @@ export default function PlotPanelCard({
                 </div>
             )}
         </div>
-    );
-}
-
-function CardMenu({
-    plotBoardUrl,
-    onDisconnect,
-}: {
-    plotBoardUrl: string;
-    onDisconnect?: () => void;
-}) {
-    const { t } = useTranslation('plot-panel');
-
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <span
-                    role="button"
-                    tabIndex={0}
-                    aria-label="More actions"
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.stopPropagation();
-                        }
-                    }}
-                    className="shrink-0 rounded-md p-1 text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink"
-                >
-                    <Ellipsis className="size-3.5" />
-                </span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" sideOffset={4}>
-                <DropdownMenuItem
-                    onClick={() => window.open(plotBoardUrl, '_blank')}
-                >
-                    <ExternalLink className="size-3.5" />
-                    {t('viewOnPlotBoard')}
-                </DropdownMenuItem>
-                {onDisconnect && (
-                    <DropdownMenuItem
-                        onClick={onDisconnect}
-                        className="text-delete focus:text-delete"
-                    >
-                        <Link2Off className="size-3.5" />
-                        {t('disconnectFromChapter')}
-                    </DropdownMenuItem>
-                )}
-            </DropdownMenuContent>
-        </DropdownMenu>
     );
 }

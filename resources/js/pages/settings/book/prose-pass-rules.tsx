@@ -66,10 +66,18 @@ export default function ProsePassRules({ book, rules: initialRules }: Props) {
                             </div>
                             <div className="flex-1">
                                 <span className="text-[14px] font-medium text-ink">
-                                    {rule.label}
+                                    {t(
+                                        `prosePassRules.rules.${rule.key}.label`,
+                                        {
+                                            defaultValue: rule.label,
+                                        },
+                                    )}
                                 </span>
                                 <p className="mt-0.5 text-[13px] text-ink-muted">
-                                    {rule.description}
+                                    {t(
+                                        `prosePassRules.rules.${rule.key}.description`,
+                                        { defaultValue: rule.description },
+                                    )}
                                 </p>
                             </div>
                         </div>

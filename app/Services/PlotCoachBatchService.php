@@ -1048,7 +1048,11 @@ class PlotCoachBatchService
 
         foreach ($pivotIds as $relation => $ids) {
             if ($ids) {
-                $chapter->{$relation}()->attach($ids);
+                // syncWithoutDetaching is idempotent against the row the Chapter
+                // model's `saved` hook auto-attaches when pov_character_id is set
+                // — using attach() would trip the unique constraint when the
+                // agent legitimately repeats the POV in character_ids.
+                $chapter->{$relation}()->syncWithoutDetaching($ids);
             }
         }
 
@@ -1149,6 +1153,22 @@ class PlotCoachBatchService
             throw new InvalidArgumentException('chapter update requires at least one of: title, storyline_id, pov_character_id, act_id, reader_order, beat_ids, character_ids, wiki_entry_ids.');
         }
 
+        // Snapshot the supporting-cast pivot BEFORE running update — the
+        // Chapter model's `saved` hook will attach the new POV to
+        // character_chapter as soon as pov_character_id changes, so a
+        // post-update snapshot would already include the auto-attached row
+        // and undo could no longer detach it.
+        if (
+            array_key_exists('pov_character_id', $patch)
+            && ! array_key_exists('character_ids', $previous)
+        ) {
+            $previous['character_ids'] = $chapter->characters()
+                ->pluck('characters.id')
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+        }
+
         if ($patch !== []) {
             $chapter->update($patch);
         }
@@ -1158,17 +1178,6 @@ class PlotCoachBatchService
         }
 
         if ($chapter->pov_character_id !== null) {
-            // Snapshot existing pivot so undo can restore it when the agent passed
-            // `pov_character_id` without `character_ids` (the resync loop above
-            // wouldn't have captured it).
-            if (! array_key_exists('character_ids', $previous)) {
-                $previous['character_ids'] = $chapter->characters()
-                    ->pluck('characters.id')
-                    ->map(fn ($id) => (int) $id)
-                    ->values()
-                    ->all();
-            }
-
             $this->attachPovAsProtagonist($chapter, $chapter->pov_character_id);
         }
 

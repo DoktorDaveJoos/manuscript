@@ -1,0 +1,15 @@
+{
+    "headerTitle": "Handlung",
+    "searchPlaceholder": "Beats suchen...",
+    "connectedToChapter": "Mit Kapitel verbunden",
+    "recentlyViewed": "Kürzlich angesehen",
+    "noDescription": "Keine Beschreibung.",
+    "connectToChapter": "Mit Kapitel verbinden",
+    "disconnectFromChapter": "Vom Kapitel trennen",
+    "viewOnPlotBoard": "Auf Plot-Board anzeigen",
+    "searchEmpty": "Keine Beats gefunden",
+    "emptyState": "Suche nach Beats, um sie mit diesem Kapitel zu verbinden.",
+    "status.planned": "Geplant",
+    "status.fulfilled": "Erfüllt",
+    "status.abandoned": "Verworfen"
+}

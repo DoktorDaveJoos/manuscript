@@ -1,0 +1,13 @@
+{
+    "headerTitle": "Wiki",
+    "searchPlaceholder": "Wiki durchsuchen...",
+    "connectedToChapter": "Mit Kapitel verbunden",
+    "recentlyViewed": "Kürzlich angesehen",
+    "aiDescription": "KI-Beschreibung",
+    "noDescription": "Keine Beschreibung.",
+    "connectToChapter": "Mit Kapitel verbinden",
+    "disconnectFromChapter": "Vom Kapitel trennen",
+    "openInWiki": "Im Wiki öffnen",
+    "searchEmpty": "Keine Ergebnisse gefunden",
+    "emptyState": "Durchsuche dein Wiki, um Einträge beim Schreiben zu referenzieren."
+}

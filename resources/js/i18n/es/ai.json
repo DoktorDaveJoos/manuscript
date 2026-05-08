@@ -112,6 +112,7 @@
     "chat.bookContext": "Contexto del libro",
     "chat.thinking": "Pensando…",
     "chat.chapter": "Cap. {{number}}",
+    "chat.untitledChapter": "Sin título",
     "chat.newConversation": "Nueva conversación",
     "chat.loadingHistory": "Cargando conversación…",
 

@@ -149,7 +149,7 @@ export default function ChapterContextMenu({
                             className="shrink-0 text-ink-muted"
                         />
                     }
-                    label={t('contextMenu.openInNewPane', 'Open in New Pane')}
+                    label={t('contextMenu.openInNewPane')}
                     onClick={() => {
                         onClose();
                         onOpenInNewPane(chapter.id);

@@ -1,0 +1,13 @@
+{
+    "headerTitle": "Wiki",
+    "searchPlaceholder": "Buscar en el wiki...",
+    "connectedToChapter": "Conectado al capítulo",
+    "recentlyViewed": "Vistos recientemente",
+    "aiDescription": "Descripción IA",
+    "noDescription": "Sin descripción.",
+    "connectToChapter": "Conectar al capítulo",
+    "disconnectFromChapter": "Desconectar del capítulo",
+    "openInWiki": "Abrir en el wiki",
+    "searchEmpty": "No se encontraron resultados",
+    "emptyState": "Busca en tu wiki para referenciar entradas mientras escribes."
+}

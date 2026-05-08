@@ -1,34 +1,11 @@
-import {
-    ChevronDown,
-    ChevronUp,
-    Ellipsis,
-    ExternalLink,
-    Link2Off,
-    Plus,
-    Sparkles,
-    UserCog,
-    X,
-} from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronDown, ChevronUp, Plus, Sparkles, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import Badge from '@/components/ui/Badge';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuSub,
-    DropdownMenuSubContent,
-    DropdownMenuSubTrigger,
-    DropdownMenuTrigger,
-} from '@/components/ui/DropdownMenu';
 import SectionLabel from '@/components/ui/SectionLabel';
-import Textarea from '@/components/ui/Textarea';
+import DescriptionBlock from '@/components/wiki/DescriptionBlock';
 import WikiAvatar from '@/components/wiki/WikiAvatar';
 import type { WikiTab } from '@/components/wiki/WikiTabBar';
-import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
-import { cn } from '@/lib/utils';
 import type { Character, WikiEntry } from '@/types/models';
+import PanelCardMenu from './PanelCardMenu';
 
 type WikiPanelCardProps = {
     entry: Character | WikiEntry;
@@ -37,10 +14,8 @@ type WikiPanelCardProps = {
     isExpanded: boolean;
     onToggleExpand: () => void;
     onDismiss?: () => void;
-    onConnect?: (role?: string) => void;
+    onConnect?: () => void;
     onDisconnect?: () => void;
-    onRoleChange?: (role: string) => void;
-    onUpdate: (data: Record<string, unknown>) => void;
     chapterRole?: string;
     wikiUrl: string;
 };
@@ -52,11 +27,6 @@ export function kindToTab(kind: string): WikiTab {
 
 export function capitalize(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-function getKindLabel(entryType: string, entry: Character | WikiEntry): string {
-    if (entryType === 'character') return 'Character';
-    return capitalize((entry as WikiEntry).kind);
 }
 
 function getSubLabel(
@@ -73,8 +43,6 @@ function getSubLabel(
     return null;
 }
 
-const ROLES = ['protagonist', 'supporting', 'mentioned'] as const;
-
 export default function WikiPanelCard({
     entry,
     entryType,
@@ -84,19 +52,25 @@ export default function WikiPanelCard({
     onDismiss,
     onConnect,
     onDisconnect,
-    onRoleChange,
-    onUpdate,
     chapterRole,
     wikiUrl,
 }: WikiPanelCardProps) {
-    const tab = kindToTab(
-        entryType === 'character' ? 'character' : (entry as WikiEntry).kind,
-    );
-    const kindLabel = getKindLabel(entryType, entry);
+    const { t } = useTranslation('wiki-panel');
+    const { t: tWiki } = useTranslation('wiki');
+    const tab =
+        entryType === 'character'
+            ? 'characters'
+            : kindToTab((entry as WikiEntry).kind);
+    const kindLabel =
+        entryType === 'character'
+            ? tWiki('dropdown.character')
+            : tWiki(`dropdown.${(entry as WikiEntry).kind}`, {
+                  defaultValue: capitalize((entry as WikiEntry).kind),
+              });
     const subLabel = getSubLabel(entry, entryType, chapterRole);
 
     return (
-        <div className="rounded-lg bg-neutral-bg/50">
+        <div className="flex flex-col rounded-lg bg-neutral-bg/50">
             <button
                 type="button"
                 onClick={onToggleExpand}
@@ -112,6 +86,14 @@ export default function WikiPanelCard({
                         {subLabel && ` · ${subLabel}`}
                     </p>
                 </div>
+                {isConnected && (
+                    <PanelCardMenu
+                        openUrl={wikiUrl}
+                        openLabel={t('openInWiki')}
+                        disconnectLabel={t('disconnectFromChapter')}
+                        onDisconnect={onDisconnect}
+                    />
+                )}
                 {!isConnected && onDismiss && (
                     <span
                         role="button"
@@ -144,15 +126,8 @@ export default function WikiPanelCard({
             {isExpanded && (
                 <ExpandedBody
                     entry={entry}
-                    entryType={entryType}
                     isConnected={isConnected}
                     onConnect={onConnect}
-                    onDisconnect={onDisconnect}
-                    onRoleChange={onRoleChange}
-                    onUpdate={onUpdate}
-                    chapterRole={chapterRole}
-                    wikiUrl={wikiUrl}
-                    onDismiss={onDismiss}
                 />
             )}
         </div>
@@ -161,58 +136,28 @@ export default function WikiPanelCard({
 
 function ExpandedBody({
     entry,
-    entryType,
     isConnected,
     onConnect,
-    onDisconnect,
-    onRoleChange,
-    onUpdate,
-    chapterRole,
-    wikiUrl,
-    onDismiss,
 }: {
     entry: Character | WikiEntry;
-    entryType: 'character' | 'wiki_entry';
     isConnected: boolean;
-    onConnect?: (role?: string) => void;
-    onDisconnect?: () => void;
-    onRoleChange?: (role: string) => void;
-    onUpdate: (data: Record<string, unknown>) => void;
-    chapterRole?: string;
-    wikiUrl: string;
-    onDismiss?: () => void;
+    onConnect?: () => void;
 }) {
     const { t } = useTranslation('wiki-panel');
-    const isCharacter = entryType === 'character';
-    const character = isCharacter ? (entry as Character) : null;
+    const description = entry.description?.trim();
 
     return (
-        <div className="flex flex-col gap-3 px-3 pb-3">
-            <div className="flex justify-end">
-                <OverflowMenu
-                    isConnected={isConnected}
-                    isCharacter={isCharacter}
-                    onConnect={onConnect}
-                    onDisconnect={onDisconnect}
-                    onRoleChange={onRoleChange}
-                    onDismiss={onDismiss}
-                    chapterRole={chapterRole}
-                    wikiUrl={wikiUrl}
+        <div className="flex flex-col gap-2.5 px-3 pb-3">
+            {description ? (
+                <DescriptionBlock
+                    text={description}
+                    className="text-[12px] leading-relaxed text-ink-muted"
                 />
-            </div>
-
-            {isCharacter && (
-                <AliasesSection
-                    aliases={character?.aliases ?? []}
-                    onUpdate={(aliases) => onUpdate({ aliases })}
-                />
+            ) : (
+                <p className="text-[12px] text-ink-faint italic">
+                    {t('noDescription')}
+                </p>
             )}
-
-            <EditableDescription
-                label={t('description')}
-                value={entry.description ?? ''}
-                onChange={(value) => onUpdate({ description: value })}
-            />
 
             {entry.ai_description && (
                 <div className="flex flex-col gap-1.5">
@@ -222,256 +167,23 @@ function ExpandedBody({
                             {t('aiDescription')}
                         </SectionLabel>
                     </div>
-                    <p className="text-[12px] leading-relaxed text-ink-muted italic">
-                        {entry.ai_description}
-                    </p>
+                    <DescriptionBlock
+                        text={entry.ai_description}
+                        className="text-[12px] leading-relaxed text-ink-muted italic"
+                    />
                 </div>
             )}
-        </div>
-    );
-}
 
-function AliasesSection({
-    aliases: initialAliases,
-    onUpdate,
-}: {
-    aliases: string[];
-    onUpdate: (aliases: string[]) => void;
-}) {
-    const { t } = useTranslation('wiki-panel');
-    const [localAliases, setLocalAliases] = useState(initialAliases);
-    const [isAdding, setIsAdding] = useState(false);
-    const [newAlias, setNewAlias] = useState('');
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        setLocalAliases(initialAliases);
-    }, [initialAliases]);
-
-    useEffect(() => {
-        if (isAdding) inputRef.current?.focus();
-    }, [isAdding]);
-
-    const handleAdd = useCallback(() => {
-        const trimmed = newAlias.trim();
-        if (trimmed && !localAliases.includes(trimmed)) {
-            const next = [...localAliases, trimmed];
-            setLocalAliases(next);
-            onUpdate(next);
-        }
-        setNewAlias('');
-        setIsAdding(false);
-    }, [newAlias, localAliases, onUpdate]);
-
-    const handleRemove = useCallback(
-        (alias: string) => {
-            const next = localAliases.filter((a) => a !== alias);
-            setLocalAliases(next);
-            onUpdate(next);
-        },
-        [localAliases, onUpdate],
-    );
-
-    return (
-        <div className="flex flex-col gap-1.5">
-            <SectionLabel variant="section">{t('aliases')}</SectionLabel>
-            <div className="flex flex-wrap items-center gap-1.5">
-                {localAliases.map((alias) => (
-                    <Badge
-                        key={alias}
-                        variant="secondary"
-                        className="gap-1 pr-1"
-                    >
-                        {alias}
-                        <button
-                            type="button"
-                            onClick={() => handleRemove(alias)}
-                            className="rounded-full p-0.5 hover:bg-ink/10"
-                        >
-                            <X size={8} />
-                        </button>
-                    </Badge>
-                ))}
-                {isAdding ? (
-                    <input
-                        ref={inputRef}
-                        value={newAlias}
-                        onChange={(e) => setNewAlias(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleAdd();
-                            if (e.key === 'Escape') {
-                                setIsAdding(false);
-                                setNewAlias('');
-                            }
-                        }}
-                        onBlur={handleAdd}
-                        className="w-16 rounded border border-border bg-transparent px-1.5 py-0.5 text-[11px] text-ink focus:ring-1 focus:ring-ink focus:outline-none"
-                    />
-                ) : (
-                    <button
-                        type="button"
-                        onClick={() => setIsAdding(true)}
-                        className="inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-[11px] text-ink-faint transition-colors hover:text-ink"
-                    >
-                        <Plus size={10} />
-                        {t('addAlias')}
-                    </button>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function EditableDescription({
-    label,
-    value,
-    onChange,
-}: {
-    label: string;
-    value: string;
-    onChange: (value: string) => void;
-}) {
-    const [localValue, setLocalValue] = useState(value);
-    const debouncedOnChange = useDebouncedCallback(onChange, 1500);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-    useEffect(() => {
-        setLocalValue(value);
-    }, [value]);
-
-    useEffect(() => {
-        const el = textareaRef.current;
-        if (!el) return;
-        el.style.height = 'auto';
-        el.style.height = `${el.scrollHeight}px`;
-    }, [localValue]);
-
-    const handleChange = useCallback(
-        (newValue: string) => {
-            setLocalValue(newValue);
-            debouncedOnChange(newValue);
-        },
-        [debouncedOnChange],
-    );
-
-    return (
-        <div className="flex flex-col gap-1.5">
-            <SectionLabel variant="section">{label}</SectionLabel>
-            <Textarea
-                ref={textareaRef}
-                value={localValue}
-                onChange={(e) => handleChange(e.target.value)}
-                rows={1}
-                className="border-transparent bg-transparent text-[12px] leading-relaxed focus:border-border focus:ring-0"
-                placeholder="Add a description..."
-            />
-        </div>
-    );
-}
-
-function OverflowMenu({
-    isConnected,
-    isCharacter,
-    onConnect,
-    onDisconnect,
-    onRoleChange,
-    onDismiss,
-    chapterRole,
-    wikiUrl,
-}: {
-    isConnected: boolean;
-    isCharacter: boolean;
-    onConnect?: (role?: string) => void;
-    onDisconnect?: () => void;
-    onRoleChange?: (role: string) => void;
-    onDismiss?: () => void;
-    chapterRole?: string;
-    wikiUrl: string;
-}) {
-    const { t } = useTranslation('wiki-panel');
-
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger className="rounded p-1 text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink">
-                <Ellipsis size={14} />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" sideOffset={4}>
-                {!isConnected && onConnect && (
-                    <>
-                        {isCharacter ? (
-                            <DropdownMenuSub>
-                                <DropdownMenuSubTrigger>
-                                    <UserCog size={14} className="mr-1" />
-                                    {t('connectToChapter')}
-                                </DropdownMenuSubTrigger>
-                                <DropdownMenuSubContent>
-                                    {ROLES.map((role) => (
-                                        <DropdownMenuItem
-                                            key={role}
-                                            onSelect={() => onConnect(role)}
-                                        >
-                                            {t(`roles.${role}`)}
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuSubContent>
-                            </DropdownMenuSub>
-                        ) : (
-                            <DropdownMenuItem onSelect={() => onConnect()}>
-                                <UserCog size={14} />
-                                {t('connectToChapter')}
-                            </DropdownMenuItem>
-                        )}
-                    </>
-                )}
-
-                {isConnected && isCharacter && onRoleChange && (
-                    <DropdownMenuSub>
-                        <DropdownMenuSubTrigger>
-                            <UserCog size={14} className="mr-1" />
-                            {t('changeRole')}
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent>
-                            {ROLES.map((role) => (
-                                <DropdownMenuItem
-                                    key={role}
-                                    onSelect={() => onRoleChange(role)}
-                                    className={cn(
-                                        chapterRole === role && 'font-medium',
-                                    )}
-                                >
-                                    {t(`roles.${role}`)}
-                                    {chapterRole === role && ' ✓'}
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                )}
-
-                {isConnected && onDisconnect && (
-                    <DropdownMenuItem onSelect={onDisconnect}>
-                        <Link2Off size={14} />
-                        {t('disconnectFromChapter')}
-                    </DropdownMenuItem>
-                )}
-
-                {!isConnected && onDismiss && (
-                    <DropdownMenuItem onSelect={onDismiss}>
-                        <X size={14} />
-                        {t('dismiss')}
-                    </DropdownMenuItem>
-                )}
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuItem
-                    onSelect={() => {
-                        window.location.href = wikiUrl;
-                    }}
+            {!isConnected && onConnect && (
+                <button
+                    type="button"
+                    onClick={onConnect}
+                    className="flex items-center justify-center gap-1.5 self-start rounded-md bg-ink px-2.5 py-1 text-[12px] font-medium text-surface transition-colors hover:bg-ink-muted"
                 >
-                    <ExternalLink size={14} />
-                    {t('openInWiki')}
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+                    <Plus className="size-3" />
+                    {t('connectToChapter')}
+                </button>
+            )}
+        </div>
     );
 }

@@ -391,7 +391,7 @@ export default function AiChatDrawer({
                         <span className="size-[5px] shrink-0 rounded-full bg-ai-green" />
                         <BookOpen size={14} className="shrink-0 text-accent" />
                         <span className="truncate text-xs font-medium text-ink">
-                            {chapter.title || 'Untitled'}
+                            {chapter.title || t('chat.untitledChapter')}
                         </span>
                         <span className="shrink-0 rounded bg-neutral-bg px-1.5 py-0.5 text-[11px] font-medium text-ink-muted">
                             {t('chat.chapter', {

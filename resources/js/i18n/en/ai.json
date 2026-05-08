@@ -114,6 +114,7 @@
     "chat.bookContext": "Book context",
     "chat.thinking": "Thinking…",
     "chat.chapter": "Ch. {{number}}",
+    "chat.untitledChapter": "Untitled",
     "chat.newConversation": "New conversation",
     "chat.loadingHistory": "Loading conversation…",
 

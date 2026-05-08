@@ -111,6 +111,34 @@ test('disconnect wiki entry from chapter', function () {
     expect($entry->chapters()->where('chapter_id', $chapter->id)->exists())->toBeFalse();
 });
 
+test('panel index includes the POV character for the chapter', function () {
+    $book = Book::factory()->create();
+    $povCharacter = Character::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->create([
+        'pov_character_id' => $povCharacter->id,
+    ]);
+
+    $response = $this->getJson("/books/{$book->id}/wiki/panel?chapter_id={$chapter->id}");
+
+    $response->assertSuccessful()
+        ->assertJsonCount(1, 'connected.characters')
+        ->assertJsonPath('connected.characters.0.id', $povCharacter->id);
+
+    expect($povCharacter->chapters()->where('chapter_id', $chapter->id)->first()?->pivot?->role)
+        ->toBe('protagonist');
+});
+
+test('updating pov_character_id attaches the new POV to the supporting cast pivot', function () {
+    $book = Book::factory()->create();
+    $chapter = Chapter::factory()->for($book)->create();
+    $povCharacter = Character::factory()->for($book)->create();
+
+    $chapter->update(['pov_character_id' => $povCharacter->id]);
+
+    expect($povCharacter->chapters()->where('chapter_id', $chapter->id)->first()?->pivot?->role)
+        ->toBe('protagonist');
+});
+
 test('update character role for chapter', function () {
     $book = Book::factory()->create();
     $chapter = Chapter::factory()->for($book)->create();

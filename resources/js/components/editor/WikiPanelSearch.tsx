@@ -25,6 +25,7 @@ export default function WikiPanelSearch({
     onSelect: (result: SearchResult) => void;
 }) {
     const { t } = useTranslation('wiki-panel');
+    const { t: tWiki } = useTranslation('wiki');
     const [query, setQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -108,7 +109,9 @@ export default function WikiPanelSearch({
                                     {result.name}
                                 </p>
                                 <p className="text-[11px] text-ink-faint">
-                                    {capitalize(result.kind)}
+                                    {tWiki(`dropdown.${result.kind}`, {
+                                        defaultValue: capitalize(result.kind),
+                                    })}
                                     {result.entry_type &&
                                         ` · ${result.entry_type}`}
                                 </p>
