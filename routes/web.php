@@ -8,6 +8,7 @@ use App\Http\Controllers\AiDashboardController;
 use App\Http\Controllers\AiPreparationController;
 use App\Http\Controllers\AiSettingsController;
 use App\Http\Controllers\AppSettingsController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BeatController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\BookSettingsController;
@@ -171,6 +172,11 @@ Route::inertia('/license/welcome', 'license/welcome')->name('license.welcome');
 Route::post('/license/activate', [LicenseController::class, 'activate'])->name('license.activate');
 Route::post('/license/deactivate', [LicenseController::class, 'deactivate'])->name('license.deactivate');
 Route::post('/license/revalidate', [LicenseController::class, 'revalidate'])->name('license.revalidate');
+
+// Local backup — export, import (with auto-rollback), single-level revert.
+Route::post('/settings/backup/export', [BackupController::class, 'export'])->name('settings.backup.export');
+Route::post('/settings/backup/import', [BackupController::class, 'import'])->name('settings.backup.import');
+Route::post('/settings/backup/revert', [BackupController::class, 'revert'])->name('settings.backup.revert');
 
 Route::get('/books/{book}/ai/dashboard', [AiDashboardController::class, 'index'])->name('books.ai.dashboard');
 Route::get('/books/{book}/ai/editorial-review', [EditorialReviewController::class, 'index'])->name('books.ai.editorial-review.index');
