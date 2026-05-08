@@ -1,4 +1,3 @@
-import { Lock } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
@@ -27,11 +26,9 @@ const FEATURE_CARDS = [
 export default function EditorialReviewEmptyState({
     onStart,
     starting,
-    locked = false,
 }: {
     onStart: () => void;
     starting: boolean;
-    locked?: boolean;
 }) {
     const { t } = useTranslation('editorial-review');
     const [showConfirm, setShowConfirm] = useState(false);
@@ -47,27 +44,16 @@ export default function EditorialReviewEmptyState({
                     <p className="text-[14px] leading-[1.6] text-ink-muted">
                         {t('emptyState.description')}
                     </p>
-                    {locked ? (
-                        <Button
-                            variant="primary"
-                            disabled
-                            className="mt-2 text-[13px]"
-                        >
-                            <Lock size={14} />
-                            {t('emptyState.button')}
-                        </Button>
-                    ) : (
-                        <Button
-                            variant="primary"
-                            onClick={() => setShowConfirm(true)}
-                            disabled={starting}
-                            className="mt-2 text-[13px]"
-                        >
-                            {starting
-                                ? t('progress.pending')
-                                : t('emptyState.button')}
-                        </Button>
-                    )}
+                    <Button
+                        variant="primary"
+                        onClick={() => setShowConfirm(true)}
+                        disabled={starting}
+                        className="mt-2 text-[13px]"
+                    >
+                        {starting
+                            ? t('progress.pending')
+                            : t('emptyState.button')}
+                    </Button>
                 </div>
 
                 {/* Feature cards */}

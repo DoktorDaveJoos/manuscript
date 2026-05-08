@@ -1,27 +1,17 @@
 import { Link } from '@inertiajs/react';
-import { Lock, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import ChatSurface from '@/components/plot/ChatSurface';
 import type { ChatSurfaceHandle } from '@/components/plot/ChatSurface';
-import CoachInsightsPanel from '@/components/plot/CoachInsightsPanel';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { useAiFeatures } from '@/hooks/useAiFeatures';
 
 type CoachPanelProps = {
     aiConfigured: boolean;
     bookId: number;
     activeSessionId: number | null;
     onSessionCreated?: (sessionId: number) => void;
-    contextCounts: {
-        acts: number;
-        plotPoints: number;
-        beats: number;
-        characters: number;
-        storylines: number;
-        chapters: number;
-    };
 };
 
 export type CoachPanelHandle = ChatSurfaceHandle;
@@ -37,17 +27,10 @@ export type CoachPanelHandle = ChatSurfaceHandle;
  */
 const CoachPanel = forwardRef<CoachPanelHandle, CoachPanelProps>(
     function CoachPanel(
-        {
-            aiConfigured,
-            bookId,
-            activeSessionId,
-            onSessionCreated,
-            contextCounts,
-        },
+        { aiConfigured, bookId, activeSessionId, onSessionCreated },
         ref,
     ) {
         const { t } = useTranslation('plot-coach');
-        const { licensed, providerLabel } = useAiFeatures();
 
         const chatRef = useRef<ChatSurfaceHandle>(null);
 
@@ -64,20 +47,6 @@ const CoachPanel = forwardRef<CoachPanelHandle, CoachPanelProps>(
             [],
         );
 
-        if (!licensed) {
-            return (
-                <GateShell>
-                    <GateCard
-                        icon={<Lock className="size-4" />}
-                        title={t('gate.no_pro.title')}
-                        body={t('gate.no_pro.body')}
-                        cta={t('gate.no_pro.cta')}
-                        href="/settings/license"
-                    />
-                </GateShell>
-            );
-        }
-
         if (!aiConfigured) {
             return (
                 <GateShell>
@@ -93,20 +62,12 @@ const CoachPanel = forwardRef<CoachPanelHandle, CoachPanelProps>(
         }
 
         return (
-            <div className="relative flex min-h-0 flex-1 flex-col">
-                <CoachInsightsPanel
-                    bookId={bookId}
-                    providerLabel={providerLabel}
-                    counts={contextCounts}
-                    onHintClick={(hint) => chatRef.current?.fillInput(hint)}
-                />
-                <ChatSurface
-                    ref={chatRef}
-                    bookId={bookId}
-                    sessionId={activeSessionId}
-                    onSessionCreated={onSessionCreated}
-                />
-            </div>
+            <ChatSurface
+                ref={chatRef}
+                bookId={bookId}
+                sessionId={activeSessionId}
+                onSessionCreated={onSessionCreated}
+            />
         );
     },
 );

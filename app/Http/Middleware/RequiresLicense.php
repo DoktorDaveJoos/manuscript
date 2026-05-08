@@ -9,18 +9,37 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RequiresLicense
 {
+    /**
+     * Routes that work without an active license.
+     *
+     * Health/loading endpoints, the welcome page itself, license activation,
+     * and update endpoints (so users can fetch fixes even before activating).
+     */
+    private const EXEMPT_ROUTES = [
+        'loading',
+        'ready',
+        'repair-status',
+        'license.welcome',
+        'license.activate',
+        'license.deactivate',
+        'license.revalidate',
+        'update.check',
+        'update.download',
+        'update.install',
+    ];
+
     public function handle(Request $request, Closure $next): Response
     {
-        if (License::isActive()) {
+        if (License::isActive() || $request->routeIs(self::EXEMPT_ROUTES)) {
             return $next($request);
         }
 
-        if ($request->expectsJson()) {
+        if ($request->expectsJson() && ! $request->header('X-Inertia')) {
             return response()->json([
-                'message' => 'This feature requires an active Manuscript licence.',
+                'message' => __('This app requires an active Manuscript license.'),
             ], 403);
         }
 
-        return redirect()->route('settings.index');
+        return redirect()->route('license.welcome');
     }
 }

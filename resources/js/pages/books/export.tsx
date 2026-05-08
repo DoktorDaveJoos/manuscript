@@ -16,7 +16,6 @@ import type {
     TemplateDef,
     TrimSizeOption,
 } from '@/components/export/types';
-import { useFreeTier } from '@/hooks/useFreeTier';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import { downloadExport } from '@/lib/export-download';
 import { jsonFetchHeaders } from '@/lib/utils';
@@ -42,7 +41,6 @@ export default function Export({
     sceneBreakStyles,
 }: Props) {
     const { t } = useTranslation('export');
-    const { isPro } = useFreeTier();
     const sidebarStorylines = useSidebarStorylines();
 
     // Epilogue detection
@@ -52,7 +50,7 @@ export default function Export({
     );
 
     // Format
-    const [format, setFormat] = useState<Format>(isPro ? 'epub' : 'docx');
+    const [format, setFormat] = useState<Format>('epub');
 
     // Chapters
     const sortedFromProps = useMemo(

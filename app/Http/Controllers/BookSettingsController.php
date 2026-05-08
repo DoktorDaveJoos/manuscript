@@ -16,7 +16,6 @@ use App\Services\Export\FontService;
 use App\Services\Export\Templates\ClassicTemplate;
 use App\Services\Export\Templates\ElegantTemplate;
 use App\Services\Export\Templates\ModernTemplate;
-use App\Services\FreeTierLimits;
 use App\Services\WritingStyleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -169,12 +168,6 @@ class BookSettingsController extends Controller
         $validated = $request->validated();
         $format = $validated['format'] ?? '';
 
-        if (! FreeTierLimits::canExportFormat($format)) {
-            return response()->json([
-                'message' => __('Upgrade to Manuscript Pro to export as :format.', ['format' => strtoupper($format)]),
-            ], 403);
-        }
-
         if ($format === 'pdf' && ! config('nativephp-internal.running')) {
             return response()->json(['error' => 'PDF export requires the desktop app'], 422);
         }
@@ -229,10 +222,6 @@ class BookSettingsController extends Controller
 
     public function previewPdf(ExportBookRequest $request, Book $book): JsonResponse
     {
-        if (! FreeTierLimits::canExportFormat('pdf')) {
-            return response()->json(['message' => __('PDF preview requires Manuscript Pro.')], 403);
-        }
-
         $validated = $request->validated();
         $validated['preview_format'] = ExportFormat::from($validated['format'] ?? 'pdf')->value;
         $validated['include_cover'] = false;

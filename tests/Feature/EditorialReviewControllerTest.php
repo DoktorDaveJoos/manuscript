@@ -15,17 +15,19 @@ beforeEach(function () {
 
 // --- Authorization tests ---
 
-test('index loads without license', function () {
+test('index requires license', function () {
     License::query()->delete();
+    License::clearActiveCache();
 
     $book = Book::factory()->create();
 
     $this->getJson(route('books.ai.editorial-review.index', $book))
-        ->assertOk();
+        ->assertForbidden();
 });
 
 test('store requires license', function () {
     License::query()->delete();
+    License::clearActiveCache();
 
     $book = Book::factory()->create();
 

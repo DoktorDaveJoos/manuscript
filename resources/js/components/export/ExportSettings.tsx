@@ -1,4 +1,4 @@
-import { Download, Lock } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CustomizePanel from '@/components/export/CustomizePanel';
 import TemplateSelector from '@/components/export/TemplateSelector';
@@ -19,7 +19,6 @@ import Select from '@/components/ui/Select';
 import { Spinner } from '@/components/ui/spinner';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import ToggleRow from '@/components/ui/ToggleRow';
-import { useFreeTier } from '@/hooks/useFreeTier';
 
 type ExportSettingsProps = {
     format: Format;
@@ -92,7 +91,6 @@ export default function ExportSettings({
     error,
 }: ExportSettingsProps) {
     const { t } = useTranslation('export');
-    const { canExportFormat } = useFreeTier();
     const isVisual = VISUAL_FORMATS.has(format);
 
     return (
@@ -113,17 +111,8 @@ export default function ExportSettings({
                             }}
                         >
                             {FORMATS.map((f) => (
-                                <ToggleGroupItem
-                                    key={f}
-                                    value={f}
-                                    disabled={!canExportFormat(f)}
-                                >
-                                    <span className="inline-flex items-center gap-1">
-                                        .{f}
-                                        {!canExportFormat(f) && (
-                                            <Lock size={10} />
-                                        )}
-                                    </span>
+                                <ToggleGroupItem key={f} value={f}>
+                                    .{f}
                                 </ToggleGroupItem>
                             ))}
                         </ToggleGroup>

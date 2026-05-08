@@ -8,9 +8,7 @@ import Sidebar from '@/components/editor/Sidebar';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import PageHeader from '@/components/ui/PageHeader';
-import ProFeatureLock from '@/components/ui/ProFeatureLock';
 import SectionLabel from '@/components/ui/SectionLabel';
-import { useFreeTier } from '@/hooks/useFreeTier';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type {
     Book,
@@ -131,7 +129,6 @@ export default function Dashboard({
 }) {
     const { t } = useTranslation('dashboard');
     const storylines = useSidebarStorylines();
-    const { isFree } = useFreeTier();
 
     return (
         <>
@@ -186,42 +183,27 @@ export default function Dashboard({
                         <div className="h-px bg-border-light" />
 
                         {/* Today's Writing + Heatmap + Manuscript Progress */}
-                        {isFree ? (
-                            <ProFeatureLock feature="dashboard">
-                                <div className="flex h-[200px] gap-6 opacity-50">
-                                    <Card className="w-[340px] shrink-0" />
-                                    <Card className="min-w-0 flex-1" />
-                                </div>
-                            </ProFeatureLock>
-                        ) : (
-                            <>
-                                <div className="flex gap-6">
-                                    <div className="w-[340px] shrink-0">
-                                        <WritingGoal
-                                            bookId={book.id}
-                                            writingGoal={writing_goal!}
-                                            targetWordCount={
-                                                manuscript_target!
-                                                    .target_word_count
-                                            }
-                                        />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <WritingHeatmap
-                                            heatmap={writing_heatmap}
-                                            dailyGoal={
-                                                writing_goal!
-                                                    .daily_word_count_goal
-                                            }
-                                        />
-                                    </div>
-                                </div>
-
-                                <ManuscriptProgress
-                                    target={manuscript_target!}
+                        <div className="flex gap-6">
+                            <div className="w-[340px] shrink-0">
+                                <WritingGoal
+                                    bookId={book.id}
+                                    writingGoal={writing_goal!}
+                                    targetWordCount={
+                                        manuscript_target!.target_word_count
+                                    }
                                 />
-                            </>
-                        )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <WritingHeatmap
+                                    heatmap={writing_heatmap}
+                                    dailyGoal={
+                                        writing_goal!.daily_word_count_goal
+                                    }
+                                />
+                            </div>
+                        </div>
+
+                        <ManuscriptProgress target={manuscript_target!} />
 
                         <div className="h-px bg-border-light" />
 

@@ -5,6 +5,7 @@ use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
+use App\Models\License;
 use App\Models\Scene;
 use App\Models\Storyline;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,6 +28,13 @@ pest()->extend(TestCase::class)
         // AppSetting/License caches are reset in TestCase::setUp(); only the
         // locale needs to be re-applied here since it's request state.
         app()->setLocale(config('app.locale', 'en'));
+
+        // Global RequiresLicense middleware redirects every request to the
+        // welcome page when no license is active. Most feature tests assume a
+        // licensed app, so seed one by default. Tests covering the unlicensed
+        // path (gate redirect, welcome page, activation flow) call
+        // License::query()->delete() + License::clearActiveCache() up front.
+        License::factory()->create();
     })
     ->in('Feature');
 
@@ -35,6 +43,10 @@ pest()->extend(TestCase::class)
     ->beforeEach(function () {
         AppSetting::set('crash_report_prompted', true);
         AppSetting::set('language_prompted', true);
+
+        // Browser tests boot the full app — same reasoning as Feature: assume
+        // licensed by default.
+        License::factory()->create();
     })
     ->in('Browser');
 

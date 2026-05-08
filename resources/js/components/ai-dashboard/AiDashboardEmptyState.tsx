@@ -1,12 +1,12 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Loader2, Lock } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
+import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { TOTAL_PHASES, useAiPreparation } from '@/hooks/useAiPreparation';
-import { useLicense } from '@/hooks/useLicense';
 import type { AiPreparationStatus } from '@/types/models';
 
 const FEATURE_CARDS = [
@@ -37,7 +37,7 @@ export default function AiDashboardEmptyState({
 }) {
     const { t } = useTranslation('ai-dashboard');
     const pageUrl = usePage().url;
-    const { isFree } = useLicense();
+    const { configured } = useAiFeatures();
     const { starting, error, status, isRunning, handleStart } =
         useAiPreparation(bookId, initialStatus);
 
@@ -51,14 +51,22 @@ export default function AiDashboardEmptyState({
                 <p className="text-[14px] leading-[1.6] text-ink-muted">
                     {t('emptyState.description')}
                 </p>
-                {isFree ? (
+                {!configured ? (
                     <Button
                         variant="primary"
-                        disabled
+                        asChild
                         className="mt-2 text-[13px]"
                     >
-                        <Lock size={14} />
-                        {t('emptyState.cta')}
+                        <Link
+                            href={settingsIndex.url({
+                                query: {
+                                    from: pageUrl,
+                                    section: 'ai-features',
+                                },
+                            })}
+                        >
+                            {t('emptyState.configureProvider')}
+                        </Link>
                     </Button>
                 ) : isRunning ? (
                     <div className="mt-2 flex flex-col items-center gap-3">

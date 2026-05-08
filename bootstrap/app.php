@@ -34,10 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
             SetLocale::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
-        ]);
-
-        $middleware->alias([
-            'license' => RequiresLicense::class,
+            RequiresLicense::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

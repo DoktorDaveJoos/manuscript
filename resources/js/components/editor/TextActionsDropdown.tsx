@@ -1,4 +1,4 @@
-import { EllipsisVertical, Lock } from 'lucide-react';
+import { EllipsisVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
     DropdownMenu,
@@ -17,7 +17,7 @@ export default function TextActionsDropdown({
     onBeautifyClick: () => void;
     isBeautifying?: boolean;
 }) {
-    const { visible, usable, licensed } = useAiFeatures();
+    const { visible, usable } = useAiFeatures();
     const { t } = useTranslation('editor');
 
     return (
@@ -55,12 +55,6 @@ export default function TextActionsDropdown({
                             <span className="rounded bg-ink-faint/10 px-1 py-0.5 text-[11px] font-medium text-ink-faint">
                                 AI
                             </span>
-                            {!licensed && (
-                                <span className="flex items-center gap-0.5 rounded bg-ink-faint/10 px-1 py-0.5 text-[11px] font-medium text-ink-faint">
-                                    <Lock size={12} />
-                                    PRO
-                                </span>
-                            )}
                         </span>
                         <span className="text-[11px] text-ink-faint">
                             {isBeautifying

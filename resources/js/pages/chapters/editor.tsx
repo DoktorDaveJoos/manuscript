@@ -38,7 +38,6 @@ import type { ChapterData } from '@/hooks/useChapterData';
 import useChapterData from '@/hooks/useChapterData';
 import type { ContinueWritingReview } from '@/hooks/useContinueWriting';
 import { useContinueWriting } from '@/hooks/useContinueWriting';
-import { useLicense } from '@/hooks/useLicense';
 import usePaneManager from '@/hooks/usePaneManager';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import {
@@ -227,7 +226,6 @@ export default function EditorPage({
     const { t: tPlotPanel } = useTranslation('plot-panel');
     const sidebarStorylines = useSidebarStorylines();
     const { usable: aiVisible } = useAiFeatures();
-    const { isActive: plotVisible } = useLicense();
     const { app_settings } = usePage<{ app_settings: AppSettings }>().props;
 
     // ── Pane management ──────────────────────────────────────────────────
@@ -611,13 +609,11 @@ export default function EditorPage({
                 label: t('toolbar.notes'),
             },
         ];
-        if (plotVisible) {
-            items.push({
-                id: 'plot',
-                icon: Workflow,
-                label: tPlotPanel('headerTitle'),
-            });
-        }
+        items.push({
+            id: 'plot',
+            icon: Workflow,
+            label: tPlotPanel('headerTitle'),
+        });
         if (aiVisible) {
             items.push(
                 {
@@ -638,7 +634,7 @@ export default function EditorPage({
             );
         }
         return items;
-    }, [aiVisible, plotVisible, t, tAi, tEditorial, tPlotPanel]);
+    }, [aiVisible, t, tAi, tEditorial, tPlotPanel]);
 
     // ── Sidebar callbacks ────────────────────────────────────────────────
     const handleBeforeNavigate = useCallback(async () => {
@@ -803,7 +799,7 @@ export default function EditorPage({
                             </SlidePanel>
                         )}
 
-                        {focusedChapter && plotVisible && (
+                        {focusedChapter && (
                             <SlidePanel
                                 open={openPanels.has('plot')}
                                 onClose={closePlot}

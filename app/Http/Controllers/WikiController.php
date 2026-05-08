@@ -10,7 +10,6 @@ use App\Http\Requests\UpdateWikiEntryRequest;
 use App\Models\Book;
 use App\Models\Character;
 use App\Models\WikiEntry;
-use App\Services\FreeTierLimits;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -61,11 +60,6 @@ class WikiController extends Controller
 
     public function storeCharacter(StoreCharacterRequest $request, Book $book): RedirectResponse
     {
-        if (! FreeTierLimits::canCreateWikiEntry($book)) {
-            return redirect()->route('books.wiki', ['book' => $book, 'tab' => 'characters'])
-                ->with('error', __('Upgrade to Manuscript Pro for unlimited Story Bible entries.'));
-        }
-
         $character = $book->characters()->create([
             ...$request->safe()->except(['role', 'chapter_ids']),
             'is_ai_extracted' => false,
@@ -96,11 +90,6 @@ class WikiController extends Controller
     {
         $data = $request->validated();
         $tab = $data['kind'];
-
-        if (! FreeTierLimits::canCreateWikiEntry($book)) {
-            return redirect()->route('books.wiki', ['book' => $book, 'tab' => $tab])
-                ->with('error', __('Upgrade to Manuscript Pro for unlimited Story Bible entries.'));
-        }
 
         unset($data['chapter_ids']);
 

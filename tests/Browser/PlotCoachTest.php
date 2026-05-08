@@ -185,6 +185,42 @@ it('shows an undo button in the top bar when a coach session is active', functio
     $page->assertSee('Undo last batch');
 });
 
+it('toggles the coach insights panel via the access bar', function () {
+    License::factory()->create();
+    $book = Book::factory()->withAi()->create();
+
+    PlotCoachSession::factory()->create(['book_id' => $book->id]);
+
+    $page = visit("/books/{$book->id}/plot");
+
+    $page->assertNoJavaScriptErrors();
+
+    // Active session → coach mode is the default → insights panel open.
+    $page->assertSee('What the coach can see');
+
+    // Close via the access bar icon.
+    $page->click('[data-access-bar="coach-insights"]')
+        ->wait(1)
+        ->assertDontSee('What the coach can see');
+
+    // Reopen via the same icon.
+    $page->click('[data-access-bar="coach-insights"]')
+        ->wait(1)
+        ->assertSee('What the coach can see');
+});
+
+it('does not render the coach insights panel in board mode', function () {
+    License::factory()->create();
+    $book = Book::factory()->withAi()->create();
+
+    $page = visit("/books/{$book->id}/plot");
+
+    $page->assertNoJavaScriptErrors();
+
+    // No session → default mode is Board → insights panel must be absent.
+    $page->assertDontSee('What the coach can see');
+});
+
 // No-Pro redirect happens at middleware level (see PlotCoachControllerTest
 // feature test for the 403). Browser tests can't reliably test that due to
 // RefreshDatabase transaction isolation — same reason noted in

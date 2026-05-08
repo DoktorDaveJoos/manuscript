@@ -42,7 +42,18 @@ function fakePolarActivation(string $key, array $overrides = []): array
     return array_replace_recursive($defaults, $overrides);
 }
 
+/**
+ * The Pest beforeEach hook seeds a license by default. Tests that exercise the
+ * activation/unlicensed flow need to start fresh.
+ */
+function clearLicense(): void
+{
+    License::query()->delete();
+    License::clearActiveCache();
+}
+
 test('activate with valid key stores license', function () {
+    clearLicense();
     $key = 'MANU-AAAA-BBBB-CCCC';
 
     Http::fake([
@@ -63,6 +74,7 @@ test('activate with valid key stores license', function () {
 });
 
 test('activate with invalid key returns 422', function () {
+    clearLicense();
     $key = 'INVALID-KEY';
 
     Http::fake([
@@ -78,6 +90,7 @@ test('activate with invalid key returns 422', function () {
 });
 
 test('activate with revoked key returns 422', function () {
+    clearLicense();
     $key = 'MANU-AAAA-BBBB-CCCC';
 
     Http::fake([
@@ -97,12 +110,14 @@ test('activate with revoked key returns 422', function () {
 });
 
 test('activate with missing key returns validation error', function () {
+    clearLicense();
     $this->postJson(route('license.activate'), ['license_key' => ''])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('license_key');
 });
 
 test('activate returns 503 when offline', function () {
+    clearLicense();
     Http::fake(fn (Request $request) => throw new ConnectionException('Connection refused'));
 
     $this->postJson(route('license.activate'), ['license_key' => 'MANU-AAAA-BBBB-CCCC'])
@@ -110,8 +125,6 @@ test('activate returns 503 when offline', function () {
 });
 
 test('deactivate calls Polar API and removes license', function () {
-    $license = License::factory()->create();
-
     Http::fake([
         'api.polar.sh/v1/license-keys/deactivate' => Http::response(null, 204),
     ]);
@@ -127,8 +140,6 @@ test('deactivate calls Polar API and removes license', function () {
 });
 
 test('deactivate returns 503 when offline and keeps license', function () {
-    License::factory()->create();
-
     Http::fake(fn (Request $request) => throw new ConnectionException('Connection refused'));
 
     $this->postJson(route('license.deactivate'))
@@ -138,6 +149,8 @@ test('deactivate returns 503 when offline and keeps license', function () {
 });
 
 test('revalidate updates last_validated_at on success', function () {
+    License::query()->delete();
+    License::clearActiveCache();
     $license = License::factory()->stale()->create();
 
     Http::fake([
@@ -157,7 +170,9 @@ test('revalidate updates last_validated_at on success', function () {
 });
 
 test('revalidate silently skips when offline', function () {
-    $license = License::factory()->stale()->create();
+    License::query()->delete();
+    License::clearActiveCache();
+    License::factory()->stale()->create();
 
     Http::fake(fn (Request $request) => throw new ConnectionException('Connection refused'));
 
@@ -169,8 +184,6 @@ test('revalidate silently skips when offline', function () {
 });
 
 test('revalidate skips when recently validated', function () {
-    License::factory()->create(['last_validated_at' => now()]);
-
     Http::fake();
 
     $this->postJson(route('license.revalidate'))
@@ -180,16 +193,10 @@ test('revalidate skips when recently validated', function () {
     Http::assertNothingSent();
 });
 
-test('license status is shared in inertia props', function () {
-    $response = $this->get(route('settings.index'));
-
-    $page = $response->original->getData()['page'];
-    expect($page['props']['license']['active'])->toBeFalse();
-
-    License::factory()->create();
-
+test('license status is shared in inertia props when active', function () {
     $response = $this->get(route('settings.index'));
     $page = $response->original->getData()['page'];
+
     expect($page['props']['license']['active'])->toBeTrue();
     expect($page['props']['license']['masked_key'])->not->toBeNull();
 });

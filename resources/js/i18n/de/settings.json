@@ -83,6 +83,10 @@
     "license.error.failed": "Lizenz konnte nicht aktiviert werden.",
     "license.error.network": "Der Lizenzserver ist nicht erreichbar. Bitte überprüfe deine Internetverbindung.",
 
+    "welcome.title": "Willkommen bei Manuscript",
+    "welcome.description": "Gib deinen Lizenzschlüssel ein, um zu starten.",
+    "welcome.buyLicense": "Noch keine Lizenz? Hol dir eine auf getmanuscript.app",
+
     "aiProviders.title": "KI-Anbieter",
     "aiProviders.description": "Wähle deinen KI-Anbieter und konfiguriere den API-Schlüssel.",
     "aiProviders.configured": "Konfiguriert",

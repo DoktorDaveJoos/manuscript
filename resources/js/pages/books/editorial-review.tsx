@@ -13,7 +13,6 @@ import Button from '@/components/ui/Button';
 import PageHeader from '@/components/ui/PageHeader';
 import SlidePanel from '@/components/ui/SlidePanel';
 import { useEditorialReview } from '@/hooks/useEditorialReview';
-import { useLicense } from '@/hooks/useLicense';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type {
     Book,
@@ -36,7 +35,6 @@ export default function EditorialReviewPage({
     chapters: Chapter[];
 }) {
     const { t } = useTranslation('editorial-review');
-    const { isFree } = useLicense();
     const storylines = useSidebarStorylines();
     const {
         review,
@@ -157,7 +155,6 @@ export default function EditorialReviewPage({
                             <EditorialReviewEmptyState
                                 onStart={handleStart}
                                 starting={starting}
-                                locked={isFree}
                             />
                         )}
 

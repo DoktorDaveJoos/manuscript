@@ -83,6 +83,10 @@
     "license.error.failed": "No se pudo activar la licencia.",
     "license.error.network": "No se pudo conectar al servidor de licencias. Verifica tu conexión a internet.",
 
+    "welcome.title": "Bienvenido a Manuscript",
+    "welcome.description": "Ingresa tu clave de licencia para empezar.",
+    "welcome.buyLicense": "¿No tienes una licencia? Obtén una en getmanuscript.app",
+
     "aiProviders.title": "Proveedores de IA",
     "aiProviders.description": "Elige tu proveedor de IA y configura su clave de API.",
     "aiProviders.configured": "Configurado",

@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Lock, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -47,7 +47,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
 import type { Theme } from '@/lib/theme';
-import { cn, jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
+import { jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
 import type {
     AppSettings,
     AiSetting,
@@ -656,33 +656,25 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
 
 function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
     const { t } = useTranslation('settings');
-    const { license } = usePage<{ license: License }>().props;
-    const locked = !license.active;
-
     const enabledProvider = providers.find((p) => p.enabled)?.provider ?? null;
 
-    const handleSelect = useCallback(
-        (provider: string) => {
-            if (locked) return;
-            fetch(updateAiProvider.url(provider), {
-                method: 'PUT',
-                headers: jsonFetchHeaders(),
-                body: JSON.stringify({ enabled: true }),
-            }).then(() => {
-                router.reload({ only: ['ai_providers'] });
-            });
-        },
-        [locked],
-    );
+    const handleSelect = useCallback((provider: string) => {
+        fetch(updateAiProvider.url(provider), {
+            method: 'PUT',
+            headers: jsonFetchHeaders(),
+            body: JSON.stringify({ enabled: true }),
+        }).then(() => {
+            router.reload({ only: ['ai_providers'] });
+        });
+    }, []);
 
     const handleAccordionChange = useCallback(
         (value: string) => {
-            if (locked) return;
             if (value && value !== enabledProvider) {
                 handleSelect(value);
             }
         },
-        [locked, enabledProvider, handleSelect],
+        [enabledProvider, handleSelect],
     );
 
     return (
@@ -690,13 +682,12 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
             <SectionLabel variant="section">
                 {t('aiProviders.title')}
             </SectionLabel>
-            <Card className={cn('mt-3 px-5', locked && 'opacity-50')}>
+            <Card className="mt-3 px-5">
                 <Accordion
                     type="single"
                     collapsible
                     defaultValue={enabledProvider ?? undefined}
                     onValueChange={handleAccordionChange}
-                    disabled={locked}
                 >
                     {providers.map((setting) => {
                         const isSelected = setting.enabled;
@@ -711,50 +702,37 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
                             >
                                 <AccordionTrigger className="px-0 py-4">
                                     <div className="flex flex-1 items-center gap-3">
-                                        {locked ? (
-                                            <Lock
-                                                size={14}
-                                                className="text-ink-faint"
-                                            />
-                                        ) : (
-                                            <span
-                                                className={`flex size-[18px] items-center justify-center rounded-full border-2 transition-colors ${isSelected ? 'border-ink' : 'border-border'}`}
-                                            >
-                                                {isSelected && (
-                                                    <span className="size-[10px] rounded-full bg-ink" />
-                                                )}
-                                            </span>
-                                        )}
+                                        <span
+                                            className={`flex size-[18px] items-center justify-center rounded-full border-2 transition-colors ${isSelected ? 'border-ink' : 'border-border'}`}
+                                        >
+                                            {isSelected && (
+                                                <span className="size-[10px] rounded-full bg-ink" />
+                                            )}
+                                        </span>
                                         <span
                                             className={`text-sm ${isSelected ? 'font-medium' : ''} text-ink`}
                                         >
                                             {setting.label}
                                         </span>
                                         <span className="flex-1" />
-                                        {!locked && (
-                                            <Badge
-                                                className="mr-2"
-                                                variant={
-                                                    configured
-                                                        ? 'success'
-                                                        : 'secondary'
-                                                }
-                                            >
-                                                {configured
-                                                    ? t(
-                                                          'aiProviders.configured',
-                                                      )
-                                                    : t(
-                                                          'aiProviders.notConfigured',
-                                                      )}
-                                            </Badge>
-                                        )}
+                                        <Badge
+                                            className="mr-2"
+                                            variant={
+                                                configured
+                                                    ? 'success'
+                                                    : 'secondary'
+                                            }
+                                        >
+                                            {configured
+                                                ? t('aiProviders.configured')
+                                                : t(
+                                                      'aiProviders.notConfigured',
+                                                  )}
+                                        </Badge>
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent>
-                                    {!locked && (
-                                        <ProviderForm setting={setting} />
-                                    )}
+                                    <ProviderForm setting={setting} />
                                 </AccordionContent>
                             </AccordionItem>
                         );

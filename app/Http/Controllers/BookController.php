@@ -10,7 +10,6 @@ use App\Http\Requests\StoreBookRequest;
 use App\Http\Requests\UpdateBookRequest;
 use App\Models\Book;
 use App\Models\Chunk;
-use App\Services\FreeTierLimits;
 use App\Services\Normalization\NormalizationService;
 use App\Services\Parsers\DocumentParserFactory;
 use App\Support\WordCount;
@@ -44,11 +43,6 @@ class BookController extends Controller
 
     public function store(StoreBookRequest $request): RedirectResponse
     {
-        if (! FreeTierLimits::canCreateBook()) {
-            return redirect()->route('books.index')
-                ->with('error', __('Upgrade to Manuscript Pro to create more books.'));
-        }
-
         $book = Book::create($request->validated());
 
         return redirect()->route('books.import', $book);
@@ -167,11 +161,6 @@ class BookController extends Controller
 
     public function duplicate(Book $book): RedirectResponse
     {
-        if (! FreeTierLimits::canCreateBook()) {
-            return redirect()->route('books.index')
-                ->with('error', __('Upgrade to Manuscript Pro to create more books.'));
-        }
-
         DB::transaction(function () use ($book) {
             $newBook = $book->replicate([
                 'writing_style',

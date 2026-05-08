@@ -64,7 +64,9 @@ function ShortcutKeys({ shortcut }: { shortcut: string }) {
     return <>{elements}</>;
 }
 
-const panelLabelKeys: Record<PanelId, { open: string; close: string }> = {
+const panelLabelKeys: Partial<
+    Record<PanelId, { open: string; close: string }>
+> = {
     wiki: { open: 'palette.openWiki', close: 'palette.closeWiki' },
     notes: { open: 'palette.openNotes', close: 'palette.closeNotes' },
     plot: { open: 'palette.openPlot', close: 'palette.closePlot' },
@@ -250,8 +252,10 @@ export default function CommandPalette({
                             </CommandItem>
 
                             {panelItems.map((item) => {
+                                if (item.kind === 'action') return null;
                                 const isActive = openPanels.has(item.id);
                                 const keys = panelLabelKeys[item.id];
+                                if (!keys) return null;
                                 const label = t(
                                     isActive ? keys.close : keys.open,
                                 );

@@ -1,17 +1,6 @@
-import {
-    ChevronLeft,
-    ChevronRight,
-    Cpu,
-    Lightbulb,
-    Sparkles,
-} from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Cpu, Lightbulb, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import Button from '@/components/ui/Button';
-import SectionLabel from '@/components/ui/SectionLabel';
-
-const STORAGE_KEY = (bookId: number) =>
-    `plot-coach-insights-collapsed-${bookId}`;
+import PanelHeader from '@/components/ui/PanelHeader';
 
 type ContextCounts = {
     acts: number;
@@ -23,10 +12,11 @@ type ContextCounts = {
 };
 
 type CoachInsightsPanelProps = {
-    bookId: number;
     providerLabel: string | null;
+    modelName: string | null;
     counts: ContextCounts;
     onHintClick: (hint: string) => void;
+    onClose: () => void;
 };
 
 const HINT_KEYS = [
@@ -42,72 +32,23 @@ const HINT_KEYS = [
     'insights.hints.character_wound',
 ] as const;
 
-/**
- * Floating, sticky insights rail that sits to the left of the chat. Surfaces
- * the active model, what context the coach can already see, and a list of
- * idea-prompts the author can click as conversation starters.
- *
- * Hidden below `lg` because the chat column is centered at 720px — there's
- * only room to its left on wider viewports.
- */
 export default function CoachInsightsPanel({
-    bookId,
     providerLabel,
+    modelName,
     counts,
     onHintClick,
+    onClose,
 }: CoachInsightsPanelProps) {
     const { t } = useTranslation('plot-coach');
-
-    const [collapsed, setCollapsed] = useState<boolean>(() => {
-        if (typeof window === 'undefined') return false;
-        return window.localStorage.getItem(STORAGE_KEY(bookId)) === '1';
-    });
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        window.localStorage.setItem(STORAGE_KEY(bookId), collapsed ? '1' : '0');
-    }, [bookId, collapsed]);
-
-    if (collapsed) {
-        return (
-            <div className="pointer-events-none absolute top-4 left-4 z-10 hidden lg:block">
-                <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    onClick={() => setCollapsed(false)}
-                    aria-label={t('insights.expand')}
-                    title={t('insights.expand')}
-                    className="pointer-events-auto size-8 bg-surface-card shadow-sm"
-                >
-                    <ChevronRight className="size-3.5" />
-                </Button>
-            </div>
-        );
-    }
-
     const contextRows = buildContextRows(counts, t);
 
     return (
-        <div className="pointer-events-none absolute top-4 left-4 z-10 hidden w-[232px] lg:block">
-            <div className="pointer-events-auto flex max-h-[calc(100vh-7rem)] flex-col gap-3 overflow-y-auto rounded-xl border border-border-light bg-surface-card p-3 shadow-sm">
-                <div className="flex items-center justify-between">
-                    <SectionLabel>{t('insights.title')}</SectionLabel>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setCollapsed(true)}
-                        aria-label={t('insights.collapse')}
-                        title={t('insights.collapse')}
-                        className="size-6"
-                    >
-                        <ChevronLeft className="size-3.5" />
-                    </Button>
-                </div>
-
+        <aside className="flex h-full min-h-0 shrink-0 flex-col border-l border-border-light bg-surface-sidebar">
+            <PanelHeader title={t('insights.title')} onClose={onClose} />
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3">
                 <ModelBlock
                     label={t('insights.model.label')}
+                    modelName={modelName}
                     providerLabel={providerLabel}
                     fallback={t('insights.model.none')}
                 />
@@ -125,19 +66,24 @@ export default function CoachInsightsPanel({
                     onHintClick={onHintClick}
                 />
             </div>
-        </div>
+        </aside>
     );
 }
 
 function ModelBlock({
     label,
+    modelName,
     providerLabel,
     fallback,
 }: {
     label: string;
+    modelName: string | null;
     providerLabel: string | null;
     fallback: string;
 }) {
+    const primary = modelName ?? providerLabel ?? fallback;
+    const secondary = modelName && providerLabel ? providerLabel : null;
+
     return (
         <div className="flex flex-col gap-1">
             <span className="text-[11px] font-medium text-ink-muted">
@@ -145,9 +91,14 @@ function ModelBlock({
             </span>
             <div className="flex items-center gap-1.5 rounded-md border border-border-light bg-surface px-2 py-1.5">
                 <Cpu className="size-3.5 shrink-0 text-ink-faint" />
-                <span className="truncate text-xs text-ink">
-                    {providerLabel ?? fallback}
-                </span>
+                <div className="flex min-w-0 flex-1 flex-col leading-tight">
+                    <span className="truncate text-xs text-ink">{primary}</span>
+                    {secondary && (
+                        <span className="truncate text-[11px] text-ink-faint">
+                            {secondary}
+                        </span>
+                    )}
+                </div>
             </div>
         </div>
     );

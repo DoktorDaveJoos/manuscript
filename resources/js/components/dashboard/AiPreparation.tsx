@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Brain, Crown, RefreshCw, Sparkle } from 'lucide-react';
+import { Brain, RefreshCw, Sparkle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
@@ -16,7 +16,7 @@ export default function AiPreparation({
 }) {
     const { t } = useTranslation('ai');
     const pageUrl = usePage().url;
-    const { visible, usable, licensed } = useAiFeatures();
+    const { visible, usable } = useAiFeatures();
     const { status, isRunning, starting, error, handleStart } =
         useAiPreparation(bookId, initialStatus);
 
@@ -46,39 +46,8 @@ export default function AiPreparation({
 
     if (!visible) return null;
 
-    // Not usable — show upgrade/configure banner
+    // Not usable — AI provider not configured
     if (!usable) {
-        if (!licensed) {
-            return (
-                <div className="flex items-center gap-4">
-                    <div className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-ink/[0.06]">
-                        <Brain size={20} className="text-ink-muted" />
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="text-sm font-medium text-ink">
-                            {t('preparation.title')}
-                        </span>
-                        <p className="text-xs text-ink-faint">
-                            {t(
-                                'preparation.unlockAiDescription',
-                                'Unlock AI-powered manuscript analysis',
-                            )}
-                        </p>
-                    </div>
-                    <a
-                        href="https://getmanuscript.app"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-ink px-4 py-2 text-[13px] font-medium text-surface transition-colors hover:bg-ink/80"
-                    >
-                        <Crown size={14} />
-                        {t('preparation.upgradeToPro', 'Upgrade to PRO')}
-                    </a>
-                </div>
-            );
-        }
-
-        // Licensed but not configured
         return (
             <div className="flex items-center gap-4">
                 <div className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-ink/[0.06]">

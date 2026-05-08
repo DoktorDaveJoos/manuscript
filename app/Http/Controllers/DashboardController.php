@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Enums\AnalysisType;
 use App\Enums\ChapterStatus;
 use App\Models\Book;
-use App\Models\License;
 use App\Models\WritingSession;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -33,16 +32,14 @@ class DashboardController extends Controller
             'final' => $chapters->where('status', ChapterStatus::Final)->count(),
         ];
 
-        $isLicensed = License::isActive();
+        $todaySession = $book->writingSessions()
+            ->whereDate('date', now()->toDateString())
+            ->first();
 
-        $todaySession = $isLicensed
-            ? $book->writingSessions()->whereDate('date', now()->toDateString())->first()
-            : null;
-
-        $streak = $isLicensed ? $this->calculateStreak($book, $todaySession) : 0;
+        $streak = $this->calculateStreak($book, $todaySession);
 
         // Auto-detect milestone
-        if ($isLicensed && $book->target_word_count && $totalWords >= $book->target_word_count && ! $book->milestone_reached_at) {
+        if ($book->target_word_count && $totalWords >= $book->target_word_count && ! $book->milestone_reached_at) {
             $book->update(['milestone_reached_at' => now()]);
         }
 
@@ -55,15 +52,15 @@ class DashboardController extends Controller
                 'reading_time_minutes' => $chapterCount > 0 ? (int) ceil($totalWords / 230) : 0,
             ],
             'status_counts' => $statusCounts,
-            'suggested_next' => $this->buildSuggestedNext($book, $isLicensed),
-            'writing_goal' => $isLicensed ? [
+            'suggested_next' => $this->buildSuggestedNext($book),
+            'writing_goal' => [
                 'daily_word_count_goal' => $book->daily_word_count_goal,
                 'today_words' => $todaySession?->words_written ?? 0,
                 'goal_met_today' => (bool) $todaySession?->goal_met,
                 'streak' => $streak,
-            ] : null,
-            'writing_heatmap' => $isLicensed ? $this->buildWritingHeatmap($book) : [],
-            'manuscript_target' => $isLicensed ? $this->buildManuscriptTarget($book, $totalWords) : null,
+            ],
+            'writing_heatmap' => $this->buildWritingHeatmap($book),
+            'manuscript_target' => $this->buildManuscriptTarget($book, $totalWords),
         ]);
     }
 
@@ -110,21 +107,19 @@ class DashboardController extends Controller
     /**
      * @return array{title: string, description: string, chapter_id: int|null}|null
      */
-    private function buildSuggestedNext(Book $book, bool $isLicensed): ?array
+    private function buildSuggestedNext(Book $book): ?array
     {
-        if ($isLicensed) {
-            $suggestion = $book->analyses()
-                ->where('type', AnalysisType::NextChapterSuggestion)
-                ->latest()
-                ->first();
+        $suggestion = $book->analyses()
+            ->where('type', AnalysisType::NextChapterSuggestion)
+            ->latest()
+            ->first();
 
-            if ($suggestion && $suggestion->result) {
-                return [
-                    'title' => $suggestion->result['title'] ?? 'Next Chapter',
-                    'description' => $suggestion->result['description'] ?? '',
-                    'chapter_id' => $suggestion->result['chapter_id'] ?? $suggestion->chapter_id,
-                ];
-            }
+        if ($suggestion && $suggestion->result) {
+            return [
+                'title' => $suggestion->result['title'] ?? 'Next Chapter',
+                'description' => $suggestion->result['description'] ?? '',
+                'chapter_id' => $suggestion->result['chapter_id'] ?? $suggestion->chapter_id,
+            ];
         }
 
         // Fallback: most recently edited chapter (uses already-loaded relation)

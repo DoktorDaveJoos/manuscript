@@ -83,6 +83,10 @@
     "license.error.failed": "Failed to activate license.",
     "license.error.network": "Could not reach the license server. Please check your internet connection.",
 
+    "welcome.title": "Welcome to Manuscript",
+    "welcome.description": "Enter your license key to get started.",
+    "welcome.buyLicense": "Don't have a license? Get one at getmanuscript.app",
+
     "aiProviders.title": "AI Providers",
     "aiProviders.description": "Choose your AI provider and configure its API key.",
     "aiProviders.configured": "Configured",

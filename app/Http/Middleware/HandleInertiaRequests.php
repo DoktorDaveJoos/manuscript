@@ -6,9 +6,10 @@ use App\Models\AiSetting;
 use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\License;
-use App\Services\FreeTierLimits;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Laravel\Ai\Ai;
+use Throwable;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -60,7 +61,7 @@ class HandleInertiaRequests extends Middleware
                 'editor_font',
                 'editor_font_size',
             ]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
 
             // Database is probably unavailable (failed migration, corrupt file).
@@ -122,30 +123,7 @@ class HandleInertiaRequests extends Middleware
             'ai_configured' => fn () => $this->activeAiSetting()?->isConfigured() ?? false,
             'ai_key_recovery_needed' => fn () => (bool) $this->activeAiSetting()?->api_key_recovery_needed,
             'ai_provider_label' => fn () => $this->activeAiSetting()?->provider->label(),
-            'free_tier' => function () use ($request) {
-                if (License::isActive()) {
-                    return null;
-                }
-
-                $book = $request->route('book');
-                $bookInstance = $book instanceof Book ? $book : null;
-
-                return [
-                    'books' => [
-                        'count' => FreeTierLimits::bookCount(),
-                        'limit' => FreeTierLimits::MAX_BOOKS,
-                    ],
-                    'storylines' => $bookInstance ? [
-                        'count' => FreeTierLimits::storylineCount($bookInstance),
-                        'limit' => FreeTierLimits::MAX_STORYLINES,
-                    ] : null,
-                    'wiki_entries' => $bookInstance ? [
-                        'count' => FreeTierLimits::wikiEntryCount($bookInstance),
-                        'limit' => FreeTierLimits::MAX_WIKI_ENTRIES,
-                    ] : null,
-                    'export_free_formats' => FreeTierLimits::FREE_EXPORT_FORMATS,
-                ];
-            },
+            'ai_default_model' => fn () => $this->activeDefaultTextModel(),
             'sidebar_storylines' => function () use ($request) {
                 $book = $request->route('book');
                 if (! $book instanceof Book) {
@@ -181,5 +159,25 @@ class HandleInertiaRequests extends Middleware
     private function activeAiSetting(): ?AiSetting
     {
         return once(fn () => AiSetting::activeProvider());
+    }
+
+    /**
+     * Resolve the default chat model the active provider would use for a
+     * non-trivial coach turn. Returns null if no provider is configured or if
+     * the SDK can't resolve one (e.g. provider isn't registered in ai.php).
+     */
+    private function activeDefaultTextModel(): ?string
+    {
+        $setting = $this->activeAiSetting();
+
+        if ($setting === null || ! $setting->isConfigured()) {
+            return null;
+        }
+
+        try {
+            return Ai::textProvider($setting->provider->value)->defaultTextModel();
+        } catch (Throwable) {
+            return null;
+        }
     }
 }

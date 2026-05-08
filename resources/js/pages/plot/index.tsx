@@ -19,6 +19,7 @@ import {
     CircleStop,
     GripVertical,
     LayoutGrid,
+    Lightbulb,
     MessageSquare,
     Plus,
     Undo2,
@@ -31,6 +32,11 @@ import {
 } from '@/actions/App/Http/Controllers/BeatController';
 import { sessionArchive } from '@/actions/App/Http/Controllers/PlotCoachController';
 import { reorder as plotPointReorder } from '@/actions/App/Http/Controllers/PlotPointController';
+import AccessBar from '@/components/editor/AccessBar';
+import type {
+    AccessBarItemConfig,
+    PanelId,
+} from '@/components/editor/AccessBar';
 import Sidebar from '@/components/editor/Sidebar';
 import ActColumn from '@/components/plot/ActColumn';
 import ActContextMenu from '@/components/plot/ActContextMenu';
@@ -38,6 +44,7 @@ import ActDetailPanel from '@/components/plot/ActDetailPanel';
 import ArchiveDrawer from '@/components/plot/ArchiveDrawer';
 import BeatContextMenu from '@/components/plot/BeatContextMenu';
 import BeatDetailPanel from '@/components/plot/BeatDetailPanel';
+import CoachInsightsPanel from '@/components/plot/CoachInsightsPanel';
 import CoachPanel from '@/components/plot/CoachPanel';
 import type { CoachPanelHandle } from '@/components/plot/CoachPanel';
 import DeleteActDialog from '@/components/plot/DeleteActDialog';
@@ -46,6 +53,7 @@ import PlotPointContextMenu from '@/components/plot/PlotPointContextMenu';
 import PlotPointDetailPanel from '@/components/plot/PlotPointDetailPanel';
 import PlotWizardModal from '@/components/plot/PlotWizardModal';
 import Button from '@/components/ui/Button';
+import SlidePanel from '@/components/ui/SlidePanel';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
@@ -84,6 +92,13 @@ type PlotPageProps = {
 type PlotMode = 'coach' | 'board';
 
 const PLOT_MODE_STORAGE_KEY = (bookId: number) => `plot-coach-mode-${bookId}`;
+
+const COACH_INSIGHTS_OPEN_KEY = 'manuscript:plot-coach-insights-open';
+
+const COACH_INSIGHTS_LEGACY_COLLAPSED_KEY = (bookId: number) =>
+    `plot-coach-insights-collapsed-${bookId}`;
+
+const COACH_INSIGHTS_PANEL_WIDTH_KEY = 'manuscript:coach-insights-panel-width';
 
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } };
 
@@ -218,7 +233,11 @@ export default function Plot({
     const { t } = useTranslation('plot');
     const { t: tCoach } = useTranslation('plot-coach');
     const sidebarStorylines = useSidebarStorylines();
-    const { configured: aiConfigured } = useAiFeatures();
+    const {
+        configured: aiConfigured,
+        providerLabel,
+        defaultModel,
+    } = useAiFeatures();
 
     // Ref for dispatching conversational signals into the coach chat
     // ("UNDO:last" from the top-bar Undo button).
@@ -283,6 +302,78 @@ export default function Plot({
         if (typeof window === 'undefined') return;
         window.localStorage.setItem(PLOT_MODE_STORAGE_KEY(book.id), mode);
     }, [book.id, mode]);
+
+    // Coach insights side panel — open/closed state, persisted app-wide.
+    // First-time read migrates from the legacy per-book "collapsed" flag the
+    // floating implementation used, so users who already hid the panel don't
+    // get it forced back open by the dock refactor.
+    const [coachInsightsOpen, setCoachInsightsOpen] = useState<boolean>(() => {
+        if (typeof window === 'undefined') return true;
+        const stored = window.localStorage.getItem(COACH_INSIGHTS_OPEN_KEY);
+        if (stored === '1') return true;
+        if (stored === '0') return false;
+        const legacy = window.localStorage.getItem(
+            COACH_INSIGHTS_LEGACY_COLLAPSED_KEY(book.id),
+        );
+        return legacy !== '1';
+    });
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        window.localStorage.setItem(
+            COACH_INSIGHTS_OPEN_KEY,
+            coachInsightsOpen ? '1' : '0',
+        );
+    }, [coachInsightsOpen]);
+
+    const openCoachPanels = useMemo(
+        () => new Set<PanelId>(coachInsightsOpen ? ['coach-insights'] : []),
+        [coachInsightsOpen],
+    );
+
+    const handleToggleCoachPanel = useCallback((panel: PanelId) => {
+        if (panel === 'coach-insights') {
+            setCoachInsightsOpen((prev) => !prev);
+        }
+    }, []);
+
+    const closeCoachInsights = useCallback(() => {
+        setCoachInsightsOpen(false);
+    }, []);
+
+    const handleHintClick = useCallback((hint: string) => {
+        coachPanelRef.current?.fillInput(hint);
+    }, []);
+
+    const coachActive = mode === 'coach' && aiConfigured;
+
+    const coachAccessBarItems = useMemo<AccessBarItemConfig[]>(() => {
+        const items: AccessBarItemConfig[] = [
+            {
+                id: 'coach-insights',
+                icon: Lightbulb,
+                label: tCoach('insights.title'),
+            },
+        ];
+        if (coachSessionId !== null) {
+            items.push({
+                kind: 'action',
+                id: 'end-session',
+                icon: CircleStop,
+                label: tCoach('archive.end_session'),
+                onClick: handleEndSession,
+                disabled: archiving,
+            });
+        }
+        items.push({
+            kind: 'action',
+            id: 'archive',
+            icon: Archive,
+            label: tCoach('archive.open'),
+            onClick: () => setArchiveOpen(true),
+        });
+        return items;
+    }, [coachSessionId, archiving, handleEndSession, tCoach]);
 
     // Cmd+\ / Ctrl+\ toggles between Coach and Board.
     useEffect(() => {
@@ -838,33 +929,6 @@ export default function Plot({
                             )}
                         </div>
                         <div className="flex items-center gap-1">
-                            {mode === 'coach' && coachSessionId !== null && (
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handleEndSession}
-                                    disabled={archiving}
-                                    aria-label={tCoach('archive.end_session')}
-                                    title={tCoach('archive.end_session')}
-                                    className="size-8 text-ink-faint hover:text-ink"
-                                >
-                                    <CircleStop className="size-3.5" />
-                                </Button>
-                            )}
-                            {mode === 'coach' && (
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setArchiveOpen(true)}
-                                    aria-label={tCoach('archive.open')}
-                                    title={tCoach('archive.open')}
-                                    className="size-8 text-ink-faint hover:text-ink"
-                                >
-                                    <Archive className="size-3.5" />
-                                </Button>
-                            )}
                             {mode === 'board' && hasActs && (
                                 <Button
                                     variant="secondary"
@@ -885,7 +949,6 @@ export default function Plot({
                             bookId={book.id}
                             activeSessionId={coachSessionId}
                             onSessionCreated={setCoachSessionId}
-                            contextCounts={coachContextCounts}
                         />
                     ) : hasActs ? (
                         <>
@@ -1036,6 +1099,32 @@ export default function Plot({
                         />
                     )}
                 </main>
+
+                {coachActive && (
+                    <>
+                        <SlidePanel
+                            open={coachInsightsOpen}
+                            onClose={closeCoachInsights}
+                            storageKey={COACH_INSIGHTS_PANEL_WIDTH_KEY}
+                            defaultWidth={272}
+                            minWidth={200}
+                            maxWidth={400}
+                        >
+                            <CoachInsightsPanel
+                                providerLabel={providerLabel}
+                                modelName={defaultModel}
+                                counts={coachContextCounts}
+                                onHintClick={handleHintClick}
+                                onClose={closeCoachInsights}
+                            />
+                        </SlidePanel>
+                        <AccessBar
+                            items={coachAccessBarItems}
+                            openPanels={openCoachPanels}
+                            onToggle={handleToggleCoachPanel}
+                        />
+                    </>
+                )}
 
                 <ArchiveDrawer
                     bookId={book.id}

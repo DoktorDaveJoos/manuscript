@@ -91,6 +91,8 @@ it('returns 422 when ai features are disabled', function () {
 });
 
 it('requires license to access preparation routes', function () {
+    License::query()->delete();
+    License::clearActiveCache();
     [$book] = createBookWithChapters(1);
 
     $this->postJson(route('books.ai.prepare', $book))

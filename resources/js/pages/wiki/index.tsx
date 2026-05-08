@@ -12,7 +12,6 @@ import WikiSearchInput from '@/components/wiki/WikiSearchInput';
 import WikiSearchResults from '@/components/wiki/WikiSearchResults';
 import WikiTabBar from '@/components/wiki/WikiTabBar';
 import type { WikiTab } from '@/components/wiki/WikiTabBar';
-import { useFreeTier } from '@/hooks/useFreeTier';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { Book, Character, WikiEntry } from '@/types/models';
@@ -45,7 +44,6 @@ export default function WikiIndex({
     tab,
 }: Props) {
     const { t } = useTranslation('wiki');
-    const { isPro, isFree, wikiEntries: wikiLimits } = useFreeTier();
     const sidebarStorylines = useSidebarStorylines();
     const bookStorylines = book.storylines ?? [];
     const initialTab = validTabs.includes(tab as WikiTab)
@@ -57,15 +55,6 @@ export default function WikiIndex({
     const [creatingType, setCreatingType] = useState<WikiTab | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
     const isSearching = query.trim().length > 0;
-
-    const wikiLimit = wikiLimits?.limit ?? 5;
-    const totalEntries =
-        characters.length +
-        locations.length +
-        organizations.length +
-        items.length +
-        lore.length;
-    const canAddEntry = isPro || totalEntries < wikiLimit;
 
     const entriesByTab = useMemo<Record<WikiTab, (Character | WikiEntry)[]>>(
         () => ({
@@ -243,15 +232,10 @@ export default function WikiIndex({
                                     ? t('search.results', {
                                           count: totalResults,
                                       })
-                                    : isFree
-                                      ? `${totalEntries}/${wikiLimit}`
-                                      : count}
+                                    : count}
                             </span>
                         </div>
-                        <AddEntryDropdown
-                            onSelect={handleAddEntry}
-                            disabled={!canAddEntry}
-                        />
+                        <AddEntryDropdown onSelect={handleAddEntry} />
                     </div>
 
                     {/* Search */}
