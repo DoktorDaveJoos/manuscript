@@ -900,10 +900,18 @@ function RevisionRulesSection({
                         <div className="flex items-center justify-between px-6 py-3.5">
                             <div>
                                 <span className="text-[14px] font-medium text-ink">
-                                    {rule.label}
+                                    {t(
+                                        `prosePassRules.rules.${rule.key}.label`,
+                                        {
+                                            defaultValue: rule.label,
+                                        },
+                                    )}
                                 </span>
                                 <p className="mt-0.5 text-[13px] text-ink-muted">
-                                    {rule.description}
+                                    {t(
+                                        `prosePassRules.rules.${rule.key}.description`,
+                                        { defaultValue: rule.description },
+                                    )}
                                 </p>
                             </div>
                             <Toggle
@@ -1435,7 +1443,7 @@ function BackupSection({
                             <div className="flex justify-end">
                                 <Button
                                     type="submit"
-                                    variant="accent"
+                                    variant="primary"
                                     disabled={phase !== 'idle'}
                                 >
                                     {phase === 'exporting'
@@ -1460,17 +1468,35 @@ function BackupSection({
                                 </p>
                             </div>
                             <FormField label={t('backup.import.fileLabel')}>
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept=".msbk,.sqlite"
-                                    onChange={(e) =>
-                                        setImportFile(
-                                            e.target.files?.[0] ?? null,
-                                        )
-                                    }
-                                    className="hover:file:bg-surface-hover block w-full text-[13px] text-ink file:mr-4 file:rounded-md file:border file:border-border file:bg-surface-card file:px-3 file:py-1.5 file:text-[13px] file:font-medium file:text-ink"
-                                />
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept=".msbk,.sqlite"
+                                        onChange={(e) =>
+                                            setImportFile(
+                                                e.target.files?.[0] ?? null,
+                                            )
+                                        }
+                                        className="hidden"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        onClick={() =>
+                                            fileInputRef.current?.click()
+                                        }
+                                    >
+                                        {importFile
+                                            ? t('backup.import.replaceFile')
+                                            : t('backup.import.chooseFile')}
+                                    </Button>
+                                    <span className="truncate text-[13px] text-ink-muted">
+                                        {importFile
+                                            ? importFile.name
+                                            : t('backup.import.noFileChosen')}
+                                    </span>
+                                </div>
                             </FormField>
                             <FormField
                                 label={t('backup.import.passphraseLabel')}
@@ -1493,7 +1519,7 @@ function BackupSection({
                             <div className="flex justify-end">
                                 <Button
                                     type="submit"
-                                    variant="secondary"
+                                    variant="primary"
                                     disabled={!importFile || phase !== 'idle'}
                                 >
                                     {phase === 'importing'
@@ -1518,7 +1544,7 @@ function BackupSection({
                                     <div className="flex justify-end">
                                         <Button
                                             type="button"
-                                            variant="secondary"
+                                            variant="primary"
                                             onClick={() =>
                                                 setConfirmRevertOpen(true)
                                             }
@@ -1569,7 +1595,7 @@ function BackupSection({
                         </Button>
                         <Button
                             type="button"
-                            variant="accent"
+                            variant="primary"
                             onClick={runRevert}
                         >
                             {t('backup.revert.button')}

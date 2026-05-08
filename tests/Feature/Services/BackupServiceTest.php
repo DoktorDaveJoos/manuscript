@@ -36,20 +36,22 @@ afterEach(function () {
     @rmdir($this->workDir);
 });
 
-test('export writes a plain sqlite copy when no passphrase is given', function () {
+test('export writes a sqlite snapshot containing the live data when no passphrase is given', function () {
     [$service, $workDir, $dbPath] = makeIsolatedBackupService();
     $this->workDir = $workDir;
 
     $exportPath = $service->export('');
 
     expect(file_exists($exportPath))->toBeTrue();
-    expect(file_get_contents($exportPath))->toBe(file_get_contents($dbPath));
     expect(str_ends_with($exportPath, '.sqlite'))->toBeTrue();
+
+    $pdo = new PDO('sqlite:'.$exportPath);
+    expect($pdo->query('SELECT title FROM books')->fetchColumn())->toBe('original');
 
     @unlink($exportPath);
 });
 
-test('export with passphrase produces an MSBK file the encryption service can decrypt', function () {
+test('export with passphrase produces an MSBK file the encryption service can decrypt back to the live data', function () {
     [$service, $workDir, $dbPath] = makeIsolatedBackupService();
     $this->workDir = $workDir;
 
@@ -61,7 +63,39 @@ test('export with passphrase produces an MSBK file the encryption service can de
 
     $roundTripPath = $workDir.'/round.sqlite';
     $encryption->decryptFile($exportPath, $roundTripPath, 'strong-passphrase');
-    expect(file_get_contents($roundTripPath))->toBe(file_get_contents($dbPath));
+
+    $pdo = new PDO('sqlite:'.$roundTripPath);
+    expect($pdo->query('SELECT title FROM books')->fetchColumn())->toBe('original');
+
+    @unlink($exportPath);
+});
+
+test('export captures rows still sitting in the WAL sidecar (the bug we shipped: raw copy missed them)', function () {
+    $workDir = sys_get_temp_dir().'/manuscript-backup-svc-'.uniqid();
+    mkdir($workDir);
+    $dbPath = $workDir.'/live.sqlite';
+    $this->workDir = $workDir;
+
+    // Build a live DB in WAL mode and write rows WITHOUT checkpointing —
+    // mirrors the production state where SqliteVecConnector enables WAL
+    // and the sqlite-wal sidecar holds recent writes.
+    $live = new PDO('sqlite:'.$dbPath);
+    $live->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $live->exec('PRAGMA journal_mode = WAL');
+    $live->exec('CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT)');
+    $live->exec("INSERT INTO books (title) VALUES ('wal-resident-row')");
+
+    expect(file_exists($dbPath.'-wal'))->toBeTrue('precondition: a -wal file must exist for this test to be meaningful');
+
+    // Hold the connection open during export — represents the running app
+    // having open writers when the user clicks "Export."
+    $service = new BackupService(new BackupEncryptionService, $dbPath);
+    $exportPath = $service->export('');
+
+    $live = null;
+
+    $pdo = new PDO('sqlite:'.$exportPath);
+    expect($pdo->query('SELECT title FROM books')->fetchColumn())->toBe('wal-resident-row');
 
     @unlink($exportPath);
 });
@@ -196,6 +230,27 @@ test('state self-heals when has_rollback flag is set but file is missing', funct
 
     $state = $service->state();
     expect($state['has_rollback'])->toBeFalse();
+});
+
+test('the BackupService singleton tracks database.default, not the sqlite connection (the bug we shipped: empty seed DB exported in NativePHP)', function () {
+    $originalDefault = config('database.default');
+    $originalSqliteDb = config('database.connections.sqlite.database');
+
+    try {
+        config()->set('database.default', 'fake-runtime');
+        config()->set('database.connections.fake-runtime.database', '/tmp/should-be-this-one.sqlite');
+        config()->set('database.connections.sqlite.database', '/tmp/seed-must-not-be-this-one.sqlite');
+
+        app()->forgetInstance(BackupService::class);
+        $service = app(BackupService::class);
+
+        expect($service->databasePath())->toBe('/tmp/should-be-this-one.sqlite');
+    } finally {
+        config()->set('database.default', $originalDefault);
+        config()->set('database.connections.sqlite.database', $originalSqliteDb);
+        config()->offsetUnset('database.connections.fake-runtime');
+        app()->forgetInstance(BackupService::class);
+    }
 });
 
 test('applyPending is a no-op when no flags are set', function () {

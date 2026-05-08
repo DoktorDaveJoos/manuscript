@@ -29,6 +29,10 @@ class BackupService
 
     public const LAST_EXPORT_AT_KEY = 'backup.last_export_at';
 
+    public const SNAPSHOT_EXTENSION = '.sqlite';
+
+    public const ENCRYPTED_EXTENSION = '.msbk';
+
     public function __construct(
         private BackupEncryptionService $encryption,
         private string $databasePath,
@@ -39,7 +43,14 @@ class BackupService
      * temp path. Caller is responsible for sending it as a download and
      * deleting it afterwards (BinaryFileResponse with deleteFileAfterSend).
      *
-     * Empty $passphrase → raw SQLite copy. Non-empty → MSBK envelope.
+     * Empty $passphrase → plain SQLite snapshot. Non-empty → MSBK envelope.
+     *
+     * Uses VACUUM INTO rather than a raw file copy: the live DB runs in WAL
+     * journal mode (see config/database.php and SqliteVecConnector), so a
+     * raw copy would miss any uncheckpointed writes still sitting in the
+     * sqlite-wal sidecar — schema flushes early, row data often does not,
+     * which surfaces as "the export looks empty." VACUUM INTO produces a
+     * fully-checkpointed, self-contained DB file with no WAL/SHM friends.
      */
     public function export(string $passphrase = ''): string
     {
@@ -48,32 +59,49 @@ class BackupService
             throw new RuntimeException("Database file not found at {$live}.");
         }
 
-        $tempDir = sys_get_temp_dir();
-        $suffix = $passphrase === '' ? '.sqlite' : '.msbk';
-        $tempPath = tempnam($tempDir, 'manuscript-backup-');
-        if ($tempPath === false) {
+        $tempReservation = tempnam(sys_get_temp_dir(), 'manuscript-backup-');
+        if ($tempReservation === false) {
             throw new RuntimeException('Could not create temp file for backup export.');
         }
-        $tempPathWithSuffix = $tempPath.$suffix;
-        // tempnam creates the file; rename to add a meaningful extension so
-        // the Content-Disposition filename can drive correct OS handling.
-        if (! @rename($tempPath, $tempPathWithSuffix)) {
-            @unlink($tempPath);
-            throw new RuntimeException('Could not rename temp file for backup export.');
+
+        $snapshotPath = $tempReservation.self::SNAPSHOT_EXTENSION;
+        // VACUUM INTO refuses to overwrite an existing file, so rename the
+        // tempnam reservation to the meaningful extension and clear it.
+        if (! @rename($tempReservation, $snapshotPath)) {
+            @unlink($tempReservation);
+            throw new RuntimeException('Could not prepare temp path for backup export.');
+        }
+        @unlink($snapshotPath);
+
+        try {
+            $pdo = new PDO('sqlite:'.$live);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo->exec('VACUUM INTO '.$pdo->quote($snapshotPath));
+            $pdo = null;
+        } catch (PDOException $e) {
+            @unlink($snapshotPath);
+            throw new RuntimeException('Could not export database: '.$e->getMessage());
         }
 
         if ($passphrase === '') {
-            if (! @copy($live, $tempPathWithSuffix)) {
-                @unlink($tempPathWithSuffix);
-                throw new RuntimeException('Could not copy database for export.');
-            }
-        } else {
-            $this->encryption->encryptFile($live, $tempPathWithSuffix, $passphrase);
+            AppSetting::set(self::LAST_EXPORT_AT_KEY, CarbonImmutable::now()->toIso8601String());
+
+            return $snapshotPath;
+        }
+
+        $encryptedPath = $tempReservation.self::ENCRYPTED_EXTENSION;
+        try {
+            $this->encryption->encryptFile($snapshotPath, $encryptedPath, $passphrase);
+        } catch (\Throwable $e) {
+            @unlink($encryptedPath);
+            throw $e;
+        } finally {
+            @unlink($snapshotPath);
         }
 
         AppSetting::set(self::LAST_EXPORT_AT_KEY, CarbonImmutable::now()->toIso8601String());
 
-        return $tempPathWithSuffix;
+        return $encryptedPath;
     }
 
     /**
@@ -199,6 +227,11 @@ class BackupService
         }
 
         return $state;
+    }
+
+    public function databasePath(): string
+    {
+        return $this->databasePath;
     }
 
     public function rollbackPath(): string

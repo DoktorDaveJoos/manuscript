@@ -41,8 +41,10 @@ test('export endpoint returns plain SQLite copy without passphrase', function ()
     $response = $this->post(route('settings.backup.export'));
 
     $response->assertOk();
-    expect($response->headers->get('content-disposition'))
-        ->toContain('.sqlite');
+    $disposition = $response->headers->get('content-disposition');
+    expect($disposition)->toContain('.sqlite');
+    expect($disposition)->toContain('manuscript-backup-');
+    expect($disposition)->toMatch('/manuscript-backup-\d{4}-\d{2}-\d{2}-\d{6}\.sqlite/');
 
     expect(AppSetting::get('backup.last_export_at'))->not->toBeNull();
 });
@@ -53,8 +55,9 @@ test('export endpoint returns encrypted MSBK with passphrase', function () {
     ]);
 
     $response->assertOk();
-    expect($response->headers->get('content-disposition'))
-        ->toContain('.msbk');
+    $disposition = $response->headers->get('content-disposition');
+    expect($disposition)->toContain('.msbk');
+    expect($disposition)->toMatch('/manuscript-backup-\d{4}-\d{2}-\d{2}-\d{6}\.msbk/');
 });
 
 test('export rejects passphrase shorter than 8 characters', function () {

@@ -47,12 +47,15 @@ class AppServiceProvider extends ServiceProvider
         // full rationale and Sentry issue 112195649.
         $this->app->singleton('command.optimize', OptimizeCommand::class);
 
-        // BackupService operates on the runtime SQLite file. In production
-        // NativePHP rewrites the connection to nativephp.sqlite at its own
-        // boot; in tests/CLI the default DB is database.sqlite. Bind to the
-        // active connection's database name so both work without surgery.
+        // BackupService must follow whichever SQLite file the *active*
+        // connection points at. NativePHP swaps `database.default` to a
+        // separate `nativephp` connection at boot, while the seed `sqlite`
+        // connection still points at the empty starter DB — naming the
+        // sqlite connection directly would silently back up the seed.
+        // Mirrors SqliteVecConnector::markerPath() for consistency.
         $this->app->singleton(BackupService::class, function ($app) {
-            $databasePath = config('database.connections.sqlite.database')
+            $default = config('database.default');
+            $databasePath = config("database.connections.{$default}.database")
                 ?: database_path('nativephp.sqlite');
 
             return new BackupService(

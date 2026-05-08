@@ -29,10 +29,11 @@ class BackupController extends Controller
         $passphrase = (string) $request->input('passphrase', '');
         $tempPath = $this->backups->export($passphrase);
 
-        $stamp = CarbonImmutable::now()->format('Y-m-d-Hi');
-        $filename = $passphrase === ''
-            ? "manuscript-{$stamp}.sqlite"
-            : "manuscript-{$stamp}.msbk";
+        // Y-m-d-His (no colons) — `:` is invalid in Windows filenames and is
+        // remapped on macOS, so a date-time stamp must use only `-`.
+        $stamp = CarbonImmutable::now()->format('Y-m-d-His');
+        $extension = pathinfo($tempPath, PATHINFO_EXTENSION);
+        $filename = "manuscript-backup-{$stamp}.{$extension}";
 
         return response()
             ->download($tempPath, $filename)
