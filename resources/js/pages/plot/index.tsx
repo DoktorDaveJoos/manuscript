@@ -794,7 +794,7 @@ export default function Plot({
 
                 <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
                     {/* Header bar */}
-                    <div className="flex h-12 items-center justify-between border-b border-border px-6">
+                    <div className="flex h-11 items-center justify-between border-b border-border px-6">
                         <div className="flex items-center gap-2">
                             <ToggleGroup
                                 type="single"
