@@ -104,6 +104,7 @@ function PaneWithData({
     onToggleTypewriterMode,
     review,
     onReviewDismiss,
+    proseRunning,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -126,6 +127,7 @@ function PaneWithData({
     onToggleTypewriterMode: () => void;
     review: ContinueWritingReview | null;
     onReviewDismiss: () => void;
+    proseRunning: boolean;
 }) {
     const { data, isLoading, error, refresh, softRefresh } = useChapterData(
         bookId,
@@ -205,6 +207,7 @@ function PaneWithData({
             review={review}
             onReviewDismiss={onReviewDismiss}
             onReviewApplied={handleReviewApplied}
+            proseRunning={proseRunning}
         />
     );
 }
@@ -263,6 +266,20 @@ export default function EditorPage({
         setScenesVisible(visible);
         saveAppSetting('show_scenes', visible);
     }, []);
+
+    // ── Prose revise UI state (drives the editor blur overlay only; the
+    // post-run "Compare" toast is fired from AiPanel via sonner) ─────────
+    const [proseRunningChapterId, setProseRunningChapterId] = useState<
+        number | null
+    >(null);
+    const handleProseStart = useCallback(
+        (chapterId: number) => setProseRunningChapterId(chapterId),
+        [],
+    );
+    const handleProseEnd = useCallback(
+        () => setProseRunningChapterId(null),
+        [],
+    );
 
     // ── Active editor tracking (from focused pane) ───────────────────────
     const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
@@ -754,6 +771,9 @@ export default function EditorPage({
                                     onReviewDismiss={
                                         continueWriting.dismissReview
                                     }
+                                    proseRunning={
+                                        proseRunningChapterId === pane.chapterId
+                                    }
                                 />
                             </div>
                         ))
@@ -853,6 +873,12 @@ export default function EditorPage({
                                     onError={(msg) => {
                                         console.error('[AiPanel]', msg);
                                     }}
+                                    proseRunning={
+                                        proseRunningChapterId ===
+                                        focusedChapter.id
+                                    }
+                                    onProseStart={handleProseStart}
+                                    onProseEnd={handleProseEnd}
                                 />
                             </SlidePanel>
                         )}

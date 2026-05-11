@@ -5,6 +5,8 @@ use App\Ai\Agents\NextChapterAdvisor;
 use App\Ai\Agents\ProseReviser;
 use App\Ai\Agents\TextBeautifier;
 use App\Enums\AiProvider;
+use App\Enums\VersionSource;
+use App\Enums\VersionStatus;
 use App\Jobs\ExtractEntitiesJob;
 use App\Jobs\GenerateEmbeddingsJob;
 use App\Jobs\RunAnalysisJob;
@@ -99,22 +101,38 @@ test('next chapter returns structured suggestion', function () {
         ->assertJsonStructure(['suggestion', 'open_plot_points', 'neglected_characters', 'hook_ideas']);
 });
 
-test('revise streams prose revision and creates new version', function () {
-    ProseReviser::fake(['The revised prose text.']);
+test('revise streams prose revision and auto-applies the new version', function () {
+    ProseReviser::fake(['<p>The revised prose text.</p>']);
 
     $book = Book::factory()->withAi()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
-    ChapterVersion::factory()->for($chapter)->create([
+    $original = ChapterVersion::factory()->for($chapter)->create([
         'is_current' => true,
         'version_number' => 1,
-        'content' => 'Original prose text.',
+        'content' => '<p>Original prose text.</p>',
+        'status' => VersionStatus::Accepted,
     ]);
 
     $response = $this->post(route('chapters.ai.revise', [$book, $chapter]));
     $response->assertOk();
+    $response->streamedContent(); // drains the stream so `then()` fires
 
     ProseReviser::assertPrompted(fn ($prompt) => true);
+
+    // The new revision is auto-applied: it becomes the current/accepted version.
+    $newVersion = $chapter->versions()->orderByDesc('version_number')->first();
+    expect($newVersion->version_number)->toBe(2);
+    expect($newVersion->is_current)->toBeTrue();
+    expect($newVersion->status)->toBe(VersionStatus::Accepted);
+    expect($newVersion->source)->toBe(VersionSource::AiRevision);
+    expect($newVersion->content)->toContain('revised prose');
+
+    // The previous version is no longer current.
+    expect($original->fresh()->is_current)->toBeFalse();
+
+    // Scenes reflect the new content (so the editor renders the revision).
+    expect($chapter->fresh()->scenes()->first()->content)->toContain('revised prose');
 });
 
 test('prose reviser instructions include character, entity, and narrative context', function () {
@@ -190,22 +208,31 @@ test('next chapter fails without api key', function () {
         ->assertStatus(422);
 });
 
-test('beautify streams and creates new version', function () {
-    TextBeautifier::fake(['The beautified text.']);
+test('beautify streams and auto-applies the new version', function () {
+    TextBeautifier::fake(['<p>The beautified text.</p>']);
 
     $book = Book::factory()->withAi()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
-    ChapterVersion::factory()->for($chapter)->create([
+    $original = ChapterVersion::factory()->for($chapter)->create([
         'is_current' => true,
         'version_number' => 1,
-        'content' => 'Original text to beautify.',
+        'content' => '<p>Original text to beautify.</p>',
+        'status' => VersionStatus::Accepted,
     ]);
 
     $response = $this->post(route('chapters.ai.beautify', [$book, $chapter]));
     $response->assertOk();
+    $response->streamedContent();
 
     TextBeautifier::assertPrompted(fn ($prompt) => true);
+
+    $newVersion = $chapter->versions()->orderByDesc('version_number')->first();
+    expect($newVersion->is_current)->toBeTrue();
+    expect($newVersion->status)->toBe(VersionStatus::Accepted);
+    expect($newVersion->source)->toBe(VersionSource::Beautify);
+    expect($original->fresh()->is_current)->toBeFalse();
+    expect($chapter->fresh()->scenes()->first()->content)->toContain('beautified');
 });
 
 test('beautify fails when chapter has no content', function () {

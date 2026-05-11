@@ -1,14 +1,16 @@
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { PenTool, Pilcrow, Sparkles } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { beautify, revise } from '@/actions/App/Http/Controllers/AiController';
+import { openWindow as openDiffWindow } from '@/actions/App/Http/Controllers/ChapterDiffController';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import PanelHeader from '@/components/ui/PanelHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useChapterAnalysis } from '@/hooks/useChapterAnalysis';
-import { cn } from '@/lib/utils';
+import { broadcastChapterDataChanged, cn, jsonFetchHeaders } from '@/lib/utils';
 import type {
     Analysis,
     Book,
@@ -242,6 +244,9 @@ export default function AiPanel({
     onClose,
     onError,
     chapterAnalyses,
+    proseRunning = false,
+    onProseStart,
+    onProseEnd,
 }: {
     characters: ChapterCharacter[];
     book: Book;
@@ -249,14 +254,72 @@ export default function AiPanel({
     onClose: () => void;
     onError?: (message: string) => void;
     chapterAnalyses?: Record<string, Analysis>;
+    proseRunning?: boolean;
+    onProseStart?: (chapterId: number) => void;
+    onProseEnd?: (chapterId: number) => void;
 }) {
     const { t, i18n } = useTranslation('ai');
     const pageUrl = usePage().url;
     const { visible, usable } = useAiFeatures();
     const aiEnabled = usable;
 
+    // Local flags so each button shows the correct label while in flight; the
+    // proseRunning prop is used to gate both (only one revise can run at a
+    // time) and to disable the inactive button without flipping its label.
     const [isRunningProse, setIsRunningProse] = useState(false);
     const [isBeautifying, setIsBeautifying] = useState(false);
+
+    // Chapter ref so the toast's "Compare" action resolves the post-revise
+    // current version id at click time, after softRefresh has updated props.
+    const chapterRef = useRef(chapter);
+    chapterRef.current = chapter;
+
+    const showRevisedToast = useCallback(() => {
+        toast(
+            t('proseRevise.toast.title', {
+                ns: 'editor',
+                defaultValue: 'AI revision applied',
+            }),
+            {
+                description: t('proseRevise.toast.description', {
+                    ns: 'editor',
+                    defaultValue: 'The chapter now uses the revised version.',
+                }),
+                action: {
+                    label: t('proseRevise.toast.compare', {
+                        ns: 'editor',
+                        defaultValue: 'Compare',
+                    }),
+                    onClick: async () => {
+                        const versionId =
+                            chapterRef.current.current_version?.id;
+                        if (!versionId) return;
+                        if (
+                            typeof window !== 'undefined' &&
+                            window.Native?.on
+                        ) {
+                            try {
+                                const response = await fetch(
+                                    openDiffWindow.url({
+                                        book: book.id,
+                                        chapter: chapterRef.current.id,
+                                        version: versionId,
+                                    }),
+                                    {
+                                        method: 'POST',
+                                        headers: jsonFetchHeaders(),
+                                    },
+                                );
+                                if (response.ok) return;
+                            } catch {
+                                /* native window unavailable */
+                            }
+                        }
+                    },
+                },
+            },
+        );
+    }, [book.id, t]);
     const {
         status: analysisStatus,
         isAnalyzing,
@@ -313,6 +376,7 @@ export default function AiPanel({
         }
 
         setIsRunningProse(true);
+        onProseStart?.(chapter.id);
         try {
             const response = await fetch(
                 revise.url({ book: book.id, chapter: chapter.id }),
@@ -327,13 +391,15 @@ export default function AiPanel({
             if (!response.ok) throw new Error(t('error.prosePassFailed'));
 
             await response.text();
-            router.reload();
+            broadcastChapterDataChanged(chapter.id);
+            showRevisedToast();
         } catch (e) {
             onError?.(
                 e instanceof Error ? e.message : t('error.prosePassFailed'),
             );
         } finally {
             setIsRunningProse(false);
+            onProseEnd?.(chapter.id);
         }
     }, [
         book.id,
@@ -341,12 +407,16 @@ export default function AiPanel({
         chapter.word_count,
         chapter.analyzed_at,
         onError,
+        onProseStart,
+        onProseEnd,
+        showRevisedToast,
         t,
         i18n.language,
     ]);
 
     const handleBeautify = useCallback(async () => {
         setIsBeautifying(true);
+        onProseStart?.(chapter.id);
         try {
             const response = await fetch(
                 beautify.url({ book: book.id, chapter: chapter.id }),
@@ -361,15 +431,25 @@ export default function AiPanel({
             if (!response.ok) throw new Error(t('error.beautifyFailed'));
 
             await response.text();
-            router.reload();
+            broadcastChapterDataChanged(chapter.id);
+            showRevisedToast();
         } catch (e) {
             onError?.(
                 e instanceof Error ? e.message : t('error.beautifyFailed'),
             );
         } finally {
             setIsBeautifying(false);
+            onProseEnd?.(chapter.id);
         }
-    }, [book.id, chapter.id, onError, t]);
+    }, [
+        book.id,
+        chapter.id,
+        onError,
+        onProseStart,
+        onProseEnd,
+        showRevisedToast,
+        t,
+    ]);
 
     const findings = useMemo(() => collectFindings(analyses), [analyses]);
     const nextSuggestion = useMemo(
@@ -478,7 +558,7 @@ export default function AiPanel({
                             <button
                                 type="button"
                                 onClick={handleBeautify}
-                                disabled={isBeautifying}
+                                disabled={proseRunning}
                                 className={actionButtonClass}
                             >
                                 <Pilcrow size={14} strokeWidth={2.5} />
@@ -512,7 +592,7 @@ export default function AiPanel({
                         <button
                             type="button"
                             onClick={handleRunProse}
-                            disabled={isRunningProse}
+                            disabled={proseRunning}
                             className={actionButtonClass}
                         >
                             <PenTool size={14} strokeWidth={2.5} />

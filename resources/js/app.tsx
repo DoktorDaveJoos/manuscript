@@ -72,12 +72,7 @@ createInertiaApp({
                 <UpdateDialog currentVersion={appVersion} />
                 <UpdateScheduler />
                 {databaseRepaired && <DatabaseRepairedDialog />}
-                <Toaster
-                    position="top-right"
-                    closeButton
-                    richColors
-                    theme="system"
-                />
+                <Toaster position="bottom-center" closeButton theme="system" />
             </DebugOverlay>,
         );
     },

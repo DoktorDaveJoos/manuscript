@@ -74,6 +74,11 @@ export default function ChapterDiffPage({
         );
     }
 
+    // Auto-applied revisions land with status='accepted'. The user can still
+    // deselect changes to revert paragraphs to the previous version — applied
+    // as a new version on top of the AI revision via the 'review' mode.
+    const mode = pendingVersion.status === 'accepted' ? 'review' : 'refine';
+
     return (
         <>
             <Head title={headTitle} />
@@ -84,7 +89,7 @@ export default function ChapterDiffPage({
                     chapterTitle={firstLine(chapter.title)}
                     currentVersion={currentVersion}
                     pendingVersion={pendingVersion}
-                    mode="refine"
+                    mode={mode}
                     onApplied={handleApplied}
                     onClose={closeWindow}
                 />

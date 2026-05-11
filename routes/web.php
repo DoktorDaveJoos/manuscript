@@ -117,6 +117,7 @@ Route::delete('/books/{book}/chapters/{chapter}/versions/{version}', [ChapterCon
 Route::post('/books/{book}/chapters/{chapter}/versions/{version}/accept', [ChapterController::class, 'acceptVersion'])->name('chapters.acceptVersion');
 Route::post('/books/{book}/chapters/{chapter}/versions/{version}/accept-partial', [ChapterController::class, 'acceptPartialVersion'])->name('chapters.acceptPartialVersion');
 Route::post('/books/{book}/chapters/{chapter}/versions/{version}/reject', [ChapterController::class, 'rejectVersion'])->name('chapters.rejectVersion');
+Route::post('/books/{book}/chapters/{chapter}/versions/merge', [ChapterController::class, 'applyMerge'])->name('chapters.applyMerge');
 Route::patch('/books/{book}/chapters/{chapter}/notes', [ChapterController::class, 'updateNotes'])->name('chapters.updateNotes');
 Route::post('/books/{book}/chapters/{chapter}/split', [ChapterController::class, 'split'])->name('chapters.split');
 Route::delete('/books/{book}/chapters/{chapter}', [ChapterController::class, 'destroy'])->name('chapters.destroy');

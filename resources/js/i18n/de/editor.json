@@ -201,5 +201,11 @@
     "globalFind.searchAllChapters": "Alle Kapitel durchsuchen...",
     "globalFind.replaceAllInBook": "Im gesamten Buch ersetzen",
     "globalFind.results_one": "{{count}} Treffer in {{chapters}} Kap.",
-    "globalFind.results_other": "{{count}} Treffer in {{chapters}} Kap."
+    "globalFind.results_other": "{{count}} Treffer in {{chapters}} Kap.",
+    "proseRevise.overlay.label": "Text wird überarbeitet…",
+    "proseRevise.toast.title": "KI-Überarbeitung angewendet",
+    "proseRevise.toast.description": "Das Kapitel verwendet jetzt die überarbeitete Version.",
+    "proseRevise.toast.compare": "Vergleichen",
+    "diff.review.update": "Aktualisieren",
+    "diff.review.updating": "Wird aktualisiert…"
 }

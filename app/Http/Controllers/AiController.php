@@ -24,6 +24,7 @@ use App\Services\Normalization\NormalizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Responses\StreamableAgentResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -207,15 +208,26 @@ class AiController extends Controller
                 $book->language,
             );
 
-            $chapter->versions()->create([
-                'version_number' => $nextNumber,
-                'content' => $normalized['content'],
-                'source' => $source,
-                'change_summary' => $changeSummary,
-                'is_current' => false,
-                'status' => VersionStatus::Pending,
-                'scene_map' => $sceneMap,
-            ]);
+            // Auto-apply: the revised version becomes the new current version
+            // immediately. The previous current version stays in history so the
+            // user can still see what changed via "Compare with previous".
+            DB::transaction(function () use ($chapter, $nextNumber, $normalized, $source, $changeSummary, $sceneMap) {
+                $chapter->versions()
+                    ->where('is_current', true)
+                    ->update(['is_current' => false]);
+
+                $chapter->versions()->create([
+                    'version_number' => $nextNumber,
+                    'content' => $normalized['content'],
+                    'source' => $source,
+                    'change_summary' => $changeSummary,
+                    'is_current' => true,
+                    'status' => VersionStatus::Accepted,
+                    'scene_map' => $sceneMap,
+                ]);
+
+                $chapter->replaceSceneContents($normalized['content'], $sceneMap);
+            });
         });
     }
 

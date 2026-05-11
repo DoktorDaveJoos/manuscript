@@ -41,6 +41,7 @@ export default function ChapterPane({
     review,
     onReviewDismiss,
     onReviewApplied,
+    proseRunning = false,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -63,6 +64,7 @@ export default function ChapterPane({
     review: ContinueWritingReview | null;
     onReviewDismiss: () => void;
     onReviewApplied: () => void;
+    proseRunning?: boolean;
 }) {
     const { t } = useTranslation('editor');
     const { chapter, proofreadingConfig: initialProofreadingConfig } =
@@ -437,31 +439,48 @@ export default function ChapterPane({
             )}
 
             {!isReviewing && !compareVersion && (
-                <WritingSurface
-                    scenes={scenes}
-                    bookId={bookId}
-                    chapterId={chapter.id}
-                    title={chapterTitle}
-                    autoSelectTitle={pendingTitleSelect}
-                    onTitleSelectHandled={handleTitleSelectHandled}
-                    povCharacterName={povCharacterName}
-                    timelineLabel={timelineLabel}
-                    onTitleUpdate={handleTitleUpdate}
-                    activeEditor={activeEditor}
-                    onActiveEditorChange={handleActiveEditorChange}
-                    onWordCountChange={handleSceneWordCountChange}
-                    onSaveStatusChange={handleLocalSaveStatusChange}
-                    isTypewriterMode={isTypewriterMode}
-                    editorFont={editorFont}
-                    editorFontSize={editorFontSize}
-                    pendingFocusSceneId={pendingFocusSceneId}
-                    onFocusHandled={() => setPendingFocusSceneId(null)}
-                    onActiveSceneIdChange={handleActiveSceneIdChange}
-                    scenesVisible={scenesVisible}
-                    proofreadingConfig={proofreadingConfig}
-                    bookLanguage={bookLanguage}
-                    spellcheckEnabled={spellcheckEnabled}
-                />
+                <div className="relative flex min-h-0 flex-1 flex-col">
+                    <WritingSurface
+                        scenes={scenes}
+                        bookId={bookId}
+                        chapterId={chapter.id}
+                        title={chapterTitle}
+                        autoSelectTitle={pendingTitleSelect}
+                        onTitleSelectHandled={handleTitleSelectHandled}
+                        povCharacterName={povCharacterName}
+                        timelineLabel={timelineLabel}
+                        onTitleUpdate={handleTitleUpdate}
+                        activeEditor={activeEditor}
+                        onActiveEditorChange={handleActiveEditorChange}
+                        onWordCountChange={handleSceneWordCountChange}
+                        onSaveStatusChange={handleLocalSaveStatusChange}
+                        isTypewriterMode={isTypewriterMode}
+                        editorFont={editorFont}
+                        editorFontSize={editorFontSize}
+                        pendingFocusSceneId={pendingFocusSceneId}
+                        onFocusHandled={() => setPendingFocusSceneId(null)}
+                        onActiveSceneIdChange={handleActiveSceneIdChange}
+                        scenesVisible={scenesVisible}
+                        proofreadingConfig={proofreadingConfig}
+                        bookLanguage={bookLanguage}
+                        spellcheckEnabled={spellcheckEnabled}
+                    />
+                    {proseRunning && (
+                        <div
+                            className="absolute inset-0 z-20 flex items-center justify-center bg-surface/60 backdrop-blur-sm"
+                            aria-live="polite"
+                        >
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="size-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                                <span className="text-sm font-medium text-ink">
+                                    {t('proseRevise.overlay.label', {
+                                        defaultValue: 'Revising prose…',
+                                    })}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                </div>
             )}
         </div>
     );

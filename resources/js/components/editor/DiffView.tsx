@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import {
     acceptPartialVersion,
     acceptVersion,
+    applyMerge,
     rejectVersion,
 } from '@/actions/App/Http/Controllers/ChapterController';
 import { refine as refineContinueWriting } from '@/actions/App/Http/Controllers/ContinueWritingController';
@@ -26,7 +27,7 @@ import type {
 } from '@/types/models';
 import { getFontFamily } from './FontSelector';
 
-export type DiffMode = 'pending' | 'refine';
+export type DiffMode = 'pending' | 'refine' | 'review';
 
 function splitParagraphs(html: string | null): string[] {
     if (!html) return [];
@@ -401,6 +402,28 @@ export default function DiffView({
                 onApplied?.();
                 return;
             }
+            if (mode === 'review') {
+                // Post-revise compare: deselected changes revert to the previous
+                // version. Apply as a NEW version on top of the current AI
+                // revision (current stays in history).
+                const mergedContent = mergeParagraphs(
+                    diff.aligned,
+                    selectedParagraphs,
+                    currentVersion.content,
+                    pendingVersion.content,
+                );
+                const response = await fetch(
+                    applyMerge.url({ book: bookId, chapter: chapterId }),
+                    {
+                        method: 'POST',
+                        headers: jsonFetchHeaders(),
+                        body: JSON.stringify({ content: mergedContent }),
+                    },
+                );
+                if (!response.ok) throw new Error('Update failed');
+                onApplied?.();
+                return;
+            }
             if (isPartial) {
                 const mergedContent = mergeParagraphs(
                     diff.aligned,
@@ -591,10 +614,13 @@ export default function DiffView({
         t(`diff.sourceLabel.${source}`);
 
     const isRefine = mode === 'refine';
+    const isReview = mode === 'review';
 
     // In refine mode, "apply" only makes sense if at least one paragraph was
     // deselected — otherwise the merged content matches the current version
-    // and applying would create a no-op duplicate.
+    // and applying would create a no-op duplicate. Same logic for 'review':
+    // the AI revision is already current, so an unchanged selection is a
+    // no-op — we only enable Update when something has been deselected.
     let acceptLabel: string;
     let rejectLabel: string;
     let acceptDisabled: boolean;
@@ -607,6 +633,13 @@ export default function DiffView({
         acceptDisabled = isAccepting || !isPartial || selectedCount === 0;
         acceptInProgressLabel = t('diff.refine.applying', {
             defaultValue: 'Applying…',
+        });
+    } else if (isReview) {
+        acceptLabel = t('diff.review.update', { defaultValue: 'Update' });
+        rejectLabel = t('diff.refine.close', { defaultValue: 'Close' });
+        acceptDisabled = isAccepting || !isPartial;
+        acceptInProgressLabel = t('diff.review.updating', {
+            defaultValue: 'Updating…',
         });
     } else {
         acceptLabel = isPartial

@@ -201,5 +201,11 @@
     "globalFind.searchAllChapters": "Buscar en todos los capítulos...",
     "globalFind.replaceAllInBook": "Reemplazar todo en el libro",
     "globalFind.results_one": "{{count}} resultado en {{chapters}} cap.",
-    "globalFind.results_other": "{{count}} resultados en {{chapters}} cap."
+    "globalFind.results_other": "{{count}} resultados en {{chapters}} cap.",
+    "proseRevise.overlay.label": "Revisando la prosa…",
+    "proseRevise.toast.title": "Revisión de IA aplicada",
+    "proseRevise.toast.description": "El capítulo usa ahora la versión revisada.",
+    "proseRevise.toast.compare": "Comparar",
+    "diff.review.update": "Actualizar",
+    "diff.review.updating": "Actualizando…"
 }
