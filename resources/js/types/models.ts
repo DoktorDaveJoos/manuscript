@@ -571,14 +571,7 @@ export type AiSetting = {
     provider: AiProvider;
     has_api_key: boolean;
     masked_api_key: string | null;
-    base_url: string | null;
-    api_version: string | null;
-    azure_deployment: string | null;
-    embedding_model: string | null;
-    embedding_dimensions: number | null;
     enabled: boolean;
-    requires_api_key: boolean;
-    requires_base_url: boolean;
     api_key_recovery_needed: boolean;
     created_at: string;
     updated_at: string;

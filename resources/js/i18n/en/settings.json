@@ -111,6 +111,83 @@
     "aiProviders.testConnection": "Test connection",
     "aiProviders.saveFailed": "Failed to save settings.",
     "aiProviders.testFailed": "Connection test failed.",
+
+    "aiProviders.howToGetKey.trigger": "How to get an API key",
+    "aiProviders.howToGetKey.title": "How to get your {{provider}} API key",
+    "aiProviders.howToGetKey.intro": "Follow these steps to generate an API key for {{provider}}. Manuscript stores it encrypted on this device — your key never leaves your machine.",
+    "aiProviders.howToGetKey.close": "Close",
+
+    "aiProviders.howToGetKey.anthropic.consoleLabel": "Open Anthropic Console",
+    "aiProviders.howToGetKey.anthropic.steps": [
+        "Open console.anthropic.com in your browser.",
+        "Sign in or create a free Anthropic account.",
+        "Open Settings → API Keys from the sidebar.",
+        "Click Create Key and give it a name like \"Manuscript\".",
+        "Copy the key (starts with sk-ant-) — it's only shown once — and paste it here."
+    ],
+
+    "aiProviders.howToGetKey.openai.consoleLabel": "Open OpenAI Platform",
+    "aiProviders.howToGetKey.openai.steps": [
+        "Open platform.openai.com and sign in.",
+        "Click your profile (top right) and choose View API keys.",
+        "Click Create new secret key and give it a name.",
+        "Copy the key (starts with sk-) — it's only shown once — and paste it here.",
+        "Add a payment method under Settings → Billing if you haven't already."
+    ],
+
+    "aiProviders.howToGetKey.gemini.consoleLabel": "Open Google AI Studio",
+    "aiProviders.howToGetKey.gemini.steps": [
+        "Open aistudio.google.com in your browser.",
+        "Sign in with your Google account.",
+        "Click Get API key in the top right.",
+        "Pick an existing Google Cloud project or create one, then click Create API key.",
+        "Copy the key and paste it here."
+    ],
+
+    "aiProviders.howToGetKey.groq.consoleLabel": "Open Groq Console",
+    "aiProviders.howToGetKey.groq.steps": [
+        "Open console.groq.com and sign in (Google, GitHub, or email).",
+        "Open the API Keys tab in the sidebar.",
+        "Click Create API Key and give it a name.",
+        "Copy the key (starts with gsk_) — it's only shown once.",
+        "Paste it here."
+    ],
+
+    "aiProviders.howToGetKey.xai.consoleLabel": "Open xAI Console",
+    "aiProviders.howToGetKey.xai.steps": [
+        "Open console.x.ai and sign in with your X / xAI account.",
+        "Open the API Keys tab.",
+        "Click Create API Key and give it a name.",
+        "Copy the key (starts with xai-) — it's only shown once.",
+        "Paste it here."
+    ],
+
+    "aiProviders.howToGetKey.deepseek.consoleLabel": "Open DeepSeek Platform",
+    "aiProviders.howToGetKey.deepseek.steps": [
+        "Open platform.deepseek.com and sign in or create an account.",
+        "Open the API Keys page from the sidebar.",
+        "Click Create new API key.",
+        "Copy the key — it's only shown once.",
+        "Paste it here. Top up credit on the Billing page if needed."
+    ],
+
+    "aiProviders.howToGetKey.mistral.consoleLabel": "Open Mistral Console",
+    "aiProviders.howToGetKey.mistral.steps": [
+        "Open console.mistral.ai and sign in or create an account.",
+        "Open the API Keys tab inside your workspace.",
+        "Click Create new key and give it a name.",
+        "Copy the key — it's only shown once.",
+        "Paste it here. Add a payment method on the Billing page first if you don't have free trial credit."
+    ],
+
+    "aiProviders.howToGetKey.openrouter.consoleLabel": "Open OpenRouter",
+    "aiProviders.howToGetKey.openrouter.steps": [
+        "Open openrouter.ai and sign in (Google, GitHub, or email).",
+        "Click your avatar (top right) and choose Keys.",
+        "Click Create Key and give it a name.",
+        "Copy the key (starts with sk-or-) — it's only shown once.",
+        "Paste it here. Top up credit on the Credits page to start using it."
+    ],
     "aiProviders.advancedSettings": "Advanced Settings",
     "aiProviders.advancedDescription": "The app automatically picks the best model for each task. Only change these if you fully understand the differences between models — wrong choices may reduce output quality or increase costs.",
     "aiProviders.writingModel": "Writing",

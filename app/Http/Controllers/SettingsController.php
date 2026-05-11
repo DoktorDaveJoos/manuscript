@@ -25,13 +25,12 @@ class SettingsController extends Controller
 
         $existing = AiSetting::query()->get()->keyBy(fn ($s) => $s->provider->value);
 
-        $aiProviders = collect(AiProvider::cases())->map(function (AiProvider $provider) use ($existing) {
+        $aiProviders = collect(AiProvider::userFacing())->map(function (AiProvider $provider) use ($existing) {
             $setting = $existing->get($provider->value) ?? AiSetting::forProvider($provider);
 
             return [
                 ...$setting->toFrontendArray(),
                 'label' => $provider->label(),
-                'supports_embeddings' => $provider->supportsEmbeddings(),
             ];
         });
 

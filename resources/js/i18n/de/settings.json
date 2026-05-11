@@ -111,6 +111,83 @@
     "aiProviders.testConnection": "Verbindung testen",
     "aiProviders.saveFailed": "Einstellungen konnten nicht gespeichert werden.",
     "aiProviders.testFailed": "Verbindungstest fehlgeschlagen.",
+
+    "aiProviders.howToGetKey.trigger": "API-Key erhalten",
+    "aiProviders.howToGetKey.title": "So bekommst du deinen {{provider}}-API-Key",
+    "aiProviders.howToGetKey.intro": "Folge diesen Schritten, um einen API-Key für {{provider}} zu erstellen. Manuscript speichert ihn verschlüsselt auf diesem Gerät — dein Schlüssel verlässt niemals deinen Rechner.",
+    "aiProviders.howToGetKey.close": "Schließen",
+
+    "aiProviders.howToGetKey.anthropic.consoleLabel": "Anthropic Console öffnen",
+    "aiProviders.howToGetKey.anthropic.steps": [
+        "Öffne console.anthropic.com im Browser.",
+        "Melde dich an oder erstelle ein kostenloses Anthropic-Konto.",
+        "Wähle in der Seitenleiste Settings → API Keys.",
+        "Klicke auf Create Key und vergib einen Namen wie „Manuscript“.",
+        "Kopiere den Schlüssel (beginnt mit sk-ant-) — er wird nur einmal angezeigt — und füge ihn hier ein."
+    ],
+
+    "aiProviders.howToGetKey.openai.consoleLabel": "OpenAI Platform öffnen",
+    "aiProviders.howToGetKey.openai.steps": [
+        "Öffne platform.openai.com und melde dich an.",
+        "Klicke oben rechts auf dein Profil und wähle View API keys.",
+        "Klicke auf Create new secret key und vergib einen Namen.",
+        "Kopiere den Schlüssel (beginnt mit sk-) — er wird nur einmal angezeigt — und füge ihn hier ein.",
+        "Hinterlege unter Settings → Billing eine Zahlungsmethode, falls noch nicht geschehen."
+    ],
+
+    "aiProviders.howToGetKey.gemini.consoleLabel": "Google AI Studio öffnen",
+    "aiProviders.howToGetKey.gemini.steps": [
+        "Öffne aistudio.google.com im Browser.",
+        "Melde dich mit deinem Google-Konto an.",
+        "Klicke oben rechts auf Get API key.",
+        "Wähle ein bestehendes Google-Cloud-Projekt oder lege ein neues an und klicke auf Create API key.",
+        "Kopiere den Schlüssel und füge ihn hier ein."
+    ],
+
+    "aiProviders.howToGetKey.groq.consoleLabel": "Groq Console öffnen",
+    "aiProviders.howToGetKey.groq.steps": [
+        "Öffne console.groq.com und melde dich an (Google, GitHub oder E-Mail).",
+        "Öffne in der Seitenleiste den Tab API Keys.",
+        "Klicke auf Create API Key und vergib einen Namen.",
+        "Kopiere den Schlüssel (beginnt mit gsk_) — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein."
+    ],
+
+    "aiProviders.howToGetKey.xai.consoleLabel": "xAI Console öffnen",
+    "aiProviders.howToGetKey.xai.steps": [
+        "Öffne console.x.ai und melde dich mit deinem X-/xAI-Konto an.",
+        "Öffne den Tab API Keys.",
+        "Klicke auf Create API Key und vergib einen Namen.",
+        "Kopiere den Schlüssel (beginnt mit xai-) — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein."
+    ],
+
+    "aiProviders.howToGetKey.deepseek.consoleLabel": "DeepSeek Platform öffnen",
+    "aiProviders.howToGetKey.deepseek.steps": [
+        "Öffne platform.deepseek.com und melde dich an oder lege ein Konto an.",
+        "Öffne in der Seitenleiste die Seite API Keys.",
+        "Klicke auf Create new API key.",
+        "Kopiere den Schlüssel — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein. Lade bei Bedarf zuvor unter Billing Guthaben auf."
+    ],
+
+    "aiProviders.howToGetKey.mistral.consoleLabel": "Mistral Console öffnen",
+    "aiProviders.howToGetKey.mistral.steps": [
+        "Öffne console.mistral.ai und melde dich an oder lege ein Konto an.",
+        "Öffne in deinem Workspace den Tab API Keys.",
+        "Klicke auf Create new key und vergib einen Namen.",
+        "Kopiere den Schlüssel — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein. Hinterlege bei Bedarf zuvor unter Billing eine Zahlungsmethode."
+    ],
+
+    "aiProviders.howToGetKey.openrouter.consoleLabel": "OpenRouter öffnen",
+    "aiProviders.howToGetKey.openrouter.steps": [
+        "Öffne openrouter.ai und melde dich an (Google, GitHub oder E-Mail).",
+        "Klicke oben rechts auf dein Profilbild und wähle Keys.",
+        "Klicke auf Create Key und vergib einen Namen.",
+        "Kopiere den Schlüssel (beginnt mit sk-or-) — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein und lade unter Credits Guthaben auf, um den Key zu nutzen."
+    ],
     "aiProviders.advancedSettings": "Erweiterte Einstellungen",
     "aiProviders.advancedDescription": "Die App wählt automatisch das beste Modell für jede Aufgabe. Ändere diese nur, wenn du die Unterschiede zwischen Modellen genau kennst — falsche Entscheidungen können die Ausgabequalität verringern oder Kosten erhöhen.",
     "aiProviders.writingModel": "Schreiben",

@@ -69,4 +69,24 @@ enum AiProvider: string
             default => false,
         };
     }
+
+    /**
+     * Providers configurable with just an API key.
+     * Azure (needs endpoint URL + deployment) and Ollama (local, no key) are excluded.
+     *
+     * @return list<self>
+     */
+    public static function userFacing(): array
+    {
+        return [
+            self::Anthropic,
+            self::Openai,
+            self::Gemini,
+            self::Groq,
+            self::Xai,
+            self::DeepSeek,
+            self::Mistral,
+            self::OpenRouter,
+        ];
+    }
 }

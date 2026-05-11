@@ -237,14 +237,7 @@ class AiSetting extends Model
             'provider' => $this->provider->value,
             'has_api_key' => $this->hasApiKey(),
             'masked_api_key' => $this->maskedApiKey(),
-            'base_url' => $this->base_url,
-            'api_version' => $this->api_version,
-            'azure_deployment' => $this->azure_deployment,
-            'embedding_model' => $this->embedding_model,
-            'embedding_dimensions' => $this->embedding_dimensions,
             'enabled' => $this->enabled,
-            'requires_api_key' => $this->provider->requiresApiKey(),
-            'requires_base_url' => $this->provider->requiresBaseUrl(),
             'api_key_recovery_needed' => (bool) $this->api_key_recovery_needed,
         ];
     }

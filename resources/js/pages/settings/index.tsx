@@ -56,6 +56,7 @@ import type { Theme } from '@/lib/theme';
 import { jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
 import type {
     AppSettings,
+    AiProvider,
     AiSetting,
     GrammarCheckKey,
     License,
@@ -65,7 +66,6 @@ import type {
 
 type ProviderSetting = AiSetting & {
     label: string;
-    supports_embeddings: boolean;
 };
 
 interface Props {
@@ -511,9 +511,8 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
     const [saving, setSaving] = useState(false);
     const [testStatus, setTestStatus] = useState<TestStatus>({ type: 'idle' });
     const [saveMessage, setSaveMessage] = useState('');
-    const configured = setting.requires_api_key
-        ? setting.has_api_key
-        : !!setting.base_url;
+    const [guideOpen, setGuideOpen] = useState(false);
+    const configured = setting.has_api_key;
 
     const handleSave = useCallback(
         (e: FormEvent) => {
@@ -567,20 +566,31 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
     }, [setting.provider, t]);
 
     return (
-        <form onSubmit={handleSave} className="pb-1">
-            <div className="flex flex-col gap-5 pl-[30px]">
-                {setting.api_key_recovery_needed && (
-                    <Alert variant="destructive">
-                        <AlertTitle>
-                            {t('aiProviders.keyRecovery.title')}
-                        </AlertTitle>
-                        <AlertDescription>
-                            {t('aiProviders.keyRecovery.description')}
-                        </AlertDescription>
-                    </Alert>
-                )}
-                {setting.requires_api_key && (
-                    <FormField label={t('aiProviders.apiKey')}>
+        <>
+            <form onSubmit={handleSave} className="pb-1">
+                <div className="flex flex-col gap-5 pl-[30px]">
+                    {setting.api_key_recovery_needed && (
+                        <Alert variant="destructive">
+                            <AlertTitle>
+                                {t('aiProviders.keyRecovery.title')}
+                            </AlertTitle>
+                            <AlertDescription>
+                                {t('aiProviders.keyRecovery.description')}
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                    <FormField
+                        label={t('aiProviders.apiKey')}
+                        action={
+                            <button
+                                type="button"
+                                onClick={() => setGuideOpen(true)}
+                                className="text-[12px] font-medium text-ink-muted transition-colors hover:text-ink"
+                            >
+                                {t('aiProviders.howToGetKey.trigger')}
+                            </button>
+                        }
+                    >
                         {setting.has_api_key && !apiKey ? (
                             <div className="flex items-center justify-between gap-3 rounded-md border border-border px-4 py-2.5">
                                 <span className="font-mono text-[13px] leading-[1.43] text-ink-muted">
@@ -619,48 +629,128 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                             />
                         )}
                     </FormField>
-                )}
 
-                <div className="flex items-center gap-3 pt-1">
-                    <Button
-                        variant="primary"
-                        size="lg"
-                        type="submit"
-                        disabled={saving}
-                    >
-                        {saving
-                            ? t('aiProviders.saving')
-                            : t('aiProviders.save')}
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        size="lg"
-                        type="button"
-                        onClick={handleTest}
-                        disabled={testStatus.type === 'loading' || !configured}
-                    >
-                        {testStatus.type === 'loading'
-                            ? t('aiProviders.testing')
-                            : t('aiProviders.testConnection')}
-                    </Button>
-                    {saveMessage && (
-                        <span className="text-[12px] font-medium text-status-final">
-                            {saveMessage}
-                        </span>
-                    )}
-                    {testStatus.type === 'success' && (
-                        <span className="text-[12px] font-medium text-status-final">
-                            {testStatus.message}
-                        </span>
-                    )}
-                    {testStatus.type === 'error' && (
-                        <span className="text-[12px] font-medium text-danger">
-                            {testStatus.message}
-                        </span>
-                    )}
+                    <div className="flex items-center gap-3 pt-1">
+                        <Button
+                            variant="primary"
+                            size="lg"
+                            type="submit"
+                            disabled={saving}
+                        >
+                            {saving
+                                ? t('aiProviders.saving')
+                                : t('aiProviders.save')}
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            size="lg"
+                            type="button"
+                            onClick={handleTest}
+                            disabled={
+                                testStatus.type === 'loading' || !configured
+                            }
+                        >
+                            {testStatus.type === 'loading'
+                                ? t('aiProviders.testing')
+                                : t('aiProviders.testConnection')}
+                        </Button>
+                        {saveMessage && (
+                            <span className="text-[12px] font-medium text-status-final">
+                                {saveMessage}
+                            </span>
+                        )}
+                        {testStatus.type === 'success' && (
+                            <span className="text-[12px] font-medium text-status-final">
+                                {testStatus.message}
+                            </span>
+                        )}
+                        {testStatus.type === 'error' && (
+                            <span className="text-[12px] font-medium text-danger">
+                                {testStatus.message}
+                            </span>
+                        )}
+                    </div>
                 </div>
+            </form>
+            {guideOpen && (
+                <GetApiKeyDialog
+                    provider={setting.provider}
+                    providerLabel={setting.label}
+                    onClose={() => setGuideOpen(false)}
+                />
+            )}
+        </>
+    );
+}
+
+const PROVIDER_CONSOLE_URLS: Partial<Record<AiProvider, string>> = {
+    anthropic: 'https://console.anthropic.com',
+    openai: 'https://platform.openai.com/api-keys',
+    gemini: 'https://aistudio.google.com/apikey',
+    groq: 'https://console.groq.com/keys',
+    xai: 'https://console.x.ai',
+    deepseek: 'https://platform.deepseek.com/api_keys',
+    mistral: 'https://console.mistral.ai/api-keys',
+    openrouter: 'https://openrouter.ai/keys',
+};
+
+function GetApiKeyDialog({
+    provider,
+    providerLabel,
+    onClose,
+}: {
+    provider: AiProvider;
+    providerLabel: string;
+    onClose: () => void;
+}) {
+    const { t } = useTranslation('settings');
+    const titleText = t('aiProviders.howToGetKey.title', {
+        provider: providerLabel,
+    });
+    const rawSteps = t(`aiProviders.howToGetKey.${provider}.steps`, {
+        returnObjects: true,
+    });
+    const steps = Array.isArray(rawSteps) ? (rawSteps as string[]) : [];
+    const consoleUrl = PROVIDER_CONSOLE_URLS[provider] ?? '';
+    const consoleLabel = t(`aiProviders.howToGetKey.${provider}.consoleLabel`);
+
+    return (
+        <Dialog onClose={onClose} title={titleText} width={520}>
+            <h3 className="font-serif text-2xl leading-8 font-semibold tracking-[-0.01em] text-ink">
+                {titleText}
+            </h3>
+            <p className="mt-3 text-[13px] text-ink-muted">
+                {t('aiProviders.howToGetKey.intro', {
+                    provider: providerLabel,
+                })}
+            </p>
+            <ol className="mt-6 flex flex-col gap-4">
+                {steps.map((step, i) => (
+                    <li key={i} className="flex gap-3">
+                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-neutral-bg text-[12px] font-semibold text-ink">
+                            {i + 1}
+                        </span>
+                        <span className="pt-0.5 text-sm leading-[1.5] text-ink">
+                            {step}
+                        </span>
+                    </li>
+                ))}
+            </ol>
+            <div className="mt-7 flex items-center justify-end gap-2">
+                <Button type="button" variant="secondary" onClick={onClose}>
+                    {t('aiProviders.howToGetKey.close')}
+                </Button>
+                <Button asChild variant="primary">
+                    <a
+                        href={consoleUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {consoleLabel}
+                    </a>
+                </Button>
             </div>
-        </form>
+        </Dialog>
     );
 }
 
@@ -701,9 +791,7 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
                 >
                     {providers.map((setting) => {
                         const isSelected = setting.enabled;
-                        const configured = setting.requires_api_key
-                            ? setting.has_api_key
-                            : !!setting.base_url;
+                        const configured = setting.has_api_key;
 
                         return (
                             <AccordionItem
