@@ -208,9 +208,21 @@
     "proseRevise.toast.compare": "Vergleichen",
     "diff.review.update": "Aktualisieren",
     "diff.review.updating": "Wird aktualisiert…",
+    "continueWriting.dialogTitle": "Schreiben fortsetzen",
+    "continueWriting.dialogSubtitle": "Die KI schreibt ab deinem Cursor weiter — basierend auf Kapitel, Beats und Entitäten.",
+    "continueWriting.hintLabel": "Optionaler Hinweis",
+    "continueWriting.hintPlaceholder": "Ton, Fokus, nächster Beat… (leer lassen für One-Shot)",
+    "continueWriting.wordGoalLabel": "Wortziel",
+    "continueWriting.cancel": "Abbrechen",
+    "continueWriting.submit": "Schreiben fortsetzen",
     "continueWriting.toast.title": "KI-Fortsetzung angewendet",
     "continueWriting.toast.description": "Prüfe die Änderungen, um Absätze zu behalten oder zurückzusetzen.",
     "continueWriting.toast.descriptionWithCount_one": "{{count}} Wort hinzugefügt. Prüfe die Änderungen, um Absätze zu behalten oder zurückzusetzen.",
     "continueWriting.toast.descriptionWithCount_other": "{{count}} Wörter hinzugefügt. Prüfe die Änderungen, um Absätze zu behalten oder zurückzusetzen.",
-    "continueWriting.toast.review": "Änderungen prüfen"
+    "continueWriting.toast.review": "Änderungen prüfen",
+    "continueWriting.error.requestFailed": "Fortsetzung fehlgeschlagen.",
+    "continueWriting.error.noStream": "Kein Stream verfügbar.",
+    "continueWriting.error.commitFailed": "Die neue Version konnte nicht gespeichert werden.",
+    "continueWriting.diffWindow.title": "Änderungen prüfen — {{chapter}}",
+    "continueWriting.diffWindow.noPrevious": "Dies ist die erste Version des Kapitels — es gibt nichts zum Vergleichen."
 }
