@@ -2,6 +2,7 @@ import type { Editor } from '@tiptap/react';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
 import { openWindow as openDiffWindow } from '@/actions/App/Http/Controllers/ChapterDiffController';
 import type { ChapterData } from '@/hooks/useChapterData';
@@ -10,7 +11,6 @@ import { useProofreading } from '@/hooks/useProofreading';
 import { jsonFetchHeaders } from '@/lib/utils';
 import { DEFAULT_PROOFREADING_CONFIG } from '@/types/models';
 import type { AppSettings, ChapterVersion, Scene } from '@/types/models';
-import ContinueWritingReviewBanner from './ContinueWritingReviewBanner';
 import DiffView from './DiffView';
 import EditorBar from './EditorBar';
 import type { SaveStatus } from './EditorBar';
@@ -39,7 +39,6 @@ export default function ChapterPane({
     isTypewriterMode,
     onToggleTypewriterMode,
     review,
-    onReviewDismiss,
     onReviewApplied,
     proseRunning = false,
 }: {
@@ -62,7 +61,6 @@ export default function ChapterPane({
     isTypewriterMode: boolean;
     onToggleTypewriterMode: () => void;
     review: ContinueWritingReview | null;
-    onReviewDismiss: () => void;
     onReviewApplied: () => void;
     proseRunning?: boolean;
 }) {
@@ -139,6 +137,39 @@ export default function ChapterPane({
         setShowVersions(false);
         setCompareVersion(version);
     }, []);
+
+    // Fire a toast once per new continue-writing review. The review state
+    // sticks around so handleReviewClick still works if the user clicks
+    // "Review changes" in the toast.
+    const handleReviewClickRef = useRef(handleReviewClick);
+    handleReviewClickRef.current = handleReviewClick;
+    useEffect(() => {
+        if (!showReview || !review) return;
+        toast(
+            t('continueWriting.toast.title', {
+                defaultValue: 'AI continuation applied',
+            }),
+            {
+                description:
+                    review.addedWords > 0
+                        ? t('continueWriting.toast.descriptionWithCount', {
+                              defaultValue:
+                                  'Added {{count}} words. Review the changes to keep or revert paragraphs.',
+                              count: review.addedWords,
+                          })
+                        : t('continueWriting.toast.description', {
+                              defaultValue:
+                                  'Review the changes to keep or revert paragraphs.',
+                          }),
+                action: {
+                    label: t('continueWriting.toast.review', {
+                        defaultValue: 'Review changes',
+                    }),
+                    onClick: () => handleReviewClickRef.current(),
+                },
+            },
+        );
+    }, [showReview, review, t]);
 
     const [pendingTitleSelect, setPendingTitleSelect] = useState(
         () => chapter.word_count === 0,
@@ -400,14 +431,6 @@ export default function ChapterPane({
                     onToggleTypewriterMode={onToggleTypewriterMode}
                 />
             </div>
-
-            {showReview && !isReviewing && review && (
-                <ContinueWritingReviewBanner
-                    addedWords={review.addedWords}
-                    onReview={handleReviewClick}
-                    onDismiss={onReviewDismiss}
-                />
-            )}
 
             {/* Replaces WritingSurface in this pane only, so other panes keep editing. */}
             {isReviewing && review && review.previous && (

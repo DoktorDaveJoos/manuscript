@@ -207,5 +207,10 @@
     "proseRevise.toast.description": "Das Kapitel verwendet jetzt die überarbeitete Version.",
     "proseRevise.toast.compare": "Vergleichen",
     "diff.review.update": "Aktualisieren",
-    "diff.review.updating": "Wird aktualisiert…"
+    "diff.review.updating": "Wird aktualisiert…",
+    "continueWriting.toast.title": "KI-Fortsetzung angewendet",
+    "continueWriting.toast.description": "Prüfe die Änderungen, um Absätze zu behalten oder zurückzusetzen.",
+    "continueWriting.toast.descriptionWithCount_one": "{{count}} Wort hinzugefügt. Prüfe die Änderungen, um Absätze zu behalten oder zurückzusetzen.",
+    "continueWriting.toast.descriptionWithCount_other": "{{count}} Wörter hinzugefügt. Prüfe die Änderungen, um Absätze zu behalten oder zurückzusetzen.",
+    "continueWriting.toast.review": "Änderungen prüfen"
 }

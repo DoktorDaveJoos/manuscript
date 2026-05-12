@@ -205,7 +205,6 @@ function PaneWithData({
             isTypewriterMode={isTypewriterMode}
             onToggleTypewriterMode={onToggleTypewriterMode}
             review={review}
-            onReviewDismiss={onReviewDismiss}
             onReviewApplied={handleReviewApplied}
             proseRunning={proseRunning}
         />

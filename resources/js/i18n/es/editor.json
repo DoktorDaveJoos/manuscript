@@ -207,5 +207,10 @@
     "proseRevise.toast.description": "El capítulo usa ahora la versión revisada.",
     "proseRevise.toast.compare": "Comparar",
     "diff.review.update": "Actualizar",
-    "diff.review.updating": "Actualizando…"
+    "diff.review.updating": "Actualizando…",
+    "continueWriting.toast.title": "Continuación de IA aplicada",
+    "continueWriting.toast.description": "Revisa los cambios para mantener o revertir párrafos.",
+    "continueWriting.toast.descriptionWithCount_one": "Se añadió {{count}} palabra. Revisa los cambios para mantener o revertir párrafos.",
+    "continueWriting.toast.descriptionWithCount_other": "Se añadieron {{count}} palabras. Revisa los cambios para mantener o revertir párrafos.",
+    "continueWriting.toast.review": "Revisar cambios"
 }
