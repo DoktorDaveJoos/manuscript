@@ -103,5 +103,35 @@ export default function useChapterEditor({
         );
     }, [editor, spellcheckEnabled]);
 
+    // prosemirror-proofread builds a decoration update from a snapshotted
+    // doc and dispatches after async grammar checks. During high-throughput
+    // inserts (continue-writing SSE), the snapshot races with new
+    // transactions and ProseMirror throws "Applying a mismatched transaction".
+    // The stale decorations are safe to drop — the next check cycle recomputes.
+    useEffect(() => {
+        if (!editor || editor.isDestroyed) return;
+        const view = editor.view;
+        const originalDispatch = view.dispatch.bind(view);
+        view.dispatch = (tr) => {
+            try {
+                originalDispatch(tr);
+            } catch (e) {
+                if (
+                    e instanceof RangeError &&
+                    /mismatched transaction/i.test(e.message) &&
+                    tr.getMeta('proofread')
+                ) {
+                    return;
+                }
+                throw e;
+            }
+        };
+        return () => {
+            if (!editor.isDestroyed) {
+                view.dispatch = originalDispatch;
+            }
+        };
+    }, [editor]);
+
     return editor;
 }
