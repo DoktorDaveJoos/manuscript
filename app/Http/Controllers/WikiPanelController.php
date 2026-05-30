@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CharacterRole;
 use App\Models\Book;
+use App\Models\Chapter;
 use App\Models\Character;
 use App\Models\WikiEntry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class WikiPanelController extends Controller
@@ -178,10 +181,35 @@ class WikiPanelController extends Controller
         ]);
 
         $chapterId = (int) $request->input('chapter_id');
+        $role = $request->input('role');
 
-        $character->chapters()->updateExistingPivot($chapterId, [
-            'role' => $request->input('role'),
-        ]);
+        DB::transaction(function () use ($character, $chapterId, $role): void {
+            $chapter = Chapter::query()->findOrFail($chapterId);
+
+            if ($role === CharacterRole::Protagonist->value) {
+                $chapter->characters()
+                    ->wherePivot('role', CharacterRole::Protagonist->value)
+                    ->where('characters.id', '!=', $character->id)
+                    ->get()
+                    ->each(function (Character $existing) use ($chapter): void {
+                        $chapter->characters()->updateExistingPivot($existing->id, [
+                            'role' => CharacterRole::Supporting->value,
+                        ]);
+                    });
+
+                $character->chapters()->updateExistingPivot($chapterId, ['role' => $role]);
+
+                $chapter->update(['pov_character_id' => $character->id]);
+
+                return;
+            }
+
+            $character->chapters()->updateExistingPivot($chapterId, ['role' => $role]);
+
+            if ($chapter->pov_character_id === $character->id) {
+                $chapter->update(['pov_character_id' => null]);
+            }
+        });
 
         return response()->json(['success' => true]);
     }

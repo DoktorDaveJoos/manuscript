@@ -1,14 +1,18 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { ImagePlus, Trash2, Upload } from 'lucide-react';
+import { Download, ImagePlus, Sparkles, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     deleteCover,
+    downloadCover,
     update,
     updateEpilogue,
+    updatePrologue,
     uploadCover,
 } from '@/actions/App/Http/Controllers/PublishController';
 import Sidebar from '@/components/editor/Sidebar';
+import type { TrimSizeOption } from '@/components/export/types';
+import CoverCreatorDialog from '@/components/publish/CoverCreatorDialog';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import FormField from '@/components/ui/FormField';
@@ -20,6 +24,8 @@ import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
 import { Spinner } from '@/components/ui/spinner';
 import Textarea from '@/components/ui/Textarea';
+import { useAiFeatures } from '@/hooks/useAiFeatures';
+import { useBlurb } from '@/hooks/useBlurb';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import type { Book } from '@/types/models';
@@ -30,13 +36,25 @@ interface PublishPageProps {
         id: number;
         title: string;
         is_epilogue: boolean;
+        is_prologue: boolean;
     }>;
+    trimSizes: TrimSizeOption[];
 }
 
-export default function PublishPage({ book, chapters }: PublishPageProps) {
+export default function PublishPage({
+    book,
+    chapters,
+    trimSizes,
+}: PublishPageProps) {
     const { t } = useTranslation('publish');
     const sidebarStorylines = useSidebarStorylines();
+    const ai = useAiFeatures();
+    const {
+        generate: generateKlappentext,
+        isGenerating: isGeneratingKlappentext,
+    } = useBlurb();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [coverCreatorOpen, setCoverCreatorOpen] = useState(false);
 
     const form = useForm({
         copyright_text: book.copyright_text ?? '',
@@ -46,6 +64,7 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
         acknowledgment_text: book.acknowledgment_text ?? '',
         about_author_text: book.about_author_text ?? '',
         also_by_text: book.also_by_text ?? '',
+        klappentext: book.klappentext ?? '',
         publisher_name: book.publisher_name ?? '',
         isbn: book.isbn ?? '',
     });
@@ -133,6 +152,7 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
     }, []);
 
     const currentEpilogueId = chapters.find((ch) => ch.is_epilogue)?.id ?? null;
+    const currentPrologueId = chapters.find((ch) => ch.is_prologue)?.id ?? null;
 
     const handleEpilogueChange = useCallback(
         (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -140,6 +160,23 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
             setSaveStatus('saving');
             router.put(
                 updateEpilogue.url(book.id),
+                { chapter_id: value === 'none' ? null : Number(value) },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => setSaveStatus('saved'),
+                    onError: () => setSaveStatus('error'),
+                },
+            );
+        },
+        [book.id],
+    );
+
+    const handlePrologueChange = useCallback(
+        (e: React.ChangeEvent<HTMLSelectElement>) => {
+            const value = e.target.value;
+            setSaveStatus('saving');
+            router.put(
+                updatePrologue.url(book.id),
                 { chapter_id: value === 'none' ? null : Number(value) },
                 {
                     preserveScroll: true,
@@ -173,6 +210,73 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                         />
 
                         <div className="mt-9 flex flex-col gap-9">
+                            {/* Klappentext */}
+                            <div id="klappentext">
+                                <SectionLabel variant="section">
+                                    {t('klappentext.title')}
+                                </SectionLabel>
+                                <Card className="mt-3 p-6">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <p className="text-[13px] text-ink-muted">
+                                            {t('klappentext.description')}
+                                        </p>
+                                        {ai.usable && (
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                className="shrink-0"
+                                                onClick={() =>
+                                                    generateKlappentext(
+                                                        book.id,
+                                                        (full) =>
+                                                            handleFieldChange(
+                                                                'klappentext',
+                                                                full,
+                                                            ),
+                                                    )
+                                                }
+                                                disabled={
+                                                    isGeneratingKlappentext
+                                                }
+                                            >
+                                                {isGeneratingKlappentext ? (
+                                                    <Spinner className="size-[14px]" />
+                                                ) : (
+                                                    <Sparkles size={14} />
+                                                )}
+                                                {isGeneratingKlappentext
+                                                    ? t(
+                                                          'klappentext.generating',
+                                                      )
+                                                    : t('klappentext.generate')}
+                                            </Button>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-4">
+                                        <Textarea
+                                            value={form.data.klappentext}
+                                            onChange={(e) =>
+                                                handleFieldChange(
+                                                    'klappentext',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder={t(
+                                                'klappentext.placeholder',
+                                            )}
+                                            rows={6}
+                                            disabled={isGeneratingKlappentext}
+                                        />
+                                        <p className="mt-1.5 text-xs text-ink-faint">
+                                            {ai.usable
+                                                ? t('klappentext.coverHint')
+                                                : t('klappentext.aiHint')}
+                                        </p>
+                                    </div>
+                                </Card>
+                            </div>
+
                             {/* Cover Image */}
                             <div>
                                 <SectionLabel variant="section">
@@ -216,6 +320,49 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                                               )}
                                                     </Button>
                                                     <Button
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            setCoverCreatorOpen(
+                                                                true,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            isConvertingPdf
+                                                        }
+                                                    >
+                                                        <Sparkles size={14} />
+                                                        {book.cover_settings
+                                                            ? t(
+                                                                  'cover.create.edit',
+                                                              )
+                                                            : t(
+                                                                  'cover.create.button',
+                                                              )}
+                                                    </Button>
+                                                    {book.cover_settings && (
+                                                        <Button
+                                                            variant="secondary"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                window.location.href =
+                                                                    downloadCover.url(
+                                                                        book.id,
+                                                                    );
+                                                            }}
+                                                            disabled={
+                                                                isConvertingPdf
+                                                            }
+                                                        >
+                                                            <Download
+                                                                size={14}
+                                                            />
+                                                            {t(
+                                                                'cover.download',
+                                                            )}
+                                                        </Button>
+                                                    )}
+                                                    <Button
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={
@@ -232,30 +379,53 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    fileInputRef.current?.click()
-                                                }
-                                                disabled={isConvertingPdf}
-                                                className="flex h-48 w-36 flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border-dashed transition-colors hover:border-ink-faint hover:bg-neutral-bg disabled:cursor-not-allowed disabled:opacity-60"
-                                            >
-                                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-bg">
-                                                    {isConvertingPdf ? (
-                                                        <Spinner className="size-[18px] text-ink-muted" />
-                                                    ) : (
-                                                        <ImagePlus
-                                                            size={18}
-                                                            className="text-ink-muted"
-                                                        />
-                                                    )}
+                                            <div className="flex items-end gap-6">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        fileInputRef.current?.click()
+                                                    }
+                                                    disabled={isConvertingPdf}
+                                                    className="flex h-48 w-36 flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border-dashed transition-colors hover:border-ink-faint hover:bg-neutral-bg disabled:cursor-not-allowed disabled:opacity-60"
+                                                >
+                                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-bg">
+                                                        {isConvertingPdf ? (
+                                                            <Spinner className="size-[18px] text-ink-muted" />
+                                                        ) : (
+                                                            <ImagePlus
+                                                                size={18}
+                                                                className="text-ink-muted"
+                                                            />
+                                                        )}
+                                                    </div>
+                                                    <span className="text-xs font-medium text-ink-muted">
+                                                        {isConvertingPdf
+                                                            ? t(
+                                                                  'cover.converting',
+                                                              )
+                                                            : t('cover.upload')}
+                                                    </span>
+                                                </button>
+                                                <div className="flex flex-col gap-2 pb-1">
+                                                    <p className="text-xs text-ink-faint">
+                                                        {t('cover.createHint')}
+                                                    </p>
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            setCoverCreatorOpen(
+                                                                true,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Sparkles size={14} />
+                                                        {t(
+                                                            'cover.create.button',
+                                                        )}
+                                                    </Button>
                                                 </div>
-                                                <span className="text-xs font-medium text-ink-muted">
-                                                    {isConvertingPdf
-                                                        ? t('cover.converting')
-                                                        : t('cover.upload')}
-                                                </span>
-                                            </button>
+                                            </div>
                                         )}
 
                                         {coverError && (
@@ -414,6 +584,41 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                                                 )}
                                             />
                                         </FormField>
+
+                                        <div className="border-t border-border-subtle" />
+
+                                        <FormField
+                                            id="prologue"
+                                            label={t('frontMatter.prologue')}
+                                        >
+                                            <Select
+                                                value={
+                                                    currentPrologueId
+                                                        ? String(
+                                                              currentPrologueId,
+                                                          )
+                                                        : 'none'
+                                                }
+                                                onChange={handlePrologueChange}
+                                            >
+                                                <option value="none">
+                                                    {t(
+                                                        'frontMatter.noPrologue',
+                                                    )}
+                                                </option>
+                                                {chapters.map((ch) => (
+                                                    <option
+                                                        key={ch.id}
+                                                        value={String(ch.id)}
+                                                    >
+                                                        {ch.title}
+                                                    </option>
+                                                ))}
+                                            </Select>
+                                            <p className="mt-1.5 text-xs text-ink-faint">
+                                                {t('frontMatter.prologueHint')}
+                                            </p>
+                                        </FormField>
                                     </div>
                                 </Card>
                             </div>
@@ -535,6 +740,27 @@ export default function PublishPage({ book, chapters }: PublishPageProps) {
                     </div>
                 </main>
             </div>
+
+            {coverCreatorOpen && (
+                <CoverCreatorDialog
+                    bookId={book.id}
+                    trimSizes={trimSizes}
+                    initialTitle={
+                        book.cover_settings?.title ?? book.title ?? ''
+                    }
+                    initialSubtitle={
+                        book.cover_settings?.subtitle ?? book.cover_genre ?? ''
+                    }
+                    initialAuthor={
+                        book.cover_settings?.author ?? book.author ?? ''
+                    }
+                    initialTrimSize={book.cover_settings?.trim_size ?? ''}
+                    initialSpineWidth={book.cover_settings?.spine_width ?? 0}
+                    klappentext={book.klappentext ?? ''}
+                    onClose={() => setCoverCreatorOpen(false)}
+                    onSaved={() => setCoverCreatorOpen(false)}
+                />
+            )}
         </>
     );
 }

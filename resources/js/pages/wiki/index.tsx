@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sidebar from '@/components/editor/Sidebar';
 import AddEntryDropdown from '@/components/wiki/AddEntryDropdown';
@@ -66,6 +66,19 @@ export default function WikiIndex({
         }),
         [characters, locations, organizations, items, lore],
     );
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const params = new URLSearchParams(window.location.search);
+        const rawId = params.get('id');
+        if (!rawId) return;
+        const id = Number(rawId);
+        if (!Number.isFinite(id)) return;
+        const exists = entriesByTab[initialTab]?.some((e) => e.id === id);
+        if (exists) setSelectedId(id);
+        // initialTab + entriesByTab are stable for the first paint we care about
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleCreateSuccess = useCallback(() => {
         const tab = creatingType;

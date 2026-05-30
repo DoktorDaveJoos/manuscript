@@ -138,6 +138,7 @@ const PUBLISH_ANCHORS = new Set([
     'copyright',
     'dedication',
     'epigraph',
+    'prologue',
     'acknowledgments',
     'about-author',
     'also-by',

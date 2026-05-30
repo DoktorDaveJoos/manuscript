@@ -7,6 +7,7 @@ use App\Ai\Support\AiErrorClassifier;
 use App\Enums\VersionSource;
 use App\Enums\VersionStatus;
 use App\Http\Controllers\Concerns\EnsuresAiConfigured;
+use App\Http\Controllers\Concerns\EnsuresChapterVersion;
 use App\Http\Requests\ContinueWritingRefineRequest;
 use App\Http\Requests\ContinueWritingRequest;
 use App\Models\AiSetting;
@@ -21,12 +22,16 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ContinueWritingController extends Controller
 {
     use EnsuresAiConfigured;
+    use EnsuresChapterVersion;
 
     public function stream(ContinueWritingRequest $request, Book $book, Chapter $chapter): StreamedResponse
     {
         abort_unless($chapter->book_id === $book->id, 404);
 
         $this->ensureAiConfigured();
+
+        $chapter->loadMissing('currentVersion');
+        $this->ensureCurrentVersion($chapter, $request->expectedCurrentVersionId());
 
         // The "before" reference for the diff overlay must reflect what's on
         // screen right now, not the last accepted version.
@@ -37,6 +42,8 @@ class ContinueWritingController extends Controller
             chapter: $chapter,
             hint: $request->hint(),
             wordGoal: $request->wordGoal(),
+            beforeProse: $request->beforeProse(),
+            afterProse: $request->afterProse(),
         );
 
         $streamable = $agent->stream('Continue writing the chapter from where the prose ends.');
@@ -77,8 +84,16 @@ class ContinueWritingController extends Controller
     {
         abort_unless($chapter->book_id === $book->id, 404);
 
-        return DB::transaction(function () use ($chapter) {
+        $validated = request()->validate([
+            'expected_current_version_id' => ['nullable', 'integer'],
+        ]);
+        $expectedId = isset($validated['expected_current_version_id'])
+            ? (int) $validated['expected_current_version_id']
+            : null;
+
+        return DB::transaction(function () use ($chapter, $expectedId) {
             $chapter->loadMissing(['scenes', 'currentVersion']);
+            $this->ensureCurrentVersion($chapter, $expectedId);
             $previous = $chapter->currentVersion;
 
             $content = $chapter->getContentWithSceneBreaks();

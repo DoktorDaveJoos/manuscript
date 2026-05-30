@@ -22,6 +22,8 @@
 
     "prose.running": "Ejecutando…",
     "prose.runProsePass": "Revisar prosa",
+    "prose.runProsePassScene": "Revisar escena actual",
+    "prose.runningScene": "Revisando escena…",
     "prose.description": "La IA revisará el texto del capítulo para mejorar la claridad, el ritmo y el estilo, preservando tu voz.",
     "prose.settingsLink": "Ajustar reglas en configuración →",
 
@@ -83,6 +85,8 @@
     "error.toast.bad_request.body": "{{provider}} rechazó la solicitud: {{detail}}",
     "error.toast.timeout.title": "Tiempo agotado",
     "error.toast.timeout.body": "El proveedor no respondió a tiempo. Inténtalo de nuevo.",
+    "error.toast.stale_version.title": "El capítulo ha cambiado",
+    "error.toast.stale_version.body": "Mientras trabajabas, este capítulo cambió por otra vía. Recarga para continuar.",
     "error.toast.unknown.title": "La solicitud de IA falló",
     "error.toast.unknown.body": "{{detail}}",
     "error.toast.action.openSettings": "Abrir ajustes",

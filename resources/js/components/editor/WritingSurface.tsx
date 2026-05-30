@@ -1,6 +1,8 @@
+import { Link } from '@inertiajs/react';
 import type { Editor } from '@tiptap/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { index as wikiIndex } from '@/actions/App/Http/Controllers/WikiController';
 import type { SaveStatus } from '@/components/editor/EditorBar';
 import Kbd from '@/components/ui/Kbd';
 import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
@@ -30,6 +32,7 @@ export default function WritingSurface({
     chapterId,
     title,
     povCharacterName,
+    povCharacterId,
     timelineLabel,
     onTitleUpdate,
     activeEditor,
@@ -60,6 +63,7 @@ export default function WritingSurface({
     autoSelectTitle?: boolean;
     onTitleSelectHandled?: () => void;
     povCharacterName?: string | null;
+    povCharacterId?: number | null;
     timelineLabel?: string | null;
     onTitleUpdate: (title: string) => void;
     activeEditor: Editor | null;
@@ -290,12 +294,46 @@ export default function WritingSurface({
         });
     }, [pendingFocusSceneId, onFocusHandled]);
 
-    const metadataParts: string[] = [];
-    if (povCharacterName)
-        metadataParts.push(t('writingSurface.pov', { name: povCharacterName }));
+    const metadataParts: React.ReactNode[] = [];
+    if (povCharacterName) {
+        if (povCharacterId) {
+            const marker = ' NAME ';
+            const povText = t('writingSurface.pov', { name: marker });
+            const [before, after] = povText.split(marker);
+            const povHref = wikiIndex.url(
+                { book: bookId },
+                {
+                    query: {
+                        tab: 'characters',
+                        id: povCharacterId,
+                    },
+                },
+            );
+            metadataParts.push(
+                <span key="pov">
+                    {before}
+                    <Link
+                        href={povHref}
+                        className="underline-offset-2 hover:text-ink hover:underline"
+                    >
+                        {povCharacterName}
+                    </Link>
+                    {after}
+                </span>,
+            );
+        } else {
+            metadataParts.push(
+                <span key="pov">
+                    {t('writingSurface.pov', { name: povCharacterName })}
+                </span>,
+            );
+        }
+    }
     if (timelineLabel)
         metadataParts.push(
-            t('writingSurface.timeline', { label: timelineLabel }),
+            <span key="timeline">
+                {t('writingSurface.timeline', { label: timelineLabel })}
+            </span>,
         );
 
     return (
@@ -361,7 +399,12 @@ export default function WritingSurface({
                     </div>
                     {metadataParts.length > 0 && (
                         <p className="mt-2 mb-0 font-sans text-sm tracking-wide text-ink-muted">
-                            {metadataParts.join(' · ')}
+                            {metadataParts.map((node, i) => (
+                                <span key={i}>
+                                    {i > 0 && ' · '}
+                                    {node}
+                                </span>
+                            ))}
                         </p>
                     )}
                     <div className="mt-8">

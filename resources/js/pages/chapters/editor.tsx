@@ -27,6 +27,7 @@ import GlobalFindDrawer from '@/components/editor/GlobalFindDrawer';
 import NotesPanel from '@/components/editor/NotesPanel';
 import PaneEmptyState from '@/components/editor/PaneEmptyState';
 import PlotPanel from '@/components/editor/PlotPanel';
+import RewriteSelectionDialog from '@/components/editor/RewriteSelectionDialog';
 import Sidebar from '@/components/editor/Sidebar';
 import WikiPanel from '@/components/editor/WikiPanel';
 import Button from '@/components/ui/Button';
@@ -39,7 +40,10 @@ import useChapterData from '@/hooks/useChapterData';
 import type { ContinueWritingReview } from '@/hooks/useContinueWriting';
 import { useContinueWriting } from '@/hooks/useContinueWriting';
 import usePaneManager from '@/hooks/usePaneManager';
+import type { RewriteSelectionReview } from '@/hooks/useRewriteSelection';
+import { useRewriteSelection } from '@/hooks/useRewriteSelection';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
+import { flushAllPanes } from '@/lib/pane';
 import {
     addSceneToChapter,
     CHANNEL_CHAPTER_DATA_CHANGED,
@@ -105,6 +109,9 @@ function PaneWithData({
     review,
     onReviewDismiss,
     proseRunning,
+    isLocalFindOpen,
+    localFindShowReplace,
+    onLocalFindClose,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -125,9 +132,12 @@ function PaneWithData({
     spellcheckEnabled: boolean;
     isTypewriterMode: boolean;
     onToggleTypewriterMode: () => void;
-    review: ContinueWritingReview | null;
+    review: ContinueWritingReview | RewriteSelectionReview | null;
     onReviewDismiss: () => void;
     proseRunning: boolean;
+    isLocalFindOpen: boolean;
+    localFindShowReplace: boolean;
+    onLocalFindClose: () => void;
 }) {
     const { data, isLoading, error, refresh, softRefresh } = useChapterData(
         bookId,
@@ -207,6 +217,9 @@ function PaneWithData({
             review={review}
             onReviewApplied={handleReviewApplied}
             proseRunning={proseRunning}
+            isLocalFindOpen={isLocalFindOpen}
+            localFindShowReplace={localFindShowReplace}
+            onLocalFindClose={onLocalFindClose}
         />
     );
 }
@@ -282,12 +295,14 @@ export default function EditorPage({
 
     // ── Active editor tracking (from focused pane) ───────────────────────
     const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
+    const [activeSceneId, setActiveSceneId] = useState<number | null>(null);
     const activeEditorRef = useRef<Editor | null>(null);
     activeEditorRef.current = activeEditor;
 
     const handleActiveEditorChange = useCallback(
-        (editor: Editor | null, _sceneId: number | null) => {
+        (editor: Editor | null, sceneId: number | null) => {
             setActiveEditor(editor);
+            setActiveSceneId(sceneId);
         },
         [],
     );
@@ -332,24 +347,13 @@ export default function EditorPage({
         }
     }, [panes]);
 
-    // ── Flush all panes ──────────────────────────────────────────────────
-    const flushAllPanes = useCallback(async () => {
-        const paneEls = document.querySelectorAll('[data-pane-chapter]');
-        const flushes = Array.from(paneEls).map((el) => {
-            const flush = (el as unknown as Record<string, () => Promise<void>>)
-                .__flushPane;
-            return typeof flush === 'function' ? flush() : Promise.resolve();
-        });
-        await Promise.all(flushes);
-    }, []);
-
     // Flush before Inertia navigation
     useEffect(() => {
         const removeListener = router.on('before', () => {
             flushAllPanes();
         });
         return removeListener;
-    }, [flushAllPanes]);
+    }, []);
 
     // Flush on beforeunload — fire keepalive fetches as a last-resort safety net
     // (the browser may kill the page before async flushAllPanes completes)
@@ -384,7 +388,7 @@ export default function EditorPage({
         };
         window.addEventListener('beforeunload', handler);
         return () => window.removeEventListener('beforeunload', handler);
-    }, [flushAllPanes]);
+    }, []);
 
     // ── Panel state ──────────────────────────────────────────────────────
     const [openPanels, setOpenPanels] = useState<Set<PanelId>>(() => {
@@ -527,20 +531,45 @@ export default function EditorPage({
     const [isFindOpen, setIsFindOpen] = useState(false);
     const [findShowReplace, setFindShowReplace] = useState(false);
     const [, setSearchHighlight] = useState<SearchHighlight | null>(null);
-    const [, setIsLocalFindOpen] = useState(false);
-    const [, setLocalFindShowReplace] = useState(false);
+    const [isLocalFindOpen, setIsLocalFindOpen] = useState(false);
+    const [localFindShowReplace, setLocalFindShowReplace] = useState(false);
+    const closeLocalFind = useCallback(() => {
+        setIsLocalFindOpen(false);
+        setLocalFindShowReplace(false);
+    }, []);
 
     // ── Continue writing ─────────────────────────────────────────────────
     const [isContinueWritingOpen, setIsContinueWritingOpen] = useState(false);
     const continueWriting = useContinueWriting();
 
-    // Dismiss the per-chapter review banner once the diff window applied.
+    // ── Rewrite selection ────────────────────────────────────────────────
+    const [rewriteRange, setRewriteRange] = useState<{
+        from: number;
+        to: number;
+    } | null>(null);
+    const rewriteSelection = useRewriteSelection();
+
+    const reviewForChapter = useCallback(
+        (chapterId: number) => {
+            for (const r of [rewriteSelection.review, continueWriting.review]) {
+                if (r && r.chapterId === chapterId) return r;
+            }
+            return null;
+        },
+        [rewriteSelection.review, continueWriting.review],
+    );
+    const dismissAllReviews = useCallback(() => {
+        continueWriting.dismissReview();
+        rewriteSelection.dismissReview();
+    }, [continueWriting, rewriteSelection]);
+
+    // Dismiss per-chapter review banners once the diff window applied.
     useEffect(() => {
         if (typeof BroadcastChannel === 'undefined') return;
         const channel = new BroadcastChannel(CHANNEL_DIFF_APPLIED);
-        channel.onmessage = () => continueWriting.dismissReview();
+        channel.onmessage = () => dismissAllReviews();
         return () => channel.close();
-    }, [continueWriting]);
+    }, [dismissAllReviews]);
 
     // ── Command palette ──────────────────────────────────────────────────
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
@@ -655,7 +684,7 @@ export default function EditorPage({
     // ── Sidebar callbacks ────────────────────────────────────────────────
     const handleBeforeNavigate = useCallback(async () => {
         await flushAllPanes();
-    }, [flushAllPanes]);
+    }, []);
 
     // Derive sidebar-visible info from focused chapter data
     const focusedChapter = focusedChapterData?.chapter ?? null;
@@ -760,19 +789,17 @@ export default function EditorPage({
                                     onToggleTypewriterMode={
                                         toggleTypewriterMode
                                     }
-                                    review={
-                                        continueWriting.review &&
-                                        continueWriting.review.chapterId ===
-                                            pane.chapterId
-                                            ? continueWriting.review
-                                            : null
-                                    }
-                                    onReviewDismiss={
-                                        continueWriting.dismissReview
-                                    }
+                                    review={reviewForChapter(pane.chapterId)}
+                                    onReviewDismiss={dismissAllReviews}
                                     proseRunning={
                                         proseRunningChapterId === pane.chapterId
                                     }
+                                    isLocalFindOpen={
+                                        isLocalFindOpen &&
+                                        pane.id === focusedPaneId
+                                    }
+                                    localFindShowReplace={localFindShowReplace}
+                                    onLocalFindClose={closeLocalFind}
                                 />
                             </div>
                         ))
@@ -868,6 +895,12 @@ export default function EditorPage({
                                     }
                                     book={book}
                                     chapter={focusedChapter}
+                                    activeSceneId={
+                                        focusedPane?.chapterId ===
+                                        focusedChapter.id
+                                            ? activeSceneId
+                                            : null
+                                    }
                                     onClose={closeAi}
                                     onError={(msg) => {
                                         console.error('[AiPanel]', msg);
@@ -952,6 +985,15 @@ export default function EditorPage({
                         ? () => setIsContinueWritingOpen(true)
                         : undefined
                 }
+                onRewriteSelection={
+                    aiVisible && activeEditor && focusedChapter
+                        ? () => {
+                              const { from, to } = activeEditor.state.selection;
+                              if (from === to) return;
+                              setRewriteRange({ from, to });
+                          }
+                        : undefined
+                }
             />
 
             {isContinueWritingOpen && activeEditor && focusedChapter && (
@@ -960,10 +1002,31 @@ export default function EditorPage({
                     onSubmit={({ hint, wordGoal }) => {
                         continueWriting.start({
                             editor: activeEditor,
+                            activeSceneId,
                             bookId: book.id,
                             chapterId: focusedChapter.id,
                             hint,
                             wordGoal,
+                        });
+                    }}
+                />
+            )}
+
+            {rewriteRange && activeEditor && focusedChapter && (
+                <RewriteSelectionDialog
+                    selectionPreview={activeEditor.state.doc.textBetween(
+                        rewriteRange.from,
+                        rewriteRange.to,
+                        ' ',
+                    )}
+                    onClose={() => setRewriteRange(null)}
+                    onSubmit={({ hint }) => {
+                        rewriteSelection.start({
+                            editor: activeEditor,
+                            bookId: book.id,
+                            chapterId: focusedChapter.id,
+                            hint,
+                            selection: rewriteRange,
                         });
                     }}
                 />

@@ -224,6 +224,8 @@
     "prosePassRules.rules.passive_voice.description": "Convierte construcciones pasivas en voz activa cuando sea apropiado.",
     "prosePassRules.rules.sentence_variety.label": "Variedad de oraciones",
     "prosePassRules.rules.sentence_variety.description": "Varía la longitud y estructura de las oraciones para mejorar el ritmo.",
+    "prosePassRules.rules.shorten_long_sentences.label": "Acortar oraciones demasiado largas",
+    "prosePassRules.rules.shorten_long_sentences.description": "Divide una oración solo cuando sobrecarga la memoria de trabajo del lector (~4 unidades): gran distancia entre sujeto y verbo, más de dos niveles de anidamiento de cláusulas, o enumeraciones con más de 3–4 elementos. Las oraciones largas y fluidas con cláusulas conectadas localmente se mantienen.",
     "prosePassRules.rules.tightening.label": "Ajuste de la prosa",
     "prosePassRules.rules.tightening.description": "Elimina redundancias y reduce frases excesivamente largas.",
 

@@ -7,6 +7,7 @@ import ExportPreview from '@/components/export/ExportPreview';
 import ExportReadingOrder from '@/components/export/ExportReadingOrder';
 import ExportSettings from '@/components/export/ExportSettings';
 import type {
+    ChapterHeading,
     ChapterRow,
     FontPairingDef,
     Format,
@@ -46,6 +47,12 @@ export default function Export({
     // Epilogue detection
     const hasEpilogue = useMemo(
         () => chapters.some((ch) => ch.is_epilogue),
+        [chapters],
+    );
+
+    // Prologue detection
+    const hasPrologue = useMemo(
+        () => chapters.some((ch) => ch.is_prologue),
         [chapters],
     );
 
@@ -111,11 +118,16 @@ export default function Export({
     );
 
     // Options
-    const [includeChapterTitles, setIncludeChapterTitles] = useState(true);
+    const [chapterHeading, setChapterHeading] =
+        useState<ChapterHeading>('full');
     const [includeActBreaks, setIncludeActBreaks] = useState(false);
     const [showPageNumbers, setShowPageNumbers] = useState(true);
     const [trimSize, setTrimSize] = useState('6x9');
     const [fontSize, setFontSize] = useState(11);
+    const [cmyk, setCmyk] = useState(false);
+    const [bleed, setBleed] = useState(0);
+    const [customWidth, setCustomWidth] = useState(130);
+    const [customHeight, setCustomHeight] = useState(190);
     const [includeCover, setIncludeCover] = useState(!!book.cover_image_path);
     const [exporting, setExporting] = useState(false);
     const [exportError, setExportError] = useState<string | null>(null);
@@ -123,8 +135,8 @@ export default function Export({
     const hasCover = !!book.cover_image_path;
 
     // Front/back matter (visual only)
-    const initialFrontMatter: MatterItem[] = useMemo(
-        () => [
+    const initialFrontMatter: MatterItem[] = useMemo(() => {
+        const items: MatterItem[] = [
             {
                 id: 'title-page',
                 label: t('frontMatter.titlePage'),
@@ -145,14 +157,21 @@ export default function Export({
                 label: t('frontMatter.epigraph'),
                 checked: false,
             },
-            {
-                id: 'toc',
-                label: t('frontMatter.tableOfContents'),
+        ];
+        if (hasPrologue) {
+            items.push({
+                id: 'prologue',
+                label: t('frontMatter.prologue'),
                 checked: false,
-            },
-        ],
-        [t],
-    );
+            });
+        }
+        items.push({
+            id: 'toc',
+            label: t('frontMatter.tableOfContents'),
+            checked: false,
+        });
+        return items;
+    }, [t, hasPrologue]);
 
     const initialBackMatter: MatterItem[] = useMemo(() => {
         const items: MatterItem[] = [];
@@ -195,6 +214,13 @@ export default function Export({
         setBackMatter(initialBackMatter);
     }
 
+    // If hasPrologue changes, we need to reset front matter
+    const [prevHasPrologue, setPrevHasPrologue] = useState(hasPrologue);
+    if (prevHasPrologue !== hasPrologue) {
+        setPrevHasPrologue(hasPrologue);
+        setFrontMatter(initialFrontMatter);
+    }
+
     const includeToc = useMemo(
         () => frontMatter.find((item) => item.id === 'toc')?.checked ?? false,
         [frontMatter],
@@ -207,12 +233,22 @@ export default function Export({
         [backMatter],
     );
 
+    // When prologue is checked in front matter, hide prologue chapters from the list
+    const prologueChecked = useMemo(
+        () =>
+            frontMatter.find((item) => item.id === 'prologue')?.checked ??
+            false,
+        [frontMatter],
+    );
+
     const visibleChapters = useMemo(
         () =>
-            epilogueChecked
-                ? orderedChapters.filter((ch) => !ch.is_epilogue)
-                : orderedChapters,
-        [orderedChapters, epilogueChecked],
+            orderedChapters.filter(
+                (ch) =>
+                    !(epilogueChecked && ch.is_epilogue) &&
+                    !(prologueChecked && ch.is_prologue),
+            ),
+        [orderedChapters, epilogueChecked, prologueChecked],
     );
 
     const handleToggleChapter = useCallback((id: number) => {
@@ -242,10 +278,6 @@ export default function Export({
         },
         [book.id],
     );
-
-    const handleToggleChapterTitles = useCallback(() => {
-        setIncludeChapterTitles((prev) => !prev);
-    }, []);
 
     const handleToggleActBreaks = useCallback(() => {
         setIncludeActBreaks((prev) => !prev);
@@ -283,7 +315,7 @@ export default function Export({
             format,
             template,
             chapter_ids: checkedOrdered,
-            include_chapter_titles: includeChapterTitles,
+            chapter_heading: chapterHeading,
             include_act_breaks: includeActBreaks,
             include_table_of_contents: includeToc,
             show_page_numbers: showPageNumbers,
@@ -296,6 +328,12 @@ export default function Export({
         if (format === 'pdf') {
             data.trim_size = trimSize;
             data.font_size = fontSize;
+            data.cmyk = cmyk;
+            data.bleed = bleed;
+            if (trimSize === 'custom') {
+                data.custom_width = customWidth;
+                data.custom_height = customHeight;
+            }
         }
 
         data.front_matter = frontMatter
@@ -316,12 +354,16 @@ export default function Export({
         template,
         orderedChapters,
         selectedChapterIds,
-        includeChapterTitles,
+        chapterHeading,
         includeActBreaks,
         showPageNumbers,
         includeToc,
         trimSize,
         fontSize,
+        cmyk,
+        bleed,
+        customWidth,
+        customHeight,
         frontMatter,
         backMatter,
         fontPairing,
@@ -363,9 +405,17 @@ export default function Export({
                     onTrimSizeChange={setTrimSize}
                     fontSize={fontSize}
                     onFontSizeChange={setFontSize}
+                    cmyk={cmyk}
+                    onCmykChange={setCmyk}
+                    bleed={bleed}
+                    onBleedChange={setBleed}
+                    customWidth={customWidth}
+                    onCustomWidthChange={setCustomWidth}
+                    customHeight={customHeight}
+                    onCustomHeightChange={setCustomHeight}
                     trimSizes={trimSizes}
-                    includeChapterTitles={includeChapterTitles}
-                    onIncludeChapterTitlesChange={handleToggleChapterTitles}
+                    chapterHeading={chapterHeading}
+                    onChapterHeadingChange={setChapterHeading}
                     includeActBreaks={includeActBreaks}
                     onIncludeActBreaksChange={handleToggleActBreaks}
                     showPageNumbers={showPageNumbers}
@@ -393,8 +443,10 @@ export default function Export({
                     format={format}
                     trimSize={trimSize}
                     trimSizes={trimSizes}
+                    customWidth={customWidth}
+                    customHeight={customHeight}
                     fontSize={fontSize}
-                    includeChapterTitles={includeChapterTitles}
+                    chapterHeading={chapterHeading}
                     showPageNumbers={showPageNumbers}
                     includeActBreaks={includeActBreaks}
                     selectedChapterIds={selectedChapterIds}

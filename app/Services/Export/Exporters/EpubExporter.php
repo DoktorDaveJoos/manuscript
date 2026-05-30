@@ -158,6 +158,7 @@ class EpubExporter implements Exporter
                 FrontMatterType::Copyright->value => $files[] = $this->addCopyrightPage($zip, $book, $options->copyrightText),
                 FrontMatterType::Dedication->value => $files[] = $this->addDedicationPage($zip, $options->dedicationText),
                 FrontMatterType::Epigraph->value => $files[] = $this->addEpigraphPage($zip, $options->epigraphText, $options->epigraphAttribution),
+                FrontMatterType::Prologue->value => $files[] = $this->addPrologueChapter($zip, $book, $options),
                 FrontMatterType::Toc->value => $files[] = $this->addTocAsFrontMatter($zip, $chapters, $options),
                 default => null,
             };
@@ -191,7 +192,8 @@ class EpubExporter implements Exporter
             $epilogueChapter = ExportService::resolveEpilogueChapter($book);
 
             if ($epilogueChapter) {
-                $files[] = $this->addEpilogueChapter($zip, $epilogueChapter, $options);
+                $locale = $book->language ?? config('app.fallback_locale', 'en');
+                $files[] = $this->addEpilogueChapter($zip, $epilogueChapter, $options, $locale);
             }
         }
 
@@ -343,16 +345,42 @@ class EpubExporter implements Exporter
      *
      * @return array{id: string, file: string, label: string}
      */
-    private function addEpilogueChapter(ZipArchive $zip, Chapter $chapter, ExportOptions $options): array
+    private function addEpilogueChapter(ZipArchive $zip, Chapter $chapter, ExportOptions $options, string $locale = 'en'): array
     {
-        $title = htmlspecialchars($chapter->title, ENT_XML1, 'UTF-8');
-        $body = "<h1>{$title}</h1>\n";
+        $label = __('Epilogue', [], $locale);
+        $heading = htmlspecialchars($label, ENT_XML1, 'UTF-8');
+        $body = "<h1>{$heading}</h1>\n";
         $body .= $this->renderChapterBody($chapter, $options);
 
-        $xhtml = $this->wrapXhtml($title, $body, isChapter: true);
+        $xhtml = $this->wrapXhtml($heading, $body, isChapter: true);
         $zip->addFromString('OEBPS/Text/epilogue.xhtml', $xhtml);
 
-        return ['id' => 'epilogue', 'file' => 'epilogue.xhtml', 'label' => $title];
+        return ['id' => 'epilogue', 'file' => 'epilogue.xhtml', 'label' => $label];
+    }
+
+    /**
+     * Render the prologue chapter as a front matter page.
+     *
+     * @return array{id: string, file: string, label: string}|null
+     */
+    private function addPrologueChapter(ZipArchive $zip, Book $book, ExportOptions $options): ?array
+    {
+        $chapter = ExportService::resolvePrologueChapter($book);
+
+        if (! $chapter) {
+            return null;
+        }
+
+        $locale = $book->language ?? config('app.fallback_locale', 'en');
+        $label = __('Prologue', [], $locale);
+        $heading = htmlspecialchars($label, ENT_XML1, 'UTF-8');
+        $body = "<h1>{$heading}</h1>\n";
+        $body .= $this->renderChapterBody($chapter, $options);
+
+        $xhtml = $this->wrapXhtml($heading, $body, isChapter: true);
+        $zip->addFromString('OEBPS/Text/prologue.xhtml', $xhtml);
+
+        return ['id' => 'prologue', 'file' => 'prologue.xhtml', 'label' => $label];
     }
 
     /**
@@ -400,8 +428,8 @@ class EpubExporter implements Exporter
                 $body .= "<p class=\"act-break\">{$actTitle}</p>\n";
             }
 
-            if ($options->includeChapterTitles) {
-                $body .= $this->template->chapterHeaderHtml($index, $chapter->title, $locale)."\n";
+            if ($options->chapterHeading->showsNumber()) {
+                $body .= $this->template->chapterHeaderHtml($index, $chapter->title, $locale, $options->chapterHeading->showsTitle())."\n";
             }
 
             $body .= $this->renderChapterBody($chapter, $options);

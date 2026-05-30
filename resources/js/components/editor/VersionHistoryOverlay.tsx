@@ -26,6 +26,7 @@ const sourceBadgeVariant: Record<
     beautify: 'revised',
     snapshot: 'success',
     continue_writing: 'revised',
+    rewrite_selection: 'revised',
 };
 
 export default function VersionHistoryOverlay({
@@ -241,7 +242,7 @@ export default function VersionHistoryOverlay({
                     <div className="flex flex-col">
                         {versionList.map((version) => {
                             const isPending = version.status === 'pending';
-                            const canCompare = isPending && !!onCompare;
+                            const canCompare = !!onCompare;
 
                             return (
                                 <div
@@ -293,20 +294,34 @@ export default function VersionHistoryOverlay({
 
                                     {!version.is_current && (
                                         <div className="flex shrink-0 items-center gap-1">
-                                            {canCompare ? (
+                                            {canCompare && (
                                                 <Button
                                                     variant="secondary"
                                                     size="sm"
                                                     onClick={() =>
                                                         onCompare!(version)
                                                     }
+                                                    title={t(
+                                                        'versionHistory.compareToCurrent',
+                                                        {
+                                                            defaultValue:
+                                                                'Compare to current',
+                                                        },
+                                                    )}
+                                                    className={
+                                                        isPending
+                                                            ? undefined
+                                                            : 'px-2'
+                                                    }
                                                 >
                                                     <GitCompareArrows className="size-3.5" />
-                                                    {t(
-                                                        'versionHistory.compare',
-                                                    )}
+                                                    {isPending &&
+                                                        t(
+                                                            'versionHistory.compare',
+                                                        )}
                                                 </Button>
-                                            ) : (
+                                            )}
+                                            {!isPending && (
                                                 <Button
                                                     variant="secondary"
                                                     size="sm"

@@ -3,6 +3,7 @@
 namespace App\Services\Export\Exporters;
 
 use App\Contracts\Exporter;
+use App\Enums\ChapterHeading;
 use App\Models\Book;
 use App\Services\Export\ExportOptions;
 use Illuminate\Support\Collection;
@@ -20,7 +21,7 @@ class KdpExporter implements Exporter
 
         // KDP enforces stricter requirements
         $kdpOptions = new ExportOptions(
-            includeChapterTitles: true,
+            chapterHeading: ChapterHeading::Full,
             includeActBreaks: $options->includeActBreaks,
             includeTableOfContents: true,
             trimSize: $options->trimSize,

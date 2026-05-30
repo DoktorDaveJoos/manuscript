@@ -11,6 +11,7 @@ import {
     Plus,
     Sparkles,
     SpellCheck,
+    Wand2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
@@ -96,6 +97,7 @@ export default function CommandPalette({
     isSpellcheckEnabled,
     onToggleSpellcheck,
     onContinueWriting,
+    onRewriteSelection,
 }: {
     editor: Editor | null;
     isOpen: boolean;
@@ -114,6 +116,7 @@ export default function CommandPalette({
     isSpellcheckEnabled?: boolean;
     onToggleSpellcheck?: () => void;
     onContinueWriting?: () => void;
+    onRewriteSelection?: () => void;
 }) {
     const { t } = useTranslation('editor');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -247,6 +250,25 @@ export default function CommandPalette({
                                 <span className="flex-1">
                                     {t('palette.continueWriting', {
                                         defaultValue: 'Continue writing',
+                                    })}
+                                </span>
+                            </CommandItem>
+
+                            <CommandItem
+                                value={t('palette.rewriteSelection', {
+                                    defaultValue: 'Rewrite selection',
+                                })}
+                                disabled={!onRewriteSelection}
+                                onSelect={() =>
+                                    handleSelect(() => onRewriteSelection?.())
+                                }
+                            >
+                                <PaletteIcon>
+                                    <Wand2 size={16} />
+                                </PaletteIcon>
+                                <span className="flex-1">
+                                    {t('palette.rewriteSelection', {
+                                        defaultValue: 'Rewrite selection',
                                     })}
                                 </span>
                             </CommandItem>

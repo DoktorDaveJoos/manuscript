@@ -6,6 +6,7 @@ import {
     index as panelIndex,
     connect as panelConnect,
     disconnect as panelDisconnect,
+    updateRole as panelUpdateRole,
 } from '@/actions/App/Http/Controllers/WikiPanelController';
 import PanelHeader from '@/components/ui/PanelHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
@@ -260,6 +261,34 @@ export default function WikiPanel({
         [book.id, chapter.id, fetchConnected],
     );
 
+    const handleUpdateRole = useCallback(
+        async (
+            characterId: number,
+            role: 'protagonist' | 'supporting' | 'mentioned',
+        ) => {
+            try {
+                await fetch(
+                    panelUpdateRole.url({
+                        book: book.id,
+                        character: characterId,
+                    }),
+                    {
+                        method: 'PATCH',
+                        headers: jsonFetchHeaders(),
+                        body: JSON.stringify({
+                            chapter_id: chapter.id,
+                            role,
+                        }),
+                    },
+                );
+                fetchConnected();
+            } catch {
+                // ignore
+            }
+        },
+        [book.id, chapter.id, fetchConnected],
+    );
+
     const connectedList = useMemo<PanelEntry[]>(
         () => [
             ...connected.characters.map((c) => ({
@@ -323,6 +352,15 @@ export default function WikiPanel({
                                                 entryType,
                                                 entry.id,
                                             )
+                                        }
+                                        onChangeRole={
+                                            entryType === 'character'
+                                                ? (role) =>
+                                                      handleUpdateRole(
+                                                          entry.id,
+                                                          role,
+                                                      )
+                                                : undefined
                                         }
                                         chapterRole={chapterRole}
                                         wikiUrl={wikiUrl}

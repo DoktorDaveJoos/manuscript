@@ -22,6 +22,8 @@
 
     "prose.running": "Läuft…",
     "prose.runProsePass": "Textüberarbeitung starten",
+    "prose.runProsePassScene": "Aktuelle Szene überarbeiten",
+    "prose.runningScene": "Szene wird überarbeitet…",
     "prose.description": "Die KI überarbeitet den Kapiteltext für Klarheit, Rhythmus und Stil und bewahrt dabei deine Stimme.",
     "prose.settingsLink": "Regeln in Einstellungen anpassen →",
 
@@ -87,6 +89,8 @@
     "error.toast.bad_request.body": "{{provider}} hat die Anfrage abgelehnt: {{detail}}",
     "error.toast.timeout.title": "Zeitüberschreitung",
     "error.toast.timeout.body": "Der Anbieter hat nicht rechtzeitig geantwortet. Versuch es nochmal.",
+    "error.toast.stale_version.title": "Kapitel wurde geändert",
+    "error.toast.stale_version.body": "Während du gearbeitet hast, wurde dieses Kapitel anderweitig verändert. Lade neu, um fortzufahren.",
     "error.toast.unknown.title": "KI-Anfrage fehlgeschlagen",
     "error.toast.unknown.body": "{{detail}}",
     "error.toast.action.openSettings": "Einstellungen öffnen",

@@ -3,11 +3,17 @@ import { PenTool, Pilcrow, Sparkles } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { beautify, revise } from '@/actions/App/Http/Controllers/AiController';
+import {
+    beautify,
+    revise,
+    reviseScene,
+} from '@/actions/App/Http/Controllers/AiController';
 import { openWindow as openDiffWindow } from '@/actions/App/Http/Controllers/ChapterDiffController';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
+import Button from '@/components/ui/Button';
 import PanelHeader from '@/components/ui/PanelHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
+import { useAiErrorToast } from '@/hooks/useAiErrorToast';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useChapterAnalysis } from '@/hooks/useChapterAnalysis';
 import { broadcastChapterDataChanged, cn, jsonFetchHeaders } from '@/lib/utils';
@@ -234,13 +240,11 @@ function getNextChapterSuggestion(
     return result.suggestion ?? null;
 }
 
-const actionButtonClass =
-    'flex items-center justify-center gap-1.5 rounded-lg bg-ink px-3 py-[9px] text-[13px] font-medium text-surface transition-colors hover:bg-ink/90 disabled:opacity-50';
-
 export default function AiPanel({
     characters,
     book,
     chapter,
+    activeSceneId = null,
     onClose,
     onError,
     chapterAnalyses,
@@ -251,6 +255,7 @@ export default function AiPanel({
     characters: ChapterCharacter[];
     book: Book;
     chapter: Chapter;
+    activeSceneId?: number | null;
     onClose: () => void;
     onError?: (message: string) => void;
     chapterAnalyses?: Record<string, Analysis>;
@@ -262,11 +267,13 @@ export default function AiPanel({
     const pageUrl = usePage().url;
     const { visible, usable } = useAiFeatures();
     const aiEnabled = usable;
+    const showAiErrorToast = useAiErrorToast();
 
     // Local flags so each button shows the correct label while in flight; the
     // proseRunning prop is used to gate both (only one revise can run at a
     // time) and to disable the inactive button without flipping its label.
     const [isRunningProse, setIsRunningProse] = useState(false);
+    const [isRunningSceneProse, setIsRunningSceneProse] = useState(false);
     const [isBeautifying, setIsBeautifying] = useState(false);
 
     // Chapter ref so the toast's "Compare" action resolves the post-revise
@@ -383,12 +390,19 @@ export default function AiPanel({
                 {
                     method: 'POST',
                     headers: {
+                        ...jsonFetchHeaders(),
                         Accept: 'application/json',
                     },
                 },
             );
 
-            if (!response.ok) throw new Error(t('error.prosePassFailed'));
+            if (!response.ok) {
+                if (response.status === 409) {
+                    showAiErrorToast({ kind: 'stale_version' });
+                    return;
+                }
+                throw new Error(t('error.prosePassFailed'));
+            }
 
             await response.text();
             broadcastChapterDataChanged(chapter.id);
@@ -410,8 +424,61 @@ export default function AiPanel({
         onProseStart,
         onProseEnd,
         showRevisedToast,
+        showAiErrorToast,
         t,
         i18n.language,
+    ]);
+
+    const handleRunSceneProse = useCallback(async () => {
+        if (!activeSceneId) return;
+
+        setIsRunningSceneProse(true);
+        onProseStart?.(chapter.id);
+        try {
+            const response = await fetch(
+                reviseScene.url({
+                    book: book.id,
+                    chapter: chapter.id,
+                    scene: activeSceneId,
+                }),
+                {
+                    method: 'POST',
+                    headers: {
+                        ...jsonFetchHeaders(),
+                        Accept: 'application/json',
+                    },
+                },
+            );
+
+            if (!response.ok) {
+                if (response.status === 409) {
+                    showAiErrorToast({ kind: 'stale_version' });
+                    return;
+                }
+                throw new Error(t('error.prosePassFailed'));
+            }
+
+            await response.text();
+            broadcastChapterDataChanged(chapter.id);
+            showRevisedToast();
+        } catch (e) {
+            onError?.(
+                e instanceof Error ? e.message : t('error.prosePassFailed'),
+            );
+        } finally {
+            setIsRunningSceneProse(false);
+            onProseEnd?.(chapter.id);
+        }
+    }, [
+        activeSceneId,
+        book.id,
+        chapter.id,
+        onError,
+        onProseStart,
+        onProseEnd,
+        showRevisedToast,
+        showAiErrorToast,
+        t,
     ]);
 
     const handleBeautify = useCallback(async () => {
@@ -423,12 +490,19 @@ export default function AiPanel({
                 {
                     method: 'POST',
                     headers: {
+                        ...jsonFetchHeaders(),
                         Accept: 'application/json',
                     },
                 },
             );
 
-            if (!response.ok) throw new Error(t('error.beautifyFailed'));
+            if (!response.ok) {
+                if (response.status === 409) {
+                    showAiErrorToast({ kind: 'stale_version' });
+                    return;
+                }
+                throw new Error(t('error.beautifyFailed'));
+            }
 
             await response.text();
             broadcastChapterDataChanged(chapter.id);
@@ -448,6 +522,7 @@ export default function AiPanel({
         onProseStart,
         onProseEnd,
         showRevisedToast,
+        showAiErrorToast,
         t,
     ]);
 
@@ -536,17 +611,18 @@ export default function AiPanel({
                     <SectionLabel>{t('section.actions')}</SectionLabel>
                     {aiEnabled ? (
                         <>
-                            <button
+                            <Button
                                 type="button"
+                                variant="primary"
                                 onClick={handleAnalyze}
                                 disabled={isAnalyzing}
-                                className={actionButtonClass}
+                                className="w-full"
                             >
                                 <Sparkles size={14} strokeWidth={2.5} />
                                 {isAnalyzing
                                     ? t('actions.analyzing')
                                     : t('actions.analyze')}
-                            </button>
+                            </Button>
                             <DescriptionText>
                                 {t('actions.analyzeDescription')}
                             </DescriptionText>
@@ -555,17 +631,18 @@ export default function AiPanel({
                                     {analysisError}
                                 </p>
                             )}
-                            <button
+                            <Button
                                 type="button"
+                                variant="primary"
                                 onClick={handleBeautify}
                                 disabled={proseRunning}
-                                className={actionButtonClass}
+                                className="w-full"
                             >
                                 <Pilcrow size={14} strokeWidth={2.5} />
                                 {isBeautifying
                                     ? t('actions.beautifying')
                                     : t('actions.beautify')}
-                            </button>
+                            </Button>
                             <DescriptionText>
                                 {t('actions.beautifyDescription')}
                             </DescriptionText>
@@ -589,17 +666,30 @@ export default function AiPanel({
                 {aiEnabled && (
                     <div className="flex flex-col gap-2.5">
                         <SectionLabel>{t('section.prose')}</SectionLabel>
-                        <button
+                        <Button
                             type="button"
+                            variant="primary"
                             onClick={handleRunProse}
                             disabled={proseRunning}
-                            className={actionButtonClass}
+                            className="w-full"
                         >
                             <PenTool size={14} strokeWidth={2.5} />
                             {isRunningProse
                                 ? t('prose.running')
                                 : t('prose.runProsePass')}
-                        </button>
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={handleRunSceneProse}
+                            disabled={proseRunning || !activeSceneId}
+                            className="w-full"
+                        >
+                            <PenTool size={14} strokeWidth={2.5} />
+                            {isRunningSceneProse
+                                ? t('prose.runningScene')
+                                : t('prose.runProsePassScene')}
+                        </Button>
                         <DescriptionText>
                             {t('prose.description')}
                         </DescriptionText>
@@ -777,13 +867,15 @@ export default function AiPanel({
                             {t('nextChapter.noSuggestion')}
                         </p>
                     )}
-                    <button
+                    <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         disabled={!nextSuggestion}
-                        className="self-start text-xs font-medium text-accent transition-colors hover:text-accent-dark disabled:opacity-50"
+                        className="self-start text-accent hover:bg-transparent hover:text-accent-dark"
                     >
                         {t('nextChapter.generateOutline')}
-                    </button>
+                    </Button>
                 </div>
 
                 {/* In This Chapter — Characters */}

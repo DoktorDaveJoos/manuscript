@@ -10,7 +10,7 @@ const buttonVariants = cva(
             variant: {
                 default: 'bg-ink text-surface hover:bg-ink/90',
                 primary: 'bg-ink text-surface hover:bg-ink/90',
-                secondary: 'border border-border text-ink-muted hover:bg-neutral-bg',
+                secondary: 'bg-neutral-bg text-ink hover:bg-neutral-bg/70',
                 ghost: 'text-ink-muted hover:text-ink',
                 danger: 'bg-delete text-surface hover:bg-delete/90',
                 accent: 'bg-accent text-surface hover:bg-accent/90',

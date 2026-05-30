@@ -74,6 +74,7 @@ const KNOWN_KINDS = [
     'context_too_long',
     'bad_request',
     'timeout',
+    'stale_version',
     'unknown',
 ] as const;
 

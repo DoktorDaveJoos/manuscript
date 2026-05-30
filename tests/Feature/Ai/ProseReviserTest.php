@@ -29,6 +29,19 @@ test('prose reviser includes writing style when available', function () {
     expect((string) $instructions)->toContain('literary');
 });
 
+test('prose reviser includes shorten long sentences rule by default', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $agent = new ProseReviser($book, $chapter);
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)->toContain('Shorten overlong sentences')
+        ->and($instructions)->toContain("reader's working memory")
+        ->and($instructions)->toContain('locally connected clauses');
+});
+
 test('prose reviser can be faked for streaming', function () {
     ProseReviser::fake(['Revised text output.']);
 

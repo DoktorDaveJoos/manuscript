@@ -4,6 +4,7 @@ export const FRONT_MATTER_TYPES = [
     'copyright',
     'dedication',
     'epigraph',
+    'prologue',
     'toc',
 ] as const;
 export const BACK_MATTER_TYPES = [
@@ -27,6 +28,7 @@ export type ChapterRow = {
     word_count: number;
     content: string | null;
     is_epilogue?: boolean;
+    is_prologue?: boolean;
 };
 
 export type StorylineRef = {
@@ -39,11 +41,14 @@ export type StorylineRef = {
 export type TrimSizeOption = {
     value: string;
     label: string;
+    labelMetric: string;
     width: number;
     height: number;
 };
 
 export type Format = 'epub' | 'pdf' | 'docx' | 'txt' | 'kdp';
+
+export type ChapterHeading = 'none' | 'number' | 'full';
 
 export const VISUAL_FORMATS: Set<Format> = new Set(['pdf', 'epub', 'kdp']);
 

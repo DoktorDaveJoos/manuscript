@@ -23,11 +23,15 @@ class ContinueWritingAgent implements Agent, BelongsToBook, HasMiddleware
 
     private const PRECEDING_CHAPTER_TAIL_WORDS = 400;
 
+    private const PRECEDING_CHAPTERS_COUNT = 3;
+
     public function __construct(
         protected Book $book,
         protected Chapter $chapter,
         protected ?string $hint = null,
         protected int $wordGoal = 120,
+        protected ?string $beforeProse = null,
+        protected ?string $afterProse = null,
     ) {}
 
     public function book(): Book
@@ -43,21 +47,68 @@ class ContinueWritingAgent implements Agent, BelongsToBook, HasMiddleware
 
         $context = $this->buildContextSections();
         $hintSection = $this->buildHintSection();
+        $rulesSection = $this->buildStyleRulesSection();
+        $hasHint = trim((string) $this->hint) !== '';
+        $isInline = $this->isInlineMode();
 
         $wordGoal = $this->wordGoal;
+
+        $anchor = $isInline
+            ? 'from exactly the last character of PROSE BEFORE CURSOR — even mid-sentence or mid-word. Do not insert a leading space, do not force capitalization, and do not break into a new paragraph'
+            : 'from exactly where the chapter prose ends';
+
+        $taskLine = $hasHint
+            ? "Your task: continue the prose {$anchor}. The author has issued a directive (see AUTHOR DIRECTIVE below) — the next approximately {$wordGoal} words MUST cover what the directive says. After roughly {$wordGoal} words, finish the current sentence and stop. The directive overrides default beat progression for this paragraph; treat beats, characters, and world entities as background only."
+            : "Your task: continue the prose {$anchor}. Write approximately {$wordGoal} words, then finish the current sentence and stop. Do not write past the end of that sentence.";
+
+        $progressionRule = $hasHint
+            ? '- The AUTHOR DIRECTIVE decides what this paragraph covers. Do not advance beats at the expense of the directive — beats are reference material, not the agenda for this stretch of prose.'
+            : '- Identify which numbered beat the next paragraph should advance based on the prose written so far, and advance it.';
+
+        $inlineRules = $isInline
+            ? "\n        - You are INSERTING prose between PROSE BEFORE CURSOR and PROSE AFTER CURSOR. PROSE AFTER CURSOR is the author's existing draft that comes LATER in the chapter — it is NOT what you are about to write."
+                ."\n        - Your continuation must come BEFORE that existing draft. Do not write toward it, do not lead into it, do not summarize, paraphrase, foreshadow, or restate any beat, line, or event from PROSE AFTER CURSOR. Treat it as a closed window — read-only, off-limits as content."
+                ."\n        - If your draft starts to overlap with anything in PROSE AFTER CURSOR, stop and replace it with new, non-overlapping material that fits the gap between BEFORE and AFTER."
+            : '';
 
         return <<<INSTRUCTIONS
         You are continuing the draft of '{$this->book->title}' by {$this->book->author}, written in {$this->book->language}.
 
-        Your task: continue the prose from exactly where the chapter prose ends. Write approximately {$wordGoal} words, then finish the current sentence and stop. Do not write past the end of that sentence.
+        {$taskLine}
 
         Rules:
         - Match the rhythm, paragraph length, vocabulary, and tense already established in the chapter.
-        - Identify which numbered beat the next paragraph should advance based on the prose written so far, and advance it.
+        {$progressionRule}
         - Output ONLY the continuation prose itself. No commentary, no headings, no labels, no quotation marks framing the output, no "Here is the continuation:" preamble.
-        - Do not repeat or restate the last sentence already written; pick up cleanly from it.
-        - LANGUAGE: write in {$this->book->language}.{$writingStyle}{$context}{$hintSection}
+        - Do not repeat or restate the last sentence already written; pick up cleanly from it.{$inlineRules}
+        - LANGUAGE: write in {$this->book->language}.{$writingStyle}{$rulesSection}{$context}{$hintSection}
         INSTRUCTIONS;
+    }
+
+    private function buildStyleRulesSection(): string
+    {
+        $enabled = collect(Book::generationApplicableProsePassRules())
+            ->filter(fn ($rule) => $rule['enabled']);
+
+        if ($enabled->isEmpty()) {
+            return '';
+        }
+
+        $bullets = $enabled
+            ->map(fn ($rule) => "- {$rule['label']}: {$rule['description']}")
+            ->implode("\n");
+
+        return "\n\nStyle rules (apply while writing):\n{$bullets}";
+    }
+
+    private function hasSplit(): bool
+    {
+        return $this->beforeProse !== null || $this->afterProse !== null;
+    }
+
+    private function isInlineMode(): bool
+    {
+        return trim((string) $this->afterProse) !== '';
     }
 
     public function middleware(): array
@@ -121,20 +172,27 @@ class ContinueWritingAgent implements Agent, BelongsToBook, HasMiddleware
             return '';
         }
 
+        $minOrder = max(1, $currentOrder - self::PRECEDING_CHAPTERS_COUNT);
+
         $preceding = $this->book->chapters()
-            ->where('reader_order', $currentOrder - 1)
-            ->first();
+            ->whereBetween('reader_order', [$minOrder, $currentOrder - 1])
+            ->orderBy('reader_order')
+            ->with('scenes')
+            ->get();
 
-        if (! $preceding) {
-            return '';
+        return $preceding
+            ->map(fn (Chapter $prior) => $this->formatPrecedingChapter($prior))
+            ->filter()
+            ->implode('');
+    }
+
+    private function formatPrecedingChapter(Chapter $prior): string
+    {
+        if ($prior->summary) {
+            return "\n### Preceding Chapter (Ch{$prior->reader_order} — {$prior->title})\n{$prior->summary}";
         }
 
-        if ($preceding->summary) {
-            return "\n### Preceding Chapter (Ch{$preceding->reader_order} — {$preceding->title})\n{$preceding->summary}";
-        }
-
-        $preceding->load('scenes');
-        $content = strip_tags($preceding->getFullContent());
+        $content = strip_tags($prior->getFullContent());
         if (trim($content) === '') {
             return '';
         }
@@ -142,7 +200,7 @@ class ContinueWritingAgent implements Agent, BelongsToBook, HasMiddleware
         $words = preg_split('/\s+/', trim($content));
         $tail = implode(' ', array_slice($words, -self::PRECEDING_CHAPTER_TAIL_WORDS));
 
-        return "\n### Preceding Chapter (Ch{$preceding->reader_order} — {$preceding->title}, last excerpt)\n{$tail}";
+        return "\n### Preceding Chapter (Ch{$prior->reader_order} — {$prior->title}, last excerpt)\n{$tail}";
     }
 
     private function buildBeatsSection(): string
@@ -230,6 +288,30 @@ class ContinueWritingAgent implements Agent, BelongsToBook, HasMiddleware
     private function buildChapterProseSection(): string
     {
         $title = $this->chapter->title ?: 'Untitled chapter';
+
+        if ($this->hasSplit()) {
+            $before = trim((string) $this->beforeProse);
+            $after = trim((string) $this->afterProse);
+
+            if ($before === '' && $after === '') {
+                return "\n### Chapter: {$title}\n(no prose written yet — write the opening paragraph)";
+            }
+
+            $sections = ["\n### Chapter: {$title}"];
+
+            if ($before === '') {
+                $sections[] = '(no prose before the cursor — write the opening)';
+            } else {
+                $sections[] = "#### Prose Before Cursor (continue from the end of this)\n{$before}";
+            }
+
+            if ($after !== '') {
+                $sections[] = "#### Prose After Cursor (background — already in the draft; do not contradict, do not repeat)\n{$after}";
+            }
+
+            return implode("\n", $sections);
+        }
+
         $content = $this->chapter->getFullContent();
 
         if (trim(strip_tags($content)) === '') {
@@ -246,6 +328,6 @@ class ContinueWritingAgent implements Agent, BelongsToBook, HasMiddleware
             return '';
         }
 
-        return "\n\n--- AUTHOR NOTE FOR THIS PARAGRAPH ---\n{$hint}";
+        return "\n\n--- AUTHOR DIRECTIVE (HIGHEST PRIORITY) ---\nThe next ~{$this->wordGoal} words MUST cover the following. This is the author's explicit decision about what happens in this stretch of prose — let it override default beat progression. Beats, characters, and world entities remain available as background.\n\n{$hint}";
     }
 }

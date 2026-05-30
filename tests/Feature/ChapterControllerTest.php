@@ -1090,3 +1090,60 @@ test('replaceSceneContents handles fewer segments than existing scenes', functio
     expect($chapter->scenes[0]->title)->toBe('Combined');
     expect($chapter->scenes[1]->title)->toBe('Final');
 });
+
+test('replaceSceneContents preserves title when AI returns a single segment', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create([
+        'title' => 'The morning',
+        'content' => '<p>Original prose.</p>',
+        'sort_order' => 0,
+    ]);
+
+    $sceneMap = [['title' => 'The morning', 'sort_order' => 0]];
+
+    $chapter->replaceSceneContents('<p>Revised prose.</p>', $sceneMap);
+
+    $chapter->refresh()->load('scenes');
+    expect($chapter->scenes)->toHaveCount(1);
+    expect($chapter->scenes[0]->title)->toBe('The morning');
+    expect($chapter->scenes[0]->content)->toBe('<p>Revised prose.</p>');
+});
+
+test('replaceSceneContents falls back to existing scene title when sceneMap is missing', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create([
+        'title' => 'The morning',
+        'content' => '<p>Original.</p>',
+        'sort_order' => 0,
+    ]);
+
+    $chapter->replaceSceneContents('<p>Revised.</p>', null);
+
+    $chapter->refresh()->load('scenes');
+    expect($chapter->scenes)->toHaveCount(1);
+    expect($chapter->scenes[0]->title)->toBe('The morning');
+});
+
+test('replaceSceneContents merges into the first scene when AI drops the hr divider', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['title' => 'Morning', 'content' => '<p>A</p>', 'sort_order' => 0]);
+    Scene::factory()->for($chapter)->create(['title' => 'Evening', 'content' => '<p>B</p>', 'sort_order' => 1]);
+
+    $sceneMap = [
+        ['title' => 'Morning', 'sort_order' => 0],
+        ['title' => 'Evening', 'sort_order' => 1],
+    ];
+
+    $chapter->replaceSceneContents('<p>Merged blob.</p>', $sceneMap);
+
+    $chapter->refresh()->load('scenes');
+    expect($chapter->scenes)->toHaveCount(1);
+    expect($chapter->scenes[0]->title)->toBe('Morning');
+    expect($chapter->scenes[0]->content)->toBe('<p>Merged blob.</p>');
+});

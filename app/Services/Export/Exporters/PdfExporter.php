@@ -58,10 +58,26 @@ class PdfExporter implements Exporter
     {
         $isEbookPreview = in_array($options->previewFormat, [ExportFormat::Epub, ExportFormat::Kdp], true);
         $html = $this->renderHtml($book, $chapters, $options, $isEbookPreview);
-        $mpdf = $this->createMpdf($options, $isEbookPreview);
+        $locale = $book->language ?? config('app.fallback_locale', 'en');
+        $mpdf = $this->createMpdf($options, $isEbookPreview, $locale);
         $mpdf->WriteHTML($html);
 
         return $mpdf;
+    }
+
+    /**
+     * Languages mPDF ships hyphenation patterns for. Falls back to English
+     * for unsupported locales so we never hyphenate with the wrong dictionary.
+     */
+    private const HYPHENATION_LANGUAGES = ['en', 'de', 'es', 'fi', 'fr', 'it', 'nl', 'pl', 'ru', 'sv'];
+
+    /**
+     * Resolve the mPDF hyphenation pattern language for a book locale, falling
+     * back to English when mPDF has no patterns for it.
+     */
+    public static function hyphenationLanguage(string $locale): string
+    {
+        return in_array($locale, self::HYPHENATION_LANGUAGES, true) ? $locale : 'en';
     }
 
     /**
@@ -83,6 +99,14 @@ class PdfExporter implements Exporter
             $css .= "\n".$this->template->dropCapCss();
         }
 
+        // For print-ready CMYK output, render body copy as true K-only black
+        // (0,0,0,100) rather than the screen-tuned soft black (~#2a2a2a, which
+        // would convert to a lighter K). Headings/labels stay grey and convert
+        // to K-only grey automatically under restrictColorSpace.
+        if ($options->cmyk && ! $isEbookPreview) {
+            $css .= "\nbody { color: cmyk(0, 0, 0, 100); }";
+        }
+
         $previousLocale = app()->getLocale();
         app()->setLocale($book->language ?? config('app.fallback_locale', 'en'));
 
@@ -102,9 +126,47 @@ class PdfExporter implements Exporter
     }
 
     /**
+     * Resolve the print page geometry (millimetres) for an export: the trim
+     * size — either a preset or user-supplied custom dimensions — grown by the
+     * configured bleed on every side, with each margin shifted by the same
+     * bleed so the text block stays put relative to the trim edge.
+     *
+     * @return array{width: float, height: float, margins: array{top: float, bottom: float, outer: float, gutter: float}}
+     */
+    public static function resolveGeometry(ExportOptions $options): array
+    {
+        if ($options->customWidth !== null && $options->customHeight !== null) {
+            $width = $options->customWidth;
+            $height = $options->customHeight;
+            $margins = TrimSize::defaultMarginsFor($width, $height);
+        } else {
+            $trimSize = $options->trimSize ?? TrimSize::UsTrade;
+            $dimensions = $trimSize->dimensions();
+            $width = $dimensions['width'];
+            $height = $dimensions['height'];
+            $margins = $trimSize->margins();
+        }
+
+        $bleed = max(0.0, $options->bleed);
+
+        if ($bleed > 0) {
+            $width += 2 * $bleed;
+            $height += 2 * $bleed;
+            $margins = [
+                'top' => $margins['top'] + $bleed,
+                'bottom' => $margins['bottom'] + $bleed,
+                'outer' => $margins['outer'] + $bleed,
+                'gutter' => $margins['gutter'] + $bleed,
+            ];
+        }
+
+        return ['width' => $width, 'height' => $height, 'margins' => $margins];
+    }
+
+    /**
      * Create a configured mPDF instance.
      */
-    private function createMpdf(ExportOptions $options, bool $isEbookPreview = false): Mpdf
+    private function createMpdf(ExportOptions $options, bool $isEbookPreview = false, string $locale = 'en'): Mpdf
     {
         $fontSize = $options->fontSize;
 
@@ -113,9 +175,9 @@ class PdfExporter implements Exporter
             $dimensions = ['width' => 90, 'height' => 122];
             $margins = ['top' => 10, 'bottom' => 10, 'gutter' => 10, 'outer' => 10];
         } else {
-            $trimSize = $options->trimSize ?? TrimSize::UsTrade;
-            $dimensions = $trimSize->dimensions();
-            $margins = $trimSize->margins();
+            $geometry = self::resolveGeometry($options);
+            $dimensions = ['width' => $geometry['width'], 'height' => $geometry['height']];
+            $margins = $geometry['margins'];
         }
 
         $defaultConfig = (new ConfigVariables)->getDefaults();
@@ -146,7 +208,23 @@ class PdfExporter implements Exporter
             'fontDir' => $fontDirs,
             'fontdata' => $fontData,
             'tempDir' => storage_path('app/mpdf-tmp'),
+            // Hyphenate using the book's own language dictionary. Without this mPDF
+            // defaults to English patterns, mangling e.g. German compounds
+            // ("Geschwindigkeitsbe-grenzung" instead of "Geschwindigkeits-begrenzung").
+            // Keep at least 3 characters on each side of a break. NOTE: SHYcharmin must
+            // stay <= 4 — a value of 5 silently disables hyphenation in this mPDF version.
+            'SHYlang' => self::hyphenationLanguage($locale),
+            'SHYleftmin' => 3,
+            'SHYrightmin' => 3,
+            'SHYcharmin' => 4,
         ];
+
+        // Print-ready PDF: force the whole document into the CMYK colour space.
+        // Every template colour is a neutral grey (r=g=b), which mPDF's RGB→CMYK
+        // conversion maps to K-only ink (C=M=Y=0), so black stays on the K plate.
+        if ($options->cmyk && ! $isEbookPreview) {
+            $config['restrictColorSpace'] = 3;
+        }
 
         @mkdir(storage_path('app/mpdf-tmp'), 0755, true);
 

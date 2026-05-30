@@ -35,6 +35,8 @@
     "Cannot delete the last scene": "No se puede eliminar la última escena",
     "Chapter 1": "Capítulo 1",
     "Chapter :number": "Capítulo :number",
+    "Prologue": "Prólogo",
+    "Epilogue": "Epílogo",
     "Cannot delete the last storyline.": "No se puede eliminar la última línea argumental.",
     "Setting updated.": "Configuración actualizada.",
     "AI is not enabled or no API key configured.": "La IA no está habilitada o no hay clave de API configurada.",

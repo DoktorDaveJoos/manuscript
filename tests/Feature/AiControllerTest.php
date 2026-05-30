@@ -101,6 +101,42 @@ test('next chapter returns structured suggestion', function () {
         ->assertJsonStructure(['suggestion', 'open_plot_points', 'neglected_characters', 'hook_ideas']);
 });
 
+test('revise rejects a stale expected_current_version_id with 409', function () {
+    ProseReviser::fake(['<p>Whatever.</p>']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $current = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => '<p>Original.</p>',
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $this->postJson(
+        route('chapters.ai.revise', [$book, $chapter]),
+        ['expected_current_version_id' => $current->id + 9999],
+    )->assertStatus(409);
+});
+
+test('beautify rejects a stale expected_current_version_id with 409', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $current = ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => '<p>Original.</p>',
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $this->postJson(
+        route('chapters.ai.beautify', [$book, $chapter]),
+        ['expected_current_version_id' => $current->id + 9999],
+    )->assertStatus(409);
+});
+
 test('revise streams prose revision and auto-applies the new version', function () {
     ProseReviser::fake(['<p>The revised prose text.</p>']);
 
@@ -133,6 +169,33 @@ test('revise streams prose revision and auto-applies the new version', function 
 
     // Scenes reflect the new content (so the editor renders the revision).
     expect($chapter->fresh()->scenes()->first()->content)->toContain('revised prose');
+});
+
+test('revise preserves the scene title when the AI returns a single segment', function () {
+    ProseReviser::fake(['<p>Polished prose.</p>']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create([
+        'title' => 'The morning',
+        'content' => '<p>Original prose.</p>',
+        'sort_order' => 0,
+    ]);
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => '<p>Original prose.</p>',
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $response = $this->post(route('chapters.ai.revise', [$book, $chapter]));
+    $response->assertOk();
+    $response->streamedContent();
+
+    $scene = $chapter->fresh()->scenes()->first();
+    expect($scene->title)->toBe('The morning');
+    expect($scene->content)->toContain('Polished prose');
 });
 
 test('prose reviser instructions include character, entity, and narrative context', function () {
@@ -182,6 +245,68 @@ test('prose reviser instructions work without context', function () {
     expect($instructions)
         ->toContain('expert prose editor')
         ->not->toContain('MANUSCRIPT CONTEXT');
+});
+
+test('reviseScene revises only the targeted scene and snapshots the chapter', function () {
+    ProseReviser::fake(['<p>Polished scene two.</p>']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => '<p>Scene one prose.</p><hr><p>Scene two prose.</p>',
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $sceneOne = Scene::factory()->for($chapter)->create([
+        'sort_order' => 0,
+        'content' => '<p>Scene one prose.</p>',
+    ]);
+    $sceneTwo = Scene::factory()->for($chapter)->create([
+        'sort_order' => 1,
+        'content' => '<p>Scene two prose.</p>',
+    ]);
+
+    $response = $this->post(route('chapters.scenes.ai.revise', [$book, $chapter, $sceneTwo]));
+    $response->assertOk();
+    $response->streamedContent();
+
+    ProseReviser::assertPrompted(fn ($prompt) => str_contains($prompt->prompt, 'Scene two prose')
+        && ! str_contains($prompt->prompt, 'Scene one prose'));
+
+    expect($sceneOne->fresh()->content)->toBe('<p>Scene one prose.</p>');
+    expect($sceneTwo->fresh()->content)->toContain('Polished scene two');
+
+    $newVersion = $chapter->versions()->orderByDesc('version_number')->first();
+    expect($newVersion->version_number)->toBe(2);
+    expect($newVersion->is_current)->toBeTrue();
+    expect($newVersion->source)->toBe(VersionSource::AiRevision);
+    expect($newVersion->content)->toContain('Scene one prose');
+    expect($newVersion->content)->toContain('Polished scene two');
+});
+
+test('reviseScene 404s when scene does not belong to chapter', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $otherChapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $foreignScene = Scene::factory()->for($otherChapter)->create();
+
+    $this->post(route('chapters.scenes.ai.revise', [$book, $chapter, $foreignScene]))
+        ->assertNotFound();
+});
+
+test('reviseScene fails when the scene has no content', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $scene = Scene::factory()->for($chapter)->create(['content' => '']);
+
+    $this->postJson(route('chapters.scenes.ai.revise', [$book, $chapter, $scene]))
+        ->assertStatus(422);
 });
 
 test('revise fails when chapter has no content', function () {

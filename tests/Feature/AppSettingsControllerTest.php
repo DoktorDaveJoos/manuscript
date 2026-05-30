@@ -93,3 +93,18 @@ test('global prose pass rules save', function () {
     $saved = json_decode(AppSetting::get('prose_pass_rules'), true);
     expect($saved[0]['enabled'])->toBeFalse();
 });
+
+test('globalProsePassRules merges missing default rules into a saved configuration', function () {
+    $partial = collect(Book::defaultProsePassRules())
+        ->reject(fn ($rule) => $rule['key'] === 'shorten_long_sentences')
+        ->values()
+        ->all();
+
+    AppSetting::set('prose_pass_rules', json_encode($partial));
+    AppSetting::clearCache();
+
+    $merged = Book::globalProsePassRules();
+    $keys = collect($merged)->pluck('key')->all();
+
+    expect($keys)->toContain('shorten_long_sentences');
+});

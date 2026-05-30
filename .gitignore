@@ -32,3 +32,9 @@ yarn-error.log
 .claude/*.lock
 .DS_Store
 /screenshots
+
+# Local marketing assets (large binaries) — not part of the app
+/marketing
+# Machine-local Higgsfield plugin skills (symlinks into .agents)
+.claude/skills/higgsfield-*
+.agents/skills/higgsfield-*

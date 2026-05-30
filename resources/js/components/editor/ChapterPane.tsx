@@ -8,6 +8,7 @@ import { openWindow as openDiffWindow } from '@/actions/App/Http/Controllers/Cha
 import type { ChapterData } from '@/hooks/useChapterData';
 import type { ContinueWritingReview } from '@/hooks/useContinueWriting';
 import { useProofreading } from '@/hooks/useProofreading';
+import type { RewriteSelectionReview } from '@/hooks/useRewriteSelection';
 import { jsonFetchHeaders } from '@/lib/utils';
 import { DEFAULT_PROOFREADING_CONFIG } from '@/types/models';
 import type { AppSettings, ChapterVersion, Scene } from '@/types/models';
@@ -41,6 +42,9 @@ export default function ChapterPane({
     review,
     onReviewApplied,
     proseRunning = false,
+    isLocalFindOpen = false,
+    localFindShowReplace = false,
+    onLocalFindClose,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -60,9 +64,12 @@ export default function ChapterPane({
     spellcheckEnabled: boolean;
     isTypewriterMode: boolean;
     onToggleTypewriterMode: () => void;
-    review: ContinueWritingReview | null;
+    review: ContinueWritingReview | RewriteSelectionReview | null;
     onReviewApplied: () => void;
     proseRunning?: boolean;
+    isLocalFindOpen?: boolean;
+    localFindShowReplace?: boolean;
+    onLocalFindClose?: () => void;
 }) {
     const { t } = useTranslation('editor');
     const { chapter, proofreadingConfig: initialProofreadingConfig } =
@@ -138,37 +145,41 @@ export default function ChapterPane({
         setCompareVersion(version);
     }, []);
 
-    // Fire a toast once per new continue-writing review. The review state
-    // sticks around so handleReviewClick still works if the user clicks
-    // "Review changes" in the toast.
+    // Fire a toast once per new AI review. The review state sticks around so
+    // handleReviewClick still works if the user clicks "Review changes" later.
     const handleReviewClickRef = useRef(handleReviewClick);
     handleReviewClickRef.current = handleReviewClick;
     useEffect(() => {
         if (!showReview || !review) return;
-        toast(
-            t('continueWriting.toast.title', {
-                defaultValue: 'AI continuation applied',
-            }),
-            {
+
+        const copy = {
+            continue_writing: {
+                title: 'continueWriting.toast.title',
                 description:
-                    review.addedWords > 0
-                        ? t('continueWriting.toast.descriptionWithCount', {
-                              defaultValue:
-                                  'Added {{count}} words. Review the changes to keep or revert paragraphs.',
-                              count: review.addedWords,
-                          })
-                        : t('continueWriting.toast.description', {
-                              defaultValue:
-                                  'Review the changes to keep or revert paragraphs.',
-                          }),
-                action: {
-                    label: t('continueWriting.toast.review', {
-                        defaultValue: 'Review changes',
-                    }),
-                    onClick: () => handleReviewClickRef.current(),
-                },
+                    review.kind === 'continue_writing' && review.addedWords > 0
+                        ? 'continueWriting.toast.descriptionWithCount'
+                        : 'continueWriting.toast.description',
+                action: 'continueWriting.toast.review',
             },
-        );
+            rewrite_selection: {
+                title: 'rewriteSelection.toast.title',
+                description: 'rewriteSelection.toast.description',
+                action: 'rewriteSelection.toast.review',
+            },
+        }[review.kind];
+
+        const descriptionArgs =
+            review.kind === 'continue_writing' && review.addedWords > 0
+                ? { count: review.addedWords }
+                : undefined;
+
+        toast(t(copy.title), {
+            description: t(copy.description, descriptionArgs),
+            action: {
+                label: t(copy.action),
+                onClick: () => handleReviewClickRef.current(),
+            },
+        });
     }, [showReview, review, t]);
 
     const [pendingTitleSelect, setPendingTitleSelect] = useState(
@@ -352,6 +363,7 @@ export default function ChapterPane({
     // ── Derived values ───────────────────────────────────────────────────
     const displayTitle = firstLine(chapterTitle);
     const povCharacterName = chapter.pov_character?.name ?? null;
+    const povCharacterId = chapter.pov_character?.id ?? null;
     const timelineLabel = chapter.storyline?.timeline_label ?? null;
 
     return (
@@ -455,7 +467,11 @@ export default function ChapterPane({
                     currentVersion={chapter.current_version}
                     pendingVersion={compareVersion}
                     editorFont={editorFont}
-                    mode="pending"
+                    mode={
+                        compareVersion.status === 'pending'
+                            ? 'pending'
+                            : 'history'
+                    }
                     onApplied={handleCompareApplied}
                     onClose={handleCompareClose}
                 />
@@ -471,6 +487,7 @@ export default function ChapterPane({
                         autoSelectTitle={pendingTitleSelect}
                         onTitleSelectHandled={handleTitleSelectHandled}
                         povCharacterName={povCharacterName}
+                        povCharacterId={povCharacterId}
                         timelineLabel={timelineLabel}
                         onTitleUpdate={handleTitleUpdate}
                         activeEditor={activeEditor}
@@ -487,6 +504,9 @@ export default function ChapterPane({
                         proofreadingConfig={proofreadingConfig}
                         bookLanguage={bookLanguage}
                         spellcheckEnabled={spellcheckEnabled}
+                        isLocalFindOpen={isLocalFindOpen}
+                        localFindShowReplace={localFindShowReplace}
+                        onLocalFindClose={onLocalFindClose}
                     />
                     {proseRunning && (
                         <div

@@ -6,6 +6,7 @@ import WikiAvatar from '@/components/wiki/WikiAvatar';
 import type { WikiTab } from '@/components/wiki/WikiTabBar';
 import type { Character, WikiEntry } from '@/types/models';
 import PanelCardMenu from './PanelCardMenu';
+import type { ChapterRole } from './PanelCardMenu';
 
 type WikiPanelCardProps = {
     entry: Character | WikiEntry;
@@ -16,6 +17,7 @@ type WikiPanelCardProps = {
     onDismiss?: () => void;
     onConnect?: () => void;
     onDisconnect?: () => void;
+    onChangeRole?: (role: ChapterRole) => void;
     chapterRole?: string;
     wikiUrl: string;
 };
@@ -52,6 +54,7 @@ export default function WikiPanelCard({
     onDismiss,
     onConnect,
     onDisconnect,
+    onChangeRole,
     chapterRole,
     wikiUrl,
 }: WikiPanelCardProps) {
@@ -92,6 +95,29 @@ export default function WikiPanelCard({
                         openLabel={t('openInWiki')}
                         disconnectLabel={t('disconnectFromChapter')}
                         onDisconnect={onDisconnect}
+                        currentRole={
+                            entryType === 'character' &&
+                            (chapterRole === 'protagonist' ||
+                                chapterRole === 'supporting' ||
+                                chapterRole === 'mentioned')
+                                ? (chapterRole as ChapterRole)
+                                : undefined
+                        }
+                        onChangeRole={
+                            entryType === 'character' ? onChangeRole : undefined
+                        }
+                        roleLabels={
+                            entryType === 'character'
+                                ? {
+                                      protagonist: t('role.protagonist'),
+                                      supporting: t('role.supporting'),
+                                      mentioned: t('role.mentioned'),
+                                  }
+                                : undefined
+                        }
+                        setRoleLabel={
+                            entryType === 'character' ? t('setRole') : undefined
+                        }
                     />
                 )}
                 {!isConnected && onDismiss && (

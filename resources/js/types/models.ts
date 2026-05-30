@@ -80,7 +80,8 @@ export type VersionSource =
     | 'normalization'
     | 'beautify'
     | 'snapshot'
-    | 'continue_writing';
+    | 'continue_writing'
+    | 'rewrite_selection';
 export type VersionStatus = 'accepted' | 'pending';
 export type PlotPointType =
     | 'setup'
@@ -197,10 +198,13 @@ export type Book = {
     acknowledgment_text?: string | null;
     about_author_text?: string | null;
     also_by_text?: string | null;
+    klappentext?: string | null;
     publisher_name?: string | null;
     isbn?: string | null;
     cover_image_path?: string | null;
     cover_image_url?: string | null;
+    cover_settings?: CoverSettings | null;
+    cover_genre?: string | null;
     custom_dictionary?: string[] | null;
     created_at: string;
     updated_at: string;
@@ -210,6 +214,14 @@ export type Book = {
     chapters?: Chapter[];
     plot_points?: PlotPoint[];
     analyses?: Analysis[];
+};
+
+export type CoverSettings = {
+    title?: string;
+    subtitle?: string;
+    author?: string;
+    trim_size?: string;
+    spine_width?: number;
 };
 
 export type Storyline = {

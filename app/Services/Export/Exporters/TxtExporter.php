@@ -29,7 +29,7 @@ class TxtExporter implements Exporter
                 $lines[] = '';
             }
 
-            if ($options->includeChapterTitles) {
+            if ($options->chapterHeading->showsTitle()) {
                 $lines[] = '';
                 $lines[] = $chapter->title;
                 $lines[] = str_repeat('-', strlen($chapter->title));

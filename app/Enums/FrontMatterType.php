@@ -8,5 +8,6 @@ enum FrontMatterType: string
     case Copyright = 'copyright';
     case Dedication = 'dedication';
     case Epigraph = 'epigraph';
+    case Prologue = 'prologue';
     case Toc = 'toc';
 }

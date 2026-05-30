@@ -128,7 +128,8 @@ class RetrieveManuscriptContext implements Tool
         foreach ($chapter->beats->groupBy(fn ($beat) => $beat->plot_point_id) as $beatGroup) {
             $plotPoint = $beatGroup->first()->plotPoint;
             $description = $plotPoint->description ? ": {$plotPoint->description}" : '';
-            $lines[] = "- Plot Point [{$plotPoint->type->value}/{$plotPoint->status->value}] {$plotPoint->title}{$description}";
+            $type = $plotPoint->type?->value ?? '—';
+            $lines[] = "- Plot Point [{$type}/{$plotPoint->status->value}] {$plotPoint->title}{$description}";
 
             foreach ($beatGroup as $beat) {
                 $beatDescription = $beat->description ? ": {$beat->description}" : '';

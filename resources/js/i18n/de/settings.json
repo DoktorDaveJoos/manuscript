@@ -224,6 +224,8 @@
     "prosePassRules.rules.passive_voice.description": "Passivkonstruktionen wo sinnvoll in Aktivformen umwandeln.",
     "prosePassRules.rules.sentence_variety.label": "Satzvielfalt",
     "prosePassRules.rules.sentence_variety.description": "Satzlänge und -struktur variieren, um den Rhythmus zu verbessern.",
+    "prosePassRules.rules.shorten_long_sentences.label": "Überlange Sätze kürzen",
+    "prosePassRules.rules.shorten_long_sentences.description": "Einen Satz nur teilen, wenn er das Arbeitsgedächtnis der Lesenden überfordert (~4 Einheiten): große Subjekt-Verb-Distanz, mehr als zwei Verschachtelungsebenen oder Aufzählungen mit mehr als 3–4 Elementen. Lange, flüssige Sätze mit lokal verbundenen Teilsätzen bleiben erhalten.",
     "prosePassRules.rules.tightening.label": "Prosa straffen",
     "prosePassRules.rules.tightening.description": "Redundanzen entfernen und wortreiche Formulierungen kürzen.",
 

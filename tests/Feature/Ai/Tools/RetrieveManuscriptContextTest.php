@@ -58,6 +58,28 @@ it('includes plot beats linked to the active chapter, grouped by parent plot poi
         ->toContain('[fulfilled] Antagonist reveals the truth');
 });
 
+it('handles plot points with a null type without crashing', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $plotPoint = PlotPoint::factory()->for($book)->create([
+        'title' => 'Untyped plot point',
+        'type' => null,
+        'status' => PlotPointStatus::Planned,
+    ]);
+
+    $beat = Beat::factory()->for($plotPoint)->create(['title' => 'Untyped beat']);
+    $chapter->beats()->attach($beat, ['sort_order' => 0]);
+
+    $tool = new RetrieveManuscriptContext($book->id);
+    $result = (string) $tool->handle(new Request(['chapter_id' => $chapter->id]));
+
+    expect($result)
+        ->toContain('Plot Point [—/planned] Untyped plot point')
+        ->toContain('Untyped beat');
+});
+
 it('respects beat pivot order within a plot point group', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();

@@ -27,7 +27,7 @@ import type {
 } from '@/types/models';
 import { getFontFamily } from './FontSelector';
 
-export type DiffMode = 'pending' | 'refine' | 'review';
+export type DiffMode = 'pending' | 'refine' | 'review' | 'history';
 
 function splitParagraphs(html: string | null): string[] {
     if (!html) return [];
@@ -377,6 +377,10 @@ export default function DiffView({
     }, [prosePassRules, pendingVersion.content]);
 
     const handleAccept = useCallback(async () => {
+        if (mode === 'history') {
+            onClose?.();
+            return;
+        }
         setIsAccepting(true);
         try {
             if (mode === 'refine') {
@@ -481,10 +485,11 @@ export default function DiffView({
         selectedParagraphs,
         diff.aligned,
         onApplied,
+        onClose,
     ]);
 
     const handleReject = useCallback(async () => {
-        if (mode === 'refine') {
+        if (mode === 'refine' || mode === 'history') {
             onClose?.();
             return;
         }
@@ -615,6 +620,7 @@ export default function DiffView({
 
     const isRefine = mode === 'refine';
     const isReview = mode === 'review';
+    const isHistory = mode === 'history';
 
     // In refine mode, "apply" only makes sense if at least one paragraph was
     // deselected — otherwise the merged content matches the current version
@@ -634,6 +640,11 @@ export default function DiffView({
         acceptInProgressLabel = t('diff.refine.applying', {
             defaultValue: 'Applying…',
         });
+    } else if (isHistory) {
+        acceptLabel = '';
+        rejectLabel = t('diff.refine.close', { defaultValue: 'Close' });
+        acceptDisabled = true;
+        acceptInProgressLabel = '';
     } else if (isReview) {
         acceptLabel = t('diff.review.update', { defaultValue: 'Update' });
         rejectLabel = t('diff.refine.close', { defaultValue: 'Close' });
@@ -661,14 +672,21 @@ export default function DiffView({
                     <span className="text-ink-faint">{chapterTitle}</span>
                     <span className="text-ink-faint">/</span>
                     <span className="font-medium text-accent">
-                        {t('diff.reviewing', {
-                            source: sourceLabel(pendingVersion.source),
-                        })}
+                        {isHistory
+                            ? t('diff.comparing', {
+                                  version: pendingVersion.version_number,
+                                  source: sourceLabel(pendingVersion.source),
+                                  defaultValue:
+                                      'Comparing v{{version}} ({{source}}) with current',
+                              })
+                            : t('diff.reviewing', {
+                                  source: sourceLabel(pendingVersion.source),
+                              })}
                     </span>
                     <span className="text-ink-faint">
                         {t('diff.changeCount', { count: diff.changeCount })}
                     </span>
-                    {totalChanged > 0 && (
+                    {totalChanged > 0 && !isHistory && (
                         <button
                             type="button"
                             onClick={toggleAll}
@@ -690,15 +708,17 @@ export default function DiffView({
                     >
                         {rejectLabel}
                     </Button>
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        type="button"
-                        onClick={handleAccept}
-                        disabled={acceptDisabled}
-                    >
-                        {isAccepting ? acceptInProgressLabel : acceptLabel}
-                    </Button>
+                    {!isHistory && (
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            type="button"
+                            onClick={handleAccept}
+                            disabled={acceptDisabled}
+                        >
+                            {isAccepting ? acceptInProgressLabel : acceptLabel}
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -741,7 +761,9 @@ export default function DiffView({
                 >
                     <div className="mb-6 flex items-center gap-2">
                         <span className="text-xs font-semibold tracking-wider text-ink-faint uppercase">
-                            {t('diff.original')}
+                            {isHistory
+                                ? t('diff.current', { defaultValue: 'Current' })
+                                : t('diff.original')}
                         </span>
                         <span className="text-xs text-ink-faint">
                             v{currentVersion.version_number} &middot;{' '}
@@ -793,7 +815,11 @@ export default function DiffView({
                 >
                     <div className="mb-6 flex items-center gap-2">
                         <span className="text-xs font-semibold tracking-wider text-ink-faint uppercase">
-                            {t('diff.revision')}
+                            {isHistory
+                                ? t('diff.selectedVersion', {
+                                      defaultValue: 'Selected version',
+                                  })
+                                : t('diff.revision')}
                         </span>
                         <span className="text-xs text-ink-faint">
                             v{pendingVersion.version_number} &middot;{' '}

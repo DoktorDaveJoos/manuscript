@@ -1,27 +1,43 @@
 import { router } from '@inertiajs/react';
-import { Ellipsis, ExternalLink, Link2Off } from 'lucide-react';
+import { Check, Ellipsis, ExternalLink, Link2Off, UserCog } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
+
+export type ChapterRole = 'protagonist' | 'supporting' | 'mentioned';
 
 type Props = {
     openUrl: string;
     openLabel: string;
     disconnectLabel: string;
     onDisconnect?: () => void;
+    currentRole?: ChapterRole;
+    onChangeRole?: (role: ChapterRole) => void;
+    roleLabels?: { protagonist: string; supporting: string; mentioned: string };
+    setRoleLabel?: string;
 };
+
+const ROLE_ORDER: ChapterRole[] = ['protagonist', 'supporting', 'mentioned'];
 
 export default function PanelCardMenu({
     openUrl,
     openLabel,
     disconnectLabel,
     onDisconnect,
+    currentRole,
+    onChangeRole,
+    roleLabels,
+    setRoleLabel,
 }: Props) {
     const { t } = useTranslation('editor');
+    const showRoleSub = Boolean(onChangeRole && roleLabels && setRoleLabel);
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -45,6 +61,34 @@ export default function PanelCardMenu({
                     <ExternalLink className="size-3.5" />
                     {openLabel}
                 </DropdownMenuItem>
+                {showRoleSub && (
+                    <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                            <span className="flex items-center gap-2">
+                                <UserCog className="size-3.5" />
+                                {setRoleLabel}
+                            </span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                            {ROLE_ORDER.map((role) => (
+                                <DropdownMenuItem
+                                    key={role}
+                                    onClick={() => onChangeRole?.(role)}
+                                >
+                                    <Check
+                                        className={
+                                            'size-3.5 ' +
+                                            (currentRole === role
+                                                ? 'opacity-100'
+                                                : 'opacity-0')
+                                        }
+                                    />
+                                    {roleLabels?.[role]}
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                )}
                 {onDisconnect && (
                     <DropdownMenuItem variant="danger" onClick={onDisconnect}>
                         <Link2Off className="size-3.5" />

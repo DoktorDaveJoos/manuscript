@@ -77,9 +77,10 @@ test('continue writing forwards the hint to the agent', function () {
     $instructions = (string) $agent->instructions();
 
     expect($instructions)
-        ->toContain('AUTHOR NOTE')
+        ->toContain('AUTHOR DIRECTIVE')
         ->toContain('Make it tense, focus on Anna')
-        ->toContain('approximately 80 words');
+        ->toContain('approximately 80 words')
+        ->toContain('MUST cover');
 });
 
 test('continue writing rejects invalid word goals', function () {
@@ -121,6 +122,42 @@ test('continue writing fails when no AI provider is configured', function () {
     $this->postJson(
         route('chapters.ai.continueWriting', [$book, $chapter]),
     )->assertStatus(422);
+});
+
+test('continue writing rejects a stale expected_current_version_id with 409', function () {
+    ContinueWritingAgent::fake(['ok']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Some prose.</p>']);
+    $current = ChapterVersion::factory()->for($chapter)->create([
+        'version_number' => 2,
+        'is_current' => true,
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $this->postJson(
+        route('chapters.ai.continueWriting', [$book, $chapter]),
+        ['expected_current_version_id' => $current->id + 9999],
+    )->assertStatus(409);
+});
+
+test('continue writing commit rejects a stale expected_current_version_id with 409', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>x</p>']);
+    $current = ChapterVersion::factory()->for($chapter)->create([
+        'version_number' => 2,
+        'is_current' => true,
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $this->postJson(
+        route('chapters.ai.continueWriting.commit', [$book, $chapter]),
+        ['expected_current_version_id' => $current->id + 9999],
+    )->assertStatus(409);
 });
 
 test('continue writing 404s when chapter does not belong to the book', function () {
@@ -379,4 +416,173 @@ test('agent instructions include preceding chapter summary when available', func
         ->toContain('Preceding Chapter')
         ->toContain('Arrival')
         ->toContain('Elena arrives in Ravenholm.');
+});
+
+test('agent instructions render before/after split when supplied (inline mode)', function () {
+    $book = Book::factory()->withAi()->create(['title' => 'Test', 'author' => 'A.', 'language' => 'English']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create([
+        'title' => 'Confrontation',
+    ]);
+    Scene::factory()->for($chapter)->create([
+        'content' => '<p>She walked to the window. The street was empty.</p>',
+        'sort_order' => 0,
+    ]);
+
+    $agent = new ContinueWritingAgent(
+        book: $book,
+        chapter: $chapter,
+        hint: null,
+        wordGoal: 120,
+        beforeProse: 'She walked to the window.',
+        afterProse: 'The street was empty.',
+    );
+
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)
+        ->toContain('Prose Before Cursor')
+        ->toContain('She walked to the window.')
+        ->toContain('Prose After Cursor')
+        ->toContain('The street was empty.')
+        ->toContain('mid-sentence')
+        ->toContain('INSERTING prose')
+        ->toContain('off-limits as content')
+        ->not->toContain('where the chapter prose ends');
+});
+
+test('agent instructions stay in append mode when after is empty', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create([
+        'title' => 'Opening',
+    ]);
+    Scene::factory()->for($chapter)->create([
+        'content' => '<p>The room was quiet.</p>',
+        'sort_order' => 0,
+    ]);
+
+    $agent = new ContinueWritingAgent(
+        book: $book,
+        chapter: $chapter,
+        hint: null,
+        wordGoal: 120,
+        beforeProse: 'The room was quiet.',
+        afterProse: '',
+    );
+
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)
+        ->toContain('Prose Before Cursor')
+        ->toContain('The room was quiet.')
+        ->toContain('where the chapter prose ends')
+        ->not->toContain('Prose After Cursor')
+        ->not->toContain('mid-sentence');
+});
+
+test('controller forwards before/after to the agent', function () {
+    ContinueWritingAgent::fake(['ok']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create([
+        'content' => '<p>She walked to the window. The street was empty.</p>',
+    ]);
+
+    $this->post(
+        route('chapters.ai.continueWriting', [$book, $chapter]),
+        [
+            'before' => 'She walked to the window.',
+            'after' => 'The street was empty.',
+            'word_goal' => 80,
+        ],
+    )->assertOk();
+
+    ContinueWritingAgent::assertPrompted(function ($prompt) {
+        $instructions = (string) $prompt->agent->instructions();
+
+        return str_contains($instructions, 'Prose Before Cursor')
+            && str_contains($instructions, 'She walked to the window.')
+            && str_contains($instructions, 'Prose After Cursor')
+            && str_contains($instructions, 'The street was empty.');
+    });
+});
+
+test('agent instructions include up to three preceding chapters in order', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+
+    foreach ([
+        1 => ['title' => 'Old History', 'summary' => 'Should not appear — too far back.'],
+        2 => ['title' => 'Arrival', 'summary' => 'Elena arrives in Ravenholm.'],
+        3 => ['title' => 'The Letter', 'summary' => 'Elena receives a letter.'],
+        4 => ['title' => 'The Stranger', 'summary' => 'A stranger appears at the inn.'],
+    ] as $order => $data) {
+        Chapter::factory()->for($book)->for($storyline)->create([
+            'reader_order' => $order,
+            'title' => $data['title'],
+            'summary' => $data['summary'],
+        ]);
+    }
+
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create([
+        'reader_order' => 5,
+    ]);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Some prose.</p>']);
+
+    $agent = new ContinueWritingAgent($book, $chapter, null, 120);
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)
+        ->toContain('Elena arrives in Ravenholm.')
+        ->toContain('Elena receives a letter.')
+        ->toContain('A stranger appears at the inn.')
+        ->not->toContain('Should not appear — too far back.');
+
+    $arrival = strpos($instructions, 'Elena arrives in Ravenholm.');
+    $letter = strpos($instructions, 'Elena receives a letter.');
+    $stranger = strpos($instructions, 'A stranger appears at the inn.');
+
+    expect($arrival)->toBeLessThan($letter);
+    expect($letter)->toBeLessThan($stranger);
+});
+
+test('agent instructions fall back to prose tail per preceding chapter when no summary', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+
+    $ch1 = Chapter::factory()->for($book)->for($storyline)->create([
+        'reader_order' => 1,
+        'title' => 'Opening',
+        'summary' => null,
+    ]);
+    Scene::factory()->for($ch1)->create([
+        'content' => '<p>The signal-flag '.str_repeat('older-word ', 500).'final-tail-one.</p>',
+    ]);
+
+    $ch2 = Chapter::factory()->for($book)->for($storyline)->create([
+        'reader_order' => 2,
+        'title' => 'Middle',
+        'summary' => null,
+    ]);
+    Scene::factory()->for($ch2)->create([
+        'content' => '<p>The harbor '.str_repeat('mid-word ', 500).'final-tail-two.</p>',
+    ]);
+
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create([
+        'reader_order' => 3,
+    ]);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Now.</p>']);
+
+    $agent = new ContinueWritingAgent($book, $chapter, null, 120);
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)
+        ->toContain('Ch1 — Opening, last excerpt')
+        ->toContain('final-tail-one')
+        ->toContain('Ch2 — Middle, last excerpt')
+        ->toContain('final-tail-two')
+        ->not->toContain('The signal-flag');
 });

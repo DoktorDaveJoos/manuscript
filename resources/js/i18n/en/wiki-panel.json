@@ -8,6 +8,12 @@
     "connectToChapter": "Connect to chapter",
     "disconnectFromChapter": "Disconnect from chapter",
     "openInWiki": "Open in wiki",
+    "setRole": "Set role",
+    "role": {
+        "protagonist": "Protagonist (POV)",
+        "supporting": "Supporting",
+        "mentioned": "Mentioned"
+    },
     "searchEmpty": "No results found",
     "emptyState": "Search your wiki to reference entries while writing."
 }

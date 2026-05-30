@@ -23,6 +23,8 @@
 
     "prose.running": "Running…",
     "prose.runProsePass": "Revise Prose",
+    "prose.runProsePassScene": "Revise Current Scene",
+    "prose.runningScene": "Revising scene…",
     "prose.description": "AI will revise the chapter text for clarity, rhythm, and style while preserving your voice.",
     "prose.settingsLink": "Adjust rules in settings →",
 
@@ -84,6 +86,8 @@
     "error.toast.bad_request.body": "{{provider}} rejected the request: {{detail}}",
     "error.toast.timeout.title": "Request timed out",
     "error.toast.timeout.body": "The provider didn't respond in time. Try again.",
+    "error.toast.stale_version.title": "Chapter has changed",
+    "error.toast.stale_version.body": "Another change to this chapter landed while you were working. Reload to continue.",
     "error.toast.unknown.title": "AI request failed",
     "error.toast.unknown.body": "{{detail}}",
     "error.toast.action.openSettings": "Open settings",

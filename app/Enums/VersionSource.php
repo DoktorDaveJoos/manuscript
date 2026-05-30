@@ -11,4 +11,5 @@ enum VersionSource: string
     case Beautify = 'beautify';
     case Snapshot = 'snapshot';
     case ContinueWriting = 'continue_writing';
+    case RewriteSelection = 'rewrite_selection';
 }

@@ -14,10 +14,21 @@
     "pdfOptions": "PDF-OPTIONEN",
     "trimSizeHint": "Das Buchformat legt die physischen Seitenmaße deines gedruckten Buches fest.",
     "trimSize": "Buchformat",
+    "customSize": "Benutzerdefiniert…",
+    "customDimensions": "Eigenes Format",
     "fontSize": "Schriftgröße",
+    "bleed": "Beschnittzugabe",
+    "bleedHint": "Die Beschnittzugabe vergrößert die Seite über das Endformat hinaus, damit randabfallende Inhalte sauber gedruckt werden. Die meisten Druckereien verlangen 3 mm; für Kindle/KDP auf 0 setzen.",
+    "cmyk": "CMYK (druckfertig)",
+    "cmykHint": "Erzeugt ein CMYK-PDF mit reinem Schwarz (nur K-Kanal) – von den meisten Druckereien gefordert. Für Kindle/KDP ausschalten, dort wird RGB erwartet.",
     "options": "OPTIONEN",
 
-    "includeChapterTitles": "Kapitelüberschriften einbeziehen",
+    "chapterHeading": "Kapitelüberschrift",
+    "chapterHeadingOptions": {
+        "full": "Nummer + Titel",
+        "number": "Nur Nummer",
+        "none": "Keine"
+    },
     "includeActBreaks": "Aktumbrüche einbeziehen",
     "showPageNumbers": "Seitenzahlen anzeigen",
 
@@ -37,6 +48,7 @@
 
     "frontMatter.titlePage": "Titelseite",
     "frontMatter.copyright": "Copyright",
+    "frontMatter.prologue": "Prolog",
     "frontMatter.tableOfContents": "Inhaltsverzeichnis",
 
     "backMatter.acknowledgments": "Danksagung",

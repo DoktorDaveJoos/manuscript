@@ -2,6 +2,7 @@
 
 namespace App\Services\Export;
 
+use App\Enums\ChapterHeading;
 use App\Enums\ExportFormat;
 use App\Enums\FontPairing;
 use App\Enums\SceneBreakStyle;
@@ -14,7 +15,7 @@ final readonly class ExportOptions
      * @param  string[]  $backMatter
      */
     public function __construct(
-        public bool $includeChapterTitles = true,
+        public ChapterHeading $chapterHeading = ChapterHeading::Full,
         public bool $includeActBreaks = false,
         public bool $includeTableOfContents = false,
         public bool $showPageNumbers = true,
@@ -36,6 +37,10 @@ final readonly class ExportOptions
         public string $epigraphAttribution = '',
         public string $alsoByText = '',
         public ?string $coverImagePath = null,
+        public bool $cmyk = false,
+        public float $bleed = 0.0,
+        public ?float $customWidth = null,
+        public ?float $customHeight = null,
     ) {}
 
     /**
@@ -44,11 +49,11 @@ final readonly class ExportOptions
     public static function fromArray(array $data): self
     {
         return new self(
-            includeChapterTitles: (bool) ($data['include_chapter_titles'] ?? true),
+            chapterHeading: ChapterHeading::tryFrom((string) ($data['chapter_heading'] ?? '')) ?? ChapterHeading::Full,
             includeActBreaks: (bool) ($data['include_act_breaks'] ?? false),
             includeTableOfContents: (bool) ($data['include_table_of_contents'] ?? false),
             showPageNumbers: (bool) ($data['show_page_numbers'] ?? true),
-            trimSize: isset($data['trim_size']) ? TrimSize::from($data['trim_size']) : null,
+            trimSize: isset($data['trim_size']) ? TrimSize::tryFrom($data['trim_size']) : null,
             fontSize: (int) ($data['font_size'] ?? 11),
             frontMatter: (array) ($data['front_matter'] ?? []),
             backMatter: (array) ($data['back_matter'] ?? []),
@@ -66,6 +71,10 @@ final readonly class ExportOptions
             epigraphAttribution: (string) ($data['epigraph_attribution'] ?? ''),
             alsoByText: (string) ($data['also_by_text'] ?? ''),
             coverImagePath: isset($data['cover_image_path']) ? (string) $data['cover_image_path'] : null,
+            cmyk: (bool) ($data['cmyk'] ?? false),
+            bleed: (float) ($data['bleed'] ?? 0),
+            customWidth: isset($data['custom_width']) ? (float) $data['custom_width'] : null,
+            customHeight: isset($data['custom_height']) ? (float) $data['custom_height'] : null,
         );
     }
 }

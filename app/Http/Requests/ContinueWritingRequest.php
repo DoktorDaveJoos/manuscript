@@ -19,7 +19,17 @@ class ContinueWritingRequest extends FormRequest
         return [
             'hint' => ['nullable', 'string', 'max:1000'],
             'word_goal' => ['nullable', 'integer', 'min:30', 'max:500'],
+            'before' => ['nullable', 'string'],
+            'after' => ['nullable', 'string'],
+            'expected_current_version_id' => ['nullable', 'integer'],
         ];
+    }
+
+    public function expectedCurrentVersionId(): ?int
+    {
+        $value = $this->validated('expected_current_version_id');
+
+        return $value === null ? null : (int) $value;
     }
 
     public function wordGoal(): int
@@ -32,5 +42,15 @@ class ContinueWritingRequest extends FormRequest
         $hint = $this->validated('hint');
 
         return $hint === null ? null : trim($hint);
+    }
+
+    public function beforeProse(): ?string
+    {
+        return $this->validated('before');
+    }
+
+    public function afterProse(): ?string
+    {
+        return $this->validated('after');
     }
 }

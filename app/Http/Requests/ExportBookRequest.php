@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\BackMatterType;
+use App\Enums\ChapterHeading;
 use App\Enums\ExportFormat;
 use App\Enums\FontPairing;
 use App\Enums\FrontMatterType;
@@ -25,11 +26,14 @@ class ExportBookRequest extends FormRequest
             'storyline_id' => ['nullable', 'integer', 'exists:storylines,id'],
             'chapter_ids' => ['nullable', 'array'],
             'chapter_ids.*' => ['integer', 'exists:chapters,id'],
-            'include_chapter_titles' => ['boolean'],
+            'chapter_heading' => ['nullable', Rule::enum(ChapterHeading::class)],
             'include_act_breaks' => ['boolean'],
             'include_table_of_contents' => ['boolean'],
             'show_page_numbers' => ['boolean'],
-            'trim_size' => ['nullable', Rule::enum(TrimSize::class)],
+            'trim_size' => ['nullable', 'string', Rule::in([...array_map(fn (TrimSize $t) => $t->value, TrimSize::cases()), 'custom'])],
+            'custom_width' => ['nullable', 'required_if:trim_size,custom', 'numeric', 'min:50', 'max:500'],
+            'custom_height' => ['nullable', 'required_if:trim_size,custom', 'numeric', 'min:50', 'max:500'],
+            'bleed' => ['nullable', 'numeric', 'min:0', 'max:25'],
             'font_size' => ['nullable', 'integer', 'in:10,11,12,13,14'],
             'front_matter' => ['nullable', 'array'],
             'front_matter.*' => ['string', Rule::enum(FrontMatterType::class)],
@@ -40,6 +44,7 @@ class ExportBookRequest extends FormRequest
             'scene_break_style' => ['nullable', 'string', Rule::enum(SceneBreakStyle::class)],
             'drop_caps' => ['nullable', 'boolean'],
             'include_cover' => ['nullable', 'boolean'],
+            'cmyk' => ['nullable', 'boolean'],
         ];
     }
 }

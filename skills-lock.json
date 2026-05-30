@@ -1,6 +1,30 @@
 {
   "version": 1,
   "skills": {
+    "higgsfield-generate": {
+      "source": "higgsfield-ai/skills",
+      "sourceType": "github",
+      "skillPath": "higgsfield-generate/SKILL.md",
+      "computedHash": "5826d9db22e6f9a0495382d33db0e515063884c713db1a4931fe861652d6d784"
+    },
+    "higgsfield-marketplace-cards": {
+      "source": "higgsfield-ai/skills",
+      "sourceType": "github",
+      "skillPath": "higgsfield-marketplace-cards/SKILL.md",
+      "computedHash": "dadfdc8d1ab18c68edc1266b699100edf6628eeb494a8a6db62972a4bac5b5be"
+    },
+    "higgsfield-product-photoshoot": {
+      "source": "higgsfield-ai/skills",
+      "sourceType": "github",
+      "skillPath": "higgsfield-product-photoshoot/SKILL.md",
+      "computedHash": "128d1926c2a70ad1c08e7de17e4b7485a2ada9a02ce3e7cad80053311d619ce7"
+    },
+    "higgsfield-soul-id": {
+      "source": "higgsfield-ai/skills",
+      "sourceType": "github",
+      "skillPath": "higgsfield-soul-id/SKILL.md",
+      "computedHash": "7cfc9540f5890dac0035f430c820a7db13c14796b2a8d42edb75f373e9e418c1"
+    },
     "php-native-audit": {
       "source": "DoktorDaveJoos/nativephp-skills",
       "sourceType": "github",

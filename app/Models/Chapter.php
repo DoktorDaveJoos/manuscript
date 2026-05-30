@@ -59,6 +59,7 @@ class Chapter extends Model
             'analyzed_at' => 'datetime',
             'ai_prepared_at' => 'datetime',
             'is_epilogue' => 'boolean',
+            'is_prologue' => 'boolean',
         ];
     }
 
@@ -260,9 +261,7 @@ class Chapter extends Model
         $segments = preg_split('/<hr\s*\/?>/', $content);
         $segments = array_values(array_filter($segments, fn ($s) => trim($s) !== ''));
 
-        if (count($segments) <= 1) {
-            $this->replaceScenesWithContent($content);
-
+        if (empty($segments)) {
             return;
         }
 
@@ -274,7 +273,12 @@ class Chapter extends Model
             $wordCount = str_word_count(strip_tags($segment));
             $totalWordCount += $wordCount;
 
-            $title = $sceneMap[$index]['title'] ?? 'Scene '.($index + 1);
+            // Title preference: sceneMap (captured at request start) →
+            // live scene title (still there if sceneMap is incomplete) →
+            // synthesized default for genuinely new scenes.
+            $title = $sceneMap[$index]['title']
+                ?? $existingScenes[$index]?->title
+                ?? 'Scene '.($index + 1);
 
             if ($index < $existingScenes->count()) {
                 $existingScenes[$index]->update([
@@ -293,7 +297,6 @@ class Chapter extends Model
             }
         }
 
-        // Delete excess scenes
         if (count($segments) < $existingScenes->count()) {
             $excessIds = $existingScenes->slice(count($segments))->pluck('id');
             $this->scenes()->whereIn('id', $excessIds)->forceDelete();

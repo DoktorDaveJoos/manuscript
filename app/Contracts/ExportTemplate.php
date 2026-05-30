@@ -33,7 +33,7 @@ interface ExportTemplate
     public function dropCapCss(): string;
 
     /**
-     * HTML markup for the chapter opening (label + title).
+     * HTML markup for the chapter opening: the number label, plus the title when $includeTitle is true.
      */
-    public function chapterHeaderHtml(int $index, string $title, string $locale = 'en'): string;
+    public function chapterHeaderHtml(int $index, string $title, string $locale = 'en', bool $includeTitle = true): string;
 }

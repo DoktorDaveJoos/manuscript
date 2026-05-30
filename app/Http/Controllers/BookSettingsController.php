@@ -109,7 +109,7 @@ class BookSettingsController extends Controller
         $book->load('storylines', 'acts');
 
         $chapters = $book->chapters()
-            ->select('id', 'book_id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count', 'is_epilogue')
+            ->select('id', 'book_id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count', 'is_epilogue', 'is_prologue')
             ->with(['scenes' => fn ($q) => $q->orderBy('sort_order')->select('id', 'chapter_id', 'content')])
             ->orderBy('reader_order')
             ->get();
@@ -118,7 +118,7 @@ class BookSettingsController extends Controller
             'book' => $book->only('id', 'title', 'author', 'cover_image_path'),
             'storylines' => $book->storylines->map(fn ($s) => $s->only('id', 'name', 'color', 'type')),
             'chapters' => $chapters->map(fn ($ch) => [
-                ...$ch->only('id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count', 'is_epilogue'),
+                ...$ch->only('id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count', 'is_epilogue', 'is_prologue'),
                 'content' => $ch->getContentWithSceneBreaks(),
             ]),
             'trimSizes' => collect(TrimSize::cases())->map(function ($t) {
@@ -127,6 +127,7 @@ class BookSettingsController extends Controller
                 return [
                     'value' => $t->value,
                     'label' => $t->label(),
+                    'labelMetric' => $t->metricLabel(),
                     'width' => $dims['width'],
                     'height' => $dims['height'],
                 ];

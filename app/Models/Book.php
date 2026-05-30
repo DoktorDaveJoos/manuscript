@@ -36,6 +36,7 @@ class Book extends Model
             'secondary_genres' => 'array',
             'export_drop_caps' => 'boolean',
             'custom_dictionary' => 'array',
+            'cover_settings' => 'array',
         ];
     }
 
@@ -99,6 +100,7 @@ class Book extends Model
             ['key' => 'filter_words', 'label' => 'Filter word removal', 'description' => 'Remove unnecessary filter words (felt, saw, heard, noticed).', 'enabled' => true],
             ['key' => 'passive_voice', 'label' => 'Passive voice reduction', 'description' => 'Convert passive constructions to active voice where appropriate.', 'enabled' => true],
             ['key' => 'sentence_variety', 'label' => 'Sentence variety', 'description' => 'Vary sentence length and structure for better rhythm.', 'enabled' => true],
+            ['key' => 'shorten_long_sentences', 'label' => 'Shorten overlong sentences', 'description' => "Split a sentence only when it overloads the reader's working memory (~4 chunks): wide subject-verb gaps, more than two levels of clause nesting, or chained items beyond 3–4. Long, fluent sentences with locally connected clauses stay.", 'enabled' => true],
             ['key' => 'tightening', 'label' => 'Prose tightening', 'description' => 'Remove redundancies and tighten wordy phrases.', 'enabled' => true],
         ];
     }
@@ -133,23 +135,50 @@ class Book extends Model
     }
 
     /**
-     * Get global prose pass rules from AppSetting, or fall back to book/default.
+     * Get global prose pass rules. Saved configurations are merged with current defaults
+     * so newly added rules appear automatically without requiring users to re-save.
      *
      * @return array<int, array{key: string, label: string, description: string, enabled: bool}>
      */
     public static function globalProsePassRules(): array
     {
+        $defaults = self::defaultProsePassRules();
         $json = AppSetting::get('prose_pass_rules');
 
-        if ($json) {
-            $decoded = is_string($json) ? json_decode($json, true) : $json;
-
-            if (is_array($decoded) && ! empty($decoded)) {
-                return $decoded;
-            }
+        if (! $json) {
+            return $defaults;
         }
 
-        return self::defaultProsePassRules();
+        $decoded = is_string($json) ? json_decode($json, true) : $json;
+
+        if (! is_array($decoded) || empty($decoded)) {
+            return $defaults;
+        }
+
+        $savedKeys = collect($decoded)->pluck('key')->all();
+        $missing = collect($defaults)
+            ->reject(fn ($rule) => in_array($rule['key'], $savedKeys, true))
+            ->values()
+            ->all();
+
+        return [...$decoded, ...$missing];
+    }
+
+    /**
+     * Rules from globalProsePassRules() that make sense to apply during fresh generation
+     * (Continue Writing), not just revision. Mechanical/structural rules transfer cleanly;
+     * corrective ones (show_dont_tell, dialogue_tags) are left to the revision pass.
+     *
+     * @return array<int, array{key: string, label: string, description: string, enabled: bool}>
+     */
+    public static function generationApplicableProsePassRules(): array
+    {
+        $applicable = ['shorten_long_sentences', 'sentence_variety', 'tightening', 'passive_voice', 'filter_words'];
+
+        return collect(self::globalProsePassRules())
+            ->filter(fn ($rule) => in_array($rule['key'], $applicable, true))
+            ->values()
+            ->all();
     }
 
     /**

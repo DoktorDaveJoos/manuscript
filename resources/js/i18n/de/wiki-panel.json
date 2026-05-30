@@ -8,6 +8,12 @@
     "connectToChapter": "Mit Kapitel verbinden",
     "disconnectFromChapter": "Vom Kapitel trennen",
     "openInWiki": "Im Wiki öffnen",
+    "setRole": "Rolle festlegen",
+    "role": {
+        "protagonist": "Protagonist (POV)",
+        "supporting": "Nebenfigur",
+        "mentioned": "Erwähnt"
+    },
     "searchEmpty": "Keine Ergebnisse gefunden",
     "emptyState": "Durchsuche dein Wiki, um Einträge beim Schreiben zu referenzieren."
 }
