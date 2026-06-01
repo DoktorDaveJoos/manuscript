@@ -7,8 +7,13 @@
             $isEbook = $isEbookPreview ?? false;
             $trimSize = $options->trimSize ?? \App\Enums\TrimSize::UsTrade;
             $fontSize = $options->fontSize;
-            $dimensions = $trimSize->dimensions();
-            $margins = $trimSize->margins();
+            // Match the mPDF constructor geometry (trim grown by bleed on every side,
+            // margins shifted by the same bleed). Using the raw trim size/margins here
+            // while the constructor uses the bleed-adjusted sheet shrinks the text block
+            // when bleed > 0, which silently inflates the page count.
+            $geometry = \App\Services\Export\Exporters\PdfExporter::resolveGeometry($options);
+            $dimensions = ['width' => $geometry['width'], 'height' => $geometry['height']];
+            $margins = $geometry['margins'];
         @endphp
 
         @unless ($isEbook)
