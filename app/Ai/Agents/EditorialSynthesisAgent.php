@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Concerns\CachesSystemPrompt;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Enums\EditorialPersona;
@@ -14,6 +15,7 @@ use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
+use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
 use Stringable;
@@ -21,9 +23,9 @@ use Stringable;
 #[Temperature(0.4)]
 #[MaxTokens(8192)]
 #[Timeout(300)]
-class EditorialSynthesisAgent implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput
+class EditorialSynthesisAgent implements Agent, BelongsToBook, HasMiddleware, HasProviderOptions, HasStructuredOutput
 {
-    use Promptable;
+    use CachesSystemPrompt, Promptable;
 
     public function __construct(
         public Book $book,
@@ -58,10 +60,14 @@ class EditorialSynthesisAgent implements Agent, BelongsToBook, HasMiddleware, Ha
             EditorialSectionType::ChapterNotes => 'Synthesize the per-chapter editorial notes into manuscript-wide patterns. Identify recurring issues across chapters, track chapter-to-chapter progression of quality, highlight standout chapters (both strong and weak), and note patterns that only become visible when looking across the full manuscript.',
         };
 
+        $break = self::CACHE_BREAKPOINT;
+
         return <<<INSTRUCTIONS
         {$persona->instructions()}
 
         {$bookContext}
+
+        {$break}
 
         Section: {$this->sectionType->value}
 
