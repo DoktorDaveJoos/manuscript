@@ -47,7 +47,6 @@ import { typedClosestCenter } from '@/lib/dnd';
 import {
     addSceneToChapter,
     broadcastChapterDataChanged,
-    cn,
     formatCompactCount,
     jsonFetchHeaders,
 } from '@/lib/utils';

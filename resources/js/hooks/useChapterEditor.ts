@@ -112,6 +112,10 @@ export default function useChapterEditor({
         if (!editor || editor.isDestroyed) return;
         const view = editor.view;
         const originalDispatch = view.dispatch.bind(view);
+        // Intentionally monkey-patch the ProseMirror view's dispatch to swallow
+        // the documented stale-proofread race described above; it cannot be
+        // moved into the editor hook since it patches a third-party view.
+        // eslint-disable-next-line react-hooks/immutability
         view.dispatch = (tr) => {
             try {
                 originalDispatch(tr);

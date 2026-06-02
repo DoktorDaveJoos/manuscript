@@ -83,7 +83,7 @@ export default function ChapterBeats({ plotPoints, bookId, chapterId }: Props) {
                                 {pp.title}
                             </span>
                             <span
-                                className={`shrink-0 rounded px-1 py-0.5 text-[9px] leading-none font-medium ${TYPE_STYLES[pp.type] ?? ''}`}
+                                className={`shrink-0 rounded px-1 py-0.5 text-[9px] leading-none font-medium ${(pp.type && TYPE_STYLES[pp.type]) || ''}`}
                             >
                                 {tPlot(`typeShort.${pp.type}`)}
                             </span>

@@ -59,9 +59,14 @@ export default function ArchiveDrawer({
         if (!open) return;
 
         const controller = new AbortController();
+        // Reset drawer view state before re-fetching the session list for the
+        // freshly opened drawer. This deliberate synchronous reset is what the
+        // rule flags, but it is the correct behavior here.
+        /* eslint-disable react-hooks/set-state-in-effect */
         setLoadingList(true);
         setActiveSessionId(null);
         setTranscript([]);
+        /* eslint-enable react-hooks/set-state-in-effect */
 
         fetch(sessionIndex.url({ book: bookId }), {
             headers: jsonFetchHeaders(),

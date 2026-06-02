@@ -30,7 +30,6 @@ import { md } from '@/lib/markdown';
 import { extractErrorMessage, jsonFetchHeaders } from '@/lib/utils';
 
 const SENTINEL_OPEN = '<!-- PLOT_COACH_BATCH_PROPOSAL';
-const SENTINEL_CLOSE = '-->';
 
 /**
  * Matches the internal wire signals emitted by approval-card buttons. These
