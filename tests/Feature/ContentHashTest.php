@@ -136,12 +136,12 @@ test('scene reorder triggers hash refresh via controller', function () {
     expect($chapter->content_hash)->not->toBe($originalHash);
 });
 
-test('pipeline skips entirely when no dirty chapters', function () {
+test('pipeline skips per-chapter work but still completes when nothing is dirty', function () {
     fakeAiAgents();
 
     [$book, $chapters] = createBookWithChapters(2);
 
-    // Mark all chapters as already prepared
+    // Mark all chapters as already prepared so none are dirty.
     foreach ($chapters as $chapter) {
         $chapter->update(['prepared_content_hash' => $chapter->content_hash]);
     }
@@ -157,8 +157,14 @@ test('pipeline skips entirely when no dirty chapters', function () {
     $preparation->refresh();
     expect($preparation->status)->toBe('completed')
         ->and($preparation->completed_phases)->toContain('chunking')
-        ->and($preparation->completed_phases)->toContain('health_analysis')
-        ->and($preparation->batch_id)->toBeNull();
+        ->and($preparation->completed_phases)->toContain('health_analysis');
+
+    // Singleton steps (writing style, story bible) still run when selected, but
+    // the expensive per-chapter work is skipped for clean chapters — so none of
+    // them get re-analyzed.
+    foreach ($chapters as $chapter) {
+        expect($chapter->fresh()->summary)->toBeNull();
+    }
 });
 
 test('pipeline only processes dirty chapters', function () {
