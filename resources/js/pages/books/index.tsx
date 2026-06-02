@@ -9,7 +9,6 @@ import DeleteBookDialog from '@/components/onboarding/DeleteBookDialog';
 import NewBookCard from '@/components/onboarding/NewBookCard';
 import RenameBookDialog from '@/components/onboarding/RenameBookDialog';
 import Button from '@/components/ui/Button';
-import { useFreeTier } from '@/hooks/useFreeTier';
 import OnboardingLayout from '@/layouts/OnboardingLayout';
 
 type DialogState =
@@ -50,14 +49,12 @@ function BookLibrary({
     onRename,
     onDuplicate,
     onDelete,
-    canCreateBook,
 }: {
     books: BookWithCounts[];
     onCreateClick: () => void;
     onRename: (book: BookWithCounts) => void;
     onDuplicate: (book: BookWithCounts) => void;
     onDelete: (book: BookWithCounts) => void;
-    canCreateBook: boolean;
 }) {
     const { t } = useTranslation('onboarding');
 
@@ -72,13 +69,11 @@ function BookLibrary({
                         key={book.id}
                         book={book}
                         onRename={() => onRename(book)}
-                        onDuplicate={
-                            canCreateBook ? () => onDuplicate(book) : undefined
-                        }
+                        onDuplicate={() => onDuplicate(book)}
                         onDelete={() => onDelete(book)}
                     />
                 ))}
-                <NewBookCard onClick={onCreateClick} locked={!canCreateBook} />
+                <NewBookCard onClick={onCreateClick} />
             </div>
         </div>
     );
@@ -86,7 +81,6 @@ function BookLibrary({
 
 export default function BooksIndex({ books }: { books: BookWithCounts[] }) {
     const [dialog, setDialog] = useState<DialogState>(null);
-    const { canCreateBook } = useFreeTier();
 
     return (
         <>
@@ -101,7 +95,6 @@ export default function BooksIndex({ books }: { books: BookWithCounts[] }) {
                     onRename={(book) => setDialog({ type: 'rename', book })}
                     onDuplicate={(book) => router.post(duplicate.url(book))}
                     onDelete={(book) => setDialog({ type: 'delete', book })}
-                    canCreateBook={canCreateBook}
                 />
             )}
 

@@ -116,6 +116,12 @@ class ExportService
             $query->where('is_epilogue', false);
         }
 
+        // Exclude prologue chapters from the main body when prologue is in front matter
+        $frontMatter = (array) ($options['front_matter'] ?? []);
+        if (in_array('prologue', $frontMatter)) {
+            $query->where('is_prologue', false);
+        }
+
         // chapter_ids takes priority — load in exact order given
         if (! empty($options['chapter_ids'])) {
             $ids = $options['chapter_ids'];
@@ -142,6 +148,14 @@ class ExportService
         return $book->chapters()
             ->with(['scenes' => fn ($q) => $q->orderBy('sort_order')])
             ->where('is_epilogue', true)
+            ->first();
+    }
+
+    public static function resolvePrologueChapter(Book $book): ?Chapter
+    {
+        return $book->chapters()
+            ->with(['scenes' => fn ($q) => $q->orderBy('sort_order')])
+            ->where('is_prologue', true)
             ->first();
     }
 

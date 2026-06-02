@@ -36,6 +36,8 @@ class AnalyzeChapter implements ShouldQueue
         private Book $book,
         private AiPreparation $preparation,
         private int $chapterId,
+        public readonly bool $runAnalysis = true,
+        public readonly bool $runEntities = true,
     ) {}
 
     public function handle(): void
@@ -73,17 +75,27 @@ class AnalyzeChapter implements ShouldQueue
 
         $capped = TextPrep::plainTextCapped($chapter->currentVersion->content);
 
-        $analysisOk = $this->runChapterAnalysis($chapter, $capped);
-        $entitiesOk = $this->runEntityExtraction($chapter, $capped);
+        $analysisOk = true;
+        $entitiesOk = true;
 
-        try {
-            $this->runManuscriptAnalyses($this->book, $chapter);
-        } catch (Throwable $e) {
-            report($e);
-            $this->preparation->appendPhaseError('manuscript_analysis', $chapter, $e->getMessage());
+        if ($this->runAnalysis) {
+            $analysisOk = $this->runChapterAnalysis($chapter, $capped);
+
+            try {
+                $this->runManuscriptAnalyses($this->book, $chapter);
+            } catch (Throwable $e) {
+                report($e);
+                $this->preparation->appendPhaseError('manuscript_analysis', $chapter, $e->getMessage());
+            }
         }
 
-        if ($analysisOk && $entitiesOk) {
+        if ($this->runEntities) {
+            $entitiesOk = $this->runEntityExtraction($chapter, $capped);
+        }
+
+        // Only mark the chapter fully prepared when both chapter-level steps ran
+        // and succeeded; a partial run leaves it dirty for a later full pass.
+        if ($this->runAnalysis && $this->runEntities && $analysisOk && $entitiesOk) {
             $chapter->update([
                 'prepared_content_hash' => $chapter->content_hash,
                 'ai_prepared_at' => now(),

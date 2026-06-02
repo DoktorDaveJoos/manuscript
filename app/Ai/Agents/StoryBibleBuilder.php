@@ -2,17 +2,16 @@
 
 namespace App\Ai\Agents;
 
-use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\SearchSimilarChunks;
-use App\Enums\AiTaskCategory;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
+use Laravel\Ai\Attributes\UseCheapestModel;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasStructuredOutput;
@@ -23,14 +22,10 @@ use Stringable;
 #[Temperature(0.3)]
 #[Timeout(120)]
 #[MaxTokens(4096)]
+#[UseCheapestModel]
 class StoryBibleBuilder implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput, HasTools
 {
-    use Promptable, UsesTaskCategoryModel;
-
-    public static function taskCategory(): AiTaskCategory
-    {
-        return AiTaskCategory::Analysis;
-    }
+    use Promptable;
 
     public function __construct(protected Book $book) {}
 
@@ -51,7 +46,6 @@ class StoryBibleBuilder implements Agent, BelongsToBook, HasMiddleware, HasStruc
         4. Timeline — key events in chronological order with approximate chapter references
 
         Verify key facts against the manuscript text using the search tool.
-        The book ID is {$this->book->id}. Use this when calling the search tool.
 
         LANGUAGE RULE: ALL text content you produce — themes, style rules, timeline entries — MUST be written in {$this->book->language}. Only structured field names (JSON keys) remain in English. Do not mix languages.
 
@@ -75,7 +69,7 @@ class StoryBibleBuilder implements Agent, BelongsToBook, HasMiddleware, HasStruc
     public function tools(): iterable
     {
         return [
-            new SearchSimilarChunks,
+            new SearchSimilarChunks($this->book->id),
         ];
     }
 

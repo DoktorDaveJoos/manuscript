@@ -14,10 +14,21 @@
     "pdfOptions": "OPCIONES DE PDF",
     "trimSizeHint": "El tamaño de corte establece las dimensiones físicas de tu libro impreso.",
     "trimSize": "Tamaño de corte",
+    "customSize": "Personalizado…",
+    "customDimensions": "Tamaño personalizado",
     "fontSize": "Tamaño de fuente",
+    "bleed": "Sangrado",
+    "bleedHint": "El sangrado amplía la página más allá del corte para que el contenido a sangre se imprima sin bordes blancos. La mayoría de las imprentas piden 3 mm; usa 0 para Kindle/KDP.",
+    "cmyk": "CMYK (para imprenta)",
+    "cmykHint": "Genera un PDF en CMYK con el negro solo en el canal K, requerido por la mayoría de las imprentas profesionales. Desactívalo para Kindle/KDP, que esperan RGB.",
     "options": "OPCIONES",
 
-    "includeChapterTitles": "Incluir títulos de capítulos",
+    "chapterHeading": "Encabezado de capítulo",
+    "chapterHeadingOptions": {
+        "full": "Número + Título",
+        "number": "Solo número",
+        "none": "Ninguno"
+    },
     "includeActBreaks": "Incluir saltos de acto",
     "showPageNumbers": "Mostrar números de página",
 
@@ -37,6 +48,7 @@
 
     "frontMatter.titlePage": "Portada",
     "frontMatter.copyright": "Copyright",
+    "frontMatter.prologue": "Prólogo",
     "frontMatter.tableOfContents": "Índice",
 
     "backMatter.acknowledgments": "Agradecimientos",

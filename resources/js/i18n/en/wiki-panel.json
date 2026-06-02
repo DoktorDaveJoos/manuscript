@@ -3,18 +3,17 @@
     "searchPlaceholder": "Search wiki...",
     "connectedToChapter": "Connected to chapter",
     "recentlyViewed": "Recently viewed",
-    "aliases": "Aliases",
-    "description": "Description",
     "aiDescription": "AI Description",
-    "addAlias": "Add",
+    "noDescription": "No description.",
     "connectToChapter": "Connect to chapter",
     "disconnectFromChapter": "Disconnect from chapter",
-    "changeRole": "Change role",
     "openInWiki": "Open in wiki",
-    "dismiss": "Dismiss",
+    "setRole": "Set role",
+    "role": {
+        "protagonist": "Protagonist (POV)",
+        "supporting": "Supporting",
+        "mentioned": "Mentioned"
+    },
     "searchEmpty": "No results found",
-    "emptyState": "Search your wiki to reference entries while writing.",
-    "roles.protagonist": "Protagonist",
-    "roles.supporting": "Supporting",
-    "roles.mentioned": "Mentioned"
+    "emptyState": "Search your wiki to reference entries while writing."
 }

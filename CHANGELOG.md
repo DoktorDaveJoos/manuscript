@@ -1,5 +1,47 @@
 # Changelog
 
+## v0.5.0 (2026-06-02)
+
+### Features
+
+- **Plot Coach** — conversational AI story coach with a docked chat panel, coaching-mode toggle, gate states, and live board sync (83d5ceb, 7c69bca, 181d6639)
+- Plot Coach batch proposals — propose chapters and beats in one pass with an approval UX, undo button, and board-change indicator (68f87e6, 75eedbb, 2e48290)
+- Plot Coach entity linking — reject proposals whose beats reference unlisted characters/wiki entries, and auto-attach POV characters on persist (20c2cbf, 4d2aea0, b617213, 1235eaa, 8cde97e)
+- **Publish** — cover creator, AI blurb/rewrite tools, prologue & klappentext (2f3f503)
+- **Continue writing** — stream AI prose straight into the editor with version review (3da3843)
+- Selectable AI preparation steps with per-step retry (5419f21, 880b1c8)
+- **Local backup** — encrypted on-device database backup with import and single-level revert (11d6982)
+- Licensing — require an active license app-wide and drop the free tier (f7d02a8)
+- Plot sidebar panel showing beats connected to the current chapter (15b61f4)
+- Auto-apply AI revisions with compare-from-toast (dc20c93)
+- Inject linked plot beats and wiki entries into the editor AI chat context (fc66020)
+- Add scenes from the command palette (ad349ca)
+- Streamlined AI provider config with an API-key setup guide (db03364)
+
+### Fixes
+
+- Editorial review: decompose into a per-chapter batch to stop timeout failures (c7c0a6a)
+- Export: make PDF page count independent of bleed (fd0793b)
+- Heal stale NativePHP secret on boot to prevent a 403 on `/_native/api/events` (1d74c7e)
+- Backup: capture WAL data, target the runtime DB, polish UI (056e7a5)
+- Continue-writing: only forward text deltas to the editor stream (1fed539)
+- Editor: swallow stale prosemirror-proofread dispatch (82abe26)
+- Editor: center the command palette + add missing prep/continue-writing translations (b301e87)
+- Editor: add missing continue-writing i18n keys for de/es (f31c949)
+- Writing session: subtract deletions from today's word count (f5fdb8f)
+- Diff view: coalesce ResizeObserver callbacks on rAF (c43ce49)
+- AI: bind `book_id` to AI tools at construction, not via the LLM (1c91347)
+- Plot Coach: 404 on unknown/cross-book session ids, snapshot pivot before POV auto-include so undo reverts, enforce language rule (6699f61, d066de3, 72c5943)
+
+### Other Changes
+
+- Clear pre-existing eslint/tsc errors blocking the release gate (7b36605)
+- Editor: unify AI-edit feedback on sonner; broadcast scene sidebar updates instead of a full Inertia reload (ce05bdf, 14b6f7e)
+- Licensing: simplify gate, dedupe test helpers, drop dead hook (68d7a26)
+- AI: replace the per-task model trait with SDK tier attributes (b1810e7)
+- Plot panel: flatten beat list, align with the design system, drop N+1 chapters eager-load (1da924f, df03a95, 119a6d6)
+- Backup: cleanup pass — phase enum, jsonFetchHeaders, quick_check (d426c1b)
+
 ## v0.4.10 (2026-04-17)
 
 ### Features

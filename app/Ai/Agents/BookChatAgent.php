@@ -2,12 +2,10 @@
 
 namespace App\Ai\Agents;
 
-use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Ai\Tools\SearchSimilarChunks;
-use App\Enums\AiTaskCategory;
 use App\Models\Book;
 use App\Models\Chapter;
 use Laravel\Ai\Attributes\Temperature;
@@ -24,12 +22,7 @@ use Stringable;
 #[Timeout(120)]
 class BookChatAgent implements Agent, BelongsToBook, Conversational, HasMiddleware, HasTools
 {
-    use Promptable, RemembersConversations, UsesTaskCategoryModel;
-
-    public static function taskCategory(): AiTaskCategory
-    {
-        return AiTaskCategory::Analysis;
-    }
+    use Promptable, RemembersConversations;
 
     public function __construct(
         protected Book $book,
@@ -50,6 +43,7 @@ class BookChatAgent implements Agent, BelongsToBook, Conversational, HasMiddlewa
             $chapterContext = "\n\nThe user is currently editing Chapter {$this->chapter->reader_order}: \"{$this->chapter->title}\".";
             $chapterContext .= "\nWhen they refer to \"this chapter\", they mean this one.";
             $chapterContext .= "\nTo retrieve its content, use the RetrieveManuscriptContext tool with chapter_id={$this->chapter->id}.";
+            $chapterContext .= "\nThat call also returns any plot beats and wiki entries connected to this chapter — treat them as authoritative context when discussing what happens here, who is present, and what world details apply.";
         }
 
         return <<<INSTRUCTIONS
@@ -58,8 +52,6 @@ class BookChatAgent implements Agent, BelongsToBook, Conversational, HasMiddlewa
 
         You can answer questions about the manuscript, its characters, plot, themes, and writing style.
         Use the available tools to search through the manuscript and retrieve relevant context before answering.
-
-        The book ID is {$this->book->id}. Use this when calling tools.
 
         LANGUAGE RULE: ALL text content you produce MUST be written in {$this->book->language}. Do not mix languages.
 
@@ -71,8 +63,8 @@ class BookChatAgent implements Agent, BelongsToBook, Conversational, HasMiddlewa
     public function tools(): iterable
     {
         return [
-            new RetrieveManuscriptContext,
-            new SearchSimilarChunks,
+            new RetrieveManuscriptContext($this->book->id),
+            new SearchSimilarChunks($this->book->id),
         ];
     }
 

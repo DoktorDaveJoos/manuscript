@@ -1,21 +1,22 @@
 import { usePage } from '@inertiajs/react';
-import type { AppSettings, License } from '@/types/models';
+import type { AppSettings } from '@/types/models';
 
 type SharedProps = {
     app_settings: AppSettings;
-    license: License;
     ai_configured: boolean;
+    ai_provider_label: string | null;
+    ai_default_model: string | null;
 };
 
 export function useAiFeatures() {
-    const { app_settings, license, ai_configured } =
+    const { app_settings, ai_configured, ai_provider_label, ai_default_model } =
         usePage<SharedProps>().props;
 
     return {
         visible: app_settings.show_ai_features,
-        usable:
-            license.active && ai_configured && app_settings.show_ai_features,
-        licensed: license.active,
+        usable: ai_configured && app_settings.show_ai_features,
         configured: ai_configured,
+        providerLabel: ai_provider_label ?? null,
+        defaultModel: ai_default_model ?? null,
     };
 }

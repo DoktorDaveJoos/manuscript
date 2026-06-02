@@ -5,7 +5,6 @@ import {
     BookOpen,
     LayoutGrid,
     LibraryBig,
-    Lock,
     PanelLeftClose,
     PanelLeftOpen,
     Settings,
@@ -24,7 +23,6 @@ import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsC
 import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
 import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
 import NavItem from '@/components/ui/NavItem';
-import { useFreeTier } from '@/hooks/useFreeTier';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { createChapter, formatCompactCount } from '@/lib/utils';
 import type { Book, Scene, Storyline } from '@/types/models';
@@ -71,7 +69,6 @@ export default function Sidebar({
     onOpenInNewPane?: (chapterId: number) => void;
 }) {
     const { t } = useTranslation();
-    const { isFree, canCreateStoryline } = useFreeTier();
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const {
@@ -266,23 +263,14 @@ export default function Sidebar({
                     />
                     <NavItem
                         label={t('nav.plot')}
-                        href={isFree ? undefined : indexPlot.url(book)}
+                        href={indexPlot.url(book)}
                         isActive={isPlot}
-                        disabled={isFree}
                         iconOnly={isCollapsed}
                         icon={
                             <Waypoints
                                 size={16}
                                 className="shrink-0 text-ink-faint"
                             />
-                        }
-                        suffix={
-                            isFree ? (
-                                <Lock
-                                    size={12}
-                                    className="ml-auto text-ink-faint"
-                                />
-                            ) : undefined
                         }
                     />
                     <NavItem
@@ -338,7 +326,6 @@ export default function Sidebar({
                         onOpenInNewPane={onOpenInNewPane}
                         onAddChapter={handleAddChapter}
                         onAddStoryline={handleAddStoryline}
-                        canAddStoryline={canCreateStoryline}
                         activeScenes={activeScenes}
                         onChapterRename={onChapterRename}
                         onSceneRename={onSceneRename}

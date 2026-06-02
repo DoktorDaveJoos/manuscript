@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\VersionSource;
 use App\Enums\VersionStatus;
 use App\Models\Beat;
 use App\Models\Book;
@@ -100,6 +101,79 @@ test('versions returns version list as json', function () {
         ->assertOk()
         ->assertJsonCount(2)
         ->assertJsonFragment(['version_number' => 2, 'is_current' => true]);
+});
+
+test('applyMerge creates a new accepted current version on top of the existing current', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $previous = ChapterVersion::factory()->for($chapter)->create([
+        'version_number' => 1,
+        'is_current' => false,
+        'status' => VersionStatus::Accepted,
+        'source' => VersionSource::Original,
+        'content' => '<p>Original prose.</p>',
+    ]);
+    $current = ChapterVersion::factory()->for($chapter)->create([
+        'version_number' => 2,
+        'is_current' => true,
+        'status' => VersionStatus::Accepted,
+        'source' => VersionSource::AiRevision,
+        'content' => '<p>AI revised prose.</p>',
+    ]);
+
+    $this->postJson(route('chapters.applyMerge', [$book, $chapter]), [
+        'content' => '<p>Merged prose.</p>',
+    ])->assertOk();
+
+    $newVersion = $chapter->versions()->orderByDesc('version_number')->first();
+    expect($newVersion->id)->not->toBe($current->id);
+    expect($newVersion->version_number)->toBe(3);
+    expect($newVersion->is_current)->toBeTrue();
+    expect($newVersion->status)->toBe(VersionStatus::Accepted);
+    expect($newVersion->source)->toBe(VersionSource::ManualEdit);
+    expect($newVersion->content)->toBe('<p>Merged prose.</p>');
+
+    expect($current->fresh()->is_current)->toBeFalse();
+    expect($previous->fresh()->is_current)->toBeFalse();
+
+    expect($chapter->fresh()->scenes()->first()->content)->toContain('Merged prose');
+});
+
+test('applyMerge requires content', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $this->postJson(route('chapters.applyMerge', [$book, $chapter]), [
+        'content' => '',
+    ])->assertUnprocessable();
+});
+
+test('versions returns content so the diff view can render the comparison', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create([
+        'version_number' => 1,
+        'is_current' => true,
+        'content' => '<p>Original prose.</p>',
+    ]);
+    ChapterVersion::factory()->for($chapter)->create([
+        'version_number' => 2,
+        'is_current' => false,
+        'status' => VersionStatus::Pending,
+        'content' => '<p>Revised prose.</p>',
+    ]);
+
+    $this->getJson(route('chapters.versions', [$book, $chapter]))
+        ->assertOk()
+        ->assertJsonFragment(['content' => '<p>Original prose.</p>'])
+        ->assertJsonFragment(['content' => '<p>Revised prose.</p>']);
 });
 
 test('restoreVersion creates new current version from old version content', function () {
@@ -1015,4 +1089,61 @@ test('replaceSceneContents handles fewer segments than existing scenes', functio
     expect($chapter->scenes)->toHaveCount(2);
     expect($chapter->scenes[0]->title)->toBe('Combined');
     expect($chapter->scenes[1]->title)->toBe('Final');
+});
+
+test('replaceSceneContents preserves title when AI returns a single segment', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create([
+        'title' => 'The morning',
+        'content' => '<p>Original prose.</p>',
+        'sort_order' => 0,
+    ]);
+
+    $sceneMap = [['title' => 'The morning', 'sort_order' => 0]];
+
+    $chapter->replaceSceneContents('<p>Revised prose.</p>', $sceneMap);
+
+    $chapter->refresh()->load('scenes');
+    expect($chapter->scenes)->toHaveCount(1);
+    expect($chapter->scenes[0]->title)->toBe('The morning');
+    expect($chapter->scenes[0]->content)->toBe('<p>Revised prose.</p>');
+});
+
+test('replaceSceneContents falls back to existing scene title when sceneMap is missing', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create([
+        'title' => 'The morning',
+        'content' => '<p>Original.</p>',
+        'sort_order' => 0,
+    ]);
+
+    $chapter->replaceSceneContents('<p>Revised.</p>', null);
+
+    $chapter->refresh()->load('scenes');
+    expect($chapter->scenes)->toHaveCount(1);
+    expect($chapter->scenes[0]->title)->toBe('The morning');
+});
+
+test('replaceSceneContents merges into the first scene when AI drops the hr divider', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['title' => 'Morning', 'content' => '<p>A</p>', 'sort_order' => 0]);
+    Scene::factory()->for($chapter)->create(['title' => 'Evening', 'content' => '<p>B</p>', 'sort_order' => 1]);
+
+    $sceneMap = [
+        ['title' => 'Morning', 'sort_order' => 0],
+        ['title' => 'Evening', 'sort_order' => 1],
+    ];
+
+    $chapter->replaceSceneContents('<p>Merged blob.</p>', $sceneMap);
+
+    $chapter->refresh()->load('scenes');
+    expect($chapter->scenes)->toHaveCount(1);
+    expect($chapter->scenes[0]->title)->toBe('Morning');
+    expect($chapter->scenes[0]->content)->toBe('<p>Merged blob.</p>');
 });

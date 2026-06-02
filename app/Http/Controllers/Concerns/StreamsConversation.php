@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Ai\Support\AiErrorClassifier;
+use App\Models\AiSetting;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,9 +42,17 @@ trait StreamsConversation
         } catch (\Throwable $e) {
             report($e);
 
-            $status = $e instanceof HttpExceptionInterface ? $e->getStatusCode() : 500;
+            $classified = $this->classifyAiError($e);
 
-            return response()->json(['message' => $e->getMessage() ?: __('Chat request failed.')], $status);
+            $status = $e instanceof HttpExceptionInterface
+                ? $e->getStatusCode()
+                : ($classified['status_code'] ?: 500);
+
+            return response()->json([
+                'message' => $classified['message'] ?: __('Chat request failed.'),
+                'kind' => $classified['kind'],
+                'provider' => $classified['provider'],
+            ], $status);
         }
     }
 
@@ -60,13 +70,30 @@ trait StreamsConversation
             } catch (\Throwable $e) {
                 report($e);
 
-                echo 'data: '.json_encode(['error' => $e->getMessage() ?: 'An unexpected error occurred.'])."\n\n";
+                $classified = $this->classifyAiError($e);
+
+                echo 'data: '.json_encode([
+                    'error' => $classified['message'] ?: 'An unexpected error occurred.',
+                    'kind' => $classified['kind'],
+                    'provider' => $classified['provider'],
+                ])."\n\n";
                 $this->sseFlush();
             }
 
             echo "data: [DONE]\n\n";
             $this->sseFlush();
         }, headers: ['Content-Type' => 'text/event-stream']);
+    }
+
+    /**
+     * @return array{kind: string, message: string, status_code: int, provider: ?string}
+     */
+    private function classifyAiError(\Throwable $e): array
+    {
+        return AiErrorClassifier::classify(
+            $e,
+            AiSetting::activeProvider()?->provider->value,
+        );
     }
 
     private function sseFlush(): void

@@ -1,11 +1,12 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Brain, Crown, RefreshCw, Sparkle } from 'lucide-react';
+import { Brain, RefreshCw, Sparkle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useAiPreparation, TOTAL_PHASES } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
+import { usePrepareStepsDialog } from './AiPrepareStepsDialog';
 
 export default function AiPreparation({
     bookId,
@@ -16,9 +17,13 @@ export default function AiPreparation({
 }) {
     const { t } = useTranslation('ai');
     const pageUrl = usePage().url;
-    const { visible, usable, licensed } = useAiFeatures();
+    const { visible, usable } = useAiFeatures();
     const { status, isRunning, starting, error, handleStart } =
         useAiPreparation(bookId, initialStatus);
+    const { openStepsDialog, stepsDialog } = usePrepareStepsDialog(
+        handleStart,
+        starting,
+    );
 
     function formatTimeAgo(dateString: string): string {
         const now = new Date();
@@ -46,39 +51,8 @@ export default function AiPreparation({
 
     if (!visible) return null;
 
-    // Not usable — show upgrade/configure banner
+    // Not usable — AI provider not configured
     if (!usable) {
-        if (!licensed) {
-            return (
-                <div className="flex items-center gap-4">
-                    <div className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-ink/[0.06]">
-                        <Brain size={20} className="text-ink-muted" />
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="text-sm font-medium text-ink">
-                            {t('preparation.title')}
-                        </span>
-                        <p className="text-xs text-ink-faint">
-                            {t(
-                                'preparation.unlockAiDescription',
-                                'Unlock AI-powered manuscript analysis',
-                            )}
-                        </p>
-                    </div>
-                    <a
-                        href="https://getmanuscript.app"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-ink px-4 py-2 text-[13px] font-medium text-surface transition-colors hover:bg-ink/80"
-                    >
-                        <Crown size={14} />
-                        {t('preparation.upgradeToPro', 'Upgrade to PRO')}
-                    </a>
-                </div>
-            );
-        }
-
-        // Licensed but not configured
         return (
             <div className="flex items-center gap-4">
                 <div className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-ink/[0.06]">
@@ -104,13 +78,14 @@ export default function AiPreparation({
 
     // Running state
     if (isRunning && status) {
+        const totalPhases = status.total_phases ?? TOTAL_PHASES;
         const completedCount = status.completed_phases?.length ?? 0;
         const currentPhase = status.current_phase;
         const phaseLabel = currentPhase
             ? t(`phase.${currentPhase}`)
             : t('preparation.starting');
         const overallProgress = Math.round(
-            (completedCount / TOTAL_PHASES) * 100,
+            (completedCount / totalPhases) * 100,
         );
 
         return (
@@ -126,7 +101,7 @@ export default function AiPreparation({
                         <span className="text-xs text-ink-faint">
                             {t('preparation.phaseProgress', {
                                 current: completedCount + 1,
-                                total: TOTAL_PHASES,
+                                total: totalPhases,
                                 percent: overallProgress,
                             })}
                         </span>
@@ -171,12 +146,13 @@ export default function AiPreparation({
                 </div>
                 <button
                     type="button"
-                    onClick={handleStart}
+                    onClick={openStepsDialog}
                     className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-ink px-4 py-2 text-[13px] font-medium text-surface transition-colors hover:bg-ink/80"
                 >
                     <RefreshCw size={14} />
                     {t('preparation.reRunAnalysis', 'Re-run Analysis')}
                 </button>
+                {stepsDialog}
             </div>
         );
     }
@@ -206,7 +182,7 @@ export default function AiPreparation({
             </div>
             <button
                 type="button"
-                onClick={handleStart}
+                onClick={openStepsDialog}
                 disabled={starting}
                 className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-ink px-4 py-2 text-[13px] font-medium text-surface transition-colors hover:bg-ink/80 disabled:opacity-50"
             >
@@ -215,6 +191,7 @@ export default function AiPreparation({
                     ? t('preparation.starting')
                     : t('preparation.prepareManuscript')}
             </button>
+            {stepsDialog}
         </div>
     );
 }

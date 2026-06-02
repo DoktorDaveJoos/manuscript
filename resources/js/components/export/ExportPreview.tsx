@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso } from 'react-virtuoso';
 import type {
+    ChapterHeading,
     Format,
     MatterItem,
     TrimSizeOption,
@@ -17,6 +18,7 @@ const PAGE_PADDING = 56; // px-7 = 28px each side
 const EBOOK_SPEC: TrimSizeOption = {
     value: 'ebook',
     label: 'E-Reader',
+    labelMetric: 'E-Reader',
     width: 90,
     height: 122,
 };
@@ -35,8 +37,10 @@ interface ExportPreviewProps {
     format: Format;
     trimSize: string;
     trimSizes: TrimSizeOption[];
+    customWidth: number;
+    customHeight: number;
     fontSize: number;
-    includeChapterTitles: boolean;
+    chapterHeading: ChapterHeading;
     showPageNumbers: boolean;
     includeActBreaks: boolean;
     selectedChapterIds: Set<number>;
@@ -145,8 +149,10 @@ export default function ExportPreview({
     format,
     trimSize,
     trimSizes,
+    customWidth,
+    customHeight,
     fontSize,
-    includeChapterTitles,
+    chapterHeading = 'full',
     showPageNumbers,
     includeActBreaks,
     selectedChapterIds,
@@ -182,13 +188,19 @@ export default function ExportPreview({
     const pageWidth = panelWidth - PAGE_PADDING;
     const isEbookFormat = format === 'epub' || format === 'kdp';
     const hasVisualPreview = VISUAL_FORMATS.has(format);
-    const trimSpec = useMemo(
-        () =>
-            isEbookFormat
-                ? EBOOK_SPEC
-                : (trimSizes.find((t) => t.value === trimSize) ?? trimSizes[0]),
-        [trimSizes, trimSize, isEbookFormat],
-    );
+    const trimSpec = useMemo(() => {
+        if (isEbookFormat) return EBOOK_SPEC;
+        if (trimSize === 'custom') {
+            return {
+                value: 'custom',
+                label: 'Custom',
+                labelMetric: 'Custom',
+                width: customWidth,
+                height: customHeight,
+            };
+        }
+        return trimSizes.find((t) => t.value === trimSize) ?? trimSizes[0];
+    }, [trimSizes, trimSize, isEbookFormat, customWidth, customHeight]);
     const { pageHeight, scaleFactor } = computePageDimensions(
         trimSpec,
         pageWidth,
@@ -244,7 +256,7 @@ export default function ExportPreview({
                     template,
                     trim_size: trimSize,
                     font_size: fontSize,
-                    include_chapter_titles: includeChapterTitles,
+                    chapter_heading: chapterHeading,
                     show_page_numbers: showPageNumbers,
                     include_act_breaks: includeActBreaks,
                     chapter_ids: orderedSelectedIds,
@@ -320,7 +332,7 @@ export default function ExportPreview({
         template,
         trimSize,
         fontSize,
-        includeChapterTitles,
+        chapterHeading,
         showPageNumbers,
         includeActBreaks,
         selectedIdsArray,

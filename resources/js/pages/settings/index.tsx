@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Lock, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,11 @@ import {
     test as testConnection,
 } from '@/actions/App/Http/Controllers/AiSettingsController';
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
+import {
+    exportMethod as backupExport,
+    importMethod as backupImport,
+    revert as backupRevert,
+} from '@/actions/App/Http/Controllers/BackupController';
 import { index as booksIndex } from '@/actions/App/Http/Controllers/BookController';
 import {
     activate,
@@ -35,6 +40,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import Dialog from '@/components/ui/Dialog';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import NavItem from '@/components/ui/NavItem';
@@ -47,9 +53,10 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
 import type { Theme } from '@/lib/theme';
-import { cn, jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
+import { jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
 import type {
     AppSettings,
+    AiProvider,
     AiSetting,
     GrammarCheckKey,
     License,
@@ -59,7 +66,6 @@ import type {
 
 type ProviderSetting = AiSetting & {
     label: string;
-    supports_embeddings: boolean;
 };
 
 interface Props {
@@ -69,6 +75,10 @@ interface Props {
     prose_pass_rules: ProsePassRule[];
     proofreading_config: ProofreadingConfig;
     version: string;
+    backup: {
+        has_rollback: boolean;
+        last_export_at: string | null;
+    };
 }
 
 const THEME_OPTIONS = [
@@ -501,9 +511,8 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
     const [saving, setSaving] = useState(false);
     const [testStatus, setTestStatus] = useState<TestStatus>({ type: 'idle' });
     const [saveMessage, setSaveMessage] = useState('');
-    const configured = setting.requires_api_key
-        ? setting.has_api_key
-        : !!setting.base_url;
+    const [guideOpen, setGuideOpen] = useState(false);
+    const configured = setting.has_api_key;
 
     const handleSave = useCallback(
         (e: FormEvent) => {
@@ -557,20 +566,31 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
     }, [setting.provider, t]);
 
     return (
-        <form onSubmit={handleSave} className="pb-1">
-            <div className="flex flex-col gap-5 pl-[30px]">
-                {setting.api_key_recovery_needed && (
-                    <Alert variant="destructive">
-                        <AlertTitle>
-                            {t('aiProviders.keyRecovery.title')}
-                        </AlertTitle>
-                        <AlertDescription>
-                            {t('aiProviders.keyRecovery.description')}
-                        </AlertDescription>
-                    </Alert>
-                )}
-                {setting.requires_api_key && (
-                    <FormField label={t('aiProviders.apiKey')}>
+        <>
+            <form onSubmit={handleSave} className="pb-1">
+                <div className="flex flex-col gap-5 pl-[30px]">
+                    {setting.api_key_recovery_needed && (
+                        <Alert variant="destructive">
+                            <AlertTitle>
+                                {t('aiProviders.keyRecovery.title')}
+                            </AlertTitle>
+                            <AlertDescription>
+                                {t('aiProviders.keyRecovery.description')}
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                    <FormField
+                        label={t('aiProviders.apiKey')}
+                        action={
+                            <button
+                                type="button"
+                                onClick={() => setGuideOpen(true)}
+                                className="text-[12px] font-medium text-ink-muted transition-colors hover:text-ink"
+                            >
+                                {t('aiProviders.howToGetKey.trigger')}
+                            </button>
+                        }
+                    >
                         {setting.has_api_key && !apiKey ? (
                             <div className="flex items-center justify-between gap-3 rounded-md border border-border px-4 py-2.5">
                                 <span className="font-mono text-[13px] leading-[1.43] text-ink-muted">
@@ -609,80 +629,152 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                             />
                         )}
                     </FormField>
-                )}
 
-                <div className="flex items-center gap-3 pt-1">
-                    <Button
-                        variant="primary"
-                        size="lg"
-                        type="submit"
-                        disabled={saving}
-                    >
-                        {saving
-                            ? t('aiProviders.saving')
-                            : t('aiProviders.save')}
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        size="lg"
-                        type="button"
-                        onClick={handleTest}
-                        disabled={testStatus.type === 'loading' || !configured}
-                    >
-                        {testStatus.type === 'loading'
-                            ? t('aiProviders.testing')
-                            : t('aiProviders.testConnection')}
-                    </Button>
-                    {saveMessage && (
-                        <span className="text-[12px] font-medium text-status-final">
-                            {saveMessage}
-                        </span>
-                    )}
-                    {testStatus.type === 'success' && (
-                        <span className="text-[12px] font-medium text-status-final">
-                            {testStatus.message}
-                        </span>
-                    )}
-                    {testStatus.type === 'error' && (
-                        <span className="text-[12px] font-medium text-danger">
-                            {testStatus.message}
-                        </span>
-                    )}
+                    <div className="flex items-center gap-3 pt-1">
+                        <Button
+                            variant="primary"
+                            size="lg"
+                            type="submit"
+                            disabled={saving}
+                        >
+                            {saving
+                                ? t('aiProviders.saving')
+                                : t('aiProviders.save')}
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            size="lg"
+                            type="button"
+                            onClick={handleTest}
+                            disabled={
+                                testStatus.type === 'loading' || !configured
+                            }
+                        >
+                            {testStatus.type === 'loading'
+                                ? t('aiProviders.testing')
+                                : t('aiProviders.testConnection')}
+                        </Button>
+                        {saveMessage && (
+                            <span className="text-[12px] font-medium text-status-final">
+                                {saveMessage}
+                            </span>
+                        )}
+                        {testStatus.type === 'success' && (
+                            <span className="text-[12px] font-medium text-status-final">
+                                {testStatus.message}
+                            </span>
+                        )}
+                        {testStatus.type === 'error' && (
+                            <span className="text-[12px] font-medium text-danger">
+                                {testStatus.message}
+                            </span>
+                        )}
+                    </div>
                 </div>
+            </form>
+            {guideOpen && (
+                <GetApiKeyDialog
+                    provider={setting.provider}
+                    providerLabel={setting.label}
+                    onClose={() => setGuideOpen(false)}
+                />
+            )}
+        </>
+    );
+}
+
+const PROVIDER_CONSOLE_URLS: Partial<Record<AiProvider, string>> = {
+    anthropic: 'https://console.anthropic.com',
+    openai: 'https://platform.openai.com/api-keys',
+    gemini: 'https://aistudio.google.com/apikey',
+    groq: 'https://console.groq.com/keys',
+    xai: 'https://console.x.ai',
+    deepseek: 'https://platform.deepseek.com/api_keys',
+    mistral: 'https://console.mistral.ai/api-keys',
+    openrouter: 'https://openrouter.ai/keys',
+};
+
+function GetApiKeyDialog({
+    provider,
+    providerLabel,
+    onClose,
+}: {
+    provider: AiProvider;
+    providerLabel: string;
+    onClose: () => void;
+}) {
+    const { t } = useTranslation('settings');
+    const titleText = t('aiProviders.howToGetKey.title', {
+        provider: providerLabel,
+    });
+    const rawSteps = t(`aiProviders.howToGetKey.${provider}.steps`, {
+        returnObjects: true,
+    });
+    const steps = Array.isArray(rawSteps) ? (rawSteps as string[]) : [];
+    const consoleUrl = PROVIDER_CONSOLE_URLS[provider] ?? '';
+    const consoleLabel = t(`aiProviders.howToGetKey.${provider}.consoleLabel`);
+
+    return (
+        <Dialog onClose={onClose} title={titleText} width={520}>
+            <h3 className="font-serif text-2xl leading-8 font-semibold tracking-[-0.01em] text-ink">
+                {titleText}
+            </h3>
+            <p className="mt-3 text-[13px] text-ink-muted">
+                {t('aiProviders.howToGetKey.intro', {
+                    provider: providerLabel,
+                })}
+            </p>
+            <ol className="mt-6 flex flex-col gap-4">
+                {steps.map((step, i) => (
+                    <li key={i} className="flex gap-3">
+                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-neutral-bg text-[12px] font-semibold text-ink">
+                            {i + 1}
+                        </span>
+                        <span className="pt-0.5 text-sm leading-[1.5] text-ink">
+                            {step}
+                        </span>
+                    </li>
+                ))}
+            </ol>
+            <div className="mt-7 flex items-center justify-end gap-2">
+                <Button type="button" variant="secondary" onClick={onClose}>
+                    {t('aiProviders.howToGetKey.close')}
+                </Button>
+                <Button asChild variant="primary">
+                    <a
+                        href={consoleUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {consoleLabel}
+                    </a>
+                </Button>
             </div>
-        </form>
+        </Dialog>
     );
 }
 
 function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
     const { t } = useTranslation('settings');
-    const { license } = usePage<{ license: License }>().props;
-    const locked = !license.active;
-
     const enabledProvider = providers.find((p) => p.enabled)?.provider ?? null;
 
-    const handleSelect = useCallback(
-        (provider: string) => {
-            if (locked) return;
-            fetch(updateAiProvider.url(provider), {
-                method: 'PUT',
-                headers: jsonFetchHeaders(),
-                body: JSON.stringify({ enabled: true }),
-            }).then(() => {
-                router.reload({ only: ['ai_providers'] });
-            });
-        },
-        [locked],
-    );
+    const handleSelect = useCallback((provider: string) => {
+        fetch(updateAiProvider.url(provider), {
+            method: 'PUT',
+            headers: jsonFetchHeaders(),
+            body: JSON.stringify({ enabled: true }),
+        }).then(() => {
+            router.reload({ only: ['ai_providers'] });
+        });
+    }, []);
 
     const handleAccordionChange = useCallback(
         (value: string) => {
-            if (locked) return;
             if (value && value !== enabledProvider) {
                 handleSelect(value);
             }
         },
-        [locked, enabledProvider, handleSelect],
+        [enabledProvider, handleSelect],
     );
 
     return (
@@ -690,19 +782,16 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
             <SectionLabel variant="section">
                 {t('aiProviders.title')}
             </SectionLabel>
-            <Card className={cn('mt-3 px-5', locked && 'opacity-50')}>
+            <Card className="mt-3 px-5">
                 <Accordion
                     type="single"
                     collapsible
                     defaultValue={enabledProvider ?? undefined}
                     onValueChange={handleAccordionChange}
-                    disabled={locked}
                 >
                     {providers.map((setting) => {
                         const isSelected = setting.enabled;
-                        const configured = setting.requires_api_key
-                            ? setting.has_api_key
-                            : !!setting.base_url;
+                        const configured = setting.has_api_key;
 
                         return (
                             <AccordionItem
@@ -711,50 +800,37 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
                             >
                                 <AccordionTrigger className="px-0 py-4">
                                     <div className="flex flex-1 items-center gap-3">
-                                        {locked ? (
-                                            <Lock
-                                                size={14}
-                                                className="text-ink-faint"
-                                            />
-                                        ) : (
-                                            <span
-                                                className={`flex size-[18px] items-center justify-center rounded-full border-2 transition-colors ${isSelected ? 'border-ink' : 'border-border'}`}
-                                            >
-                                                {isSelected && (
-                                                    <span className="size-[10px] rounded-full bg-ink" />
-                                                )}
-                                            </span>
-                                        )}
+                                        <span
+                                            className={`flex size-[18px] items-center justify-center rounded-full border-2 transition-colors ${isSelected ? 'border-ink' : 'border-border'}`}
+                                        >
+                                            {isSelected && (
+                                                <span className="size-[10px] rounded-full bg-ink" />
+                                            )}
+                                        </span>
                                         <span
                                             className={`text-sm ${isSelected ? 'font-medium' : ''} text-ink`}
                                         >
                                             {setting.label}
                                         </span>
                                         <span className="flex-1" />
-                                        {!locked && (
-                                            <Badge
-                                                className="mr-2"
-                                                variant={
-                                                    configured
-                                                        ? 'success'
-                                                        : 'secondary'
-                                                }
-                                            >
-                                                {configured
-                                                    ? t(
-                                                          'aiProviders.configured',
-                                                      )
-                                                    : t(
-                                                          'aiProviders.notConfigured',
-                                                      )}
-                                            </Badge>
-                                        )}
+                                        <Badge
+                                            className="mr-2"
+                                            variant={
+                                                configured
+                                                    ? 'success'
+                                                    : 'secondary'
+                                            }
+                                        >
+                                            {configured
+                                                ? t('aiProviders.configured')
+                                                : t(
+                                                      'aiProviders.notConfigured',
+                                                  )}
+                                        </Badge>
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent>
-                                    {!locked && (
-                                        <ProviderForm setting={setting} />
-                                    )}
+                                    <ProviderForm setting={setting} />
                                 </AccordionContent>
                             </AccordionItem>
                         );
@@ -912,10 +988,18 @@ function RevisionRulesSection({
                         <div className="flex items-center justify-between px-6 py-3.5">
                             <div>
                                 <span className="text-[14px] font-medium text-ink">
-                                    {rule.label}
+                                    {t(
+                                        `prosePassRules.rules.${rule.key}.label`,
+                                        {
+                                            defaultValue: rule.label,
+                                        },
+                                    )}
                                 </span>
                                 <p className="mt-0.5 text-[13px] text-ink-muted">
-                                    {rule.description}
+                                    {t(
+                                        `prosePassRules.rules.${rule.key}.description`,
+                                        { defaultValue: rule.description },
+                                    )}
                                 </p>
                             </div>
                             <Toggle
@@ -1264,6 +1348,353 @@ function UpdatesSection({
     );
 }
 
+// ─── Backup Section ──────────────────────────────────────────────────
+
+type BackupPhase = 'idle' | 'exporting' | 'importing' | 'reverting' | 'done';
+
+function BackupSection({
+    backup,
+}: {
+    backup: { has_rollback: boolean; last_export_at: string | null };
+}) {
+    const { t } = useTranslation('settings');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [exportPassphrase, setExportPassphrase] = useState('');
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [importPassphrase, setImportPassphrase] = useState('');
+    const [phase, setPhase] = useState<BackupPhase>('idle');
+    const [error, setError] = useState('');
+    const [doneMessage, setDoneMessage] = useState('');
+    const [confirmRevertOpen, setConfirmRevertOpen] = useState(false);
+
+    const lastExportLabel = backup.last_export_at
+        ? new Date(backup.last_export_at).toLocaleString()
+        : t('backup.neverExported');
+
+    const handleExport = useCallback(
+        async (e: FormEvent) => {
+            e.preventDefault();
+            setPhase('exporting');
+            setError('');
+            try {
+                const formData = new FormData();
+                if (exportPassphrase) {
+                    formData.append('passphrase', exportPassphrase);
+                }
+                const res = await fetch(backupExport.url(), {
+                    method: 'POST',
+                    headers: jsonFetchHeaders(),
+                    body: formData,
+                });
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    setError(json.message || t('backup.error.exportFailed'));
+                    return;
+                }
+                const blob = await res.blob();
+                const filename =
+                    res.headers
+                        .get('content-disposition')
+                        ?.match(/filename="([^"]+)"/)?.[1] ||
+                    'manuscript-backup';
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                setExportPassphrase('');
+                router.reload({ only: ['backup'] });
+            } catch {
+                setError(t('backup.error.exportFailed'));
+            } finally {
+                setPhase((p) => (p === 'exporting' ? 'idle' : p));
+            }
+        },
+        [exportPassphrase, t],
+    );
+
+    const handleImport = useCallback(
+        async (e: FormEvent) => {
+            e.preventDefault();
+            if (!importFile) return;
+            setPhase('importing');
+            setError('');
+            try {
+                const formData = new FormData();
+                formData.append('backup', importFile);
+                if (importPassphrase) {
+                    formData.append('passphrase', importPassphrase);
+                }
+                const res = await fetch(backupImport.url(), {
+                    method: 'POST',
+                    headers: jsonFetchHeaders(),
+                    body: formData,
+                });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    setError(json.message || t('backup.error.importFailed'));
+                    setPhase('idle');
+                    return;
+                }
+                setImportFile(null);
+                setImportPassphrase('');
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+                setDoneMessage(json.message || t('backup.restart.import'));
+                setPhase('done');
+            } catch {
+                setError(t('backup.error.importFailed'));
+                setPhase('idle');
+            }
+        },
+        [importFile, importPassphrase, t],
+    );
+
+    const runRevert = useCallback(async () => {
+        setConfirmRevertOpen(false);
+        setPhase('reverting');
+        setError('');
+        try {
+            const res = await fetch(backupRevert.url(), {
+                method: 'POST',
+                headers: jsonFetchHeaders(),
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                setError(json.message || t('backup.error.revertFailed'));
+                setPhase('idle');
+                return;
+            }
+            setDoneMessage(json.message || t('backup.restart.revert'));
+            setPhase('done');
+        } catch {
+            setError(t('backup.error.revertFailed'));
+            setPhase('idle');
+        }
+    }, [t]);
+
+    return (
+        <div>
+            <SectionLabel variant="section">
+                {t('backup.sectionLabel')}
+            </SectionLabel>
+            <Card className="mt-3">
+                {phase === 'done' ? (
+                    <div className="px-6 py-5">
+                        <p className="text-[14px] font-medium text-ink">
+                            {doneMessage}
+                        </p>
+                        <p className="mt-2 text-[13px] text-ink-muted">
+                            {t('backup.restart.hint')}
+                        </p>
+                    </div>
+                ) : (
+                    <>
+                        <form
+                            onSubmit={handleExport}
+                            className="flex flex-col gap-3 px-6 py-5"
+                        >
+                            <div>
+                                <span className="text-[14px] font-medium text-ink">
+                                    {t('backup.save.title')}
+                                </span>
+                                <p className="mt-0.5 text-[13px] text-ink-muted">
+                                    {t('backup.save.description')}
+                                </p>
+                                <p className="mt-1 text-[12px] text-ink-muted">
+                                    {t('backup.lastExport', {
+                                        value: lastExportLabel,
+                                    })}
+                                </p>
+                            </div>
+                            <FormField label={t('backup.passphrase.label')}>
+                                <Input
+                                    type="password"
+                                    value={exportPassphrase}
+                                    onChange={(e) =>
+                                        setExportPassphrase(e.target.value)
+                                    }
+                                    placeholder={t(
+                                        'backup.passphrase.placeholder',
+                                    )}
+                                    autoComplete="new-password"
+                                />
+                            </FormField>
+                            <p className="text-[12px] text-ink-muted">
+                                {t('backup.passphrase.hint')}
+                            </p>
+                            <div className="flex justify-end">
+                                <Button
+                                    type="submit"
+                                    variant="primary"
+                                    disabled={phase !== 'idle'}
+                                >
+                                    {phase === 'exporting'
+                                        ? t('backup.save.busy')
+                                        : t('backup.save.button')}
+                                </Button>
+                            </div>
+                        </form>
+
+                        <div className="border-t border-border" />
+
+                        <form
+                            onSubmit={handleImport}
+                            className="flex flex-col gap-3 px-6 py-5"
+                        >
+                            <div>
+                                <span className="text-[14px] font-medium text-ink">
+                                    {t('backup.import.title')}
+                                </span>
+                                <p className="mt-0.5 text-[13px] text-ink-muted">
+                                    {t('backup.import.description')}
+                                </p>
+                            </div>
+                            <FormField label={t('backup.import.fileLabel')}>
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept=".msbk,.sqlite"
+                                        onChange={(e) =>
+                                            setImportFile(
+                                                e.target.files?.[0] ?? null,
+                                            )
+                                        }
+                                        className="hidden"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        onClick={() =>
+                                            fileInputRef.current?.click()
+                                        }
+                                    >
+                                        {importFile
+                                            ? t('backup.import.replaceFile')
+                                            : t('backup.import.chooseFile')}
+                                    </Button>
+                                    <span className="truncate text-[13px] text-ink-muted">
+                                        {importFile
+                                            ? importFile.name
+                                            : t('backup.import.noFileChosen')}
+                                    </span>
+                                </div>
+                            </FormField>
+                            <FormField
+                                label={t('backup.import.passphraseLabel')}
+                            >
+                                <Input
+                                    type="password"
+                                    value={importPassphrase}
+                                    onChange={(e) =>
+                                        setImportPassphrase(e.target.value)
+                                    }
+                                    placeholder={t(
+                                        'backup.import.passphrasePlaceholder',
+                                    )}
+                                    autoComplete="new-password"
+                                />
+                            </FormField>
+                            <p className="text-[12px] text-ink-muted">
+                                {t('backup.import.warning')}
+                            </p>
+                            <div className="flex justify-end">
+                                <Button
+                                    type="submit"
+                                    variant="primary"
+                                    disabled={!importFile || phase !== 'idle'}
+                                >
+                                    {phase === 'importing'
+                                        ? t('backup.import.busy')
+                                        : t('backup.import.button')}
+                                </Button>
+                            </div>
+                        </form>
+
+                        {backup.has_rollback && (
+                            <>
+                                <div className="border-t border-border" />
+                                <div className="flex flex-col gap-3 px-6 py-5">
+                                    <div>
+                                        <span className="text-[14px] font-medium text-ink">
+                                            {t('backup.revert.title')}
+                                        </span>
+                                        <p className="mt-0.5 text-[13px] text-ink-muted">
+                                            {t('backup.revert.description')}
+                                        </p>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <Button
+                                            type="button"
+                                            variant="primary"
+                                            onClick={() =>
+                                                setConfirmRevertOpen(true)
+                                            }
+                                            disabled={phase !== 'idle'}
+                                        >
+                                            {phase === 'reverting'
+                                                ? t('backup.revert.busy')
+                                                : t('backup.revert.button')}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {error && (
+                            <>
+                                <div className="border-t border-border" />
+                                <div className="px-6 py-3">
+                                    <p className="text-[13px] text-delete">
+                                        {error}
+                                    </p>
+                                </div>
+                            </>
+                        )}
+                    </>
+                )}
+            </Card>
+
+            {confirmRevertOpen && (
+                <Dialog
+                    onClose={() => setConfirmRevertOpen(false)}
+                    title={t('backup.revert.title')}
+                    width={440}
+                >
+                    <h3 className="text-[16px] font-semibold text-ink">
+                        {t('backup.revert.title')}
+                    </h3>
+                    <p className="mt-3 text-[13px] text-ink-muted">
+                        {t('backup.revertConfirm')}
+                    </p>
+                    <div className="mt-6 flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => setConfirmRevertOpen(false)}
+                        >
+                            {t('back')}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            onClick={runRevert}
+                        >
+                            {t('backup.revert.button')}
+                        </Button>
+                    </div>
+                </Dialog>
+            )}
+        </div>
+    );
+}
+
 // ─── Sidebar ─────────────────────────────────────────────────────────
 
 type SectionKey =
@@ -1276,7 +1707,8 @@ type SectionKey =
     | 'revision-rules'
     | 'proofreading'
     | 'privacy'
-    | 'updates';
+    | 'updates'
+    | 'backup';
 
 type NavSection = { key: SectionKey; label: string; groupKey?: string };
 
@@ -1315,6 +1747,7 @@ const NAV_ITEMS: NavSection[] = [
     },
     { key: 'privacy', label: 'privacy.navLabel', groupKey: 'sidebar.account' },
     { key: 'updates', label: 'updates.navLabel', groupKey: 'sidebar.account' },
+    { key: 'backup', label: 'backup.navLabel', groupKey: 'sidebar.account' },
 ];
 
 function SettingsSidebar({
@@ -1394,6 +1827,7 @@ export default function Settings({
     prose_pass_rules,
     proofreading_config,
     version,
+    backup,
 }: Props) {
     const { t } = useTranslation('settings');
 
@@ -1407,6 +1841,7 @@ export default function Settings({
     const proofreadingRef = useRef<HTMLDivElement>(null);
     const privacyRef = useRef<HTMLDivElement>(null);
     const updatesRef = useRef<HTMLDivElement>(null);
+    const backupRef = useRef<HTMLDivElement>(null);
 
     const sectionRefs = useRef<
         Record<SectionKey, React.RefObject<HTMLDivElement | null>>
@@ -1421,6 +1856,7 @@ export default function Settings({
         proofreading: proofreadingRef,
         privacy: privacyRef,
         updates: updatesRef,
+        backup: backupRef,
     });
 
     const [activeSection, setActiveSection] = useState<SectionKey>(() => {
@@ -1611,6 +2047,9 @@ export default function Settings({
                                             settings={settings}
                                             saveSetting={saveSetting}
                                         />
+                                    </div>
+                                    <div ref={backupRef} data-section="backup">
+                                        <BackupSection backup={backup} />
                                     </div>
                                 </div>
                             </div>

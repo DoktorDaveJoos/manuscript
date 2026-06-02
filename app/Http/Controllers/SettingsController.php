@@ -6,6 +6,7 @@ use App\Enums\AiProvider;
 use App\Models\AiSetting;
 use App\Models\AppSetting;
 use App\Models\Book;
+use App\Services\BackupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -13,6 +14,8 @@ use Inertia\Response;
 
 class SettingsController extends Controller
 {
+    public function __construct(private BackupService $backups) {}
+
     public function index(): Response
     {
         $settings = AppSetting::query()
@@ -22,13 +25,12 @@ class SettingsController extends Controller
 
         $existing = AiSetting::query()->get()->keyBy(fn ($s) => $s->provider->value);
 
-        $aiProviders = collect(AiProvider::cases())->map(function (AiProvider $provider) use ($existing) {
+        $aiProviders = collect(AiProvider::userFacing())->map(function (AiProvider $provider) use ($existing) {
             $setting = $existing->get($provider->value) ?? AiSetting::forProvider($provider);
 
             return [
                 ...$setting->toFrontendArray(),
                 'label' => $provider->label(),
-                'supports_embeddings' => $provider->supportsEmbeddings(),
             ];
         });
 
@@ -46,6 +48,10 @@ class SettingsController extends Controller
             'prose_pass_rules' => Book::globalProsePassRules(),
             'proofreading_config' => Book::globalProofreadingConfig(),
             'version' => config('app.version', '0.0.0'),
+            'backup' => [
+                'has_rollback' => $this->backups->state()['has_rollback'],
+                'last_export_at' => AppSetting::get(BackupService::LAST_EXPORT_AT_KEY),
+            ],
         ]);
     }
 

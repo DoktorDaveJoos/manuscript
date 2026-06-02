@@ -102,7 +102,7 @@ class DocxExporter implements Exporter
             }
             $isFirstChapter = false;
 
-            if ($options->includeChapterTitles && $chapter->title) {
+            if ($options->chapterHeading->showsTitle() && $chapter->title) {
                 $section->addText(
                     htmlspecialchars($chapter->title),
                     ['bold' => true, 'size' => 16],
@@ -130,6 +130,7 @@ class DocxExporter implements Exporter
                 'copyright' => $this->addCopyrightPage($section, $book, $options),
                 'dedication' => $this->addDedicationPage($section, $options),
                 'epigraph' => $this->addEpigraphPage($section, $options),
+                'prologue' => $this->addPrologueMatter($section, $book),
                 default => null,
             };
         }
@@ -200,6 +201,18 @@ class DocxExporter implements Exporter
         $section->addPageBreak();
     }
 
+    private function addPrologueMatter(Section $section, Book $book): void
+    {
+        $prologue = ExportService::resolvePrologueChapter($book);
+        if (! $prologue) {
+            return;
+        }
+        $locale = $book->language ?? config('app.fallback_locale', 'en');
+        $section->addText(htmlspecialchars(__('Prologue', [], $locale)), ['bold' => true, 'size' => 16], 'ChapterTitle');
+        $this->addChapterContent($section, $prologue);
+        $section->addPageBreak();
+    }
+
     private function addChapterContent(Section $section, mixed $chapter): void
     {
         $content = $chapter->getContentWithSceneBreaks();
@@ -252,8 +265,9 @@ class DocxExporter implements Exporter
         if (! $epilogue) {
             return;
         }
+        $locale = $book->language ?? config('app.fallback_locale', 'en');
         $section->addPageBreak();
-        $section->addText(htmlspecialchars($epilogue->title), ['bold' => true, 'size' => 16], 'ChapterTitle');
+        $section->addText(htmlspecialchars(__('Epilogue', [], $locale)), ['bold' => true, 'size' => 16], 'ChapterTitle');
         $this->addChapterContent($section, $epilogue);
     }
 

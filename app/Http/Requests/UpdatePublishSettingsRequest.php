@@ -24,6 +24,7 @@ class UpdatePublishSettingsRequest extends FormRequest
             'acknowledgment_text' => ['nullable', 'string', 'max:5000'],
             'about_author_text' => ['nullable', 'string', 'max:5000'],
             'also_by_text' => ['nullable', 'string', 'max:5000'],
+            'klappentext' => ['nullable', 'string', 'max:2000'],
             'publisher_name' => ['nullable', 'string', 'max:255'],
             'isbn' => ['nullable', 'string', 'max:20'],
         ];

@@ -109,7 +109,7 @@ test('exports single storyline scope', function () {
 
 // === Options Tests ===
 
-test('respects include_chapter_titles option', function () {
+test('respects chapter_heading option', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Hidden Title']);
@@ -118,7 +118,7 @@ test('respects include_chapter_titles option', function () {
     $response = $this->service->export($book, [
         'format' => 'txt',
         'scope' => 'full',
-        'include_chapter_titles' => false,
+        'chapter_heading' => 'none',
     ]);
 
     $content = file_get_contents($response->getFile()->getPathname());
@@ -553,7 +553,7 @@ test('kdp forces table of contents and chapter titles', function () {
         'format' => 'kdp',
         'scope' => 'full',
         'include_table_of_contents' => false,
-        'include_chapter_titles' => false,
+        'chapter_heading' => 'none',
     ]);
 
     $zip = new ZipArchive;
@@ -652,6 +652,39 @@ test('export endpoint validates trim_size', function () {
         'scope' => 'full',
         'trim_size' => 'invalid',
     ])->assertUnprocessable();
+});
+
+test('export endpoint rejects bleed outside the allowed range', function () {
+    $book = Book::factory()->create();
+
+    $this->postJson(route('books.settings.export.run', $book), [
+        'format' => 'pdf',
+        'scope' => 'full',
+        'bleed' => 99,
+    ])->assertUnprocessable();
+});
+
+test('export endpoint requires custom dimensions when trim_size is custom', function () {
+    $book = Book::factory()->create();
+
+    $this->postJson(route('books.settings.export.run', $book), [
+        'format' => 'pdf',
+        'scope' => 'full',
+        'trim_size' => 'custom',
+    ])->assertJsonValidationErrors(['custom_width', 'custom_height']);
+});
+
+test('export endpoint accepts a custom trim size with bleed', function () {
+    $book = Book::factory()->create();
+
+    $this->postJson(route('books.settings.export.run', $book), [
+        'format' => 'pdf',
+        'scope' => 'full',
+        'trim_size' => 'custom',
+        'custom_width' => 130,
+        'custom_height' => 190,
+        'bleed' => 3,
+    ])->assertJsonMissingValidationErrors(['trim_size', 'custom_width', 'custom_height', 'bleed']);
 });
 
 test('export endpoint validates font_size', function () {
@@ -797,6 +830,101 @@ test('export endpoint rejects invalid front_matter values', function () {
     ])->assertUnprocessable();
 });
 
+test('export endpoint accepts prologue front_matter value', function () {
+    $book = Book::factory()->create(['author' => 'Test', 'language' => 'en']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Text.</p>', 'sort_order' => 1]);
+
+    $this->postJson(route('books.settings.export.run', $book), [
+        'format' => 'epub',
+        'scope' => 'full',
+        'front_matter' => ['title-page', 'prologue'],
+    ])->assertOk();
+});
+
+test('docx renders prologue chapter when prologue is in front matter', function () {
+    $book = Book::factory()->create(['title' => 'Prologue Docx', 'author' => 'Author']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $prologue = Chapter::factory()->for($book)->for($storyline)->create([
+        'title' => 'How It Started',
+        'is_prologue' => true,
+        'reader_order' => 1,
+    ]);
+    Scene::factory()->for($prologue)->create(['content' => '<p>The opening line.</p>', 'sort_order' => 1]);
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Chapter One', 'reader_order' => 2]);
+    Scene::factory()->for($chapter)->create(['content' => '<p>The middle.</p>', 'sort_order' => 1]);
+
+    $response = $this->service->export($book, [
+        'format' => 'docx',
+        'scope' => 'full',
+        'front_matter' => ['title-page', 'prologue'],
+    ]);
+
+    expect($response->getStatusCode())->toBe(200);
+    expect($response->headers->get('content-disposition'))->toContain('prologue-docx.docx');
+});
+
+test('resolveChapters excludes prologue chapter from body when prologue is in front matter', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $prologue = Chapter::factory()->for($book)->for($storyline)->create([
+        'title' => 'Before It All',
+        'is_prologue' => true,
+        'reader_order' => 1,
+    ]);
+    $body = Chapter::factory()->for($book)->for($storyline)->create([
+        'title' => 'Chapter One',
+        'reader_order' => 2,
+    ]);
+
+    $chapters = ExportService::resolveChapters($book, [
+        'scope' => 'full',
+        'front_matter' => ['prologue'],
+    ]);
+
+    expect($chapters->pluck('id'))->not->toContain($prologue->id);
+    expect($chapters->pluck('id'))->toContain($body->id);
+});
+
+test('epub renders prologue chapter as a front matter page', function () {
+    $book = Book::factory()->create(['title' => 'Prologue EPUB', 'author' => 'Author', 'language' => 'en']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $prologue = Chapter::factory()->for($book)->for($storyline)->create([
+        'title' => 'How It Started',
+        'is_prologue' => true,
+        'reader_order' => 1,
+    ]);
+    Scene::factory()->for($prologue)->create(['content' => '<p>The opening.</p>', 'sort_order' => 1]);
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create([
+        'title' => 'Chapter One',
+        'reader_order' => 2,
+    ]);
+    Scene::factory()->for($chapter)->create(['content' => '<p>The middle.</p>', 'sort_order' => 1]);
+
+    $response = $this->service->export($book, [
+        'format' => 'epub',
+        'scope' => 'full',
+        'front_matter' => ['title-page', 'prologue'],
+    ]);
+
+    $zip = new ZipArchive;
+    $zip->open($response->getFile()->getPathname());
+
+    expect($zip->locateName('OEBPS/Text/prologue.xhtml'))->not->toBeFalse();
+    $prologueXhtml = $zip->getFromName('OEBPS/Text/prologue.xhtml');
+    // Heading is the localized label, not the chapter title
+    expect($prologueXhtml)->toContain('<h1>Prologue</h1>');
+    expect($prologueXhtml)->not->toContain('How It Started');
+    expect($prologueXhtml)->toContain('The opening.');
+
+    // Prologue must sit before the first chapter in the spine
+    $opf = $zip->getFromName('OEBPS/content.opf');
+    expect(strpos($opf, 'idref="prologue"'))->toBeLessThan(strpos($opf, 'idref="chapter-001"'));
+
+    $zip->close();
+});
+
 // === Backward Compatibility ===
 
 test('backward compatible with legacy scope-based request', function () {
@@ -860,7 +988,7 @@ test('pdf blade template renders valid html', function () {
     });
 
     $options = ExportOptions::fromArray([
-        'include_chapter_titles' => true,
+        'chapter_heading' => 'full',
         'show_page_numbers' => true,
         'trim_size' => '6x9',
         'font_size' => 11,

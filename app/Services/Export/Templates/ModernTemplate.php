@@ -370,14 +370,16 @@ class ModernTemplate implements ExportTemplate
         CSS;
     }
 
+    /**
+     * Scene-break CSS. Note: no `page-break-before/after: avoid` — mPDF mishandles
+     * those on a centered break element and ejects a blank page before it.
+     */
     public function sceneBreakCss(): string
     {
         return <<<'CSS'
         .scene-break {
             margin: 1.5em 0;
             text-indent: 0;
-            page-break-before: avoid;
-            page-break-after: avoid;
         }
         .scene-break--rule {
             border: none;
@@ -396,12 +398,16 @@ class ModernTemplate implements ExportTemplate
         return '';
     }
 
-    public function chapterHeaderHtml(int $index, string $title, string $locale = 'en'): string
+    public function chapterHeaderHtml(int $index, string $title, string $locale = 'en', bool $includeTitle = true): string
     {
         $number = $index + 1;
-        $escapedTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
 
-        return '<p class="chapter-label" id="chapter-'.$index.'">'.$number.'</p>'
-            ."\n".'<h1>'.$escapedTitle.'</h1>';
+        $html = '<p class="chapter-label" id="chapter-'.$index.'">'.$number.'</p>';
+
+        if ($includeTitle) {
+            $html .= "\n".'<h1>'.htmlspecialchars($title, ENT_QUOTES, 'UTF-8').'</h1>';
+        }
+
+        return $html;
     }
 }

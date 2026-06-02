@@ -1,9 +1,10 @@
-import { Download, Lock } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CustomizePanel from '@/components/export/CustomizePanel';
 import TemplateSelector from '@/components/export/TemplateSelector';
 import { VISUAL_FORMATS } from '@/components/export/types';
 import type {
+    ChapterHeading,
     FontPairingDef,
     Format,
     SceneBreakStyleDef,
@@ -13,13 +14,14 @@ import type {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import NumberInput from '@/components/ui/NumberInput';
 import PageHeader from '@/components/ui/PageHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
 import { Spinner } from '@/components/ui/spinner';
+import Toggle from '@/components/ui/Toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import ToggleRow from '@/components/ui/ToggleRow';
-import { useFreeTier } from '@/hooks/useFreeTier';
 
 type ExportSettingsProps = {
     format: Format;
@@ -30,9 +32,17 @@ type ExportSettingsProps = {
     onTrimSizeChange: (v: string) => void;
     fontSize: number;
     onFontSizeChange: (v: number) => void;
+    cmyk: boolean;
+    onCmykChange: (v: boolean) => void;
+    bleed: number;
+    onBleedChange: (v: number) => void;
+    customWidth: number;
+    onCustomWidthChange: (v: number) => void;
+    customHeight: number;
+    onCustomHeightChange: (v: number) => void;
     trimSizes: TrimSizeOption[];
-    includeChapterTitles: boolean;
-    onIncludeChapterTitlesChange: () => void;
+    chapterHeading: ChapterHeading;
+    onChapterHeadingChange: (v: ChapterHeading) => void;
     includeActBreaks: boolean;
     onIncludeActBreaksChange: () => void;
     showPageNumbers: boolean;
@@ -67,9 +77,17 @@ export default function ExportSettings({
     onTrimSizeChange,
     fontSize,
     onFontSizeChange,
+    cmyk,
+    onCmykChange,
+    bleed,
+    onBleedChange,
+    customWidth,
+    onCustomWidthChange,
+    customHeight,
+    onCustomHeightChange,
     trimSizes,
-    includeChapterTitles,
-    onIncludeChapterTitlesChange,
+    chapterHeading,
+    onChapterHeadingChange,
     includeActBreaks,
     onIncludeActBreaksChange,
     showPageNumbers,
@@ -91,9 +109,12 @@ export default function ExportSettings({
     hasCover,
     error,
 }: ExportSettingsProps) {
-    const { t } = useTranslation('export');
-    const { canExportFormat } = useFreeTier();
+    const { t, i18n } = useTranslation('export');
     const isVisual = VISUAL_FORMATS.has(format);
+    // English locales read inches; metric locales (de, es) read cm.
+    const useMetricLabels = !i18n.language.startsWith('en');
+    const pdfHintKey =
+        bleed > 0 ? 'bleedHint' : cmyk ? 'cmykHint' : 'trimSizeHint';
 
     return (
         <div className="flex flex-1 flex-col overflow-y-auto bg-surface">
@@ -113,17 +134,8 @@ export default function ExportSettings({
                             }}
                         >
                             {FORMATS.map((f) => (
-                                <ToggleGroupItem
-                                    key={f}
-                                    value={f}
-                                    disabled={!canExportFormat(f)}
-                                >
-                                    <span className="inline-flex items-center gap-1">
-                                        .{f}
-                                        {!canExportFormat(f) && (
-                                            <Lock size={10} />
-                                        )}
-                                    </span>
+                                <ToggleGroupItem key={f} value={f}>
+                                    .{f}
                                 </ToggleGroupItem>
                             ))}
                         </ToggleGroup>
@@ -199,11 +211,49 @@ export default function ExportSettings({
                                                 key={ts.value}
                                                 value={ts.value}
                                             >
-                                                {ts.label}
+                                                {useMetricLabels
+                                                    ? ts.labelMetric
+                                                    : ts.label}
                                             </option>
                                         ))}
+                                        <option value="custom">
+                                            {t('customSize')}
+                                        </option>
                                     </Select>
                                 </div>
+                                {trimSize === 'custom' && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[13px] text-ink-soft">
+                                            {t('customDimensions')}
+                                        </span>
+                                        <div className="flex items-center gap-1.5">
+                                            <NumberInput
+                                                value={customWidth}
+                                                onChange={onCustomWidthChange}
+                                                min={50}
+                                                max={500}
+                                                aria-label={t(
+                                                    'customDimensions',
+                                                )}
+                                            />
+                                            <span className="text-[13px] text-ink-faint">
+                                                ×
+                                            </span>
+                                            <NumberInput
+                                                value={customHeight}
+                                                onChange={onCustomHeightChange}
+                                                min={50}
+                                                max={500}
+                                                aria-label={t(
+                                                    'customDimensions',
+                                                )}
+                                            />
+                                            <span className="text-[13px] text-ink-faint">
+                                                mm
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="flex items-center justify-between">
                                     <span className="text-[13px] text-ink-soft">
                                         {t('fontSize')}
@@ -225,9 +275,32 @@ export default function ExportSettings({
                                         ))}
                                     </Select>
                                 </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[13px] text-ink-soft">
+                                        {t('bleed')}
+                                    </span>
+                                    <NumberInput
+                                        value={bleed}
+                                        onChange={onBleedChange}
+                                        min={0}
+                                        max={25}
+                                        step={0.5}
+                                        unit="mm"
+                                        aria-label={t('bleed')}
+                                    />
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[13px] text-ink-soft">
+                                        {t('cmyk')}
+                                    </span>
+                                    <Toggle
+                                        checked={cmyk}
+                                        onChange={() => onCmykChange(!cmyk)}
+                                    />
+                                </div>
                             </div>
                             <p className="text-[11px] text-ink-faint">
-                                {t('trimSizeHint')}
+                                {t(pdfHintKey)}
                             </p>
                         </div>
                     )}
@@ -237,11 +310,31 @@ export default function ExportSettings({
                         <div className="pb-2.5">
                             <SectionLabel>{t('options')}</SectionLabel>
                         </div>
-                        <ToggleRow
-                            label={t('includeChapterTitles')}
-                            checked={includeChapterTitles}
-                            onChange={onIncludeChapterTitlesChange}
-                        />
+                        <div className="flex items-center justify-between border-b border-border-subtle py-3">
+                            <span className="text-[13px] text-ink-soft">
+                                {t('chapterHeading')}
+                            </span>
+                            <Select
+                                variant="compact"
+                                value={chapterHeading}
+                                onChange={(e) =>
+                                    onChapterHeadingChange(
+                                        e.target.value as ChapterHeading,
+                                    )
+                                }
+                                className="w-auto"
+                            >
+                                <option value="full">
+                                    {t('chapterHeadingOptions.full')}
+                                </option>
+                                <option value="number">
+                                    {t('chapterHeadingOptions.number')}
+                                </option>
+                                <option value="none">
+                                    {t('chapterHeadingOptions.none')}
+                                </option>
+                            </Select>
+                        </div>
                         <ToggleRow
                             label={t('includeActBreaks')}
                             checked={includeActBreaks}

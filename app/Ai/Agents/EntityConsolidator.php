@@ -2,10 +2,8 @@
 
 namespace App\Ai\Agents;
 
-use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
-use App\Enums\AiTaskCategory;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
@@ -23,12 +21,7 @@ use Stringable;
 #[UseCheapestModel]
 class EntityConsolidator implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput
 {
-    use Promptable, UsesTaskCategoryModel;
-
-    public static function taskCategory(): AiTaskCategory
-    {
-        return AiTaskCategory::Extraction;
-    }
+    use Promptable;
 
     public function __construct(protected Book $book) {}
 

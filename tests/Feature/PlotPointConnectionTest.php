@@ -81,7 +81,7 @@ it('cascades delete when plot point is removed', function () {
         'type' => ConnectionType::Causes,
     ]);
 
-    $source->delete();
+    $source->forceDelete();
 
     expect(PlotPointConnection::count())->toBe(0);
 });

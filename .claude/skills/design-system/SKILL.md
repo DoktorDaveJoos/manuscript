@@ -73,10 +73,19 @@ Read that file if you haven't in this conversation. This skill is the enforcemen
 - `hover:bg-accent-dark` — accent hover state
 - `bg-accent-light` — accent-tinted backgrounds
 
-## Component Reuse
+## Component Reuse — Reuse first, shadcn second, custom last
+
+The reuse rule is non-negotiable. **Before writing markup:**
+1. Check `resources/js/components/ui/` — if a component fits, use it.
+2. If nothing fits, install a shadcn component and adapt it to our tokens.
+3. Custom markup is a last resort. The moment a custom snippet appears in a second file, lift it into `components/ui/`.
+
+A duplicated button, input, or chat surface IS a bug. Fix the duplication before it spreads.
 
 Always check `resources/js/components/ui/` first:
-Button, Input, Select, Textarea, Dialog, Drawer, PanelHeader, SectionLabel, ContextMenu, FormField, Toggle, ToggleRow, Checkbox, Collapsible, Kbd
+Button, Input, Select, Textarea, **SearchInput** (filter/search bar — magnifier + input + clear button), **AiChatInput** (AI chat compose surface — auto-grow textarea + circular send button), Dialog, Drawer, PanelHeader, SectionLabel, ContextMenu, FormField, Card, Toggle, ToggleRow, ToggleGroup, Checkbox, Collapsible, Kbd, Alert, Badge.
+
+**Never roll your own AI chat input.** When the user talks to an AI agent (Plot Coach, editor AI chat, anywhere conversational), use `<AiChatInput value={...} onChange={...} onSend={...} placeholder={...} disabled={...} />`. Enter sends, Shift+Enter inserts a newline. Don't assemble a textarea + send button pair inline.
 
 ## Section Labels Pattern
 ```

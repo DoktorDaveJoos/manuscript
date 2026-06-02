@@ -68,7 +68,7 @@ it('deletes a beat', function () {
     $this->delete(route('beats.destroy', [$book, $beat]))
         ->assertRedirect();
 
-    $this->assertDatabaseMissing('beats', ['id' => $beat->id]);
+    $this->assertSoftDeleted('beats', ['id' => $beat->id]);
 });
 
 it('reorders beats within a plot point', function () {
@@ -220,7 +220,7 @@ it('cascade deletes beats when plot point is deleted', function () {
     $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id]);
     $beat = Beat::factory()->create(['plot_point_id' => $plotPoint->id]);
 
-    $plotPoint->delete();
+    $plotPoint->forceDelete();
 
     $this->assertDatabaseMissing('beats', ['id' => $beat->id]);
 });
@@ -233,7 +233,7 @@ it('cascade detaches beat_chapter rows when beat is deleted', function () {
     $chapter = Chapter::factory()->create(['book_id' => $book->id, 'storyline_id' => $storyline->id]);
     $beat->chapters()->attach($chapter->id);
 
-    $beat->delete();
+    $beat->forceDelete();
 
     $this->assertDatabaseMissing('beat_chapter', ['beat_id' => $beat->id]);
 });

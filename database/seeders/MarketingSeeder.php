@@ -327,18 +327,27 @@ class MarketingSeeder extends Seeder
             $chapters[] = $chapter;
         }
 
-        // Attach characters to chapters with roles
-        $chapters[0]->characters()->attach($characters['harlow']->id, ['role' => CharacterRole::Protagonist->value]);
-        $chapters[0]->characters()->attach($characters['kieran']->id, ['role' => CharacterRole::Mentioned->value]);
+        // Attach characters to chapters with roles. POV characters are auto-attached
+        // by the Chapter model observer, so use syncWithoutDetaching to stay idempotent.
+        $chapters[0]->characters()->syncWithoutDetaching([
+            $characters['harlow']->id => ['role' => CharacterRole::Protagonist->value],
+            $characters['kieran']->id => ['role' => CharacterRole::Mentioned->value],
+        ]);
 
-        $chapters[1]->characters()->attach($characters['harlow']->id, ['role' => CharacterRole::Protagonist->value]);
-        $chapters[1]->characters()->attach($characters['reed']->id, ['role' => CharacterRole::Supporting->value]);
+        $chapters[1]->characters()->syncWithoutDetaching([
+            $characters['harlow']->id => ['role' => CharacterRole::Protagonist->value],
+            $characters['reed']->id => ['role' => CharacterRole::Supporting->value],
+        ]);
 
-        $chapters[2]->characters()->attach($characters['elena']->id, ['role' => CharacterRole::Protagonist->value]);
-        $chapters[2]->characters()->attach($characters['reed']->id, ['role' => CharacterRole::Mentioned->value]);
+        $chapters[2]->characters()->syncWithoutDetaching([
+            $characters['elena']->id => ['role' => CharacterRole::Protagonist->value],
+            $characters['reed']->id => ['role' => CharacterRole::Mentioned->value],
+        ]);
 
-        $chapters[3]->characters()->attach($characters['elena']->id, ['role' => CharacterRole::Protagonist->value]);
-        $chapters[3]->characters()->attach($characters['kieran']->id, ['role' => CharacterRole::Supporting->value]);
+        $chapters[3]->characters()->syncWithoutDetaching([
+            $characters['elena']->id => ['role' => CharacterRole::Protagonist->value],
+            $characters['kieran']->id => ['role' => CharacterRole::Supporting->value],
+        ]);
 
         // Set first appearances
         $characters['harlow']->update(['first_appearance' => $chapters[0]->id]);

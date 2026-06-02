@@ -11,13 +11,13 @@ beforeEach(function () {
     $this->withoutVite();
 });
 
-test('ai dashboard loads without license', function () {
-    License::query()->delete();
+test('ai dashboard requires license', function () {
+    clearLicense();
 
     $book = Book::factory()->create();
 
     $this->getJson(route('books.ai.dashboard', $book))
-        ->assertOk();
+        ->assertForbidden();
 });
 
 test('ai dashboard loads with empty state when no preparation exists', function () {

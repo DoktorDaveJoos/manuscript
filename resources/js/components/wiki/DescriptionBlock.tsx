@@ -1,3 +1,6 @@
+import { useMemo } from 'react';
+import { md } from '@/lib/markdown';
+
 export default function DescriptionBlock({
     text,
     className = 'text-[14px] leading-relaxed text-ink',
@@ -5,14 +8,12 @@ export default function DescriptionBlock({
     text: string;
     className?: string;
 }) {
+    const html = useMemo(() => md.render(text), [text]);
+
     return (
-        <div className={`flex flex-col gap-3 ${className}`}>
-            {text
-                .split('\n')
-                .filter(Boolean)
-                .map((paragraph, i) => (
-                    <p key={i}>{paragraph}</p>
-                ))}
-        </div>
+        <div
+            className={`ai-chat-markdown ${className}`}
+            dangerouslySetInnerHTML={{ __html: html }}
+        />
     );
 }

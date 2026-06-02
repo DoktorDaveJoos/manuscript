@@ -83,6 +83,10 @@
     "license.error.failed": "No se pudo activar la licencia.",
     "license.error.network": "No se pudo conectar al servidor de licencias. Verifica tu conexión a internet.",
 
+    "welcome.title": "Bienvenido a Manuscript",
+    "welcome.description": "Ingresa tu clave de licencia para empezar.",
+    "welcome.buyLicense": "¿No tienes una licencia? Obtén una en getmanuscript.app",
+
     "aiProviders.title": "Proveedores de IA",
     "aiProviders.description": "Elige tu proveedor de IA y configura su clave de API.",
     "aiProviders.configured": "Configurado",
@@ -107,6 +111,83 @@
     "aiProviders.testConnection": "Probar conexión",
     "aiProviders.saveFailed": "No se pudo guardar la configuración.",
     "aiProviders.testFailed": "La prueba de conexión falló.",
+
+    "aiProviders.howToGetKey.trigger": "Cómo obtener una API key",
+    "aiProviders.howToGetKey.title": "Cómo obtener tu API key de {{provider}}",
+    "aiProviders.howToGetKey.intro": "Sigue estos pasos para generar una API key para {{provider}}. Manuscript la guarda cifrada en este dispositivo — tu clave nunca sale de tu equipo.",
+    "aiProviders.howToGetKey.close": "Cerrar",
+
+    "aiProviders.howToGetKey.anthropic.consoleLabel": "Abrir Anthropic Console",
+    "aiProviders.howToGetKey.anthropic.steps": [
+        "Abre console.anthropic.com en tu navegador.",
+        "Inicia sesión o crea una cuenta gratuita en Anthropic.",
+        "Ve a Settings → API Keys en la barra lateral.",
+        "Pulsa Create Key y ponle un nombre como «Manuscript».",
+        "Copia la clave (empieza por sk-ant-) — solo se muestra una vez — y pégala aquí."
+    ],
+
+    "aiProviders.howToGetKey.openai.consoleLabel": "Abrir OpenAI Platform",
+    "aiProviders.howToGetKey.openai.steps": [
+        "Abre platform.openai.com e inicia sesión.",
+        "Pulsa tu perfil (arriba a la derecha) y elige View API keys.",
+        "Pulsa Create new secret key y ponle un nombre.",
+        "Copia la clave (empieza por sk-) — solo se muestra una vez — y pégala aquí.",
+        "Configura un método de pago en Settings → Billing si todavía no lo tienes."
+    ],
+
+    "aiProviders.howToGetKey.gemini.consoleLabel": "Abrir Google AI Studio",
+    "aiProviders.howToGetKey.gemini.steps": [
+        "Abre aistudio.google.com en tu navegador.",
+        "Inicia sesión con tu cuenta de Google.",
+        "Pulsa Get API key en la esquina superior derecha.",
+        "Elige un proyecto de Google Cloud existente o crea uno nuevo y pulsa Create API key.",
+        "Copia la clave y pégala aquí."
+    ],
+
+    "aiProviders.howToGetKey.groq.consoleLabel": "Abrir Groq Console",
+    "aiProviders.howToGetKey.groq.steps": [
+        "Abre console.groq.com e inicia sesión (Google, GitHub o email).",
+        "Abre la pestaña API Keys en la barra lateral.",
+        "Pulsa Create API Key y ponle un nombre.",
+        "Copia la clave (empieza por gsk_) — solo se muestra una vez.",
+        "Pégala aquí."
+    ],
+
+    "aiProviders.howToGetKey.xai.consoleLabel": "Abrir xAI Console",
+    "aiProviders.howToGetKey.xai.steps": [
+        "Abre console.x.ai e inicia sesión con tu cuenta de X / xAI.",
+        "Abre la pestaña API Keys.",
+        "Pulsa Create API Key y ponle un nombre.",
+        "Copia la clave (empieza por xai-) — solo se muestra una vez.",
+        "Pégala aquí."
+    ],
+
+    "aiProviders.howToGetKey.deepseek.consoleLabel": "Abrir DeepSeek Platform",
+    "aiProviders.howToGetKey.deepseek.steps": [
+        "Abre platform.deepseek.com e inicia sesión o crea una cuenta.",
+        "Abre la página API Keys en la barra lateral.",
+        "Pulsa Create new API key.",
+        "Copia la clave — solo se muestra una vez.",
+        "Pégala aquí. Si hace falta, añade saldo antes en la página Billing."
+    ],
+
+    "aiProviders.howToGetKey.mistral.consoleLabel": "Abrir Mistral Console",
+    "aiProviders.howToGetKey.mistral.steps": [
+        "Abre console.mistral.ai e inicia sesión o crea una cuenta.",
+        "Abre la pestaña API Keys dentro de tu workspace.",
+        "Pulsa Create new key y ponle un nombre.",
+        "Copia la clave — solo se muestra una vez.",
+        "Pégala aquí. Si hace falta, añade antes un método de pago en Billing."
+    ],
+
+    "aiProviders.howToGetKey.openrouter.consoleLabel": "Abrir OpenRouter",
+    "aiProviders.howToGetKey.openrouter.steps": [
+        "Abre openrouter.ai e inicia sesión (Google, GitHub o email).",
+        "Pulsa tu avatar (arriba a la derecha) y elige Keys.",
+        "Pulsa Create Key y ponle un nombre.",
+        "Copia la clave (empieza por sk-or-) — solo se muestra una vez.",
+        "Pégala aquí y carga saldo en la página Credits para empezar a usarla."
+    ],
     "aiProviders.advancedSettings": "Configuración avanzada",
     "aiProviders.advancedDescription": "La aplicación selecciona automáticamente el mejor modelo para cada tarea. Cambia estos valores solo si conoces bien las diferencias entre modelos — una selección incorrecta puede reducir la calidad del resultado o aumentar los costos.",
     "aiProviders.writingModel": "Escritura",
@@ -133,6 +214,20 @@
     "prosePassRules.title": "Reglas de revisión",
     "prosePassRules.pageTitle": "Reglas de revisión — {{bookTitle}}",
     "prosePassRules.description": "Estas reglas se aplican cuando usas Revisar prosa. Las reglas habilitadas guiarán la forma en que la IA revisa y mejora tu texto.",
+    "prosePassRules.rules.show_dont_tell.label": "Mostrar, no contar",
+    "prosePassRules.rules.show_dont_tell.description": "Convierte las afirmaciones expositivas en acción y detalles que muestren.",
+    "prosePassRules.rules.dialogue_tags.label": "Limpieza de verbos de diálogo",
+    "prosePassRules.rules.dialogue_tags.description": "Reemplaza los verbos de diálogo cargados de adverbios por beats de acción.",
+    "prosePassRules.rules.filter_words.label": "Eliminación de palabras filtro",
+    "prosePassRules.rules.filter_words.description": "Elimina palabras filtro innecesarias (sintió, vio, oyó, notó).",
+    "prosePassRules.rules.passive_voice.label": "Reducción de voz pasiva",
+    "prosePassRules.rules.passive_voice.description": "Convierte construcciones pasivas en voz activa cuando sea apropiado.",
+    "prosePassRules.rules.sentence_variety.label": "Variedad de oraciones",
+    "prosePassRules.rules.sentence_variety.description": "Varía la longitud y estructura de las oraciones para mejorar el ritmo.",
+    "prosePassRules.rules.shorten_long_sentences.label": "Acortar oraciones demasiado largas",
+    "prosePassRules.rules.shorten_long_sentences.description": "Divide una oración solo cuando sobrecarga la memoria de trabajo del lector (~4 unidades): gran distancia entre sujeto y verbo, más de dos niveles de anidamiento de cláusulas, o enumeraciones con más de 3–4 elementos. Las oraciones largas y fluidas con cláusulas conectadas localmente se mantienen.",
+    "prosePassRules.rules.tightening.label": "Ajuste de la prosa",
+    "prosePassRules.rules.tightening.description": "Elimina redundancias y reduce frases excesivamente largas.",
 
     "sidebar.proofreading": "Corrección",
     "proofreading.title": "Corrección",
@@ -174,5 +269,39 @@
     "export.includeChapterTitles": "Incluir títulos de capítulos",
     "export.includeActBreaks": "Incluir separadores de actos",
     "export.exporting": "Exportando...",
-    "export.exportManuscript": "Exportar manuscrito"
+    "export.exportManuscript": "Exportar manuscrito",
+
+    "backup.sectionLabel": "RESPALDO",
+    "backup.navLabel": "Respaldo",
+    "backup.lastExport": "Último respaldo: {{value}}",
+    "backup.neverExported": "Nunca",
+    "backup.passphrase.label": "Frase de paso (opcional)",
+    "backup.passphrase.placeholder": "Dejar vacío para guardar sin cifrar",
+    "backup.passphrase.hint": "Si configuras una frase de paso, el respaldo se cifra en este equipo antes de salir de Manuscript. Guárdala en un lugar seguro — sin ella el respaldo no se puede restaurar.",
+    "backup.save.title": "Guardar respaldo",
+    "backup.save.description": "Descarga una copia de tus datos. Guarda el archivo donde quieras — en tu computadora, una memoria USB o el almacenamiento en la nube que prefieras.",
+    "backup.save.button": "Guardar respaldo",
+    "backup.save.busy": "Guardando…",
+    "backup.import.title": "Importar respaldo",
+    "backup.import.description": "Restaura tus datos desde un archivo de respaldo guardado anteriormente. Tus datos actuales se conservan como reversión de un paso por si el respaldo importado es incorrecto.",
+    "backup.import.fileLabel": "Archivo de respaldo",
+    "backup.import.chooseFile": "Elegir archivo…",
+    "backup.import.replaceFile": "Reemplazar archivo…",
+    "backup.import.noFileChosen": "Ningún archivo seleccionado",
+    "backup.import.passphraseLabel": "Frase de paso",
+    "backup.import.passphrasePlaceholder": "Requerida para respaldos cifrados",
+    "backup.import.warning": "Al importar se reemplazarán tus datos actuales tras reiniciar. Es posible que debas volver a introducir las claves de proveedores de IA si el respaldo se hizo en otro equipo.",
+    "backup.import.button": "Importar respaldo",
+    "backup.import.busy": "Validando…",
+    "backup.revert.title": "Revertir última importación",
+    "backup.revert.description": "Restaura la base de datos anterior a la última importación. Acción única — al revertir, los datos importados se descartan.",
+    "backup.revert.button": "Revertir",
+    "backup.revert.busy": "Revirtiendo…",
+    "backup.revertConfirm": "¿Restaurar la base de datos anterior a la última importación? Tus datos actuales serán reemplazados. No se puede deshacer.",
+    "backup.restart.import": "Respaldo listo para importar. Cierra Manuscript y vuelve a abrirlo para completar la importación.",
+    "backup.restart.revert": "Reversión lista. Cierra Manuscript y vuelve a abrirlo para restaurar tus datos anteriores.",
+    "backup.restart.hint": "Cierra la ventana o sal de Manuscript desde el menú. Al volver a abrirlo se completará la operación.",
+    "backup.error.exportFailed": "No se pudo guardar el respaldo. Inténtalo de nuevo.",
+    "backup.error.importFailed": "No se pudo importar el respaldo.",
+    "backup.error.revertFailed": "No se pudo revertir."
 }

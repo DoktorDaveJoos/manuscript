@@ -2,12 +2,17 @@ import type { Editor } from '@tiptap/react';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
+import { openWindow as openDiffWindow } from '@/actions/App/Http/Controllers/ChapterDiffController';
 import type { ChapterData } from '@/hooks/useChapterData';
+import type { ContinueWritingReview } from '@/hooks/useContinueWriting';
 import { useProofreading } from '@/hooks/useProofreading';
+import type { RewriteSelectionReview } from '@/hooks/useRewriteSelection';
 import { jsonFetchHeaders } from '@/lib/utils';
 import { DEFAULT_PROOFREADING_CONFIG } from '@/types/models';
-import type { AppSettings, Scene } from '@/types/models';
+import type { AppSettings, ChapterVersion, Scene } from '@/types/models';
+import DiffView from './DiffView';
 import EditorBar from './EditorBar';
 import type { SaveStatus } from './EditorBar';
 import FormattingToolbar from './FormattingToolbar';
@@ -34,6 +39,12 @@ export default function ChapterPane({
     spellcheckEnabled,
     isTypewriterMode,
     onToggleTypewriterMode,
+    review,
+    onReviewApplied,
+    proseRunning = false,
+    isLocalFindOpen = false,
+    localFindShowReplace = false,
+    onLocalFindClose,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -53,6 +64,12 @@ export default function ChapterPane({
     spellcheckEnabled: boolean;
     isTypewriterMode: boolean;
     onToggleTypewriterMode: () => void;
+    review: ContinueWritingReview | RewriteSelectionReview | null;
+    onReviewApplied: () => void;
+    proseRunning?: boolean;
+    isLocalFindOpen?: boolean;
+    localFindShowReplace?: boolean;
+    onLocalFindClose?: () => void;
 }) {
     const { t } = useTranslation('editor');
     const { chapter, proofreadingConfig: initialProofreadingConfig } =
@@ -78,6 +95,92 @@ export default function ChapterPane({
         number | null
     >(null);
     const [showVersions, setShowVersions] = useState(false);
+    const [isReviewing, setIsReviewing] = useState(false);
+    const [compareVersion, setCompareVersion] = useState<ChapterVersion | null>(
+        null,
+    );
+
+    // The pane is reused across chapter navigation (no remount); reset review
+    // overlay so we don't show stale diff content.
+    useEffect(() => {
+        setIsReviewing(false);
+        setCompareVersion(null);
+    }, [chapter.id]);
+
+    const showReview = review !== null && review.previous !== null;
+    const handleApplied = useCallback(() => {
+        setIsReviewing(false);
+        onReviewApplied();
+    }, [onReviewApplied]);
+    const handleCloseDiff = useCallback(() => setIsReviewing(false), []);
+
+    // Desktop opens the diff in its own native window (proper full-bleed
+    // side-by-side); web/dev fall back to the in-pane overlay.
+    const handleReviewClick = useCallback(async () => {
+        if (!review) return;
+        if (typeof window !== 'undefined' && window.Native?.on) {
+            try {
+                const response = await fetch(
+                    openDiffWindow.url({
+                        book: bookId,
+                        chapter: chapter.id,
+                        version: review.new.id,
+                    }),
+                    { method: 'POST', headers: jsonFetchHeaders() },
+                );
+                if (response.ok) return;
+            } catch {
+                /* fall through to in-pane overlay */
+            }
+        }
+        setIsReviewing(true);
+    }, [bookId, chapter.id, review]);
+    const handleCompareApplied = useCallback(() => {
+        setCompareVersion(null);
+        onVersionsChanged();
+    }, [onVersionsChanged]);
+    const handleCompareClose = useCallback(() => setCompareVersion(null), []);
+    const handleCompareSelect = useCallback((version: ChapterVersion) => {
+        setShowVersions(false);
+        setCompareVersion(version);
+    }, []);
+
+    // Fire a toast once per new AI review. The review state sticks around so
+    // handleReviewClick still works if the user clicks "Review changes" later.
+    const handleReviewClickRef = useRef(handleReviewClick);
+    handleReviewClickRef.current = handleReviewClick;
+    useEffect(() => {
+        if (!showReview || !review) return;
+
+        const copy = {
+            continue_writing: {
+                title: 'continueWriting.toast.title',
+                description:
+                    review.kind === 'continue_writing' && review.addedWords > 0
+                        ? 'continueWriting.toast.descriptionWithCount'
+                        : 'continueWriting.toast.description',
+                action: 'continueWriting.toast.review',
+            },
+            rewrite_selection: {
+                title: 'rewriteSelection.toast.title',
+                description: 'rewriteSelection.toast.description',
+                action: 'rewriteSelection.toast.review',
+            },
+        }[review.kind];
+
+        const descriptionArgs =
+            review.kind === 'continue_writing' && review.addedWords > 0
+                ? { count: review.addedWords }
+                : undefined;
+
+        toast(t(copy.title), {
+            description: t(copy.description, descriptionArgs),
+            action: {
+                label: t(copy.action),
+                onClick: () => handleReviewClickRef.current(),
+            },
+        });
+    }, [showReview, review, t]);
 
     const [pendingTitleSelect, setPendingTitleSelect] = useState(
         () => chapter.word_count === 0,
@@ -260,6 +363,7 @@ export default function ChapterPane({
     // ── Derived values ───────────────────────────────────────────────────
     const displayTitle = firstLine(chapterTitle);
     const povCharacterName = chapter.pov_character?.name ?? null;
+    const povCharacterId = chapter.pov_character?.id ?? null;
     const timelineLabel = chapter.storyline?.timeline_label ?? null;
 
     return (
@@ -315,6 +419,7 @@ export default function ChapterPane({
                         chapterId={chapter.id}
                         onClose={() => setShowVersions(false)}
                         onVersionsChanged={onVersionsChanged}
+                        onCompare={handleCompareSelect}
                     />
                 )}
             </div>
@@ -339,32 +444,87 @@ export default function ChapterPane({
                 />
             </div>
 
-            {/* Writing surface */}
-            <WritingSurface
-                scenes={scenes}
-                bookId={bookId}
-                chapterId={chapter.id}
-                title={chapterTitle}
-                autoSelectTitle={pendingTitleSelect}
-                onTitleSelectHandled={handleTitleSelectHandled}
-                povCharacterName={povCharacterName}
-                timelineLabel={timelineLabel}
-                onTitleUpdate={handleTitleUpdate}
-                activeEditor={activeEditor}
-                onActiveEditorChange={handleActiveEditorChange}
-                onWordCountChange={handleSceneWordCountChange}
-                onSaveStatusChange={handleLocalSaveStatusChange}
-                isTypewriterMode={isTypewriterMode}
-                editorFont={editorFont}
-                editorFontSize={editorFontSize}
-                pendingFocusSceneId={pendingFocusSceneId}
-                onFocusHandled={() => setPendingFocusSceneId(null)}
-                onActiveSceneIdChange={handleActiveSceneIdChange}
-                scenesVisible={scenesVisible}
-                proofreadingConfig={proofreadingConfig}
-                bookLanguage={bookLanguage}
-                spellcheckEnabled={spellcheckEnabled}
-            />
+            {/* Replaces WritingSurface in this pane only, so other panes keep editing. */}
+            {isReviewing && review && review.previous && (
+                <DiffView
+                    bookId={bookId}
+                    chapterId={chapter.id}
+                    chapterTitle={firstLine(chapterTitle)}
+                    currentVersion={review.previous}
+                    pendingVersion={review.new}
+                    editorFont={editorFont}
+                    mode="refine"
+                    onApplied={handleApplied}
+                    onClose={handleCloseDiff}
+                />
+            )}
+
+            {compareVersion && chapter.current_version && (
+                <DiffView
+                    bookId={bookId}
+                    chapterId={chapter.id}
+                    chapterTitle={firstLine(chapterTitle)}
+                    currentVersion={chapter.current_version}
+                    pendingVersion={compareVersion}
+                    editorFont={editorFont}
+                    mode={
+                        compareVersion.status === 'pending'
+                            ? 'pending'
+                            : 'history'
+                    }
+                    onApplied={handleCompareApplied}
+                    onClose={handleCompareClose}
+                />
+            )}
+
+            {!isReviewing && !compareVersion && (
+                <div className="relative flex min-h-0 flex-1 flex-col">
+                    <WritingSurface
+                        scenes={scenes}
+                        bookId={bookId}
+                        chapterId={chapter.id}
+                        title={chapterTitle}
+                        autoSelectTitle={pendingTitleSelect}
+                        onTitleSelectHandled={handleTitleSelectHandled}
+                        povCharacterName={povCharacterName}
+                        povCharacterId={povCharacterId}
+                        timelineLabel={timelineLabel}
+                        onTitleUpdate={handleTitleUpdate}
+                        activeEditor={activeEditor}
+                        onActiveEditorChange={handleActiveEditorChange}
+                        onWordCountChange={handleSceneWordCountChange}
+                        onSaveStatusChange={handleLocalSaveStatusChange}
+                        isTypewriterMode={isTypewriterMode}
+                        editorFont={editorFont}
+                        editorFontSize={editorFontSize}
+                        pendingFocusSceneId={pendingFocusSceneId}
+                        onFocusHandled={() => setPendingFocusSceneId(null)}
+                        onActiveSceneIdChange={handleActiveSceneIdChange}
+                        scenesVisible={scenesVisible}
+                        proofreadingConfig={proofreadingConfig}
+                        bookLanguage={bookLanguage}
+                        spellcheckEnabled={spellcheckEnabled}
+                        isLocalFindOpen={isLocalFindOpen}
+                        localFindShowReplace={localFindShowReplace}
+                        onLocalFindClose={onLocalFindClose}
+                    />
+                    {proseRunning && (
+                        <div
+                            className="absolute inset-0 z-20 flex items-center justify-center bg-surface/60 backdrop-blur-sm"
+                            aria-live="polite"
+                        >
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="size-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                                <span className="text-sm font-medium text-ink">
+                                    {t('proseRevise.overlay.label', {
+                                        defaultValue: 'Revising prose…',
+                                    })}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

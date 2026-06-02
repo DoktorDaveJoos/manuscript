@@ -4,6 +4,7 @@ import { Alert, AlertDescription } from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
 import { useAiPreparation, TOTAL_PHASES } from '@/hooks/useAiPreparation';
 import type { AiPreparationStatus } from '@/types/models';
+import { usePrepareStepsDialog } from './AiPrepareStepsDialog';
 
 export default function AiPreparationProgress({
     bookId,
@@ -19,6 +20,10 @@ export default function AiPreparationProgress({
     const { t } = useTranslation('ai');
     const { status, isRunning, starting, error, handleStart, handleRetry } =
         useAiPreparation(bookId, initialStatus);
+    const { openStepsDialog, stepsDialog } = usePrepareStepsDialog(
+        handleStart,
+        starting,
+    );
 
     if (!licensed) {
         return (
@@ -59,6 +64,7 @@ export default function AiPreparationProgress({
         .join('\n');
 
     if (isRunning && status) {
+        const totalPhases = status.total_phases ?? TOTAL_PHASES;
         const completedCount = status.completed_phases?.length ?? 0;
         const currentPhase = status.current_phase;
         const phaseLabel = currentPhase
@@ -73,7 +79,7 @@ export default function AiPreparationProgress({
                   )
                 : 0;
         const overallProgress = Math.round(
-            (completedCount / TOTAL_PHASES) * 100,
+            (completedCount / totalPhases) * 100,
         );
         const hasErrors = status.phase_errors && status.phase_errors.length > 0;
 
@@ -86,7 +92,7 @@ export default function AiPreparationProgress({
                         <span className="text-xs text-ink-faint">
                             {t('preparationProgress.phaseCounter', {
                                 current: completedCount + 1,
-                                total: TOTAL_PHASES,
+                                total: totalPhases,
                             })}
                         </span>
                         {status.current_phase_total > 1 && (
@@ -146,12 +152,13 @@ export default function AiPreparationProgress({
                     )}
                     <button
                         type="button"
-                        onClick={handleStart}
+                        onClick={openStepsDialog}
                         className="ml-auto text-xs text-ink-faint transition-colors hover:text-ink"
                     >
                         {t('preparation.reRun')}
                     </button>
                 </div>
+                {stepsDialog}
                 {hasErrors && (
                     <details className="group">
                         <summary className="flex cursor-pointer items-center gap-1 text-xs text-ink-faint transition-colors hover:text-ink">
@@ -211,7 +218,7 @@ export default function AiPreparationProgress({
             <Button
                 variant="secondary"
                 type="button"
-                onClick={handleStart}
+                onClick={openStepsDialog}
                 disabled={starting}
             >
                 {starting
@@ -227,6 +234,7 @@ export default function AiPreparationProgress({
                     </AlertDescription>
                 </Alert>
             )}
+            {stepsDialog}
         </div>
     );
 }

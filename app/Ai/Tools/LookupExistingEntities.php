@@ -14,9 +14,11 @@ class LookupExistingEntities implements Tool
 {
     private const DESCRIPTION_CHAR_LIMIT = 200;
 
+    public function __construct(private int $bookId) {}
+
     public function description(): Stringable|string
     {
-        return 'Looks up existing characters and world entities for a book, including names, aliases, and descriptions. Useful for avoiding duplicate extraction and matching aliases.';
+        return 'Looks up existing characters and world entities for the current book, including names, aliases, and descriptions. Useful for avoiding duplicate extraction and matching aliases.';
     }
 
     /**
@@ -24,14 +26,12 @@ class LookupExistingEntities implements Tool
      */
     public function schema(JsonSchema $schema): array
     {
-        return [
-            'book_id' => $schema->integer()->required(),
-        ];
+        return [];
     }
 
     public function handle(Request $request): Stringable|string
     {
-        $book = Book::query()->findOrFail($request['book_id']);
+        $book = Book::query()->findOrFail($this->bookId);
         $characters = $book->characters()->get(['id', 'name', 'aliases', 'description', 'ai_description']);
         $wikiEntries = $book->wikiEntries()->get(['id', 'name', 'kind', 'type', 'description', 'ai_description', 'metadata']);
 
@@ -46,7 +46,7 @@ class LookupExistingEntities implements Tool
             foreach ($characters as $character) {
                 $aliases = ! empty($character->aliases) ? ' (aliases: '.implode(', ', $character->aliases).')' : '';
                 $description = $this->truncate($character->fullDescription());
-                $results[] = "- {$character->name}{$aliases}: {$description}";
+                $results[] = "- id={$character->id} {$character->name}{$aliases}: {$description}";
             }
             $sections[] = "## Existing Characters\n\n".implode("\n", $results);
         }
@@ -57,10 +57,12 @@ class LookupExistingEntities implements Tool
                 $type = $entry->type ? " ({$entry->type})" : '';
                 $aliases = ! empty($entry->metadata['aliases']) ? ' (aliases: '.implode(', ', $entry->metadata['aliases']).')' : '';
                 $description = $this->truncate($entry->fullDescription());
-                $results[] = "- [{$entry->kind->value}] {$entry->name}{$aliases}{$type}: {$description}";
+                $results[] = "- id={$entry->id} [{$entry->kind->value}] {$entry->name}{$aliases}{$type}: {$description}";
             }
             $sections[] = "## Existing World Entities\n\n".implode("\n", $results);
         }
+
+        $sections[] = '_Use the `id` value when proposing an update or referencing an existing entity (e.g. `{"type":"wiki_entry","data":{"id":42,...}}`)._';
 
         return implode("\n\n", $sections);
     }

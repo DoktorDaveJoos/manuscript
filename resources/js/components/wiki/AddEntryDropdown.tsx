@@ -1,12 +1,4 @@
-import {
-    Building2,
-    BookOpen,
-    Lock,
-    MapPin,
-    Package,
-    Plus,
-    User,
-} from 'lucide-react';
+import { Building2, BookOpen, MapPin, Package, Plus, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
     DropdownMenu,
@@ -26,25 +18,10 @@ const options: { type: WikiTab; icon: typeof User }[] = [
 
 export default function AddEntryDropdown({
     onSelect,
-    disabled,
 }: {
     onSelect: (type: WikiTab) => void;
-    disabled?: boolean;
 }) {
     const { t } = useTranslation('wiki');
-
-    if (disabled) {
-        return (
-            <button
-                data-testid="add-wiki-entry"
-                disabled
-                className="flex h-[26px] w-[26px] cursor-default items-center justify-center rounded-md border border-border bg-neutral-bg opacity-50 transition-colors"
-                title="Upgrade to Pro"
-            >
-                <Lock size={12} className="text-ink-faint" />
-            </button>
-        );
-    }
 
     return (
         <DropdownMenu>

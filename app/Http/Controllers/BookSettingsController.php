@@ -16,7 +16,6 @@ use App\Services\Export\FontService;
 use App\Services\Export\Templates\ClassicTemplate;
 use App\Services\Export\Templates\ElegantTemplate;
 use App\Services\Export\Templates\ModernTemplate;
-use App\Services\FreeTierLimits;
 use App\Services\WritingStyleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -110,7 +109,7 @@ class BookSettingsController extends Controller
         $book->load('storylines', 'acts');
 
         $chapters = $book->chapters()
-            ->select('id', 'book_id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count', 'is_epilogue')
+            ->select('id', 'book_id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count', 'is_epilogue', 'is_prologue')
             ->with(['scenes' => fn ($q) => $q->orderBy('sort_order')->select('id', 'chapter_id', 'content')])
             ->orderBy('reader_order')
             ->get();
@@ -119,7 +118,7 @@ class BookSettingsController extends Controller
             'book' => $book->only('id', 'title', 'author', 'cover_image_path'),
             'storylines' => $book->storylines->map(fn ($s) => $s->only('id', 'name', 'color', 'type')),
             'chapters' => $chapters->map(fn ($ch) => [
-                ...$ch->only('id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count', 'is_epilogue'),
+                ...$ch->only('id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count', 'is_epilogue', 'is_prologue'),
                 'content' => $ch->getContentWithSceneBreaks(),
             ]),
             'trimSizes' => collect(TrimSize::cases())->map(function ($t) {
@@ -128,6 +127,7 @@ class BookSettingsController extends Controller
                 return [
                     'value' => $t->value,
                     'label' => $t->label(),
+                    'labelMetric' => $t->metricLabel(),
                     'width' => $dims['width'],
                     'height' => $dims['height'],
                 ];
@@ -168,12 +168,6 @@ class BookSettingsController extends Controller
     {
         $validated = $request->validated();
         $format = $validated['format'] ?? '';
-
-        if (! FreeTierLimits::canExportFormat($format)) {
-            return response()->json([
-                'message' => __('Upgrade to Manuscript Pro to export as :format.', ['format' => strtoupper($format)]),
-            ], 403);
-        }
 
         if ($format === 'pdf' && ! config('nativephp-internal.running')) {
             return response()->json(['error' => 'PDF export requires the desktop app'], 422);
@@ -229,10 +223,6 @@ class BookSettingsController extends Controller
 
     public function previewPdf(ExportBookRequest $request, Book $book): JsonResponse
     {
-        if (! FreeTierLimits::canExportFormat('pdf')) {
-            return response()->json(['message' => __('PDF preview requires Manuscript Pro.')], 403);
-        }
-
         $validated = $request->validated();
         $validated['preview_format'] = ExportFormat::from($validated['format'] ?? 'pdf')->value;
         $validated['include_cover'] = false;

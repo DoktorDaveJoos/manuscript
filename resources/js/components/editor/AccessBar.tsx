@@ -1,27 +1,48 @@
 import Badge from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 
-export type PanelId = 'wiki' | 'notes' | 'ai' | 'chat' | 'editorial';
+export type PanelId =
+    | 'wiki'
+    | 'notes'
+    | 'plot'
+    | 'ai'
+    | 'chat'
+    | 'editorial'
+    | 'coach-insights';
 
-export type AccessBarItemConfig = {
+export type AccessBarPanelItem = {
+    kind?: 'panel';
     id: PanelId;
     icon: React.ComponentType<{ size?: number }>;
     label: string;
     badge?: number;
 };
 
+export type AccessBarActionItem = {
+    kind: 'action';
+    id: string;
+    icon: React.ComponentType<{ size?: number }>;
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+};
+
+export type AccessBarItemConfig = AccessBarPanelItem | AccessBarActionItem;
+
 function AccessBarItem({
     id,
     icon: Icon,
     label,
     isActive,
+    disabled,
     badge,
     onClick,
 }: {
-    id: PanelId;
+    id: string;
     icon: React.ComponentType<{ size?: number }>;
     label: string;
     isActive: boolean;
+    disabled?: boolean;
     badge?: number;
     onClick: () => void;
 }) {
@@ -31,11 +52,13 @@ function AccessBarItem({
                 type="button"
                 data-access-bar={id}
                 onClick={onClick}
+                disabled={disabled}
                 className={cn(
                     'flex size-8 items-center justify-center rounded-md transition-colors',
                     isActive
                         ? 'bg-neutral-bg text-ink'
                         : 'text-ink-muted hover:bg-neutral-bg hover:text-ink',
+                    disabled && 'pointer-events-none opacity-40',
                 )}
             >
                 <Icon size={14} />
@@ -63,17 +86,32 @@ export default function AccessBar({
 }) {
     return (
         <aside className="flex h-full w-12 shrink-0 flex-col items-center gap-1 border-l border-border-light bg-surface-card pt-3">
-            {items.map((item) => (
-                <AccessBarItem
-                    key={item.id}
-                    id={item.id}
-                    icon={item.icon}
-                    label={item.label}
-                    isActive={openPanels.has(item.id)}
-                    badge={item.badge}
-                    onClick={() => onToggle(item.id)}
-                />
-            ))}
+            {items.map((item) => {
+                if (item.kind === 'action') {
+                    return (
+                        <AccessBarItem
+                            key={item.id}
+                            id={item.id}
+                            icon={item.icon}
+                            label={item.label}
+                            isActive={false}
+                            disabled={item.disabled}
+                            onClick={item.onClick}
+                        />
+                    );
+                }
+                return (
+                    <AccessBarItem
+                        key={item.id}
+                        id={item.id}
+                        icon={item.icon}
+                        label={item.label}
+                        isActive={openPanels.has(item.id)}
+                        badge={item.badge}
+                        onClick={() => onToggle(item.id)}
+                    />
+                );
+            })}
         </aside>
     );
 }

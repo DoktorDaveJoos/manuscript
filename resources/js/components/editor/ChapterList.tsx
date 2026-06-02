@@ -23,7 +23,6 @@ import {
     Eye,
     EyeOff,
     GripVertical,
-    Lock,
     Plus,
     UnfoldVertical,
     FoldVertical,
@@ -37,7 +36,6 @@ import {
 import {
     destroy as destroyScene,
     reorder as reorderScenes,
-    store as storeScene,
     updateTitle as updateSceneTitle,
 } from '@/actions/App/Http/Controllers/SceneController';
 import {
@@ -46,7 +44,12 @@ import {
 } from '@/actions/App/Http/Controllers/StorylineController';
 import { Collapsible, CollapsibleTrigger } from '@/components/ui/Collapsible';
 import { typedClosestCenter } from '@/lib/dnd';
-import { cn, formatCompactCount, jsonFetchHeaders } from '@/lib/utils';
+import {
+    addSceneToChapter,
+    broadcastChapterDataChanged,
+    formatCompactCount,
+    jsonFetchHeaders,
+} from '@/lib/utils';
 import type { Chapter, Scene, Storyline } from '@/types/models';
 import ChapterContextMenu from './ChapterContextMenu';
 import ChapterListItem from './ChapterListItem';
@@ -358,11 +361,8 @@ function SceneList({
                 },
             );
 
-            if (onReorder) {
-                onReorder(reordered.map((s) => s.id));
-            } else {
-                router.reload({ only: ['book'] });
-            }
+            broadcastChapterDataChanged(chapterId);
+            onReorder?.(reordered.map((s) => s.id));
         },
         [scenes, bookId, chapterId, onReorder],
     );
@@ -443,7 +443,6 @@ export default function ChapterList({
     onOpenInNewPane,
     onAddChapter,
     onAddStoryline,
-    canAddStoryline = true,
     activeScenes,
     onChapterRename,
     onSceneRename,
@@ -465,7 +464,6 @@ export default function ChapterList({
     onOpenInNewPane?: (chapterId: number) => void;
     onAddChapter?: (storylineId: number) => void;
     onAddStoryline?: () => void;
-    canAddStoryline?: boolean;
     activeScenes?: Scene[];
     onChapterRename?: (chapterId: number, newTitle: string) => void;
     onSceneRename?: (sceneId: number, newTitle: string) => void;
@@ -808,11 +806,8 @@ export default function ChapterList({
                             body: JSON.stringify({ title: newValue }),
                         },
                     );
-                    if (onSceneRename) {
-                        onSceneRename(renaming.scene.id, newValue);
-                    } else {
-                        router.reload({ only: ['book'] });
-                    }
+                    broadcastChapterDataChanged(renaming.chapterId);
+                    onSceneRename?.(renaming.scene.id, newValue);
                     break;
             }
         },
@@ -852,29 +847,15 @@ export default function ChapterList({
                 },
             );
 
-            if (onSceneDelete) {
-                onSceneDelete(sceneId);
-            } else {
-                router.reload({ only: ['book'] });
-            }
+            broadcastChapterDataChanged(chapterId);
+            onSceneDelete?.(sceneId);
         },
         [bookId, onSceneDelete],
     );
 
     const handleAddScene = useCallback(
-        async (chapterId: number, sceneCount: number) => {
-            await fetch(storeScene.url({ book: bookId, chapter: chapterId }), {
-                method: 'POST',
-                headers: jsonFetchHeaders(),
-                body: JSON.stringify({
-                    title: t('chapterList.sceneDefault', {
-                        number: sceneCount + 1,
-                    }),
-                    position: sceneCount,
-                }),
-            });
-            router.reload({ only: ['book'] });
-        },
+        (chapterId: number, sceneCount: number) =>
+            addSceneToChapter(bookId, chapterId, sceneCount, t),
         [bookId, t],
     );
 
@@ -1105,6 +1086,7 @@ export default function ChapterList({
                                                                         isExpanded && (
                                                                             <button
                                                                                 type="button"
+                                                                                data-testid="add-scene-button"
                                                                                 onClick={() => {
                                                                                     if (
                                                                                         onSceneAdd
@@ -1159,24 +1141,9 @@ export default function ChapterList({
                         <button
                             type="button"
                             onClick={onAddStoryline}
-                            disabled={!canAddStoryline}
-                            title={
-                                canAddStoryline
-                                    ? undefined
-                                    : t('chapterList.upgradeToPro')
-                            }
-                            className={cn(
-                                'flex w-full items-center gap-1.5 px-2.5 pt-3.5 pb-1 text-[11px] font-medium tracking-[0.08em] uppercase transition-colors',
-                                canAddStoryline
-                                    ? 'text-ink-faint hover:text-ink'
-                                    : 'cursor-default opacity-50',
-                            )}
+                            className="flex w-full items-center gap-1.5 px-2.5 pt-3.5 pb-1 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase transition-colors hover:text-ink"
                         >
-                            {canAddStoryline ? (
-                                <Plus size={12} />
-                            ) : (
-                                <Lock size={12} className="text-ink-faint" />
-                            )}
+                            <Plus size={12} />
                             <span>{t('chapterList.addStoryline')}</span>
                         </button>
                     </div>

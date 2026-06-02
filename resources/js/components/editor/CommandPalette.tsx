@@ -9,7 +9,9 @@ import {
     Maximize,
     Minus,
     Plus,
+    Sparkles,
     SpellCheck,
+    Wand2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
@@ -63,9 +65,12 @@ function ShortcutKeys({ shortcut }: { shortcut: string }) {
     return <>{elements}</>;
 }
 
-const panelLabelKeys: Record<PanelId, { open: string; close: string }> = {
+const panelLabelKeys: Partial<
+    Record<PanelId, { open: string; close: string }>
+> = {
     wiki: { open: 'palette.openWiki', close: 'palette.closeWiki' },
     notes: { open: 'palette.openNotes', close: 'palette.closeNotes' },
+    plot: { open: 'palette.openPlot', close: 'palette.closePlot' },
     ai: { open: 'palette.openAiAssistant', close: 'palette.closeAiAssistant' },
     chat: { open: 'palette.openChat', close: 'palette.closeChat' },
     editorial: {
@@ -91,6 +96,8 @@ export default function CommandPalette({
     onToggleTypewriterMode,
     isSpellcheckEnabled,
     onToggleSpellcheck,
+    onContinueWriting,
+    onRewriteSelection,
 }: {
     editor: Editor | null;
     isOpen: boolean;
@@ -108,6 +115,8 @@ export default function CommandPalette({
     onToggleTypewriterMode?: () => void;
     isSpellcheckEnabled?: boolean;
     onToggleSpellcheck?: () => void;
+    onContinueWriting?: () => void;
+    onRewriteSelection?: () => void;
 }) {
     const { t } = useTranslation('editor');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -139,7 +148,7 @@ export default function CommandPalette({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-start justify-center bg-surface/40 pt-[20vh]"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-surface/40"
             onClick={onClose}
         >
             <div
@@ -226,9 +235,49 @@ export default function CommandPalette({
                         <CommandSeparator />
 
                         <CommandGroup heading={t('palette.section.assistance')}>
+                            <CommandItem
+                                value={t('palette.continueWriting', {
+                                    defaultValue: 'Continue writing',
+                                })}
+                                disabled={!onContinueWriting}
+                                onSelect={() =>
+                                    handleSelect(() => onContinueWriting?.())
+                                }
+                            >
+                                <PaletteIcon>
+                                    <Sparkles size={16} />
+                                </PaletteIcon>
+                                <span className="flex-1">
+                                    {t('palette.continueWriting', {
+                                        defaultValue: 'Continue writing',
+                                    })}
+                                </span>
+                            </CommandItem>
+
+                            <CommandItem
+                                value={t('palette.rewriteSelection', {
+                                    defaultValue: 'Rewrite selection',
+                                })}
+                                disabled={!onRewriteSelection}
+                                onSelect={() =>
+                                    handleSelect(() => onRewriteSelection?.())
+                                }
+                            >
+                                <PaletteIcon>
+                                    <Wand2 size={16} />
+                                </PaletteIcon>
+                                <span className="flex-1">
+                                    {t('palette.rewriteSelection', {
+                                        defaultValue: 'Rewrite selection',
+                                    })}
+                                </span>
+                            </CommandItem>
+
                             {panelItems.map((item) => {
+                                if (item.kind === 'action') return null;
                                 const isActive = openPanels.has(item.id);
                                 const keys = panelLabelKeys[item.id];
+                                if (!keys) return null;
                                 const label = t(
                                     isActive ? keys.close : keys.open,
                                 );

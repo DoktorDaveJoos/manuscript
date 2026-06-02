@@ -2,7 +2,6 @@
 
 use App\Models\AppSetting;
 use App\Models\Book;
-use App\Models\License;
 use App\Models\Storyline;
 
 it('completes full onboarding: create book and skip import', function () {
@@ -80,8 +79,7 @@ it('shows the book library when books exist', function () {
         ->assertSee('Create new book');
 });
 
-it('can create a second book from the library with pro license', function () {
-    License::factory()->create();
+it('can create a second book from the library', function () {
     Book::factory()->create(['title' => 'First Book']);
 
     $page = visit('/');
@@ -126,16 +124,4 @@ it('dismisses crash report dialog on first visit', function () {
         ->assertSee('Begin your story')
         ->assertSee('Create your first book')
         ->assertNoJavaScriptErrors();
-});
-
-it('new book card is locked on free tier with existing book', function () {
-    Book::factory()->create(['title' => 'My Only Book']);
-
-    $page = visit('/');
-
-    $page->assertNoJavaScriptErrors()
-        ->assertSee('Your books')
-        ->assertSee('My Only Book')
-        ->assertSee('Create new book')
-        ->assertSee('Upgrade to Pro');
 });

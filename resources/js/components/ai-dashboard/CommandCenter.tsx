@@ -7,6 +7,7 @@ import {
     bulkRevisionStatus,
     reviseAll,
 } from '@/actions/App/Http/Controllers/AiController';
+import { usePrepareStepsDialog } from '@/components/dashboard/AiPrepareStepsDialog';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import Dialog from '@/components/ui/Dialog';
@@ -243,6 +244,10 @@ export default function CommandCenter({
         starting,
         handleStart,
     } = useAiPreparation(bookId, initialStatus);
+    const { openStepsDialog, stepsDialog } = usePrepareStepsDialog(
+        handleStart,
+        starting,
+    );
     const {
         bulkStatus,
         isRunning: bulkRunning,
@@ -289,7 +294,7 @@ export default function CommandCenter({
                           label={t(phaseKey)}
                           rightLabel={t('commandCenter.preparation.step', {
                               current: completedCount + 1,
-                              total: TOTAL_PHASES,
+                              total: status.total_phases ?? TOTAL_PHASES,
                           })}
                           percent={percent}
                       />
@@ -352,7 +357,7 @@ export default function CommandCenter({
                             )}
                             <button
                                 type="button"
-                                onClick={handleStart}
+                                onClick={openStepsDialog}
                                 disabled={starting || prepRunning}
                                 className="ml-auto inline-flex items-center gap-1.5 text-[12px] font-medium text-accent transition-colors hover:text-accent/80 disabled:opacity-50"
                             >
@@ -468,6 +473,8 @@ export default function CommandCenter({
                 confirmLabel={t('commandCenter.prosePass.confirm')}
                 cancelLabel={t('commandCenter.prosePass.cancel')}
             />
+
+            {stepsDialog}
         </div>
     );
 }

@@ -176,6 +176,16 @@ class ChapterController extends Controller
             if ($book->daily_word_count_goal && $session->words_written >= $book->daily_word_count_goal) {
                 $session->update(['goal_met' => true]);
             }
+        } elseif ($delta < 0) {
+            $session = $book->writingSessions()
+                ->whereDate('date', now()->toDateString())
+                ->first();
+
+            if ($session) {
+                $session->update([
+                    'words_written' => max(0, $session->words_written + $delta),
+                ]);
+            }
         }
 
         return response()->json([
@@ -196,7 +206,7 @@ class ChapterController extends Controller
     public function versions(Book $book, Chapter $chapter): JsonResponse
     {
         $versions = $chapter->versions()
-            ->select('id', 'chapter_id', 'version_number', 'source', 'change_summary', 'is_current', 'status', 'created_at')
+            ->select('id', 'chapter_id', 'version_number', 'source', 'change_summary', 'is_current', 'status', 'content', 'created_at')
             ->orderByDesc('version_number')
             ->get();
 
@@ -389,6 +399,39 @@ class ChapterController extends Controller
         abort_if($version->status !== VersionStatus::Pending, 403, 'Only pending versions can be rejected.');
 
         $version->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function applyMerge(Request $request, Book $book, Chapter $chapter): JsonResponse
+    {
+        $request->validate([
+            'content' => ['required', 'string'],
+        ]);
+
+        $content = $request->input('content');
+
+        DB::transaction(function () use ($chapter, $content) {
+            $current = $chapter->currentVersion;
+            $nextNumber = ($current?->version_number ?? 0) + 1;
+            $sceneMap = $current?->scene_map;
+
+            $chapter->versions()
+                ->where('is_current', true)
+                ->update(['is_current' => false]);
+
+            $chapter->versions()->create([
+                'version_number' => $nextNumber,
+                'content' => $content,
+                'source' => VersionSource::ManualEdit,
+                'change_summary' => __('Refined AI revision'),
+                'is_current' => true,
+                'status' => VersionStatus::Accepted,
+                'scene_map' => $sceneMap,
+            ]);
+
+            $chapter->replaceSceneContents($content, $sceneMap);
+        });
 
         return response()->json(['success' => true]);
     }

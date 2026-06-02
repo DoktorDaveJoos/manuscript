@@ -9,8 +9,8 @@ import { GripVertical, Plus } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/ui/Card';
+import { markdownToPlainText } from '@/lib/markdown';
 import { TYPE_STYLES } from '@/lib/plot-constants';
-import { stripTags } from '@/lib/ruleCheckers';
 import { cn } from '@/lib/utils';
 import type { Beat, PlotPoint } from '@/types/models';
 import BeatCard from './BeatCard';
@@ -45,10 +45,7 @@ export default function PlotPointSection({
 
     const beats = plotPoint.beats ?? [];
     const plainDescription = useMemo(
-        () =>
-            plotPoint.description
-                ? stripTags(plotPoint.description).trim()
-                : '',
+        () => markdownToPlainText(plotPoint.description ?? ''),
         [plotPoint.description],
     );
 
@@ -123,15 +120,17 @@ export default function PlotPointSection({
                             plotPoint.title}
                     </button>
                 </div>
-                <span
-                    className={cn(
-                        'shrink-0 rounded px-2 py-0.5 text-[11px] font-medium',
-                        TYPE_STYLES[plotPoint.type] ??
-                            'bg-neutral-bg text-ink-muted',
-                    )}
-                >
-                    {t(`type.${plotPoint.type}`)}
-                </span>
+                {plotPoint.type && (
+                    <span
+                        className={cn(
+                            'shrink-0 rounded px-2 py-0.5 text-[11px] font-medium',
+                            TYPE_STYLES[plotPoint.type] ??
+                                'bg-neutral-bg text-ink-muted',
+                        )}
+                    >
+                        {t(`type.${plotPoint.type}`)}
+                    </span>
+                )}
             </div>
 
             {/* Divider */}

@@ -1,0 +1,15 @@
+{
+    "headerTitle": "Trama",
+    "searchPlaceholder": "Buscar beats...",
+    "connectedToChapter": "Conectado al capítulo",
+    "recentlyViewed": "Vistos recientemente",
+    "noDescription": "Sin descripción.",
+    "connectToChapter": "Conectar al capítulo",
+    "disconnectFromChapter": "Desconectar del capítulo",
+    "viewOnPlotBoard": "Ver en el tablero de trama",
+    "searchEmpty": "No se encontraron beats",
+    "emptyState": "Busca beats para conectarlos a este capítulo.",
+    "status.planned": "Planeado",
+    "status.fulfilled": "Cumplido",
+    "status.abandoned": "Abandonado"
+}

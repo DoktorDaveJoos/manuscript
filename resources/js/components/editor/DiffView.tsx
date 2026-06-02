@@ -13,16 +13,21 @@ import { useTranslation } from 'react-i18next';
 import {
     acceptPartialVersion,
     acceptVersion,
+    applyMerge,
     rejectVersion,
 } from '@/actions/App/Http/Controllers/ChapterController';
+import { refine as refineContinueWriting } from '@/actions/App/Http/Controllers/ContinueWritingController';
 import Button from '@/components/ui/Button';
 import { ruleCheckers, RULE_THRESHOLDS, stripTags } from '@/lib/ruleCheckers';
+import { jsonFetchHeaders } from '@/lib/utils';
 import type {
     ChapterVersion,
     ProsePassRule,
     VersionSource,
 } from '@/types/models';
 import { getFontFamily } from './FontSelector';
+
+export type DiffMode = 'pending' | 'refine' | 'review' | 'history';
 
 function splitParagraphs(html: string | null): string[] {
     if (!html) return [];
@@ -266,6 +271,9 @@ export default function DiffView({
     pendingVersion,
     prosePassRules,
     editorFont,
+    mode = 'pending',
+    onClose,
+    onApplied,
 }: {
     bookId: number;
     chapterId: number;
@@ -274,6 +282,9 @@ export default function DiffView({
     pendingVersion: ChapterVersion;
     prosePassRules?: ProsePassRule[];
     editorFont?: string;
+    mode?: DiffMode;
+    onClose?: () => void;
+    onApplied?: () => void;
 }) {
     const { t, i18n } = useTranslation('editor');
     const [isAccepting, setIsAccepting] = useState(false);
@@ -366,8 +377,57 @@ export default function DiffView({
     }, [prosePassRules, pendingVersion.content]);
 
     const handleAccept = useCallback(async () => {
+        if (mode === 'history') {
+            onClose?.();
+            return;
+        }
         setIsAccepting(true);
         try {
+            if (mode === 'refine') {
+                const mergedContent = mergeParagraphs(
+                    diff.aligned,
+                    selectedParagraphs,
+                    currentVersion.content,
+                    pendingVersion.content,
+                );
+                const response = await fetch(
+                    refineContinueWriting.url({
+                        book: bookId,
+                        chapter: chapterId,
+                        version: pendingVersion.id,
+                    }),
+                    {
+                        method: 'POST',
+                        headers: jsonFetchHeaders(),
+                        body: JSON.stringify({ content: mergedContent }),
+                    },
+                );
+                if (!response.ok) throw new Error('Refine failed');
+                onApplied?.();
+                return;
+            }
+            if (mode === 'review') {
+                // Post-revise compare: deselected changes revert to the previous
+                // version. Apply as a NEW version on top of the current AI
+                // revision (current stays in history).
+                const mergedContent = mergeParagraphs(
+                    diff.aligned,
+                    selectedParagraphs,
+                    currentVersion.content,
+                    pendingVersion.content,
+                );
+                const response = await fetch(
+                    applyMerge.url({ book: bookId, chapter: chapterId }),
+                    {
+                        method: 'POST',
+                        headers: jsonFetchHeaders(),
+                        body: JSON.stringify({ content: mergedContent }),
+                    },
+                );
+                if (!response.ok) throw new Error('Update failed');
+                onApplied?.();
+                return;
+            }
             if (isPartial) {
                 const mergedContent = mergeParagraphs(
                     diff.aligned,
@@ -407,11 +467,15 @@ export default function DiffView({
                 );
                 if (!response.ok) throw new Error('Accept failed');
             }
+            // Inertia router.reload preserves component state, so callers must
+            // be told to clear their "diff is open" flag explicitly.
+            onApplied?.();
             router.reload();
         } catch {
             setIsAccepting(false);
         }
     }, [
+        mode,
         bookId,
         chapterId,
         pendingVersion.id,
@@ -420,9 +484,15 @@ export default function DiffView({
         isPartial,
         selectedParagraphs,
         diff.aligned,
+        onApplied,
+        onClose,
     ]);
 
     const handleReject = useCallback(async () => {
+        if (mode === 'refine' || mode === 'history') {
+            onClose?.();
+            return;
+        }
         setIsRejecting(true);
         try {
             const response = await fetch(
@@ -439,11 +509,12 @@ export default function DiffView({
                 },
             );
             if (!response.ok) throw new Error('Reject failed');
+            onClose?.();
             router.reload();
         } catch {
             setIsRejecting(false);
         }
-    }, [bookId, chapterId, pendingVersion.id]);
+    }, [mode, bookId, chapterId, pendingVersion.id, onClose]);
 
     // Synchronized scrolling with height-matched spacers
     const leftPanelRef = useRef<HTMLDivElement>(null);
@@ -503,14 +574,26 @@ export default function DiffView({
         measureHeights();
     }, [measureHeights]);
 
-    // Re-measure on resize (font load, window resize, etc.)
+    // Re-measure on resize (font load, window resize, etc.).
+    // The observer callback writes min-heights, which the observer would
+    // immediately notice — schedule the measure on rAF and coalesce bursts so
+    // we never produce "ResizeObserver loop completed with undelivered
+    // notifications" warnings.
     useEffect(() => {
+        let rafId: number | null = null;
         const observer = new ResizeObserver(() => {
-            if (!isMeasuring.current) measureHeights();
+            if (isMeasuring.current || rafId !== null) return;
+            rafId = requestAnimationFrame(() => {
+                rafId = null;
+                if (!isMeasuring.current) measureHeights();
+            });
         });
         if (leftContentRef.current) observer.observe(leftContentRef.current);
         if (rightContentRef.current) observer.observe(rightContentRef.current);
-        return () => observer.disconnect();
+        return () => {
+            observer.disconnect();
+            if (rafId !== null) cancelAnimationFrame(rafId);
+        };
     }, [measureHeights]);
 
     // Pixel-based scroll sync (panels have identical total height)
@@ -535,12 +618,51 @@ export default function DiffView({
     const sourceLabel = (source: VersionSource) =>
         t(`diff.sourceLabel.${source}`);
 
-    const acceptLabel = isPartial
-        ? t('diff.acceptPartial', {
-              selected: selectedCount,
-              total: totalChanged,
-          })
-        : t('diff.acceptAll');
+    const isRefine = mode === 'refine';
+    const isReview = mode === 'review';
+    const isHistory = mode === 'history';
+
+    // In refine mode, "apply" only makes sense if at least one paragraph was
+    // deselected — otherwise the merged content matches the current version
+    // and applying would create a no-op duplicate. Same logic for 'review':
+    // the AI revision is already current, so an unchanged selection is a
+    // no-op — we only enable Update when something has been deselected.
+    let acceptLabel: string;
+    let rejectLabel: string;
+    let acceptDisabled: boolean;
+    let acceptInProgressLabel: string;
+    if (isRefine) {
+        acceptLabel = t('diff.refine.apply', {
+            defaultValue: 'Apply selection',
+        });
+        rejectLabel = t('diff.refine.close', { defaultValue: 'Close' });
+        acceptDisabled = isAccepting || !isPartial || selectedCount === 0;
+        acceptInProgressLabel = t('diff.refine.applying', {
+            defaultValue: 'Applying…',
+        });
+    } else if (isHistory) {
+        acceptLabel = '';
+        rejectLabel = t('diff.refine.close', { defaultValue: 'Close' });
+        acceptDisabled = true;
+        acceptInProgressLabel = '';
+    } else if (isReview) {
+        acceptLabel = t('diff.review.update', { defaultValue: 'Update' });
+        rejectLabel = t('diff.refine.close', { defaultValue: 'Close' });
+        acceptDisabled = isAccepting || !isPartial;
+        acceptInProgressLabel = t('diff.review.updating', {
+            defaultValue: 'Updating…',
+        });
+    } else {
+        acceptLabel = isPartial
+            ? t('diff.acceptPartial', {
+                  selected: selectedCount,
+                  total: totalChanged,
+              })
+            : t('diff.acceptAll');
+        rejectLabel = isRejecting ? t('diff.rejecting') : t('diff.rejectAll');
+        acceptDisabled = isAccepting || isRejecting || selectedCount === 0;
+        acceptInProgressLabel = t('diff.accepting');
+    }
 
     return (
         <div className="flex flex-1 flex-col overflow-hidden">
@@ -550,14 +672,21 @@ export default function DiffView({
                     <span className="text-ink-faint">{chapterTitle}</span>
                     <span className="text-ink-faint">/</span>
                     <span className="font-medium text-accent">
-                        {t('diff.reviewing', {
-                            source: sourceLabel(pendingVersion.source),
-                        })}
+                        {isHistory
+                            ? t('diff.comparing', {
+                                  version: pendingVersion.version_number,
+                                  source: sourceLabel(pendingVersion.source),
+                                  defaultValue:
+                                      'Comparing v{{version}} ({{source}}) with current',
+                              })
+                            : t('diff.reviewing', {
+                                  source: sourceLabel(pendingVersion.source),
+                              })}
                     </span>
                     <span className="text-ink-faint">
                         {t('diff.changeCount', { count: diff.changeCount })}
                     </span>
-                    {totalChanged > 0 && (
+                    {totalChanged > 0 && !isHistory && (
                         <button
                             type="button"
                             onClick={toggleAll}
@@ -577,21 +706,19 @@ export default function DiffView({
                         onClick={handleReject}
                         disabled={isRejecting || isAccepting}
                     >
-                        {isRejecting
-                            ? t('diff.rejecting')
-                            : t('diff.rejectAll')}
+                        {rejectLabel}
                     </Button>
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        type="button"
-                        onClick={handleAccept}
-                        disabled={
-                            isAccepting || isRejecting || selectedCount === 0
-                        }
-                    >
-                        {isAccepting ? t('diff.accepting') : acceptLabel}
-                    </Button>
+                    {!isHistory && (
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            type="button"
+                            onClick={handleAccept}
+                            disabled={acceptDisabled}
+                        >
+                            {isAccepting ? acceptInProgressLabel : acceptLabel}
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -634,7 +761,9 @@ export default function DiffView({
                 >
                     <div className="mb-6 flex items-center gap-2">
                         <span className="text-xs font-semibold tracking-wider text-ink-faint uppercase">
-                            {t('diff.original')}
+                            {isHistory
+                                ? t('diff.current', { defaultValue: 'Current' })
+                                : t('diff.original')}
                         </span>
                         <span className="text-xs text-ink-faint">
                             v{currentVersion.version_number} &middot;{' '}
@@ -686,7 +815,11 @@ export default function DiffView({
                 >
                     <div className="mb-6 flex items-center gap-2">
                         <span className="text-xs font-semibold tracking-wider text-ink-faint uppercase">
-                            {t('diff.revision')}
+                            {isHistory
+                                ? t('diff.selectedVersion', {
+                                      defaultValue: 'Selected version',
+                                  })
+                                : t('diff.revision')}
                         </span>
                         <span className="text-xs text-ink-faint">
                             v{pendingVersion.version_number} &middot;{' '}

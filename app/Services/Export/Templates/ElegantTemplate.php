@@ -376,6 +376,10 @@ class ElegantTemplate implements ExportTemplate
         CSS;
     }
 
+    /**
+     * Scene-break CSS. Note: no `page-break-before/after: avoid` — mPDF mishandles
+     * those on a centered break element and ejects a blank page before it.
+     */
     public function sceneBreakCss(): string
     {
         return <<<'CSS'
@@ -384,8 +388,6 @@ class ElegantTemplate implements ExportTemplate
             margin: 1.5em 0;
             font-size: 1em;
             color: #999999;
-            page-break-before: avoid;
-            page-break-after: avoid;
             text-indent: 0;
         }
         .scene-break--rule {
@@ -415,10 +417,9 @@ class ElegantTemplate implements ExportTemplate
         CSS;
     }
 
-    public function chapterHeaderHtml(int $index, string $title, string $locale = 'en'): string
+    public function chapterHeaderHtml(int $index, string $title, string $locale = 'en', bool $includeTitle = true): string
     {
         $number = $index + 1;
-        $escapedTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
 
         if ($locale === 'en' && $number >= 1 && $number <= 99) {
             $label = 'Chapter '.self::numberToWord($number);
@@ -426,8 +427,13 @@ class ElegantTemplate implements ExportTemplate
             $label = __('Chapter :number', ['number' => $number], $locale);
         }
 
-        return '<p class="chapter-label" id="chapter-'.$index.'">'.htmlspecialchars($label, ENT_QUOTES, 'UTF-8').'</p>'
-            ."\n".'<h1>'.$escapedTitle.'</h1>';
+        $html = '<p class="chapter-label" id="chapter-'.$index.'">'.htmlspecialchars($label, ENT_QUOTES, 'UTF-8').'</p>';
+
+        if ($includeTitle) {
+            $html .= "\n".'<h1>'.htmlspecialchars($title, ENT_QUOTES, 'UTF-8').'</h1>';
+        }
+
+        return $html;
     }
 
     private static function numberToWord(int $number): string

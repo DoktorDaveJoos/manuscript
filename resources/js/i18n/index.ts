@@ -9,9 +9,12 @@ import deEditor from './de/editor.json';
 import deEditorialReview from './de/editorial-review.json';
 import deExport from './de/export.json';
 import deOnboarding from './de/onboarding.json';
+import dePlotCoach from './de/plot-coach.json';
+import dePlotPanel from './de/plot-panel.json';
 import dePlot from './de/plot.json';
 import dePublish from './de/publish.json';
 import deSettings from './de/settings.json';
+import deWikiPanel from './de/wiki-panel.json';
 import deWiki from './de/wiki.json';
 import enAiDashboard from './en/ai-dashboard.json';
 import enAi from './en/ai.json';
@@ -21,6 +24,8 @@ import enEditor from './en/editor.json';
 import enEditorialReview from './en/editorial-review.json';
 import enExport from './en/export.json';
 import enOnboarding from './en/onboarding.json';
+import enPlotCoach from './en/plot-coach.json';
+import enPlotPanel from './en/plot-panel.json';
 import enPlot from './en/plot.json';
 import enPublish from './en/publish.json';
 import enSettings from './en/settings.json';
@@ -35,9 +40,12 @@ import esEditor from './es/editor.json';
 import esEditorialReview from './es/editorial-review.json';
 import esExport from './es/export.json';
 import esOnboarding from './es/onboarding.json';
+import esPlotCoach from './es/plot-coach.json';
+import esPlotPanel from './es/plot-panel.json';
 import esPlot from './es/plot.json';
 import esPublish from './es/publish.json';
 import esSettings from './es/settings.json';
+import esWikiPanel from './es/wiki-panel.json';
 import esWiki from './es/wiki.json';
 
 i18n.use(initReactI18next).init({
@@ -49,6 +57,8 @@ i18n.use(initReactI18next).init({
             settings: enSettings,
             onboarding: enOnboarding,
             plot: enPlot,
+            'plot-coach': enPlotCoach,
+            'plot-panel': enPlotPanel,
             publish: enPublish,
             wiki: enWiki,
             'wiki-panel': enWikiPanel,
@@ -64,8 +74,11 @@ i18n.use(initReactI18next).init({
             settings: deSettings,
             onboarding: deOnboarding,
             plot: dePlot,
+            'plot-coach': dePlotCoach,
+            'plot-panel': dePlotPanel,
             publish: dePublish,
             wiki: deWiki,
+            'wiki-panel': deWikiPanel,
             ai: deAi,
             export: deExport,
             'editorial-review': deEditorialReview,
@@ -78,8 +91,11 @@ i18n.use(initReactI18next).init({
             settings: esSettings,
             onboarding: esOnboarding,
             plot: esPlot,
+            'plot-coach': esPlotCoach,
+            'plot-panel': esPlotPanel,
             publish: esPublish,
             wiki: esWiki,
+            'wiki-panel': esWikiPanel,
             ai: esAi,
             export: esExport,
             'editorial-review': esEditorialReview,
@@ -96,6 +112,8 @@ i18n.use(initReactI18next).init({
         'settings',
         'onboarding',
         'plot',
+        'plot-coach',
+        'plot-panel',
         'publish',
         'wiki',
         'wiki-panel',

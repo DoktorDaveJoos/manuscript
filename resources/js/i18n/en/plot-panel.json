@@ -1,0 +1,15 @@
+{
+    "headerTitle": "Plot",
+    "searchPlaceholder": "Search beats...",
+    "connectedToChapter": "Connected to chapter",
+    "recentlyViewed": "Recently viewed",
+    "noDescription": "No description.",
+    "connectToChapter": "Connect to chapter",
+    "disconnectFromChapter": "Disconnect from chapter",
+    "viewOnPlotBoard": "View on plot board",
+    "searchEmpty": "No beats found",
+    "emptyState": "Search for beats to connect to this chapter.",
+    "status.planned": "Planned",
+    "status.fulfilled": "Fulfilled",
+    "status.abandoned": "Abandoned"
+}

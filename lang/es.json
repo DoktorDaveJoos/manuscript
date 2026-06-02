@@ -35,6 +35,8 @@
     "Cannot delete the last scene": "No se puede eliminar la última escena",
     "Chapter 1": "Capítulo 1",
     "Chapter :number": "Capítulo :number",
+    "Prologue": "Prólogo",
+    "Epilogue": "Epílogo",
     "Cannot delete the last storyline.": "No se puede eliminar la última línea argumental.",
     "Setting updated.": "Configuración actualizada.",
     "AI is not enabled or no API key configured.": "La IA no está habilitada o no hay clave de API configurada.",
@@ -50,5 +52,8 @@
     "License server authentication failed. Please contact support.": "Error de autenticación con el servidor de licencias. Contacta al soporte.",
     "No API key to remove.": "No hay clave de API para eliminar.",
     "No active license found.": "No se encontró una licencia activa.",
-    "Main Storyline": "Línea argumental principal"
+    "Main Storyline": "Línea argumental principal",
+    "Wrong passphrase or the backup file is corrupted.": "Passphrase incorrecta o el archivo de backup está dañado.",
+    "Backup ready to import. Quit Manuscript and reopen to complete the import.": "Backup listo para importar. Cierra Manuscript y vuelve a abrirlo para completar la importación.",
+    "Revert ready. Quit Manuscript and reopen to restore your previous data.": "Reversión lista. Cierra Manuscript y vuelve a abrirlo para restaurar tus datos anteriores."
 }

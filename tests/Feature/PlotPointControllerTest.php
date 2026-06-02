@@ -27,6 +27,22 @@ it('creates a plot point', function () {
     ]);
 });
 
+it('creates a plot point without a type and stores it as null', function () {
+    $book = Book::factory()->create();
+    $act = Act::factory()->create(['book_id' => $book->id]);
+
+    $this->post(route('plotPoints.store', $book), [
+        'title' => 'Untyped point',
+        'act_id' => $act->id,
+    ])->assertRedirect();
+
+    $this->assertDatabaseHas('plot_points', [
+        'book_id' => $book->id,
+        'title' => 'Untyped point',
+        'type' => null,
+    ]);
+});
+
 it('updates a plot point', function () {
     $book = Book::factory()->create();
     $plotPoint = PlotPoint::factory()->create(['book_id' => $book->id, 'title' => 'Old title']);
@@ -47,7 +63,7 @@ it('deletes a plot point', function () {
     $this->delete(route('plotPoints.destroy', [$book, $plotPoint]))
         ->assertRedirect();
 
-    $this->assertDatabaseMissing('plot_points', ['id' => $plotPoint->id]);
+    $this->assertSoftDeleted('plot_points', ['id' => $plotPoint->id]);
 });
 
 it('reorders plot points', function () {

@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
+import { GitCompareArrows, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -12,6 +12,7 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import PanelHeader from '@/components/ui/PanelHeader';
+import { cn } from '@/lib/utils';
 import type { ChapterVersion, VersionSource } from '@/types/models';
 
 const sourceBadgeVariant: Record<
@@ -24,6 +25,8 @@ const sourceBadgeVariant: Record<
     normalization: 'secondary',
     beautify: 'revised',
     snapshot: 'success',
+    continue_writing: 'revised',
+    rewrite_selection: 'revised',
 };
 
 export default function VersionHistoryOverlay({
@@ -31,11 +34,13 @@ export default function VersionHistoryOverlay({
     chapterId,
     onClose,
     onVersionsChanged,
+    onCompare,
 }: {
     bookId: number;
     chapterId: number;
     onClose: () => void;
     onVersionsChanged: () => void;
+    onCompare?: (version: ChapterVersion) => void;
 }) {
     const [versionList, setVersionList] = useState<ChapterVersion[] | null>(
         null,
@@ -235,80 +240,126 @@ export default function VersionHistoryOverlay({
                     </div>
                 ) : (
                     <div className="flex flex-col">
-                        {versionList.map((version) => (
-                            <div
-                                key={version.id}
-                                className={`flex items-center gap-3 px-4 py-3 ${version.is_current ? 'bg-neutral-bg/50' : ''}`}
-                            >
-                                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm font-medium text-ink">
-                                            v{version.version_number}
-                                        </span>
-                                        <Badge
-                                            variant={
-                                                sourceBadgeVariant[
-                                                    version.source
-                                                ]
-                                            }
-                                        >
-                                            {sourceLabel(version.source)}
-                                        </Badge>
-                                        {version.is_current && (
-                                            <Badge variant="success">
-                                                {t('versionHistory.current')}
-                                            </Badge>
-                                        )}
-                                        {version.status === 'pending' && (
-                                            <Badge variant="warning">
-                                                {t(
-                                                    'versionHistory.pendingReview',
-                                                )}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                    {version.change_summary && (
-                                        <span className="truncate text-xs text-ink-faint">
-                                            {version.change_summary}
-                                        </span>
-                                    )}
-                                    <span className="text-[11px] text-ink-faint">
-                                        {formatDate(version.created_at)}
-                                    </span>
-                                </div>
+                        {versionList.map((version) => {
+                            const isPending = version.status === 'pending';
+                            const canCompare = !!onCompare;
 
-                                {!version.is_current && (
-                                    <div className="flex shrink-0 gap-1">
-                                        <Button
-                                            variant="secondary"
-                                            size="sm"
-                                            onClick={() =>
-                                                handleRestore(version)
-                                            }
-                                            disabled={restoring !== null}
-                                        >
-                                            {restoring === version.id
-                                                ? t('versionHistory.restoring')
-                                                : t('versionHistory.restore')}
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() =>
-                                                handleDelete(version)
-                                            }
-                                            disabled={deleting !== null}
-                                            className="text-ink-faint hover:bg-delete/10 hover:text-delete"
-                                            title={t(
-                                                'versionHistory.deleteVersion',
+                            return (
+                                <div
+                                    key={version.id}
+                                    className={cn(
+                                        'flex items-start gap-3 px-4 py-3',
+                                        version.is_current &&
+                                            'bg-neutral-bg/50',
+                                    )}
+                                >
+                                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                            <span className="text-sm font-medium text-ink">
+                                                v{version.version_number}
+                                            </span>
+                                            <Badge
+                                                variant={
+                                                    sourceBadgeVariant[
+                                                        version.source
+                                                    ]
+                                                }
+                                            >
+                                                {sourceLabel(version.source)}
+                                            </Badge>
+                                            {version.is_current && (
+                                                <Badge variant="success">
+                                                    {t(
+                                                        'versionHistory.current',
+                                                    )}
+                                                </Badge>
                                             )}
-                                        >
-                                            <Trash2 size={14} />
-                                        </Button>
+                                            {isPending && (
+                                                <Badge variant="warning">
+                                                    {t(
+                                                        'versionHistory.pendingReview',
+                                                    )}
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        {version.change_summary && (
+                                            <span className="line-clamp-1 text-xs text-ink-muted">
+                                                {version.change_summary}
+                                            </span>
+                                        )}
+                                        <span className="text-[11px] text-ink-faint">
+                                            {formatDate(version.created_at)}
+                                        </span>
                                     </div>
-                                )}
-                            </div>
-                        ))}
+
+                                    {!version.is_current && (
+                                        <div className="flex shrink-0 items-center gap-1">
+                                            {canCompare && (
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        onCompare!(version)
+                                                    }
+                                                    title={t(
+                                                        'versionHistory.compareToCurrent',
+                                                        {
+                                                            defaultValue:
+                                                                'Compare to current',
+                                                        },
+                                                    )}
+                                                    className={
+                                                        isPending
+                                                            ? undefined
+                                                            : 'px-2'
+                                                    }
+                                                >
+                                                    <GitCompareArrows className="size-3.5" />
+                                                    {isPending &&
+                                                        t(
+                                                            'versionHistory.compare',
+                                                        )}
+                                                </Button>
+                                            )}
+                                            {!isPending && (
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleRestore(version)
+                                                    }
+                                                    disabled={
+                                                        restoring !== null
+                                                    }
+                                                >
+                                                    {restoring === version.id
+                                                        ? t(
+                                                              'versionHistory.restoring',
+                                                          )
+                                                        : t(
+                                                              'versionHistory.restore',
+                                                          )}
+                                                </Button>
+                                            )}
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() =>
+                                                    handleDelete(version)
+                                                }
+                                                disabled={deleting !== null}
+                                                className="text-ink-faint hover:bg-delete/10 hover:text-delete"
+                                                title={t(
+                                                    'versionHistory.deleteVersion',
+                                                )}
+                                            >
+                                                <Trash2 className="size-3.5" />
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>

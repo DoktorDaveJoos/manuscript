@@ -79,7 +79,9 @@ export type VersionSource =
     | 'manual_edit'
     | 'normalization'
     | 'beautify'
-    | 'snapshot';
+    | 'snapshot'
+    | 'continue_writing'
+    | 'rewrite_selection';
 export type VersionStatus = 'accepted' | 'pending';
 export type PlotPointType =
     | 'setup'
@@ -166,18 +168,6 @@ export type License = {
     masked_key: string | null;
 };
 
-export type FreeTierResource = {
-    count: number;
-    limit: number;
-};
-
-export type FreeTier = {
-    books: FreeTierResource;
-    storylines: FreeTierResource | null;
-    wiki_entries: FreeTierResource | null;
-    export_free_formats: string[];
-} | null;
-
 export type AppSettings = {
     show_ai_features: boolean;
     hide_formatting_toolbar: boolean;
@@ -208,10 +198,13 @@ export type Book = {
     acknowledgment_text?: string | null;
     about_author_text?: string | null;
     also_by_text?: string | null;
+    klappentext?: string | null;
     publisher_name?: string | null;
     isbn?: string | null;
     cover_image_path?: string | null;
     cover_image_url?: string | null;
+    cover_settings?: CoverSettings | null;
+    cover_genre?: string | null;
     custom_dictionary?: string[] | null;
     created_at: string;
     updated_at: string;
@@ -221,6 +214,14 @@ export type Book = {
     chapters?: Chapter[];
     plot_points?: PlotPoint[];
     analyses?: Analysis[];
+};
+
+export type CoverSettings = {
+    title?: string;
+    subtitle?: string;
+    author?: string;
+    trim_size?: string;
+    spine_width?: number;
 };
 
 export type Storyline = {
@@ -375,7 +376,7 @@ export type PlotPoint = {
     act_id: number | null;
     title: string;
     description: string | null;
-    type: PlotPointType;
+    type: PlotPointType | null;
     status: PlotPointStatus;
     sort_order: number;
     created_at: string;
@@ -561,12 +562,22 @@ export type PhaseError = {
     error: string;
 };
 
+export type PreparationStepKey =
+    | 'semantic_index'
+    | 'writing_style'
+    | 'chapter_analysis'
+    | 'wiki'
+    | 'story_bible'
+    | 'health';
+
 export type AiPreparationStatus = {
     id: number;
     status: 'pending' | 'running' | 'completed' | 'failed';
     current_phase: PreparationPhase | null;
     current_phase_total: number;
     current_phase_progress: number;
+    steps: PreparationStepKey[] | null;
+    total_phases: number | null;
     total_chapters: number;
     processed_chapters: number;
     embedded_chunks: number;
@@ -582,17 +593,7 @@ export type AiSetting = {
     provider: AiProvider;
     has_api_key: boolean;
     masked_api_key: string | null;
-    base_url: string | null;
-    api_version: string | null;
-    text_model: string | null;
-    writing_model: string | null;
-    analysis_model: string | null;
-    extraction_model: string | null;
-    embedding_model: string | null;
-    embedding_dimensions: number | null;
     enabled: boolean;
-    requires_api_key: boolean;
-    requires_base_url: boolean;
     api_key_recovery_needed: boolean;
     created_at: string;
     updated_at: string;

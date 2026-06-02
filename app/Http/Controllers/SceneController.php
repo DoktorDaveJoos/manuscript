@@ -67,6 +67,16 @@ class SceneController extends Controller
             if ($book->daily_word_count_goal && $session->words_written >= $book->daily_word_count_goal) {
                 $session->update(['goal_met' => true]);
             }
+        } elseif ($delta < 0) {
+            $session = $book->writingSessions()
+                ->whereDate('date', now()->toDateString())
+                ->first();
+
+            if ($session) {
+                $session->update([
+                    'words_written' => max(0, $session->words_written + $delta),
+                ]);
+            }
         }
 
         return response()->json([

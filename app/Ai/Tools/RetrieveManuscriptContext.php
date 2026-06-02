@@ -3,6 +3,7 @@
 namespace App\Ai\Tools;
 
 use App\Models\Book;
+use App\Models\Chapter;
 use App\Services\StoryBibleService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
@@ -12,9 +13,11 @@ use Stringable;
 
 class RetrieveManuscriptContext implements Tool
 {
+    public function __construct(private int $bookId) {}
+
     public function description(): Stringable|string
     {
-        return 'Retrieves manuscript context including characters, chapter summaries, plot points, story bible, and active chapter text for a given book.';
+        return 'Retrieves manuscript context including characters, chapter summaries, plot points, story bible, and active chapter text for the current book. When a chapter_id is provided, also returns plot beats linked to that chapter (grouped by parent plot point) and wiki entries connected to that chapter (grouped by kind).';
     }
 
     /**
@@ -23,7 +26,6 @@ class RetrieveManuscriptContext implements Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'book_id' => $schema->integer()->required(),
             'chapter_id' => $schema->integer()->nullable()->required(),
             'include_characters' => $schema->boolean()->nullable()->required(),
             'include_plot_points' => $schema->boolean()->nullable()->required(),
@@ -32,7 +34,7 @@ class RetrieveManuscriptContext implements Tool
 
     public function handle(Request $request): Stringable|string
     {
-        $book = Book::query()->findOrFail($request['book_id']);
+        $book = Book::query()->findOrFail($this->bookId);
         $sections = [];
 
         $sections[] = "Book: {$book->title} by {$book->author} (Language: {$book->language})";
@@ -85,15 +87,85 @@ class RetrieveManuscriptContext implements Tool
 
         if ($request['chapter_id'] ?? null) {
             $chapter = $book->chapters()
-                ->with('currentVersion')
+                ->with([
+                    'currentVersion',
+                    'beats.plotPoint',
+                    'wikiEntries',
+                ])
                 ->find($request['chapter_id']);
 
-            if ($chapter?->currentVersion) {
-                $sections[] = "\n## Active Chapter Text: {$chapter->title}";
-                $sections[] = $chapter->currentVersion->content;
+            if ($chapter) {
+                $sections = [
+                    ...$sections,
+                    ...$this->buildChapterPlotSection($chapter),
+                    ...$this->buildChapterWikiSection($chapter),
+                ];
+
+                if ($chapter->currentVersion) {
+                    $sections[] = "\n## Active Chapter Text: {$chapter->title}";
+                    $sections[] = $chapter->currentVersion->content;
+                }
             }
         }
 
         return implode("\n", $sections);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function buildChapterPlotSection(Chapter $chapter): array
+    {
+        if ($chapter->beats->isEmpty()) {
+            return [];
+        }
+
+        $lines = [
+            "\n## Plot Beats for This Chapter",
+            'Beats land in this chapter and carry plot intent — reference them when discussing what should happen here.',
+        ];
+
+        foreach ($chapter->beats->groupBy(fn ($beat) => $beat->plot_point_id) as $beatGroup) {
+            $plotPoint = $beatGroup->first()->plotPoint;
+            $description = $plotPoint->description ? ": {$plotPoint->description}" : '';
+            $type = $plotPoint->type?->value ?? '—';
+            $lines[] = "- Plot Point [{$type}/{$plotPoint->status->value}] {$plotPoint->title}{$description}";
+
+            foreach ($beatGroup as $beat) {
+                $beatDescription = $beat->description ? ": {$beat->description}" : '';
+                $lines[] = "  - [{$beat->status->value}] {$beat->title}{$beatDescription}";
+            }
+        }
+
+        return $lines;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function buildChapterWikiSection(Chapter $chapter): array
+    {
+        if ($chapter->wikiEntries->isEmpty()) {
+            return [];
+        }
+
+        $lines = [
+            "\n## Wiki Entries for This Chapter",
+            'World-building entries connected to this chapter — use them as ground truth for places, factions, items, and lore that appear here.',
+        ];
+
+        foreach ($chapter->wikiEntries->groupBy(fn ($entry) => $entry->kind->value) as $kindEntries) {
+            $kind = $kindEntries->first()->kind;
+            $lines[] = "### {$kind->pluralLabel()}";
+
+            foreach ($kindEntries as $entry) {
+                $type = $entry->type ? " ({$entry->type})" : '';
+                $description = $entry->fullDescription();
+                $descriptionPart = $description ? ": {$description}" : '';
+                $lines[] = "- {$entry->name}{$type}{$descriptionPart}";
+            }
+        }
+
+        return $lines;
     }
 }

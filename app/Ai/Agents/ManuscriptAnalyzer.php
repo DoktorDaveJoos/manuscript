@@ -2,12 +2,10 @@
 
 namespace App\Ai\Agents;
 
-use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Ai\Tools\SearchSimilarChunks;
-use App\Enums\AiTaskCategory;
 use App\Enums\AnalysisType;
 use App\Enums\EditorialPersona;
 use App\Models\Book;
@@ -26,12 +24,7 @@ use Stringable;
 #[Timeout(120)]
 class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput, HasTools
 {
-    use Promptable, UsesTaskCategoryModel;
-
-    public static function taskCategory(): AiTaskCategory
-    {
-        return AiTaskCategory::Analysis;
-    }
+    use Promptable;
 
     public function __construct(
         protected Book $book,
@@ -96,8 +89,8 @@ class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStru
     public function tools(): iterable
     {
         return [
-            new RetrieveManuscriptContext,
-            new SearchSimilarChunks,
+            new RetrieveManuscriptContext($this->book->id),
+            new SearchSimilarChunks($this->book->id),
         ];
     }
 

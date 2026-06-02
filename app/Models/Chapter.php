@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ChapterStatus;
+use App\Enums\CharacterRole;
 use App\Enums\VersionStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,6 +19,26 @@ class Chapter extends Model
     use HasFactory, SoftDeletes;
 
     protected $guarded = [];
+
+    protected static function booted(): void
+    {
+        static::saved(function (Chapter $chapter): void {
+            if ($chapter->pov_character_id === null) {
+                return;
+            }
+
+            $changedOnUpdate = $chapter->wasChanged('pov_character_id');
+            $createdWithPov = $chapter->wasRecentlyCreated;
+
+            if (! $changedOnUpdate && ! $createdWithPov) {
+                return;
+            }
+
+            $chapter->characters()->syncWithoutDetaching([
+                $chapter->pov_character_id => ['role' => CharacterRole::Protagonist->value],
+            ]);
+        });
+    }
 
     /**
      * @return array<string, string>
@@ -38,6 +59,7 @@ class Chapter extends Model
             'analyzed_at' => 'datetime',
             'ai_prepared_at' => 'datetime',
             'is_epilogue' => 'boolean',
+            'is_prologue' => 'boolean',
         ];
     }
 
@@ -130,6 +152,7 @@ class Chapter extends Model
     {
         return $this->belongsToMany(Beat::class, 'beat_chapter')
             ->withPivot(['sort_order'])
+            ->orderByPivot('sort_order')
             ->withTimestamps();
     }
 
@@ -238,9 +261,7 @@ class Chapter extends Model
         $segments = preg_split('/<hr\s*\/?>/', $content);
         $segments = array_values(array_filter($segments, fn ($s) => trim($s) !== ''));
 
-        if (count($segments) <= 1) {
-            $this->replaceScenesWithContent($content);
-
+        if (empty($segments)) {
             return;
         }
 
@@ -252,7 +273,12 @@ class Chapter extends Model
             $wordCount = str_word_count(strip_tags($segment));
             $totalWordCount += $wordCount;
 
-            $title = $sceneMap[$index]['title'] ?? 'Scene '.($index + 1);
+            // Title preference: sceneMap (captured at request start) →
+            // live scene title (still there if sceneMap is incomplete) →
+            // synthesized default for genuinely new scenes.
+            $title = $sceneMap[$index]['title']
+                ?? $existingScenes[$index]?->title
+                ?? 'Scene '.($index + 1);
 
             if ($index < $existingScenes->count()) {
                 $existingScenes[$index]->update([
@@ -271,7 +297,6 @@ class Chapter extends Model
             }
         }
 
-        // Delete excess scenes
         if (count($segments) < $existingScenes->count()) {
             $excessIds = $existingScenes->slice(count($segments))->pluck('id');
             $this->scenes()->whereIn('id', $excessIds)->forceDelete();

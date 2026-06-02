@@ -83,6 +83,10 @@
     "license.error.failed": "Lizenz konnte nicht aktiviert werden.",
     "license.error.network": "Der Lizenzserver ist nicht erreichbar. Bitte überprüfe deine Internetverbindung.",
 
+    "welcome.title": "Willkommen bei Manuscript",
+    "welcome.description": "Gib deinen Lizenzschlüssel ein, um zu starten.",
+    "welcome.buyLicense": "Noch keine Lizenz? Hol dir eine auf getmanuscript.app",
+
     "aiProviders.title": "KI-Anbieter",
     "aiProviders.description": "Wähle deinen KI-Anbieter und konfiguriere den API-Schlüssel.",
     "aiProviders.configured": "Konfiguriert",
@@ -107,6 +111,83 @@
     "aiProviders.testConnection": "Verbindung testen",
     "aiProviders.saveFailed": "Einstellungen konnten nicht gespeichert werden.",
     "aiProviders.testFailed": "Verbindungstest fehlgeschlagen.",
+
+    "aiProviders.howToGetKey.trigger": "API-Key erhalten",
+    "aiProviders.howToGetKey.title": "So bekommst du deinen {{provider}}-API-Key",
+    "aiProviders.howToGetKey.intro": "Folge diesen Schritten, um einen API-Key für {{provider}} zu erstellen. Manuscript speichert ihn verschlüsselt auf diesem Gerät — dein Schlüssel verlässt niemals deinen Rechner.",
+    "aiProviders.howToGetKey.close": "Schließen",
+
+    "aiProviders.howToGetKey.anthropic.consoleLabel": "Anthropic Console öffnen",
+    "aiProviders.howToGetKey.anthropic.steps": [
+        "Öffne console.anthropic.com im Browser.",
+        "Melde dich an oder erstelle ein kostenloses Anthropic-Konto.",
+        "Wähle in der Seitenleiste Settings → API Keys.",
+        "Klicke auf Create Key und vergib einen Namen wie „Manuscript“.",
+        "Kopiere den Schlüssel (beginnt mit sk-ant-) — er wird nur einmal angezeigt — und füge ihn hier ein."
+    ],
+
+    "aiProviders.howToGetKey.openai.consoleLabel": "OpenAI Platform öffnen",
+    "aiProviders.howToGetKey.openai.steps": [
+        "Öffne platform.openai.com und melde dich an.",
+        "Klicke oben rechts auf dein Profil und wähle View API keys.",
+        "Klicke auf Create new secret key und vergib einen Namen.",
+        "Kopiere den Schlüssel (beginnt mit sk-) — er wird nur einmal angezeigt — und füge ihn hier ein.",
+        "Hinterlege unter Settings → Billing eine Zahlungsmethode, falls noch nicht geschehen."
+    ],
+
+    "aiProviders.howToGetKey.gemini.consoleLabel": "Google AI Studio öffnen",
+    "aiProviders.howToGetKey.gemini.steps": [
+        "Öffne aistudio.google.com im Browser.",
+        "Melde dich mit deinem Google-Konto an.",
+        "Klicke oben rechts auf Get API key.",
+        "Wähle ein bestehendes Google-Cloud-Projekt oder lege ein neues an und klicke auf Create API key.",
+        "Kopiere den Schlüssel und füge ihn hier ein."
+    ],
+
+    "aiProviders.howToGetKey.groq.consoleLabel": "Groq Console öffnen",
+    "aiProviders.howToGetKey.groq.steps": [
+        "Öffne console.groq.com und melde dich an (Google, GitHub oder E-Mail).",
+        "Öffne in der Seitenleiste den Tab API Keys.",
+        "Klicke auf Create API Key und vergib einen Namen.",
+        "Kopiere den Schlüssel (beginnt mit gsk_) — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein."
+    ],
+
+    "aiProviders.howToGetKey.xai.consoleLabel": "xAI Console öffnen",
+    "aiProviders.howToGetKey.xai.steps": [
+        "Öffne console.x.ai und melde dich mit deinem X-/xAI-Konto an.",
+        "Öffne den Tab API Keys.",
+        "Klicke auf Create API Key und vergib einen Namen.",
+        "Kopiere den Schlüssel (beginnt mit xai-) — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein."
+    ],
+
+    "aiProviders.howToGetKey.deepseek.consoleLabel": "DeepSeek Platform öffnen",
+    "aiProviders.howToGetKey.deepseek.steps": [
+        "Öffne platform.deepseek.com und melde dich an oder lege ein Konto an.",
+        "Öffne in der Seitenleiste die Seite API Keys.",
+        "Klicke auf Create new API key.",
+        "Kopiere den Schlüssel — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein. Lade bei Bedarf zuvor unter Billing Guthaben auf."
+    ],
+
+    "aiProviders.howToGetKey.mistral.consoleLabel": "Mistral Console öffnen",
+    "aiProviders.howToGetKey.mistral.steps": [
+        "Öffne console.mistral.ai und melde dich an oder lege ein Konto an.",
+        "Öffne in deinem Workspace den Tab API Keys.",
+        "Klicke auf Create new key und vergib einen Namen.",
+        "Kopiere den Schlüssel — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein. Hinterlege bei Bedarf zuvor unter Billing eine Zahlungsmethode."
+    ],
+
+    "aiProviders.howToGetKey.openrouter.consoleLabel": "OpenRouter öffnen",
+    "aiProviders.howToGetKey.openrouter.steps": [
+        "Öffne openrouter.ai und melde dich an (Google, GitHub oder E-Mail).",
+        "Klicke oben rechts auf dein Profilbild und wähle Keys.",
+        "Klicke auf Create Key und vergib einen Namen.",
+        "Kopiere den Schlüssel (beginnt mit sk-or-) — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein und lade unter Credits Guthaben auf, um den Key zu nutzen."
+    ],
     "aiProviders.advancedSettings": "Erweiterte Einstellungen",
     "aiProviders.advancedDescription": "Die App wählt automatisch das beste Modell für jede Aufgabe. Ändere diese nur, wenn du die Unterschiede zwischen Modellen genau kennst — falsche Entscheidungen können die Ausgabequalität verringern oder Kosten erhöhen.",
     "aiProviders.writingModel": "Schreiben",
@@ -133,6 +214,20 @@
     "prosePassRules.title": "Überarbeitungsregeln",
     "prosePassRules.pageTitle": "Überarbeitungsregeln — {{bookTitle}}",
     "prosePassRules.description": "Diese Regeln werden beim Überarbeiten von Prosa angewendet. Aktivierte Regeln bestimmen, wie die KI deinen Text überprüft und verbessert.",
+    "prosePassRules.rules.show_dont_tell.label": "Zeigen statt erzählen",
+    "prosePassRules.rules.show_dont_tell.description": "Erzählende Aussagen durch Handlung und Detail in zeigende verwandeln.",
+    "prosePassRules.rules.dialogue_tags.label": "Dialogverben straffen",
+    "prosePassRules.rules.dialogue_tags.description": "Adverbreiche Dialogverben durch Handlungsbeats ersetzen.",
+    "prosePassRules.rules.filter_words.label": "Filterwörter entfernen",
+    "prosePassRules.rules.filter_words.description": "Unnötige Filterwörter entfernen (fühlte, sah, hörte, bemerkte).",
+    "prosePassRules.rules.passive_voice.label": "Passivkonstruktionen reduzieren",
+    "prosePassRules.rules.passive_voice.description": "Passivkonstruktionen wo sinnvoll in Aktivformen umwandeln.",
+    "prosePassRules.rules.sentence_variety.label": "Satzvielfalt",
+    "prosePassRules.rules.sentence_variety.description": "Satzlänge und -struktur variieren, um den Rhythmus zu verbessern.",
+    "prosePassRules.rules.shorten_long_sentences.label": "Überlange Sätze kürzen",
+    "prosePassRules.rules.shorten_long_sentences.description": "Einen Satz nur teilen, wenn er das Arbeitsgedächtnis der Lesenden überfordert (~4 Einheiten): große Subjekt-Verb-Distanz, mehr als zwei Verschachtelungsebenen oder Aufzählungen mit mehr als 3–4 Elementen. Lange, flüssige Sätze mit lokal verbundenen Teilsätzen bleiben erhalten.",
+    "prosePassRules.rules.tightening.label": "Prosa straffen",
+    "prosePassRules.rules.tightening.description": "Redundanzen entfernen und wortreiche Formulierungen kürzen.",
 
     "sidebar.proofreading": "Korrekturlesen",
     "proofreading.title": "Korrekturlesen",
@@ -174,5 +269,39 @@
     "export.includeChapterTitles": "Kapiteltitel einbeziehen",
     "export.includeActBreaks": "Aktübergänge einbeziehen",
     "export.exporting": "Exportiere...",
-    "export.exportManuscript": "Manuskript exportieren"
+    "export.exportManuscript": "Manuskript exportieren",
+
+    "backup.sectionLabel": "BACKUP",
+    "backup.navLabel": "Backup",
+    "backup.lastExport": "Letztes Backup: {{value}}",
+    "backup.neverExported": "Noch nie",
+    "backup.passphrase.label": "Passphrase (optional)",
+    "backup.passphrase.placeholder": "Leer lassen, um ohne Verschlüsselung zu speichern",
+    "backup.passphrase.hint": "Mit Passphrase wird das Backup auf diesem Gerät verschlüsselt, bevor es Manuscript verlässt. Bewahre sie sicher auf — ohne sie kann das Backup nicht wiederhergestellt werden.",
+    "backup.save.title": "Backup speichern",
+    "backup.save.description": "Lade eine Kopie deiner Daten herunter. Speichere die Datei wo du willst — auf deinem Computer, einem USB-Stick oder deinem Cloud-Speicher.",
+    "backup.save.button": "Backup speichern",
+    "backup.save.busy": "Speichere…",
+    "backup.import.title": "Backup importieren",
+    "backup.import.description": "Stelle deine Daten aus einer zuvor gespeicherten Backup-Datei wieder her. Deine aktuellen Daten werden als einstufiges Rollback aufbewahrt, falls das Backup falsch ist.",
+    "backup.import.fileLabel": "Backup-Datei",
+    "backup.import.chooseFile": "Datei wählen …",
+    "backup.import.replaceFile": "Datei ersetzen …",
+    "backup.import.noFileChosen": "Keine Datei ausgewählt",
+    "backup.import.passphraseLabel": "Passphrase",
+    "backup.import.passphrasePlaceholder": "Für verschlüsselte Backups erforderlich",
+    "backup.import.warning": "Beim Import werden deine aktuellen Daten nach dem Neustart ersetzt. KI-API-Schlüssel müssen unter Umständen neu eingegeben werden, wenn das Backup auf einem anderen Gerät erstellt wurde.",
+    "backup.import.button": "Backup importieren",
+    "backup.import.busy": "Prüfe…",
+    "backup.revert.title": "Letzten Import rückgängig machen",
+    "backup.revert.description": "Stelle die Datenbank vor dem letzten Import wieder her. Einmalige Aktion — nach dem Zurücksetzen sind die importierten Daten verloren.",
+    "backup.revert.button": "Zurücksetzen",
+    "backup.revert.busy": "Setze zurück…",
+    "backup.revertConfirm": "Datenbank vor dem letzten Import wiederherstellen? Deine aktuellen Daten werden ersetzt. Dies kann nicht rückgängig gemacht werden.",
+    "backup.restart.import": "Backup bereit zum Import. Beende Manuscript und öffne es erneut, um den Import abzuschließen.",
+    "backup.restart.revert": "Zurücksetzen bereit. Beende Manuscript und öffne es erneut, um deine vorherigen Daten wiederherzustellen.",
+    "backup.restart.hint": "Schließe das Fenster oder beende Manuscript über das Menü. Beim erneuten Öffnen wird der Vorgang abgeschlossen.",
+    "backup.error.exportFailed": "Backup konnte nicht gespeichert werden. Bitte erneut versuchen.",
+    "backup.error.importFailed": "Backup konnte nicht importiert werden.",
+    "backup.error.revertFailed": "Zurücksetzen fehlgeschlagen."
 }

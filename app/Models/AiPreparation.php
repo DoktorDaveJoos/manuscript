@@ -26,6 +26,8 @@ class AiPreparation extends Model
             'embedded_chunks' => 'integer',
             'current_phase_total' => 'integer',
             'current_phase_progress' => 'integer',
+            'steps' => 'array',
+            'total_phases' => 'integer',
             'completed_phases' => 'array',
             'phase_errors' => 'array',
             'consecutive_failures' => 'integer',

@@ -2,6 +2,7 @@ import type { Editor } from '@tiptap/core';
 import { ChevronDown, ChevronUp, Replace, Search, X } from 'lucide-react';
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import ToggleButton from '@/components/ui/ToggleButton';
 import {
     buildPattern,
@@ -65,6 +66,7 @@ export default function ChapterFindBar({
     showReplace: boolean;
     onClose: () => void;
 }) {
+    const { t } = useTranslation('editor');
     const [query, setQuery] = useState('');
     const [replaceText, setReplaceText] = useState('');
     const [caseSensitive, setCaseSensitive] = useState(false);
@@ -342,9 +344,12 @@ export default function ChapterFindBar({
     const matchCountLabel =
         allMatches.length === 0
             ? query.trim()
-                ? 'No results'
+                ? t('common:noResults')
                 : ''
-            : `${activeMatchIndex + 1} of ${allMatches.length}`;
+            : t('find.matchPosition', {
+                  current: activeMatchIndex + 1,
+                  total: allMatches.length,
+              });
 
     return (
         <div className="absolute top-3 right-6 z-20 flex w-[400px] animate-slide-down flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-lg">
@@ -354,19 +359,19 @@ export default function ChapterFindBar({
                         label="Aa"
                         active={caseSensitive}
                         onClick={() => setCaseSensitive((p) => !p)}
-                        title="Match Case"
+                        title={t('find.matchCase')}
                     />
                     <ToggleButton
                         label="W"
                         active={wholeWord}
                         onClick={() => setWholeWord((p) => !p)}
-                        title="Whole Word"
+                        title={t('find.wholeWord')}
                     />
                     <ToggleButton
                         label=".*"
                         active={useRegex}
                         onClick={() => setUseRegex((p) => !p)}
-                        title="Use Regex"
+                        title={t('find.useRegex')}
                         mono
                     />
                 </div>
@@ -379,7 +384,7 @@ export default function ChapterFindBar({
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={handleSearchKeyDown}
-                        placeholder="Find in chapter..."
+                        placeholder={t('find.findInChapter')}
                         className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-faint"
                     />
                 </div>
@@ -393,7 +398,7 @@ export default function ChapterFindBar({
                 <button
                     onClick={prevMatch}
                     disabled={allMatches.length === 0}
-                    title="Previous Match (Shift+Enter)"
+                    title={t('find.previousMatch')}
                     className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink disabled:opacity-30"
                 >
                     <ChevronUp size={14} />
@@ -401,14 +406,14 @@ export default function ChapterFindBar({
                 <button
                     onClick={nextMatch}
                     disabled={allMatches.length === 0}
-                    title="Next Match (Enter)"
+                    title={t('find.nextMatch')}
                     className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink disabled:opacity-30"
                 >
                     <ChevronDown size={14} />
                 </button>
                 <button
                     onClick={onClose}
-                    title="Close (Escape)"
+                    title={t('find.close')}
                     className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink"
                 >
                     <X size={14} />
@@ -427,25 +432,25 @@ export default function ChapterFindBar({
                             value={replaceText}
                             onChange={(e) => setReplaceText(e.target.value)}
                             onKeyDown={handleReplaceKeyDown}
-                            placeholder="Replace with..."
+                            placeholder={t('find.replaceWith')}
                             className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-faint"
                         />
                     </div>
                     <button
                         onClick={replaceCurrent}
                         disabled={activeMatchIndex < 0}
-                        title="Replace"
+                        title={t('find.replace')}
                         className="shrink-0 rounded-md border border-border px-2.5 py-1 text-[12px] font-medium text-ink transition-colors hover:bg-neutral-bg disabled:opacity-30"
                     >
-                        Replace
+                        {t('find.replace')}
                     </button>
                     <button
                         onClick={replaceAllMatches}
                         disabled={allMatches.length === 0}
-                        title="Replace All (⌘⇧↵)"
+                        title={t('find.replaceAll')}
                         className="shrink-0 rounded-md border border-border px-2.5 py-1 text-[12px] font-medium text-ink transition-colors hover:bg-neutral-bg disabled:opacity-30"
                     >
-                        All
+                        {t('find.allShort')}
                     </button>
                 </div>
             )}

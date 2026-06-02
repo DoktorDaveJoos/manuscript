@@ -6,6 +6,7 @@ import {
     NotebookPen,
     NotebookText,
     Sparkles,
+    Workflow,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,10 +21,13 @@ import AiPanel from '@/components/editor/AiPanel';
 import ChapterPane, { firstLine } from '@/components/editor/ChapterPane';
 import type { SaveStatus } from '@/components/editor/ChapterPane';
 import CommandPalette from '@/components/editor/CommandPalette';
+import ContinueWritingDialog from '@/components/editor/ContinueWritingDialog';
 import EditorialReviewPanel from '@/components/editor/EditorialReviewPanel';
 import GlobalFindDrawer from '@/components/editor/GlobalFindDrawer';
 import NotesPanel from '@/components/editor/NotesPanel';
 import PaneEmptyState from '@/components/editor/PaneEmptyState';
+import PlotPanel from '@/components/editor/PlotPanel';
+import RewriteSelectionDialog from '@/components/editor/RewriteSelectionDialog';
 import Sidebar from '@/components/editor/Sidebar';
 import WikiPanel from '@/components/editor/WikiPanel';
 import Button from '@/components/ui/Button';
@@ -33,9 +37,21 @@ import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import type { ChapterData } from '@/hooks/useChapterData';
 import useChapterData from '@/hooks/useChapterData';
+import type { ContinueWritingReview } from '@/hooks/useContinueWriting';
+import { useContinueWriting } from '@/hooks/useContinueWriting';
 import usePaneManager from '@/hooks/usePaneManager';
+import type { RewriteSelectionReview } from '@/hooks/useRewriteSelection';
+import { useRewriteSelection } from '@/hooks/useRewriteSelection';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
-import { createChapter, jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
+import { flushAllPanes } from '@/lib/pane';
+import {
+    addSceneToChapter,
+    CHANNEL_CHAPTER_DATA_CHANGED,
+    CHANNEL_DIFF_APPLIED,
+    createChapter,
+    jsonFetchHeaders,
+    saveAppSetting,
+} from '@/lib/utils';
 import type {
     AppSettings,
     Book,
@@ -47,9 +63,25 @@ import type {
 
 const NOOP_EDITOR_CHANGE = () => {};
 
+function useChapterRefreshChannel(
+    channelName: string,
+    chapterId: number,
+    softRefresh: () => void,
+) {
+    useEffect(() => {
+        if (typeof BroadcastChannel === 'undefined') return;
+        const channel = new BroadcastChannel(channelName);
+        channel.onmessage = (event) => {
+            if (event.data?.chapterId === chapterId) softRefresh();
+        };
+        return () => channel.close();
+    }, [channelName, chapterId, softRefresh]);
+}
+
 const VALID_PANELS: Set<PanelId> = new Set([
     'wiki',
     'notes',
+    'plot',
     'ai',
     'chat',
     'editorial',
@@ -74,6 +106,12 @@ function PaneWithData({
     spellcheckEnabled,
     isTypewriterMode,
     onToggleTypewriterMode,
+    review,
+    onReviewDismiss,
+    proseRunning,
+    isLocalFindOpen,
+    localFindShowReplace,
+    onLocalFindClose,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -94,10 +132,30 @@ function PaneWithData({
     spellcheckEnabled: boolean;
     isTypewriterMode: boolean;
     onToggleTypewriterMode: () => void;
+    review: ContinueWritingReview | RewriteSelectionReview | null;
+    onReviewDismiss: () => void;
+    proseRunning: boolean;
+    isLocalFindOpen: boolean;
+    localFindShowReplace: boolean;
+    onLocalFindClose: () => void;
 }) {
     const { data, isLoading, error, refresh, softRefresh } = useChapterData(
         bookId,
         chapterId,
+    );
+
+    const handleReviewApplied = useCallback(() => {
+        onReviewDismiss();
+        softRefresh();
+    }, [onReviewDismiss, softRefresh]);
+
+    // Refresh on cross-window diff-applied (from the diff window) and on
+    // local chapter-data changes (e.g. scene added via palette).
+    useChapterRefreshChannel(CHANNEL_DIFF_APPLIED, chapterId, softRefresh);
+    useChapterRefreshChannel(
+        CHANNEL_CHAPTER_DATA_CHANGED,
+        chapterId,
+        softRefresh,
     );
 
     const onFocus = useCallback(
@@ -156,6 +214,12 @@ function PaneWithData({
             spellcheckEnabled={spellcheckEnabled}
             isTypewriterMode={isTypewriterMode}
             onToggleTypewriterMode={onToggleTypewriterMode}
+            review={review}
+            onReviewApplied={handleReviewApplied}
+            proseRunning={proseRunning}
+            isLocalFindOpen={isLocalFindOpen}
+            localFindShowReplace={localFindShowReplace}
+            onLocalFindClose={onLocalFindClose}
         />
     );
 }
@@ -174,6 +238,7 @@ export default function EditorPage({
     const { t } = useTranslation('editor');
     const { t: tAi } = useTranslation('ai');
     const { t: tEditorial } = useTranslation('editorial-review');
+    const { t: tPlotPanel } = useTranslation('plot-panel');
     const sidebarStorylines = useSidebarStorylines();
     const { usable: aiVisible } = useAiFeatures();
     const { app_settings } = usePage<{ app_settings: AppSettings }>().props;
@@ -214,14 +279,30 @@ export default function EditorPage({
         saveAppSetting('show_scenes', visible);
     }, []);
 
+    // ── Prose revise UI state (drives the editor blur overlay only; the
+    // post-run "Compare" toast is fired from AiPanel via sonner) ─────────
+    const [proseRunningChapterId, setProseRunningChapterId] = useState<
+        number | null
+    >(null);
+    const handleProseStart = useCallback(
+        (chapterId: number) => setProseRunningChapterId(chapterId),
+        [],
+    );
+    const handleProseEnd = useCallback(
+        () => setProseRunningChapterId(null),
+        [],
+    );
+
     // ── Active editor tracking (from focused pane) ───────────────────────
     const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
+    const [activeSceneId, setActiveSceneId] = useState<number | null>(null);
     const activeEditorRef = useRef<Editor | null>(null);
     activeEditorRef.current = activeEditor;
 
     const handleActiveEditorChange = useCallback(
-        (editor: Editor | null, _sceneId: number | null) => {
+        (editor: Editor | null, sceneId: number | null) => {
             setActiveEditor(editor);
+            setActiveSceneId(sceneId);
         },
         [],
     );
@@ -266,24 +347,13 @@ export default function EditorPage({
         }
     }, [panes]);
 
-    // ── Flush all panes ──────────────────────────────────────────────────
-    const flushAllPanes = useCallback(async () => {
-        const paneEls = document.querySelectorAll('[data-pane-chapter]');
-        const flushes = Array.from(paneEls).map((el) => {
-            const flush = (el as unknown as Record<string, () => Promise<void>>)
-                .__flushPane;
-            return typeof flush === 'function' ? flush() : Promise.resolve();
-        });
-        await Promise.all(flushes);
-    }, []);
-
     // Flush before Inertia navigation
     useEffect(() => {
         const removeListener = router.on('before', () => {
             flushAllPanes();
         });
         return removeListener;
-    }, [flushAllPanes]);
+    }, []);
 
     // Flush on beforeunload — fire keepalive fetches as a last-resort safety net
     // (the browser may kill the page before async flushAllPanes completes)
@@ -318,7 +388,7 @@ export default function EditorPage({
         };
         window.addEventListener('beforeunload', handler);
         return () => window.removeEventListener('beforeunload', handler);
-    }, [flushAllPanes]);
+    }, []);
 
     // ── Panel state ──────────────────────────────────────────────────────
     const [openPanels, setOpenPanels] = useState<Set<PanelId>>(() => {
@@ -381,6 +451,10 @@ export default function EditorPage({
     );
     const closeNotes = useCallback(
         () => closePanelAndFocus('notes'),
+        [closePanelAndFocus],
+    );
+    const closePlot = useCallback(
+        () => closePanelAndFocus('plot'),
         [closePanelAndFocus],
     );
     const closeAi = useCallback(
@@ -457,8 +531,45 @@ export default function EditorPage({
     const [isFindOpen, setIsFindOpen] = useState(false);
     const [findShowReplace, setFindShowReplace] = useState(false);
     const [, setSearchHighlight] = useState<SearchHighlight | null>(null);
-    const [, setIsLocalFindOpen] = useState(false);
-    const [, setLocalFindShowReplace] = useState(false);
+    const [isLocalFindOpen, setIsLocalFindOpen] = useState(false);
+    const [localFindShowReplace, setLocalFindShowReplace] = useState(false);
+    const closeLocalFind = useCallback(() => {
+        setIsLocalFindOpen(false);
+        setLocalFindShowReplace(false);
+    }, []);
+
+    // ── Continue writing ─────────────────────────────────────────────────
+    const [isContinueWritingOpen, setIsContinueWritingOpen] = useState(false);
+    const continueWriting = useContinueWriting();
+
+    // ── Rewrite selection ────────────────────────────────────────────────
+    const [rewriteRange, setRewriteRange] = useState<{
+        from: number;
+        to: number;
+    } | null>(null);
+    const rewriteSelection = useRewriteSelection();
+
+    const reviewForChapter = useCallback(
+        (chapterId: number) => {
+            for (const r of [rewriteSelection.review, continueWriting.review]) {
+                if (r && r.chapterId === chapterId) return r;
+            }
+            return null;
+        },
+        [rewriteSelection.review, continueWriting.review],
+    );
+    const dismissAllReviews = useCallback(() => {
+        continueWriting.dismissReview();
+        rewriteSelection.dismissReview();
+    }, [continueWriting, rewriteSelection]);
+
+    // Dismiss per-chapter review banners once the diff window applied.
+    useEffect(() => {
+        if (typeof BroadcastChannel === 'undefined') return;
+        const channel = new BroadcastChannel(CHANNEL_DIFF_APPLIED);
+        channel.onmessage = () => dismissAllReviews();
+        return () => channel.close();
+    }, [dismissAllReviews]);
 
     // ── Command palette ──────────────────────────────────────────────────
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
@@ -543,6 +654,11 @@ export default function EditorPage({
                 label: t('toolbar.notes'),
             },
         ];
+        items.push({
+            id: 'plot',
+            icon: Workflow,
+            label: tPlotPanel('headerTitle'),
+        });
         if (aiVisible) {
             items.push(
                 {
@@ -563,12 +679,12 @@ export default function EditorPage({
             );
         }
         return items;
-    }, [aiVisible, t, tAi, tEditorial]);
+    }, [aiVisible, t, tAi, tEditorial, tPlotPanel]);
 
     // ── Sidebar callbacks ────────────────────────────────────────────────
     const handleBeforeNavigate = useCallback(async () => {
         await flushAllPanes();
-    }, [flushAllPanes]);
+    }, []);
 
     // Derive sidebar-visible info from focused chapter data
     const focusedChapter = focusedChapterData?.chapter ?? null;
@@ -589,6 +705,18 @@ export default function EditorPage({
             createChapter(book.id, storylineId, sidebarStorylines);
         }
     }, [book.id, focusedChapter?.storyline_id, sidebarStorylines]);
+
+    // ── Create scene in focused chapter from palette ────────────────────
+    const focusedSceneCount = focusedScenes.length;
+    const handleAddScene = useCallback(async () => {
+        if (!focusedChapter) return;
+        await addSceneToChapter(
+            book.id,
+            focusedChapter.id,
+            focusedSceneCount,
+            t,
+        );
+    }, [book.id, focusedChapter, focusedSceneCount, t]);
 
     // ── Find navigate ────────────────────────────────────────────────────
     const handleFindNavigate = useCallback(
@@ -618,11 +746,6 @@ export default function EditorPage({
                     onChapterNavigate={navigateToChapter}
                     onOpenInNewPane={openInNewPane}
                     activeScenes={focusedScenes}
-                    onChapterRename={() => {}}
-                    onSceneRename={() => {}}
-                    onSceneDelete={() => {}}
-                    onSceneReorder={() => {}}
-                    onSceneAdd={async () => {}}
                     scenesVisible={scenesVisible}
                     onScenesVisibleChange={handleScenesVisibleChange}
                     isFocusMode={isFocusMode}
@@ -666,6 +789,17 @@ export default function EditorPage({
                                     onToggleTypewriterMode={
                                         toggleTypewriterMode
                                     }
+                                    review={reviewForChapter(pane.chapterId)}
+                                    onReviewDismiss={dismissAllReviews}
+                                    proseRunning={
+                                        proseRunningChapterId === pane.chapterId
+                                    }
+                                    isLocalFindOpen={
+                                        isLocalFindOpen &&
+                                        pane.id === focusedPaneId
+                                    }
+                                    localFindShowReplace={localFindShowReplace}
+                                    onLocalFindClose={closeLocalFind}
                                 />
                             </div>
                         ))
@@ -711,6 +845,24 @@ export default function EditorPage({
                             </SlidePanel>
                         )}
 
+                        {focusedChapter && (
+                            <SlidePanel
+                                open={openPanels.has('plot')}
+                                onClose={closePlot}
+                                storageKey="manuscript:plot-panel-width"
+                                defaultWidth={300}
+                                minWidth={200}
+                                maxWidth={600}
+                            >
+                                <PlotPanel
+                                    key={focusedChapter.id}
+                                    book={book}
+                                    chapter={focusedChapter}
+                                    onClose={closePlot}
+                                />
+                            </SlidePanel>
+                        )}
+
                         {isFindOpen && focusedChapterId && (
                             <GlobalFindDrawer
                                 bookId={book.id}
@@ -743,10 +895,22 @@ export default function EditorPage({
                                     }
                                     book={book}
                                     chapter={focusedChapter}
+                                    activeSceneId={
+                                        focusedPane?.chapterId ===
+                                        focusedChapter.id
+                                            ? activeSceneId
+                                            : null
+                                    }
                                     onClose={closeAi}
                                     onError={(msg) => {
                                         console.error('[AiPanel]', msg);
                                     }}
+                                    proseRunning={
+                                        proseRunningChapterId ===
+                                        focusedChapter.id
+                                    }
+                                    onProseStart={handleProseStart}
+                                    onProseEnd={handleProseEnd}
                                 />
                             </SlidePanel>
                         )}
@@ -806,6 +970,7 @@ export default function EditorPage({
                 onSplitScene={async () => {}}
                 onSplitChapter={async () => {}}
                 onNewChapter={handleCreateChapter}
+                onAddScene={focusedChapter ? handleAddScene : undefined}
                 onEnterFocusMode={toggleFocusMode}
                 isFocusMode={isFocusMode}
                 panelItems={accessBarItems}
@@ -815,7 +980,57 @@ export default function EditorPage({
                 onToggleSpellcheck={toggleSpellcheck}
                 isTypewriterMode={isTypewriterMode}
                 onToggleTypewriterMode={toggleTypewriterMode}
+                onContinueWriting={
+                    aiVisible && activeEditor && focusedChapter
+                        ? () => setIsContinueWritingOpen(true)
+                        : undefined
+                }
+                onRewriteSelection={
+                    aiVisible && activeEditor && focusedChapter
+                        ? () => {
+                              const { from, to } = activeEditor.state.selection;
+                              if (from === to) return;
+                              setRewriteRange({ from, to });
+                          }
+                        : undefined
+                }
             />
+
+            {isContinueWritingOpen && activeEditor && focusedChapter && (
+                <ContinueWritingDialog
+                    onClose={() => setIsContinueWritingOpen(false)}
+                    onSubmit={({ hint, wordGoal }) => {
+                        continueWriting.start({
+                            editor: activeEditor,
+                            activeSceneId,
+                            bookId: book.id,
+                            chapterId: focusedChapter.id,
+                            hint,
+                            wordGoal,
+                        });
+                    }}
+                />
+            )}
+
+            {rewriteRange && activeEditor && focusedChapter && (
+                <RewriteSelectionDialog
+                    selectionPreview={activeEditor.state.doc.textBetween(
+                        rewriteRange.from,
+                        rewriteRange.to,
+                        ' ',
+                    )}
+                    onClose={() => setRewriteRange(null)}
+                    onSubmit={({ hint }) => {
+                        rewriteSelection.start({
+                            editor: activeEditor,
+                            bookId: book.id,
+                            chapterId: focusedChapter.id,
+                            hint,
+                            selection: rewriteRange,
+                        });
+                    }}
+                />
+            )}
 
             {/* Focus mode whisper chrome */}
             {isFocusMode && focusedChapter && (

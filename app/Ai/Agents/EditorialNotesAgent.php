@@ -2,10 +2,9 @@
 
 namespace App\Ai\Agents;
 
-use App\Ai\Concerns\UsesTaskCategoryModel;
+use App\Ai\Concerns\CachesSystemPrompt;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
-use App\Enums\AiTaskCategory;
 use App\Enums\EditorialPersona;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -15,6 +14,7 @@ use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
+use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
 use Stringable;
@@ -22,14 +22,9 @@ use Stringable;
 #[Temperature(0.3)]
 #[MaxTokens(4096)]
 #[Timeout(180)]
-class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput
+class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasProviderOptions, HasStructuredOutput
 {
-    use Promptable, UsesTaskCategoryModel;
-
-    public static function taskCategory(): AiTaskCategory
-    {
-        return AiTaskCategory::Analysis;
-    }
+    use CachesSystemPrompt, Promptable;
 
     public function __construct(
         public Book $book,
@@ -54,10 +49,8 @@ class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasStr
             $context .= ' '.$genreSnippet;
         }
 
-        if ($this->existingAnalysis) {
-            $context .= "\n\nExisting chapter analysis (for reference — do not repeat these findings, complement them):\n{$this->existingAnalysis}";
-        }
-
+        // Book-level context (writing style, character data) is identical for
+        // every chapter, so it stays in the static, cacheable prefix.
         if ($this->writingStyle) {
             $context .= "\n\nWriting style profile:\n{$this->writingStyle}";
         }
@@ -66,12 +59,12 @@ class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasStr
             $context .= "\n\nCharacter data:\n{$this->characterData}";
         }
 
-        return <<<INSTRUCTIONS
+        $static = <<<INSTRUCTIONS
         {$persona->instructions()}
 
         {$context}
 
-        Analyze the chapter text and produce editorial observations that complement (not duplicate) the existing analysis. Focus on:
+        Analyze the chapter text and produce editorial observations that complement (not duplicate) the chapter's existing analysis. Focus on:
 
         1. **Narrative voice:** Identify the POV type, tense, any inconsistencies or shifts, and tone observations.
         2. **Themes:** Note recurring motifs, thematic throughlines, and how they connect to other parts of the manuscript.
@@ -85,6 +78,15 @@ class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasStr
 
         Be specific and reference concrete passages. Provide actionable observations, not generic praise.
         INSTRUCTIONS;
+
+        // The per-chapter existing analysis varies, so it sits after the cache
+        // breakpoint and is left uncached.
+        if (! $this->existingAnalysis) {
+            return $static;
+        }
+
+        return $static."\n\n".self::CACHE_BREAKPOINT
+            ."\n\nExisting chapter analysis (for reference — do not repeat these findings, complement them):\n{$this->existingAnalysis}";
     }
 
     /**

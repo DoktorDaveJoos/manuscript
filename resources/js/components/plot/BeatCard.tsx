@@ -2,7 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
 import { useMemo } from 'react';
-import { stripTags } from '@/lib/ruleCheckers';
+import { markdownToPlainText } from '@/lib/markdown';
 import { cn } from '@/lib/utils';
 import type { Beat, BeatStatus } from '@/types/models';
 
@@ -29,7 +29,7 @@ export default function BeatCard({
 }: Props) {
     const dotClass = BEAT_DOT_CLASSES[beat.status];
     const plainDescription = useMemo(
-        () => (beat.description ? stripTags(beat.description).trim() : ''),
+        () => markdownToPlainText(beat.description ?? ''),
         [beat.description],
     );
 

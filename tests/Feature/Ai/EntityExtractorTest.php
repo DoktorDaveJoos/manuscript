@@ -1,6 +1,7 @@
 <?php
 
 use App\Ai\Agents\EntityExtractor;
+use App\Ai\Tools\LookupExistingEntities;
 use App\Jobs\ExtractEntitiesJob;
 use App\Models\Book;
 use App\Models\Chapter;
@@ -30,13 +31,14 @@ test('entity extractor includes book language in instructions', function () {
     expect((string) $instructions)->toContain('de');
 });
 
-test('entity extractor includes book id in instructions', function () {
+test('entity extractor registers LookupExistingEntities scoped to its book', function () {
     $book = Book::factory()->create();
 
     $agent = new EntityExtractor($book);
-    $instructions = $agent->instructions();
+    $tools = iterator_to_array($agent->tools());
 
-    expect((string) $instructions)->toContain("The book ID is {$book->id}");
+    expect($tools)->toHaveCount(1)
+        ->and($tools[0])->toBeInstanceOf(LookupExistingEntities::class);
 });
 
 test('extract entities job creates character and wiki entry records', function () {

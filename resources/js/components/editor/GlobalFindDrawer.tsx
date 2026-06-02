@@ -7,6 +7,7 @@ import {
     Search,
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     replaceAll,
     search,
@@ -60,6 +61,7 @@ export default function GlobalFindDrawer({
     onSearchChange?: (params: SearchHighlight | null) => void;
     showReplace: boolean;
 }) {
+    const { t } = useTranslation('editor');
     const {
         width,
         panelRef: asideRef,
@@ -242,7 +244,7 @@ export default function GlobalFindDrawer({
             </div>
 
             <PanelHeader
-                title="Find in Book"
+                title={t('globalFind.title')}
                 icon={<Search size={14} className="text-ink-faint" />}
                 onClose={onClose}
             />
@@ -257,7 +259,7 @@ export default function GlobalFindDrawer({
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Search all chapters..."
+                        placeholder={t('globalFind.searchAllChapters')}
                         className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-faint"
                     />
                     {isSearching && (
@@ -274,27 +276,28 @@ export default function GlobalFindDrawer({
                             label="Aa"
                             active={caseSensitive}
                             onClick={() => setCaseSensitive((p) => !p)}
-                            title="Match Case"
+                            title={t('find.matchCase')}
                         />
                         <ToggleButton
                             label="W"
                             active={wholeWord}
                             onClick={() => setWholeWord((p) => !p)}
-                            title="Whole Word"
+                            title={t('find.wholeWord')}
                         />
                         <ToggleButton
                             label=".*"
                             active={useRegex}
                             onClick={() => setUseRegex((p) => !p)}
-                            title="Use Regex"
+                            title={t('find.useRegex')}
                             mono
                         />
                     </div>
                     {totalMatches > 0 && (
                         <span className="text-[11px] text-ink-faint">
-                            {totalMatches} result
-                            {totalMatches !== 1 ? 's' : ''} in {results.length}{' '}
-                            ch.
+                            {t('globalFind.results', {
+                                count: totalMatches,
+                                chapters: results.length,
+                            })}
                         </span>
                     )}
                 </div>
@@ -317,7 +320,7 @@ export default function GlobalFindDrawer({
                                     else if (e.key === 'Enter')
                                         handleReplaceAll();
                                 }}
-                                placeholder="Replace with..."
+                                placeholder={t('find.replaceWith')}
                                 className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-faint"
                             />
                         </div>
@@ -334,7 +337,7 @@ export default function GlobalFindDrawer({
                             {isReplacing ? (
                                 <Loader size={14} className="animate-spin" />
                             ) : (
-                                'Replace All in Book'
+                                t('globalFind.replaceAllInBook')
                             )}
                         </Button>
                     </div>
@@ -345,7 +348,7 @@ export default function GlobalFindDrawer({
             <div className="flex-1 overflow-y-auto">
                 {results.length === 0 && query.trim() && !isSearching ? (
                     <div className="px-4 py-8 text-center text-[12px] text-ink-faint">
-                        No results found
+                        {t('common:noResults')}
                     </div>
                 ) : (
                     results.map((chapter) => (

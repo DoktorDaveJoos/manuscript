@@ -83,6 +83,10 @@
     "license.error.failed": "Failed to activate license.",
     "license.error.network": "Could not reach the license server. Please check your internet connection.",
 
+    "welcome.title": "Welcome to Manuscript",
+    "welcome.description": "Enter your license key to get started.",
+    "welcome.buyLicense": "Don't have a license? Get one at getmanuscript.app",
+
     "aiProviders.title": "AI Providers",
     "aiProviders.description": "Choose your AI provider and configure its API key.",
     "aiProviders.configured": "Configured",
@@ -107,6 +111,83 @@
     "aiProviders.testConnection": "Test connection",
     "aiProviders.saveFailed": "Failed to save settings.",
     "aiProviders.testFailed": "Connection test failed.",
+
+    "aiProviders.howToGetKey.trigger": "How to get an API key",
+    "aiProviders.howToGetKey.title": "How to get your {{provider}} API key",
+    "aiProviders.howToGetKey.intro": "Follow these steps to generate an API key for {{provider}}. Manuscript stores it encrypted on this device — your key never leaves your machine.",
+    "aiProviders.howToGetKey.close": "Close",
+
+    "aiProviders.howToGetKey.anthropic.consoleLabel": "Open Anthropic Console",
+    "aiProviders.howToGetKey.anthropic.steps": [
+        "Open console.anthropic.com in your browser.",
+        "Sign in or create a free Anthropic account.",
+        "Open Settings → API Keys from the sidebar.",
+        "Click Create Key and give it a name like \"Manuscript\".",
+        "Copy the key (starts with sk-ant-) — it's only shown once — and paste it here."
+    ],
+
+    "aiProviders.howToGetKey.openai.consoleLabel": "Open OpenAI Platform",
+    "aiProviders.howToGetKey.openai.steps": [
+        "Open platform.openai.com and sign in.",
+        "Click your profile (top right) and choose View API keys.",
+        "Click Create new secret key and give it a name.",
+        "Copy the key (starts with sk-) — it's only shown once — and paste it here.",
+        "Add a payment method under Settings → Billing if you haven't already."
+    ],
+
+    "aiProviders.howToGetKey.gemini.consoleLabel": "Open Google AI Studio",
+    "aiProviders.howToGetKey.gemini.steps": [
+        "Open aistudio.google.com in your browser.",
+        "Sign in with your Google account.",
+        "Click Get API key in the top right.",
+        "Pick an existing Google Cloud project or create one, then click Create API key.",
+        "Copy the key and paste it here."
+    ],
+
+    "aiProviders.howToGetKey.groq.consoleLabel": "Open Groq Console",
+    "aiProviders.howToGetKey.groq.steps": [
+        "Open console.groq.com and sign in (Google, GitHub, or email).",
+        "Open the API Keys tab in the sidebar.",
+        "Click Create API Key and give it a name.",
+        "Copy the key (starts with gsk_) — it's only shown once.",
+        "Paste it here."
+    ],
+
+    "aiProviders.howToGetKey.xai.consoleLabel": "Open xAI Console",
+    "aiProviders.howToGetKey.xai.steps": [
+        "Open console.x.ai and sign in with your X / xAI account.",
+        "Open the API Keys tab.",
+        "Click Create API Key and give it a name.",
+        "Copy the key (starts with xai-) — it's only shown once.",
+        "Paste it here."
+    ],
+
+    "aiProviders.howToGetKey.deepseek.consoleLabel": "Open DeepSeek Platform",
+    "aiProviders.howToGetKey.deepseek.steps": [
+        "Open platform.deepseek.com and sign in or create an account.",
+        "Open the API Keys page from the sidebar.",
+        "Click Create new API key.",
+        "Copy the key — it's only shown once.",
+        "Paste it here. Top up credit on the Billing page if needed."
+    ],
+
+    "aiProviders.howToGetKey.mistral.consoleLabel": "Open Mistral Console",
+    "aiProviders.howToGetKey.mistral.steps": [
+        "Open console.mistral.ai and sign in or create an account.",
+        "Open the API Keys tab inside your workspace.",
+        "Click Create new key and give it a name.",
+        "Copy the key — it's only shown once.",
+        "Paste it here. Add a payment method on the Billing page first if you don't have free trial credit."
+    ],
+
+    "aiProviders.howToGetKey.openrouter.consoleLabel": "Open OpenRouter",
+    "aiProviders.howToGetKey.openrouter.steps": [
+        "Open openrouter.ai and sign in (Google, GitHub, or email).",
+        "Click your avatar (top right) and choose Keys.",
+        "Click Create Key and give it a name.",
+        "Copy the key (starts with sk-or-) — it's only shown once.",
+        "Paste it here. Top up credit on the Credits page to start using it."
+    ],
     "aiProviders.advancedSettings": "Advanced Settings",
     "aiProviders.advancedDescription": "The app automatically picks the best model for each task. Only change these if you fully understand the differences between models — wrong choices may reduce output quality or increase costs.",
     "aiProviders.writingModel": "Writing",
@@ -133,6 +214,20 @@
     "prosePassRules.title": "Revision Rules",
     "prosePassRules.pageTitle": "Revision Rules — {{bookTitle}}",
     "prosePassRules.description": "These rules are applied when you use Revise Prose. Enabled rules will guide how AI reviews and improves your text.",
+    "prosePassRules.rules.show_dont_tell.label": "Show, don't tell",
+    "prosePassRules.rules.show_dont_tell.description": "Convert telling statements to showing through action and detail.",
+    "prosePassRules.rules.dialogue_tags.label": "Dialogue tag cleanup",
+    "prosePassRules.rules.dialogue_tags.description": "Replace adverb-heavy dialogue tags with action beats.",
+    "prosePassRules.rules.filter_words.label": "Filter word removal",
+    "prosePassRules.rules.filter_words.description": "Remove unnecessary filter words (felt, saw, heard, noticed).",
+    "prosePassRules.rules.passive_voice.label": "Passive voice reduction",
+    "prosePassRules.rules.passive_voice.description": "Convert passive constructions to active voice where appropriate.",
+    "prosePassRules.rules.sentence_variety.label": "Sentence variety",
+    "prosePassRules.rules.sentence_variety.description": "Vary sentence length and structure for better rhythm.",
+    "prosePassRules.rules.shorten_long_sentences.label": "Shorten overlong sentences",
+    "prosePassRules.rules.shorten_long_sentences.description": "Split a sentence only when it overloads the reader's working memory (~4 chunks): wide subject-verb gaps, more than two levels of clause nesting, or chained items beyond 3–4. Long, fluent sentences with locally connected clauses stay.",
+    "prosePassRules.rules.tightening.label": "Prose tightening",
+    "prosePassRules.rules.tightening.description": "Remove redundancies and tighten wordy phrases.",
 
     "sidebar.proofreading": "Proofreading",
     "proofreading.title": "Proofreading",
@@ -174,5 +269,39 @@
     "export.includeChapterTitles": "Include chapter titles",
     "export.includeActBreaks": "Include act breaks",
     "export.exporting": "Exporting...",
-    "export.exportManuscript": "Export manuscript"
+    "export.exportManuscript": "Export manuscript",
+
+    "backup.sectionLabel": "BACKUP",
+    "backup.navLabel": "Backup",
+    "backup.lastExport": "Last backup: {{value}}",
+    "backup.neverExported": "Never",
+    "backup.passphrase.label": "Passphrase (optional)",
+    "backup.passphrase.placeholder": "Leave empty to save without encryption",
+    "backup.passphrase.hint": "If you set a passphrase, the backup is encrypted on this machine before it leaves Manuscript. Save it somewhere safe — without it the backup cannot be restored.",
+    "backup.save.title": "Save backup",
+    "backup.save.description": "Download a copy of your data. Save the file anywhere — your computer, a USB stick, or your cloud drive of choice.",
+    "backup.save.button": "Save backup",
+    "backup.save.busy": "Saving…",
+    "backup.import.title": "Import backup",
+    "backup.import.description": "Restore your data from a previously saved backup file. Your current data will be kept as a one-step rollback in case the imported backup is wrong.",
+    "backup.import.fileLabel": "Backup file",
+    "backup.import.chooseFile": "Choose file…",
+    "backup.import.replaceFile": "Replace file…",
+    "backup.import.noFileChosen": "No file selected",
+    "backup.import.passphraseLabel": "Passphrase",
+    "backup.import.passphrasePlaceholder": "Required for encrypted backups",
+    "backup.import.warning": "Importing replaces your current data after restart. AI provider API keys may need to be re-entered if the backup was made on a different machine.",
+    "backup.import.button": "Import backup",
+    "backup.import.busy": "Validating…",
+    "backup.revert.title": "Revert last import",
+    "backup.revert.description": "Restore the database from before your last import. This is one-shot — once reverted, the imported data is discarded.",
+    "backup.revert.button": "Revert",
+    "backup.revert.busy": "Reverting…",
+    "backup.revertConfirm": "Restore the database from before your last import? Your current data will be replaced. This cannot be undone.",
+    "backup.restart.import": "Backup ready to import. Quit Manuscript and reopen to complete the import.",
+    "backup.restart.revert": "Revert ready. Quit Manuscript and reopen to restore your previous data.",
+    "backup.restart.hint": "Use the menu or close the window to quit. Reopening Manuscript will finish the operation.",
+    "backup.error.exportFailed": "Could not save the backup. Please try again.",
+    "backup.error.importFailed": "Could not import the backup.",
+    "backup.error.revertFailed": "Could not revert."
 }

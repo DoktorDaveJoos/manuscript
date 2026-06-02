@@ -10,6 +10,8 @@ use App\Enums\AnalysisType;
 use App\Enums\BulkRevisionType;
 use App\Enums\VersionSource;
 use App\Enums\VersionStatus;
+use App\Http\Controllers\Concerns\EnsuresAiConfigured;
+use App\Http\Controllers\Concerns\EnsuresChapterVersion;
 use App\Http\Controllers\Concerns\StreamsConversation;
 use App\Http\Requests\RunAnalysisRequest;
 use App\Jobs\AnalyzeChapterJob;
@@ -17,20 +19,21 @@ use App\Jobs\BulkRevisionJob;
 use App\Jobs\ExtractEntitiesJob;
 use App\Jobs\GenerateEmbeddingsJob;
 use App\Jobs\RunAnalysisJob;
-use App\Models\AiSetting;
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\Scene;
 use App\Services\Normalization\NormalizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Responses\StreamableAgentResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AiController extends Controller
 {
-    use StreamsConversation;
+    use EnsuresAiConfigured, EnsuresChapterVersion, StreamsConversation;
 
     public function analyzeChapter(Book $book, Chapter $chapter): JsonResponse
     {
@@ -154,6 +157,24 @@ class AiController extends Controller
             __('Revise the following chapter text:'),
             VersionSource::AiRevision,
             __('AI prose revision'),
+            expectedVersionId: $this->validatedExpectedVersionId(),
+        );
+    }
+
+    public function reviseScene(Book $book, Chapter $chapter, Scene $scene): StreamableAgentResponse
+    {
+        abort_unless($chapter->book_id === $book->id, 404);
+        abort_unless($scene->chapter_id === $chapter->id, 404);
+
+        return $this->streamAgentRevision(
+            $book,
+            $chapter,
+            new ProseReviser($book, $chapter),
+            __('Revise the following scene text:'),
+            VersionSource::AiRevision,
+            __('AI scene prose revision'),
+            $scene,
+            expectedVersionId: $this->validatedExpectedVersionId(),
         );
     }
 
@@ -166,7 +187,19 @@ class AiController extends Controller
             __('Restructure the following chapter text:'),
             VersionSource::Beautify,
             __('AI text beautification'),
+            expectedVersionId: $this->validatedExpectedVersionId(),
         );
+    }
+
+    private function validatedExpectedVersionId(): ?int
+    {
+        $validated = request()->validate([
+            'expected_current_version_id' => ['nullable', 'integer'],
+        ]);
+
+        return isset($validated['expected_current_version_id'])
+            ? (int) $validated['expected_current_version_id']
+            : null;
     }
 
     private function streamAgentRevision(
@@ -176,16 +209,25 @@ class AiController extends Controller
         string $promptPrefix,
         VersionSource $source,
         string $changeSummary,
+        ?Scene $scene = null,
+        ?int $expectedVersionId = null,
     ): StreamableAgentResponse {
         $this->ensureAiConfigured();
 
         $chapter->loadMissing(['currentVersion', 'scenes']);
+        $this->ensureCurrentVersion($chapter, $expectedVersionId);
         $currentVersion = $chapter->currentVersion;
-        $content = $chapter->getContentWithSceneBreaks();
-        if (blank($content)) {
-            $content = $currentVersion?->content;
+
+        if ($scene) {
+            $content = $scene->content;
+            abort_if(blank($content), 422, __('Scene has no content to process.'));
+        } else {
+            $content = $chapter->getContentWithSceneBreaks();
+            if (blank($content)) {
+                $content = $currentVersion?->content;
+            }
+            abort_if(blank($content), 422, __('Chapter has no content to process.'));
         }
-        abort_if(blank($content), 422, __('Chapter has no content to process.'));
 
         $wordCount = str_word_count(strip_tags($content));
         abort_if($wordCount > 12000, 422, __('Chapter is too long for AI revision (:count words). Consider splitting it into smaller chapters.', ['count' => $wordCount]));
@@ -199,7 +241,7 @@ class AiController extends Controller
 
         return $agent->stream(
             "{$promptPrefix}\n\n{$content}",
-        )->then(function ($response) use ($book, $chapter, $currentVersion, $source, $changeSummary, $sceneMap) {
+        )->then(function ($response) use ($book, $chapter, $currentVersion, $source, $changeSummary, $sceneMap, $scene) {
             $nextNumber = ($currentVersion?->version_number ?? 0) + 1;
 
             $normalized = app(NormalizationService::class)->normalize(
@@ -207,15 +249,39 @@ class AiController extends Controller
                 $book->language,
             );
 
-            $chapter->versions()->create([
-                'version_number' => $nextNumber,
-                'content' => $normalized['content'],
-                'source' => $source,
-                'change_summary' => $changeSummary,
-                'is_current' => false,
-                'status' => VersionStatus::Pending,
-                'scene_map' => $sceneMap,
-            ]);
+            // Auto-apply: the revised version becomes the new current version
+            // immediately. The previous current version stays in history so the
+            // user can still see what changed via "Compare with previous".
+            DB::transaction(function () use ($chapter, $currentVersion, $nextNumber, $normalized, $source, $changeSummary, $sceneMap, $scene) {
+                $chapter->load('currentVersion');
+                $this->ensureCurrentVersion($chapter, $currentVersion?->id);
+
+                if ($scene) {
+                    $scene->update(['content' => $normalized['content']]);
+                    $chapter->load('scenes');
+                    $fullContent = $chapter->getContentWithSceneBreaks();
+                } else {
+                    $fullContent = $normalized['content'];
+                }
+
+                $chapter->versions()
+                    ->where('is_current', true)
+                    ->update(['is_current' => false]);
+
+                $chapter->versions()->create([
+                    'version_number' => $nextNumber,
+                    'content' => $fullContent,
+                    'source' => $source,
+                    'change_summary' => $changeSummary,
+                    'is_current' => true,
+                    'status' => VersionStatus::Accepted,
+                    'scene_map' => $sceneMap,
+                ]);
+
+                if (! $scene) {
+                    $chapter->replaceSceneContents($normalized['content'], $sceneMap);
+                }
+            });
         });
     }
 
@@ -266,20 +332,5 @@ class AiController extends Controller
         }
 
         return response()->json(['status' => 'started', 'type' => $type->value]);
-    }
-
-    private function ensureAiConfigured(): void
-    {
-        set_time_limit(300);
-
-        $setting = AiSetting::activeProvider();
-
-        abort_if(
-            ! $setting || ! $setting->isConfigured(),
-            422,
-            __('No AI provider configured.'),
-        );
-
-        $setting->injectConfig();
     }
 }

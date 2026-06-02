@@ -5,6 +5,13 @@ namespace App\Providers;
 use App\Console\Commands\OptimizeCommand;
 use App\Database\SqliteVecConnector;
 use App\Listeners\RecordAiTokenUsage;
+use App\Models\Act;
+use App\Models\Beat;
+use App\Models\PlotPoint;
+use App\Models\Storyline;
+use App\Observers\BoardChangeObserver;
+use App\Services\BackupEncryptionService;
+use App\Services\BackupService;
 use App\Services\DatabaseRepairService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -40,6 +47,23 @@ class AppServiceProvider extends ServiceProvider
         // full rationale and Sentry issue 112195649.
         $this->app->singleton('command.optimize', OptimizeCommand::class);
 
+        // BackupService must follow whichever SQLite file the *active*
+        // connection points at. NativePHP swaps `database.default` to a
+        // separate `nativephp` connection at boot, while the seed `sqlite`
+        // connection still points at the empty starter DB — naming the
+        // sqlite connection directly would silently back up the seed.
+        // Mirrors SqliteVecConnector::markerPath() for consistency.
+        $this->app->singleton(BackupService::class, function ($app) {
+            $default = config('database.default');
+            $databasePath = config("database.connections.{$default}.database")
+                ?: database_path('nativephp.sqlite');
+
+            return new BackupService(
+                $app->make(BackupEncryptionService::class),
+                $databasePath,
+            );
+        });
+
         // After all service providers boot (including NativePHP's database
         // rewrite), run pending migrations and attempt data recovery if the
         // connector detected a corrupt database.
@@ -55,9 +79,46 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureSentry();
+        $this->healStaleNativePhpSecret();
 
         Event::listen(AgentPrompted::class, RecordAiTokenUsage::class);
         Event::listen(AgentStreamed::class, RecordAiTokenUsage::class);
+
+        PlotPoint::observe(BoardChangeObserver::class);
+        Beat::observe(BoardChangeObserver::class);
+        Storyline::observe(BoardChangeObserver::class);
+        Act::observe(BoardChangeObserver::class);
+    }
+
+    /**
+     * Reconcile a stale NativePHP secret cache at request time.
+     *
+     * Electron generates a fresh `NATIVEPHP_SECRET` per launch and hands it to
+     * PHP via the process env. NativePHP regenerates the config cache on each
+     * boot via `artisan optimize`, but that call is non-fatal in vendor code
+     * (vendor/nativephp/desktop/resources/electron/electron-plugin/src/server/php.ts:437).
+     * If optimize ever fails, the server boots against the previous launch's
+     * cached secret and `PreventRegularBrowserAccess` 403s every
+     * `/_native/api/events` call until the user relaunches — see Sentry issue
+     * 113317190. Reading env() directly sidesteps the cache.
+     */
+    protected function healStaleNativePhpSecret(): void
+    {
+        if (! config('nativephp-internal.running')) {
+            return;
+        }
+
+        $runtimeSecret = env('NATIVEPHP_SECRET');
+
+        if ($runtimeSecret === null || $runtimeSecret === '') {
+            return;
+        }
+
+        if (config('nativephp-internal.secret') === $runtimeSecret) {
+            return;
+        }
+
+        config()->set('nativephp-internal.secret', $runtimeSecret);
     }
 
     /**

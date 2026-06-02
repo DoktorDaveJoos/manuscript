@@ -40,7 +40,14 @@ return [
             'connection' => env('DB_QUEUE_CONNECTION'),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
-            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),
+            // retry_after is the reservation-lock duration: a reserved job older
+            // than this becomes available again. It MUST clear every queued
+            // job's $timeout (the longest is BulkRevisionJob at 3600s) and the
+            // NativePHP worker timeout (1800s) by a margin. If it is smaller, a
+            // long-running AI job is picked up a second time and — because these
+            // jobs use tries = 1 — fails with "... has been attempted too many
+            // times". The margin is enforced by tests/Unit/QueueTimeoutTest.php.
+            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 3660),
             'after_commit' => false,
         ],
 

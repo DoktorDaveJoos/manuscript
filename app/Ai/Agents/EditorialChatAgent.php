@@ -2,12 +2,10 @@
 
 namespace App\Ai\Agents;
 
-use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Ai\Tools\SearchSimilarChunks;
-use App\Enums\AiTaskCategory;
 use App\Enums\EditorialPersona;
 use App\Models\Book;
 use Laravel\Ai\Attributes\MaxTokens;
@@ -26,17 +24,12 @@ use Stringable;
 #[Timeout(120)]
 class EditorialChatAgent implements Agent, BelongsToBook, Conversational, HasMiddleware, HasTools
 {
-    use Promptable, RemembersConversations, UsesTaskCategoryModel;
+    use Promptable, RemembersConversations;
 
     public function __construct(
         protected Book $book,
         protected string $editorialContext,
     ) {}
-
-    public static function taskCategory(): AiTaskCategory
-    {
-        return AiTaskCategory::Analysis;
-    }
 
     public function book(): Book
     {
@@ -64,7 +57,6 @@ class EditorialChatAgent implements Agent, BelongsToBook, Conversational, HasMid
         - Reference specific parts of the manuscript to support your points
 
         Use the available tools to search through the manuscript and retrieve relevant context when needed.
-        The book ID is {$this->book->id}. Use this when calling tools.
 
         If the author challenges a finding: re-examine the evidence. If they raise a point your review
         missed — a thematic choice you didn't recognize, context from earlier chapters that justifies
@@ -85,8 +77,8 @@ class EditorialChatAgent implements Agent, BelongsToBook, Conversational, HasMid
     public function tools(): iterable
     {
         return [
-            new SearchSimilarChunks,
-            new RetrieveManuscriptContext,
+            new SearchSimilarChunks($this->book->id),
+            new RetrieveManuscriptContext($this->book->id),
         ];
     }
 

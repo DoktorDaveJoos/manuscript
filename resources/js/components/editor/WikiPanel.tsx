@@ -6,9 +6,7 @@ import {
     index as panelIndex,
     connect as panelConnect,
     disconnect as panelDisconnect,
-    updateCharacter as panelUpdateCharacter,
     updateRole as panelUpdateRole,
-    updateWikiEntry as panelUpdateWikiEntry,
 } from '@/actions/App/Http/Controllers/WikiPanelController';
 import PanelHeader from '@/components/ui/PanelHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
@@ -221,7 +219,7 @@ export default function WikiPanel({
     }, []);
 
     const handleConnect = useCallback(
-        async (entryType: string, id: number, role?: string) => {
+        async (entryType: string, id: number) => {
             try {
                 await fetch(panelConnect.url(book.id), {
                     method: 'POST',
@@ -230,7 +228,6 @@ export default function WikiPanel({
                         chapter_id: chapter.id,
                         type: entryType,
                         id,
-                        role,
                     }),
                 });
                 setSessionEntries((prev) =>
@@ -264,8 +261,11 @@ export default function WikiPanel({
         [book.id, chapter.id, fetchConnected],
     );
 
-    const handleRoleChange = useCallback(
-        async (characterId: number, role: string) => {
+    const handleUpdateRole = useCallback(
+        async (
+            characterId: number,
+            role: 'protagonist' | 'supporting' | 'mentioned',
+        ) => {
             try {
                 await fetch(
                     panelUpdateRole.url({
@@ -287,36 +287,6 @@ export default function WikiPanel({
             }
         },
         [book.id, chapter.id, fetchConnected],
-    );
-
-    const handleUpdate = useCallback(
-        async (
-            entryType: string,
-            id: number,
-            data: Record<string, unknown>,
-        ) => {
-            const url =
-                entryType === 'character'
-                    ? panelUpdateCharacter.url({
-                          book: book.id,
-                          character: id,
-                      })
-                    : panelUpdateWikiEntry.url({
-                          book: book.id,
-                          wikiEntry: id,
-                      });
-
-            try {
-                await fetch(url, {
-                    method: 'PATCH',
-                    headers: jsonFetchHeaders(),
-                    body: JSON.stringify(data),
-                });
-            } catch {
-                // silent fail
-            }
-        },
-        [book.id],
     );
 
     const connectedList = useMemo<PanelEntry[]>(
@@ -383,21 +353,14 @@ export default function WikiPanel({
                                                 entry.id,
                                             )
                                         }
-                                        onRoleChange={
+                                        onChangeRole={
                                             entryType === 'character'
                                                 ? (role) =>
-                                                      handleRoleChange(
+                                                      handleUpdateRole(
                                                           entry.id,
                                                           role,
                                                       )
                                                 : undefined
-                                        }
-                                        onUpdate={(data) =>
-                                            handleUpdate(
-                                                entryType,
-                                                entry.id,
-                                                data,
-                                            )
                                         }
                                         chapterRole={chapterRole}
                                         wikiUrl={wikiUrl}
@@ -429,12 +392,7 @@ export default function WikiPanel({
                             isExpanded={expandedIds.has(key)}
                             onToggleExpand={() => toggleExpanded(key)}
                             onDismiss={() => handleDismiss(entryType, entry.id)}
-                            onConnect={(role) =>
-                                handleConnect(entryType, entry.id, role)
-                            }
-                            onUpdate={(data) =>
-                                handleUpdate(entryType, entry.id, data)
-                            }
+                            onConnect={() => handleConnect(entryType, entry.id)}
                             wikiUrl={wikiUrl}
                         />
                     );

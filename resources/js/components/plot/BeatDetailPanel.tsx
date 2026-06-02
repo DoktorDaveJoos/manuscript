@@ -7,10 +7,10 @@ import Button from '@/components/ui/Button';
 import Drawer from '@/components/ui/Drawer';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
+import MarkdownTextarea from '@/components/ui/MarkdownTextarea';
 import PanelHeader from '@/components/ui/PanelHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
-import Textarea from '@/components/ui/Textarea';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { STATUS_PILL_OPTIONS } from '@/lib/plot-constants';
 import type {
@@ -156,7 +156,7 @@ export default function BeatDetailPanel({
     const plotPointType = beat.plot_point?.type;
 
     return (
-        <Drawer onClose={onClose}>
+        <Drawer onClose={onClose} className="w-[480px]">
             <PanelHeader title={t('beat.details')} onClose={onClose} />
 
             <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-5">
@@ -172,11 +172,9 @@ export default function BeatDetailPanel({
 
                 {/* Description */}
                 <FormField label={t('beat.description')}>
-                    <Textarea
+                    <MarkdownTextarea
                         value={description}
-                        onChange={(e) =>
-                            handleDescriptionChange(e.target.value)
-                        }
+                        onChange={handleDescriptionChange}
                         rows={4}
                         placeholder={t('beat.descriptionPlaceholder')}
                     />

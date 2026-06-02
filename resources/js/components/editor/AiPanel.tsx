@@ -1,15 +1,22 @@
-import { Link, router, usePage } from '@inertiajs/react';
-import { Lock, PenTool, Pilcrow, Sparkles } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { Link, usePage } from '@inertiajs/react';
+import { PenTool, Pilcrow, Sparkles } from 'lucide-react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { beautify, revise } from '@/actions/App/Http/Controllers/AiController';
+import { toast } from 'sonner';
+import {
+    beautify,
+    revise,
+    reviseScene,
+} from '@/actions/App/Http/Controllers/AiController';
+import { openWindow as openDiffWindow } from '@/actions/App/Http/Controllers/ChapterDiffController';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
+import Button from '@/components/ui/Button';
 import PanelHeader from '@/components/ui/PanelHeader';
-import ProFeatureLock from '@/components/ui/ProFeatureLock';
 import SectionLabel from '@/components/ui/SectionLabel';
+import { useAiErrorToast } from '@/hooks/useAiErrorToast';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { useChapterAnalysis } from '@/hooks/useChapterAnalysis';
-import { cn } from '@/lib/utils';
+import { broadcastChapterDataChanged, cn, jsonFetchHeaders } from '@/lib/utils';
 import type {
     Analysis,
     Book,
@@ -233,31 +240,93 @@ function getNextChapterSuggestion(
     return result.suggestion ?? null;
 }
 
-const actionButtonClass =
-    'flex items-center justify-center gap-1.5 rounded-lg bg-ink px-3 py-[9px] text-[13px] font-medium text-surface transition-colors hover:bg-ink/90 disabled:opacity-50';
-
 export default function AiPanel({
     characters,
     book,
     chapter,
+    activeSceneId = null,
     onClose,
     onError,
     chapterAnalyses,
+    proseRunning = false,
+    onProseStart,
+    onProseEnd,
 }: {
     characters: ChapterCharacter[];
     book: Book;
     chapter: Chapter;
+    activeSceneId?: number | null;
     onClose: () => void;
     onError?: (message: string) => void;
     chapterAnalyses?: Record<string, Analysis>;
+    proseRunning?: boolean;
+    onProseStart?: (chapterId: number) => void;
+    onProseEnd?: (chapterId: number) => void;
 }) {
     const { t, i18n } = useTranslation('ai');
     const pageUrl = usePage().url;
-    const { visible, usable, licensed } = useAiFeatures();
+    const { visible, usable } = useAiFeatures();
     const aiEnabled = usable;
+    const showAiErrorToast = useAiErrorToast();
 
+    // Local flags so each button shows the correct label while in flight; the
+    // proseRunning prop is used to gate both (only one revise can run at a
+    // time) and to disable the inactive button without flipping its label.
     const [isRunningProse, setIsRunningProse] = useState(false);
+    const [isRunningSceneProse, setIsRunningSceneProse] = useState(false);
     const [isBeautifying, setIsBeautifying] = useState(false);
+
+    // Chapter ref so the toast's "Compare" action resolves the post-revise
+    // current version id at click time, after softRefresh has updated props.
+    const chapterRef = useRef(chapter);
+    chapterRef.current = chapter;
+
+    const showRevisedToast = useCallback(() => {
+        toast(
+            t('proseRevise.toast.title', {
+                ns: 'editor',
+                defaultValue: 'AI revision applied',
+            }),
+            {
+                description: t('proseRevise.toast.description', {
+                    ns: 'editor',
+                    defaultValue: 'The chapter now uses the revised version.',
+                }),
+                action: {
+                    label: t('proseRevise.toast.compare', {
+                        ns: 'editor',
+                        defaultValue: 'Compare',
+                    }),
+                    onClick: async () => {
+                        const versionId =
+                            chapterRef.current.current_version?.id;
+                        if (!versionId) return;
+                        if (
+                            typeof window !== 'undefined' &&
+                            window.Native?.on
+                        ) {
+                            try {
+                                const response = await fetch(
+                                    openDiffWindow.url({
+                                        book: book.id,
+                                        chapter: chapterRef.current.id,
+                                        version: versionId,
+                                    }),
+                                    {
+                                        method: 'POST',
+                                        headers: jsonFetchHeaders(),
+                                    },
+                                );
+                                if (response.ok) return;
+                            } catch {
+                                /* native window unavailable */
+                            }
+                        }
+                    },
+                },
+            },
+        );
+    }, [book.id, t]);
     const {
         status: analysisStatus,
         isAnalyzing,
@@ -314,27 +383,37 @@ export default function AiPanel({
         }
 
         setIsRunningProse(true);
+        onProseStart?.(chapter.id);
         try {
             const response = await fetch(
                 revise.url({ book: book.id, chapter: chapter.id }),
                 {
                     method: 'POST',
                     headers: {
+                        ...jsonFetchHeaders(),
                         Accept: 'application/json',
                     },
                 },
             );
 
-            if (!response.ok) throw new Error(t('error.prosePassFailed'));
+            if (!response.ok) {
+                if (response.status === 409) {
+                    showAiErrorToast({ kind: 'stale_version' });
+                    return;
+                }
+                throw new Error(t('error.prosePassFailed'));
+            }
 
             await response.text();
-            router.reload();
+            broadcastChapterDataChanged(chapter.id);
+            showRevisedToast();
         } catch (e) {
             onError?.(
                 e instanceof Error ? e.message : t('error.prosePassFailed'),
             );
         } finally {
             setIsRunningProse(false);
+            onProseEnd?.(chapter.id);
         }
     }, [
         book.id,
@@ -342,35 +421,110 @@ export default function AiPanel({
         chapter.word_count,
         chapter.analyzed_at,
         onError,
+        onProseStart,
+        onProseEnd,
+        showRevisedToast,
+        showAiErrorToast,
         t,
         i18n.language,
     ]);
 
+    const handleRunSceneProse = useCallback(async () => {
+        if (!activeSceneId) return;
+
+        setIsRunningSceneProse(true);
+        onProseStart?.(chapter.id);
+        try {
+            const response = await fetch(
+                reviseScene.url({
+                    book: book.id,
+                    chapter: chapter.id,
+                    scene: activeSceneId,
+                }),
+                {
+                    method: 'POST',
+                    headers: {
+                        ...jsonFetchHeaders(),
+                        Accept: 'application/json',
+                    },
+                },
+            );
+
+            if (!response.ok) {
+                if (response.status === 409) {
+                    showAiErrorToast({ kind: 'stale_version' });
+                    return;
+                }
+                throw new Error(t('error.prosePassFailed'));
+            }
+
+            await response.text();
+            broadcastChapterDataChanged(chapter.id);
+            showRevisedToast();
+        } catch (e) {
+            onError?.(
+                e instanceof Error ? e.message : t('error.prosePassFailed'),
+            );
+        } finally {
+            setIsRunningSceneProse(false);
+            onProseEnd?.(chapter.id);
+        }
+    }, [
+        activeSceneId,
+        book.id,
+        chapter.id,
+        onError,
+        onProseStart,
+        onProseEnd,
+        showRevisedToast,
+        showAiErrorToast,
+        t,
+    ]);
+
     const handleBeautify = useCallback(async () => {
         setIsBeautifying(true);
+        onProseStart?.(chapter.id);
         try {
             const response = await fetch(
                 beautify.url({ book: book.id, chapter: chapter.id }),
                 {
                     method: 'POST',
                     headers: {
+                        ...jsonFetchHeaders(),
                         Accept: 'application/json',
                     },
                 },
             );
 
-            if (!response.ok) throw new Error(t('error.beautifyFailed'));
+            if (!response.ok) {
+                if (response.status === 409) {
+                    showAiErrorToast({ kind: 'stale_version' });
+                    return;
+                }
+                throw new Error(t('error.beautifyFailed'));
+            }
 
             await response.text();
-            router.reload();
+            broadcastChapterDataChanged(chapter.id);
+            showRevisedToast();
         } catch (e) {
             onError?.(
                 e instanceof Error ? e.message : t('error.beautifyFailed'),
             );
         } finally {
             setIsBeautifying(false);
+            onProseEnd?.(chapter.id);
         }
-    }, [book.id, chapter.id, onError, t]);
+    }, [
+        book.id,
+        chapter.id,
+        onError,
+        onProseStart,
+        onProseEnd,
+        showRevisedToast,
+        showAiErrorToast,
+        t,
+    ]);
 
     const findings = useMemo(() => collectFindings(analyses), [analyses]);
     const nextSuggestion = useMemo(
@@ -442,341 +596,308 @@ export default function AiPanel({
                 icon={<Sparkles size={14} className="text-ink-muted" />}
                 onClose={onClose}
                 suffix={
-                    licensed ? (
-                        <span
-                            className={cn(
-                                'size-1.5 rounded-full',
-                                aiEnabled ? 'bg-ai-green' : 'bg-status-revised',
-                            )}
-                        />
-                    ) : (
-                        <Lock size={14} className="text-ink-faint" />
-                    )
+                    <span
+                        className={cn(
+                            'size-1.5 rounded-full',
+                            aiEnabled ? 'bg-ai-green' : 'bg-status-revised',
+                        )}
+                    />
                 }
             />
 
-            {licensed ? (
-                <div className="flex flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto p-5">
-                    {/* Actions section */}
-                    <div className="flex flex-col gap-2.5">
-                        <SectionLabel>{t('section.actions')}</SectionLabel>
-                        {aiEnabled ? (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={handleAnalyze}
-                                    disabled={isAnalyzing}
-                                    className={actionButtonClass}
-                                >
-                                    <Sparkles size={14} strokeWidth={2.5} />
-                                    {isAnalyzing
-                                        ? t('actions.analyzing')
-                                        : t('actions.analyze')}
-                                </button>
-                                <DescriptionText>
-                                    {t('actions.analyzeDescription')}
-                                </DescriptionText>
-                                {analysisError && (
-                                    <p className="text-[11px] leading-[1.4] text-red-600">
-                                        {analysisError}
-                                    </p>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={handleBeautify}
-                                    disabled={isBeautifying}
-                                    className={actionButtonClass}
-                                >
-                                    <Pilcrow size={14} strokeWidth={2.5} />
-                                    {isBeautifying
-                                        ? t('actions.beautifying')
-                                        : t('actions.beautify')}
-                                </button>
-                                <DescriptionText>
-                                    {t('actions.beautifyDescription')}
-                                </DescriptionText>
-                            </>
-                        ) : (
-                            <DescriptionText>
-                                {t('actions.notConfigured')}{' '}
-                                <Link
-                                    href={settingsIndex.url({
-                                        query: { from: pageUrl },
-                                    })}
-                                    className="font-medium text-accent underline decoration-accent/30 hover:decoration-accent"
-                                >
-                                    {t('actions.configureSettings')}
-                                </Link>
-                            </DescriptionText>
-                        )}
-                    </div>
-
-                    {/* Prose section */}
-                    {aiEnabled && (
-                        <div className="flex flex-col gap-2.5">
-                            <SectionLabel>{t('section.prose')}</SectionLabel>
-                            <button
+            <div className="flex flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto p-5">
+                {/* Actions section */}
+                <div className="flex flex-col gap-2.5">
+                    <SectionLabel>{t('section.actions')}</SectionLabel>
+                    {aiEnabled ? (
+                        <>
+                            <Button
                                 type="button"
-                                onClick={handleRunProse}
-                                disabled={isRunningProse}
-                                className={actionButtonClass}
+                                variant="primary"
+                                onClick={handleAnalyze}
+                                disabled={isAnalyzing}
+                                className="w-full"
                             >
-                                <PenTool size={14} strokeWidth={2.5} />
-                                {isRunningProse
-                                    ? t('prose.running')
-                                    : t('prose.runProsePass')}
-                            </button>
+                                <Sparkles size={14} strokeWidth={2.5} />
+                                {isAnalyzing
+                                    ? t('actions.analyzing')
+                                    : t('actions.analyze')}
+                            </Button>
                             <DescriptionText>
-                                {t('prose.description')}
+                                {t('actions.analyzeDescription')}
                             </DescriptionText>
+                            {analysisError && (
+                                <p className="text-[11px] leading-[1.4] text-red-600">
+                                    {analysisError}
+                                </p>
+                            )}
+                            <Button
+                                type="button"
+                                variant="primary"
+                                onClick={handleBeautify}
+                                disabled={proseRunning}
+                                className="w-full"
+                            >
+                                <Pilcrow size={14} strokeWidth={2.5} />
+                                {isBeautifying
+                                    ? t('actions.beautifying')
+                                    : t('actions.beautify')}
+                            </Button>
+                            <DescriptionText>
+                                {t('actions.beautifyDescription')}
+                            </DescriptionText>
+                        </>
+                    ) : (
+                        <DescriptionText>
+                            {t('actions.notConfigured')}{' '}
                             <Link
                                 href={settingsIndex.url({
-                                    query: {
-                                        from: pageUrl,
-                                        section: 'revision-rules',
-                                    },
+                                    query: { from: pageUrl },
                                 })}
-                                className="text-[11px] font-medium text-accent transition-colors hover:text-accent-dark"
+                                className="font-medium text-accent underline decoration-accent/30 hover:decoration-accent"
                             >
-                                {t('prose.settingsLink')}
+                                {t('actions.configureSettings')}
                             </Link>
-                        </div>
+                        </DescriptionText>
                     )}
+                </div>
 
-                    {/* Craft Metrics */}
-                    <div className="flex flex-col gap-4">
-                        <SectionLabel className="text-[11px] text-ink">
-                            {t('section.craftMetrics')}
-                        </SectionLabel>
-                        <LevelGroup title={t('level.chapter')}>
-                            <CraftMetricRow
-                                label={t('metric.tensionDynamics')}
-                                score={tensionLabel}
-                                detail={
-                                    chapter.tension_score != null
-                                        ? t('metric.tensionDetail', {
-                                              score: chapter.tension_score,
-                                              microTension:
-                                                  chapter.micro_tension_score ??
+                {/* Prose section */}
+                {aiEnabled && (
+                    <div className="flex flex-col gap-2.5">
+                        <SectionLabel>{t('section.prose')}</SectionLabel>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            onClick={handleRunProse}
+                            disabled={proseRunning}
+                            className="w-full"
+                        >
+                            <PenTool size={14} strokeWidth={2.5} />
+                            {isRunningProse
+                                ? t('prose.running')
+                                : t('prose.runProsePass')}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={handleRunSceneProse}
+                            disabled={proseRunning || !activeSceneId}
+                            className="w-full"
+                        >
+                            <PenTool size={14} strokeWidth={2.5} />
+                            {isRunningSceneProse
+                                ? t('prose.runningScene')
+                                : t('prose.runProsePassScene')}
+                        </Button>
+                        <DescriptionText>
+                            {t('prose.description')}
+                        </DescriptionText>
+                        <Link
+                            href={settingsIndex.url({
+                                query: {
+                                    from: pageUrl,
+                                    section: 'revision-rules',
+                                },
+                            })}
+                            className="text-[11px] font-medium text-accent transition-colors hover:text-accent-dark"
+                        >
+                            {t('prose.settingsLink')}
+                        </Link>
+                    </div>
+                )}
+
+                {/* Craft Metrics */}
+                <div className="flex flex-col gap-4">
+                    <SectionLabel className="text-[11px] text-ink">
+                        {t('section.craftMetrics')}
+                    </SectionLabel>
+                    <LevelGroup title={t('level.chapter')}>
+                        <CraftMetricRow
+                            label={t('metric.tensionDynamics')}
+                            score={tensionLabel}
+                            detail={
+                                chapter.tension_score != null
+                                    ? t('metric.tensionDetail', {
+                                          score: chapter.tension_score,
+                                          microTension:
+                                              chapter.micro_tension_score ??
+                                              '--',
+                                      })
+                                    : null
+                            }
+                        />
+                        <CraftMetricRow
+                            label={t('metric.emotionalArc')}
+                            score={emotionalLabel}
+                            detail={
+                                chapter.emotional_shift_magnitude != null
+                                    ? t('metric.emotionalDetail', {
+                                          open:
+                                              chapter.emotional_state_open ??
+                                              '?',
+                                          close:
+                                              chapter.emotional_state_close ??
+                                              '?',
+                                          magnitude:
+                                              chapter.emotional_shift_magnitude,
+                                      })
+                                    : null
+                            }
+                        />
+                        <CraftMetricRow
+                            label={t('metric.pacing')}
+                            score={pacingLabel}
+                        />
+                    </LevelGroup>
+
+                    <LevelGroup title={t('level.prose')}>
+                        <CraftMetricRow
+                            label={t('metric.sensoryDetail')}
+                            score={sensoryLabel}
+                            detail={
+                                chapter.sensory_grounding != null
+                                    ? t('metric.sensoryDetailCount', {
+                                          senses: chapter.sensory_grounding,
+                                      })
+                                    : null
+                            }
+                        />
+                        <CraftMetricRow
+                            label={t('metric.informationDelivery')}
+                            score={infoDeliveryLabel}
+                        />
+                        <CraftMetricRow
+                            label={t('metric.narrativeDensity')}
+                            score={densityLabel}
+                            detail={densityDetail}
+                        />
+                    </LevelGroup>
+
+                    <LevelGroup title={t('level.scene')}>
+                        <CraftMetricRow
+                            label={t('metric.scenePurpose')}
+                            score={scenePurposeLabel}
+                            detail={
+                                chapter.scene_purpose
+                                    ? (chapter.value_shift ??
+                                      t('metric.noValueShift'))
+                                    : null
+                            }
+                        />
+                        <CraftMetricRow
+                            label={t('metric.hooks')}
+                            score={hookLabel}
+                            detail={
+                                avgHookScore != null
+                                    ? chapter.hook_type
+                                        ? t('metric.hooksDetailWithType', {
+                                              entry:
+                                                  chapter.entry_hook_score ??
+                                                  '--',
+                                              exit:
+                                                  chapter.exit_hook_score ??
+                                                  '--',
+                                              hookType:
+                                                  chapter.hook_type.replace(
+                                                      '_',
+                                                      ' ',
+                                                  ),
+                                          })
+                                        : t('metric.hooksDetail', {
+                                              entry:
+                                                  chapter.entry_hook_score ??
+                                                  '--',
+                                              exit:
+                                                  chapter.exit_hook_score ??
                                                   '--',
                                           })
-                                        : null
-                                }
-                            />
-                            <CraftMetricRow
-                                label={t('metric.emotionalArc')}
-                                score={emotionalLabel}
-                                detail={
-                                    chapter.emotional_shift_magnitude != null
-                                        ? t('metric.emotionalDetail', {
-                                              open:
-                                                  chapter.emotional_state_open ??
-                                                  '?',
-                                              close:
-                                                  chapter.emotional_state_close ??
-                                                  '?',
-                                              magnitude:
-                                                  chapter.emotional_shift_magnitude,
-                                          })
-                                        : null
-                                }
-                            />
-                            <CraftMetricRow
-                                label={t('metric.pacing')}
-                                score={pacingLabel}
-                            />
-                        </LevelGroup>
+                                    : null
+                            }
+                        />
+                    </LevelGroup>
 
-                        <LevelGroup title={t('level.prose')}>
-                            <CraftMetricRow
-                                label={t('metric.sensoryDetail')}
-                                score={sensoryLabel}
-                                detail={
-                                    chapter.sensory_grounding != null
-                                        ? t('metric.sensoryDetailCount', {
-                                              senses: chapter.sensory_grounding,
-                                          })
-                                        : null
-                                }
-                            />
-                            <CraftMetricRow
-                                label={t('metric.informationDelivery')}
-                                score={infoDeliveryLabel}
-                            />
-                            <CraftMetricRow
-                                label={t('metric.narrativeDensity')}
-                                score={densityLabel}
-                                detail={densityDetail}
-                            />
-                        </LevelGroup>
-
-                        <LevelGroup title={t('level.scene')}>
-                            <CraftMetricRow
-                                label={t('metric.scenePurpose')}
-                                score={scenePurposeLabel}
-                                detail={
-                                    chapter.scene_purpose
-                                        ? (chapter.value_shift ??
-                                          t('metric.noValueShift'))
-                                        : null
-                                }
-                            />
-                            <CraftMetricRow
-                                label={t('metric.hooks')}
-                                score={hookLabel}
-                                detail={
-                                    avgHookScore != null
-                                        ? chapter.hook_type
-                                            ? t('metric.hooksDetailWithType', {
-                                                  entry:
-                                                      chapter.entry_hook_score ??
-                                                      '--',
-                                                  exit:
-                                                      chapter.exit_hook_score ??
-                                                      '--',
-                                                  hookType:
-                                                      chapter.hook_type.replace(
-                                                          '_',
-                                                          ' ',
-                                                      ),
-                                              })
-                                            : t('metric.hooksDetail', {
-                                                  entry:
-                                                      chapter.entry_hook_score ??
-                                                      '--',
-                                                  exit:
-                                                      chapter.exit_hook_score ??
-                                                      '--',
-                                              })
-                                        : null
-                                }
-                            />
-                        </LevelGroup>
-
-                        <LevelGroup title={t('level.manuscript')}>
-                            <CraftMetricRow
-                                label={t('metric.plotAlignment')}
-                                score={plotLabel}
-                                detail={plotDetail}
-                            />
-                            <CraftMetricRow
-                                label={t('metric.consistency')}
-                                score={consistencyLabel}
-                                detail={consistencyDetail}
-                            />
-                        </LevelGroup>
-                    </div>
-
-                    {/* Findings */}
-                    <div className="flex flex-col gap-2.5">
-                        <SectionLabel>{t('section.findings')}</SectionLabel>
-                        {findings.length > 0 ? (
-                            <div className="flex flex-col gap-2.5">
-                                {findings.map((f, i) => (
-                                    <div key={i} className="flex gap-2">
-                                        <FindingDot variant={f.variant} />
-                                        <span className="text-[11px] leading-[1.4] text-ink-soft">
-                                            {f.text}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-[11px] leading-[1.4] text-ink-muted italic">
-                                {analysisStatus === 'completed' ||
-                                analysisStatus === 'partial'
-                                    ? t('findings.none')
-                                    : t('findings.noAnalysis')}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Next Chapter */}
-                    <div className="flex flex-col gap-2">
-                        <SectionLabel>{t('section.nextChapter')}</SectionLabel>
-                        {nextSuggestion ? (
-                            <p className="text-[11px] leading-[1.4] text-ink-soft">
-                                {nextSuggestion}
-                            </p>
-                        ) : (
-                            <p className="text-[11px] leading-[1.4] text-ink-soft">
-                                {t('nextChapter.noSuggestion')}
-                            </p>
-                        )}
-                        <button
-                            type="button"
-                            disabled={!nextSuggestion}
-                            className="self-start text-xs font-medium text-accent transition-colors hover:text-accent-dark disabled:opacity-50"
-                        >
-                            {t('nextChapter.generateOutline')}
-                        </button>
-                    </div>
-
-                    {/* In This Chapter — Characters */}
-                    <div className="flex flex-col gap-2.5">
-                        <SectionLabel>
-                            {t('section.inThisChapter')}
-                        </SectionLabel>
-                        {characters.length > 0 ? (
-                            <div className="flex flex-col gap-2.5">
-                                {characters.map((character) => (
-                                    <CharacterRow
-                                        key={character.id}
-                                        character={character}
-                                        roleText={t(
-                                            `role.${character.pivot.role}`,
-                                        )}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-[11px] leading-[1.4] text-ink-muted italic">
-                                {t('characters.none')}
-                            </p>
-                        )}
-                    </div>
+                    <LevelGroup title={t('level.manuscript')}>
+                        <CraftMetricRow
+                            label={t('metric.plotAlignment')}
+                            score={plotLabel}
+                            detail={plotDetail}
+                        />
+                        <CraftMetricRow
+                            label={t('metric.consistency')}
+                            score={consistencyLabel}
+                            detail={consistencyDetail}
+                        />
+                    </LevelGroup>
                 </div>
-            ) : (
-                <ProFeatureLock>
-                    <div className="flex flex-1 flex-col gap-5 p-4 opacity-40">
+
+                {/* Findings */}
+                <div className="flex flex-col gap-2.5">
+                    <SectionLabel>{t('section.findings')}</SectionLabel>
+                    {findings.length > 0 ? (
                         <div className="flex flex-col gap-2.5">
-                            <SectionLabel>{t('section.actions')}</SectionLabel>
-                            <div className="h-9 rounded-md bg-border/50" />
+                            {findings.map((f, i) => (
+                                <div key={i} className="flex gap-2">
+                                    <FindingDot variant={f.variant} />
+                                    <span className="text-[11px] leading-[1.4] text-ink-soft">
+                                        {f.text}
+                                    </span>
+                                </div>
+                            ))}
                         </div>
+                    ) : (
+                        <p className="text-[11px] leading-[1.4] text-ink-muted italic">
+                            {analysisStatus === 'completed' ||
+                            analysisStatus === 'partial'
+                                ? t('findings.none')
+                                : t('findings.noAnalysis')}
+                        </p>
+                    )}
+                </div>
+
+                {/* Next Chapter */}
+                <div className="flex flex-col gap-2">
+                    <SectionLabel>{t('section.nextChapter')}</SectionLabel>
+                    {nextSuggestion ? (
+                        <p className="text-[11px] leading-[1.4] text-ink-soft">
+                            {nextSuggestion}
+                        </p>
+                    ) : (
+                        <p className="text-[11px] leading-[1.4] text-ink-soft">
+                            {t('nextChapter.noSuggestion')}
+                        </p>
+                    )}
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={!nextSuggestion}
+                        className="self-start text-accent hover:bg-transparent hover:text-accent-dark"
+                    >
+                        {t('nextChapter.generateOutline')}
+                    </Button>
+                </div>
+
+                {/* In This Chapter — Characters */}
+                <div className="flex flex-col gap-2.5">
+                    <SectionLabel>{t('section.inThisChapter')}</SectionLabel>
+                    {characters.length > 0 ? (
                         <div className="flex flex-col gap-2.5">
-                            <SectionLabel>
-                                {t('section.craftMetrics')}
-                            </SectionLabel>
-                            <div className="flex flex-col gap-4">
-                                <LevelGroup title={t('level.chapter')}>
-                                    <CraftMetricRow
-                                        label={t('metric.tensionDynamics')}
-                                        score={EMPTY_SCORE}
-                                    />
-                                    <CraftMetricRow
-                                        label={t('metric.emotionalArc')}
-                                        score={EMPTY_SCORE}
-                                    />
-                                    <CraftMetricRow
-                                        label={t('metric.pacing')}
-                                        score={EMPTY_SCORE}
-                                    />
-                                </LevelGroup>
-                                <LevelGroup title={t('level.prose')}>
-                                    <CraftMetricRow
-                                        label={t('metric.sensoryDetail')}
-                                        score={EMPTY_SCORE}
-                                    />
-                                    <CraftMetricRow
-                                        label={t('metric.density')}
-                                        score={EMPTY_SCORE}
-                                    />
-                                </LevelGroup>
-                            </div>
+                            {characters.map((character) => (
+                                <CharacterRow
+                                    key={character.id}
+                                    character={character}
+                                    roleText={t(`role.${character.pivot.role}`)}
+                                />
+                            ))}
                         </div>
-                    </div>
-                </ProFeatureLock>
-            )}
+                    ) : (
+                        <p className="text-[11px] leading-[1.4] text-ink-muted italic">
+                            {t('characters.none')}
+                        </p>
+                    )}
+                </div>
+            </div>
         </aside>
     );
 }

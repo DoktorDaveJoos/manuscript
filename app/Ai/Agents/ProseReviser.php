@@ -2,18 +2,14 @@
 
 namespace App\Ai\Agents;
 
-use App\Ai\Concerns\UsesTaskCategoryModel;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
-use App\Enums\AiTaskCategory;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Services\StoryBibleService;
-use Illuminate\Support\Str;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
-use Laravel\Ai\Attributes\UseSmartestModel;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Promptable;
@@ -22,15 +18,9 @@ use Stringable;
 #[MaxTokens(16384)]
 #[Temperature(0.4)]
 #[Timeout(180)]
-#[UseSmartestModel]
 class ProseReviser implements Agent, BelongsToBook, HasMiddleware
 {
-    use Promptable, UsesTaskCategoryModel;
-
-    public static function taskCategory(): AiTaskCategory
-    {
-        return AiTaskCategory::Writing;
-    }
+    use Promptable;
 
     public function __construct(
         protected Book $book,
@@ -132,9 +122,8 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
         $grouped = $this->chapter->wikiEntries->groupBy(fn ($entry) => $entry->kind->value);
 
         $lines = ["\n### World Entities in This Chapter"];
-        foreach ($grouped as $kind => $entries) {
-            $label = Str::plural(Str::ucfirst($kind));
-            $lines[] = "\n**{$label}:**";
+        foreach ($grouped as $entries) {
+            $lines[] = "\n**{$entries->first()->kind->pluralLabel()}:**";
             foreach ($entries as $entry) {
                 $line = "- {$entry->name}";
                 $desc = $entry->fullDescription();

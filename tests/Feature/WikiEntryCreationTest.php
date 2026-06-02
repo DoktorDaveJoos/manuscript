@@ -116,7 +116,7 @@ test('can delete a character', function () {
     $this->delete(route('characters.destroy', [$book, $character]))
         ->assertRedirect();
 
-    $this->assertDatabaseMissing('characters', ['id' => $character->id]);
+    $this->assertSoftDeleted('characters', ['id' => $character->id]);
 });
 
 test('can delete a wiki entry', function () {
@@ -126,7 +126,7 @@ test('can delete a wiki entry', function () {
     $this->delete(route('wikiEntries.destroy', [$book, $entry]))
         ->assertRedirect();
 
-    $this->assertDatabaseMissing('wiki_entries', ['id' => $entry->id]);
+    $this->assertSoftDeleted('wiki_entries', ['id' => $entry->id]);
 });
 
 test('new entries have is_ai_extracted set to false', function () {

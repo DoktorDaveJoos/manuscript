@@ -22,7 +22,7 @@ class StorePlotPointRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'type' => ['required', Rule::enum(PlotPointType::class)],
+            'type' => ['nullable', Rule::enum(PlotPointType::class)],
             'status' => ['sometimes', Rule::enum(PlotPointStatus::class)],
             'act_id' => ['nullable', 'exists:acts,id'],
         ];

@@ -27,6 +27,11 @@ class AiPreparationRetryService
             return ['dispatched' => 0, 'cleared' => []];
         }
 
+        // A null steps value (legacy preparations) means "all steps were run".
+        $steps = $preparation->steps;
+        $runAnalysis = $steps === null || in_array('chapter_analysis', $steps, true);
+        $runEntities = $steps === null || in_array('wiki', $steps, true);
+
         $chapterPhases = ['chunking', 'chapter_analysis', 'entity_extraction', 'manuscript_analysis'];
 
         $chapterJobsByChapter = [];
@@ -67,7 +72,7 @@ class AiPreparationRetryService
         }
 
         foreach (array_keys($chapterJobsByChapter) as $chapterId) {
-            $jobs[] = new AnalyzeChapter($book, $preparation, (int) $chapterId);
+            $jobs[] = new AnalyzeChapter($book, $preparation, (int) $chapterId, $runAnalysis, $runEntities);
         }
 
         foreach (array_keys($singletons) as $phase) {
