@@ -51,6 +51,30 @@ test('retry endpoint dispatches targeted jobs and clears matching errors', funct
         ->and($preparation->current_phase)->toBe('retry');
 });
 
+test('retry respects stored steps when rebuilding chapter jobs', function () {
+    Bus::fake();
+    [$book, $chapters, $preparation] = createBookWithChapters(1);
+
+    $preparation->update([
+        'status' => 'completed',
+        'steps' => ['chapter_analysis'],
+        'phase_errors' => [
+            ['phase' => 'chapter_analysis', 'chapter' => $chapters[0]->title, 'chapter_id' => $chapters[0]->id, 'error' => 'timeout'],
+        ],
+    ]);
+
+    $this->postJson(route('books.ai.prepare.retry', $book))->assertOk();
+
+    Bus::assertBatched(function ($batch) {
+        $analyze = collect($batch->jobs)->first(fn ($j) => $j instanceof AnalyzeChapter);
+        expect($analyze)->not->toBeNull()
+            ->and($analyze->runAnalysis)->toBeTrue()
+            ->and($analyze->runEntities)->toBeFalse();
+
+        return true;
+    });
+});
+
 test('retry deduplicates per chapter when multiple phases failed for the same chapter', function () {
     Bus::fake();
     [$book, $chapters, $preparation] = createBookWithChapters(2);

@@ -26,6 +26,55 @@ it('starts ai preparation and dispatches job', function () {
     expect(AiPreparation::where('book_id', $book->id)->where('status', 'pending')->exists())->toBeTrue();
 });
 
+it('stores selected steps and total phases on the preparation', function () {
+    Bus::fake();
+    License::factory()->create();
+    [$book] = createBookWithChapters(2);
+    AppSetting::set('show_ai_features', true);
+
+    $this->postJson(route('books.ai.prepare', $book), [
+        'steps' => ['semantic_index', 'chapter_analysis'],
+    ])->assertOk()
+        ->assertJsonPath('steps', ['semantic_index', 'chapter_analysis'])
+        ->assertJsonPath('total_phases', 3);
+});
+
+it('defaults to all steps when none are provided', function () {
+    Bus::fake();
+    License::factory()->create();
+    [$book] = createBookWithChapters(2);
+    AppSetting::set('show_ai_features', true);
+
+    $this->postJson(route('books.ai.prepare', $book))
+        ->assertOk()
+        ->assertJsonPath('steps', [
+            'semantic_index', 'writing_style', 'chapter_analysis', 'wiki', 'story_bible', 'health',
+        ])
+        ->assertJsonPath('total_phases', 7);
+});
+
+it('rejects story bible without chapter analysis', function () {
+    License::factory()->create();
+    [$book] = createBookWithChapters(2);
+    AppSetting::set('show_ai_features', true);
+
+    $this->postJson(route('books.ai.prepare', $book), [
+        'steps' => ['story_bible'],
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('steps');
+});
+
+it('rejects unknown steps', function () {
+    License::factory()->create();
+    [$book] = createBookWithChapters(2);
+    AppSetting::set('show_ai_features', true);
+
+    $this->postJson(route('books.ai.prepare', $book), [
+        'steps' => ['nonsense'],
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('steps.0');
+});
+
 it('returns 422 when no ai provider is configured', function () {
     License::factory()->create();
     $book = Book::factory()->create();

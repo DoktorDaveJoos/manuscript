@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
+import { usePrepareStepsDialog } from '@/components/dashboard/AiPrepareStepsDialog';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -40,6 +41,10 @@ export default function AiDashboardEmptyState({
     const { configured } = useAiFeatures();
     const { starting, error, status, isRunning, handleStart } =
         useAiPreparation(bookId, initialStatus);
+    const { openStepsDialog, stepsDialog } = usePrepareStepsDialog(
+        handleStart,
+        starting,
+    );
 
     return (
         <div className="flex flex-1 flex-col items-center gap-12 py-16">
@@ -84,7 +89,7 @@ export default function AiDashboardEmptyState({
                             {t('commandCenter.preparation.step', {
                                 current:
                                     (status?.completed_phases?.length ?? 0) + 1,
-                                total: TOTAL_PHASES,
+                                total: status?.total_phases ?? TOTAL_PHASES,
                             })}
                             {status?.current_phase_total
                                 ? ` · ${status.current_phase_progress}/${status.current_phase_total}`
@@ -94,13 +99,14 @@ export default function AiDashboardEmptyState({
                 ) : (
                     <Button
                         variant="primary"
-                        onClick={handleStart}
+                        onClick={openStepsDialog}
                         disabled={starting}
                         className="mt-2 text-[13px]"
                     >
                         {t('emptyState.cta')}
                     </Button>
                 )}
+                {stepsDialog}
                 {error && (
                     <Alert variant="destructive" className="max-w-md">
                         <AlertDescription>{error}</AlertDescription>

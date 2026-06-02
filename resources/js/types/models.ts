@@ -562,12 +562,22 @@ export type PhaseError = {
     error: string;
 };
 
+export type PreparationStepKey =
+    | 'semantic_index'
+    | 'writing_style'
+    | 'chapter_analysis'
+    | 'wiki'
+    | 'story_bible'
+    | 'health';
+
 export type AiPreparationStatus = {
     id: number;
     status: 'pending' | 'running' | 'completed' | 'failed';
     current_phase: PreparationPhase | null;
     current_phase_total: number;
     current_phase_progress: number;
+    steps: PreparationStepKey[] | null;
+    total_phases: number | null;
     total_chapters: number;
     processed_chapters: number;
     embedded_chunks: number;

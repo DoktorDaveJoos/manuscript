@@ -23,9 +23,14 @@ class CompletePreparation implements ShouldQueue
 
     public int $timeout = 30;
 
+    /**
+     * @param  list<string>  $finalPhases  Phases to mark complete as the pipeline closes out.
+     */
     public function __construct(
         private Book $book,
         private AiPreparation $preparation,
+        private array $finalPhases = ['health_analysis'],
+        public readonly bool $runHealthSnapshot = true,
     ) {}
 
     public function handle(): void
@@ -34,18 +39,20 @@ class CompletePreparation implements ShouldQueue
             return;
         }
 
-        $chapters = $this->book->chapters()
-            ->select([
-                'id', 'book_id', 'reader_order', 'hook_score', 'hook_type',
-                'scene_purpose', 'value_shift', 'pacing_feel', 'tension_score',
-                'micro_tension_score', 'exit_hook_score', 'entry_hook_score',
-                'emotional_shift_magnitude', 'sensory_grounding', 'information_delivery',
-            ])
-            ->get();
+        if ($this->runHealthSnapshot) {
+            $chapters = $this->book->chapters()
+                ->select([
+                    'id', 'book_id', 'reader_order', 'hook_score', 'hook_type',
+                    'scene_purpose', 'value_shift', 'pacing_feel', 'tension_score',
+                    'micro_tension_score', 'exit_hook_score', 'entry_hook_score',
+                    'emotional_shift_magnitude', 'sensory_grounding', 'information_delivery',
+                ])
+                ->get();
 
-        $this->upsertHealthSnapshot($chapters);
+            $this->upsertHealthSnapshot($chapters);
+        }
 
-        $this->preparation->markPhasesCompleted(['health_analysis']);
+        $this->preparation->markPhasesCompleted($this->finalPhases);
         $this->preparation->refresh();
 
         $this->preparation->update([

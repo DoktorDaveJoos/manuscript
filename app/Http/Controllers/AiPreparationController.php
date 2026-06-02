@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PreparationStep;
+use App\Http\Requests\StartAiPreparationRequest;
 use App\Jobs\PrepareBookForAi;
 use App\Models\AiSetting;
 use App\Models\AppSetting;
@@ -12,7 +14,7 @@ use Illuminate\Support\Facades\Bus;
 
 class AiPreparationController extends Controller
 {
-    public function start(Book $book): JsonResponse
+    public function start(StartAiPreparationRequest $request, Book $book): JsonResponse
     {
         $setting = AiSetting::activeProvider();
 
@@ -34,8 +36,12 @@ class AiPreparationController extends Controller
             $prep->update(['status' => 'failed', 'error_message' => __('Superseded by new preparation')]);
         }
 
+        $steps = $request->steps();
+
         $preparation = $book->aiPreparations()->create([
             'status' => 'pending',
+            'steps' => $steps,
+            'total_phases' => PreparationStep::totalPhasesFor($steps),
         ]);
 
         PrepareBookForAi::dispatch($book, $preparation);

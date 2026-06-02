@@ -69,7 +69,7 @@ export function useAiPreparation(
     }, [bookId, isRunning]);
 
     const dispatch = useCallback(
-        async (url: string, fallbackMessage: string) => {
+        async (url: string, fallbackMessage: string, body?: unknown) => {
             setStarting(true);
             setError(null);
 
@@ -77,6 +77,7 @@ export function useAiPreparation(
                 const res = await fetch(url, {
                     method: 'POST',
                     headers: jsonFetchHeaders(),
+                    body: body !== undefined ? JSON.stringify(body) : undefined,
                 });
 
                 if (!res.ok) {
@@ -96,7 +97,10 @@ export function useAiPreparation(
     );
 
     const handleStart = useCallback(
-        () => dispatch(startPreparation.url(bookId), 'Failed to start'),
+        (steps: string[]) =>
+            dispatch(startPreparation.url(bookId), 'Failed to start', {
+                steps,
+            }),
         [bookId, dispatch],
     );
 

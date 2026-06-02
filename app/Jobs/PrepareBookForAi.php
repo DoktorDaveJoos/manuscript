@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\PreparationStep;
 use App\Jobs\Preparation\AnalyzeChapter;
 use App\Jobs\Preparation\BuildStoryBible;
 use App\Jobs\Preparation\ChunkAndEmbedChapter;
@@ -59,6 +60,8 @@ class PrepareBookForAi implements ShouldQueue
             }
         }
 
+        $steps = $this->preparation->steps ?: PreparationStep::values();
+
         $this->preparation->update([
             'total_chapters' => $chapters->count(),
             'status' => 'running',
@@ -66,13 +69,7 @@ class PrepareBookForAi implements ShouldQueue
 
         $dirtyChapters = $chapters->filter(fn ($ch) => $ch->needsAiPreparation());
 
-        if ($dirtyChapters->isEmpty()) {
-            $this->completeImmediately();
-
-            return;
-        }
-
-        $jobs = $this->buildJobList($chapters, $dirtyChapters);
+        $jobs = $this->buildJobList($steps, $dirtyChapters);
 
         $batch = Bus::batch($jobs)
             ->allowFailures()
@@ -81,87 +78,118 @@ class PrepareBookForAi implements ShouldQueue
         $this->preparation->update(['batch_id' => $batch->id]);
     }
 
-    private function completeImmediately(): void
-    {
-        $this->preparation->update([
-            'status' => 'completed',
-            'completed_phases' => [
-                'chunking', 'embedding', 'writing_style',
-                'chapter_analysis', 'entity_extraction',
-                'story_bible', 'health_analysis',
-            ],
-        ]);
-    }
-
     /**
-     * Build the flat list of jobs for the batch pipeline.
+     * Build the flat list of jobs for the batch pipeline, including only the
+     * selected steps. Each stage announces itself with a PhaseTransition that
+     * also marks the prior stage's phases complete.
      *
-     * @param  Collection<int, Chapter>  $chapters
+     * @param  list<string>  $steps
      * @param  Collection<int, Chapter>  $dirtyChapters
      * @return list<object>
      */
-    private function buildJobList(Collection $chapters, Collection $dirtyChapters): array
+    private function buildJobList(array $steps, Collection $dirtyChapters): array
     {
-        $jobs = [];
-
-        // Phase 1+2: Chunk and embed dirty chapters
-        $jobs[] = new PhaseTransition(
-            preparation: $this->preparation,
-            startPhase: 'chunking',
-            phaseTotal: $dirtyChapters->count(),
-        );
-
-        foreach ($dirtyChapters as $chapter) {
-            $jobs[] = new ChunkAndEmbedChapter($this->book, $this->preparation, $chapter->id);
-        }
-
-        // Phase 3: Writing style extraction (always runs)
-        $jobs[] = new PhaseTransition(
-            preparation: $this->preparation,
-            startPhase: 'writing_style',
-            phaseTotal: 1,
-            completedPhases: ['chunking', 'embedding'],
-        );
-
-        $jobs[] = new ExtractWritingStyle($this->book, $this->preparation);
-
-        // Phase 4+5: Chapter analysis + entity extraction (dirty chapters only)
+        $has = fn (string $step) => in_array($step, $steps, true);
         $dirtyWithContent = $dirtyChapters->filter(fn ($ch) => $ch->currentVersion?->content);
 
-        $jobs[] = new PhaseTransition(
-            preparation: $this->preparation,
-            startPhase: 'chapter_analysis',
-            phaseTotal: $dirtyWithContent->count() + 1,
-            completedPhases: ['writing_style'],
-        );
+        /** @var list<array{phases: list<string>, current: string, total: int, jobs: list<object>}> $stages */
+        $stages = [];
 
-        foreach ($dirtyChapters as $chapter) {
-            if ($chapter->currentVersion?->content) {
-                $jobs[] = new AnalyzeChapter($this->book, $this->preparation, $chapter->id);
-            }
+        // Semantic index: chunk + embed dirty chapters.
+        if ($has('semantic_index')) {
+            $stages[] = [
+                'phases' => ['chunking', 'embedding'],
+                'current' => 'chunking',
+                'total' => $dirtyChapters->count(),
+                'jobs' => $dirtyChapters
+                    ->map(fn ($ch) => new ChunkAndEmbedChapter($this->book, $this->preparation, $ch->id))
+                    ->values()
+                    ->all(),
+            ];
         }
 
-        $jobs[] = new ConsolidateEntities($this->book, $this->preparation);
+        // Writing style extraction.
+        if ($has('writing_style')) {
+            $stages[] = [
+                'phases' => ['writing_style'],
+                'current' => 'writing_style',
+                'total' => 1,
+                'jobs' => [new ExtractWritingStyle($this->book, $this->preparation)],
+            ];
+        }
 
-        // Phase 6: Story bible (always runs)
-        $jobs[] = new PhaseTransition(
-            preparation: $this->preparation,
-            startPhase: 'story_bible',
-            phaseTotal: 1,
-            completedPhases: ['chapter_analysis', 'entity_extraction'],
+        // Chapter analysis and/or wiki extraction (both run inside AnalyzeChapter).
+        $runAnalysis = $has('chapter_analysis');
+        $runEntities = $has('wiki');
+
+        if ($runAnalysis || $runEntities) {
+            $jobs = $dirtyWithContent
+                ->map(fn ($ch) => new AnalyzeChapter($this->book, $this->preparation, $ch->id, $runAnalysis, $runEntities))
+                ->values()
+                ->all();
+
+            $phases = [];
+            if ($runAnalysis) {
+                $phases[] = 'chapter_analysis';
+            }
+            if ($runEntities) {
+                $phases[] = 'entity_extraction';
+                $jobs[] = new ConsolidateEntities($this->book, $this->preparation);
+            }
+
+            $stages[] = [
+                'phases' => $phases,
+                'current' => $runAnalysis ? 'chapter_analysis' : 'entity_extraction',
+                'total' => $dirtyWithContent->count() + ($runEntities ? 1 : 0),
+                'jobs' => $jobs,
+            ];
+        }
+
+        // Story bible.
+        if ($has('story_bible')) {
+            $stages[] = [
+                'phases' => ['story_bible'],
+                'current' => 'story_bible',
+                'total' => 1,
+                'jobs' => [new BuildStoryBible($this->book, $this->preparation)],
+            ];
+        }
+
+        // Health analysis — the snapshot itself is computed by CompletePreparation.
+        $healthSelected = $has('health');
+        if ($healthSelected) {
+            $stages[] = [
+                'phases' => ['health_analysis'],
+                'current' => 'health_analysis',
+                'total' => 1,
+                'jobs' => [],
+            ];
+        }
+
+        $jobs = [];
+        $completedSoFar = [];
+
+        foreach ($stages as $stage) {
+            $jobs[] = new PhaseTransition(
+                preparation: $this->preparation,
+                startPhase: $stage['current'],
+                phaseTotal: $stage['total'],
+                completedPhases: $completedSoFar,
+            );
+
+            array_push($jobs, ...$stage['jobs']);
+
+            $completedSoFar = $stage['phases'];
+        }
+
+        // Terminal job: mark the final stage's phases complete, optionally compute
+        // the health snapshot, and flip the preparation to completed.
+        $jobs[] = new CompletePreparation(
+            $this->book,
+            $this->preparation,
+            finalPhases: $completedSoFar,
+            runHealthSnapshot: $healthSelected,
         );
-
-        $jobs[] = new BuildStoryBible($this->book, $this->preparation);
-
-        // Phase 7: Health analysis + completion (always runs)
-        $jobs[] = new PhaseTransition(
-            preparation: $this->preparation,
-            startPhase: 'health_analysis',
-            phaseTotal: 1,
-            completedPhases: ['story_bible'],
-        );
-
-        $jobs[] = new CompletePreparation($this->book, $this->preparation);
 
         return $jobs;
     }
