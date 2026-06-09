@@ -1,0 +1,18 @@
+--- a/src/Drivers/Electron/ElectronServiceProvider.php
++++ b/src/Drivers/Electron/ElectronServiceProvider.php
+@@ -20,10 +20,13 @@
+ {
+     public static function electronPath(string $path = '')
+     {
+-        // Will use the published electron project, or fallback to the vendor default
++        // Will use the published electron project, or fallback to the vendor default.
++        // Detect the published project by its root package.json — checking
++        // "{$publishedProjectPath}/package.json" breaks for any sub-path (e.g.
++        // node_modules/.../Info.plist), forcing an incorrect vendor fallback.
+         $publishedProjectPath = base_path("nativephp/electron/{$path}");
+
+-        return file_exists("{$publishedProjectPath}/package.json")
++        return file_exists(base_path('nativephp/electron/package.json'))
+             ? $publishedProjectPath
+             : Composer::desktopPackagePath("resources/electron/{$path}");
+     }
