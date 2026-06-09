@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.5.1 (2026-06-09)
+
+### Fixes
+
+- **Startup** — recover from the Electron control-API port mismatch that left the app stuck never opening: macOS single-instance lock, API bind retry, and a visible startup-error dialog (cb108d2)
+- **Boot migrations** — create the `migrations` table idempotently so a Windows SQLite/WAL probe under-reporting an existing table no longer aborts the launch-time migration (cb108d2)
+- **Launch** — `native:run` no longer crashes patching `Info.plist` after a `composer install`; `electronPath()` now resolves sub-paths to the published electron project instead of the wiped vendor copy (bb815e3)
+- **Launch** — skip `config:cache` / `event:cache` when the app bundle is read-only (macOS App Translocation), instead of crashing the per-launch optimize (b79a705)
+- **Crash reporting** — stop reporting expected framework noise (form-validation 422s and stale-secret 403s on the internal NativePHP bridge) as crashes (9a9133f)
+- **CI** — point the publish artifact guards at `nativephp/electron/dist` (c96bfc6)
+
 ## v0.5.0 (2026-06-02)
 
 ### Features

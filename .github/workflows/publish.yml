@@ -158,7 +158,10 @@ jobs:
       - name: Verify DMG artifacts were produced
         shell: bash
         run: |
-          DIST=vendor/nativephp/desktop/resources/electron/dist
+          # NativePHP stages the electron app at <repo>/nativephp/electron at
+          # build time; older desktop versions emitted to the vendor path.
+          DIST=nativephp/electron/dist
+          [ -d "$DIST" ] || DIST=vendor/nativephp/desktop/resources/electron/dist
           if [ ! -d "$DIST" ] || [ -z "$(find $DIST -maxdepth 2 -type f -name '*.dmg' 2>/dev/null)" ]; then
             echo "::error::No .dmg artifacts in $DIST — native:publish silently failed."
             ls -la "$DIST" 2>/dev/null || echo "(dist/ does not exist)"
@@ -284,7 +287,10 @@ jobs:
       - name: Verify installer artifacts were produced
         shell: bash
         run: |
-          DIST=vendor/nativephp/desktop/resources/electron/dist
+          # NativePHP stages the electron app at <repo>/nativephp/electron at
+          # build time; older desktop versions emitted to the vendor path.
+          DIST=nativephp/electron/dist
+          [ -d "$DIST" ] || DIST=vendor/nativephp/desktop/resources/electron/dist
           if [ ! -d "$DIST" ] || [ -z "$(find $DIST -maxdepth 2 -type f \( -name '*.exe' -o -name '*.msi' \) 2>/dev/null)" ]; then
             echo "::error::No .exe/.msi artifacts in $DIST — native:publish silently failed."
             ls -la "$DIST" 2>/dev/null || echo "(dist/ does not exist)"
