@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Console\Commands\OptimizeCommand;
+use App\Database\ResilientMigrationRepository;
 use App\Database\SqliteVecConnector;
 use App\Listeners\RecordAiTokenUsage;
 use App\Models\Act;
@@ -62,6 +63,20 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(BackupEncryptionService::class),
                 $databasePath,
             );
+        });
+
+        // Harden the migration repository so creating the `migrations` table
+        // is idempotent. NativePHP runs `migrate --force` on every launch; on
+        // Windows SQLite/WAL the table-existence probe can under-report an
+        // existing table, making migrate:install throw "table already exists"
+        // and abort the whole migration (Sentry 123909138). `extend` replaces
+        // the binding even though MigrationServiceProvider is deferred — the
+        // extender is applied after the deferred provider builds the instance.
+        $this->app->extend('migration.repository', function ($repository, $app) {
+            $migrations = $app['config']['database.migrations'];
+            $table = is_array($migrations) ? ($migrations['table'] ?? 'migrations') : $migrations;
+
+            return new ResilientMigrationRepository($app['db'], $table);
         });
 
         // After all service providers boot (including NativePHP's database

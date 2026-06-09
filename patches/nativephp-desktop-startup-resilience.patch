@@ -1,0 +1,109 @@
+--- a/resources/electron/electron-plugin/src/index.ts
++++ b/resources/electron/electron-plugin/src/index.ts
+@@ -1,5 +1,5 @@
+ import CrossProcessExports from "electron";
+-import { app, session, powerMonitor } from "electron";
++import { app, session, powerMonitor, dialog } from "electron";
+ import { ChildProcessWithoutNullStreams } from "child_process";
+ import { initialize } from "@electron/remote/main/index.js";
+ import state from "./server/state.js";
+@@ -34,6 +34,34 @@
+     cert: string,
+     appPath: string
+   ) {
++    // Enforce a single running instance on ALL platforms. Without this, macOS
++    // (which had no single-instance lock here, and keeps the app resident after
++    // its window closes) lets a second launch start while the first still holds
++    // the Electron API port. The second instance then boots its PHP against a
++    // port with no healthy API listener, so its window never opens. A second
++    // launch should focus the instance that is already running instead.
++    if (!app.requestSingleInstanceLock()) {
++      app.quit();
++      return;
++    }
++
++    app.on("second-instance", () => {
++      const existing = Object.values(state.windows).find(
++        (window) => !window.isDestroyed()
++      );
++
++      if (existing) {
++        if (existing.isMinimized()) {
++          existing.restore();
++        }
++        existing.focus();
++      } else {
++        // Resident app with no open window (e.g. closed on macOS) — ask
++        // Laravel to open one, mirroring the "activate" handler.
++        notifyLaravel("booted");
++      }
++    });
++
+     initialize();
+ 
+     state.icon = icon;
+@@ -96,6 +124,32 @@
+   }
+ 
+   private async bootstrapApp(app: Electron.CrossProcessExports.App) {
++    try {
++      await this.runBootstrap(app);
++    } catch (error) {
++      this.handleStartupFailure(error);
++    }
++  }
++
++  private handleStartupFailure(error: unknown) {
++    console.error("NativePHP failed to start:", error);
++
++    try {
++      dialog.showErrorBox(
++        "Manuscript couldn't start",
++        "Manuscript couldn't start its background services.\n\n" +
++          "Please quit Manuscript completely (right-click the dock icon and " +
++          "choose Quit, or press Cmd+Q) and open it again.\n\n" +
++          "If it keeps happening, restart your computer."
++      );
++    } catch {
++      // showErrorBox can itself fail very early in startup; quitting is the priority.
++    }
++
++    app.quit();
++  }
++
++  private async runBootstrap(app: Electron.CrossProcessExports.App) {
+     await app.whenReady();
+ 
+     const config = await this.loadConfig();
+--- a/resources/electron/electron-plugin/src/server/api.ts
++++ b/resources/electron/electron-plugin/src/server/api.ts
+@@ -32,7 +32,7 @@
+   port: number;
+ }
+ 
+-async function startAPIServer(randomSecret: string): Promise<APIProcess> {
++async function startAPIServer(randomSecret: string, attempt = 0): Promise<APIProcess> {
+   const port = await getPort({
+     port: portNumbers(4000, 5000),
+   });
+@@ -73,6 +73,20 @@
+         port,
+       });
+     });
++
++    // get-port only reserves the port momentarily; another process (such as a
++    // second app instance) can grab it before listen() binds. Without this
++    // handler the EADDRINUSE error is swallowed and PHP is handed a dead API
++    // port. Retry on a fresh port instead, and only resolve once a listener is
++    // actually live.
++    server.on("error", (error: NodeJS.ErrnoException) => {
++      if (error.code === "EADDRINUSE" && attempt < 20) {
++        server.close();
++        resolve(startAPIServer(randomSecret, attempt + 1));
++      } else {
++        reject(error);
++      }
++    });
+   });
+ }
+ 
