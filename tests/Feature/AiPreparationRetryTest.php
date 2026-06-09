@@ -2,6 +2,7 @@
 
 use App\Jobs\Preparation\AnalyzeChapter;
 use App\Jobs\Preparation\BuildStoryBible;
+use App\Jobs\Preparation\CompletePreparation;
 use App\Jobs\Preparation\ConsolidateEntities;
 use App\Jobs\Preparation\ExtractWritingStyle;
 use App\Models\AppSetting;
@@ -114,6 +115,50 @@ test('retry groups entity_extraction with null chapter into ConsolidateEntities'
     Bus::assertBatched(function ($batch) {
         $jobs = collect($batch->jobs);
         expect($jobs->contains(fn ($j) => $j instanceof ConsolidateEntities))->toBeTrue();
+
+        return true;
+    });
+});
+
+test('retry batch ends with CompletePreparation so the status leaves running', function () {
+    Bus::fake();
+    [$book, $chapters, $preparation] = createBookWithChapters(1);
+
+    $preparation->update([
+        'status' => 'completed',
+        'phase_errors' => [
+            ['phase' => 'chapter_analysis', 'chapter' => $chapters[0]->title, 'chapter_id' => $chapters[0]->id, 'error' => 'timeout'],
+        ],
+    ]);
+
+    $this->postJson(route('books.ai.prepare.retry', $book))->assertOk();
+
+    Bus::assertBatched(function ($batch) {
+        $last = collect($batch->jobs)->last();
+        expect($last)->toBeInstanceOf(CompletePreparation::class);
+
+        return true;
+    });
+});
+
+test('retry skips the health snapshot when the original steps excluded health', function () {
+    Bus::fake();
+    [$book, $chapters, $preparation] = createBookWithChapters(1);
+
+    $preparation->update([
+        'status' => 'completed',
+        'steps' => ['chapter_analysis'],
+        'phase_errors' => [
+            ['phase' => 'chapter_analysis', 'chapter' => $chapters[0]->title, 'chapter_id' => $chapters[0]->id, 'error' => 'timeout'],
+        ],
+    ]);
+
+    $this->postJson(route('books.ai.prepare.retry', $book))->assertOk();
+
+    Bus::assertBatched(function ($batch) {
+        $complete = collect($batch->jobs)->first(fn ($j) => $j instanceof CompletePreparation);
+        expect($complete)->not->toBeNull()
+            ->and($complete->runHealthSnapshot)->toBeFalse();
 
         return true;
     });

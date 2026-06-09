@@ -5,6 +5,7 @@ use App\Ai\Agents\EntityExtractor;
 use App\Ai\Agents\ManuscriptAnalyzer;
 use App\Enums\AnalysisType;
 use App\Jobs\Preparation\AnalyzeChapter;
+use App\Jobs\Preparation\ChunkAndEmbedChapter;
 use App\Models\AiPreparation;
 use App\Models\Book;
 use App\Models\Chapter;
@@ -338,6 +339,43 @@ test('analyze chapter logs manuscript analysis errors without throwing', functio
     $preparation->refresh();
     expect($preparation->phase_errors)->toBeArray()
         ->and($preparation->phase_errors[0]['phase'])->toBe('manuscript_analysis');
+});
+
+test('analyze chapter marks the preparation failed when the circuit breaker trips', function () {
+    [$book, $chapters, $preparation] = createBookForAnalysis(1);
+
+    // Two prior consecutive failures — this final failure trips the breaker.
+    $preparation->update(['consecutive_failures' => AiPreparation::CIRCUIT_BREAKER_THRESHOLD - 1]);
+
+    $job = new AnalyzeChapter($book, $preparation, $chapters[0]->id);
+    $job->failed(new RuntimeException('AI provider exploded'));
+
+    $preparation->refresh();
+    expect($preparation->status)->toBe('failed')
+        ->and($preparation->error_message)->toContain('consecutive failures');
+});
+
+test('analyze chapter failure below the breaker threshold keeps the preparation running', function () {
+    [$book, $chapters, $preparation] = createBookForAnalysis(1);
+
+    $job = new AnalyzeChapter($book, $preparation, $chapters[0]->id);
+    $job->failed(new RuntimeException('one-off failure'));
+
+    $preparation->refresh();
+    expect($preparation->status)->toBe('running');
+});
+
+test('chunk and embed chapter marks the preparation failed when the circuit breaker trips', function () {
+    [$book, $chapters, $preparation] = createBookForAnalysis(1);
+
+    $preparation->update(['consecutive_failures' => AiPreparation::CIRCUIT_BREAKER_THRESHOLD - 1]);
+
+    $job = new ChunkAndEmbedChapter($book, $preparation, $chapters[0]->id);
+    $job->failed(new RuntimeException('embedding provider exploded'));
+
+    $preparation->refresh();
+    expect($preparation->status)->toBe('failed')
+        ->and($preparation->error_message)->toContain('consecutive failures');
 });
 
 test('analyze chapter rethrows transient errors for retry', function () {

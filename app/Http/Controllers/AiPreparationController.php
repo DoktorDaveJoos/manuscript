@@ -52,7 +52,7 @@ class AiPreparationController extends Controller
     public function status(Book $book): JsonResponse
     {
         $preparation = $book->aiPreparations()
-            ->latest()
+            ->latest('id')
             ->first();
 
         if (! $preparation) {
@@ -72,7 +72,7 @@ class AiPreparationController extends Controller
             ], 422);
         }
 
-        $preparation = $book->aiPreparations()->latest()->first();
+        $preparation = $book->aiPreparations()->latest('id')->first();
 
         if (! $preparation) {
             return response()->json([
