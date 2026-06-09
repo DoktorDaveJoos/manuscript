@@ -19,9 +19,8 @@ it('rejects when a beat references a book character but character_ids is empty',
     ]);
     Character::factory()->for($book, 'book')->create(['name' => 'Maja']);
 
-    $tool = new ProposeChapterPlan;
+    $tool = new ProposeChapterPlan($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'Slice 1',
         'chapters' => [
             ['title' => 'Opening', 'storyline_id' => $storyline->id, 'beat_ids' => [$beat->id]],
@@ -45,9 +44,8 @@ it('rejects when a beat references a wiki entry but wiki_entry_ids is empty', fu
     ]);
     WikiEntry::factory()->for($book, 'book')->create(['name' => 'Voyager']);
 
-    $tool = new ProposeChapterPlan;
+    $tool = new ProposeChapterPlan($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'Slice 1',
         'chapters' => [
             ['title' => 'Opening', 'storyline_id' => $storyline->id, 'beat_ids' => [$beat->id]],
@@ -71,9 +69,8 @@ it('accepts when no entities are referenced (empty lists are valid)', function (
     Character::factory()->for($book, 'book')->create(['name' => 'Maja']);
     WikiEntry::factory()->for($book, 'book')->create(['name' => 'Voyager']);
 
-    $tool = new ProposeChapterPlan;
+    $tool = new ProposeChapterPlan($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'Slice 1',
         'chapters' => [
             ['title' => 'Opening', 'storyline_id' => $storyline->id, 'beat_ids' => [$beat->id]],
@@ -97,9 +94,8 @@ it('accepts when entities are referenced and lists are populated (specific picks
     $john = Character::factory()->for($book, 'book')->create(['name' => 'John']); // not in beat
     $voyager = WikiEntry::factory()->for($book, 'book')->create(['name' => 'Voyager']);
 
-    $tool = new ProposeChapterPlan;
+    $tool = new ProposeChapterPlan($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'Slice 1',
         'chapters' => [[
             'title' => 'Opening',
@@ -131,9 +127,8 @@ it('reports rejections for multiple chapters in one proposal', function () {
     Character::factory()->for($book, 'book')->create(['name' => 'John']);
     WikiEntry::factory()->for($book, 'book')->create(['name' => 'Voyager']);
 
-    $tool = new ProposeChapterPlan;
+    $tool = new ProposeChapterPlan($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'Slice 1',
         'chapters' => [
             ['title' => 'A', 'storyline_id' => $storyline->id, 'beat_ids' => [$beat1->id]],

@@ -2,7 +2,6 @@
 
 namespace App\Ai\Tools\Plot;
 
-use App\Ai\Tools\Plot\Concerns\CoercesBookId;
 use App\Ai\Tools\Plot\Concerns\DecodesJsonPayload;
 use App\Ai\Tools\Plot\Concerns\ValidatesChapterEntityLinks;
 use App\Enums\PlotCoachProposalKind;
@@ -25,15 +24,24 @@ use Stringable;
 /**
  * Staged preview of a proposed batch. Pure — never writes.
  *
- * The agent reads the returned markdown preview and pastes it (verbatim or
- * paraphrased) into chat. The user approves in conversation, then the agent
- * calls `ApplyPlotCoachBatch` with the same writes + summary.
+ * The tool output is passed through to the frontend, which renders the
+ * approval card from the machine-readable sentinel block. The user approves
+ * via the card (applied server-side) or in free text, in which case the agent
+ * calls `ApplyPlotCoachBatch` with the sentinel's `proposal_id`.
  */
 class ProposeBatch implements Tool
 {
-    use CoercesBookId, DecodesJsonPayload, ValidatesChapterEntityLinks;
+    use DecodesJsonPayload, ValidatesChapterEntityLinks;
 
-    public function __construct(public int $bookId) {}
+    /**
+     * The session is bound by the agent so proposals land on the conversation
+     * being streamed — even when it is not the book's active session. Falls
+     * back to the active session for direct construction (tests, legacy).
+     */
+    public function __construct(
+        public int $bookId,
+        private ?PlotCoachSession $session = null,
+    ) {}
 
     public function description(): Stringable|string
     {
@@ -46,7 +54,6 @@ class ProposeBatch implements Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'book_id' => $schema->integer()->required(),
             'writes' => $schema->string()->required(),
             'summary' => $schema->string()->required(),
         ];
@@ -54,10 +61,11 @@ class ProposeBatch implements Tool
 
     public function handle(Request $request): Stringable|string
     {
-        // Prefer the constructor-bound book id (the agent passes it). Fall
-        // back to the request payload only if construction skipped it —
-        // legacy callers and tests that still set `book_id` keep working.
-        $bookId = $this->coerceBookId($request['book_id'] ?? null) ?? $this->bookId;
+        // The book is bound at construction. A payload `book_id` (older
+        // conversations replaying a tool schema that still carried it) is
+        // deliberately ignored — the model must not be able to redirect a
+        // proposal to another book.
+        $bookId = $this->bookId;
         $parseError = null;
         $writes = $this->decodeJsonPayload($request['writes'] ?? null, $parseError);
         $summary = $request['summary'] ?? '';
@@ -107,56 +115,45 @@ class ProposeBatch implements Tool
             'delete' => [],
         ];
 
+        // Reject unknown types up front. Anything that slips past the preview
+        // is persisted into the proposal verbatim and would make the whole
+        // batch throw at approval time — AFTER the user said yes.
+        $unknownTypes = [];
+
         foreach ($writes as $write) {
-            if (! is_array($write) || empty($write['type']) || ! isset($grouped[$write['type']])) {
-                continue;
+            $type = is_array($write) ? ($write['type'] ?? null) : null;
+
+            if (! is_string($type) || ! isset($grouped[$type])) {
+                $unknownTypes[] = is_string($type) ? $type : '(missing type)';
             }
+        }
+
+        if ($unknownTypes !== []) {
+            return 'Batch rejected: unknown write type'.(count($unknownTypes) === 1 ? '' : 's').' '
+                .implode(', ', array_map(fn ($t) => "`{$t}`", array_unique($unknownTypes)))
+                .'. Valid types: '.implode(', ', array_keys($grouped))
+                .'. Nothing persisted. Re-call ProposeBatch with corrected types.';
+        }
+
+        foreach ($writes as $write) {
             $grouped[$write['type']][] = $write['data'] ?? [];
         }
 
         $duplicates = $this->detectDuplicates($bookId, $grouped);
 
+        // Compact on purpose: the writes live ONCE in the sentinel JSON below
+        // (the frontend renders the approval card from it, and it is what the
+        // model re-reads on replay). A per-item markdown rendering would be
+        // a second copy of the same data in every replayed turn.
         $sections = [];
         $sections[] = "## Proposed batch\n\n_{$summary}_";
 
-        $labels = [
-            'book_update' => 'Book details',
-            'session_update' => 'Session',
-            'character' => 'Characters',
-            'wiki_entry' => 'Wiki entries',
-            'storyline' => 'Storylines',
-            'act' => 'Acts',
-            'plot_point' => 'Plot points',
-            'beat' => 'Beats',
-            'chapter' => 'Chapters',
-            'delete' => 'Removals',
-        ];
-
-        foreach ($labels as $type => $label) {
-            if (empty($grouped[$type])) {
-                continue;
-            }
-
-            $sections[] = "### {$label}";
-            foreach ($grouped[$type] as $data) {
-                $prefix = match (true) {
-                    $type === 'delete' => '- _Delete_ ',
-                    isset($data['id']) => '- _Update_ ',
-                    default => '- ',
-                };
-                $line = $prefix.$this->renderLine($type, $data, $bookId);
-                if ($this->isDuplicate($type, $data, $duplicates)) {
-                    $line .= ' _(name already exists — will create a duplicate)_';
-                }
-                $sections[] = $line;
-            }
-        }
-
-        $total = array_sum(array_map('count', $grouped));
-        $sections[] = "\n_{$total} item".($total === 1 ? '' : 's').' — awaiting approval._';
+        $total = count($writes);
+        $sections[] = "_{$total} item".($total === 1 ? '' : 's').' — awaiting approval. The author sees the full preview card rendered from the sentinel below; do not restate its contents._';
 
         if ($duplicates['count'] > 0) {
-            $sections[] = "_{$duplicates['count']} proposed name".($duplicates['count'] === 1 ? '' : 's').' already exist on this book. Consider asking the user whether to reuse an existing entity or confirm the duplicate._';
+            $sections[] = "_{$duplicates['count']} proposed name".($duplicates['count'] === 1 ? ' already exists' : 's already exist')
+                .' on this book ('.implode(', ', $duplicates['names']).'). Ask the author whether to reuse the existing entity, rename, or confirm the duplicate before applying._';
         }
 
         $proposalId = $this->persistProposal($bookId, $writes, $summary);
@@ -170,24 +167,16 @@ class ProposeBatch implements Tool
      * Persist the proposal so the controller can apply it deterministically on
      * approval. Returns the public uuid embedded in the sentinel.
      *
-     * Silently hands out a throwaway uuid ONLY when no book_id was passed —
-     * this preserves the "preview without persisting" path used by unit
-     * tests. When a real numeric book_id is passed but no active session
-     * exists we persist nothing and still return a disposable uuid so the
-     * preview renders; approval will fail-loudly with "proposal does not
-     * exist" instead of silently creating orphaned rows.
+     * When no active session exists for the book we persist nothing and still
+     * return a disposable uuid so the preview renders; approval will
+     * fail-loudly with "proposal does not exist" instead of silently creating
+     * orphaned rows.
      *
      * @param  array<int, array<string, mixed>>  $writes
      */
-    private function persistProposal(mixed $bookId, array $writes, string $summary): string
+    private function persistProposal(int $bookId, array $writes, string $summary): string
     {
-        $bookId = $this->coerceBookId($bookId);
-
-        if ($bookId === null) {
-            return (string) Str::uuid();
-        }
-
-        $session = PlotCoachSession::activeForBook($bookId);
+        $session = $this->session ?? PlotCoachSession::activeForBook($bookId);
 
         if (! $session) {
             return (string) Str::uuid();
@@ -328,83 +317,56 @@ class ProposeBatch implements Tool
     }
 
     /**
-     * Build a lookup of existing character + wiki-entry names for this book.
+     * Proposed character / wiki-entry names that already exist on this book.
+     * Creates only — updates target an existing row by id and are by
+     * definition not duplicates. Names keep their proposed casing so the
+     * agent can raise them with the author verbatim.
      *
      * @param  array<string, array<int, array<string, mixed>>>  $grouped
-     * @return array{characters: array<string, true>, wiki_entries: array<string, true>, count: int}
+     * @return array{names: list<string>, count: int}
      */
     private function detectDuplicates(?int $bookId, array $grouped): array
     {
-        $result = ['characters' => [], 'wiki_entries' => [], 'count' => 0];
+        $result = ['names' => [], 'count' => 0];
 
         if (! $bookId) {
             return $result;
         }
 
-        $characterNames = array_values(array_filter(array_map(
-            fn ($c) => is_string($c['name'] ?? null) ? mb_strtolower(trim($c['name'])) : null,
-            $grouped['character'] ?? []
-        )));
+        $lookups = [
+            'character' => Character::class,
+            'wiki_entry' => WikiEntry::class,
+        ];
 
-        $wikiNames = array_values(array_filter(array_map(
-            fn ($w) => is_string($w['name'] ?? null) ? mb_strtolower(trim($w['name'])) : null,
-            $grouped['wiki_entry'] ?? []
-        )));
+        foreach ($lookups as $type => $modelClass) {
+            $proposed = [];
 
-        if ($characterNames) {
-            $existing = Character::query()
-                ->where('book_id', $bookId)
-                ->pluck('name')
-                ->map(fn ($n) => mb_strtolower(trim((string) $n)))
-                ->all();
-            foreach ($characterNames as $name) {
-                if (in_array($name, $existing, true)) {
-                    $result['characters'][$name] = true;
-                    $result['count']++;
+            foreach ($grouped[$type] ?? [] as $data) {
+                if (isset($data['id']) || ! is_string($data['name'] ?? null) || trim($data['name']) === '') {
+                    continue;
                 }
+                $proposed[mb_strtolower(trim($data['name']))] = trim($data['name']);
             }
-        }
 
-        if ($wikiNames) {
-            $existing = WikiEntry::query()
+            if ($proposed === []) {
+                continue;
+            }
+
+            $existing = $modelClass::query()
                 ->where('book_id', $bookId)
                 ->pluck('name')
                 ->map(fn ($n) => mb_strtolower(trim((string) $n)))
                 ->all();
-            foreach ($wikiNames as $name) {
-                if (in_array($name, $existing, true)) {
-                    $result['wiki_entries'][$name] = true;
+
+            foreach ($proposed as $key => $original) {
+                if (in_array($key, $existing, true)) {
+                    $result['names'][] = $original;
                     $result['count']++;
                 }
             }
         }
 
         return $result;
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     * @param  array{characters: array<string, true>, wiki_entries: array<string, true>, count: int}  $duplicates
-     */
-    private function isDuplicate(string $type, array $data, array $duplicates): bool
-    {
-        // Updates target an existing row by id — by definition not a duplicate.
-        if (isset($data['id'])) {
-            return false;
-        }
-
-        $name = $data['name'] ?? null;
-        if (! is_string($name)) {
-            return false;
-        }
-
-        $key = mb_strtolower(trim($name));
-
-        return match ($type) {
-            'character' => isset($duplicates['characters'][$key]),
-            'wiki_entry' => isset($duplicates['wiki_entries'][$key]),
-            default => false,
-        };
     }
 
     /**
@@ -424,268 +386,5 @@ class ProposeBatch implements Tool
         ], JSON_UNESCAPED_SLASHES);
 
         return "\n<!-- PLOT_COACH_BATCH_PROPOSAL\n{$payload}\n-->";
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function renderLine(string $type, array $data, ?int $bookId = null): string
-    {
-        return match ($type) {
-            'character' => $this->characterLine($data),
-            'wiki_entry' => $this->wikiEntryLine($data),
-            'storyline' => $this->storylineLine($data),
-            'act' => $this->actLine($data),
-            'plot_point' => $this->plotPointLine($data),
-            'beat' => $this->beatLine($data),
-            'chapter' => $this->chapterLine($data, $bookId),
-            'book_update' => $this->bookUpdateLine($data),
-            'session_update' => $this->sessionUpdateLine($data),
-            'delete' => $this->deleteLine($data, $bookId),
-            default => '(unknown write)',
-        };
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function chapterLine(array $data, ?int $bookId = null): string
-    {
-        $title = $this->resolveDisplayName($data, 'title');
-        $id = $data['id'] ?? null;
-
-        $head = match (true) {
-            $title !== null => $title,
-            $id !== null => "(chapter id={$id})",
-            default => '(untitled)',
-        };
-
-        $bits = [];
-        if (! empty($data['storyline_id'])) {
-            $bits[] = 'storyline → '.$this->labelFor('storyline', (int) $data['storyline_id'], $bookId);
-        }
-        if (! empty($data['pov_character_id'])) {
-            $bits[] = 'POV → '.$this->labelFor('character', (int) $data['pov_character_id'], $bookId);
-        }
-        if (! empty($data['act_id'])) {
-            $bits[] = 'act → '.$this->labelFor('act', (int) $data['act_id'], $bookId);
-        }
-        if (array_key_exists('beat_ids', $data) && is_array($data['beat_ids'])) {
-            $count = count($data['beat_ids']);
-            $bits[] = $count.' '.Str::plural('beat', $count);
-        }
-        if (array_key_exists('character_ids', $data) && is_array($data['character_ids'])) {
-            $count = count($data['character_ids']);
-            $bits[] = $count.' supporting '.Str::plural('character', $count);
-        }
-        if (array_key_exists('wiki_entry_ids', $data) && is_array($data['wiki_entry_ids'])) {
-            $count = count($data['wiki_entry_ids']);
-            $bits[] = $count.' wiki '.Str::plural('entry', $count);
-        }
-
-        return $bits === [] ? $head : $head.' — '.implode(' · ', $bits);
-    }
-
-    private function labelFor(string $target, int $id, ?int $bookId): string
-    {
-        if ($bookId !== null) {
-            $name = $this->resolveTargetName($target, $id, $bookId);
-            if (is_string($name) && $name !== '') {
-                return $name;
-            }
-        }
-
-        return "id={$id}";
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function deleteLine(array $data, ?int $bookId): string
-    {
-        $target = isset($data['target']) ? (string) $data['target'] : '?';
-        $id = isset($data['id']) ? (int) $data['id'] : null;
-
-        if ($id === null) {
-            return "[{$target}] (missing id)";
-        }
-
-        $name = $bookId !== null ? $this->resolveTargetName($target, $id, $bookId) : null;
-
-        return $name !== null
-            ? "[{$target}] {$name} (id={$id})"
-            : "[{$target}] id={$id}";
-    }
-
-    private function resolveTargetName(string $target, int $id, int $bookId): ?string
-    {
-        return match ($target) {
-            'character' => Character::query()->where('id', $id)->where('book_id', $bookId)->value('name'),
-            'wiki_entry' => WikiEntry::query()->where('id', $id)->where('book_id', $bookId)->value('name'),
-            'storyline' => Storyline::query()->where('id', $id)->where('book_id', $bookId)->value('name'),
-            'act' => Act::query()->where('id', $id)->where('book_id', $bookId)->value('title'),
-            'plot_point' => PlotPoint::query()->where('id', $id)->where('book_id', $bookId)->value('title'),
-            'beat' => Beat::query()
-                ->join('plot_points', 'plot_points.id', '=', 'beats.plot_point_id')
-                ->where('beats.id', $id)
-                ->where('plot_points.book_id', $bookId)
-                ->value('beats.title'),
-            'chapter' => Chapter::query()->where('id', $id)->where('book_id', $bookId)->value('title'),
-            default => null,
-        };
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function actLine(array $data): string
-    {
-        $id = $data['id'] ?? null;
-        $title = $this->resolveDisplayName($data, 'title');
-        $number = isset($data['number'])
-            ? (int) $data['number']
-            : (isset($data['_existing_number']) ? (int) $data['_existing_number'] : null);
-        $desc = $data['description'] ?? null;
-
-        $head = match (true) {
-            $title !== null => $number !== null ? "Act {$number}: {$title}" : $title,
-            $number !== null => "Act {$number}",
-            $id !== null => "(act id={$id})",
-            default => '(untitled)',
-        };
-
-        return $desc ? "{$head} — {$desc}" : $head;
-    }
-
-    /**
-     * Pick the best display name from the write payload: the agent-supplied
-     * field first, then the `_existing_name` hint added by `enrichWrites`.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    private function resolveDisplayName(array $data, string $primary): ?string
-    {
-        $value = $data[$primary] ?? null;
-        if (is_string($value) && trim($value) !== '') {
-            return $value;
-        }
-        $existing = $data['_existing_name'] ?? null;
-        if (is_string($existing) && trim($existing) !== '') {
-            return $existing;
-        }
-
-        return null;
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function sessionUpdateLine(array $data): string
-    {
-        $parts = [];
-
-        if (array_key_exists('stage', $data)) {
-            $parts[] = 'stage: '.((string) ($data['stage'] ?? '(cleared)'));
-        }
-
-        if (array_key_exists('coaching_mode', $data)) {
-            $mode = $data['coaching_mode'];
-            $parts[] = 'coaching mode: '.($mode === null || $mode === '' ? '(cleared)' : (string) $mode);
-        }
-
-        return $parts === [] ? '(no fields)' : implode(' · ', $parts);
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function bookUpdateLine(array $data): string
-    {
-        $parts = [];
-
-        if (array_key_exists('premise', $data)) {
-            $premise = trim((string) ($data['premise'] ?? ''));
-            $parts[] = 'premise: '.($premise === '' ? '(cleared)' : $premise);
-        }
-
-        if (array_key_exists('target_word_count', $data)) {
-            $target = $data['target_word_count'];
-            $parts[] = 'target length: '.($target === null || $target === '' ? '(cleared)' : number_format((int) $target).' words');
-        }
-
-        if (array_key_exists('genre', $data)) {
-            $genre = $data['genre'];
-            $parts[] = 'genre: '.($genre === null || $genre === '' ? '(cleared)' : (string) $genre);
-        }
-
-        return $parts === [] ? '(no fields)' : implode(' · ', $parts);
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function characterLine(array $data): string
-    {
-        $name = $this->resolveDisplayName($data, 'name') ?? '(unnamed)';
-        $desc = $data['ai_description'] ?? null;
-
-        return $desc ? "{$name} — {$desc}" : $name;
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function wikiEntryLine(array $data): string
-    {
-        $name = $this->resolveDisplayName($data, 'name') ?? '(unnamed)';
-        $kind = $data['kind'] ?? $data['_existing_kind'] ?? 'entry';
-        $desc = $data['ai_description'] ?? null;
-
-        $line = "[{$kind}] {$name}";
-
-        return $desc ? "{$line} — {$desc}" : $line;
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function storylineLine(array $data): string
-    {
-        $id = $data['id'] ?? null;
-        $name = $this->resolveDisplayName($data, 'name');
-        $type = $data['type'] ?? $data['_existing_type'] ?? null;
-
-        $head = match (true) {
-            $name !== null => $name,
-            $id !== null => "(storyline id={$id})",
-            default => '(unnamed)',
-        };
-
-        return $type ? "[{$type}] {$head}" : $head;
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function plotPointLine(array $data): string
-    {
-        $title = $this->resolveDisplayName($data, 'title') ?? '(untitled)';
-        $type = $data['type'] ?? $data['_existing_type'] ?? null;
-        $desc = $data['description'] ?? null;
-
-        $line = $type ? "[{$type}] {$title}" : $title;
-
-        return $desc ? "{$line} — {$desc}" : $line;
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function beatLine(array $data): string
-    {
-        $title = $this->resolveDisplayName($data, 'title') ?? '(untitled)';
-        $desc = $data['description'] ?? null;
-
-        return $desc ? "{$title} — {$desc}" : $title;
     }
 }

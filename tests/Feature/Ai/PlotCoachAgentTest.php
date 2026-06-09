@@ -36,14 +36,17 @@ test('plot coach agent registers GetPlotBoardState and related tools', function 
     $agent = new PlotCoachAgent($book, $session);
     $tools = iterator_to_array($agent->tools());
 
-    expect($tools)->toHaveCount(8);
+    expect($tools)->toHaveCount(7);
 
     $toolClasses = array_map(fn ($t) => $t::class, $tools);
 
     expect($toolClasses)->toContain(GetPlotBoardState::class);
     expect($toolClasses)->toContain(GetEntityDetails::class);
-    expect($toolClasses)->toContain(RetrieveManuscriptContext::class);
     expect($toolClasses)->toContain(LookupExistingEntities::class);
+
+    // RetrieveManuscriptContext duplicates the inlined bible block almost
+    // entirely — one stray call dumps thousands of redundant tokens.
+    expect($toolClasses)->not->toContain(RetrieveManuscriptContext::class);
 });
 
 test('plot coach agent registers the batch tools', function () {
@@ -170,16 +173,17 @@ test('plot coach instructions place volatile counters AFTER the cache breakpoint
     expect(strpos($instructions, '"user_turn_count": 17'))->toBeGreaterThan($digestAt);
 });
 
-test('plot coach isTrivialTurn classifies system-prefixed acks, wire signals, and short approvals/cancels/undos', function () {
+test('plot coach isTrivialTurn classifies wire signals and short approvals/cancels/undos', function () {
     $book = Book::factory()->create();
     $session = PlotCoachSession::factory()->for($book, 'book')->create();
     $agent = new PlotCoachAgent($book, $session);
 
-    // System-applied approval / cancel / undo notes — should always route cheap.
-    expect($agent->isTrivialTurn('[system: The batch was applied. ...]'))->toBeTrue();
-    expect($agent->isTrivialTurn('[system: Nothing to undo. ...]'))->toBeTrue();
+    // [system: ...] scaffolding is NOT a trivia signal — the controller
+    // classifies on the raw user input, and a substantive message behind a
+    // board-changes or handoff prefix must keep the smart model.
+    expect($agent->isTrivialTurn('[system: Board changes since last turn: ...] Rework act two so the betrayal lands sooner.'))->toBeFalse();
 
-    // Bare wire signals (defensive).
+    // Wire signals from the approval-card buttons.
     expect($agent->isTrivialTurn('APPROVE:batch:'.Str::uuid()))->toBeTrue();
     expect($agent->isTrivialTurn('UNDO:last'))->toBeTrue();
     expect($agent->isTrivialTurn('CANCEL:batch:'.Str::uuid()))->toBeTrue();
@@ -370,19 +374,54 @@ test('plot coach instructions are memoized within an agent instance', function (
     expect($cacheProperty->getValue($agent))->toBe($first);
 });
 
-test('plot coach agent returns empty stage-guidance for stages without dedicated prompts', function () {
+test('plot coach agent falls back to plotting guidance for legacy stages without dedicated prompts', function () {
+    foreach ([PlotCoachStage::Structure, PlotCoachStage::Entities] as $stage) {
+        $book = Book::factory()->create();
+        $session = PlotCoachSession::factory()->for($book, 'book')->create([
+            'stage' => $stage,
+        ]);
+
+        $agent = new PlotCoachAgent($book, $session);
+        $instructions = (string) $agent->instructions();
+
+        expect($instructions)
+            ->not->toContain('We need to pin down')
+            ->toContain('Batch discipline')
+            ->toContain('editorial plot coach');
+    }
+});
+
+test('plot coach plotting guidance documents the transition to refinement and the valid stages', function () {
     $book = Book::factory()->create();
     $session = PlotCoachSession::factory()->for($book, 'book')->create([
-        'stage' => PlotCoachStage::Structure,
+        'stage' => PlotCoachStage::Plotting,
     ]);
 
-    $agent = new PlotCoachAgent($book, $session);
-    $instructions = (string) $agent->instructions();
+    $instructions = (string) (new PlotCoachAgent($book, $session))->instructions();
 
     expect($instructions)
-        ->not->toContain('We need to pin down')
-        ->not->toContain('Batch discipline')
-        ->toContain('editorial plot coach');
+        ->toContain('"stage":"refinement"')
+        ->toContain('intake, plotting, refinement, complete');
+});
+
+test('plot coach stage guidance steers applies through proposal_id, never re-emitted writes', function () {
+    $plottingBook = Book::factory()->create();
+    $plotting = PlotCoachSession::factory()->for($plottingBook, 'book')->create([
+        'stage' => PlotCoachStage::Plotting,
+    ]);
+    $plottingInstructions = (string) (new PlotCoachAgent($plottingBook, $plotting))->instructions();
+
+    expect($plottingInstructions)->not->toContain('with the same writes');
+
+    $refinementBook = Book::factory()->create();
+    $refinement = PlotCoachSession::factory()->for($refinementBook, 'book')->create([
+        'stage' => PlotCoachStage::Refinement,
+    ]);
+    $refinementInstructions = (string) (new PlotCoachAgent($refinementBook, $refinement))->instructions();
+
+    expect($refinementInstructions)
+        ->not->toContain('exact writes array')
+        ->toContain('proposal_id');
 });
 
 test('plot coach agent includes static persona in all stages', function () {
@@ -911,4 +950,45 @@ test('plot coach agent skips temperature on OpenAI to avoid reasoning-model reje
 
     config(['ai.default' => 'anthropic']);
     expect($agent->temperature())->toBe(0.6);
+});
+
+test('plot coach agent does not churn session updates while the digest is empty', function () {
+    $book = Book::factory()->create();
+
+    $conversationId = (string) Str::uuid();
+    DB::table('agent_conversations')->insert([
+        'id' => $conversationId,
+        'user_id' => null,
+        'title' => 'short session',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $session = PlotCoachSession::factory()->for($book, 'book')->create([
+        'agent_conversation_id' => $conversationId,
+        'user_turn_count' => 7,
+        'rolling_digest' => '',
+        'rolling_digest_through_turn' => 0,
+    ]);
+
+    DB::table('agent_conversation_messages')->insert([
+        'id' => (string) Str::uuid(),
+        'conversation_id' => $conversationId,
+        'agent' => PlotCoachAgent::class,
+        'role' => 'user',
+        'content' => 'short conversation',
+        'attachments' => '[]',
+        'tool_calls' => '[]',
+        'tool_results' => '[]',
+        'usage' => '[]',
+        'meta' => '[]',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    (new PlotCoachAgent($book, $session))->instructions();
+
+    $session->refresh();
+    expect((int) $session->rolling_digest_through_turn)->toBe(0);
+    expect((string) $session->rolling_digest)->toBe('');
 });

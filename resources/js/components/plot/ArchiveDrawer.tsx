@@ -30,7 +30,6 @@ type ArchivedSession = {
     user_turn_count: number | null;
     input_tokens: number | null;
     output_tokens: number | null;
-    cost_cents: number | null;
 };
 
 type TranscriptMessage = {

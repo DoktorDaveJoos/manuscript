@@ -1832,3 +1832,81 @@ test('undo restores the previous chapter character and wiki pivots', function ()
         ->toBe(collect([$charA->id, $charB->id])->sort()->values()->all());
     expect($chapter->wikiEntries()->pluck('wiki_entries.id')->all())->toBe([$wikiA->id]);
 });
+
+test('undo detaches pivots a batch added to a reused chapter but keeps pre-existing ones', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book, 'book')->create();
+    $act = Act::factory()->for($book, 'book')->create();
+    $plotPoint = PlotPoint::factory()->for($book, 'book')->for($act, 'act')->create();
+    $beatA = Beat::factory()->for($plotPoint, 'plotPoint')->create();
+    $beatB = Beat::factory()->for($plotPoint, 'plotPoint')->create();
+    $supporting = Character::factory()->for($book, 'book')->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+
+    $existing = Chapter::factory()
+        ->for($book, 'book')
+        ->for($storyline, 'storyline')
+        ->create(['title' => 'Opening']);
+    $existing->beats()->attach($beatA->id);
+
+    $service = new PlotCoachBatchService;
+    $service->apply($session, [
+        ['type' => 'chapter', 'data' => [
+            'title' => 'Opening',
+            'storyline_id' => $storyline->id,
+            'beat_ids' => [$beatB->id],
+            'character_ids' => [$supporting->id],
+        ]],
+    ], 'Re-propose with new wiring');
+
+    $service->undo($session);
+
+    $existing->refresh();
+    expect($existing->exists)->toBeTrue();
+    expect($existing->beats()->pluck('beats.id')->all())->toBe([$beatA->id]);
+    expect($existing->characters()->pluck('characters.id')->all())->toBe([]);
+});
+
+test('it resolves chapter.storyline_name against a storyline created earlier in the same batch', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+
+    $service = new PlotCoachBatchService;
+    $service->apply($session, [
+        ['type' => 'storyline', 'data' => ['name' => 'Main arc', 'type' => 'main']],
+        ['type' => 'chapter', 'data' => ['title' => 'Opening', 'storyline_name' => 'Main arc']],
+    ], 'Storyline + first chapter in one batch');
+
+    $storyline = Storyline::query()->where('book_id', $book->id)->where('name', 'Main arc')->first();
+    $chapter = Chapter::query()->where('book_id', $book->id)->where('title', 'Opening')->first();
+
+    expect($storyline)->not->toBeNull();
+    expect($chapter)->not->toBeNull();
+    expect($chapter->storyline_id)->toBe($storyline->id);
+});
+
+test('it rejects chapter.storyline_name that does not match any storyline in this book', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+
+    $service = new PlotCoachBatchService;
+
+    expect(fn () => $service->apply($session, [
+        ['type' => 'chapter', 'data' => ['title' => 'Opening', 'storyline_name' => 'Ghost arc']],
+    ], 'Bad reference'))->toThrow(InvalidArgumentException::class, 'storyline_name');
+
+    expect(Chapter::query()->where('book_id', $book->id)->count())->toBe(0);
+});
+
+test('it rejects a session_update to a stage outside the documented flow', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+
+    $service = new PlotCoachBatchService;
+
+    expect(fn () => $service->apply($session, [
+        ['type' => 'session_update', 'data' => ['stage' => 'structure']],
+    ], 'Dead stage'))->toThrow(InvalidArgumentException::class, 'stage');
+
+    expect($session->fresh()->stage)->toBe(PlotCoachStage::Intake);
+});

@@ -18,9 +18,15 @@ use Throwable;
  */
 class UndoLastBatch implements Tool
 {
+    /**
+     * The session is bound by the agent so undo targets the conversation
+     * being streamed — even when it is not the book's active session. Falls
+     * back to the active session for direct construction (tests, legacy).
+     */
     public function __construct(
         private int $bookId,
         private PlotCoachBatchService $service = new PlotCoachBatchService,
+        private ?PlotCoachSession $session = null,
     ) {}
 
     public function description(): Stringable|string
@@ -38,7 +44,7 @@ class UndoLastBatch implements Tool
 
     public function handle(Request $request): Stringable|string
     {
-        $session = PlotCoachSession::activeForBook($this->bookId);
+        $session = $this->session ?? PlotCoachSession::activeForBook($this->bookId);
 
         if (! $session) {
             return "Undo failed: no active plot coach session for book {$this->bookId}.";

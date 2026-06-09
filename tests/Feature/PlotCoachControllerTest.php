@@ -12,6 +12,7 @@ use App\Models\PlotCoachBatch;
 use App\Models\PlotCoachProposal;
 use App\Models\PlotCoachSession;
 use Illuminate\Support\Str;
+use Laravel\Ai\Ai;
 
 beforeEach(function () {
     License::factory()->create();
@@ -395,12 +396,12 @@ test('sessionArchive writes an archive_summary from session decisions', function
     expect($session->archive_summary)->toContain('Who is the thief?');
 });
 
-test('a new session after an archive carries the archive summary into the first user turn', function () {
+test('a new session after an archive links the parent without duplicating its summary into the first turn', function () {
     PlotCoachAgent::fake(['Got it.']);
 
     $book = Book::factory()->withAi()->create();
     $archived = PlotCoachSession::factory()->for($book, 'book')->archived()->create([
-        'archive_summary' => 'Plot Coach archive summary\ngenre: fantasy',
+        'archive_summary' => str_repeat('Plot Coach archive summary. genre: fantasy. ', 8),
         'archived_at' => now()->subHour(),
     ]);
 
@@ -418,14 +419,20 @@ test('a new session after an archive carries the archive summary into the first 
     expect($fresh)->not->toBeNull();
     expect($fresh->parent_session_id)->toBe($archived->id);
 
+    // The handoff lives in the agent's system prompt (parentHandoffBlock) on
+    // EVERY turn — duplicating it into the first user message would pay for
+    // the same summary twice for as long as the turn sits in the replay window.
     $firstUserMessage = DB::table('agent_conversation_messages')
         ->where('conversation_id', $fresh->agent_conversation_id)
         ->where('role', 'user')
         ->orderBy('created_at')
         ->value('content');
 
-    expect($firstUserMessage)->toContain('Handoff from previous plot coach session');
-    expect($firstUserMessage)->toContain('Fresh start.');
+    expect($firstUserMessage)->toBe('Fresh start.');
+
+    $instructions = (string) (new PlotCoachAgent($book, $fresh))->instructions();
+
+    expect($instructions)->toContain('Handoff from previous session');
 });
 
 test('stream increments user_turn_count after each successful turn', function () {
@@ -670,4 +677,116 @@ test('UNDO:last reverts the most recent applied batch server-side', function () 
     ])->assertOk();
 
     expect(Character::query()->where('book_id', $book->id)->count())->toBe(0);
+});
+
+test('a substantive turn with queued board changes still uses the smart model', function () {
+    PlotCoachAgent::fake(['On it.']);
+
+    $book = Book::factory()->withAi()->create();
+    PlotCoachSession::factory()->for($book, 'book')->create([
+        'pending_board_changes' => [
+            ['kind' => 'updated', 'type' => 'beat', 'id' => 7, 'summary' => "Beat 'First cut' updated", 'at' => now()->toIso8601String()],
+        ],
+    ]);
+
+    $this->post(route('books.plotCoach.stream', $book), [
+        'message' => 'Rework the second act so the betrayal lands sooner.',
+    ])->assertOk();
+
+    $cheapest = Ai::textProvider('anthropic')->cheapestTextModel();
+
+    PlotCoachAgent::assertPrompted(fn ($prompt) => str_contains($prompt->prompt, 'betrayal lands sooner')
+        && $prompt->model !== $cheapest);
+});
+
+test('the first turn of a successor session is not downgraded to the cheap model', function () {
+    PlotCoachAgent::fake(['Welcome back.']);
+
+    $book = Book::factory()->withAi()->create();
+    PlotCoachSession::factory()->for($book, 'book')->archived()->create([
+        'archive_summary' => str_repeat('Earlier session summary line. ', 20),
+    ]);
+
+    $this->post(route('books.plotCoach.stream', $book), [
+        'message' => 'Pick up where we left off with the second act of Maja\'s arc.',
+    ])->assertOk();
+
+    $cheapest = Ai::textProvider('anthropic')->cheapestTextModel();
+
+    PlotCoachAgent::assertPrompted(fn ($prompt) => str_contains($prompt->prompt, 'second act')
+        && $prompt->model !== $cheapest);
+});
+
+test('apply-failure recovery turns use the smart model, not the cheap ack model', function () {
+    PlotCoachAgent::fake(['Let me fix that.']);
+
+    $book = Book::factory()->withAi()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+
+    // A write guaranteed to fail on apply: plot_point without act_id/act_number.
+    $proposal = PlotCoachProposal::create([
+        'public_id' => (string) Str::uuid(),
+        'session_id' => $session->id,
+        'kind' => 'batch',
+        'writes' => [['type' => 'plot_point', 'data' => ['title' => 'Orphan point']]],
+        'summary' => 'One broken plot point',
+    ]);
+
+    $this->post(route('books.plotCoach.stream', $book), [
+        'message' => "APPROVE:batch:{$proposal->public_id}",
+        'session_id' => $session->id,
+    ])->assertOk();
+
+    $cheapest = Ai::textProvider('anthropic')->cheapestTextModel();
+
+    PlotCoachAgent::assertPrompted(fn ($prompt) => str_contains($prompt->prompt, 'failed to apply')
+        && $prompt->model !== $cheapest);
+});
+
+test('wire signals are rewritten to the system note and never forwarded to the LLM', function () {
+    PlotCoachAgent::fake(['Drin. Was als Nächstes?']);
+
+    $book = Book::factory()->withAi()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+
+    $proposal = PlotCoachProposal::create([
+        'public_id' => (string) Str::uuid(),
+        'session_id' => $session->id,
+        'kind' => 'batch',
+        'writes' => [['type' => 'character', 'data' => ['name' => 'Maja']]],
+        'summary' => 'Save Maja',
+    ]);
+
+    $this->post(route('books.plotCoach.stream', $book), [
+        'message' => "APPROVE:batch:{$proposal->public_id}",
+        'session_id' => $session->id,
+    ])->assertOk();
+
+    PlotCoachAgent::assertNotPrompted(fn ($prompt) => str_contains($prompt->prompt, 'APPROVE:batch:'));
+    PlotCoachAgent::assertPrompted(fn ($prompt) => str_starts_with($prompt->prompt, '[system:'));
+});
+
+test('sessionShow strips [system: ...] notes containing brackets in their body', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create();
+
+    DB::table('agent_conversation_messages')->insert([
+        'id' => (string) Str::uuid7(),
+        'conversation_id' => $session->agent_conversation_id,
+        'user_id' => null,
+        'agent' => PlotCoachAgent::class,
+        'role' => 'user',
+        'content' => "[system: The batch failed to apply. Error: SQLSTATE[23000]: UNIQUE constraint failed. Nothing was persisted.]\n\nokay, rename her to Mara",
+        'attachments' => '[]',
+        'tool_calls' => '[]',
+        'tool_results' => '[]',
+        'usage' => '[]',
+        'meta' => '[]',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $this->getJson(route('books.plotCoach.sessions.show', [$book, $session]))
+        ->assertOk()
+        ->assertJsonPath('messages.0.content', 'okay, rename her to Mara');
 });

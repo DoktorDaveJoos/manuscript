@@ -12,7 +12,6 @@ use App\Ai\Tools\Plot\GetPlotBoardState;
 use App\Ai\Tools\Plot\ProposeBatch;
 use App\Ai\Tools\Plot\ProposeChapterPlan;
 use App\Ai\Tools\Plot\UndoLastBatch;
-use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Enums\EditorialPersona;
 use App\Enums\PlotCoachProposalKind;
 use App\Enums\PlotCoachStage;
@@ -148,7 +147,10 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         if ($stale) {
             $digest = (new PlotCoachSessionSummarizer)->buildInSessionDigest($this->session);
 
-            if ($digest !== $stored || $currentTurn !== $throughTurn) {
+            // Persist only when there is a digest to advance — sessions still
+            // short enough to replay verbatim would otherwise churn a session
+            // UPDATE on every single turn for nothing.
+            if ($digest !== $stored || ($digest !== '' && $currentTurn !== $throughTurn)) {
                 $this->session->update([
                     'rolling_digest' => $digest,
                     'rolling_digest_through_turn' => $currentTurn,
@@ -202,16 +204,18 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
 
     public function tools(): iterable
     {
+        // RetrieveManuscriptContext is deliberately absent: it dumps the full
+        // book context (characters, plot points, chapter summaries, story
+        // bible), nearly all of which is already inlined in the bible block —
+        // one stray call would re-pay thousands of tokens for nothing.
         return [
             new GetPlotBoardState($this->book->id),
             new GetEntityDetails($this->book->id),
-            new RetrieveManuscriptContext($this->book->id),
             new LookupExistingEntities($this->book->id),
-            new ProposeBatch($this->book->id),
-            // ProposeChapterPlan uses CoercesBookId trait — book_id from payload, not constructor.
-            new ProposeChapterPlan,
-            new ApplyPlotCoachBatch($this->book->id),
-            new UndoLastBatch($this->book->id),
+            new ProposeBatch($this->book->id, session: $this->session),
+            new ProposeChapterPlan($this->book->id, session: $this->session),
+            new ApplyPlotCoachBatch($this->book->id, session: $this->session),
+            new UndoLastBatch($this->book->id, session: $this->session),
         ];
     }
 
@@ -226,17 +230,20 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
      * Mechanical turns that don't need the smart model. The list is
      * intentionally narrow — better to over-pay for one borderline ack than
      * to under-power a real coaching turn:
-     *  - structured `[system: ...]` notes the controller prepends to a turn
-     *    after server-side approve / cancel / undo. These signal the agent
-     *    to write a short forward-looking line, nothing creative.
      *  - bare wire signals (APPROVE:batch:<uuid> / CANCEL:batch:<uuid> /
-     *    UNDO:last / UNDO:proposal:<uuid>) the controller intercepts before
-     *    the LLM runs — the agent only sees the [system: ...] note that
-     *    follows, but if for some reason the wire signal slips through we
-     *    treat it as trivial.
+     *    UNDO:last / UNDO:proposal:<uuid>) sent by the approval-card buttons.
+     *    The controller executes them server-side and replaces them with a
+     *    `[system: ...]` outcome note; the agent only writes a short forward
+     *    line. (Apply failures are the exception — the controller forces the
+     *    smart model for those, see PlotCoachController::handleApprovalSignals.)
      *  - free-text approvals / rejections / undos in EN/DE/ES — terse,
      *    unambiguous one-liners that move the conversation on without
      *    requiring the smart model's reasoning.
+     *
+     * Classification runs on the RAW user input only. The controller's
+     * `[system: ...]` scaffolding (board changes, archive handoff) is
+     * deliberately NOT a trivia signal — a substantive turn that happens to
+     * carry queued board changes still deserves the smart model.
      */
     public function isTrivialTurn(string $message): bool
     {
@@ -246,15 +253,8 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
             return false;
         }
 
-        // Server-applied approval/cancel/undo turns: agent writes a single
-        // forward line. Even if more user content follows the prefix, the
-        // dominant work is acknowledgment.
-        if (str_starts_with($trimmed, PlotCoachWireSignals::SYSTEM_PREFIX)) {
-            return true;
-        }
-
-        // Bare wire signals (defensive — controller normally rewrites these
-        // into [system: ...] notes before the LLM sees them).
+        // Wire signals from the approval-card buttons: the server has already
+        // applied the outcome; the agent only acknowledges.
         if (preg_match(PlotCoachWireSignals::PATTERN_ANY, $trimmed)) {
             return true;
         }
@@ -452,7 +452,7 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         $languageRule = EditorialPersona::languageRule($language);
 
         return <<<PERSONA
-        You are an editorial plot coach working with the author of '{$title}' by {$author} (book_id: {$bookId} — always use this exact integer whenever a tool asks for `book_id`; never guess another). The manuscript is written in {$language}. Think of yourself as a seasoned old editor who has read a thousand manuscripts and still delights in a good one. You're warm, unhurried, a little bit of a storyteller yourself, and you carry the gentle humor of someone who has watched every kind of book get made. You've seen every mistake an author can make and you have kind words for each of them — but you also have taste, and you tell the truth.
+        You are an editorial plot coach working with the author of '{$title}' by {$author} (book_id: {$bookId} — every tool is already bound to this book; never pass a book_id). The manuscript is written in {$language}. Think of yourself as a seasoned old editor who has read a thousand manuscripts and still delights in a good one. You're warm, unhurried, a little bit of a storyteller yourself, and you carry the gentle humor of someone who has watched every kind of book get made. You've seen every mistake an author can make and you have kind words for each of them — but you also have taste, and you tell the truth.
 
         Voice rules:
         - Warm and patient. You're in no hurry.
@@ -536,8 +536,11 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
             PlotCoachStage::Plotting => $this->plottingGuidance(),
             PlotCoachStage::Refinement,
             PlotCoachStage::Complete => $this->refinementGuidance(),
+            // Legacy stages with no dedicated prompt — sessions stranded here
+            // (by old data or an old model guess) get the plotting playbook
+            // instead of running guidance-less.
             PlotCoachStage::Structure,
-            PlotCoachStage::Entities => '',
+            PlotCoachStage::Entities => $this->plottingGuidance(),
         };
 
         $threshold = $this->sessionThresholdGuidance();
@@ -549,9 +552,7 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
 
     private function plottingGuidance(): string
     {
-        $bookId = $this->book->id;
-
-        return <<<PLOTTING
+        return <<<'PLOTTING'
         Current stage: Plotting.
 
         The structure is locked. The board is open. Fill plot points and beats collaboratively.
@@ -559,11 +560,11 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         Batch discipline:
         - ProposeBatch only when the user has agreed to something concrete AND you have 1+ coherent writes ready. Micro-commits (single item) are fine.
         - Show the preview in chat via ProposeBatch's output. Wait for explicit approval ("yes", "go ahead", "approve all", or a free-text edit).
-        - When approved, call ApplyPlotCoachBatch with the same writes. On failure, explain briefly and re-propose.
+        - When approved, call ApplyPlotCoachBatch with ONLY the `proposal_id` from your most recent ProposeBatch sentinel — never re-emit the writes array. On failure, explain briefly and re-propose.
         - If the user asks to undo, call UndoLastBatch. Do not offer undo unsolicited.
 
         Tool arguments:
-        - ProposeChapterPlan still accepts `book_id` in its schema — pass {$bookId}. Never guess another number. (ProposeBatch / ApplyPlotCoachBatch / GetPlotBoardState / etc. now bind book_id at construction; you don't pass it in the call.)
+        - Every tool (ProposeBatch / ProposeChapterPlan / ApplyPlotCoachBatch / GetPlotBoardState / etc.) is bound to this book at construction — never pass a `book_id`.
         - For references (plot_point.act_id, beat.plot_point_id, chapter.storyline_id, chapter.beat_ids, chapter.pov_character_id, chapter.act_id) use ONLY the numeric ids from the `saved_entities` block at the top of this prompt. Do not invent small ids like 1/2/3 — they almost certainly point to another book. If the id you need isn't in `saved_entities`, that entity doesn't exist yet; propose it first.
         - `plot_point` accepts `act_number` as a fallback if you don't have the `act_id` handy ({"type":"plot_point","data":{"act_number":1,"title":"…"}}). Prefer `act_id` when you have it.
         - `beat` accepts `plot_point_title` as a fallback so you can propose a `plot_point` + its opening `beat`(s) in the SAME batch — the server resolves the title after the plot_point is persisted in the transaction. Shape: `[{"type":"plot_point","data":{"act_number":1,"title":"Auslöser"}},{"type":"beat","data":{"plot_point_title":"Auslöser","title":"First cut"}}]`. Do NOT split into two batches for this case.
@@ -615,14 +616,16 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         Speculative riffs:
         - You can riff on 2–3 "what if" directions mid-conversation without proposing a batch. Keep those exploratory. Only propose writes when one lands.
         - Never ask "want me to save that?" reflexively. If the user says something strong, you can offer: "Let me add that beat." One short line.
+
+        Moving to Refinement (chapter handoff):
+        - When the board is mostly filled — beats have titles and descriptions — and the author starts polishing or asks to turn structure into chapters, move the stage: include {"type":"session_update","data":{"stage":"refinement"}} in your next batch. The refinement stage carries the full chapter-planning checklist (ProposeChapterPlan, fully-wired stubs).
+        - Valid stage values are: intake, plotting, refinement, complete. Never invent another value — the server rejects anything else.
         PLOTTING;
     }
 
     private function refinementGuidance(): string
     {
-        $bookId = $this->book->id;
-
-        return <<<REFINE
+        return <<<'REFINE'
         Current stage: Refinement.
 
         The board is mostly filled. Polish rough edges, close open threads, and — when the author is ready — hand off to fully-wired chapter stubs.
@@ -630,8 +633,8 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         Chapter handoff rules:
         - Only propose chapters when beats exist and have titles + descriptions. Don't push it early.
         - When the author asks "turn this into chapters" or clearly signals they're ready, call ProposeChapterPlan. Do not apply directly — the author approves in chat first.
-        - Storylines are required. Every chapter needs a `storyline_id`. If no storyline exists yet (the author has been working at the act/plot_point level only), propose a `storyline` write in the SAME batch that creates the first chapters — do not split it into two round-trips. Apply will roll back if a chapter references a missing storyline_id, so wire the storyline first or use a single ProposeBatch that creates the storyline + chapters together (chapters can reference the storyline by id once it's persisted in-batch).
-        - Each proposed chapter must specify title + storyline_id. Per-chapter checklist — work through this for EVERY chapter you propose:
+        - Storylines are required. Every chapter needs a `storyline_id` — or, when the storyline is created in the SAME batch (so its id does not exist yet), a `storyline_name` carrying the exact storyline name. Never guess an id for a storyline that hasn't been applied. Shape: `[{"type":"storyline","data":{"name":"Main arc","type":"main"}},{"type":"chapter","data":{"title":"Opening","storyline_name":"Main arc","act_id":3,...}}]` — one batch, no second round-trip.
+        - Each proposed chapter must specify title + storyline_id (or storyline_name as above). Per-chapter checklist — work through this for EVERY chapter you propose:
           1. `beat_ids` — every beat this chapter dramatizes (N:1 is fine).
           2. `pov_character_id` — the POV for the chapter (single character). The server adds this to the supporting cast pivot automatically; do NOT repeat it in `character_ids`.
           3. `character_ids` — REQUIRED. Read each attached beat's description. List every supporting character whose name appears, plus any character on the beats' parent `plot_point.character_ids`. Empty array `[]` is valid ONLY if no beats reference any known character. Otherwise the tool rejects the proposal and you retry.
@@ -641,13 +644,13 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         - Example fully-wired chapter: `{"title": "Madeira: Apparat-Anflug", "storyline_id": 12, "act_id": 3, "pov_character_id": 44, "beat_ids": [88, 89], "character_ids": [42, 47], "wiki_entry_ids": [12, 18]}`.
         - Chapters are additive. If a title already exists on a storyline, ProposeChapterPlan marks it as reused — beats / characters / wiki entries are re-attached without detaching, metadata is left alone. Never propose a "rename" or "delete" of an existing chapter silently.
         - Cross-storyline chapters are fine. Multiple beats per chapter (N:1) are fine.
-        - After the author approves, call ApplyPlotCoachBatch with the exact writes array from the ProposeChapterPlan sentinel. On failure explain briefly and re-propose.
+        - After the author approves, call ApplyPlotCoachBatch with ONLY the `proposal_id` from the ProposeChapterPlan sentinel — never re-emit the writes array. On failure explain briefly and re-propose.
 
         Single chapters mid-conversation:
         - For a single chapter (not a full plan), use ProposeBatch with one `chapter` write. All the same fields apply (`storyline_id`, `beat_ids`, `pov_character_id`, `character_ids`, `wiki_entry_ids`, `act_id`). Useful when the author wants to slice off one scene without committing to a full chapter plan.
 
         Tool arguments:
-        - ProposeChapterPlan and ApplyPlotCoachBatch both require `book_id` — always pass {$bookId}. Never guess another number.
+        - Every tool is bound to this book at construction — never pass a `book_id`.
         - For pivot ids (`beat_ids`, `character_ids`, `wiki_entry_ids`, `pov_character_id`, `storyline_id`, `act_id`) use ONLY the numeric ids from `saved_entities`. Wiki entry ids appear in `saved_entities.wiki_entries` as `id=<n>`.
         REFINE;
     }
@@ -673,7 +676,6 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
             ? (string) $this->book->target_word_count
             : '(not set)';
         $premise = $this->book->premise ?: '(not set)';
-        $bookId = $this->book->id;
 
         return <<<INTAKE
         Current stage: Intake.
@@ -694,7 +696,7 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         - If the author opened two threads in a single message, pick the more load-bearing one, address it first, and park the other with a single line ("We'll come back to the Russia angle — first let me pin John down.").
 
         Save as you go (important — do NOT wait for the plotting stage):
-        - The moment a character is concretely named AND has at least a sketch of role / want / wound, call ProposeBatch with a single-item writes array for that character (book_id: {$bookId}, `ai_description` carrying role/want/wound in one or two sentences). A single character is a valid batch.
+        - The moment a character is concretely named AND has at least a sketch of role / want / wound, call ProposeBatch with a single-item writes array for that character (`ai_description` carrying role/want/wound in one or two sentences). A single character is a valid batch.
         - Same for a named storyline the author has committed to → ProposeBatch with one storyline write.
         - The story bible should feel ALIVE, not just a cast list. Every concrete noun the author introduces deserves a wiki_entry the moment it matters to the story. Do NOT limit this to "main" locations or "important" objects — if it has a name and the author cares about it, save it.
           - `location` — every named place: cities, countries, rooms that matter (a specific lab, a specific safehouse), districts, landscapes ("Jakutsk", "the New England research lab", "the Swiss lab", "Maja's apartment in Zurich").
