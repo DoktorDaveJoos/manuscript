@@ -62,20 +62,16 @@ class EditorialSynthesisAgent implements Agent, BelongsToBook, HasMiddleware, Ha
 
         $break = self::CACHE_BREAKPOINT;
 
+        // Everything that is identical across the eight section calls — persona,
+        // book context, output spec, and rubric — sits before the cache
+        // breakpoint so it is cached once and reused per section. Only the
+        // section name, its instructions, and the aggregated data vary per call.
         return <<<INSTRUCTIONS
         {$persona->instructions()}
 
         {$bookContext}
 
-        {$break}
-
-        Section: {$this->sectionType->value}
-
-        {$sectionInstructions}
-
-        Below is the aggregated chapter-level data for this editorial section:
-
-        {$this->aggregatedData}
+        You will be given one editorial dimension (section) and the aggregated chapter-level data for it.
 
         Produce a comprehensive synthesis with:
         - A score from 0-100 reflecting the manuscript's quality in this dimension
@@ -92,6 +88,16 @@ class EditorialSynthesisAgent implements Agent, BelongsToBook, HasMiddleware, Ha
         {$persona->languageRule($this->book->language)}
 
         Reference concrete examples from the data. Be specific about what works and what fails.
+
+        {$break}
+
+        Section: {$this->sectionType->value}
+
+        {$sectionInstructions}
+
+        Below is the aggregated chapter-level data for this editorial section:
+
+        {$this->aggregatedData}
         INSTRUCTIONS;
     }
 

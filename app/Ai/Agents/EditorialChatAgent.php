@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Concerns\CachesSystemPrompt;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
@@ -15,6 +16,7 @@ use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
 use Laravel\Ai\Contracts\HasMiddleware;
+use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
 use Stringable;
@@ -22,9 +24,12 @@ use Stringable;
 #[Temperature(0.5)]
 #[MaxTokens(4096)]
 #[Timeout(120)]
-class EditorialChatAgent implements Agent, BelongsToBook, Conversational, HasMiddleware, HasTools
+class EditorialChatAgent implements Agent, BelongsToBook, Conversational, HasMiddleware, HasProviderOptions, HasTools
 {
-    use Promptable, RemembersConversations;
+    // The editorial context is fixed for the life of a conversation, so the
+    // whole system prompt is cached (no breakpoint) and every follow-up turn
+    // reads it from cache instead of re-sending it at full price.
+    use CachesSystemPrompt, Promptable, RemembersConversations;
 
     public function __construct(
         protected Book $book,
