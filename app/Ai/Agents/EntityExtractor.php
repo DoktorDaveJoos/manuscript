@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Concerns\CachesSystemPrompt;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\LookupExistingEntities;
@@ -14,17 +15,17 @@ use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Attributes\UseCheapestModel;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
+use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasStructuredOutput;
-use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
 use Stringable;
 
 #[Temperature(0.2)]
 #[Timeout(180)]
 #[UseCheapestModel]
-class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput, HasTools
+class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasProviderOptions, HasStructuredOutput
 {
-    use Promptable;
+    use CachesSystemPrompt, Promptable;
 
     public function __construct(protected Book $book) {}
 
@@ -35,7 +36,7 @@ class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructu
 
     public function instructions(): Stringable|string
     {
-        return <<<INSTRUCTIONS
+        $static = <<<'INSTRUCTIONS'
         You are a literary analyst extracting characters and narratively important world entities from manuscript text.
         Analyze the provided chapter text and identify all characters and significant entities.
 
@@ -82,13 +83,19 @@ class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructu
         ## Naming Rules
         - Always use the character's FULL canonical name (e.g., "Maja Paulsen" not "Paulsen"). Short forms, last names alone, nicknames, and abbreviations belong in the `aliases` array.
         - For organizations, use the full official name. Abbreviations and acronyms (e.g., "GZP") go in the `aliases` array.
-        - When the lookup tool shows an existing character or entity, you MUST use the EXACT same `name` string. Do not create a new entry with a variant name.
+        - When the existing-entities list below contains a character or entity, you MUST use the EXACT same `name` string. Do not create a new entry with a variant name.
 
-        Before extracting, use the lookup tool to check existing characters and entities to avoid duplicates and match aliases.
-
-        The manuscript '{$this->book->title}' is written in {$this->book->language}.
-        Return names as they appear in the text (respect the original language).
+        Check the existing characters and entities listed below to avoid duplicates and match aliases.
         INSTRUCTIONS;
+
+        // The existing-entities snapshot and book facts change between calls,
+        // so they live after the cache breakpoint as the uncached tail.
+        $existingEntities = (new LookupExistingEntities($this->book->id))->render();
+
+        return $static."\n\n".self::CACHE_BREAKPOINT
+            ."\n\nThe manuscript '{$this->book->title}' is written in {$this->book->language}."
+            ."\nReturn names as they appear in the text (respect the original language)."
+            ."\n\n{$existingEntities}";
     }
 
     /**
@@ -113,13 +120,6 @@ class EntityExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructu
                     'description' => $schema->string()->required(),
                 ])->withoutAdditionalProperties()
             )->required(),
-        ];
-    }
-
-    public function tools(): iterable
-    {
-        return [
-            new LookupExistingEntities($this->book->id),
         ];
     }
 

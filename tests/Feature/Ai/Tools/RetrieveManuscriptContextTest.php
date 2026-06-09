@@ -143,6 +143,30 @@ it('includes wiki entries linked to the active chapter, grouped by kind', functi
         ->not->toContain('### Lores');
 });
 
+it('strips html and caps the active chapter text', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $longTail = implode(' ', array_fill(0, 4000, 'word'));
+    $chapter->versions()->create([
+        'is_current' => true,
+        'content' => "<p>Opening <strong>scene</strong></p> {$longTail}",
+    ]);
+
+    $tool = new RetrieveManuscriptContext($book->id);
+    $result = (string) $tool->handle(new Request(['chapter_id' => $chapter->id]));
+
+    expect($result)
+        ->toContain('## Active Chapter Text')
+        ->toContain('Opening scene')
+        ->not->toContain('<strong>');
+
+    // Capped at 3000 words — the 4000-word tail must be truncated.
+    $chapterText = substr($result, strpos($result, '## Active Chapter Text'));
+    expect(substr_count($chapterText, 'word'))->toBeLessThanOrEqual(3000);
+});
+
 it('omits the plot beats section when no beats are linked to the chapter', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();

@@ -2,6 +2,7 @@
 
 namespace App\Ai\Tools;
 
+use App\Ai\Support\TextPrep;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Services\StoryBibleService;
@@ -34,6 +35,19 @@ class RetrieveManuscriptContext implements Tool
 
     public function handle(Request $request): Stringable|string
     {
+        return $this->render(
+            chapterId: $request['chapter_id'] ?? null,
+            includeCharacters: $request['include_characters'] ?? true,
+            includePlotPoints: $request['include_plot_points'] ?? true,
+        );
+    }
+
+    /**
+     * Render the manuscript context. Exposed separately so agents can inline
+     * it into a prompt instead of spending a tool round trip on it.
+     */
+    public function render(?int $chapterId = null, bool $includeCharacters = true, bool $includePlotPoints = true): string
+    {
         $book = Book::query()->findOrFail($this->bookId);
         $sections = [];
 
@@ -48,7 +62,7 @@ class RetrieveManuscriptContext implements Tool
             }
         }
 
-        if ($request['include_characters'] ?? true) {
+        if ($includeCharacters) {
             $characters = $book->characters()->get();
             if ($characters->isNotEmpty()) {
                 $sections[] = "\n## Characters";
@@ -59,7 +73,7 @@ class RetrieveManuscriptContext implements Tool
             }
         }
 
-        if ($request['include_plot_points'] ?? true) {
+        if ($includePlotPoints) {
             $plotPoints = $book->plotPoints()->get();
             if ($plotPoints->isNotEmpty()) {
                 $sections[] = "\n## Plot Points";
@@ -85,14 +99,14 @@ class RetrieveManuscriptContext implements Tool
             }
         }
 
-        if ($request['chapter_id'] ?? null) {
+        if ($chapterId) {
             $chapter = $book->chapters()
                 ->with([
                     'currentVersion',
                     'beats.plotPoint',
                     'wikiEntries',
                 ])
-                ->find($request['chapter_id']);
+                ->find($chapterId);
 
             if ($chapter) {
                 $sections = [
@@ -101,9 +115,9 @@ class RetrieveManuscriptContext implements Tool
                     ...$this->buildChapterWikiSection($chapter),
                 ];
 
-                if ($chapter->currentVersion) {
+                if ($chapter->currentVersion?->content) {
                     $sections[] = "\n## Active Chapter Text: {$chapter->title}";
-                    $sections[] = $chapter->currentVersion->content;
+                    $sections[] = TextPrep::plainTextCapped($chapter->currentVersion->content);
                 }
             }
         }
