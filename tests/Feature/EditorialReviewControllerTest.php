@@ -447,6 +447,67 @@ test('index returns failed review when no in-progress or completed exists', func
         );
 });
 
+test('index prefers the newest review when created_at ties', function () {
+    $book = Book::factory()->withAi()->create();
+
+    $this->freezeSecond();
+
+    EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+    ]);
+    $newer = EditorialReview::factory()->failed()->create([
+        'book_id' => $book->id,
+    ]);
+
+    $this->get(route('books.ai.editorial-review.index', $book))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->component('books/editorial-review')
+            ->where('latestReview.id', $newer->id)
+        );
+});
+
+test('store fails a stale stuck review instead of blocking new reviews', function () {
+    Queue::fake();
+
+    $book = Book::factory()->withAi()->create();
+    $stale = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'analyzing',
+        'updated_at' => now()->subHour(),
+    ]);
+
+    $this->postJson(route('books.ai.editorial-review.store', $book))
+        ->assertOk();
+
+    $stale->refresh();
+    expect($stale->status)->toBe('failed')
+        ->and($stale->error_message)->toContain('timed out');
+
+    Queue::assertPushed(RunEditorialReviewJob::class);
+});
+
+test('store leaves stale reviews of other books to the scheduled cleanup', function () {
+    Queue::fake();
+
+    $otherBook = Book::factory()->create();
+    EditorialReview::factory()->create([
+        'book_id' => $otherBook->id,
+        'status' => 'analyzing',
+        'updated_at' => now()->subHour(),
+    ]);
+
+    $book = Book::factory()->withAi()->create();
+
+    $this->postJson(route('books.ai.editorial-review.store', $book))
+        ->assertOk();
+
+    // Stale runs of other books are left to the scheduled cleanup.
+    expect(EditorialReview::where('book_id', $otherBook->id)->first()->status)
+        ->toBe('analyzing');
+});
+
 test('index caps reviews to 20', function () {
     $book = Book::factory()->withAi()->create();
     EditorialReview::factory()->count(25)->create([

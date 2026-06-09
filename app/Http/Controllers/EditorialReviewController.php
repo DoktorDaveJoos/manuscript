@@ -26,7 +26,7 @@ class EditorialReviewController extends Controller
     public function index(Book $book): Response
     {
         $reviews = $book->editorialReviews()
-            ->latest()
+            ->latest('id')
             ->limit(20)
             ->get();
 
@@ -49,6 +49,10 @@ class EditorialReviewController extends Controller
     public function store(Book $book): JsonResponse
     {
         $this->ensureAiConfigured();
+
+        // A run whose worker died would otherwise block new reviews until the
+        // hourly cleanup; fail this book's stale runs before the duplicate check.
+        EditorialReview::failStale($book);
 
         abort_if(
             $book->editorialReviews()
@@ -82,7 +86,7 @@ class EditorialReviewController extends Controller
             'book' => $book->only('id', 'title', 'author', 'language'),
             'latestReview' => $review,
             'chapters' => $this->chapterList($book),
-            'reviews' => $book->editorialReviews()->latest()->limit(20)->get(),
+            'reviews' => $book->editorialReviews()->latest('id')->limit(20)->get(),
         ]);
     }
 
