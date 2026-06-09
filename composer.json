@@ -126,14 +126,7 @@
     "extra": {
         "laravel": {
             "dont-discover": []
-        },
-        "patches": {
-            "nativephp/desktop": {
-                "Startup port resilience: macOS single-instance lock, API bind retry, startup error dialog": "patches/nativephp-desktop-startup-resilience.patch",
-                "electronPath: detect published project by root package.json so sub-paths resolve to nativephp/electron": "patches/nativephp-desktop-electron-path-resolution.patch"
-            }
-        },
-        "composer-exit-on-patch-failure": true
+        }
     },
     "config": {
         "optimize-autoloader": true,
