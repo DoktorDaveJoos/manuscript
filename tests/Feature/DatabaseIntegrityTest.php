@@ -3,6 +3,7 @@
 use App\Database\SqliteVecConnector;
 use App\Services\DatabaseRepairService;
 use App\Services\DatabaseStartupService;
+use App\Services\SqliteVec\SqliteVecService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -98,6 +99,40 @@ test('integrity check runs only once per boot', function () {
     file_put_contents($dbPath, random_bytes(4096));
     $backups = glob($this->tempDir.'/*.corrupt.*');
     expect($backups)->toBeEmpty();
+});
+
+test('integrity check is skipped for web requests', function () {
+    $dbPath = $this->tempDir.'/web.sqlite';
+    file_put_contents($dbPath, random_bytes(4096));
+
+    // Simulate NativePHP's cli-server context. PHP's built-in server resets
+    // statics per request, so a request-path check would re-pay a full
+    // O(database size) PRAGMA quick_check on EVERY request — with immediate
+    // saves on every keystroke that's a per-interaction tax that grows with
+    // the manuscript. The launch-time CLI migrate already checks once per
+    // launch; web requests must not check (or repair) at all.
+    $webApp = new class extends Illuminate\Foundation\Application
+    {
+        public function __construct() {}
+
+        public function runningInConsole()
+        {
+            return false;
+        }
+    };
+
+    $connector = new SqliteVecConnector(new SqliteVecService, $webApp);
+
+    try {
+        $connector->connect(['database' => $dbPath]);
+    } catch (Throwable) {
+        // A corrupt file may organically fail during PRAGMA setup — fine.
+        // What matters is that the destructive repair path never ran.
+    }
+
+    expect(glob($this->tempDir.'/*.corrupt.*'))->toBeEmpty();
+    expect(app()->bound('database.repaired'))->toBeFalse();
+    expect(file_exists($this->tempDir.'/.repairing'))->toBeFalse();
 });
 
 test('memory databases skip integrity check', function () {
