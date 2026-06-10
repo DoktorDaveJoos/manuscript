@@ -28,8 +28,6 @@
     "palette.closeAiAssistant": "Cerrar Asistente IA",
     "palette.openChat": "Abrir Chat",
     "palette.closeChat": "Cerrar Chat",
-    "palette.openEditorialReview": "Abrir Revisión Editorial",
-    "palette.closeEditorialReview": "Cerrar Revisión Editorial",
     "palette.enableTypewriterMode": "Activar modo máquina de escribir",
     "palette.disableTypewriterMode": "Desactivar modo máquina de escribir",
     "palette.enableSpellCheck": "Activar corrector ortográfico",
