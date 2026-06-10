@@ -13,10 +13,10 @@ import {
 } from 'lucide-react';
 import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { index as aiDashboardIndex } from '@/actions/App/Http/Controllers/AiDashboardController';
 import { index } from '@/actions/App/Http/Controllers/BookController';
 import { exportMethod } from '@/actions/App/Http/Controllers/BookSettingsController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
+import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
 import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
 import { show as showPublish } from '@/actions/App/Http/Controllers/PublishController';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
@@ -275,7 +275,7 @@ export default function Sidebar({
                     />
                     <NavItem
                         label={t('nav.ai')}
-                        href={aiDashboardIndex.url(book)}
+                        href={editorialReviewIndex.url(book)}
                         isActive={isAi}
                         iconOnly={isCollapsed}
                         icon={

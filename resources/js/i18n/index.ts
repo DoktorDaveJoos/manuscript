@@ -1,7 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import enAiDashboard from './en/ai-dashboard.json';
 import enAi from './en/ai.json';
 import enCommon from './en/common.json';
 import enDashboard from './en/dashboard.json';
@@ -46,7 +45,6 @@ i18n.use(initReactI18next).init({
             ai: enAi,
             export: enExport,
             'editorial-review': enEditorialReview,
-            'ai-dashboard': enAiDashboard,
         },
     },
     lng: 'en',
@@ -67,7 +65,6 @@ i18n.use(initReactI18next).init({
         'ai',
         'export',
         'editorial-review',
-        'ai-dashboard',
     ],
     interpolation: {
         escapeValue: false,

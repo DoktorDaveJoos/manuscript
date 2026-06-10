@@ -4,7 +4,6 @@ use App\Database\SqliteVecConnector;
 use App\Http\Controllers\ActController;
 use App\Http\Controllers\AiController;
 use App\Http\Controllers\AiConversationController;
-use App\Http\Controllers\AiDashboardController;
 use App\Http\Controllers\AiPreparationController;
 use App\Http\Controllers\AiSettingsController;
 use App\Http\Controllers\AppSettingsController;
@@ -181,7 +180,6 @@ Route::post('/settings/backup/export', [BackupController::class, 'export'])->nam
 Route::post('/settings/backup/import', [BackupController::class, 'import'])->name('settings.backup.import');
 Route::post('/settings/backup/revert', [BackupController::class, 'revert'])->name('settings.backup.revert');
 
-Route::get('/books/{book}/ai/dashboard', [AiDashboardController::class, 'index'])->name('books.ai.dashboard');
 Route::get('/books/{book}/ai/editorial-review', [EditorialReviewController::class, 'index'])->name('books.ai.editorial-review.index');
 
 Route::get('/books/{book}/canvas', [CanvasController::class, 'index'])->name('books.canvas');

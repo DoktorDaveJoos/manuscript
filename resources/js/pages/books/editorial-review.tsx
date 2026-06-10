@@ -1,8 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { Sparkles, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { index as aiDashboardIndex } from '@/actions/App/Http/Controllers/AiDashboardController';
 import AiChatDrawer from '@/components/editor/AiChatDrawer';
 import Sidebar from '@/components/editor/Sidebar';
 import EditorialReviewEmptyState from '@/components/editorial-review/EditorialReviewEmptyState';
@@ -96,18 +95,6 @@ export default function EditorialReviewPage({
                                 />
                             }
                         />
-
-                        <div className="flex gap-1 border-b border-border-light">
-                            <Link
-                                href={aiDashboardIndex.url(book)}
-                                className="border-b-2 border-transparent px-3 pb-2 text-[13px] font-medium text-ink-muted transition-colors hover:text-ink"
-                            >
-                                {t('tabs.dashboard')}
-                            </Link>
-                            <span className="border-b-2 border-ink px-3 pb-2 text-[13px] font-medium text-ink">
-                                {t('tabs.editorialReview')}
-                            </span>
-                        </div>
                     </div>
 
                     <div className="flex flex-1 flex-col px-12 py-6">

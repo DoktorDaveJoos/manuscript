@@ -1,14 +1,9 @@
 {
     "title": "KI-Assistent",
     "subtitle": "Der Lektoratspartner für Ihr Manuskript",
-
-    "tabs.dashboard": "KI-Dashboard",
-    "tabs.editorialReview": "Lektorat",
-
     "emptyState.heading": "Sehen Sie Ihre Geschichte mit den Augen eines Lektors",
     "emptyState.description": "Das Lektorat ist für fertige Erstentwürfe konzipiert. Es analysiert Ihr gesamtes Manuskript in acht redaktionellen Dimensionen und ist token-intensiv. Für laufendes Feedback während des Schreibens nutzen Sie stattdessen die Kapitelanalyse.",
     "emptyState.button": "Lektorat starten",
-
     "emptyState.features.title": "WAS DAS LEKTORAT ABDECKT",
     "emptyState.features.bigPicture.title": "Das große Ganze",
     "emptyState.features.bigPicture.description": "Plotstruktur, thematische Tiefe und ob Ihre Geschichte so ankommt, wie Sie es beabsichtigt haben.",
@@ -18,15 +13,12 @@
     "emptyState.features.pacing.description": "Wo die Geschichte atmet, wo sie eilt und wo Leser den Faden verlieren könnten.",
     "emptyState.features.prose.title": "Prosa & Handwerk",
     "emptyState.features.prose.description": "Stil auf Satzebene, Szenenkonstruktion und die kleinen Entscheidungen, die das Leseerlebnis prägen.",
-
     "confirm.title": "Lektorat starten?",
     "confirm.description": "Dies wird Ihr gesamtes Manuskript analysieren. Das Lektorat funktioniert am besten mit fertigen Erstentwürfen. Fortfahren?",
-
     "progress.refreshing": "Kapitelanalysen werden aktualisiert...",
     "progress.analyzing": "Kapitel {{current}} von {{total}} wird analysiert...",
     "progress.synthesizing": "{{section}} wird zusammengefasst...",
     "progress.pending": "Lektorat wird gestartet...",
-
     "report.overallScore": "Gesamtbewertung",
     "report.quality.good": "Gut",
     "report.quality.fair": "Befriedigend",
@@ -38,7 +30,6 @@
     "report.reviewFrom": "Lektorat vom {{date}}",
     "report.manuscriptPreview": "Manuskript-Vorschau",
     "report.summary": "Zusammenfassung",
-
     "section.plot": "Handlung",
     "section.characters": "Figuren",
     "section.pacing": "Erzähltempo",
@@ -47,7 +38,6 @@
     "section.scene_craft": "Szenengestaltung",
     "section.prose_style": "Prosastil",
     "section.chapter_notes": "Kapitelnotizen",
-
     "section.summary": "Zusammenfassung",
     "section.strengths": "Stärken",
     "section.findings": "Befunde",
@@ -56,16 +46,12 @@
     "section.chapters": "Kap. {{chapters}}",
     "section.allResolved": "Alle erledigt",
     "section.remaining": "{{count}} offen",
-
     "severity.critical": "Kritisch",
     "severity.warning": "Warnung",
     "severity.suggestion": "Vorschlag",
-
     "failed.title": "Lektorat fehlgeschlagen",
     "failed.retry": "Erneut versuchen",
-
     "sectionLabel.editorialReview": "Lektorat",
-
     "preEditorial.heading": "Vorab-Einschätzung",
     "preEditorial.description": "Dieses Manuskript benötigt grundlegende Überarbeitung, bevor ein vollständiges Lektorat sinnvoll wäre. Konzentriere dich zuerst auf die folgenden Bereiche und starte dann eine neue Bewertung.",
     "experimentalAlert": "Dies ist ein experimentelles Feature. Qualität und Genauigkeit der Ergebnisse können variieren.",

@@ -79,7 +79,6 @@ it('has no forbidden auth calls outside the allowlist', function () {
 it('has a Feature test file for every controller', function () {
     $grandfathered = [
         'AiConversationController',
-        'AiDashboardController',
         'CanvasController',
         'SearchController',
         'SettingsController',
