@@ -88,3 +88,37 @@ test('drops a failed form-request validation reported as an unhandled crash, reg
     'title route' => ['title', '/books/1/chapters/1/title'],
     'content route' => ['content', '/books/9/chapters/4/content'],
 ]);
+
+/*
+| On Windows, the NativePHP Electron process runs `php artisan optimize` on
+| boot, which compiles every Blade view via an atomic write-then-rename.
+| Antivirus real-time scanning (or any concurrent handle on the freshly
+| written file) makes that rename fail with "Access is denied", surfacing as
+| an ErrorException warning. The failure is self-healing — Electron logs it
+| and keeps booting, views compile on demand, and optimize re-runs on the
+| next launch — but the emptied `internalDontReport` lets it reach Sentry as
+| an unhandled crash (Sentry 124580823). It is never actionable.
+*/
+
+test('drops a transient compiled-view rename failure reported as an unhandled crash', function (string $message) {
+    $event = sentryEvent(new ErrorException($message), null, handled: false);
+
+    expect(BeforeSend::handle($event))->toBeNull();
+})->with([
+    'windows boot optimize' => 'rename(C:\Users\Chris\AppData\Roaming\manuscript\storage\framework\views\a3b8B7E.tmp,C:\Users\Chris\AppData\Roaming\manuscript\storage\framework\views/a3bc8d6b48f2074ed09855bf1adf471d.php): Access is denied (code: 5)',
+    'forward-slash paths' => 'rename(/app/storage/framework/views/a3b8B7E.tmp,/app/storage/framework/views/a3bc8d6b48f2074ed09855bf1adf471d.php): Access is denied (code: 5)',
+]);
+
+test('still reports a rename failure outside the compiled-views directory', function () {
+    $exception = new ErrorException('rename(/tmp/a3b8B7E.tmp,/app/storage/app/books/1/export.epub): Permission denied');
+    $event = sentryEvent($exception, null, handled: false);
+
+    expect(BeforeSend::handle($event))->toBe($event);
+});
+
+test('still reports a non-rename ErrorException that mentions the compiled-views directory', function () {
+    $exception = new ErrorException('file_put_contents(/app/storage/framework/views/a3b8B7E.tmp): Failed to open stream');
+    $event = sentryEvent($exception, null, handled: false);
+
+    expect(BeforeSend::handle($event))->toBe($event);
+});
