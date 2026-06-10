@@ -83,6 +83,8 @@
 
     "import.chapterLabel": "Kapitel {{number}} — {{title}}",
     "import.noHeadingsNotice": "Keine Kapitelüberschriften erkannt — wird als einzelnes Kapitel importiert",
+    "import.confirmError": "Beim Speichern deines Imports ist etwas schiefgelaufen. Bitte versuche es erneut.",
+    "import.parseError": "Beim Lesen deiner Datei ist etwas schiefgelaufen. Bitte prüfe das Format und versuche es erneut.",
 
     "reviewPhase.subtitle": "Import überprüfen",
     "reviewPhase.storylineType.main": "Hauptstrang",

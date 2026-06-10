@@ -119,6 +119,7 @@
     "chat.untitledChapter": "Sin título",
     "chat.newConversation": "Nueva conversación",
     "chat.loadingHistory": "Cargando conversación…",
+    "chat.findingLoaded": "Hallazgo cargado",
 
     "preparation.title": "Preparación de IA",
     "preparation.requiresPro": "Requiere Pro",
@@ -204,5 +205,6 @@
     "pacing.brisk": "Ágil",
     "pacing.measured": "Pausado",
     "pacing.languid": "Lánguido",
-    "pacing.static": "Estático"
+    "pacing.static": "Estático",
+    "discussWithAi": "Conversar con la IA"
 }

@@ -83,6 +83,8 @@
 
     "import.chapterLabel": "Capítulo {{number}} — {{title}}",
     "import.noHeadingsNotice": "No se detectaron encabezados de capítulo — se importa como capítulo único",
+    "import.confirmError": "Algo salió mal al guardar tu importación. Inténtalo de nuevo.",
+    "import.parseError": "Algo salió mal al leer tu archivo. Comprueba el formato e inténtalo de nuevo.",
 
     "reviewPhase.subtitle": "Revisa tu importación",
     "reviewPhase.storylineType.main": "principal",

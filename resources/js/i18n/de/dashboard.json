@@ -37,6 +37,11 @@
     "heatmap.monthLabels.dec": "Dez",
 
     "manuscriptProgress.towardFirstDraft": "zum ersten Entwurf",
+    "manuscriptProgress.label.almostThere": "fast geschafft!",
+    "manuscriptProgress.label.building": "nimmt Fahrt auf",
+    "manuscriptProgress.label.great": "großartiger Fortschritt!",
+    "manuscriptProgress.label.halfway": "über die Hälfte!",
+    "manuscriptProgress.label.starting": "gerade gestartet",
 
     "milestone.words": "{{value}} Wörter.",
     "milestone.days_one": "{{count}} Tag.",
@@ -118,6 +123,9 @@
 
     "suggestedNext.label": "Nächster Vorschlag",
     "suggestedNext.openInEditor": "Im Editor öffnen",
+    "suggestedNext.continueWriting": "Weiterschreiben",
+    "suggestedNext.lastEdited": "Zuletzt bearbeitet {{timeAgo}}. Mach weiter, wo du aufgehört hast!",
+    "suggestedNext.pickUpLabel": "Weitermachen, wo du aufgehört hast",
 
     "actions.normalize": "Normalisieren",
     "actions.export": "Exportieren",
@@ -156,6 +164,12 @@
     "sections.healthTimeline": "Gesundheitsverlauf",
     "sections.stats": "Statistiken",
     "sections.aiUsage": "KI-Nutzung & Kosten",
+    "sections.chapterProgress": "Kapitelfortschritt",
 
-    "header.by": "von {{author}}"
+    "header.by": "von {{author}}",
+    "header.greeting_one": "Du schreibst seit {{count}} Tag in Folge. Bleib dran!",
+    "header.greeting_other": "Du schreibst seit {{count}} Tagen in Folge. Bleib dran!",
+    "feedback.button": "Gib uns Feedback",
+    "feedback.description": "Wir würden gerne hören, wie wir dein Schreiberlebnis noch besser machen können. Dein Feedback bestimmt, was wir als Nächstes bauen.",
+    "feedback.title": "Hilf uns, Manuscript zu verbessern"
 }

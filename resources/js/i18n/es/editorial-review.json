@@ -37,6 +37,7 @@
     "report.startNew": "Iniciar Nueva Revisión",
     "report.reviewFrom": "Revisión del {{date}}",
     "report.manuscriptPreview": "Vista Previa del Manuscrito",
+    "report.summary": "Resumen",
 
     "section.plot": "Trama",
     "section.characters": "Personajes",
@@ -53,6 +54,8 @@
     "section.recommendations": "Recomendaciones",
     "section.discuss": "Discutir",
     "section.chapters": "Cap. {{chapters}}",
+    "section.allResolved": "Todo resuelto",
+    "section.remaining": "{{count}} pendientes",
 
     "severity.critical": "Crítico",
     "severity.warning": "Advertencia",
@@ -64,5 +67,11 @@
     "sectionLabel.editorialReview": "Revisión Editorial",
 
     "preEditorial.heading": "Evaluación Preliminar",
-    "preEditorial.description": "Este manuscrito necesita trabajo fundamental antes de que una revisión editorial completa sea útil. Concéntrate primero en las áreas siguientes y luego ejecuta una nueva revisión."
+    "preEditorial.description": "Este manuscrito necesita trabajo fundamental antes de que una revisión editorial completa sea útil. Concéntrate primero en las áreas siguientes y luego ejecuta una nueva revisión.",
+    "experimentalAlert": "Esta es una función experimental. La calidad y precisión de los resultados pueden variar.",
+    "finding.recommendation": "Recomendación",
+    "panel.emptyChapter": "No hay nota del editor para este capítulo",
+    "panel.noReview": "Aún no hay revisión editorial",
+    "panel.title": "Nota del Editor",
+    "panel.viewReview": "Iniciar una revisión editorial"
 }

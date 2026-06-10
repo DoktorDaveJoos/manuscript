@@ -50,9 +50,13 @@
     "frontMatter.copyright": "Copyright",
     "frontMatter.prologue": "Prolog",
     "frontMatter.tableOfContents": "Inhaltsverzeichnis",
+    "frontMatter.dedication": "Widmung",
+    "frontMatter.epigraph": "Epigraph",
 
     "backMatter.acknowledgments": "Danksagung",
     "backMatter.aboutTheAuthor": "Über den Autor",
+    "backMatter.alsoBy": "Weitere Werke",
+    "backMatter.epilogue": "Epilog",
 
     "preview": "VORSCHAU",
     "preview.contents": "Inhalt",
@@ -60,5 +64,14 @@
     "preview.acknowledgments": "Danksagung",
     "preview.aboutTheAuthor": "Über den Autor",
     "preview.empty": "Kapitel auswählen für Vorschau",
-    "preview.noVisual": "Keine visuelle Vorschau für .{{format}}"
+    "preview.noVisual": "Keine visuelle Vorschau für .{{format}}",
+    "customLabel": "Benutzerdefiniert",
+    "customize": "Anpassen",
+    "customizeDescription": "Vorlagen-Standards überschreiben",
+    "dropCaps": "Initialen",
+    "editInPublish": "Unter „Veröffentlichen“ bearbeiten",
+    "fontPairing": "Schriftpaarung",
+    "includeCover": "Cover einbeziehen",
+    "noCoverUploaded": "Kein Cover — unter „Veröffentlichen“ hochladen",
+    "sceneBreakStyle": "Szenentrenner"
 }
