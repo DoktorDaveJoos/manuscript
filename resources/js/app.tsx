@@ -9,7 +9,7 @@ import DebugOverlay from '@/components/ui/DebugOverlay';
 import UpdateDialog from '@/components/ui/UpdateDialog';
 import { checkForUpdates } from '@/hooks/useAutoUpdater';
 import '../css/app.css';
-import i18n from './i18n';
+import { setAppLanguage } from './i18n';
 import { initTheme } from './lib/theme';
 import type { AppSettings } from './types/models';
 
@@ -35,7 +35,7 @@ createInertiaApp({
         const settings = props.initialPage.props.app_settings as
             | AppSettings
             | undefined;
-        i18n.changeLanguage(settings?.locale ?? 'en');
+        const languageReady = setAppLanguage(settings?.locale ?? 'en');
 
         const appVersion =
             (props.initialPage.props.app_version as string) ?? '0.0.0';
@@ -66,15 +66,24 @@ createInertiaApp({
             return;
         }
 
-        root.render(
-            <DebugOverlay>
-                <App {...props} />
-                <UpdateDialog currentVersion={appVersion} />
-                <UpdateScheduler />
-                {databaseRepaired && <DatabaseRepairedDialog />}
-                <Toaster position="bottom-center" closeButton theme="system" />
-            </DebugOverlay>,
-        );
+        // Wait for the (local, near-instant) locale chunk before first paint
+        // so non-English users never see an English flash. English resolves
+        // immediately — it ships in the entry bundle.
+        void languageReady.finally(() => {
+            root.render(
+                <DebugOverlay>
+                    <App {...props} />
+                    <UpdateDialog currentVersion={appVersion} />
+                    <UpdateScheduler />
+                    {databaseRepaired && <DatabaseRepairedDialog />}
+                    <Toaster
+                        position="bottom-center"
+                        closeButton
+                        theme="system"
+                    />
+                </DebugOverlay>,
+            );
+        });
     },
     progress: {
         color: 'var(--color-ink-muted)',

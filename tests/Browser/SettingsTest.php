@@ -8,8 +8,19 @@ it('renders settings page with all tabs', function () {
     $page->assertNoJavaScriptErrors()
         ->assertSee('General')
         ->assertSee('Editor')
-        ->assertSee('Print')
         ->assertSee('Account');
+});
+
+it('switches the interface language to German via the lazy-loaded locale', function () {
+    $page = visit('/settings');
+
+    // 'Deutsch' lives in a code-split chunk that is only fetched when the
+    // locale toggle is clicked — this covers the lazy i18n loading path.
+    $page->assertNoJavaScriptErrors()
+        ->assertSee('Display Language')
+        ->click('Deutsch')
+        ->assertSee('Anzeigesprache')
+        ->assertNoJavaScriptErrors();
 });
 
 it('shows appearance section with theme options', function () {

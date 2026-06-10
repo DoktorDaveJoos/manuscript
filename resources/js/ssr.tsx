@@ -2,7 +2,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import createServer from '@inertiajs/react/server';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { renderToString } from 'react-dom/server';
-import i18n from './i18n';
+import { setAppLanguage } from './i18n';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -20,7 +20,7 @@ createServer((page) =>
             const settings = props.initialPage.props.app_settings as
                 | { locale?: string }
                 | undefined;
-            i18n.changeLanguage(settings?.locale ?? 'en');
+            void setAppLanguage(settings?.locale ?? 'en');
 
             return <App {...props} />;
         },

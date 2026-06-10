@@ -52,6 +52,7 @@ import Toggle from '@/components/ui/Toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
+import { setAppLanguage } from '@/i18n';
 import type { Theme } from '@/lib/theme';
 import { jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
 import type {
@@ -264,7 +265,7 @@ function LanguageSection() {
 
     function switchLocale(locale: string) {
         if (locale === activeLocale) return;
-        i18n.changeLanguage(locale);
+        void setAppLanguage(locale);
         saveAppSetting('locale', locale);
     }
 
