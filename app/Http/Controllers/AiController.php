@@ -213,25 +213,16 @@ class AiController extends Controller
             return null;
         }
 
-        $resolvedKeys = $review->resolved_findings ?? [];
+        $note = $review->chapterNoteFor($chapter->id);
 
-        $note = $review->chapterNotes()
-            ->where('chapter_id', $chapter->id)
-            ->latest('id')
-            ->first()
-            ?->notes['chapter_note'] ?? null;
-
-        $findings = $review->sections
-            ->flatMap(fn ($section) => collect($section->findings ?? [])
-                ->filter(fn ($finding) => in_array($chapter->id, array_map('intval', $finding['chapter_references'] ?? []), true)
-                    && ! in_array($finding['key'] ?? '', $resolvedKeys, true))
-                ->map(fn ($finding) => sprintf(
-                    '- [%s] (%s) %s — Recommendation: %s',
-                    $finding['severity'] ?? 'suggestion',
-                    $section->type->value,
-                    $finding['description'] ?? '',
-                    $finding['recommendation'] ?? '',
-                )))
+        $findings = collect($review->unresolvedFindingsForChapter($chapter->id))
+            ->map(fn (array $finding) => sprintf(
+                '- [%s] (%s) %s — Recommendation: %s',
+                $finding['severity'],
+                $finding['section'],
+                $finding['description'],
+                $finding['recommendation'],
+            ))
             ->all();
 
         $parts = [];

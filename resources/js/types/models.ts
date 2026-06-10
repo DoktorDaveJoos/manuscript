@@ -49,6 +49,15 @@ export type EditorialReviewChapterNote = {
     notes: Record<string, unknown> & { chapter_note?: string };
 };
 
+/** One chapter's unresolved finding as served by ChapterController::showJson. */
+export type ChapterEditorialFinding = {
+    key: string;
+    section: string;
+    severity: FindingSeverity;
+    description: string;
+    recommendation: string;
+};
+
 export type EditorialReview = {
     id: number;
     book_id: number;
@@ -82,7 +91,8 @@ export type VersionSource =
     | 'beautify'
     | 'snapshot'
     | 'continue_writing'
-    | 'rewrite_selection';
+    | 'rewrite_selection'
+    | 'editorial_rewrite';
 export type VersionStatus = 'accepted' | 'pending';
 export type PlotPointType =
     | 'setup'

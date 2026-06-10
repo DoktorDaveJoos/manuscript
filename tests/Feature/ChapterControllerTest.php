@@ -6,6 +6,8 @@ use App\Models\Beat;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
+use App\Models\EditorialReview;
+use App\Models\EditorialReviewSection;
 use App\Models\PlotPoint;
 use App\Models\Scene;
 use App\Models\Storyline;
@@ -574,6 +576,69 @@ test('notes survive round-trip through showJson endpoint', function () {
     $this->getJson(route('chapters.show.json', [$book, $chapter]))
         ->assertOk()
         ->assertJsonPath('chapter.notes', 'Round-trip test note');
+});
+
+test('showJson returns unresolved editorial findings for the chapter', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $other = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $resolvedKey = EditorialReviewSection::findingKey('pacing', 'Resolved finding.');
+    $review = EditorialReview::factory()->for($book)->create([
+        'status' => 'completed',
+        'completed_at' => now(),
+        'resolved_findings' => [$resolvedKey],
+    ]);
+    $review->chapterNotes()->create([
+        'chapter_id' => $chapter->id,
+        'notes' => ['chapter_note' => 'Tighten the opening.'],
+    ]);
+    EditorialReviewSection::factory()->for($review)->create([
+        'type' => 'pacing',
+        'findings' => [
+            [
+                'key' => EditorialReviewSection::findingKey('pacing', 'Mid-chapter sag.'),
+                'severity' => 'warning',
+                'description' => 'Mid-chapter sag.',
+                'chapter_references' => [$chapter->id],
+                'recommendation' => 'Cut the flashback.',
+            ],
+            [
+                'key' => $resolvedKey,
+                'severity' => 'critical',
+                'description' => 'Resolved finding.',
+                'chapter_references' => [$chapter->id],
+                'recommendation' => 'Already addressed.',
+            ],
+            [
+                'key' => EditorialReviewSection::findingKey('pacing', 'Other chapter issue.'),
+                'severity' => 'suggestion',
+                'description' => 'Other chapter issue.',
+                'chapter_references' => [$other->id],
+                'recommendation' => 'Elsewhere.',
+            ],
+        ],
+    ]);
+
+    $this->getJson(route('chapters.show.json', [$book, $chapter]))
+        ->assertOk()
+        ->assertJsonPath('editorialChapterNote', 'Tighten the opening.')
+        ->assertJsonCount(1, 'editorialFindings')
+        ->assertJsonPath('editorialFindings.0.description', 'Mid-chapter sag.')
+        ->assertJsonPath('editorialFindings.0.severity', 'warning')
+        ->assertJsonPath('editorialFindings.0.section', 'pacing');
+});
+
+test('showJson returns empty editorial findings without a completed review', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $this->getJson(route('chapters.show.json', [$book, $chapter]))
+        ->assertOk()
+        ->assertJsonPath('editorialChapterNote', null)
+        ->assertJsonCount(0, 'editorialFindings');
 });
 
 test('createSnapshot creates new version with snapshot source', function () {

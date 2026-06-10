@@ -149,7 +149,7 @@ it('ai chat drawer remounts cleanly when switching panes in splitscreen', functi
         ->assertNoJavaScriptErrors();
 });
 
-it('editorial panel shows chapter-specific note in splitscreen', function () {
+it('ai panel shows chapter-specific editorial note in splitscreen', function () {
     License::factory()->create();
 
     [$book, $chapters] = createBookWithChapters(2);
@@ -175,7 +175,7 @@ it('editorial panel shows chapter-specific note in splitscreen', function () {
     $page = visit("/books/{$book->id}/editor?panes={$chapters[0]->id},{$chapters[1]->id}");
 
     $page->assertNoJavaScriptErrors()
-        ->click('[data-access-bar="editorial"]')
+        ->click('[data-access-bar="ai"]')
         ->assertSee('Note for chapter one')
         ->click("[data-pane-chapter='{$chapters[1]->id}']")
         ->assertSee('Note for chapter two')

@@ -3,14 +3,12 @@
     "headerTitle": "KI-Assistent",
     "askAi": "KI fragen",
     "tokensEstimate": "~2k Tokens/Anfrage",
-
     "section.actions": "Aktionen",
     "section.prose": "Textüberarbeitung",
     "section.craftMetrics": "Handwerksmetriken",
     "section.findings": "Erkenntnisse",
     "section.nextChapter": "Nächstes Kapitel",
     "section.inThisChapter": "In diesem Kapitel",
-
     "actions.analyzing": "Analysiere…",
     "actions.analyze": "Kapitel analysieren",
     "actions.analyzeDescription": "Führe eine tiefgehende Analyse dieses Kapitels durch, um Handwerksmetriken, Erkenntnisse und Vorschläge zu erhalten.",
@@ -19,14 +17,12 @@
     "actions.beautifyDescription": "Absätze und Dialoge für sauberere Formatierung umstrukturieren. Der Text bleibt unverändert.",
     "actions.notConfigured": "KI ist nicht konfiguriert.",
     "actions.configureSettings": "Einstellungen konfigurieren",
-
     "prose.running": "Läuft…",
     "prose.runProsePass": "Textüberarbeitung starten",
     "prose.runProsePassScene": "Aktuelle Szene überarbeiten",
     "prose.runningScene": "Szene wird überarbeitet…",
     "prose.description": "Die KI überarbeitet den Kapiteltext für Klarheit, Rhythmus und Stil und bewahrt dabei deine Stimme.",
     "prose.settingsLink": "Regeln in Einstellungen anpassen →",
-
     "score.empty": "—",
     "score.good": "Gut",
     "score.fair": "Mäßig",
@@ -38,12 +34,10 @@
     "score.drifting": "Abdriftend",
     "score.offCourse": "Vom Kurs ab",
     "score.strong": "Vorhanden",
-
     "level.chapter": "Kapitel",
     "level.prose": "Prosa",
     "level.scene": "Szene",
     "level.manuscript": "Manuskript",
-
     "metric.tensionDynamics": "Spannungsdynamik",
     "metric.tensionDetail": "Wert {{score}} · Mikrospannung {{microTension}}",
     "metric.emotionalArc": "Emotionaler Bogen",
@@ -62,13 +56,10 @@
     "metric.hooksDetail": "Einstieg {{entry}} · Ausstieg {{exit}}",
     "metric.consistency": "Konsistenz",
     "metric.plotAlignment": "Handlungstreue",
-
     "confirm.notAnalyzed": "Dieses Kapitel wurde noch nicht analysiert. Die Textüberarbeitung funktioniert am besten nach einer Analyse. Trotzdem fortfahren?",
     "confirm.longChapter": "Dieses Kapitel hat {{wordCount}} Wörter. Textüberarbeitungen bei langen Kapiteln können eine Weile dauern. Fortfahren?",
-
     "error.prosePassFailed": "Textüberarbeitung fehlgeschlagen. Bitte erneut versuchen.",
     "error.beautifyFailed": "Verschönern fehlgeschlagen. Bitte erneut versuchen.",
-
     "error.toast.invalid_key.title": "Ungültiger API-Schlüssel",
     "error.toast.invalid_key.body": "{{provider}} hat deinen API-Schlüssel abgelehnt. Öffne die Einstellungen, um ihn neu einzugeben.",
     "error.toast.insufficient_credits.title": "Guthaben aufgebraucht",
@@ -91,19 +82,14 @@
     "error.toast.unknown.body": "{{detail}}",
     "error.toast.action.openSettings": "Einstellungen öffnen",
     "error.toast.providerFallback": "Dein KI-Anbieter",
-
     "findings.none": "Keine Auffälligkeiten — sieht gut aus.",
     "findings.noAnalysis": "Führe eine Analyse durch, um Erkenntnisse zu sehen.",
-
     "nextChapter.noSuggestion": "Analysiere dieses Kapitel, um einen Vorschlag für das nächste zu erhalten.",
     "nextChapter.generateOutline": "Gliederung erstellen",
-
     "characters.none": "Noch keine Figuren erkannt.",
-
     "role.protagonist": "Protagonist",
     "role.supporting": "Nebenfigur",
     "role.mentioned": "Erwähnt",
-
     "chat.connectionFailed": "Verbindung fehlgeschlagen. Bitte erneut versuchen.",
     "chat.requestFailed": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
     "chat.emptyState": "Frage alles über dieses Kapitel — Figuren, Handlung, Stil oder Ideen.",
@@ -120,7 +106,6 @@
     "chat.newConversation": "Neues Gespräch",
     "chat.loadingHistory": "Lade Gespräch…",
     "chat.findingLoaded": "Befund geladen",
-
     "preparation.title": "KI-Vorbereitung",
     "preparation.requiresPro": "Erfordert Pro",
     "preparation.upgradeDescription": "Upgrade auf Pro, um KI-gestützte Analyse, Handwerksmetriken und Schreibhilfe freizuschalten.",
@@ -149,7 +134,6 @@
     "preparation.failed": "Vorbereitung fehlgeschlagen. Bitte erneut versuchen.",
     "preparation.prepareManuscript": "Dieses Buch vorbereiten",
     "preparation.setupTime": "Dauert einige Minuten",
-
     "preparationProgress.requiresProTitle": "KI-Vorbereitung erfordert eine Pro-Lizenz",
     "preparationProgress.prepareForAi": "Für KI vorbereiten",
     "preparationProgress.configureApiKeyTitle": "Zuerst einen KI-Anbieter-API-Schlüssel konfigurieren",
@@ -161,7 +145,6 @@
     "preparationProgress.viewDetails": "Details anzeigen",
     "preparationProgress.retryFailed": "{{count}} fehlgeschlagene Aufgabe(n) erneut versuchen",
     "preparationProgress.retrying": "Erneuter Versuch…",
-
     "prepareDialog.title": "Für KI vorbereiten",
     "prepareDialog.description": "Wähle aus, welche Schritte für dieses Buch ausgeführt werden sollen. Nur die ausgewählten Schritte werden durchgeführt.",
     "prepareDialog.run": "Ausgewählte Schritte ausführen",
@@ -179,7 +162,6 @@
     "prepareDialog.step.story_bible.description": "Themen, Stilregeln, Genre-Regeln und eine Zeitleiste.",
     "prepareDialog.step.health.label": "Manuskript-Gesundheit",
     "prepareDialog.step.health.description": "Handwerks-Gesundheitswerte über das Manuskript berechnen.",
-
     "phase.chunking": "Textabschnitte aufteilen",
     "phase.embedding": "Embeddings erzeugen",
     "phase.writing_style": "Stil extrahieren",
@@ -187,24 +169,28 @@
     "phase.entity_extraction": "Entitäten extrahieren",
     "phase.story_bible": "Story-Bibel erstellen",
     "phase.health_analysis": "Zustand berechnen",
-
     "delivery.organic": "Organisch",
     "delivery.mostly_organic": "Überwiegend organisch",
     "delivery.mixed": "Gemischt",
     "delivery.exposition_heavy": "Expositionslastig",
     "delivery.info_dump": "Infodump",
-
     "purpose.turning_point": "Wendepunkt",
     "purpose.revelation": "Enthüllung",
     "purpose.deepening": "Vertiefung",
     "purpose.setup": "Einführung",
     "purpose.resolution": "Auflösung",
     "purpose.transition": "Übergang",
-
     "pacing.breakneck": "Rasant",
     "pacing.brisk": "Zügig",
     "pacing.measured": "Bedächtig",
     "pacing.languid": "Gemächlich",
     "pacing.static": "Statisch",
-    "discussWithAi": "Mit KI besprechen"
+    "discussWithAi": "Mit KI besprechen",
+    "section.editorialNotes": "Lektoratsnotizen",
+    "editorial.rewrite": "Mit Feedback überarbeiten",
+    "editorial.rewriting": "Überarbeite…",
+    "editorial.rewriteDescription": "Überarbeitet dieses Kapitel und berücksichtigt dabei das offene Feedback aus dem letzten Lektorat.",
+    "editorial.none": "Noch kein Lektorats-Feedback für dieses Kapitel. Starte ein Lektorat, um hier Notizen zu sehen und Feedback-basierte Überarbeitungen freizuschalten.",
+    "editorial.viewReport": "Lektorat öffnen →",
+    "error.rewriteFailed": "Überarbeitung fehlgeschlagen. Bitte erneut versuchen."
 }

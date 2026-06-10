@@ -3,14 +3,12 @@
     "headerTitle": "Asistente de IA",
     "askAi": "Consultar IA",
     "tokensEstimate": "~2k tokens/consulta",
-
     "section.actions": "Acciones",
     "section.prose": "Revisar prosa",
     "section.craftMetrics": "Métricas de escritura",
     "section.findings": "Hallazgos",
     "section.nextChapter": "Próximo capítulo",
     "section.inThisChapter": "En este capítulo",
-
     "actions.analyzing": "Analizando…",
     "actions.analyze": "Analizar capítulo",
     "actions.analyzeDescription": "Realiza un análisis profundo de este capítulo para identificar métricas de escritura, hallazgos y sugerencias.",
@@ -19,14 +17,12 @@
     "actions.beautifyDescription": "Reestructura párrafos y diálogos para un formato más limpio. El texto no cambia.",
     "actions.notConfigured": "La IA no está configurada.",
     "actions.configureSettings": "Configurar ajustes",
-
     "prose.running": "Ejecutando…",
     "prose.runProsePass": "Revisar prosa",
     "prose.runProsePassScene": "Revisar escena actual",
     "prose.runningScene": "Revisando escena…",
     "prose.description": "La IA revisará el texto del capítulo para mejorar la claridad, el ritmo y el estilo, preservando tu voz.",
     "prose.settingsLink": "Ajustar reglas en configuración →",
-
     "score.empty": "—",
     "score.good": "Bueno",
     "score.fair": "Regular",
@@ -38,12 +34,10 @@
     "score.drifting": "Derivando",
     "score.offCourse": "Desviado",
     "score.strong": "Presente",
-
     "level.chapter": "Capítulo",
     "level.prose": "Prosa",
     "level.scene": "Escena",
     "level.manuscript": "Manuscrito",
-
     "metric.tensionDynamics": "Dinámica de tensión",
     "metric.tensionDetail": "Puntuación {{score}} · Microtensión {{microTension}}",
     "metric.emotionalArc": "Arco emocional",
@@ -62,13 +56,10 @@
     "metric.hooksDetail": "Entrada {{entry}} · Salida {{exit}}",
     "metric.consistency": "Coherencia",
     "metric.plotAlignment": "Alineación con la trama",
-
     "confirm.notAnalyzed": "Este capítulo aún no ha sido analizado. La revisión funciona mejor después del análisis. ¿Continuar de todas formas?",
     "confirm.longChapter": "Este capítulo tiene {{wordCount}} palabras. Revisar capítulos largos puede tomar un tiempo. ¿Continuar?",
-
     "error.prosePassFailed": "La revisión falló. Por favor, intenta de nuevo.",
     "error.beautifyFailed": "El embellecimiento falló. Por favor, intenta de nuevo.",
-
     "error.toast.invalid_key.title": "Clave API no válida",
     "error.toast.invalid_key.body": "{{provider}} rechazó tu clave API. Abre los ajustes para volver a introducirla.",
     "error.toast.insufficient_credits.title": "Sin créditos",
@@ -91,19 +82,14 @@
     "error.toast.unknown.body": "{{detail}}",
     "error.toast.action.openSettings": "Abrir ajustes",
     "error.toast.providerFallback": "Tu proveedor de IA",
-
     "findings.none": "Sin hallazgos — todo se ve bien.",
     "findings.noAnalysis": "Ejecuta un análisis para ver los hallazgos.",
-
     "nextChapter.noSuggestion": "Analiza este capítulo para obtener una sugerencia de lo que sigue.",
     "nextChapter.generateOutline": "Generar esquema",
-
     "characters.none": "Aún no se detectaron personajes.",
-
     "role.protagonist": "Protagonista",
     "role.supporting": "Secundario",
     "role.mentioned": "Mencionado",
-
     "chat.connectionFailed": "La conexión falló. Por favor, intenta de nuevo.",
     "chat.requestFailed": "Algo salió mal. Por favor, intenta de nuevo.",
     "chat.emptyState": "Pregunta lo que quieras sobre este capítulo — personajes, trama, estilo o ideas.",
@@ -120,7 +106,6 @@
     "chat.newConversation": "Nueva conversación",
     "chat.loadingHistory": "Cargando conversación…",
     "chat.findingLoaded": "Hallazgo cargado",
-
     "preparation.title": "Preparación de IA",
     "preparation.requiresPro": "Requiere Pro",
     "preparation.upgradeDescription": "Actualiza a Pro para desbloquear análisis con IA, métricas de escritura y asistencia de redacción.",
@@ -149,7 +134,6 @@
     "preparation.failed": "La preparación falló. Por favor, intenta de nuevo.",
     "preparation.prepareManuscript": "Preparar este libro",
     "preparation.setupTime": "Toma unos minutos",
-
     "preparationProgress.requiresProTitle": "La preparación de IA requiere una licencia Pro",
     "preparationProgress.prepareForAi": "Preparar para IA",
     "preparationProgress.configureApiKeyTitle": "Configura primero una clave de API de proveedor de IA",
@@ -161,7 +145,6 @@
     "preparationProgress.viewDetails": "Ver detalles",
     "preparationProgress.retryFailed": "Reintentar {{count}} tarea(s) fallida(s)",
     "preparationProgress.retrying": "Reintentando…",
-
     "prepareDialog.title": "Preparar para IA",
     "prepareDialog.description": "Elige qué pasos ejecutar en este libro. Solo se realizarán los pasos seleccionados.",
     "prepareDialog.run": "Ejecutar pasos seleccionados",
@@ -179,7 +162,6 @@
     "prepareDialog.step.story_bible.description": "Temas, reglas de estilo, reglas de género y una cronología.",
     "prepareDialog.step.health.label": "Salud del manuscrito",
     "prepareDialog.step.health.description": "Calcular puntuaciones de salud del oficio en todo el manuscrito.",
-
     "phase.chunking": "Dividiendo fragmentos",
     "phase.embedding": "Generando embeddings",
     "phase.writing_style": "Extrayendo estilo",
@@ -187,24 +169,28 @@
     "phase.entity_extraction": "Extrayendo entidades",
     "phase.story_bible": "Construyendo la biblia de la historia",
     "phase.health_analysis": "Calculando salud narrativa",
-
     "delivery.organic": "Orgánica",
     "delivery.mostly_organic": "Mayormente orgánica",
     "delivery.mixed": "Mixta",
     "delivery.exposition_heavy": "Con mucha exposición",
     "delivery.info_dump": "Volcado de información",
-
     "purpose.turning_point": "Punto de giro",
     "purpose.revelation": "Revelación",
     "purpose.deepening": "Profundización",
     "purpose.setup": "Preparación",
     "purpose.resolution": "Resolución",
     "purpose.transition": "Transición",
-
     "pacing.breakneck": "Vertiginoso",
     "pacing.brisk": "Ágil",
     "pacing.measured": "Pausado",
     "pacing.languid": "Lánguido",
     "pacing.static": "Estático",
-    "discussWithAi": "Conversar con la IA"
+    "discussWithAi": "Conversar con la IA",
+    "section.editorialNotes": "Notas editoriales",
+    "editorial.rewrite": "Reescribir con feedback",
+    "editorial.rewriting": "Reescribiendo…",
+    "editorial.rewriteDescription": "Revisa este capítulo aplicando el feedback pendiente de tu última revisión editorial.",
+    "editorial.none": "Aún no hay feedback editorial para este capítulo. Ejecuta una revisión editorial para ver notas aquí y desbloquear reescrituras basadas en feedback.",
+    "editorial.viewReport": "Abrir revisión editorial →",
+    "error.rewriteFailed": "La reescritura falló. Inténtalo de nuevo."
 }
