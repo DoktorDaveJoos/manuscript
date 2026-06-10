@@ -3,6 +3,7 @@
 namespace App\Database;
 
 use App\Services\SqliteVec\SqliteVecService;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Connectors\SQLiteConnector;
 use Illuminate\Support\Facades\Log;
 
@@ -10,7 +11,10 @@ class SqliteVecConnector extends SQLiteConnector
 {
     private static bool $integrityChecked = false;
 
-    public function __construct(protected SqliteVecService $sqliteVec) {}
+    public function __construct(
+        protected SqliteVecService $sqliteVec,
+        protected Application $app,
+    ) {}
 
     /**
      * Establish a database connection, check integrity, and load sqlite-vec.
@@ -23,11 +27,16 @@ class SqliteVecConnector extends SQLiteConnector
 
         $database = $config['database'] ?? '';
 
-        // Run integrity check on the first real (non-memory) connection.
-        // This fires when NativePHP's rewriteDatabase() issues its first
-        // DB::statement(), before any middleware or route runs.
+        // Run integrity check on the first real (non-memory) connection of a
+        // CONSOLE process only — in production that's the launch-time
+        // `migrate --force`, giving one check per launch. NativePHP serves
+        // web requests via PHP's cli-server, which resets statics per
+        // request: checking there would re-pay a full O(database size)
+        // quick_check on every request. Mid-session corruption surfaces
+        // organically as SQLITE_CORRUPT query errors and is repaired (with
+        // data recovery) on the next launch.
         // Must run BEFORE PRAGMAs — PRAGMAs themselves throw on corrupt files.
-        if (! self::$integrityChecked && $database !== ':memory:' && $database !== '') {
+        if (! self::$integrityChecked && $this->app->runningInConsole() && $database !== ':memory:' && $database !== '') {
             self::$integrityChecked = true;
 
             try {
