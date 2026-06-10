@@ -120,10 +120,14 @@ class SqliteVecConnector extends SQLiteConnector
         ]);
 
         // Marker read by /repair-status so the loading screen can show an
-        // accurate "restoring your data…" state.
+        // accurate "restoring your data…" state. It must carry the backup
+        // path: when this repair runs inside the launch-time CLI migrate, the
+        // `database.repaired` binding dies with the process and the marker is
+        // the only handle the next web request has for data recovery.
         @file_put_contents(self::markerPath($path), (string) json_encode([
             'started_at' => date('c'),
             'trigger' => $cause->getMessage(),
+            'backup' => $backupPath,
         ]));
 
         $renamed = @rename($path, $backupPath);

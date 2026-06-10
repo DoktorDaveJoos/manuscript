@@ -13,22 +13,18 @@ use App\Models\Storyline;
 use App\Observers\BoardChangeObserver;
 use App\Services\BackupEncryptionService;
 use App\Services\BackupService;
-use App\Services\DatabaseRepairService;
+use App\Services\DatabaseStartupService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Ai\Events\AgentPrompted;
 use Laravel\Ai\Events\AgentStreamed;
 use Sentry\Laravel\Integration;
-use Sentry\Severity;
-use Sentry\State\Scope;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -79,11 +75,19 @@ class AppServiceProvider extends ServiceProvider
             return new ResilientMigrationRepository($app['db'], $table);
         });
 
+        // The startup service needs to distinguish real CLI contexts from
+        // NativePHP's cli-server requests — capture the flag at build time.
+        $this->app->singleton(
+            DatabaseStartupService::class,
+            fn ($app) => new DatabaseStartupService($app, $app->runningInConsole()),
+        );
+
         // After all service providers boot (including NativePHP's database
-        // rewrite), run pending migrations and attempt data recovery if the
-        // connector detected a corrupt database.
+        // rewrite), run pending migrations and attempt data recovery if a
+        // corruption repair is pending — this process's connector may have
+        // detected it, or a previous launch-time CLI migrate left a marker.
         $this->app->booted(function () {
-            $this->ensureDatabaseSchema();
+            $this->app->make(DatabaseStartupService::class)->ensureSchema();
         });
     }
 
@@ -178,88 +182,5 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
-    }
-
-    /**
-     * Run pending migrations and attempt data recovery after corruption repair.
-     *
-     * Fires from the booted() callback — by this point NativePHP has already
-     * rewritten the default database connection, so migrate targets the correct
-     * database (nativephp.sqlite in production, database.sqlite in dev).
-     */
-    protected function ensureDatabaseSchema(): void
-    {
-        if (config('database.default') !== 'sqlite') {
-            return;
-        }
-
-        // NativePHP's bundled PHP runs as cli-server so runningInConsole() is
-        // false there; any real CLI context must leave migrations to the dev.
-        if ($this->app->runningInConsole()) {
-            return;
-        }
-
-        try {
-            Artisan::call('migrate', ['--force' => true, '--no-interaction' => true]);
-        } catch (\Throwable $e) {
-            Log::error('DatabaseIntegrity: migration failed during boot.', [
-                'error' => $e->getMessage(),
-            ]);
-
-            return;
-        }
-
-        // If the connector repaired a corrupt database, try to recover data
-        // from the backup now that the fresh database has its schema.
-        if ($this->app->bound('database.repaired')) {
-            $repairInfo = $this->app->make('database.repaired');
-            $backupPath = $repairInfo['backup'] ?? null;
-
-            if ($backupPath && file_exists($backupPath)) {
-                $service = $this->app->make(DatabaseRepairService::class);
-                $result = $service->recoverData($backupPath);
-
-                // Update the repair info with recovery results so middleware
-                // can pass it to the frontend.
-                $repairInfo = array_merge($repairInfo, $result);
-                $this->app->instance('database.repaired', $repairInfo);
-            }
-
-            @unlink(SqliteVecConnector::markerPath());
-
-            $this->reportRepairToSentry($repairInfo);
-        }
-    }
-
-    /**
-     * Emit a Sentry event so operators see auto-repair activity — without this,
-     * silent "Ok" recoveries never reach monitoring and a growing rate of
-     * corrupt-DB events across the user base could go unnoticed.
-     */
-    protected function reportRepairToSentry(array $repairInfo): void
-    {
-        if (! $this->app->bound('sentry')) {
-            return;
-        }
-
-        \Sentry\withScope(function (Scope $scope) use ($repairInfo) {
-            $recovered = $repairInfo['recovered'] ?? [];
-            $failed = $repairInfo['failed'] ?? [];
-
-            $scope->setTag('database_integrity', $failed === [] ? 'repaired' : 'repaired_partial');
-            $scope->setContext('repair', [
-                'backup' => $repairInfo['backup'] ?? null,
-                'trigger' => $repairInfo['trigger'] ?? null,
-                'recovered_tables' => $recovered,
-                'failed_tables' => $failed,
-                'recovered_count' => count($recovered),
-                'failed_count' => count($failed),
-            ]);
-
-            \Sentry\captureMessage(
-                'Database corruption detected and auto-repaired',
-                Severity::error(),
-            );
-        });
     }
 }
