@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Console\Commands\OptimizeCommand;
 use App\Database\ResilientMigrationRepository;
+use App\Database\ResilientMigrator;
 use App\Database\SqliteVecConnector;
 use App\Listeners\RecordAiTokenUsage;
 use App\Models\Act;
@@ -73,6 +74,20 @@ class AppServiceProvider extends ServiceProvider
             $table = is_array($migrations) ? ($migrations['table'] ?? 'migrations') : $migrations;
 
             return new ResilientMigrationRepository($app['db'], $table);
+        });
+
+        // Snapshot-and-restore migrator: SQLite migrations are NOT wrapped in
+        // transactions, so a mid-run failure would leave partial DDL behind
+        // and wedge every subsequent launch-time `migrate --force` on
+        // "already exists". Extenders run before afterResolving callbacks, so
+        // loadMigrationsFrom() path registrations still land on this instance.
+        $this->app->extend('migrator', function ($migrator, $app) {
+            return new ResilientMigrator(
+                $app['migration.repository'],
+                $app['db'],
+                $app['files'],
+                $app['events'],
+            );
         });
 
         // The startup service needs to distinguish real CLI contexts from
