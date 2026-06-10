@@ -232,6 +232,7 @@ Route::post('/books/{book}/ai/embed', [AiController::class, 'embed'])->name('boo
 Route::post('/books/{book}/chapters/{chapter}/ai/revise', [AiController::class, 'revise'])->name('chapters.ai.revise');
 Route::post('/books/{book}/chapters/{chapter}/scenes/{scene}/ai/revise', [AiController::class, 'reviseScene'])->name('chapters.scenes.ai.revise');
 Route::post('/books/{book}/chapters/{chapter}/ai/beautify', [AiController::class, 'beautify'])->name('chapters.ai.beautify');
+Route::post('/books/{book}/chapters/{chapter}/ai/revise-editorial', [AiController::class, 'reviseWithEditorialFeedback'])->name('chapters.ai.reviseEditorial');
 Route::post('/books/{book}/chapters/{chapter}/ai/continue-writing', [ContinueWritingController::class, 'stream'])->name('chapters.ai.continueWriting');
 Route::post('/books/{book}/chapters/{chapter}/ai/continue-writing/commit', [ContinueWritingController::class, 'commit'])->name('chapters.ai.continueWriting.commit');
 Route::post('/books/{book}/chapters/{chapter}/ai/continue-writing/refine/{version}', [ContinueWritingController::class, 'refine'])->name('chapters.ai.continueWriting.refine');

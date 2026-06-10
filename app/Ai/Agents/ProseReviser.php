@@ -25,6 +25,7 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
     public function __construct(
         protected Book $book,
         protected Chapter $chapter,
+        protected ?string $editorialDirective = null,
     ) {}
 
     public function book(): Book
@@ -43,6 +44,7 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
             : '';
 
         $contextSections = $this->buildContextSections();
+        $editorialSection = $this->buildEditorialSection();
 
         return <<<INSTRUCTIONS
         You are an expert prose editor revising a chapter of '{$this->book->title}' by {$this->book->author}.
@@ -59,7 +61,7 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
         The <hr> tags mark scene boundaries — do not add or remove <hr> tags.
 
         Preserve the author's intent, plot, and character voice. Do not change plot points or character actions.
-        Return ONLY the revised text, without commentary or explanations.{$writingStyle}{$rulesSection}{$contextSections}
+        Return ONLY the revised text, without commentary or explanations.{$writingStyle}{$rulesSection}{$editorialSection}{$contextSections}
         INSTRUCTIONS;
     }
 
@@ -68,6 +70,16 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
         return [
             new InjectProviderCredentials,
         ];
+    }
+
+    private function buildEditorialSection(): string
+    {
+        if (! $this->editorialDirective) {
+            return '';
+        }
+
+        return "\n\n--- EDITORIAL FEEDBACK TO ADDRESS ---\n{$this->editorialDirective}\n"
+            .'Resolve this feedback in your revision. Where feedback conflicts with preserving plot or character actions, preserve the plot and address the feedback at the prose level only.';
     }
 
     private function buildContextSections(): string

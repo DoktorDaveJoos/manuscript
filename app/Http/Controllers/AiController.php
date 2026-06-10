@@ -178,6 +178,75 @@ class AiController extends Controller
         );
     }
 
+    public function reviseWithEditorialFeedback(Book $book, Chapter $chapter): StreamableAgentResponse
+    {
+        abort_unless($chapter->book_id === $book->id, 404);
+
+        $directive = $this->editorialDirectiveFor($book, $chapter);
+
+        abort_if($directive === null, 422, __('No completed editorial review has feedback for this chapter. Run an editorial review first.'));
+
+        return $this->streamAgentRevision(
+            $book,
+            $chapter,
+            new ProseReviser($book, $chapter, $directive),
+            __('Revise the following chapter text, addressing the editorial feedback from your instructions:'),
+            VersionSource::EditorialRewrite,
+            __('AI rewrite from editorial feedback'),
+            expectedVersionId: $this->validatedExpectedVersionId(),
+        );
+    }
+
+    /**
+     * The latest completed editorial review's feedback for one chapter: the
+     * chapter note plus every unresolved finding referencing the chapter.
+     * Null when no completed review exists or none of it concerns the chapter.
+     */
+    private function editorialDirectiveFor(Book $book, Chapter $chapter): ?string
+    {
+        $review = $book->editorialReviews()
+            ->where('status', 'completed')
+            ->latest('completed_at')
+            ->first();
+
+        if (! $review) {
+            return null;
+        }
+
+        $resolvedKeys = $review->resolved_findings ?? [];
+
+        $note = $review->chapterNotes()
+            ->where('chapter_id', $chapter->id)
+            ->latest('id')
+            ->first()
+            ?->notes['chapter_note'] ?? null;
+
+        $findings = $review->sections
+            ->flatMap(fn ($section) => collect($section->findings ?? [])
+                ->filter(fn ($finding) => in_array($chapter->id, array_map('intval', $finding['chapter_references'] ?? []), true)
+                    && ! in_array($finding['key'] ?? '', $resolvedKeys, true))
+                ->map(fn ($finding) => sprintf(
+                    '- [%s] (%s) %s — Recommendation: %s',
+                    $finding['severity'] ?? 'suggestion',
+                    $section->type->value,
+                    $finding['description'] ?? '',
+                    $finding['recommendation'] ?? '',
+                )))
+            ->all();
+
+        $parts = [];
+
+        if ($note) {
+            $parts[] = "Chapter note from the editor:\n{$note}";
+        }
+
+        if ($findings !== []) {
+            $parts[] = "Findings to address:\n".implode("\n", $findings);
+        }
+
+        return $parts === [] ? null : implode("\n\n", $parts);
+    }
+
     public function beautify(Book $book, Chapter $chapter): StreamableAgentResponse
     {
         return $this->streamAgentRevision(
