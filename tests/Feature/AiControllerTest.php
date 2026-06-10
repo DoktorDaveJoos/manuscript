@@ -15,6 +15,8 @@ use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
 use App\Models\Character;
+use App\Models\EditorialReview;
+use App\Models\EditorialReviewSection;
 use App\Models\License;
 use App\Models\Scene;
 use App\Models\Storyline;
@@ -196,6 +198,130 @@ test('revise preserves the scene title when the AI returns a single segment', fu
     $scene = $chapter->fresh()->scenes()->first();
     expect($scene->title)->toBe('The morning');
     expect($scene->content)->toContain('Polished prose');
+});
+
+test('revise-editorial streams a rewrite addressing editorial feedback and applies the new version', function () {
+    ProseReviser::fake(['<p>Rewritten with feedback.</p>']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => '<p>Original prose text.</p>',
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $review = EditorialReview::factory()->for($book)->create([
+        'status' => 'completed',
+        'completed_at' => now(),
+    ]);
+    $review->chapterNotes()->create([
+        'chapter_id' => $chapter->id,
+        'notes' => ['chapter_note' => 'The opening drags; tighten the first scene.'],
+    ]);
+    EditorialReviewSection::factory()->for($review)->create([
+        'type' => 'pacing',
+        'findings' => [[
+            'key' => EditorialReviewSection::findingKey('pacing', 'Mid-chapter sag.'),
+            'severity' => 'warning',
+            'description' => 'Mid-chapter sag.',
+            'chapter_references' => [$chapter->id],
+            'recommendation' => 'Cut the second flashback.',
+        ]],
+    ]);
+
+    $response = $this->post(route('chapters.ai.reviseEditorial', [$book, $chapter]));
+    $response->assertOk();
+    $response->streamedContent();
+
+    $newVersion = $chapter->versions()->orderByDesc('version_number')->first();
+    expect($newVersion->is_current)->toBeTrue()
+        ->and($newVersion->source)->toBe(VersionSource::EditorialRewrite)
+        ->and($newVersion->content)->toContain('Rewritten with feedback');
+});
+
+test('revise-editorial returns 422 when the book has no completed review', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'content' => '<p>Original prose text.</p>',
+    ]);
+
+    EditorialReview::factory()->for($book)->create(['status' => 'analyzing']);
+
+    $this->postJson(route('chapters.ai.reviseEditorial', [$book, $chapter]))
+        ->assertUnprocessable();
+});
+
+test('revise-editorial returns 422 when the review has no feedback for this chapter', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $other = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'content' => '<p>Original prose text.</p>',
+    ]);
+
+    $review = EditorialReview::factory()->for($book)->create([
+        'status' => 'completed',
+        'completed_at' => now(),
+    ]);
+    $review->chapterNotes()->create([
+        'chapter_id' => $other->id,
+        'notes' => ['chapter_note' => 'Notes for a different chapter.'],
+    ]);
+
+    $this->postJson(route('chapters.ai.reviseEditorial', [$book, $chapter]))
+        ->assertUnprocessable();
+});
+
+test('revise-editorial ignores findings the user marked as resolved', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'content' => '<p>Original prose text.</p>',
+    ]);
+
+    $key = EditorialReviewSection::findingKey('pacing', 'Mid-chapter sag.');
+    $review = EditorialReview::factory()->for($book)->create([
+        'status' => 'completed',
+        'completed_at' => now(),
+        'resolved_findings' => [$key],
+    ]);
+    EditorialReviewSection::factory()->for($review)->create([
+        'type' => 'pacing',
+        'findings' => [[
+            'key' => $key,
+            'severity' => 'warning',
+            'description' => 'Mid-chapter sag.',
+            'chapter_references' => [$chapter->id],
+            'recommendation' => 'Cut the second flashback.',
+        ]],
+    ]);
+
+    // The only finding is resolved and there is no chapter note — nothing to address.
+    $this->postJson(route('chapters.ai.reviseEditorial', [$book, $chapter]))
+        ->assertUnprocessable();
+});
+
+test('prose reviser instructions include the editorial directive when given', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    $agent = new ProseReviser($book, $chapter, "Chapter note from the editor:\nTighten the first scene.");
+
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)->toContain('EDITORIAL FEEDBACK')
+        ->and($instructions)->toContain('Tighten the first scene.');
 });
 
 test('prose reviser instructions include character, entity, and narrative context', function () {
