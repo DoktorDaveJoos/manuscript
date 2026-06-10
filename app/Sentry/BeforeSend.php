@@ -3,6 +3,7 @@
 namespace App\Sentry;
 
 use App\Models\AppSetting;
+use ErrorException;
 use Illuminate\Validation\ValidationException;
 use Sentry\Event;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -26,6 +27,10 @@ class BeforeSend
         }
 
         if (self::isExpectedValidationFailure($event)) {
+            return null;
+        }
+
+        if (self::isTransientCompiledViewRenameFailure($event)) {
             return null;
         }
 
@@ -87,6 +92,40 @@ class BeforeSend
     private static function isExpectedValidationFailure(Event $event): bool
     {
         return self::hasExceptionOfType($event, ValidationException::class);
+    }
+
+    /**
+     * The NativePHP Electron process runs `php artisan optimize` on boot
+     * (vendor php.js), which compiles every Blade view via an atomic
+     * write-then-rename. On Windows, antivirus real-time scanning — or any
+     * other concurrent handle on the freshly written file — makes that
+     * rename fail with "Access is denied", surfacing as an ErrorException
+     * warning. The failure is self-healing: Electron logs it and keeps
+     * booting, views compile on demand, and optimize re-runs on the next
+     * launch. But the emptied `internalDontReport` (see
+     * isExpectedValidationFailure) lets the warning reach Sentry as an
+     * unhandled crash (Sentry 124580823). Drop it — it is never actionable.
+     *
+     * Scope: only `rename()` warnings whose paths sit in the compiled-views
+     * directory (`storage/framework/views`). The Windows error text is
+     * locale-dependent, so the message suffix is deliberately not matched.
+     */
+    private static function isTransientCompiledViewRenameFailure(Event $event): bool
+    {
+        foreach ($event->getExceptions() as $exception) {
+            if (! is_a($exception->getType(), ErrorException::class, true)) {
+                continue;
+            }
+
+            $message = $exception->getValue();
+
+            if (str_starts_with($message, 'rename(')
+                && preg_match('#[/\\\\]framework[/\\\\]views[/\\\\]#', $message) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
