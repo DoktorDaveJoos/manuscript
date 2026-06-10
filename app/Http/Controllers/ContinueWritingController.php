@@ -44,9 +44,12 @@ class ContinueWritingController extends Controller
             wordGoal: $request->wordGoal(),
             beforeProse: $request->beforeProse(),
             afterProse: $request->afterProse(),
+            afterTruncated: $request->afterTruncated(),
+            sceneFollows: $request->sceneFollows(),
+            chapterLink: $request->chapterLink(),
         );
 
-        $streamable = $agent->stream('Continue writing the chapter from where the prose ends.');
+        $streamable = $agent->stream($agent->userMessage());
 
         return response()->stream(function () use ($streamable) {
             try {
