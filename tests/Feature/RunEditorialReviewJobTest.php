@@ -38,6 +38,78 @@ test('RunEditorialReviewJob batches one chapter job per chapter plus a finalize 
     });
 });
 
+test('RunEditorialReviewJob batches embed jobs for stale chapters and a style refresh before analysis', function () {
+    Bus::fake();
+
+    [$book, $chapters] = createBookWithChaptersForEditorial(3);
+    $book->update(['writing_style' => ['tone' => 'wry']]);
+    $chapters[0]->update(['prepared_content_hash' => 'stale-hash']);
+    $chapters[2]->update(['prepared_content_hash' => null]);
+
+    $review = EditorialReview::factory()->for($book)->create(['status' => 'pending']);
+
+    (new RunEditorialReviewJob($book, $review))->handle();
+
+    Bus::assertBatched(function (PendingBatch $batch) {
+        $classes = collect(editorialBatchedClasses($batch));
+
+        expect($classes->filter(fn ($c) => $c === 'EmbedReviewChapterJob'))->toHaveCount(2)
+            ->and($classes->filter(fn ($c) => $c === 'RefreshWritingStyleJob'))->toHaveCount(1);
+
+        // Embedding + style refresh must run before analysis (single-worker FIFO),
+        // so the notes agent sees fresh style and retrieval sees fresh chunks.
+        $firstAnalysis = $classes->search('AnalyzeReviewChapterJob');
+        $lastPrep = $classes
+            ->filter(fn ($c) => in_array($c, ['EmbedReviewChapterJob', 'RefreshWritingStyleJob'], true))
+            ->keys()
+            ->max();
+
+        expect($lastPrep)->toBeLessThan($firstAnalysis);
+
+        return true;
+    });
+});
+
+test('RunEditorialReviewJob skips embed and style jobs when chapters are fresh and a style exists', function () {
+    Bus::fake();
+
+    [$book] = createBookWithChaptersForEditorial(2);
+    $book->update(['writing_style' => ['tone' => 'wry']]);
+
+    $review = EditorialReview::factory()->for($book)->create(['status' => 'pending']);
+
+    (new RunEditorialReviewJob($book, $review))->handle();
+
+    Bus::assertBatched(function (PendingBatch $batch) {
+        $classes = editorialBatchedClasses($batch);
+
+        expect($classes)->not->toContain('EmbedReviewChapterJob')
+            ->and($classes)->not->toContain('RefreshWritingStyleJob');
+
+        return true;
+    });
+});
+
+test('RunEditorialReviewJob refreshes writing style when the book has none', function () {
+    Bus::fake();
+
+    [$book] = createBookWithChaptersForEditorial(2);
+    $book->update(['writing_style' => null]);
+
+    $review = EditorialReview::factory()->for($book)->create(['status' => 'pending']);
+
+    (new RunEditorialReviewJob($book, $review))->handle();
+
+    Bus::assertBatched(function (PendingBatch $batch) {
+        $classes = editorialBatchedClasses($batch);
+
+        expect($classes)->not->toContain('EmbedReviewChapterJob')
+            ->and(collect($classes)->filter(fn ($c) => $c === 'RefreshWritingStyleJob'))->toHaveCount(1);
+
+        return true;
+    });
+});
+
 test('RunEditorialReviewJob marks the review analyzing with chapter totals', function () {
     Bus::fake();
 

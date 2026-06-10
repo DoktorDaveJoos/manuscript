@@ -144,6 +144,10 @@ function createBookWithChaptersForEditorial(int $chapterCount = 3): array
         $chapter->update(['prepared_content_hash' => $chapter->content_hash]);
     }
 
+    // A prepared book also has a writing style — without one, dispatching a
+    // review would batch a RefreshWritingStyleJob (a real AI call on sync queues).
+    $book->update(['writing_style' => ['tone' => 'measured and wry']]);
+
     return [$book, $chapters];
 }
 
