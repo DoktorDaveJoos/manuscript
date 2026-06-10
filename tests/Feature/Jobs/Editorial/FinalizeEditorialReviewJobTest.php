@@ -38,6 +38,25 @@ test('FinalizeEditorialReviewJob synthesizes all sections and an executive summa
         ->and($review->sections()->count())->toBe(8);
 });
 
+test('FinalizeEditorialReviewJob persists per-section strengths', function () {
+    fakeAllEditorialAgents();
+
+    [$book, $chapters] = createBookWithChaptersForEditorial(1);
+    $review = EditorialReview::factory()->for($book)->create(['status' => 'analyzing']);
+    seedEditorialChapterNote($review, $chapters[0]->id);
+
+    (new FinalizeEditorialReviewJob($book, $review))->handle();
+
+    $review->refresh();
+
+    expect($review->sections)->toHaveCount(8);
+
+    $review->sections->each(function ($section) {
+        expect($section->strengths)->toBeArray()
+            ->and($section->strengths[0])->toContain('midpoint reversal');
+    });
+});
+
 test('FinalizeEditorialReviewJob marks review as failed when there are no chapter notes', function () {
     fakeAllEditorialAgents();
 

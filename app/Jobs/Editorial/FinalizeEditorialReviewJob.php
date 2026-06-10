@@ -112,6 +112,7 @@ class FinalizeEditorialReviewJob implements ShouldQueue
                 'type' => $sectionType,
                 'score' => $result['score'] ?? null,
                 'summary' => $result['summary'] ?? null,
+                'strengths' => $result['strengths'] ?? [],
                 'findings' => $result['findings'] ?? [],
                 'recommendations' => $result['recommendations'] ?? [],
             ]);

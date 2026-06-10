@@ -11,7 +11,6 @@ import type {
     EditorialReview,
     OnDiscussFinding,
 } from '@/types/models';
-import ChapterProgressStrip from './ChapterProgressStrip';
 import EditorialReviewSection from './EditorialReviewSection';
 
 function BulletList({
@@ -185,13 +184,6 @@ export default function EditorialReviewReport({
 
                 {!review.is_pre_editorial && (
                     <>
-                        <ChapterProgressStrip
-                            chapters={chapters}
-                            sections={review.sections}
-                            resolvedSet={resolvedSet}
-                            bookId={review.book_id}
-                        />
-
                         <div className="flex items-center justify-between">
                             <Select
                                 variant="compact"

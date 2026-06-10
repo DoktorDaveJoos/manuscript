@@ -38,6 +38,7 @@ export type EditorialReviewSection = {
     type: EditorialSectionType;
     score: number | null;
     summary: string | null;
+    strengths: string[] | null;
     findings: EditorialReviewFinding[] | null;
     recommendations: string[] | null;
 };

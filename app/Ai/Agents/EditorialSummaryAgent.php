@@ -59,16 +59,23 @@ class EditorialSummaryAgent implements Agent, BelongsToBook, HasMiddleware, HasS
         First, determine if this manuscript is ready for a full editorial review. If the overall quality
         is fundamentally below editorial-review level (overall score would be below 35), set is_pre_editorial
         to true and write the executive_summary as a direct, kind note explaining what foundational work
-        is needed before a full review would be useful. List 1-3 specific areas to focus on in top_improvements.
+        is needed before a full review would be useful — framed as the natural next stage of the draft,
+        not as a failure. List 1-3 specific areas to focus on in top_improvements.
         Leave top_strengths empty and set overall_score to the honest score.
 
         For manuscripts ready for full review, produce an executive summary that:
         - Provides an overall score (0-100) weighted by section importance (plot and characters weigh most heavily)
-        - Writes a 2-3 paragraph executive summary. The opening paragraph may acknowledge the author's ambition
-          and the story's potential — not fake praise, but genuine recognition of what they are trying to do.
-          Then assess the manuscript's state directly.
-        - Lists 1-5 genuine strengths. Only include real strengths — if only 1 exists, list 1. Do not invent strengths to fill a quota.
-        - Lists 1-5 areas for improvement, ordered by impact.
+        - Writes a 2-3 paragraph executive summary. Open with what genuinely works — the manuscript's
+          strongest qualities and what the author is achieving, grounded in the section results rather
+          than generic praise. Then assess the manuscript's current state directly, naming the most
+          important problems plainly. Close with a clear sense of the path forward: what the revision
+          priorities are and why the work is worth doing. The author should finish reading motivated
+          to revise, with no illusions about what the revision involves.
+        - Lists 1-5 genuine strengths. Each strength must be specific — name what works and why it works,
+          so the author knows what to protect and build on. Only include real strengths — if only 1
+          exists, list 1. Do not invent strengths to fill a quota.
+        - Lists 1-5 areas for improvement, ordered by impact, each phrased as a concrete revision focus
+          rather than a flaw.
 
         {$persona->scoreCalibration()}
 
