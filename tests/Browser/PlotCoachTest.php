@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Act;
 use App\Models\Book;
 use App\Models\License;
 use App\Models\PlotCoachSession;
@@ -14,9 +15,7 @@ it('shows the configure-AI CTA in Coach mode when Pro but no AI provider', funct
 
     $page->assertNoJavaScriptErrors();
 
-    // Default mode is Board (no active coach session). Switch to Coach.
-    $page->click('Coach');
-
+    // Coach is the default mode — the CTA renders without any toggle click.
     $page->assertSee('Configure AI');
 });
 
@@ -27,8 +26,6 @@ it('shows the intake empty state in Coach mode when Pro + AI configured', functi
     $page = visit("/books/{$book->id}/plot");
 
     $page->assertNoJavaScriptErrors();
-
-    $page->click('Coach');
 
     // The intake opener should render with the welcome headline + body.
     $page->assertSee('Hi.');
@@ -43,11 +40,10 @@ it('allows typing a first message into the intake input bar', function () {
 
     $page->assertNoJavaScriptErrors();
 
-    $page->click('Coach');
-
-    // Intake input is enabled — fill via CSS selector (no submit, since SSE
-    // is hard to exercise under the browser harness).
-    $page->fill('input[type="text"]', 'A mystery novel set in 1920s Berlin');
+    // Intake input is enabled — fill the AiChatInput textarea via CSS
+    // selector (no submit, since SSE is hard to exercise under the browser
+    // harness).
+    $page->fill('textarea[aria-label="Message Coach…"]', 'A mystery novel set in 1920s Berlin');
 });
 
 it('hydrates prior messages when an active coach session exists', function () {
@@ -106,16 +102,39 @@ it('toggles between coach and board modes via the toggle', function () {
 
     $page->assertNoJavaScriptErrors();
 
-    // Default is Board — coach intake should not be visible.
-    $page->assertDontSee('Hi.');
-
-    // Switch to Coach.
-    $page->click('Coach');
+    // Default is Coach — the intake opener is visible immediately.
     $page->assertSee('Hi.');
 
-    // Switch back to Board.
+    // Switch to Board.
     $page->click('Board');
     $page->assertDontSee('Hi.');
+
+    // Switch back to Coach.
+    $page->click('Coach');
+    $page->assertSee('Hi.');
+});
+
+it('fetches the latest plot state when switching to the board', function () {
+    License::factory()->create();
+    $book = Book::factory()->withAi()->create();
+
+    $page = visit("/books/{$book->id}/plot");
+
+    $page->assertNoJavaScriptErrors();
+
+    // Created AFTER the page load — exactly what happens when the coach
+    // applies a batch through the streamed chat: the Inertia page props on
+    // the client are stale by the time the user opens the board.
+    Act::factory()->create([
+        'book_id' => $book->id,
+        'number' => 1,
+        'title' => 'Midnight Heist Act',
+    ]);
+
+    $page->click('Board');
+
+    // Switching to Board must refetch from the server, not render stale props.
+    $page->assertSee('Midnight Heist Act');
 });
 
 it('renders a batch proposal card when the assistant message contains a sentinel', function () {
@@ -217,8 +236,10 @@ it('does not render the coach insights panel in board mode', function () {
 
     $page->assertNoJavaScriptErrors();
 
-    // No session → default mode is Board → insights panel must be absent.
-    $page->assertDontSee('What the coach can see');
+    // Coach is the default mode, so switch to Board first.
+    $page->click('Board')
+        ->wait(1)
+        ->assertDontSee('What the coach can see');
 });
 
 // No-Pro redirect happens at middleware level (see PlotCoachControllerTest
