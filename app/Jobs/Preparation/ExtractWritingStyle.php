@@ -36,19 +36,18 @@ class ExtractWritingStyle implements ShouldQueue
             return;
         }
 
-        $chapters = $this->book->chapters()
+        // Sample the first three chapters that actually contain prose — empty
+        // outline chapters at the start of a book must not shrink the sample.
+        $sampleTexts = $this->book->chapters()
             ->with('currentVersion')
             ->orderBy('reader_order')
-            ->limit(3)
-            ->get();
-
-        $sampleTexts = [];
-        foreach ($chapters as $chapter) {
-            $content = $chapter->currentVersion?->content;
-            if ($content) {
-                $sampleTexts[] = strip_tags($content);
-            }
-        }
+            ->get()
+            ->map(fn ($chapter) => $chapter->currentVersion?->content)
+            ->filter()
+            ->take(3)
+            ->map(fn (string $content) => strip_tags($content))
+            ->values()
+            ->all();
 
         if (empty($sampleTexts)) {
             $this->preparation->increment('current_phase_progress');

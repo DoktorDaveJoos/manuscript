@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Concerns\CachesSystemPrompt;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\SearchSimilarChunks;
@@ -13,6 +14,7 @@ use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
+use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
@@ -20,9 +22,9 @@ use Stringable;
 
 #[Temperature(0.2)]
 #[Timeout(180)]
-class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput, HasTools
+class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasProviderOptions, HasStructuredOutput, HasTools
 {
-    use Promptable;
+    use CachesSystemPrompt, Promptable;
 
     public function __construct(
         protected Book $book,
@@ -38,6 +40,9 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
     {
         $persona = EditorialPersona::Lektor;
 
+        // Book-level context is identical for every chapter of a preparation
+        // run, so it stays in the static, cacheable prefix. Only the rolling
+        // context from preceding chapters varies per call.
         $context = "You are performing a combined chapter analysis for '{$this->book->title}' by {$this->book->author}. The manuscript is written in {$this->book->language}.";
 
         $genreSnippet = $this->book->genreSnippet();
@@ -45,11 +50,7 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
             $context .= ' '.$genreSnippet;
         }
 
-        if ($this->precedingContext) {
-            $context .= "\n\nContext from preceding chapters:\n{$this->precedingContext}";
-        }
-
-        return <<<INSTRUCTIONS
+        $static = <<<INSTRUCTIONS
         {$persona->instructions()}
 
         {$context}
@@ -85,12 +86,19 @@ class ChapterAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructu
         16. sensory_grounding (1-5): How many distinct senses are meaningfully engaged (sight, sound, touch, taste, smell)? Not just mentioned — actually used to ground the reader.
         17. information_delivery: How is new information revealed? One of: organic (through action/dialogue), mostly_organic, mixed, exposition_heavy, info_dump.
 
-        Use the search tool to find related passages from other chapters when cross-referencing themes or plot threads.
-
         {$persona->languageRule($this->book->language)}
 
         Be precise and analytical. Score honestly — not every chapter needs high scores. Low tension or quiet pacing can be exactly right for a chapter's role in the story.
         INSTRUCTIONS;
+
+        if (! $this->precedingContext) {
+            return $static;
+        }
+
+        // The rolling context varies per chapter, so it sits after the cache
+        // breakpoint and is left uncached.
+        return $static."\n\n".self::CACHE_BREAKPOINT
+            ."\n\nContext from preceding chapters:\n{$this->precedingContext}";
     }
 
     /**

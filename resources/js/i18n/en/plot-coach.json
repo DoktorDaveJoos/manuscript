@@ -23,7 +23,6 @@
     "status.tool.GetEntityDetails": "Re-reading the prose\u2026",
     "status.tool.GetPlotBoardState": "Looking at the board\u2026",
     "status.tool.LookupExistingEntities": "Checking what's already saved\u2026",
-    "status.tool.RetrieveManuscriptContext": "Pulling in the manuscript\u2026",
     "status.tool.ApplyPlotCoachBatch": "Saving\u2026",
     "status.tool.UndoLastBatch": "Reverting\u2026",
 

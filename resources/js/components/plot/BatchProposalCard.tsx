@@ -414,10 +414,18 @@ function ChapterLine({ data }: { data: Record<string, unknown> }) {
     const desc = stringify(data.description ?? '');
 
     const beatIds = Array.isArray(data.beat_ids) ? data.beat_ids : null;
+    // A chapter referencing its storyline by name targets a storyline created
+    // in the same batch — surface the name since there is no id to resolve.
+    const storylineName = stringify(data.storyline_name ?? '');
 
     return (
         <span className="min-w-0 flex-1">
             <span className="font-semibold text-ink">{title}</span>
+            {storylineName && (
+                <Badge variant="secondary" className="ml-2">
+                    {storylineName}
+                </Badge>
+            )}
             {beatIds && (
                 <Badge variant="secondary" className="ml-2">
                     {beatIds.length} beat{beatIds.length === 1 ? '' : 's'}

@@ -4,12 +4,14 @@ use App\Ai\Tools\Plot\ProposeBatch;
 use App\Enums\WikiEntryKind;
 use App\Models\Book;
 use App\Models\Character;
+use App\Models\PlotCoachProposal;
+use App\Models\PlotCoachSession;
 use App\Models\PlotPoint;
 use App\Models\Storyline;
 use App\Models\WikiEntry;
 use Laravel\Ai\Tools\Request;
 
-it('returns a markdown preview with sections grouped by type', function () {
+it('returns a compact preview with summary, item count, and sentinel', function () {
     $book = Book::factory()->create();
 
     $tool = new ProposeBatch($book->id);
@@ -27,21 +29,16 @@ it('returns a markdown preview with sections grouped by type', function () {
 
     $result = (string) $tool->handle($request);
 
+    // Compact on purpose: the writes appear once, in the sentinel JSON the
+    // card is rendered from — no second per-item markdown copy.
     expect($result)
         ->toContain('## Proposed batch')
         ->toContain('Seed resistance arc')
-        ->toContain('### Characters')
-        ->toContain('Mara — A fighter.')
-        ->toContain('Tomas')
-        ->toContain('### Storylines')
-        ->toContain('[main] Resistance arc')
-        ->toContain('### Plot points')
-        ->toContain('[setup] First arrest')
-        ->toContain('### Beats')
-        ->toContain('Knock at dawn — Before sunrise.')
-        ->toContain('### Wiki entries')
-        ->toContain('[location] The Archive')
-        ->toContain('6 items — awaiting approval.');
+        ->toContain('6 items — awaiting approval.')
+        ->toContain('<!-- PLOT_COACH_BATCH_PROPOSAL')
+        ->toContain('Knock at dawn')
+        ->not->toContain('### Characters')
+        ->not->toContain('### Storylines');
 });
 
 it('does not persist anything', function () {
@@ -85,7 +82,6 @@ it('returns an explicit parse error when writes is a malformed JSON string', fun
 
     $tool = new ProposeBatch($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'malformed',
         'writes' => $malformed,
     ]));
@@ -205,7 +201,7 @@ it('scopes duplicate detection to the given book', function () {
     expect($result)->not->toContain('name already exists');
 });
 
-it('renders a Book details section for a book_update write', function () {
+it('carries book_update writes through to the sentinel payload', function () {
     $book = Book::factory()->create();
     $tool = new ProposeBatch($book->id);
     $result = (string) $tool->handle(new Request([
@@ -219,14 +215,18 @@ it('renders a Book details section for a book_update write', function () {
         ],
     ]));
 
-    expect($result)
-        ->toContain('### Book details')
-        ->toContain('premise: A retired cellist investigates a drowning.')
-        ->toContain('target length: 85,000 words')
-        ->toContain('genre: literary_fiction');
+    preg_match('/<!-- PLOT_COACH_BATCH_PROPOSAL\n(.*?)\n-->/s', $result, $matches);
+    $payload = json_decode($matches[1], true);
+
+    expect($payload['writes'][0]['type'])->toBe('book_update');
+    expect($payload['writes'][0]['data'])->toMatchArray([
+        'premise' => 'A retired cellist investigates a drowning.',
+        'target_word_count' => 85000,
+        'genre' => 'literary_fiction',
+    ]);
 });
 
-it('enriches update writes with the existing entity name + kind for the preview', function () {
+it('enriches update writes with the existing entity name + kind for the card', function () {
     $book = Book::factory()->create();
     $character = Character::factory()->for($book)->create(['name' => 'Maja']);
     $entry = WikiEntry::factory()->for($book)->create([
@@ -236,7 +236,6 @@ it('enriches update writes with the existing entity name + kind for the preview'
 
     $tool = new ProposeBatch($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'Refine entries',
         'writes' => [
             ['type' => 'character', 'data' => ['id' => $character->id, 'ai_description' => 'tighter']],
@@ -244,12 +243,8 @@ it('enriches update writes with the existing entity name + kind for the preview'
         ],
     ]));
 
-    // Markdown preview falls back to the existing name instead of "(unnamed)".
-    expect($result)
-        ->toContain('_Update_ Maja — tighter')
-        ->toContain('_Update_ [location] Jakutsk — merged');
-
-    // Sentinel payload carries the same hint fields so the React card can use them.
+    // Sentinel payload carries the hint fields so the React card can render
+    // the entity's current name for an id-only patch.
     preg_match('/<!-- PLOT_COACH_BATCH_PROPOSAL\n(.*?)\n-->/s', $result, $matches);
     $payload = json_decode($matches[1], true);
 
@@ -282,7 +277,7 @@ it('produces a unique proposal_id per invocation', function () {
     expect($mA[1])->not->toBe($mB[1]);
 });
 
-it('renders chapter wiring (POV, supporting cast, wiki entries) in the chapter line', function () {
+it('carries full chapter wiring (POV, supporting cast, wiki entries) through to the sentinel', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book, 'book')->create(['name' => 'Main arc']);
     $pov = Character::factory()->for($book, 'book')->create(['name' => 'Maja']);
@@ -302,12 +297,70 @@ it('renders chapter wiring (POV, supporting cast, wiki entries) in the chapter l
         ],
     ]));
 
+    preg_match('/<!-- PLOT_COACH_BATCH_PROPOSAL\n(.*?)\n-->/s', $result, $matches);
+    $payload = json_decode($matches[1], true);
+
+    expect($payload['writes'][0]['data'])->toMatchArray([
+        'title' => 'Opening',
+        'storyline_id' => $storyline->id,
+        'pov_character_id' => $pov->id,
+        'beat_ids' => [1, 2],
+        'character_ids' => [3, 4, 5],
+        'wiki_entry_ids' => [9],
+    ]);
+});
+
+it('binds to the constructor book and ignores a payload book_id', function () {
+    $bookA = Book::factory()->create();
+    $bookB = Book::factory()->create();
+
+    $sessionA = PlotCoachSession::factory()->for($bookA, 'book')->create();
+    $sessionB = PlotCoachSession::factory()->for($bookB, 'book')->create();
+
+    $tool = new ProposeBatch($bookA->id);
+    $tool->handle(new Request([
+        'book_id' => $bookB->id, // hallucinated by the model — must be ignored
+        'summary' => 'Save Maja',
+        'writes' => [
+            ['type' => 'character', 'data' => ['name' => 'Maja']],
+        ],
+    ]));
+
+    expect(PlotCoachProposal::query()->where('session_id', $sessionA->id)->count())->toBe(1);
+    expect(PlotCoachProposal::query()->where('session_id', $sessionB->id)->count())->toBe(0);
+});
+
+it('rejects writes with unknown types instead of persisting them for a doomed apply', function () {
+    $book = Book::factory()->create();
+    PlotCoachSession::factory()->for($book, 'book')->create();
+
+    $tool = new ProposeBatch($book->id);
+    $result = (string) $tool->handle(new Request([
+        'summary' => 'Mixed validity',
+        'writes' => [
+            ['type' => 'character', 'data' => ['name' => 'Maja']],
+            ['type' => 'Charakter', 'data' => ['name' => 'Tomas']], // unknown type
+        ],
+    ]));
+
     expect($result)
-        ->toContain('### Chapters')
-        ->toContain('Opening')
-        ->toContain('storyline → Main arc')
-        ->toContain('POV → Maja')
-        ->toContain('2 beats')
-        ->toContain('3 supporting characters')
-        ->toContain('1 wiki entry');
+        ->toContain('unknown write type')
+        ->not->toContain('PLOT_COACH_BATCH_PROPOSAL');
+
+    expect(PlotCoachProposal::query()->count())->toBe(0);
+});
+
+it('persists the proposal on the bound session even when another session is active', function () {
+    $book = Book::factory()->create();
+    $archived = PlotCoachSession::factory()->for($book, 'book')->archived()->create();
+    $active = PlotCoachSession::factory()->for($book, 'book')->create();
+
+    $tool = new ProposeBatch($book->id, session: $archived);
+    $tool->handle(new Request([
+        'summary' => 'Save Maja',
+        'writes' => [['type' => 'character', 'data' => ['name' => 'Maja']]],
+    ]));
+
+    expect(PlotCoachProposal::query()->where('session_id', $archived->id)->count())->toBe(1);
+    expect(PlotCoachProposal::query()->where('session_id', $active->id)->count())->toBe(0);
 });

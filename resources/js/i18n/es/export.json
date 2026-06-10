@@ -50,9 +50,13 @@
     "frontMatter.copyright": "Copyright",
     "frontMatter.prologue": "Prólogo",
     "frontMatter.tableOfContents": "Índice",
+    "frontMatter.dedication": "Dedicatoria",
+    "frontMatter.epigraph": "Epígrafe",
 
     "backMatter.acknowledgments": "Agradecimientos",
     "backMatter.aboutTheAuthor": "Sobre el autor",
+    "backMatter.alsoBy": "Del mismo autor",
+    "backMatter.epilogue": "Epílogo",
 
     "preview": "VISTA PREVIA",
     "preview.contents": "Contenido",
@@ -60,5 +64,14 @@
     "preview.acknowledgments": "Agradecimientos",
     "preview.aboutTheAuthor": "Sobre el autor",
     "preview.empty": "Selecciona capítulos para vista previa",
-    "preview.noVisual": "Sin vista previa visual para .{{format}}"
+    "preview.noVisual": "Sin vista previa visual para .{{format}}",
+    "customLabel": "Personalizado",
+    "customize": "Personalizar",
+    "customizeDescription": "Anular los valores de la plantilla",
+    "dropCaps": "Letras capitulares",
+    "editInPublish": "Editar en Publicar",
+    "fontPairing": "Combinación de fuentes",
+    "includeCover": "Incluir portada",
+    "noCoverUploaded": "Sin portada — súbela en Publicar",
+    "sceneBreakStyle": "Separador de escenas"
 }

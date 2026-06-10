@@ -21,7 +21,6 @@ it('rejects a chapter write whose beats reference characters not in character_id
 
     $tool = new ProposeBatch($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'Single chapter slice',
         'writes' => [
             ['type' => 'chapter', 'data' => [
@@ -51,7 +50,6 @@ it('passes through a chapter write with populated entity ids', function () {
 
     $tool = new ProposeBatch($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'Single chapter slice',
         'writes' => [
             ['type' => 'chapter', 'data' => [
@@ -78,7 +76,6 @@ it('does not validate non-chapter writes (a character write alongside a chapter)
 
     $tool = new ProposeBatch($book->id);
     $result = (string) $tool->handle(new Request([
-        'book_id' => $book->id,
         'summary' => 'Mixed batch',
         'writes' => [
             ['type' => 'character', 'data' => ['name' => 'Maja']],

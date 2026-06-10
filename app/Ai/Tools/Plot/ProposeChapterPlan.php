@@ -2,13 +2,13 @@
 
 namespace App\Ai\Tools\Plot;
 
-use App\Ai\Tools\Plot\Concerns\CoercesBookId;
 use App\Ai\Tools\Plot\Concerns\DecodesJsonPayload;
 use App\Ai\Tools\Plot\Concerns\ValidatesChapterEntityLinks;
 use App\Enums\PlotCoachProposalKind;
 use App\Models\Chapter;
 use App\Models\PlotCoachProposal;
 use App\Models\PlotCoachSession;
+use App\Models\Storyline;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Illuminate\Support\Str;
@@ -32,11 +32,21 @@ use Stringable;
  */
 class ProposeChapterPlan implements Tool
 {
-    use CoercesBookId, DecodesJsonPayload, ValidatesChapterEntityLinks;
+    use DecodesJsonPayload, ValidatesChapterEntityLinks;
+
+    /**
+     * The session is bound by the agent so proposals land on the conversation
+     * being streamed — even when it is not the book's active session. Falls
+     * back to the active session for direct construction (tests, legacy).
+     */
+    public function __construct(
+        public int $bookId,
+        private ?PlotCoachSession $session = null,
+    ) {}
 
     public function description(): Stringable|string
     {
-        return 'Presents a preview of chapter stubs you intend to add — one per proposed chapter, fully wiring beats, the POV character, supporting characters, the act, and any locations / items / lore / organizations (wiki entries) the chapter touches. Use this once beats exist and the author has agreed to break structure into chapters. The author will approve in chat before anything is persisted. Additive only: chapters whose (storyline, title) already exist will be reused (beats / characters / wiki entries re-attached without detaching), never renamed or deleted. Pass `chapters` as a JSON-encoded string of an array of `{"title": string, "storyline_id": int, "act_id"?: int, "pov_character_id"?: int, "beat_ids"?: int[], "character_ids": int[], "wiki_entry_ids": int[]}` objects. `character_ids` and `wiki_entry_ids` are REQUIRED on every chapter — list every supporting character and every location/item/organization/lore concept whose name appears in the attached beats\' descriptions. POV is added to the supporting cast pivot automatically; do not repeat it in `character_ids`. Empty arrays (`[]`) are valid only when the beats reference no known entities; otherwise the tool will reject the proposal and you must retry with the missing entities included. Example chapter: `{"title": "Madeira: Apparat-Anflug", "storyline_id": 12, "act_id": 3, "pov_character_id": 44, "beat_ids": [88, 89], "character_ids": [42, 47], "wiki_entry_ids": [12, 18]}`.';
+        return 'Presents a preview of chapter stubs you intend to add — one per proposed chapter, fully wiring beats, the POV character, supporting characters, the act, and any locations / items / lore / organizations (wiki entries) the chapter touches. Use this once beats exist and the author has agreed to break structure into chapters. The author will approve in chat before anything is persisted. Additive only: chapters whose (storyline, title) already exist will be reused (beats / characters / wiki entries re-attached without detaching), never renamed or deleted. Pass `chapters` as a JSON-encoded string of an array of `{"title": string, "storyline_id": int, "act_id"?: int, "pov_character_id"?: int, "beat_ids"?: int[], "character_ids": int[], "wiki_entry_ids": int[]}` objects. When the storyline is created in the same approved batch (so its id does not exist yet), pass `"storyline_name": string` (the exact storyline name) instead of `storyline_id` — the server resolves it at apply time. `character_ids` and `wiki_entry_ids` are REQUIRED on every chapter — list every supporting character and every location/item/organization/lore concept whose name appears in the attached beats\' descriptions. POV is added to the supporting cast pivot automatically; do not repeat it in `character_ids`. Empty arrays (`[]`) are valid only when the beats reference no known entities; otherwise the tool will reject the proposal and you must retry with the missing entities included. Example chapter: `{"title": "Madeira: Apparat-Anflug", "storyline_id": 12, "act_id": 3, "pov_character_id": 44, "beat_ids": [88, 89], "character_ids": [42, 47], "wiki_entry_ids": [12, 18]}`.';
     }
 
     /**
@@ -45,7 +55,6 @@ class ProposeChapterPlan implements Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'book_id' => $schema->integer()->required(),
             'chapters' => $schema->string()->required(),
             'summary' => $schema->string()->required(),
         ];
@@ -53,7 +62,9 @@ class ProposeChapterPlan implements Tool
 
     public function handle(Request $request): Stringable|string
     {
-        $bookId = $this->coerceBookId($request['book_id'] ?? null);
+        // Bound at construction — a payload `book_id` is deliberately ignored
+        // so the model cannot redirect a chapter plan to another book.
+        $bookId = $this->bookId;
         $parseError = null;
         $chapters = $this->decodeJsonPayload($request['chapters'] ?? null, $parseError);
         $summary = (string) ($request['summary'] ?? '');
@@ -66,32 +77,50 @@ class ProposeChapterPlan implements Tool
             return "Chapter plan preview: (empty)\n\nSummary: {$summary}";
         }
 
-        $existing = $this->existingChapterKeys($bookId, $chapters);
+        $storylineIdsByName = $this->storylineIdsByName($bookId, $chapters);
+        $existing = $this->existingChapterKeys($bookId, $chapters, $storylineIdsByName);
 
         $writes = [];
-        $lines = [];
-        $reusedCount = 0;
+        $reusedTitles = [];
+        $invalid = [];
 
-        foreach ($chapters as $chapter) {
+        foreach ($chapters as $index => $chapter) {
             if (! is_array($chapter)) {
+                $invalid[] = "chapter at index {$index}: not an object";
+
                 continue;
             }
 
             $data = $this->normalizeChapter($chapter);
 
             if ($data === null) {
+                $invalid[] = "chapter at index {$index}".(isset($chapter['title']) && is_string($chapter['title']) && trim($chapter['title']) !== '' ? " (\"{$chapter['title']}\")" : '')
+                    .': '.$this->normalizationFailureReason($chapter);
+
                 continue;
             }
 
-            $key = $this->chapterKey((int) $data['storyline_id'], (string) $data['title']);
-            $reused = isset($existing[$key]);
+            // Reuse detection needs a concrete storyline id; a storyline_name
+            // pointing at a not-yet-created storyline can't collide.
+            $resolvedStorylineId = $data['storyline_id']
+                ?? ($storylineIdsByName[mb_strtolower((string) ($data['storyline_name'] ?? ''))] ?? null);
+
+            $reused = $resolvedStorylineId !== null
+                && isset($existing[$this->chapterKey((int) $resolvedStorylineId, (string) $data['title'])]);
 
             if ($reused) {
-                $reusedCount++;
+                $reusedTitles[] = $data['title'];
             }
 
-            $lines[] = '- '.$this->renderLine($data, $reused);
             $writes[] = ['type' => 'chapter', 'data' => $data];
+        }
+
+        // Reject loudly rather than silently dropping chapters — a proposal
+        // that quietly lost entries would be approved as if it were complete.
+        if ($invalid !== []) {
+            return "Chapter plan rejected — some chapters are malformed. Nothing persisted.\n\n- "
+                .implode("\n- ", $invalid)
+                ."\n\nEvery chapter needs a non-empty `title` and a numeric `storyline_id` (or `storyline_name` when the storyline is created in the same batch). Re-call ProposeChapterPlan with all chapters fixed.";
         }
 
         if ($bookId !== null) {
@@ -103,19 +132,17 @@ class ProposeChapterPlan implements Tool
             }
         }
 
+        // Compact on purpose: the chapter writes live ONCE in the sentinel
+        // JSON below (the frontend renders the approval card from it, and it
+        // is what the model re-reads on replay).
         $sections = [];
         $sections[] = "## Proposed chapter plan\n\n_{$summary}_";
-        $sections[] = '### Chapters';
-
-        foreach ($lines as $line) {
-            $sections[] = $line;
-        }
 
         $total = count($writes);
-        $sections[] = "\n_{$total} chapter".($total === 1 ? '' : 's').' — awaiting approval._';
+        $sections[] = "_{$total} chapter".($total === 1 ? '' : 's').' — awaiting approval. The author sees the full preview card rendered from the sentinel below; do not restate its contents._';
 
-        if ($reusedCount > 0) {
-            $sections[] = "_{$reusedCount} already exist on the matching storyline — those will be reused (beats re-linked), never renamed or deleted._";
+        if ($reusedTitles !== []) {
+            $sections[] = '_'.count($reusedTitles).' already exist on the matching storyline ('.implode(', ', $reusedTitles).') — those will be reused (beats re-linked), never renamed or deleted._';
         }
 
         $proposalId = $this->persistProposal($bookId, $writes, $summary);
@@ -128,9 +155,9 @@ class ProposeChapterPlan implements Tool
     /**
      * @param  array<int, array{type: string, data: array<string, mixed>}>  $writes
      */
-    private function persistProposal(?int $bookId, array $writes, string $summary): string
+    private function persistProposal(int $bookId, array $writes, string $summary): string
     {
-        $session = is_int($bookId) ? PlotCoachSession::activeForBook($bookId) : null;
+        $session = $this->session ?? PlotCoachSession::activeForBook($bookId);
 
         if (! $session) {
             return (string) Str::uuid();
@@ -140,22 +167,64 @@ class ProposeChapterPlan implements Tool
     }
 
     /**
-     * Build a lookup of existing (storyline_id, normalized-title) keys so the
-     * preview can flag reuse before the author approves.
+     * Resolve the `storyline_name` references in a chapter list against the
+     * book's existing storylines. Map of lowercased name → storyline id
+     * (newest id wins). Names that don't match yet (storyline created in the
+     * same batch) simply don't appear.
      *
      * @param  array<int, mixed>  $chapters
-     * @return array<string, true>
+     * @return array<string, int>
      */
-    private function existingChapterKeys(?int $bookId, array $chapters): array
+    private function storylineIdsByName(?int $bookId, array $chapters): array
     {
         if (! $bookId) {
             return [];
         }
 
-        $storylineIds = array_values(array_unique(array_filter(array_map(
-            fn ($c) => is_array($c) && isset($c['storyline_id']) ? (int) $c['storyline_id'] : null,
-            $chapters,
-        ))));
+        $names = [];
+
+        foreach ($chapters as $chapter) {
+            $name = is_array($chapter) ? ($chapter['storyline_name'] ?? null) : null;
+
+            if (is_string($name) && trim($name) !== '') {
+                $names[] = trim($name);
+            }
+        }
+
+        if ($names === []) {
+            return [];
+        }
+
+        return Storyline::query()
+            ->where('book_id', $bookId)
+            ->whereIn('name', array_values(array_unique($names)))
+            ->orderBy('id')
+            ->get(['id', 'name'])
+            ->mapWithKeys(fn ($s) => [mb_strtolower(trim((string) $s->name)) => (int) $s->id])
+            ->all();
+    }
+
+    /**
+     * Build a lookup of existing (storyline_id, normalized-title) keys so the
+     * preview can flag reuse before the author approves.
+     *
+     * @param  array<int, mixed>  $chapters
+     * @param  array<string, int>  $storylineIdsByName
+     * @return array<string, true>
+     */
+    private function existingChapterKeys(?int $bookId, array $chapters, array $storylineIdsByName = []): array
+    {
+        if (! $bookId) {
+            return [];
+        }
+
+        $storylineIds = array_values(array_unique([
+            ...array_filter(array_map(
+                fn ($c) => is_array($c) && isset($c['storyline_id']) ? (int) $c['storyline_id'] : null,
+                $chapters,
+            )),
+            ...array_values($storylineIdsByName),
+        ]));
 
         if (empty($storylineIds)) {
             return [];
@@ -181,22 +250,46 @@ class ProposeChapterPlan implements Tool
     }
 
     /**
+     * Human-readable reason why {@see normalizeChapter} returned null.
+     *
      * @param  array<string, mixed>  $chapter
-     * @return array{title: string, storyline_id: int, act_id?: int, pov_character_id?: int, beat_ids?: list<int>, character_ids?: list<int>, wiki_entry_ids?: list<int>}|null
+     */
+    private function normalizationFailureReason(array $chapter): string
+    {
+        $title = $chapter['title'] ?? null;
+
+        if (! is_string($title) || trim($title) === '') {
+            return 'missing or empty `title`';
+        }
+
+        return 'missing `storyline_id` (or `storyline_name` for a storyline created in the same batch)';
+    }
+
+    /**
+     * @param  array<string, mixed>  $chapter
+     * @return array{title: string, storyline_id?: int, storyline_name?: string, act_id?: int, pov_character_id?: int, beat_ids?: list<int>, character_ids?: list<int>, wiki_entry_ids?: list<int>}|null
      */
     private function normalizeChapter(array $chapter): ?array
     {
         $title = $chapter['title'] ?? null;
         $storylineId = $chapter['storyline_id'] ?? null;
+        $storylineName = $chapter['storyline_name'] ?? null;
 
-        if (! is_string($title) || trim($title) === '' || ! is_numeric($storylineId)) {
+        if (! is_string($title) || trim($title) === '') {
             return null;
         }
 
-        $data = [
-            'title' => trim($title),
-            'storyline_id' => (int) $storylineId,
-        ];
+        $data = ['title' => trim($title)];
+
+        if (is_numeric($storylineId)) {
+            $data['storyline_id'] = (int) $storylineId;
+        } elseif (is_string($storylineName) && trim($storylineName) !== '') {
+            // Storyline created in the same batch — apply resolves the name
+            // after the storyline write has persisted in the transaction.
+            $data['storyline_name'] = trim($storylineName);
+        } else {
+            return null;
+        }
 
         if (isset($chapter['act_id']) && is_numeric($chapter['act_id'])) {
             $data['act_id'] = (int) $chapter['act_id'];
@@ -219,51 +312,6 @@ class ProposeChapterPlan implements Tool
         }
 
         return $data;
-    }
-
-    /**
-     * @param  array{title: string, storyline_id: int, act_id?: int, pov_character_id?: int, beat_ids?: list<int>, character_ids?: list<int>, wiki_entry_ids?: list<int>}  $data
-     */
-    private function renderLine(array $data, bool $reused): string
-    {
-        $parts = [$data['title']];
-
-        $meta = [];
-
-        if (! empty($data['beat_ids'])) {
-            $count = count($data['beat_ids']);
-            $meta[] = $count.' '.Str::plural('beat', $count);
-        }
-
-        if (! empty($data['pov_character_id'])) {
-            $meta[] = 'POV #'.$data['pov_character_id'];
-        }
-
-        if (! empty($data['character_ids'])) {
-            $count = count($data['character_ids']);
-            $meta[] = $count.' supporting '.Str::plural('character', $count);
-        }
-
-        if (! empty($data['wiki_entry_ids'])) {
-            $count = count($data['wiki_entry_ids']);
-            $meta[] = $count.' wiki '.Str::plural('entry', $count);
-        }
-
-        if (! empty($data['act_id'])) {
-            $meta[] = 'act #'.$data['act_id'];
-        }
-
-        if ($meta) {
-            $parts[] = '('.implode(', ', $meta).')';
-        }
-
-        $line = implode(' ', $parts);
-
-        if ($reused) {
-            $line .= ' _(existing — will reuse)_';
-        }
-
-        return $line;
     }
 
     /**

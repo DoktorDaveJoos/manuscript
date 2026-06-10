@@ -49,6 +49,7 @@
     "section.chapter_notes": "Chapter Notes",
 
     "section.summary": "Summary",
+    "section.strengths": "Strengths",
     "section.findings": "Findings",
     "section.recommendations": "Recommendations",
     "section.remaining": "{{count}} remaining",
@@ -71,8 +72,6 @@
     "preEditorial.description": "This manuscript needs foundational work before a full editorial review would be useful. Focus on the areas below first, then run a new review.",
 
     "finding.recommendation": "Recommendation",
-
-    "chapterStrip.title": "Chapter Progress",
 
     "panel.title": "Editor's Note",
     "panel.emptyChapter": "No editor's note for this chapter",

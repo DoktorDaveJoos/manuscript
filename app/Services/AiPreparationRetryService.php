@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Jobs\Preparation\AnalyzeChapter;
 use App\Jobs\Preparation\BuildStoryBible;
 use App\Jobs\Preparation\ChunkAndEmbedChapter;
+use App\Jobs\Preparation\CompletePreparation;
 use App\Jobs\Preparation\ConsolidateEntities;
 use App\Jobs\Preparation\ExtractWritingStyle;
 use App\Models\AiPreparation;
@@ -88,6 +89,19 @@ class AiPreparationRetryService
             return ['dispatched' => 0, 'cleared' => []];
         }
 
+        $dispatched = count($jobs);
+
+        // Terminal job: flips the preparation back to 'completed' (the original
+        // run already marked the phases) and refreshes the health snapshot when
+        // the original steps included it. Without it the status — and the UI —
+        // would stay on 'running' forever.
+        $jobs[] = new CompletePreparation(
+            $book,
+            $preparation,
+            finalPhases: [],
+            runHealthSnapshot: $steps === null || in_array('health', $steps, true),
+        );
+
         $preparation->clearPhaseErrors($cleared);
         $preparation->resetConsecutiveFailures();
 
@@ -95,12 +109,12 @@ class AiPreparationRetryService
             'status' => 'running',
             'current_phase' => 'retry',
             'current_phase_progress' => 0,
-            'current_phase_total' => count($jobs),
+            'current_phase_total' => $dispatched,
         ]);
 
         $batch = Bus::batch($jobs)->allowFailures()->dispatch();
         $preparation->update(['batch_id' => $batch->id]);
 
-        return ['dispatched' => count($jobs), 'cleared' => $cleared];
+        return ['dispatched' => $dispatched, 'cleared' => $cleared];
     }
 }

@@ -2,6 +2,8 @@
 
 use App\Database\SqliteVecConnector;
 use App\Services\DatabaseRepairService;
+use App\Services\DatabaseStartupService;
+use App\Services\SqliteVec\SqliteVecService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -12,8 +14,19 @@ beforeEach(function () {
 });
 
 afterEach(function () {
-    foreach (glob($this->tempDir.'/*') as $f) {
-        @unlink($f);
+    // Boot-service tests swap the default connection. Restore it BEFORE
+    // RefreshDatabase tears down — its rollback re-resolves the default at
+    // destroy time, and rolling back the wrong connection leaks an open
+    // transaction into the next test.
+    config(['database.default' => 'sqlite']);
+    DB::purge('nativephp');
+    DB::purge('devsqlite');
+
+    // GLOB_BRACE so dotfiles like the `.repairing` marker are removed too.
+    foreach (glob($this->tempDir.'/{,.}*', GLOB_BRACE) as $f) {
+        if (is_file($f)) {
+            @unlink($f);
+        }
     }
     @rmdir($this->tempDir);
 });
@@ -65,6 +78,13 @@ test('corrupt database triggers backup and fresh file', function () {
     $marker = json_decode(file_get_contents($this->tempDir.'/.repairing'), true);
     expect($marker)->toHaveKey('started_at');
     expect($marker)->toHaveKey('trigger');
+
+    // The marker must carry the backup path: when corruption is detected by
+    // the launch-time CLI migrate, the `database.repaired` container binding
+    // dies with that process — the marker is the only cross-process handle
+    // the next web request has for running data recovery.
+    expect($marker)->toHaveKey('backup');
+    expect($marker['backup'])->toBe($info['backup']);
 });
 
 test('integrity check runs only once per boot', function () {
@@ -79,6 +99,40 @@ test('integrity check runs only once per boot', function () {
     file_put_contents($dbPath, random_bytes(4096));
     $backups = glob($this->tempDir.'/*.corrupt.*');
     expect($backups)->toBeEmpty();
+});
+
+test('integrity check is skipped for web requests', function () {
+    $dbPath = $this->tempDir.'/web.sqlite';
+    file_put_contents($dbPath, random_bytes(4096));
+
+    // Simulate NativePHP's cli-server context. PHP's built-in server resets
+    // statics per request, so a request-path check would re-pay a full
+    // O(database size) PRAGMA quick_check on EVERY request — with immediate
+    // saves on every keystroke that's a per-interaction tax that grows with
+    // the manuscript. The launch-time CLI migrate already checks once per
+    // launch; web requests must not check (or repair) at all.
+    $webApp = new class extends Illuminate\Foundation\Application
+    {
+        public function __construct() {}
+
+        public function runningInConsole()
+        {
+            return false;
+        }
+    };
+
+    $connector = new SqliteVecConnector(new SqliteVecService, $webApp);
+
+    try {
+        $connector->connect(['database' => $dbPath]);
+    } catch (Throwable) {
+        // A corrupt file may organically fail during PRAGMA setup — fine.
+        // What matters is that the destructive repair path never ran.
+    }
+
+    expect(glob($this->tempDir.'/*.corrupt.*'))->toBeEmpty();
+    expect(app()->bound('database.repaired'))->toBeFalse();
+    expect(file_exists($this->tempDir.'/.repairing'))->toBeFalse();
 });
 
 test('memory databases skip integrity check', function () {
@@ -279,6 +333,102 @@ test('recovery returns empty when backup file does not exist', function () {
 
     expect($result['recovered'])->toBeEmpty();
     expect($result['failed'])->toBeEmpty();
+});
+
+// ---------------------------------------------------------------------------
+// DatabaseStartupService — boot-time schema & recovery
+//
+// In the packaged app NativePHP renames the default connection to `nativephp`
+// (still sqlite driver, pointing at the user-data DB). The boot path must key
+// off the DRIVER, not the connection NAME — guarding on the name 'sqlite'
+// made migrate + recovery dead code in production.
+// ---------------------------------------------------------------------------
+
+test('boot recovery runs when the default connection is named nativephp', function () {
+    $livePath = $this->tempDir.'/nativephp.sqlite';
+    touch($livePath);
+
+    // Backup left behind by a launch-time CLI repair: readable, with user data.
+    $backupPath = $livePath.'.corrupt.2026-06-10_120000';
+    $pdo = new PDO("sqlite:{$backupPath}");
+    $pdo->exec('CREATE TABLE app_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL, value TEXT, created_at DATETIME, updated_at DATETIME)');
+    $pdo->exec("INSERT INTO app_settings (key, value) VALUES ('recovery_probe', 'user-value')");
+    unset($pdo);
+
+    // Marker as written by SqliteVecConnector::repairDatabase() in the CLI
+    // migrate process — the only cross-process repair signal.
+    file_put_contents($this->tempDir.'/.repairing', json_encode([
+        'started_at' => '2026-06-10T12:00:00+00:00',
+        'trigger' => 'PRAGMA quick_check failed: test',
+        'backup' => $backupPath,
+    ]));
+
+    config(['database.connections.nativephp' => [
+        'driver' => 'sqlite',
+        'database' => $livePath,
+        'prefix' => '',
+        'foreign_key_constraints' => true,
+    ]]);
+    config(['database.default' => 'nativephp']);
+    config(['nativephp-internal.running' => true]);
+
+    (new DatabaseStartupService(app(), runningInConsole: false))->ensureSchema();
+
+    // Fresh DB got its schema, then the user's data back.
+    expect(Schema::hasTable('app_settings'))->toBeTrue();
+    expect(DB::table('app_settings')->where('key', 'recovery_probe')->value('value'))->toBe('user-value');
+
+    // Repair info is bound for HandleInertiaRequests to surface the toast.
+    expect(app()->bound('database.repaired'))->toBeTrue();
+    expect(app('database.repaired')['recovered'])->toContain('app_settings');
+
+    // Marker cleared — otherwise every future launch shows "Restoring your
+    // data" on the loading screen forever.
+    expect(file_exists($this->tempDir.'/.repairing'))->toBeFalse();
+});
+
+test('boot skips migrate under nativephp when no repair is pending', function () {
+    $livePath = $this->tempDir.'/nativephp.sqlite';
+    touch($livePath);
+
+    config(['database.connections.nativephp' => [
+        'driver' => 'sqlite',
+        'database' => $livePath,
+        'prefix' => '',
+        'foreign_key_constraints' => true,
+    ]]);
+    config(['database.default' => 'nativephp']);
+    config(['nativephp-internal.running' => true]);
+
+    (new DatabaseStartupService(app(), runningInConsole: false))->ensureSchema();
+
+    // The Electron main process already runs `migrate --force` once per
+    // launch — re-running it on every web request is wasted work.
+    $pdo = new PDO("sqlite:{$livePath}");
+    $migrationsTable = $pdo->query("SELECT count(*) FROM sqlite_master WHERE name = 'migrations'")->fetchColumn();
+    expect((int) $migrationsTable)->toBe(0);
+    expect(app()->bound('database.repaired'))->toBeFalse();
+});
+
+test('boot migrates sqlite-driver defaults regardless of connection name outside nativephp', function () {
+    $livePath = $this->tempDir.'/dev.sqlite';
+    touch($livePath);
+
+    config(['database.connections.devsqlite' => [
+        'driver' => 'sqlite',
+        'database' => $livePath,
+        'prefix' => '',
+        'foreign_key_constraints' => true,
+    ]]);
+    config(['database.default' => 'devsqlite']);
+    config(['nativephp-internal.running' => false]);
+
+    (new DatabaseStartupService(app(), runningInConsole: false))->ensureSchema();
+
+    // Outside NativePHP there is no launch-time migrate — the boot path is
+    // the only migration path and must run for ANY sqlite-driver default.
+    expect(Schema::hasTable('migrations'))->toBeTrue();
+    expect(Schema::hasTable('app_settings'))->toBeTrue();
 });
 
 // ---------------------------------------------------------------------------

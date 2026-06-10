@@ -23,7 +23,6 @@
     "status.tool.GetEntityDetails": "Releyendo el pasaje\u2026",
     "status.tool.GetPlotBoardState": "Mirando el tablero\u2026",
     "status.tool.LookupExistingEntities": "Comprobando lo guardado\u2026",
-    "status.tool.RetrieveManuscriptContext": "Trayendo el contexto del manuscrito\u2026",
     "status.tool.ApplyPlotCoachBatch": "Guardando\u2026",
     "status.tool.UndoLastBatch": "Revirtiendo\u2026",
 

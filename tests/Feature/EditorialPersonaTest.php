@@ -10,13 +10,15 @@ it('returns a label for each persona', function () {
     expect(EditorialPersona::Lektor->label())->toBe('Lektor');
 });
 
-it('returns persona instructions that include key honesty phrases', function () {
+it('returns persona instructions that balance honesty with encouragement', function () {
     $instructions = EditorialPersona::Lektor->instructions();
 
     expect($instructions)
         ->toContain('serve the work, not the author\'s ego')
-        ->toContain('Do not inflate scores')
-        ->toContain('compliment sandwich');
+        ->toContain('invent praise')
+        ->toContain('concrete path')
+        ->toContain('what to protect')
+        ->toContain('not as verdicts on the author\'s ability');
 });
 
 it('returns score calibration text', function () {
@@ -24,7 +26,9 @@ it('returns score calibration text', function () {
 
     expect($calibration)
         ->toContain('55-65')
-        ->toContain('86-95');
+        ->toContain('86-95')
+        ->toContain('Do not inflate scores')
+        ->toContain('never a prognosis');
 });
 
 it('returns severity definitions', function () {
@@ -33,15 +37,21 @@ it('returns severity definitions', function () {
     expect($severity)
         ->toContain('critical')
         ->toContain('warning')
-        ->toContain('suggestion');
+        ->toContain('suggestion')
+        ->toContain('recommendation the author can act on');
 });
 
-it('returns anti-pattern rules', function () {
+it('returns anti-pattern rules covering both dishonest and discouraging patterns', function () {
     $rules = EditorialPersona::Lektor->antiPatternRules();
 
     expect($rules)
         ->toContain('DO NOT')
-        ->toContain('hedge');
+        ->toContain('hedge')
+        ->toContain('DO NOT invent strengths')
+        ->toContain('DO NOT state a problem without a concrete way to address it')
+        ->toContain('DO NOT catastrophize')
+        ->toContain('Critique the draft, never the writer')
+        ->toContain('DO NOT skip genuine strengths');
 });
 
 use App\Ai\Agents\ChapterAnalyzer;
@@ -52,7 +62,7 @@ use App\Ai\Agents\EditorialSynthesisAgent;
 use App\Enums\EditorialSectionType;
 use App\Models\Book;
 
-it('synthesis agent instructions include persona and calibration', function () {
+it('synthesis agent instructions include persona, calibration, and strengths requirements', function () {
     $book = Book::factory()->create();
     $agent = new EditorialSynthesisAgent(
         book: $book,
@@ -65,11 +75,12 @@ it('synthesis agent instructions include persona and calibration', function () {
     expect($instructions)
         ->toContain('serve the work, not the author\'s ego')
         ->toContain('55-65')
-        ->toContain('DO NOT use compliment sandwiches')
+        ->toContain('Genuine strengths in this dimension')
+        ->toContain('Never invent strengths to fill a quota')
         ->toContain('critical: Structural issues');
 });
 
-it('summary agent instructions include persona and honesty rules', function () {
+it('summary agent instructions require an encouraging but honest executive summary', function () {
     $book = Book::factory()->create();
     $agent = new EditorialSummaryAgent(
         book: $book,
@@ -80,11 +91,14 @@ it('summary agent instructions include persona and honesty rules', function () {
 
     expect($instructions)
         ->toContain('serve the work, not the author\'s ego')
-        ->toContain('DO NOT use compliment sandwiches')
+        ->toContain('Open with what genuinely works')
+        ->toContain('important problems plainly')
+        ->toContain('no illusions about what the revision involves')
+        ->toContain('Do not invent strengths to fill a quota')
         ->not->toContain('Be balanced and constructive');
 });
 
-it('notes agent instructions lead with issues before strengths', function () {
+it('notes agent instructions demand passage-anchored, actionable chapter notes', function () {
     $book = Book::factory()->create();
     $agent = new EditorialNotesAgent(book: $book);
 
@@ -92,8 +106,11 @@ it('notes agent instructions lead with issues before strengths', function () {
 
     expect($instructions)
         ->toContain('serve the work, not the author\'s ego')
-        ->toContain('lead with what needs the author\'s attention')
-        ->not->toContain('highlight what works, what needs attention');
+        ->toContain('Anchor every observation in the text')
+        ->toContain('concrete revision move')
+        ->toContain('genuinely works and why it works')
+        ->toContain('single highest-impact focus')
+        ->toContain('A note that could be pasted under any chapter is a failed note');
 });
 
 it('chat agent instructions are direct and handle disagreement properly', function () {
@@ -107,9 +124,7 @@ it('chat agent instructions are direct and handle disagreement properly', functi
 
     expect($instructions)
         ->toContain('re-examine the evidence')
-        ->toContain('not trying to win an argument')
-        ->not->toContain('encouraging')
-        ->not->toContain('respecting their creative vision');
+        ->toContain('not trying to win an argument');
 });
 
 it('chapter analyzer instructions include persona', function () {
@@ -133,5 +148,5 @@ it('manuscript analyzer instructions include persona and anti-patterns', functio
 
     expect($instructions)
         ->toContain('serve the work, not the author\'s ego')
-        ->toContain('DO NOT use compliment sandwiches');
+        ->toContain('DO NOT invent strengths');
 });

@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.6.0 (2026-06-10)
+
+### Features
+
+- **Continue writing** — inline insertions now bridge into the prose after the cursor instead of producing disconnected paragraphs; preceding chapters carry continuity-background roles and storyline labels so new chapters stop welding onto the previous chapter's final scene; new chapter-link choice (Auto / Continue on / Fresh scene) for opening an empty chapter; hints take priority over chapter beats and may run to 2000 chars; the dialog draft survives closing for research (efb58054)
+- **Rewrite selection** — the same prompt overhaul ported to rewrites: continuity-background roles for preceding chapters, truncated-excerpt flags so the model stops mistaking a cut for the chapter boundary, directives take priority and may run to 2000 chars, persistent dialog draft with reset, and a head … tail selection preview with word count (b31f7b50)
+- **Editorial review** — fair, encouraging, honest feedback with per-section strengths (b12a2109)
+- **Editor** — auto-growing notes textarea with icon save status (46ba7745)
+- **Migrations** — snapshot the SQLite databases before pending runs and restore on failure, so a failed migration no longer leaves partial DDL behind (124c39e8)
+
+### Fixes
+
+- Editor AI: streamed multi-paragraph continuations/rewrites now land as real paragraphs instead of one wall of text, and prior scenes are extracted without gluing paragraph boundaries together (efb58054, b31f7b50)
+- Plot Coach: close all 23 review findings — routing, validation, session binding, token diet (43be671d)
+- AI: unstick editorial review lifecycle and latest() ordering ties (d05109f9)
+- AI: unstick preparation status lifecycle and writing-style sampling (747c42f8)
+- Resilience: marker-driven boot recovery, guarded by driver instead of connection name (7b7ba366)
+- Sentry: drop transient compiled-view rename failures from boot-time optimize (0a2ceaca)
+- i18n: fill missing de/es/en locale keys, enforced by a locale-parity test (f1c5b010)
+
+### Other Changes
+
+- Perf: run the SQLite boot integrity check only in console processes, not on every web request (9f655df6)
+- Perf: cut prepare-AI token spend with inline context and prompt caching; widen the editorial synthesis cache prefix and cache the chat system prompt (cad1722b, 11f7d701)
+- CI: cut the tests workflow from ~4m to ~1m, lint on dev, cached publish (ef3623a6)
+
 ## v0.5.1 (2026-06-09)
 
 ### Fixes

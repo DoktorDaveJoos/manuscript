@@ -3,6 +3,7 @@
 use App\Ai\Agents\ManuscriptAnalyzer;
 use App\Enums\AnalysisType;
 use App\Models\Book;
+use Laravel\Ai\Enums\Lab;
 
 test('manuscript analyzer returns structured analysis', function () {
     ManuscriptAnalyzer::fake();
@@ -43,6 +44,37 @@ test('manuscript analyzer includes book title in instructions', function () {
     $instructions = $agent->instructions();
 
     expect((string) $instructions)->toContain('The Great Novel');
+});
+
+test('manuscript analyzer exposes retrieval tools when no inline context is given', function () {
+    $book = Book::factory()->withAi()->create();
+
+    $agent = new ManuscriptAnalyzer($book, AnalysisType::Pacing);
+
+    expect(iterator_to_array($agent->tools()))->toHaveCount(2);
+});
+
+test('manuscript analyzer runs single-shot without tools when context is inlined', function () {
+    $book = Book::factory()->withAi()->create();
+
+    $agent = new ManuscriptAnalyzer($book, AnalysisType::CharacterConsistency, inlineContext: 'UNIQUE_CONTEXT_MARKER');
+
+    expect(iterator_to_array($agent->tools()))->toBeEmpty()
+        ->and((string) $agent->instructions())->toContain('UNIQUE_CONTEXT_MARKER');
+});
+
+test('manuscript analyzer caches the persona prefix but not the inline context for Anthropic', function () {
+    $book = Book::factory()->withAi()->create();
+
+    $agent = new ManuscriptAnalyzer($book, AnalysisType::PlotDeviation, inlineContext: 'UNIQUE_CONTEXT_MARKER');
+    $blocks = $agent->providerOptions(Lab::Anthropic)['system'];
+
+    expect($blocks[0]['cache_control'])->toBe(['type' => 'ephemeral'])
+        ->and($blocks[0]['text'])->not->toContain('UNIQUE_CONTEXT_MARKER');
+
+    $last = $blocks[count($blocks) - 1];
+    expect($last)->not->toHaveKey('cache_control')
+        ->and($last['text'])->toContain('UNIQUE_CONTEXT_MARKER');
 });
 
 test('manuscript analyzer includes middleware', function () {

@@ -10,6 +10,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/Collapsible';
+import SectionLabel from '@/components/ui/SectionLabel';
 import { severityDotColor } from '@/lib/editorial-constants';
 import { cn } from '@/lib/utils';
 import type {
@@ -150,6 +151,7 @@ export default function EditorialReviewSection({
     const [open, setOpen] = useState(false);
 
     const findings = section.findings ?? [];
+    const strengths = section.strengths ?? [];
     const totalFindings = findings.length;
     const resolvedCount = findings.filter((f) => resolvedSet.has(f.key)).length;
     const remainingCount = totalFindings - resolvedCount;
@@ -208,6 +210,22 @@ export default function EditorialReviewSection({
                         <p className="text-[13px] leading-relaxed text-ink-muted">
                             {section.summary}
                         </p>
+                    )}
+
+                    {strengths.length > 0 && (
+                        <div className="flex flex-col gap-2 pt-1">
+                            <SectionLabel>
+                                {t('section.strengths')}
+                            </SectionLabel>
+                            {strengths.map((strength, i) => (
+                                <div key={i} className="flex items-start gap-2">
+                                    <span className="mt-[6px] size-2 shrink-0 rounded-full bg-status-final" />
+                                    <span className="text-[13px] leading-relaxed text-ink-muted">
+                                        {strength}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
                     )}
 
                     {totalFindings > 0 && (

@@ -71,6 +71,41 @@ test('extract writing style rethrows transient errors for retry and does not rec
     expect($preparation->phase_errors)->toBeNull();
 });
 
+test('extract writing style samples the first chapters that actually have content', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+
+    // Chapters 1-3 are empty outlines; real prose starts at chapter 4.
+    foreach ([1, 2, 3] as $order) {
+        $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => $order]);
+        ChapterVersion::factory()->for($chapter)->create(['is_current' => true, 'content' => null]);
+    }
+
+    $written = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 4]);
+    ChapterVersion::factory()->for($written)->create([
+        'is_current' => true,
+        'content' => '<p>UNIQUE_PROSE_MARKER and more prose follows here.</p>',
+    ]);
+
+    $preparation = AiPreparation::create([
+        'book_id' => $book->id,
+        'status' => 'running',
+        'current_phase' => 'writing_style',
+        'current_phase_total' => 1,
+        'current_phase_progress' => 0,
+    ]);
+
+    $service = $this->mock(WritingStyleService::class);
+    $service->shouldReceive('extract')->once()
+        ->withArgs(fn (string $sample) => str_contains($sample, 'UNIQUE_PROSE_MARKER'))
+        ->andReturn(['tone' => 'wry']);
+
+    $job = new ExtractWritingStyle($book, $preparation);
+    $job->handle($service);
+
+    expect($book->fresh()->writing_style)->toBe(['tone' => 'wry']);
+});
+
 test('failed hook reports to Sentry and records error', function () {
     Exceptions::fake();
     [$book, $preparation] = seedBookForStyle();

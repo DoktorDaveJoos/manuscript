@@ -31,6 +31,15 @@ class LookupExistingEntities implements Tool
 
     public function handle(Request $request): Stringable|string
     {
+        return $this->render();
+    }
+
+    /**
+     * Render the existing-entities snapshot. Exposed separately so agents can
+     * inline it into a prompt instead of spending a tool round trip on it.
+     */
+    public function render(): string
+    {
         $book = Book::query()->findOrFail($this->bookId);
         $characters = $book->characters()->get(['id', 'name', 'aliases', 'description', 'ai_description']);
         $wikiEntries = $book->wikiEntries()->get(['id', 'name', 'kind', 'type', 'description', 'ai_description', 'metadata']);

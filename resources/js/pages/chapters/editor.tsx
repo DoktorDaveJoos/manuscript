@@ -21,13 +21,19 @@ import AiPanel from '@/components/editor/AiPanel';
 import ChapterPane, { firstLine } from '@/components/editor/ChapterPane';
 import type { SaveStatus } from '@/components/editor/ChapterPane';
 import CommandPalette from '@/components/editor/CommandPalette';
-import ContinueWritingDialog from '@/components/editor/ContinueWritingDialog';
+import ContinueWritingDialog, {
+    defaultContinueWritingDraft,
+} from '@/components/editor/ContinueWritingDialog';
+import type { ContinueWritingDraft } from '@/components/editor/ContinueWritingDialog';
 import EditorialReviewPanel from '@/components/editor/EditorialReviewPanel';
 import GlobalFindDrawer from '@/components/editor/GlobalFindDrawer';
 import NotesPanel from '@/components/editor/NotesPanel';
 import PaneEmptyState from '@/components/editor/PaneEmptyState';
 import PlotPanel from '@/components/editor/PlotPanel';
-import RewriteSelectionDialog from '@/components/editor/RewriteSelectionDialog';
+import RewriteSelectionDialog, {
+    defaultRewriteSelectionDraft,
+} from '@/components/editor/RewriteSelectionDialog';
+import type { RewriteSelectionDraft } from '@/components/editor/RewriteSelectionDialog';
 import Sidebar from '@/components/editor/Sidebar';
 import WikiPanel from '@/components/editor/WikiPanel';
 import Button from '@/components/ui/Button';
@@ -540,14 +546,31 @@ export default function EditorPage({
 
     // ── Continue writing ─────────────────────────────────────────────────
     const [isContinueWritingOpen, setIsContinueWritingOpen] = useState(false);
+    // Draft survives closing the dialog (research, then come back) — it only
+    // resets on submit, explicit reset, or switching chapters.
+    const [continueWritingDraft, setContinueWritingDraft] =
+        useState<ContinueWritingDraft>(defaultContinueWritingDraft);
     const continueWriting = useContinueWriting();
+
+    useEffect(() => {
+        setContinueWritingDraft(defaultContinueWritingDraft);
+    }, [focusedChapterId]);
 
     // ── Rewrite selection ────────────────────────────────────────────────
     const [rewriteRange, setRewriteRange] = useState<{
         from: number;
         to: number;
     } | null>(null);
+    // Draft survives closing the dialog (research, then come back) — it only
+    // resets on submit, explicit reset, or switching chapters.
+    const [rewriteDraft, setRewriteDraft] = useState<RewriteSelectionDraft>(
+        defaultRewriteSelectionDraft,
+    );
     const rewriteSelection = useRewriteSelection();
+
+    useEffect(() => {
+        setRewriteDraft(defaultRewriteSelectionDraft);
+    }, [focusedChapterId]);
 
     const reviewForChapter = useCallback(
         (chapterId: number) => {
@@ -998,8 +1021,13 @@ export default function EditorPage({
 
             {isContinueWritingOpen && activeEditor && focusedChapter && (
                 <ContinueWritingDialog
+                    draft={continueWritingDraft}
+                    onDraftChange={setContinueWritingDraft}
+                    onReset={() =>
+                        setContinueWritingDraft(defaultContinueWritingDraft)
+                    }
                     onClose={() => setIsContinueWritingOpen(false)}
-                    onSubmit={({ hint, wordGoal }) => {
+                    onSubmit={({ hint, wordGoal, chapterLink }) => {
                         continueWriting.start({
                             editor: activeEditor,
                             activeSceneId,
@@ -1007,7 +1035,9 @@ export default function EditorPage({
                             chapterId: focusedChapter.id,
                             hint,
                             wordGoal,
+                            chapterLink,
                         });
+                        setContinueWritingDraft(defaultContinueWritingDraft);
                     }}
                 />
             )}
@@ -1019,6 +1049,11 @@ export default function EditorPage({
                         rewriteRange.to,
                         ' ',
                     )}
+                    draft={rewriteDraft}
+                    onDraftChange={setRewriteDraft}
+                    onReset={() =>
+                        setRewriteDraft(defaultRewriteSelectionDraft)
+                    }
                     onClose={() => setRewriteRange(null)}
                     onSubmit={({ hint }) => {
                         rewriteSelection.start({
@@ -1028,6 +1063,7 @@ export default function EditorPage({
                             hint,
                             selection: rewriteRange,
                         });
+                        setRewriteDraft(defaultRewriteSelectionDraft);
                     }}
                 />
             )}

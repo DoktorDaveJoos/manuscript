@@ -1,5 +1,4 @@
 import type { FormEvent } from 'react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
@@ -7,31 +6,47 @@ import FormField from '@/components/ui/FormField';
 import Textarea from '@/components/ui/Textarea';
 
 // Mirrors the backend Request `hint` validation rule.
-const MAX_HINT_LENGTH = 1000;
+const MAX_HINT_LENGTH = 2000;
 // Visual confirmation only — the model still receives the full selection.
-const PREVIEW_WORD_LIMIT = 12;
+// Head + tail so the author can verify where the rewrite starts AND ends.
+const PREVIEW_EDGE_WORDS = 6;
+
+export type RewriteSelectionDraft = {
+    hint: string;
+};
+
+export const defaultRewriteSelectionDraft: RewriteSelectionDraft = {
+    hint: '',
+};
 
 function truncateForPreview(text: string): string {
     const words = text.trim().split(/\s+/);
-    if (words.length <= PREVIEW_WORD_LIMIT) return words.join(' ');
-    return `${words.slice(0, PREVIEW_WORD_LIMIT).join(' ')}…`;
+    if (words.length <= PREVIEW_EDGE_WORDS * 2) return words.join(' ');
+    return `${words.slice(0, PREVIEW_EDGE_WORDS).join(' ')} … ${words.slice(-PREVIEW_EDGE_WORDS).join(' ')}`;
 }
 
 export default function RewriteSelectionDialog({
     selectionPreview,
+    draft,
+    onDraftChange,
+    onReset,
     onSubmit,
     onClose,
 }: {
     selectionPreview: string;
-    onSubmit: (args: { hint: string }) => void;
+    draft: RewriteSelectionDraft;
+    onDraftChange: (draft: RewriteSelectionDraft) => void;
+    onReset: () => void;
+    onSubmit: (args: RewriteSelectionDraft) => void;
     onClose: () => void;
 }) {
     const { t } = useTranslation('editor');
-    const [hint, setHint] = useState('');
+
+    const isPristine = draft.hint === defaultRewriteSelectionDraft.hint;
 
     function handleSubmit(e: FormEvent) {
         e.preventDefault();
-        onSubmit({ hint: hint.trim() });
+        onSubmit({ hint: draft.hint.trim() });
         onClose();
     }
 
@@ -43,12 +58,14 @@ export default function RewriteSelectionDialog({
     }
 
     const preview = truncateForPreview(selectionPreview);
+    const selectionWordCount =
+        selectionPreview.trim().match(/\S+/g)?.length ?? 0;
 
     return (
         <Dialog
             onClose={onClose}
             backdrop="dark"
-            width={460}
+            width={560}
             className="gap-5"
             title={t('rewriteSelection.dialogTitle', {
                 defaultValue: 'Rewrite selection',
@@ -64,7 +81,7 @@ export default function RewriteSelectionDialog({
                     <p className="text-xs text-ink-muted">
                         {t('rewriteSelection.dialogSubtitle', {
                             defaultValue:
-                                'AI rewrites the selected passage using the chapter, beats, characters, and world entities.',
+                                'AI rewrites only the selected passage using the chapter, beats, characters, and world entities. Your directive here is kept until you hit Rewrite.',
                         })}
                     </p>
                 </div>
@@ -72,8 +89,9 @@ export default function RewriteSelectionDialog({
                 {preview && (
                     <div className="rounded-md border border-border-light bg-surface px-3 py-2 text-xs text-ink-muted">
                         <span className="font-medium text-ink-soft">
-                            {t('rewriteSelection.selectionLabel', {
-                                defaultValue: 'Selection',
+                            {t('rewriteSelection.selectionLabelWithCount', {
+                                defaultValue: 'Selection ({{count}} words)',
+                                count: selectionWordCount,
                             })}
                             :{' '}
                         </span>
@@ -88,30 +106,44 @@ export default function RewriteSelectionDialog({
                 >
                     <Textarea
                         variant="dialog"
-                        rows={3}
+                        rows={5}
                         autoFocus
-                        value={hint}
-                        onChange={(e) => setHint(e.target.value)}
+                        value={draft.hint}
+                        onChange={(e) =>
+                            onDraftChange({ ...draft, hint: e.target.value })
+                        }
                         onKeyDown={handleKeyDown}
                         placeholder={t('rewriteSelection.hintPlaceholder', {
                             defaultValue:
-                                'Tighten, shift tone, swap POV… (leave blank for a craft pass)',
+                                'Tighten, shift tone, swap POV… (leave blank for a craft pass). A directive takes priority over default style preservation.',
                         })}
                         maxLength={MAX_HINT_LENGTH}
                     />
                 </FormField>
 
-                <div className="flex items-center justify-end gap-3">
-                    <Button variant="ghost" type="button" onClick={onClose}>
-                        {t('rewriteSelection.cancel', {
-                            defaultValue: 'Cancel',
+                <div className="flex items-center justify-between gap-3">
+                    <Button
+                        variant="ghost"
+                        type="button"
+                        onClick={onReset}
+                        disabled={isPristine}
+                    >
+                        {t('rewriteSelection.reset', {
+                            defaultValue: 'Reset',
                         })}
                     </Button>
-                    <Button variant="primary" type="submit">
-                        {t('rewriteSelection.submit', {
-                            defaultValue: 'Rewrite',
-                        })}
-                    </Button>
+                    <div className="flex items-center gap-3">
+                        <Button variant="ghost" type="button" onClick={onClose}>
+                            {t('rewriteSelection.cancel', {
+                                defaultValue: 'Cancel',
+                            })}
+                        </Button>
+                        <Button variant="primary" type="submit">
+                            {t('rewriteSelection.submit', {
+                                defaultValue: 'Rewrite',
+                            })}
+                        </Button>
+                    </div>
                 </div>
             </form>
         </Dialog>

@@ -45,18 +45,20 @@ class PlotCoachController extends Controller
 
             $rawMessage = (string) $request->input('message');
 
-            $message = $this->handleApprovalSignals($session, $rawMessage);
+            [$message, $requiresSmartModel] = $this->handleApprovalSignals($session, $rawMessage);
 
             $message = $this->prependBoardChangesNote($session, $message);
 
-            $message = $this->prependArchiveSummaryOnFirstTurn($session, $message);
+            // Pick the cheapest provider model for trivial turns (wire-signal
+            // acks, free-text approvals/cancels/undos). Classification runs on
+            // the RAW user input — the [system: ...] scaffolding prepended
+            // above (board changes, archive handoff) must never downgrade a
+            // substantive turn to the cheap ack model. Apply failures force
+            // the smart model regardless: the failure note asks the agent to
+            // diagnose and re-propose, which is real work.
+            $model = $requiresSmartModel ? null : $agent->modelForTurn($rawMessage);
 
-            // Pick the cheapest provider model for trivial turns (system
-            // acks, free-text approvals/cancels/undos). All other turns
-            // pass null so the SDK falls back to the provider's default text
-            // model. See PlotCoachAgent::isTrivialTurn for the classification
-            // rules.
-            $stream = $agent->stream($message, model: $agent->modelForTurn($message));
+            $stream = $agent->stream($message, model: $model);
 
             // Clear queued board changes + accrue per-session token usage only
             // after the stream completes successfully. On failure, pending
@@ -82,7 +84,6 @@ class PlotCoachController extends Controller
                 'user_turn_count',
                 'input_tokens',
                 'output_tokens',
-                'cost_cents',
                 'archived_at',
                 'created_at',
                 'updated_at',
@@ -129,7 +130,6 @@ class PlotCoachController extends Controller
             'parent_session_id' => $session->parent_session_id,
             'input_tokens' => $session->input_tokens,
             'output_tokens' => $session->output_tokens,
-            'cost_cents' => $session->cost_cents,
             'created_at' => $session->created_at,
             'updated_at' => $session->updated_at,
             'messages' => $messages,
@@ -257,42 +257,55 @@ class PlotCoachController extends Controller
      * Intercept structured APPROVE:batch / CANCEL:batch / UNDO:last signals
      * from the frontend and execute them server-side before the LLM runs.
      * Returns the original message unchanged if no signal matched, otherwise
-     * prepends a `[system: ...]` note describing the outcome so the agent
-     * can acknowledge and continue naturally.
+     * REPLACES the message with a `[system: ...]` note describing the outcome
+     * — the raw signal (and its uuid) is never forwarded to the LLM.
+     *
+     * The second tuple element flags turns that need the smart model: a
+     * failed apply asks the agent to diagnose and re-propose, which the
+     * cheap ack model cannot be trusted with.
+     *
+     * @return array{0: string, 1: bool} [message for the LLM, requires smart model]
      */
-    private function handleApprovalSignals(PlotCoachSession $session, string $message): string
+    private function handleApprovalSignals(PlotCoachSession $session, string $message): array
     {
         $trimmed = trim($message);
 
-        $note = null;
-
         if (preg_match(PlotCoachWireSignals::PATTERN_APPROVE, $trimmed, $m)) {
-            $note = $this->applyApproval($session, $m[1]);
-        } elseif (preg_match(PlotCoachWireSignals::PATTERN_CANCEL, $trimmed, $m)) {
-            $note = $this->applyCancel($session, $m[1]);
-        } elseif (preg_match(PlotCoachWireSignals::PATTERN_UNDO_PROPOSAL, $trimmed, $m)) {
-            $note = $this->applyProposalUndo($session, $m[1]);
-        } elseif (preg_match(PlotCoachWireSignals::PATTERN_UNDO_LAST, $trimmed)) {
-            $note = $this->applyUndo($session);
+            return $this->applyApproval($session, $m[1]);
         }
 
-        return $note === null ? $message : "{$note}\n\n{$message}";
+        if (preg_match(PlotCoachWireSignals::PATTERN_CANCEL, $trimmed, $m)) {
+            return [$this->applyCancel($session, $m[1]), false];
+        }
+
+        if (preg_match(PlotCoachWireSignals::PATTERN_UNDO_PROPOSAL, $trimmed, $m)) {
+            return [$this->applyProposalUndo($session, $m[1]), false];
+        }
+
+        if (preg_match(PlotCoachWireSignals::PATTERN_UNDO_LAST, $trimmed)) {
+            return [$this->applyUndo($session), false];
+        }
+
+        return [$message, false];
     }
 
-    private function applyApproval(PlotCoachSession $session, string $publicId): string
+    /**
+     * @return array{0: string, 1: bool} [note, requires smart model]
+     */
+    private function applyApproval(PlotCoachSession $session, string $publicId): array
     {
         $proposal = PlotCoachProposal::findForSession($session, $publicId);
 
         if (! $proposal) {
-            return '[system: An approval came in for a proposal that no longer exists. Nothing was applied. Move on in one short line without naming any id — offer to re-propose if it makes sense.]';
+            return ['[system: An approval came in for a proposal that no longer exists. Nothing was applied. Move on in one short line without naming any id — offer to re-propose if it makes sense.]', false];
         }
 
         if ($proposal->approved_at) {
-            return '[system: This proposal was already applied earlier. No changes this turn. Continue forward in one short line — do not re-acknowledge or re-list anything.]';
+            return ['[system: This proposal was already applied earlier. No changes this turn. Continue forward in one short line — do not re-acknowledge or re-list anything.]', false];
         }
 
         if ($proposal->cancelled_at) {
-            return '[system: This proposal was previously cancelled. Nothing applied this turn. Continue forward in one short line without re-mentioning it.]';
+            return ['[system: This proposal was previously cancelled. Nothing applied this turn. Continue forward in one short line without re-mentioning it.]', false];
         }
 
         try {
@@ -302,13 +315,13 @@ class PlotCoachController extends Controller
                 $proposal->summary,
             );
         } catch (Throwable $e) {
-            return '[system: The batch failed to apply. Error: '.$e->getMessage().'. Nothing was persisted. Diagnose and AUTO-CORRECT if you can:'
+            return ['[system: The batch failed to apply. Error: '.$e->getMessage().'. Nothing was persisted. Diagnose and AUTO-CORRECT if you can:'
                 .' (a) duplicate name → rename the entity or drop it from the writes and propose again;'
                 .' (b) invalid enum value → swap to the correct one and propose again;'
                 .' (c) cross-book id / id from another book → look up the correct id with `LookupExistingEntities` or `GetPlotBoardState` and propose again;'
                 .' (d) unresolved `plot_point_title` → propose the plot_point first or fix the spelling and propose again;'
                 .' (e) empty patch → drop the no-op write.'
-                .' Call ProposeBatch again with the fix in the SAME turn — do not wait for the author to retry. If the failure needs the author to choose (e.g. genuine ambiguity about which entity they meant), ask in ONE short line. Never echo ids, batch numbers, or proposal uuids.]';
+                .' Call ProposeBatch again with the fix in the SAME turn — do not wait for the author to retry. If the failure needs the author to choose (e.g. genuine ambiguity about which entity they meant), ask in ONE short line. Never echo ids, batch numbers, or proposal uuids.]', true];
         }
 
         $proposal->update([
@@ -316,7 +329,7 @@ class PlotCoachController extends Controller
             'applied_batch_id' => $batch->id,
         ]);
 
-        return '[system: The batch was applied. The author already sees the confirmation in the approval card above this turn. STRICT rules for your reply: (1) do NOT call ApplyPlotCoachBatch again — it is done; (2) do NOT echo or mention the proposal id, batch number, or any uuid; (3) do NOT re-list or re-summarize what was saved — the card already shows it; (4) reply with ONE short forward-looking line only — a next question, the next thread to pick up, or a tiny sign of life ("Drin. Was kommt als Nächstes?"). No acknowledgment summary. No preview text. The card is the source of truth.]';
+        return ['[system: The batch was applied. The author already sees the confirmation in the approval card above this turn. STRICT rules for your reply: (1) do NOT call ApplyPlotCoachBatch again — it is done; (2) do NOT echo or mention the proposal id, batch number, or any uuid; (3) do NOT re-list or re-summarize what was saved — the card already shows it; (4) reply with ONE short forward-looking line only — a next question, the next thread to pick up, or a tiny sign of life ("Drin. Was kommt als Nächstes?"). No acknowledgment summary. No preview text. The card is the source of truth.]', false];
     }
 
     private function applyCancel(PlotCoachSession $session, string $publicId): string
@@ -445,37 +458,10 @@ class PlotCoachController extends Controller
     }
 
     /**
-     * If this session was spawned off an archived predecessor, prepend the
-     * predecessor's archive summary as a [system: ...] note into the very
-     * first user turn so the new agent is not cold.
-     */
-    private function prependArchiveSummaryOnFirstTurn(PlotCoachSession $session, string $message): string
-    {
-        if (($session->user_turn_count ?? 0) > 0 || ! $session->parent_session_id) {
-            return $message;
-        }
-
-        $summary = PlotCoachSession::query()
-            ->whereKey($session->parent_session_id)
-            ->value('archive_summary');
-
-        if (! $summary || trim($summary) === '') {
-            return $message;
-        }
-
-        return "[system: Handoff from previous plot coach session:\n{$summary}]\n\n{$message}";
-    }
-
-    /**
-     * Strip internal scaffolding from a user turn before exposing it to the
-     * chat UI. Internal scaffolding includes:
-     *  - `[system: ...]` notes the controller prepended to the turn (approval
-     *    acknowledgments, board-change digests, archive summaries, etc.)
-     *  - the bare wire signals `APPROVE:batch:<uuid>`, `CANCEL:batch:<uuid>`,
-     *    `UNDO:last` sent when the user presses a button on an approval card.
-     *
-     * Returns an empty string for turns that are nothing but scaffolding; the
-     * caller is expected to drop those messages from the rendered history.
+     * Strip internal scaffolding ([system: ...] notes, wire signals) from a
+     * user turn before exposing it to the chat UI. Returns an empty string
+     * for turns that are nothing but scaffolding; the caller drops those
+     * messages from the rendered history.
      */
     private function sanitizeUserFacingContent(string $role, string $content): string
     {
@@ -483,24 +469,7 @@ class PlotCoachController extends Controller
             return $content;
         }
 
-        // Strip every leading `[system: ...]` block. There may be more than
-        // one because the controller stacks several of them (approval +
-        // board changes + first-turn archive summary) onto the same turn.
-        while (str_starts_with(ltrim($content), PlotCoachWireSignals::SYSTEM_PREFIX)) {
-            $content = ltrim($content);
-            $end = strpos($content, ']');
-            if ($end === false) {
-                break;
-            }
-            $content = ltrim(substr($content, $end + 1));
-        }
-
-        // Hide bare wire signals emitted by the approval buttons.
-        if (preg_match(PlotCoachWireSignals::PATTERN_ANY, trim($content))) {
-            return '';
-        }
-
-        return $content;
+        return PlotCoachWireSignals::stripScaffolding($content);
     }
 
     /**

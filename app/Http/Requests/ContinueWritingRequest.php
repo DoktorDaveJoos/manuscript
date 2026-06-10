@@ -17,10 +17,13 @@ class ContinueWritingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'hint' => ['nullable', 'string', 'max:1000'],
+            'hint' => ['nullable', 'string', 'max:2000'],
             'word_goal' => ['nullable', 'integer', 'min:30', 'max:500'],
             'before' => ['nullable', 'string'],
             'after' => ['nullable', 'string'],
+            'after_truncated' => ['nullable', 'boolean'],
+            'scene_follows' => ['nullable', 'boolean'],
+            'chapter_link' => ['nullable', 'string', 'in:auto,continue,fresh'],
             'expected_current_version_id' => ['nullable', 'integer'],
         ];
     }
@@ -52,5 +55,20 @@ class ContinueWritingRequest extends FormRequest
     public function afterProse(): ?string
     {
         return $this->validated('after');
+    }
+
+    public function afterTruncated(): bool
+    {
+        return (bool) ($this->validated('after_truncated') ?? false);
+    }
+
+    public function sceneFollows(): bool
+    {
+        return (bool) ($this->validated('scene_follows') ?? false);
+    }
+
+    public function chapterLink(): string
+    {
+        return $this->validated('chapter_link') ?? 'auto';
     }
 }

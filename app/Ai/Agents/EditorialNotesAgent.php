@@ -70,13 +70,25 @@ class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasPro
         2. **Themes:** Note recurring motifs, thematic throughlines, and how they connect to other parts of the manuscript.
         3. **Scene craft:** Assess scene purposes, identify show-vs-tell moments, and evaluate sensory detail usage.
         4. **Prose style patterns:** Analyze sentence rhythm, word repetitions, and vocabulary patterns.
-        5. **Chapter note:** Write a concise editor's note (1-2 short paragraphs) as if you were a working editor writing margin notes. Be direct — lead with what needs the author's attention and why, then acknowledge what's working well. End with a forward-looking note about what to focus on in revision. This is the note the author will see when editing this chapter.
+        5. **Chapter note:** Write an editor's note (2-3 short paragraphs) the way a working editor writes
+           margin notes — this is the note the author will see when editing this chapter, so it must be
+           worth their time. Requirements:
+           - Anchor every observation in the text: name the scene, beat, or character moment it refers to,
+             or quote a short phrase. A note that could be pasted under any chapter is a failed note.
+           - For each problem, name the craft issue at stake (e.g. the scene's goal is unclear, the
+             reveal is told rather than discovered, the dialogue carries no subtext) and give one
+             concrete revision move the author could try — not "improve the pacing" but what to cut,
+             move, expand, or reframe.
+           - Name at least one thing in this chapter that genuinely works and why it works, so the
+             author knows what to keep through revision. Be as specific about this as about the problems.
+           - Close with the single highest-impact focus for revising this chapter.
 
         {$persona->antiPatternRules()}
 
         {$persona->languageRule($this->book->language)}
 
-        Be specific and reference concrete passages. Provide actionable observations, not generic praise.
+        Be specific and reference concrete passages. Every observation must be actionable or name
+        something worth keeping — never generic praise, never a diagnosis without a next step.
         INSTRUCTIONS;
 
         // The per-chapter existing analysis varies, so it sits after the cache

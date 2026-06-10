@@ -172,6 +172,7 @@ function fakeAllEditorialAgents(): void
     EditorialSynthesisAgent::fake(fn () => [
         'score' => 72,
         'summary' => 'The section shows strong fundamentals with room for improvement.',
+        'strengths' => ['The midpoint reversal lands because it was set up in chapter 2.'],
         'findings' => [
             [
                 'severity' => 'warning',

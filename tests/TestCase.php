@@ -12,6 +12,11 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        // Tests never assert on built assets, so CI can skip npm install,
+        // vite build, and Playwright entirely (tests/Browser is not in the
+        // phpunit testsuites).
+        $this->withoutVite();
+
         // Reset per-request static caches that would otherwise leak across tests.
         AppSetting::clearCache();
         License::clearActiveCache();

@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Concerns\CachesSystemPrompt;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
@@ -15,6 +16,7 @@ use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
+use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
@@ -22,13 +24,19 @@ use Stringable;
 
 #[Temperature(0.3)]
 #[Timeout(120)]
-class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput, HasTools
+class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasProviderOptions, HasStructuredOutput, HasTools
 {
-    use Promptable;
+    use CachesSystemPrompt, Promptable;
 
+    /**
+     * When $inlineContext is provided the agent runs single-shot: the manuscript
+     * context is embedded in the system prompt and no tools are exposed, saving
+     * the retrieval round trip that would otherwise replay the full request.
+     */
     public function __construct(
         protected Book $book,
         protected AnalysisType $analysisType,
+        protected ?string $inlineContext = null,
     ) {}
 
     public function book(): Book
@@ -53,7 +61,7 @@ class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStru
 
         $personaRules = $persona->instructions()."\n\n".$persona->antiPatternRules()."\n\n".$persona->languageRule($this->book->language);
 
-        return match ($this->analysisType) {
+        $instructions = match ($this->analysisType) {
             AnalysisType::Pacing => "{$personaRules}\n\n{$bookContext} Analyze the pacing of the manuscript. Evaluate chapter lengths, scene transitions, tension arcs, and narrative momentum. Identify sections that feel rushed or drag. {$qualityRules}",
             AnalysisType::Plothole => "{$personaRules}\n\n{$bookContext} Identify plot holes and inconsistencies in the manuscript. Look for contradictions, unresolved threads, timeline issues, and logical gaps in the story. {$qualityRules}",
             AnalysisType::CharacterConsistency => "{$personaRules}\n\n{$bookContext} Analyze character consistency across the manuscript. Check for voice consistency, behavioral contradictions, knowledge inconsistencies, and character arc coherence. {$qualityRules} {$summaryRule}",
@@ -66,6 +74,15 @@ class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStru
                 ? "{$personaRules}\n\n{$bookContext} Evaluate the overall health of the manuscript as a {$this->book->genre->label()}. Assess how well it fulfills genre expectations, conventions, and reader satisfaction. {$qualityRules}"
                 : "{$personaRules}\n\n{$bookContext} Evaluate the overall narrative health of the manuscript. Assess suspense, stakes, antagonist presence, and reader tension throughout. {$qualityRules}",
         };
+
+        if ($this->inlineContext === null) {
+            return $instructions;
+        }
+
+        // The manuscript context varies per chapter, so it sits after the cache
+        // breakpoint and is left uncached.
+        return $instructions."\n\n".self::CACHE_BREAKPOINT
+            ."\n\nManuscript context:\n\n{$this->inlineContext}";
     }
 
     /**
@@ -88,6 +105,10 @@ class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasStru
 
     public function tools(): iterable
     {
+        if ($this->inlineContext !== null) {
+            return [];
+        }
+
         return [
             new RetrieveManuscriptContext($this->book->id),
             new SearchSimilarChunks($this->book->id),

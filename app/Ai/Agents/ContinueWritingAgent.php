@@ -32,6 +32,9 @@ class ContinueWritingAgent implements Agent, BelongsToBook, HasMiddleware
         protected int $wordGoal = 120,
         protected ?string $beforeProse = null,
         protected ?string $afterProse = null,
+        protected bool $afterTruncated = false,
+        protected bool $sceneFollows = false,
+        protected string $chapterLink = 'auto',
     ) {}
 
     public function book(): Book
@@ -67,9 +70,9 @@ class ContinueWritingAgent implements Agent, BelongsToBook, HasMiddleware
 
         $inlineRules = $isInline
             ? "\n        - You are INSERTING prose between PROSE BEFORE CURSOR and PROSE AFTER CURSOR. PROSE AFTER CURSOR is the author's existing draft that comes LATER in the chapter — it is NOT what you are about to write."
-                ."\n        - Your continuation must come BEFORE that existing draft. Do not write toward it, do not lead into it, do not summarize, paraphrase, foreshadow, or restate any beat, line, or event from PROSE AFTER CURSOR. Treat it as a closed window — read-only, off-limits as content."
-                ."\n        - If your draft starts to overlap with anything in PROSE AFTER CURSOR, stop and replace it with new, non-overlapping material that fits the gap between BEFORE and AFTER."
-            : '';
+                ."\n        - Bridge the gap: pick up from the end of PROSE BEFORE CURSOR, and shape your final sentence so that the first sentence of PROSE AFTER CURSOR reads as its natural next sentence."
+                ."\n        - Hand off, do not echo: never restate, paraphrase, or pre-empt any beat, line, or event from PROSE AFTER CURSOR — everything it describes must still happen after your insertion."
+            : $this->buildSceneFollowsRule();
 
         return <<<INSTRUCTIONS
         You are continuing the draft of '{$this->book->title}' by {$this->book->author}, written in {$this->book->language}.
@@ -83,6 +86,32 @@ class ContinueWritingAgent implements Agent, BelongsToBook, HasMiddleware
         - Do not repeat or restate the last sentence already written; pick up cleanly from it.{$inlineRules}
         - LANGUAGE: write in {$this->book->language}.{$writingStyle}{$rulesSection}{$context}{$hintSection}
         INSTRUCTIONS;
+    }
+
+    /**
+     * The user message sent alongside the instructions. Mode-aware: insertion
+     * vs. append, with a pointer to the author directive when one exists.
+     */
+    public function userMessage(): string
+    {
+        $message = $this->isInlineMode()
+            ? 'Insert the continuation at the cursor, between the prose before and after it.'
+            : 'Continue writing the chapter from where the prose ends.';
+
+        if (trim((string) $this->hint) !== '') {
+            $message .= ' Follow the AUTHOR DIRECTIVE.';
+        }
+
+        return $message;
+    }
+
+    private function buildSceneFollowsRule(): string
+    {
+        if (! $this->sceneFollows) {
+            return '';
+        }
+
+        return "\n        - Another scene follows later in this chapter. Continue the current scene only — do not wrap up the chapter or write closing lines.";
     }
 
     private function buildStyleRulesSection(): string
@@ -177,19 +206,65 @@ class ContinueWritingAgent implements Agent, BelongsToBook, HasMiddleware
         $preceding = $this->book->chapters()
             ->whereBetween('reader_order', [$minOrder, $currentOrder - 1])
             ->orderBy('reader_order')
-            ->with('scenes')
+            ->with(['scenes', 'storyline'])
             ->get();
 
-        return $preceding
+        $chapters = $preceding
             ->map(fn (Chapter $prior) => $this->formatPrecedingChapter($prior))
             ->filter()
             ->implode('');
+
+        if ($chapters === '') {
+            return '';
+        }
+
+        return "\n### Preceding Chapters\n{$this->precedingChaptersRole()}".$chapters;
+    }
+
+    /**
+     * What the preceding chapters are FOR. Without an explicit role the model
+     * tends to weld the new prose onto the previous chapter's final scene.
+     */
+    private function precedingChaptersRole(): string
+    {
+        return match ($this->resolvedChapterLink()) {
+            'fresh' => "Continuity background only. The author wants a FRESH opening for this chapter: do not continue the preceding chapter's final scene and do not echo its closing lines. Open a new scene — a different time, place, or thread — guided by this chapter's beats.",
+            'continue' => 'The author wants this chapter to pick up DIRECTLY where the most recent preceding chapter ends — same scene, same moment, continuous action. Use its ending as your starting point.',
+            default => 'Continuity background only: keep names, facts, timeline, and tone consistent with these chapters, but do not treat them as the start of your continuation — the current chapter stands on its own unless its beats say otherwise.',
+        };
+    }
+
+    /**
+     * The chapter-link choice only makes sense when the continuation opens the
+     * chapter; once prose exists before the cursor it degrades to auto.
+     */
+    private function resolvedChapterLink(): string
+    {
+        if (! in_array($this->chapterLink, ['fresh', 'continue'], true)) {
+            return 'auto';
+        }
+
+        return $this->isChapterOpening() ? $this->chapterLink : 'auto';
+    }
+
+    private function isChapterOpening(): bool
+    {
+        if ($this->hasSplit()) {
+            return trim((string) $this->beforeProse) === '';
+        }
+
+        return trim(strip_tags($this->chapter->getFullContent())) === '';
     }
 
     private function formatPrecedingChapter(Chapter $prior): string
     {
+        $label = "Ch{$prior->reader_order} — {$prior->title}";
+        if ($prior->storyline && $prior->storyline->name) {
+            $label .= " (Storyline: {$prior->storyline->name})";
+        }
+
         if ($prior->summary) {
-            return "\n### Preceding Chapter (Ch{$prior->reader_order} — {$prior->title})\n{$prior->summary}";
+            return "\n#### {$label}\n{$prior->summary}";
         }
 
         $content = strip_tags($prior->getFullContent());
@@ -200,7 +275,7 @@ class ContinueWritingAgent implements Agent, BelongsToBook, HasMiddleware
         $words = preg_split('/\s+/', trim($content));
         $tail = implode(' ', array_slice($words, -self::PRECEDING_CHAPTER_TAIL_WORDS));
 
-        return "\n### Preceding Chapter (Ch{$prior->reader_order} — {$prior->title}, last excerpt)\n{$tail}";
+        return "\n#### {$label} (last excerpt)\n{$tail}";
     }
 
     private function buildBeatsSection(): string
@@ -211,7 +286,11 @@ class ContinueWritingAgent implements Agent, BelongsToBook, HasMiddleware
 
         $beats = $this->chapter->beats->sortBy(fn ($beat) => $beat->pivot->sort_order)->values();
 
-        $lines = ["\n### Beats In This Chapter (advance these in order)"];
+        $header = trim((string) $this->hint) !== ''
+            ? '### Beats In This Chapter (background reference — the author directive leads)'
+            : '### Beats In This Chapter (advance these in order)';
+
+        $lines = ["\n{$header}"];
         foreach ($beats as $index => $beat) {
             $position = $index + 1;
             $title = trim((string) $beat->title);
@@ -306,7 +385,11 @@ class ContinueWritingAgent implements Agent, BelongsToBook, HasMiddleware
             }
 
             if ($after !== '') {
-                $sections[] = "#### Prose After Cursor (background — already in the draft; do not contradict, do not repeat)\n{$after}";
+                $afterBlock = "#### Prose After Cursor (the existing draft that follows your insertion — flow into its first sentence; do not repeat it)\n{$after}";
+                if ($this->afterTruncated) {
+                    $afterBlock .= "\n[The excerpt above is truncated — the chapter draft continues beyond it.]";
+                }
+                $sections[] = $afterBlock;
             }
 
             return implode("\n", $sections);

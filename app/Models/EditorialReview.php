@@ -11,7 +11,30 @@ class EditorialReview extends Model
 {
     use HasFactory;
 
+    /**
+     * Minutes without a progress write after which a running review is
+     * considered dead (1.5x the 30-minute finalize-job timeout).
+     */
+    public const STALE_AFTER_MINUTES = 45;
+
     protected $guarded = [];
+
+    /**
+     * Fail running reviews whose workers stopped writing progress, optionally
+     * scoped to one book. Returns the number of reviews marked failed.
+     */
+    public static function failStale(?Book $book = null): int
+    {
+        return static::query()
+            ->when($book, fn ($query) => $query->where('book_id', $book->id))
+            ->whereIn('status', ['pending', 'analyzing', 'synthesizing'])
+            ->where('updated_at', '<', now()->subMinutes(self::STALE_AFTER_MINUTES))
+            ->update([
+                'status' => 'failed',
+                'error_message' => __('Review timed out. Please try again.'),
+                'updated_at' => now(),
+            ]);
+    }
 
     /**
      * @return array<string, string>

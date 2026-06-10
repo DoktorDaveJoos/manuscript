@@ -87,6 +87,13 @@ class ChunkAndEmbedChapter implements ShouldQueue
         $failures = $this->preparation->recordConsecutiveFailure();
         if ($failures >= AiPreparation::CIRCUIT_BREAKER_THRESHOLD) {
             $this->batch()?->cancel();
+
+            // Cancelling skips every remaining job, including the terminal
+            // CompletePreparation — flip the status here or it stays 'running'.
+            $this->preparation->update([
+                'status' => 'failed',
+                'error_message' => __('Stopped after too many consecutive failures.'),
+            ]);
         }
     }
 }

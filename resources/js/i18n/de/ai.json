@@ -52,15 +52,11 @@
     "metric.sensoryDetail": "Sinnliche Details",
     "metric.sensoryDetailCount": "{{senses}} von 5 Sinnen",
     "metric.informationDelivery": "Informationsvermittlung",
-    "metric.craftScore": "Handwerkswert",
-    "metric.craftDetail": "Sinne {{senses}} · Vermittlung {{delivery}}",
     "metric.narrativeDensity": "Erzählerische Dichte",
     "metric.density": "Dichte",
     "metric.scenePurpose": "Szenenzweck",
     "metric.scenePurposeDetail": "{{purpose}} · Wertverschiebung {{valueShift}}",
     "metric.noValueShift": "Keine Wertverschiebung",
-    "metric.valueShiftPresent": "vorhanden",
-    "metric.valueShiftAbsent": "nicht vorhanden",
     "metric.hooks": "Hooks",
     "metric.hooksDetailWithType": "Einstieg {{entry}} · Ausstieg {{exit}} · {{hookType}}",
     "metric.hooksDetail": "Einstieg {{entry}} · Ausstieg {{exit}}",
@@ -123,6 +119,7 @@
     "chat.untitledChapter": "Ohne Titel",
     "chat.newConversation": "Neues Gespräch",
     "chat.loadingHistory": "Lade Gespräch…",
+    "chat.findingLoaded": "Befund geladen",
 
     "preparation.title": "KI-Vorbereitung",
     "preparation.requiresPro": "Erfordert Pro",
@@ -208,5 +205,6 @@
     "pacing.brisk": "Zügig",
     "pacing.measured": "Bedächtig",
     "pacing.languid": "Gemächlich",
-    "pacing.static": "Statisch"
+    "pacing.static": "Statisch",
+    "discussWithAi": "Mit KI besprechen"
 }

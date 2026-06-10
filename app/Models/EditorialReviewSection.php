@@ -21,6 +21,7 @@ class EditorialReviewSection extends Model
         return [
             'type' => EditorialSectionType::class,
             'score' => 'integer',
+            'strengths' => 'array',
             'findings' => 'array',
             'recommendations' => 'array',
         ];

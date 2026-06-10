@@ -86,12 +86,19 @@ class PlotCoachBatchService
 
     /**
      * Revert a specific batch. Idempotent: if the batch is already reverted
-     * returns it unchanged; if it doesn't exist returns null.
+     * returns it unchanged; if it doesn't exist returns null. Batches past
+     * their undo window are refused — the board may have moved on since.
      */
     public function undoBatch(PlotCoachBatch $batch): ?PlotCoachBatch
     {
         if ($batch->reverted_at) {
             return $batch;
+        }
+
+        if ($batch->undo_window_expires_at !== null && $batch->undo_window_expires_at->isPast()) {
+            throw new InvalidArgumentException(
+                'the undo window ('.self::UNDO_WINDOW_MINUTES.' minutes) for this batch has expired'
+            );
         }
 
         return BoardChangeObserver::suppress(function () use ($batch) {
@@ -310,6 +317,19 @@ class PlotCoachBatchService
         return ['type' => 'session_update', 'id' => $session->id, 'previous' => $previous];
     }
 
+    /**
+     * Stages the coach is allowed to transition a session into. `structure`
+     * and `entities` exist in the enum for legacy rows but have no dedicated
+     * guidance — letting the model guess its way into them would strand the
+     * session.
+     */
+    private const ALLOWED_STAGE_TRANSITIONS = [
+        PlotCoachStage::Intake,
+        PlotCoachStage::Plotting,
+        PlotCoachStage::Refinement,
+        PlotCoachStage::Complete,
+    ];
+
     private function coerceStage(mixed $raw): string
     {
         if (! is_string($raw) || $raw === '') {
@@ -318,8 +338,11 @@ class PlotCoachBatchService
 
         $stage = PlotCoachStage::tryFrom($raw);
 
-        if (! $stage) {
-            throw new InvalidArgumentException('session_update.stage is not a known stage: '.$raw);
+        if (! $stage || ! in_array($stage, self::ALLOWED_STAGE_TRANSITIONS, true)) {
+            throw new InvalidArgumentException(
+                'session_update.stage is not a valid stage: '.$raw.'. Valid stages: '
+                .implode(', ', array_map(fn (PlotCoachStage $s) => $s->value, self::ALLOWED_STAGE_TRANSITIONS)).'.'
+            );
         }
 
         return $stage->value;
@@ -976,18 +999,7 @@ class PlotCoachBatchService
 
         $this->requireString($data, 'title', 'chapter');
 
-        if (empty($data['storyline_id'])) {
-            throw new InvalidArgumentException('chapter.storyline_id is required.');
-        }
-
-        $storyline = Storyline::query()
-            ->where('id', (int) $data['storyline_id'])
-            ->where('book_id', $session->book_id)
-            ->first();
-
-        if (! $storyline) {
-            throw new InvalidArgumentException('chapter.storyline_id does not belong to this book.');
-        }
+        $storyline = $this->resolveChapterStoryline($session->book_id, $data);
 
         $povCharacterId = $this->validatePovCharacterId($session->book_id, $data['pov_character_id'] ?? null);
         $actId = $this->validateActId($session->book_id, $data['act_id'] ?? null);
@@ -1005,13 +1017,35 @@ class PlotCoachBatchService
             ->first();
 
         if ($existing) {
+            // Snapshot the pre-batch pivots so undo can detach exactly what
+            // this batch added without touching pre-existing attachments.
+            $previous = [];
+
+            foreach (self::CHAPTER_PIVOT_FIELDS as $field => $spec) {
+                if (($pivotIds[$spec['relation']] ?? []) === []) {
+                    continue;
+                }
+
+                $previous[$field] = $existing->{$spec['relation']}()
+                    ->pluck("{$spec['table']}.id")
+                    ->map(fn ($id) => (int) $id)
+                    ->values()
+                    ->all();
+            }
+
             foreach ($pivotIds as $relation => $ids) {
                 if ($ids) {
                     $existing->{$relation}()->syncWithoutDetaching($ids);
                 }
             }
 
-            return ['type' => 'chapter', 'id' => $existing->id, 'reused' => true];
+            $descriptor = ['type' => 'chapter', 'id' => $existing->id, 'reused' => true];
+
+            if ($previous !== []) {
+                $descriptor['previous'] = $previous;
+            }
+
+            return $descriptor;
         }
 
         $nextOrder = (int) (Chapter::query()
@@ -1101,8 +1135,8 @@ class PlotCoachBatchService
             $patch['title'] = $data['title'];
         }
 
-        if (array_key_exists('storyline_id', $data)) {
-            $newStorylineId = $this->validateStorylineId($session->book_id, $data['storyline_id']);
+        if (array_key_exists('storyline_id', $data) || array_key_exists('storyline_name', $data)) {
+            $newStorylineId = $this->resolveChapterStoryline($session->book_id, $data)->id;
             if ($newStorylineId !== (int) $chapter->storyline_id) {
                 $previous['storyline_id'] = $chapter->getRawOriginal('storyline_id');
                 $patch['storyline_id'] = $newStorylineId;
@@ -1324,24 +1358,49 @@ class PlotCoachBatchService
         return $id;
     }
 
-    private function validateStorylineId(int $bookId, mixed $raw): int
+    /**
+     * Resolve a chapter's storyline from either an explicit `storyline_id` or
+     * a fallback `storyline_name`. The name fallback is what lets the AI
+     * propose `storyline + chapter` pairs in a single batch — the storyline
+     * is created first in the same transaction and the name lookup finds it
+     * (newest match wins, so the in-batch row shadows older same-name rows).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveChapterStoryline(int $bookId, array $data): Storyline
     {
-        if ($raw === null || $raw === '') {
-            throw new InvalidArgumentException('chapter.storyline_id is required.');
+        if (! empty($data['storyline_id'])) {
+            $storyline = Storyline::query()
+                ->where('id', (int) $data['storyline_id'])
+                ->where('book_id', $bookId)
+                ->first();
+
+            if (! $storyline) {
+                throw new InvalidArgumentException("chapter.storyline_id {$data['storyline_id']} does not belong to this book.");
+            }
+
+            return $storyline;
         }
 
-        $id = (int) $raw;
+        if (! empty($data['storyline_name']) && is_string($data['storyline_name'])) {
+            $name = trim($data['storyline_name']);
 
-        $exists = Storyline::query()
-            ->where('id', $id)
-            ->where('book_id', $bookId)
-            ->exists();
+            $storyline = Storyline::query()
+                ->where('book_id', $bookId)
+                ->where('name', $name)
+                ->orderByDesc('id')
+                ->first();
 
-        if (! $exists) {
-            throw new InvalidArgumentException("chapter.storyline_id {$id} does not belong to this book.");
+            if (! $storyline) {
+                throw new InvalidArgumentException(
+                    "chapter.storyline_name \"{$name}\" does not match any storyline in this book. Propose the storyline first (or earlier in this same batch).",
+                );
+            }
+
+            return $storyline;
         }
 
-        return $id;
+        throw new InvalidArgumentException('chapter requires storyline_id (or storyline_name for a storyline created in the same batch).');
     }
 
     /**
@@ -1427,8 +1486,12 @@ class PlotCoachBatchService
         }
 
         // Chapters marked as reused existed before the batch — never delete
-        // them on undo, that would destroy user-created work.
+        // them on undo, that would destroy user-created work. Their pre-batch
+        // pivots are restored instead (the batch may have attached new beats,
+        // characters, or wiki entries).
         if ($write['type'] === 'chapter' && ! empty($write['reused'])) {
+            $this->restoreReusedChapterPivots($write);
+
             return;
         }
 
@@ -1486,6 +1549,36 @@ class PlotCoachBatchService
         }
 
         $model->delete();
+    }
+
+    /**
+     * Restore the pre-batch pivot sets captured when a batch re-attached
+     * entities to a chapter that already existed. Missing chapters are
+     * skipped silently — undo stays best-effort.
+     *
+     * @param  array{id?: int, previous?: array<string, mixed>}  $write
+     */
+    private function restoreReusedChapterPivots(array $write): void
+    {
+        $previous = $write['previous'] ?? [];
+
+        if (! is_array($previous) || $previous === []) {
+            return;
+        }
+
+        $chapter = Chapter::query()->find($write['id']);
+
+        if (! $chapter) {
+            return;
+        }
+
+        foreach (self::CHAPTER_PIVOT_FIELDS as $field => $spec) {
+            if (! array_key_exists($field, $previous)) {
+                continue;
+            }
+
+            $chapter->{$spec['relation']}()->sync(is_array($previous[$field]) ? $previous[$field] : []);
+        }
     }
 
     /**

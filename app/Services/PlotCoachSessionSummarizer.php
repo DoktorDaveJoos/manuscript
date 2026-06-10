@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Ai\Agents\PlotCoachAgent;
+use App\Ai\Support\PlotCoachWireSignals;
 use App\Models\PlotCoachBatch;
 use App\Models\PlotCoachSession;
 use Illuminate\Support\Facades\DB;
@@ -45,8 +46,26 @@ class PlotCoachSessionSummarizer
      */
     public const ROLLING_DIGEST_TAIL_MESSAGES = 20;
 
-    /** Chars per message when rendering the rolling in-session digest. */
+    /**
+     * Messages of overlap between the digest and the verbatim replay window.
+     * The digest refreshes only every few user turns while the replay window
+     * slides every turn — without overlap, messages falling off the tail
+     * between refreshes would be in neither context. Matches the agent's
+     * refresh interval (5 user turns = 10 messages) so the windows always
+     * meet, whatever the refresh lag.
+     */
+    public const ROLLING_DIGEST_OVERLAP_MESSAGES = 10;
+
+    /**
+     * HARD cap (in characters) on the rendered rolling digest. When the
+     * pre-tail conversation outgrows it, the OLDEST messages are elided —
+     * the bible block and session decisions carry the early facts, so recent
+     * pre-tail context is worth more than a shrinking per-message budget.
+     */
     private const ROLLING_DIGEST_BUDGET = 4000;
+
+    /** Chars per message line in the rolling in-session digest. */
+    private const ROLLING_DIGEST_PER_MESSAGE = 160;
 
     public function buildArchiveSummary(PlotCoachSession $session): string
     {
@@ -127,18 +146,7 @@ class PlotCoachSessionSummarizer
      */
     private function buildTranscriptDigest(PlotCoachSession $session): string
     {
-        $messages = DB::table('agent_conversation_messages')
-            ->where('conversation_id', $session->agent_conversation_id)
-            ->whereIn('role', ['user', 'assistant'])
-            ->orderBy('created_at')
-            ->get(['role', 'content'])
-            ->map(fn ($m) => [
-                'role' => $m->role,
-                'content' => trim((string) $m->content),
-            ])
-            ->filter(fn ($m) => $m['content'] !== '')
-            ->values()
-            ->all();
+        $messages = $this->conversationMessages($session);
 
         if ($messages === []) {
             return '';
@@ -182,35 +190,80 @@ class PlotCoachSessionSummarizer
      */
     public function buildInSessionDigest(PlotCoachSession $session): string
     {
-        $messages = DB::table('agent_conversation_messages')
+        // Cheap gate: short sessions don't need the content fetched at all.
+        $rawCount = DB::table('agent_conversation_messages')
+            ->where('conversation_id', $session->agent_conversation_id)
+            ->whereIn('role', ['user', 'assistant'])
+            ->count();
+
+        if ($rawCount <= self::ROLLING_DIGEST_TAIL_MESSAGES) {
+            return '';
+        }
+
+        $messages = $this->conversationMessages($session);
+
+        // Digest everything except the newest (TAIL - OVERLAP) messages: the
+        // overlap keeps the digest's edge ahead of where the replay window
+        // will have slid by the next refresh.
+        $cut = count($messages) - (self::ROLLING_DIGEST_TAIL_MESSAGES - self::ROLLING_DIGEST_OVERLAP_MESSAGES);
+
+        if ($cut <= 0) {
+            return '';
+        }
+
+        $preTail = array_slice($messages, 0, $cut);
+
+        // Render newest-first until the budget is spent, then elide the rest.
+        $rendered = [];
+        $spent = 0;
+        $elided = 0;
+
+        for ($i = count($preTail) - 1; $i >= 0; $i--) {
+            $speaker = $preTail[$i]['role'] === 'user' ? 'Author' : 'Coach';
+            $line = "  {$speaker}: ".$this->inline($preTail[$i]['content'], self::ROLLING_DIGEST_PER_MESSAGE);
+
+            if ($rendered !== [] && $spent + mb_strlen($line) > self::ROLLING_DIGEST_BUDGET) {
+                $elided = $i + 1;
+                break;
+            }
+
+            $rendered[] = $line;
+            $spent += mb_strlen($line);
+        }
+
+        $rendered = array_reverse($rendered);
+
+        if ($elided > 0) {
+            array_unshift($rendered, "  [{$elided} earlier messages elided — the bible block above carries the settled facts]");
+        }
+
+        return implode("\n", $rendered);
+    }
+
+    /**
+     * Load the conversation's user/assistant turns with internal scaffolding
+     * ([system: ...] notes, wire signals) stripped from user content. Turns
+     * that were nothing but scaffolding are dropped so digests and exports
+     * spend their budget on real conversation.
+     *
+     * @return list<array{role: string, content: string}>
+     */
+    private function conversationMessages(PlotCoachSession $session): array
+    {
+        return DB::table('agent_conversation_messages')
             ->where('conversation_id', $session->agent_conversation_id)
             ->whereIn('role', ['user', 'assistant'])
             ->orderBy('created_at')
             ->get(['role', 'content'])
             ->map(fn ($m) => [
-                'role' => $m->role,
-                'content' => trim((string) $m->content),
+                'role' => (string) $m->role,
+                'content' => $m->role === 'user'
+                    ? trim(PlotCoachWireSignals::stripScaffolding((string) $m->content))
+                    : trim((string) $m->content),
             ])
             ->filter(fn ($m) => $m['content'] !== '')
             ->values()
             ->all();
-
-        $total = count($messages);
-
-        if ($total <= self::ROLLING_DIGEST_TAIL_MESSAGES) {
-            return '';
-        }
-
-        $preTail = array_slice($messages, 0, $total - self::ROLLING_DIGEST_TAIL_MESSAGES);
-        $perMessage = max(80, (int) (self::ROLLING_DIGEST_BUDGET / max(1, count($preTail))));
-
-        $rendered = [];
-        foreach ($preTail as $message) {
-            $speaker = $message['role'] === 'user' ? 'Author' : 'Coach';
-            $rendered[] = "  {$speaker}: ".$this->inline($message['content'], $perMessage);
-        }
-
-        return implode("\n", $rendered);
     }
 
     public function buildTranscriptMarkdown(PlotCoachSession $session): string
@@ -250,22 +303,16 @@ class PlotCoachSessionSummarizer
         $sections[] = '## Conversation';
         $sections[] = '';
 
-        $messages = DB::table('agent_conversation_messages')
-            ->where('conversation_id', $session->agent_conversation_id)
-            ->whereIn('role', ['user', 'assistant'])
-            ->orderBy('created_at')
-            ->get(['role', 'content', 'created_at']);
+        $messages = $this->conversationMessages($session);
 
-        if ($messages->isEmpty()) {
+        if ($messages === []) {
             $sections[] = '_No messages._';
         } else {
             foreach ($messages as $message) {
-                $speaker = $message->role === 'user' ? '**You**' : '**Coach**';
+                $speaker = $message['role'] === 'user' ? '**You**' : '**Coach**';
                 $sections[] = $speaker;
                 $sections[] = '';
-                $sections[] = trim((string) $message->content) === ''
-                    ? '_(empty)_'
-                    : trim((string) $message->content);
+                $sections[] = $message['content'];
                 $sections[] = '';
             }
         }

@@ -18,9 +18,11 @@ class RewriteSelectionRequest extends FormRequest
     {
         return [
             'selection' => ['required', 'string', 'max:8000'],
-            'hint' => ['nullable', 'string', 'max:1000'],
+            'hint' => ['nullable', 'string', 'max:2000'],
             'before' => ['nullable', 'string'],
             'after' => ['nullable', 'string'],
+            'before_truncated' => ['nullable', 'boolean'],
+            'after_truncated' => ['nullable', 'boolean'],
             'expected_current_version_id' => ['nullable', 'integer'],
         ];
     }
@@ -52,5 +54,15 @@ class RewriteSelectionRequest extends FormRequest
     public function afterProse(): ?string
     {
         return $this->validated('after');
+    }
+
+    public function beforeTruncated(): bool
+    {
+        return (bool) ($this->validated('before_truncated') ?? false);
+    }
+
+    public function afterTruncated(): bool
+    {
+        return (bool) ($this->validated('after_truncated') ?? false);
     }
 }

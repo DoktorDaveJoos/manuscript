@@ -1,4 +1,4 @@
-import { NotebookPen } from 'lucide-react';
+import { Check, NotebookPen } from 'lucide-react';
 import MarkdownIt from 'markdown-it';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import { updateNotes } from '@/actions/App/Http/Controllers/ChapterController';
 import NotesSlashMenu from '@/components/editor/NotesSlashMenu';
 import Kbd from '@/components/ui/Kbd';
 import PanelHeader from '@/components/ui/PanelHeader';
+import { Spinner } from '@/components/ui/spinner';
 import { jsonFetchHeaders } from '@/lib/utils';
 
 const md = new MarkdownIt({ linkify: true });
@@ -116,7 +117,7 @@ export default function NotesPanel({
         return initial ? initial.split('\n').length - 1 : 0;
     });
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
     const abortRef = useRef<AbortController | null>(null);
     const pendingRef = useRef<'dirty' | null>(null);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -166,6 +167,15 @@ export default function NotesPanel({
             }
         });
     }, [activeIndex]);
+
+    // Auto-grow the active block's textarea to fit its content so long lines
+    // wrap to the panel width instead of scrolling horizontally.
+    useEffect(() => {
+        const el = inputRef.current;
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = `${el.scrollHeight}px`;
+    }, [activeIndex, lines]);
 
     const flush = useCallback(async () => {
         if (pendingRef.current === null) return;
@@ -261,7 +271,7 @@ export default function NotesPanel({
     );
 
     const handleLineChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
+        (e: React.ChangeEvent<HTMLTextAreaElement>) => {
             const value = e.target.value;
             const line = linesRef.current[activeIndex];
 
@@ -317,7 +327,7 @@ export default function NotesPanel({
     );
 
     const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent<HTMLInputElement>) => {
+        (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
             if (slashMenuRef.current) return;
             const input = e.currentTarget;
             const line = linesRef.current[activeIndex];
@@ -521,7 +531,7 @@ export default function NotesPanel({
     }, []);
 
     const handlePaste = useCallback(
-        (e: React.ClipboardEvent<HTMLInputElement>) => {
+        (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
             const text = e.clipboardData.getData('text');
             if (!text.includes('\n')) return;
 
@@ -582,12 +592,20 @@ export default function NotesPanel({
                 onClose={onClose}
                 suffix={
                     <>
-                        {saveStatus !== 'idle' && (
-                            <span className="text-[11px] text-ink-faint">
-                                {saveStatus === 'saving'
-                                    ? t('notes.saving')
-                                    : t('notes.saved')}
-                            </span>
+                        {saveStatus === 'saving' && (
+                            <Spinner
+                                data-notes-save-status="saving"
+                                aria-label={t('notes.saving')}
+                                className="size-3.5 text-ink-faint"
+                            />
+                        )}
+                        {saveStatus === 'saved' && (
+                            <Check
+                                role="img"
+                                data-notes-save-status="saved"
+                                aria-label={t('notes.saved')}
+                                className="size-3.5 text-ink-faint"
+                            />
                         )}
                         <Kbd keys="/" />
                         <Kbd keys="Esc" />
@@ -610,7 +628,7 @@ export default function NotesPanel({
                                     className={`border-t ${isActive ? 'border-accent' : 'border-border'}`}
                                 />
                                 {isActive && (
-                                    <input
+                                    <textarea
                                         ref={inputRef}
                                         className="sr-only"
                                         onKeyDown={handleKeyDown}
@@ -675,10 +693,10 @@ export default function NotesPanel({
                             <div key={line.id} className={wrapClass}>
                                 {checkbox}
                                 {bullet}
-                                <input
+                                <textarea
                                     ref={inputRef}
                                     data-notes-input
-                                    type="text"
+                                    rows={1}
                                     value={line.text}
                                     onChange={handleLineChange}
                                     onKeyDown={handleKeyDown}
@@ -690,7 +708,7 @@ export default function NotesPanel({
                                             ? t('notes.placeholder')
                                             : undefined
                                     }
-                                    className={`${textClass} w-full border-0 bg-transparent p-0 font-sans text-ink placeholder:text-ink-faint focus:ring-0 focus:outline-none`}
+                                    className={`${textClass} block w-full resize-none overflow-hidden border-0 bg-transparent p-0 font-sans text-ink placeholder:text-ink-faint focus:ring-0 focus:outline-none`}
                                 />
                             </div>
                         );

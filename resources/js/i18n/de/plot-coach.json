@@ -23,7 +23,6 @@
     "status.tool.GetEntityDetails": "Lese die Stelle noch einmal\u2026",
     "status.tool.GetPlotBoardState": "Schaue auf das Board\u2026",
     "status.tool.LookupExistingEntities": "Pr\u00fcfe, was schon gespeichert ist\u2026",
-    "status.tool.RetrieveManuscriptContext": "Hole den Manuskript-Kontext\u2026",
     "status.tool.ApplyPlotCoachBatch": "Speichere\u2026",
     "status.tool.UndoLastBatch": "Mache r\u00fcckg\u00e4ngig\u2026",
 

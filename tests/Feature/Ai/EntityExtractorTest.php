@@ -1,12 +1,13 @@
 <?php
 
 use App\Ai\Agents\EntityExtractor;
-use App\Ai\Tools\LookupExistingEntities;
 use App\Jobs\ExtractEntitiesJob;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\ChapterVersion;
 use App\Models\Storyline;
+use Laravel\Ai\Contracts\HasTools;
+use Laravel\Ai\Enums\Lab;
 
 test('entity extractor returns structured character and entity data', function () {
     EntityExtractor::fake();
@@ -31,14 +32,39 @@ test('entity extractor includes book language in instructions', function () {
     expect((string) $instructions)->toContain('de');
 });
 
-test('entity extractor registers LookupExistingEntities scoped to its book', function () {
+test('entity extractor inlines existing entities instead of using a lookup tool', function () {
     $book = Book::factory()->create();
+    $book->characters()->create([
+        'name' => 'Maja Paulsen',
+        'aliases' => ['Maja'],
+        'ai_description' => 'The protagonist.',
+        'is_ai_extracted' => true,
+    ]);
 
     $agent = new EntityExtractor($book);
-    $tools = iterator_to_array($agent->tools());
 
-    expect($tools)->toHaveCount(1)
-        ->and($tools[0])->toBeInstanceOf(LookupExistingEntities::class);
+    expect($agent)->not->toBeInstanceOf(HasTools::class)
+        ->and((string) $agent->instructions())->toContain('Maja Paulsen');
+});
+
+test('entity extractor caches the static rubric but not the entity snapshot for Anthropic', function () {
+    $book = Book::factory()->create();
+    $book->characters()->create([
+        'name' => 'Wendelin Krachbaum',
+        'aliases' => [],
+        'ai_description' => 'The protagonist.',
+        'is_ai_extracted' => true,
+    ]);
+
+    $agent = new EntityExtractor($book);
+    $blocks = $agent->providerOptions(Lab::Anthropic)['system'];
+
+    expect($blocks[0]['cache_control'])->toBe(['type' => 'ephemeral'])
+        ->and($blocks[0]['text'])->not->toContain('Wendelin Krachbaum');
+
+    $last = $blocks[count($blocks) - 1];
+    expect($last)->not->toHaveKey('cache_control')
+        ->and($last['text'])->toContain('Wendelin Krachbaum');
 });
 
 test('extract entities job creates character and wiki entry records', function () {

@@ -7,6 +7,7 @@ import {
 } from '@/actions/App/Http/Controllers/ContinueWritingController';
 import { useAiErrorToast } from '@/hooks/useAiErrorToast';
 import { flushPaneByChapter } from '@/lib/pane';
+import { proseMirrorBlockText } from '@/lib/proseText';
 import { stripTags } from '@/lib/ruleCheckers';
 import { escapeHtml, jsonFetchHeaders } from '@/lib/utils';
 import type { ChapterVersion } from '@/types/models';
@@ -18,6 +19,7 @@ type StartArgs = {
     chapterId: number;
     hint: string;
     wordGoal: number;
+    chapterLink: 'auto' | 'continue' | 'fresh';
 };
 
 export type ContinueWritingReview = {
@@ -29,19 +31,23 @@ export type ContinueWritingReview = {
     addedWords: number;
 };
 
-// Keep AFTER short. With too much trailing context, the model paraphrases it
-// instead of writing fresh prose from the cursor.
-const AFTER_WORD_CAP = 120;
+// Cap AFTER so the prompt stays focused on the insertion point. The agent is
+// told when the excerpt is truncated so it doesn't mistake the cut for the
+// end of the draft.
+const AFTER_WORD_CAP = 250;
 
 function countWords(html: string | null | undefined): number {
     if (!html) return 0;
     return stripTags(html).match(/\S+/g)?.length ?? 0;
 }
 
-function capWords(text: string, max: number): string {
+function capWords(
+    text: string,
+    max: number,
+): { text: string; truncated: boolean } {
     const words = text.match(/\S+/g);
-    if (!words || words.length <= max) return text;
-    return words.slice(0, max).join(' ');
+    if (!words || words.length <= max) return { text, truncated: false };
+    return { text: words.slice(0, max).join(' '), truncated: true };
 }
 
 // Recover the live editor instance for the active scene from its ProseMirror
@@ -77,7 +83,12 @@ function splitChapterAtCursor(
     editor: Editor,
     chapterId: number,
     activeSceneId: number | null,
-): { before: string; after: string } {
+): {
+    before: string;
+    after: string;
+    afterTruncated: boolean;
+    sceneFollows: boolean;
+} {
     const activeSceneTail = () => {
         const pos = editor.state.selection.from;
         const end = editor.state.doc.content.size;
@@ -90,7 +101,13 @@ function splitChapterAtCursor(
     const pane = document.querySelector(`[data-pane-chapter="${chapterId}"]`);
     if (!pane || activeSceneId == null) {
         const { head, tail } = activeSceneTail();
-        return { before: head, after: capWords(tail, AFTER_WORD_CAP) };
+        const capped = capWords(tail, AFTER_WORD_CAP);
+        return {
+            before: head,
+            after: capped.text,
+            afterTruncated: capped.truncated,
+            sceneFollows: false,
+        };
     }
 
     const sceneEls = Array.from(
@@ -100,6 +117,7 @@ function splitChapterAtCursor(
     const beforeParts: string[] = [];
     let afterText = '';
     let foundActive = false;
+    let sceneFollows = false;
 
     for (const sceneEl of sceneEls) {
         if (sceneEl.id === `scene-${activeSceneId}`) {
@@ -110,16 +128,29 @@ function splitChapterAtCursor(
             continue;
         }
 
-        if (foundActive) break; // Skip scenes after the active scene.
-
         const pm = sceneEl.querySelector<HTMLElement>('.ProseMirror');
-        const text = (pm?.textContent ?? '').trim();
+        const text = proseMirrorBlockText(pm);
+
+        if (foundActive) {
+            // Later scenes stay out of the prompt (scene boundaries are
+            // structural), but the agent must know the chapter goes on.
+            if (text) {
+                sceneFollows = true;
+                break;
+            }
+            continue;
+        }
+
         if (text) beforeParts.push(text);
     }
 
+    const capped = capWords(afterText.trim(), AFTER_WORD_CAP);
+
     return {
         before: beforeParts.join('\n\n'),
-        after: capWords(afterText.trim(), AFTER_WORD_CAP),
+        after: capped.text,
+        afterTruncated: capped.truncated,
+        sceneFollows,
     };
 }
 
@@ -146,6 +177,7 @@ export function useContinueWriting() {
             chapterId,
             hint,
             wordGoal,
+            chapterLink,
         }: StartArgs) => {
             if (isWorkingRef.current) return;
 
@@ -173,11 +205,8 @@ export function useContinueWriting() {
             const controller = new AbortController();
             abortRef.current = controller;
 
-            const { before, after } = splitChapterAtCursor(
-                liveEditor,
-                chapterId,
-                activeSceneId,
-            );
+            const { before, after, afterTruncated, sceneFollows } =
+                splitChapterAtCursor(liveEditor, chapterId, activeSceneId);
             const isInline = after.trim() !== '';
 
             if (isInline) {
@@ -203,13 +232,35 @@ export function useContinueWriting() {
             // Coalesce SSE deltas onto rAF so we run one Tiptap transaction
             // per frame instead of one per token — token-rate inserts trigger
             // the autosave debounce on every event and wedge the editor.
+            //
+            // insertContent() parses strings as HTML, where newlines are mere
+            // whitespace — newline runs must become real paragraph splits.
+            // Trailing newlines are held back for the next flush, since the
+            // paragraph break may continue in the next delta (the final flush
+            // drops them instead).
             let pendingDelta = '';
             let flushScheduled = false;
-            const flushDelta = () => {
-                if (pendingDelta === '') return;
-                const text = pendingDelta;
+            const flushDelta = (final = false) => {
+                let text = pendingDelta;
                 pendingDelta = '';
-                liveEditor.chain().insertContent(escapeHtml(text)).run();
+                if (final) {
+                    text = text.replace(/\n+$/, '');
+                } else {
+                    const held = text.match(/\n+$/)?.[0];
+                    if (held) {
+                        text = text.slice(0, -held.length);
+                        pendingDelta = held;
+                    }
+                }
+                if (text === '') return;
+                const chain = liveEditor.chain();
+                text.split(/\n+/).forEach((paragraph, index) => {
+                    if (index > 0) chain.splitBlock();
+                    if (paragraph !== '') {
+                        chain.insertContent(escapeHtml(paragraph));
+                    }
+                });
+                chain.run();
             };
             const scheduleFlush = () => {
                 if (flushScheduled) return;
@@ -238,6 +289,9 @@ export function useContinueWriting() {
                             word_goal: wordGoal,
                             before,
                             after,
+                            after_truncated: afterTruncated,
+                            scene_follows: sceneFollows,
+                            chapter_link: chapterLink,
                         }),
                     },
                 );
@@ -309,7 +363,7 @@ export function useContinueWriting() {
                     }
                 }
 
-                flushDelta();
+                flushDelta(true);
 
                 if (streamErrored) return;
 

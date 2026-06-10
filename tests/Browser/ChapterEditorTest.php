@@ -81,6 +81,32 @@ it('notes panel restores content after close and reopen', function () {
     expect($chapters[0]->fresh()->notes)->toBe('Remember the villain twist');
 });
 
+it('edits notes in a multi-line textarea so long lines wrap to the panel width', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+
+    $page = visit("/books/{$book->id}/editor?panes={$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->click('[data-access-bar="notes"]')
+        ->fill('[data-notes-input]', 'A very long note line that should wrap onto multiple visual rows instead of scrolling sideways inside a single-line input field')
+        ->wait(1)
+        ->assertCount('textarea[data-notes-input]', 1);
+
+    expect($chapters[0]->fresh()->notes)
+        ->toBe('A very long note line that should wrap onto multiple visual rows instead of scrolling sideways inside a single-line input field');
+});
+
+it('shows the notes save status as an icon rather than text', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+
+    $page = visit("/books/{$book->id}/editor?panes={$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->click('[data-access-bar="notes"]')
+        ->fill('[data-notes-input]', 'Trigger a save')
+        ->assertCount('svg[data-notes-save-status]', 1);
+});
+
 it('wiki panel remounts cleanly when switching panes in splitscreen', function () {
     [$book, $chapters] = createBookWithChapters(2);
 
@@ -168,7 +194,9 @@ it('plot panel connects a beat to the active chapter', function () {
 
     $page->assertNoJavaScriptErrors()
         ->click('[data-access-bar="plot"]')
-        ->assertSee('Search beats...')
+        // The search prompt only exists as an input placeholder — assertSee
+        // matches text nodes, so assert on the input element itself.
+        ->assertCount('input[placeholder="Search beats..."]', 1)
         ->fill('input[placeholder="Search beats..."]', 'Murder')
         ->wait(1)
         ->assertSee('Murder of the duke')

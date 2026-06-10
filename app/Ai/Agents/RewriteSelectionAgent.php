@@ -34,6 +34,8 @@ class RewriteSelectionAgent implements Agent, BelongsToBook, HasMiddleware
         protected ?string $hint = null,
         protected ?string $beforeProse = null,
         protected ?string $afterProse = null,
+        protected bool $beforeTruncated = false,
+        protected bool $afterTruncated = false,
     ) {}
 
     public function book(): Book
@@ -68,6 +70,21 @@ class RewriteSelectionAgent implements Agent, BelongsToBook, HasMiddleware
         - Output ONLY the rewritten prose itself. No commentary, no headings, no labels, no quotation marks framing the output, no "Here is the rewrite:" preamble.
         - LANGUAGE: write in {$this->book->language}.{$writingStyle}{$context}{$hintSection}
         INSTRUCTIONS;
+    }
+
+    /**
+     * The user message sent alongside the instructions. Points at the author
+     * directive when one exists.
+     */
+    public function userMessage(): string
+    {
+        $message = 'Rewrite the SELECTION so it replaces the original passage and reads seamlessly with the surrounding prose.';
+
+        if (trim((string) $this->hint) !== '') {
+            $message .= ' Follow the AUTHOR DIRECTIVE.';
+        }
+
+        return $message;
     }
 
     public function middleware(): array
@@ -136,19 +153,30 @@ class RewriteSelectionAgent implements Agent, BelongsToBook, HasMiddleware
         $preceding = $this->book->chapters()
             ->whereBetween('reader_order', [$minOrder, $currentOrder - 1])
             ->orderBy('reader_order')
-            ->with('scenes')
+            ->with(['scenes', 'storyline'])
             ->get();
 
-        return $preceding
+        $chapters = $preceding
             ->map(fn (Chapter $prior) => $this->formatPrecedingChapter($prior))
             ->filter()
             ->implode('');
+
+        if ($chapters === '') {
+            return '';
+        }
+
+        return "\n### Preceding Chapters\nContinuity background only: keep names, facts, timeline, and tone consistent with these chapters, but do not import their events into the rewrite — the rewrite covers only what the SELECTION already covers.".$chapters;
     }
 
     private function formatPrecedingChapter(Chapter $prior): string
     {
+        $label = "Ch{$prior->reader_order} — {$prior->title}";
+        if ($prior->storyline && $prior->storyline->name) {
+            $label .= " (Storyline: {$prior->storyline->name})";
+        }
+
         if ($prior->summary) {
-            return "\n### Preceding Chapter (Ch{$prior->reader_order} — {$prior->title})\n{$prior->summary}";
+            return "\n#### {$label}\n{$prior->summary}";
         }
 
         $content = strip_tags($prior->getFullContent());
@@ -159,7 +187,7 @@ class RewriteSelectionAgent implements Agent, BelongsToBook, HasMiddleware
         $words = preg_split('/\s+/', trim($content));
         $tail = implode(' ', array_slice($words, -self::PRECEDING_CHAPTER_TAIL_WORDS));
 
-        return "\n### Preceding Chapter (Ch{$prior->reader_order} — {$prior->title}, last excerpt)\n{$tail}";
+        return "\n#### {$label} (last excerpt)\n{$tail}";
     }
 
     private function buildBeatsSection(): string
@@ -170,7 +198,11 @@ class RewriteSelectionAgent implements Agent, BelongsToBook, HasMiddleware
 
         $beats = $this->chapter->beats->sortBy(fn ($beat) => $beat->pivot->sort_order)->values();
 
-        $lines = ["\n### Beats In This Chapter (background — do not advance beyond the selection)"];
+        $header = trim((string) $this->hint) !== ''
+            ? '### Beats In This Chapter (background reference — the author directive leads; do not advance beyond the selection)'
+            : '### Beats In This Chapter (background — do not advance beyond the selection)';
+
+        $lines = ["\n{$header}"];
         foreach ($beats as $index => $beat) {
             $position = $index + 1;
             $title = trim((string) $beat->title);
@@ -247,14 +279,18 @@ class RewriteSelectionAgent implements Agent, BelongsToBook, HasMiddleware
     private function buildChapterProseSection(): string
     {
         $title = $this->chapter->title ?: 'Untitled chapter';
-        $before = $this->capWords(trim((string) $this->beforeProse), self::SURROUND_WORD_CAP, fromEnd: true);
-        $after = $this->capWords(trim((string) $this->afterProse), self::SURROUND_WORD_CAP, fromEnd: false);
+        [$before, $beforeCapped] = $this->capWords(trim((string) $this->beforeProse), self::SURROUND_WORD_CAP, fromEnd: true);
+        [$after, $afterCapped] = $this->capWords(trim((string) $this->afterProse), self::SURROUND_WORD_CAP, fromEnd: false);
         $selection = trim($this->selection);
 
         $sections = ["\n### Chapter: {$title}"];
 
         if ($before !== '') {
-            $sections[] = "#### Prose Before Selection (context — do not rewrite, do not repeat)\n{$before}";
+            $beforeBlock = "#### Prose Before Selection (context — do not rewrite, do not repeat)\n{$before}";
+            if ($this->beforeTruncated || $beforeCapped) {
+                $beforeBlock .= "\n[The excerpt above is truncated — the chapter begins before it.]";
+            }
+            $sections[] = $beforeBlock;
         } else {
             $sections[] = '(no prose before the selection — it sits at the start of the chapter)';
         }
@@ -262,7 +298,11 @@ class RewriteSelectionAgent implements Agent, BelongsToBook, HasMiddleware
         $sections[] = "#### SELECTION (rewrite this)\n{$selection}";
 
         if ($after !== '') {
-            $sections[] = "#### Prose After Selection (context — do not rewrite, do not lead into it verbatim)\n{$after}";
+            $afterBlock = "#### Prose After Selection (context — do not rewrite, do not lead into it verbatim)\n{$after}";
+            if ($this->afterTruncated || $afterCapped) {
+                $afterBlock .= "\n[The excerpt above is truncated — the chapter draft continues beyond it.]";
+            }
+            $sections[] = $afterBlock;
         } else {
             $sections[] = '(no prose after the selection — it sits at the end of the chapter)';
         }
@@ -280,17 +320,20 @@ class RewriteSelectionAgent implements Agent, BelongsToBook, HasMiddleware
         return "\n\n--- AUTHOR DIRECTIVE (HIGHEST PRIORITY) ---\nThe rewrite MUST follow this directive. It overrides default style preservation when they conflict.\n\n{$hint}";
     }
 
-    private function capWords(string $text, int $max, bool $fromEnd): string
+    /**
+     * @return array{0: string, 1: bool} The capped text and whether the cap cut anything.
+     */
+    private function capWords(string $text, int $max, bool $fromEnd): array
     {
         $words = preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
         if (! $words || count($words) <= $max) {
-            return $text;
+            return [$text, false];
         }
 
         $slice = $fromEnd
             ? array_slice($words, -$max)
             : array_slice($words, 0, $max);
 
-        return implode(' ', $slice);
+        return [implode(' ', $slice), true];
     }
 }
