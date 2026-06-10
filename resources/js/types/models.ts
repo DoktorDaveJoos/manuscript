@@ -127,13 +127,6 @@ export type AiProvider =
     | 'azure'
     | 'openrouter';
 
-export type StoryBible = {
-    themes?: string[];
-    style_rules?: string[];
-    genre_rules?: string[];
-    timeline?: string[];
-};
-
 export type ProsePassRule = {
     key: string;
     label: string;
@@ -201,7 +194,6 @@ export type Book = {
     secondary_genres: string[] | null;
     prose_pass_rules: ProsePassRule[] | null;
     writing_style_text: string | null;
-    story_bible?: StoryBible | null;
     copyright_text?: string | null;
     dedication_text?: string | null;
     epigraph_text?: string | null;

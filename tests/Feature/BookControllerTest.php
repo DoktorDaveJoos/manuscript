@@ -164,7 +164,6 @@ test('duplicates a book with all relationships', function () {
 test('duplicate resets AI-derived fields', function () {
     $book = Book::factory()->withAi()->create([
         'writing_style' => ['tone' => 'dark'],
-        'story_bible' => ['setting' => 'Medieval'],
         'prose_pass_rules' => [['key' => 'test', 'enabled' => true]],
     ]);
 
@@ -173,6 +172,5 @@ test('duplicate resets AI-derived fields', function () {
 
     $copy = Book::query()->where('title', 'like', '%(Copy)%')->first();
     expect($copy->writing_style)->toBeNull()
-        ->and($copy->story_bible)->toBeNull()
         ->and($copy->prose_pass_rules)->toBeNull();
 });

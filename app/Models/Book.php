@@ -21,7 +21,6 @@ class Book extends Model
     {
         return [
             'writing_style' => 'array',
-            'story_bible' => 'array',
             'prose_pass_rules' => 'array',
             'daily_word_count_goal' => 'integer',
             'target_word_count' => 'integer',

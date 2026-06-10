@@ -164,7 +164,6 @@ class BookController extends Controller
         DB::transaction(function () use ($book) {
             $newBook = $book->replicate([
                 'writing_style',
-                'story_bible',
                 'prose_pass_rules',
             ]);
             $newBook->title = $book->title.' (Copy)';
