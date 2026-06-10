@@ -16,31 +16,38 @@ on:
       - master
       - workos
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ci:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php-version: ['8.4', '8.5']
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      # PHP 8.4 only: the app ships as a NativePHP desktop bundle pinned to
+      # the 8.4 runtime, so other PHP versions are not deploy targets.
+      # pcov over xdebug: same clover output, a fraction of the runtime.
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-version }}
+          php-version: '8.4'
           tools: composer:v2
-          coverage: xdebug
+          coverage: pcov
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
         with:
-          node-version: '22'
-
-      - name: Install Node Dependencies
-        run: npm i
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
 
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
@@ -51,17 +58,13 @@ jobs:
       - name: Generate Application Key
         run: php artisan key:generate
 
-      - name: Build Assets
-        run: npm run build
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
-
+      # No npm install / vite build / Playwright here: TestCase calls
+      # withoutVite(), and tests/Browser is not part of the phpunit
+      # testsuites, so the suite has no dependency on built assets.
       - name: Tests
-        run: ./vendor/bin/pest --coverage --coverage-clover=coverage.xml
+        run: ./vendor/bin/pest --parallel --coverage --coverage-clover=coverage.xml
 
       - name: Upload Coverage to Codecov
-        if: matrix.php-version == '8.4'
         uses: codecov/codecov-action@v5
         with:
           files: coverage.xml

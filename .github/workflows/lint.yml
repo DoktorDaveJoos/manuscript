@@ -3,12 +3,14 @@ name: linter
 on:
   push:
     branches:
+      - dev
       - develop
       - main
       - master
       - workos
   pull_request:
     branches:
+      - dev
       - develop
       - main
       - master
@@ -16,6 +18,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: linter-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
@@ -27,23 +33,41 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
 
       - name: Install Dependencies
         run: |
           composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-          npm install
+          npm ci
 
+      # Check-only variants: the mutating ones (pint, prettier --write,
+      # eslint --fix) silently pass on fixable drift because nothing
+      # commits the fixes back.
       - name: Run Pint
-        run: composer lint
+        run: composer lint:check
 
       - name: Format Frontend
-        run: npm run format
+        run: npm run format:check
 
       - name: Lint Frontend
-        run: npm run lint
+        run: npx eslint .
 
-      # - name: Commit Changes
-      #   uses: stefanzweifel/git-auto-commit-action@v7
-      #   with:
-      #     commit_message: fix code style
-      #     commit_options: '--no-verify'
+      - name: Typecheck Frontend
+        run: npm run types:check

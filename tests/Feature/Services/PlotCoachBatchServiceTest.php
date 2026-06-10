@@ -12,7 +12,6 @@ use App\Models\PlotPoint;
 use App\Models\Storyline;
 use App\Models\WikiEntry;
 use App\Services\PlotCoachBatchService;
-use InvalidArgumentException;
 
 test('it applies a character batch transactionally', function () {
     $book = Book::factory()->create();
