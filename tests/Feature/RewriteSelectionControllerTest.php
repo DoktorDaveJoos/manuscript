@@ -114,9 +114,26 @@ test('rewrite selection rejects an over-long hint', function () {
         route('chapters.ai.rewriteSelection', [$book, $chapter]),
         [
             'selection' => 'Some text.',
-            'hint' => str_repeat('a', 1001),
+            'hint' => str_repeat('a', 2001),
         ],
     )->assertStatus(422);
+});
+
+test('rewrite selection accepts a hint up to 2000 characters', function () {
+    RewriteSelectionAgent::fake(['ok']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Some prose.</p>']);
+
+    $this->post(
+        route('chapters.ai.rewriteSelection', [$book, $chapter]),
+        [
+            'selection' => 'Some text.',
+            'hint' => str_repeat('a', 2000),
+        ],
+    )->assertOk();
 });
 
 test('rewrite selection requires a selection', function () {
@@ -363,4 +380,193 @@ test('commit rejects a stale expected_current_version_id with 409', function () 
         route('chapters.ai.rewriteSelection.commit', [$book, $chapter]),
         ['expected_current_version_id' => $current->id + 9999],
     )->assertStatus(409);
+});
+
+test('preceding chapters carry a continuity-background role and storyline labels', function () {
+    $book = Book::factory()->withAi()->create();
+    $mainArc = Storyline::factory()->for($book)->create(['name' => 'Main arc']);
+    $sideArc = Storyline::factory()->for($book)->create(['name' => 'Side arc']);
+
+    Chapter::factory()->for($book)->for($sideArc)->create([
+        'reader_order' => 1,
+        'title' => 'Elsewhere',
+        'summary' => 'Meanwhile, in the side plot.',
+    ]);
+
+    $chapter = Chapter::factory()->for($book)->for($mainArc)->create([
+        'reader_order' => 2,
+    ]);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Some prose.</p>']);
+
+    $agent = new RewriteSelectionAgent(
+        book: $book,
+        chapter: $chapter,
+        selection: 'Some prose.',
+    );
+    $instructions = (string) $agent->instructions();
+
+    expect($instructions)
+        ->toContain('Preceding Chapters')
+        ->toContain('Continuity background only')
+        ->toContain('do not import their events')
+        ->toContain('Storyline: Side arc');
+});
+
+test('beats header defers to the author directive when a hint is given', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Some prose.</p>']);
+
+    $plotPoint = PlotPoint::factory()->for($book)->create();
+    $beat = Beat::factory()->for($plotPoint)->create(['title' => 'A beat']);
+    $chapter->beats()->attach($beat, ['sort_order' => 0]);
+
+    $withHint = new RewriteSelectionAgent(
+        book: $book,
+        chapter: $chapter,
+        selection: 'Some prose.',
+        hint: 'Focus on the rain',
+    );
+    expect((string) $withHint->instructions())
+        ->toContain('background reference — the author directive leads');
+
+    $withoutHint = new RewriteSelectionAgent(
+        book: $book,
+        chapter: $chapter,
+        selection: 'Some prose.',
+    );
+    expect((string) $withoutHint->instructions())
+        ->toContain('do not advance beyond the selection')
+        ->not->toContain('author directive leads');
+});
+
+test('agent instructions flag truncated surrounding excerpts', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create([
+        'content' => '<p>Earlier prose. The middle part. Later prose.</p>',
+    ]);
+
+    $truncated = new RewriteSelectionAgent(
+        book: $book,
+        chapter: $chapter,
+        selection: 'The middle part.',
+        hint: null,
+        beforeProse: 'Earlier prose.',
+        afterProse: 'Later prose.',
+        beforeTruncated: true,
+        afterTruncated: true,
+    );
+
+    expect((string) $truncated->instructions())
+        ->toContain('the chapter begins before it')
+        ->toContain('the chapter draft continues beyond it');
+
+    $complete = new RewriteSelectionAgent(
+        book: $book,
+        chapter: $chapter,
+        selection: 'The middle part.',
+        hint: null,
+        beforeProse: 'Earlier prose.',
+        afterProse: 'Later prose.',
+        beforeTruncated: false,
+        afterTruncated: false,
+    );
+
+    expect((string) $complete->instructions())->not->toContain('truncated');
+});
+
+test('agent flags surrounds capped by the server-side word limit', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Some prose.</p>']);
+
+    $longProse = implode(' ', array_fill(0, 250, 'word'));
+
+    $agent = new RewriteSelectionAgent(
+        book: $book,
+        chapter: $chapter,
+        selection: 'The middle part.',
+        hint: null,
+        beforeProse: $longProse,
+        afterProse: $longProse,
+    );
+
+    expect((string) $agent->instructions())
+        ->toContain('the chapter begins before it')
+        ->toContain('the chapter draft continues beyond it');
+});
+
+test('agent user message points at the author directive when a hint is given', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Some prose.</p>']);
+
+    $plain = new RewriteSelectionAgent(
+        book: $book,
+        chapter: $chapter,
+        selection: 'Some text.',
+    );
+    expect($plain->userMessage())
+        ->toBe('Rewrite the SELECTION so it replaces the original passage and reads seamlessly with the surrounding prose.');
+
+    $withHint = new RewriteSelectionAgent(
+        book: $book,
+        chapter: $chapter,
+        selection: 'Some text.',
+        hint: 'Tighter',
+    );
+    expect($withHint->userMessage())
+        ->toBe('Rewrite the SELECTION so it replaces the original passage and reads seamlessly with the surrounding prose. Follow the AUTHOR DIRECTIVE.');
+});
+
+test('controller streams with the directive-aware user message', function () {
+    RewriteSelectionAgent::fake(['ok']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Some prose.</p>']);
+
+    $this->post(
+        route('chapters.ai.rewriteSelection', [$book, $chapter]),
+        [
+            'selection' => 'Some text.',
+            'hint' => 'Make it tense',
+        ],
+    )->assertOk();
+
+    RewriteSelectionAgent::assertPrompted(
+        fn ($prompt) => $prompt->contains('Rewrite the SELECTION')
+            && $prompt->contains('Follow the AUTHOR DIRECTIVE.'),
+    );
+});
+
+test('controller forwards truncation flags to the agent', function () {
+    RewriteSelectionAgent::fake(['ok']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Some prose.</p>']);
+
+    $this->post(
+        route('chapters.ai.rewriteSelection', [$book, $chapter]),
+        [
+            'selection' => 'Some text.',
+            'before' => 'Earlier.',
+            'after' => 'Later.',
+            'before_truncated' => true,
+            'after_truncated' => true,
+        ],
+    )->assertOk();
+
+    RewriteSelectionAgent::assertPrompted(
+        fn ($prompt) => str_contains((string) $prompt->agent->instructions(), 'the chapter begins before it')
+            && str_contains((string) $prompt->agent->instructions(), 'the chapter draft continues beyond it'),
+    );
 });
