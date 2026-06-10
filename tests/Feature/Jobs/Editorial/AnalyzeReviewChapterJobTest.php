@@ -2,6 +2,7 @@
 
 use App\Ai\Agents\ChapterAnalyzer;
 use App\Ai\Agents\EditorialNotesAgent;
+use App\Ai\Agents\ManuscriptAnalyzer;
 use App\Jobs\Editorial\AnalyzeReviewChapterJob;
 use App\Models\EditorialReview;
 
@@ -40,6 +41,7 @@ test('AnalyzeReviewChapterJob refreshes a stale chapter analysis before gap-fill
         'sensory_grounding' => 3,
         'information_delivery' => 'mixed',
     ]);
+    ManuscriptAnalyzer::fake(fn () => ['score' => 7, 'findings' => [], 'recommendations' => []]);
     fakeAllEditorialAgents();
 
     [$book, $chapters] = createBookWithChaptersForEditorial(1);
@@ -57,6 +59,58 @@ test('AnalyzeReviewChapterJob refreshes a stale chapter analysis before gap-fill
         ->and($chapter->prepared_content_hash)->toBe($chapter->content_hash);
 
     ChapterAnalyzer::assertPrompted(fn ($prompt) => true);
+});
+
+test('AnalyzeReviewChapterJob runs manuscript analyses when refreshing a stale chapter', function () {
+    ChapterAnalyzer::fake(fn () => [
+        'summary' => 'Refreshed summary.',
+        'key_events' => ['Event 1'],
+        'characters_present' => ['John'],
+        'tension_score' => 5,
+        'micro_tension_score' => 4,
+        'scene_purpose' => 'setup',
+        'value_shift' => null,
+        'emotional_state_open' => 'calm',
+        'emotional_state_close' => 'worried',
+        'emotional_shift_magnitude' => 3,
+        'hook_score' => 6,
+        'hook_type' => 'soft_hook',
+        'hook_reasoning' => 'Moderate tension.',
+        'entry_hook_score' => 5,
+        'pacing_feel' => 'measured',
+        'sensory_grounding' => 3,
+        'information_delivery' => 'mixed',
+    ]);
+    ManuscriptAnalyzer::fake(fn () => ['score' => 7, 'findings' => [], 'recommendations' => []]);
+    fakeAllEditorialAgents();
+
+    [$book, $chapters] = createBookWithChaptersForEditorial(1);
+    $chapter = $chapters[0];
+    $chapter->update(['prepared_content_hash' => 'stale_hash']);
+
+    $review = EditorialReview::factory()->for($book)->create(['status' => 'analyzing']);
+
+    (new AnalyzeReviewChapterJob($book, $review, $chapter->id, 1, 1))->handle();
+
+    $types = $chapter->analyses()->pluck('type')->map(fn ($type) => $type->value)->all();
+
+    expect($types)->toContain('character_consistency')
+        ->and($types)->toContain('plot_deviation');
+});
+
+test('AnalyzeReviewChapterJob skips manuscript analyses for a fresh chapter', function () {
+    ManuscriptAnalyzer::fake(function () {
+        throw new RuntimeException('ManuscriptAnalyzer must not run for fresh chapters');
+    });
+    fakeAllEditorialAgents();
+
+    [$book, $chapters] = createBookWithChaptersForEditorial(1);
+    $review = EditorialReview::factory()->for($book)->create(['status' => 'analyzing']);
+
+    $job = new AnalyzeReviewChapterJob($book, $review, $chapters[0]->id, 1, 1);
+
+    expect(fn () => $job->handle())->not->toThrow(Throwable::class);
+    expect($review->chapterNotes()->count())->toBe(1);
 });
 
 test('AnalyzeReviewChapterJob skips gracefully when the notes agent throws', function () {

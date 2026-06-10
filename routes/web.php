@@ -4,7 +4,6 @@ use App\Database\SqliteVecConnector;
 use App\Http\Controllers\ActController;
 use App\Http\Controllers\AiController;
 use App\Http\Controllers\AiConversationController;
-use App\Http\Controllers\AiPreparationController;
 use App\Http\Controllers\AiSettingsController;
 use App\Http\Controllers\AppSettingsController;
 use App\Http\Controllers\BackupController;
@@ -214,22 +213,13 @@ Route::post('/books/{book}/plot/panel/disconnect', [PlotPanelController::class, 
 Route::post('/books/{book}/plot-connections', [PlotPointConnectionController::class, 'store'])->name('plotConnections.store');
 Route::delete('/books/{book}/plot-connections/{plotPointConnection}', [PlotPointConnectionController::class, 'destroy'])->name('plotConnections.destroy');
 
-Route::post('/books/{book}/ai/prepare', [AiPreparationController::class, 'start'])->name('books.ai.prepare');
-Route::get('/books/{book}/ai/prepare/status', [AiPreparationController::class, 'status'])->name('books.ai.prepare.status');
-Route::post('/books/{book}/ai/prepare/retry', [AiPreparationController::class, 'retry'])->name('books.ai.prepare.retry');
-
 Route::put('/settings/ai/{provider}', [AiSettingsController::class, 'update'])->name('ai-settings.update');
 Route::delete('/settings/ai/{provider}/key', [AiSettingsController::class, 'deleteKey'])->name('ai-settings.delete-key');
 Route::post('/settings/ai/{provider}/test', [AiSettingsController::class, 'test'])->name('ai-settings.test');
 
-Route::post('/books/{book}/ai/analyze', [AiController::class, 'analyze'])->name('books.ai.analyze');
-Route::post('/books/{book}/ai/extract-characters/{chapter}', [AiController::class, 'extractCharacters'])->name('books.ai.extractCharacters');
-Route::post('/books/{book}/ai/next-chapter', [AiController::class, 'nextChapter'])->name('books.ai.nextChapter');
 Route::post('/books/{book}/ai/blurb', [BlurbController::class, 'stream'])->name('books.ai.blurb');
-Route::post('/books/{book}/ai/embed', [AiController::class, 'embed'])->name('books.ai.embed');
 Route::post('/books/{book}/chapters/{chapter}/ai/revise', [AiController::class, 'revise'])->name('chapters.ai.revise');
 Route::post('/books/{book}/chapters/{chapter}/scenes/{scene}/ai/revise', [AiController::class, 'reviseScene'])->name('chapters.scenes.ai.revise');
-Route::post('/books/{book}/chapters/{chapter}/ai/beautify', [AiController::class, 'beautify'])->name('chapters.ai.beautify');
 Route::post('/books/{book}/chapters/{chapter}/ai/revise-editorial', [AiController::class, 'reviseWithEditorialFeedback'])->name('chapters.ai.reviseEditorial');
 Route::post('/books/{book}/chapters/{chapter}/ai/continue-writing', [ContinueWritingController::class, 'stream'])->name('chapters.ai.continueWriting');
 Route::post('/books/{book}/chapters/{chapter}/ai/continue-writing/commit', [ContinueWritingController::class, 'commit'])->name('chapters.ai.continueWriting.commit');
@@ -240,14 +230,9 @@ Route::post('/books/{book}/chapters/{chapter}/ai/rewrite-selection/commit', [Rew
 Route::get('/books/{book}/chapters/{chapter}/diff/{version}', [ChapterDiffController::class, 'show'])->name('chapters.diff.show');
 Route::post('/books/{book}/chapters/{chapter}/diff/{version}/open', [ChapterDiffController::class, 'openWindow'])->name('chapters.diff.open');
 Route::post('/chapters/{chapter}/diff/window/close', [ChapterDiffController::class, 'closeWindow'])->name('chapters.diff.close');
-Route::post('/books/{book}/chapters/{chapter}/ai/analyze-chapter', [AiController::class, 'analyzeChapter'])->name('chapters.ai.analyzeChapter');
-Route::get('/books/{book}/chapters/{chapter}/ai/analysis-status', [AiController::class, 'chapterAnalysisStatus'])->name('chapters.ai.analysisStatus');
 Route::post('/books/{book}/ai/chat', [AiController::class, 'chat'])->name('books.ai.chat');
 Route::get('/books/{book}/ai/conversations/{conversation}/messages', [AiConversationController::class, 'messages'])->name('books.ai.conversations.messages');
 Route::delete('/books/{book}/ai/conversations/{conversation}', [AiConversationController::class, 'destroy'])->name('books.ai.conversations.destroy');
-Route::post('/books/{book}/ai/beautify-all', [AiController::class, 'beautifyAll'])->name('books.ai.beautifyAll');
-Route::post('/books/{book}/ai/revise-all', [AiController::class, 'reviseAll'])->name('books.ai.reviseAll');
-Route::get('/books/{book}/ai/bulk-revision-status', [AiController::class, 'bulkRevisionStatus'])->name('books.ai.bulkRevisionStatus');
 Route::post('/books/{book}/ai/reset-usage', [AiController::class, 'resetUsage'])->name('books.ai.resetUsage');
 
 Route::post('/books/{book}/ai/editorial-review', [EditorialReviewController::class, 'store'])->name('books.ai.editorial-review.store');

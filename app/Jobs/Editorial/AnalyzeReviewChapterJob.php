@@ -6,6 +6,7 @@ use App\Ai\Agents\ChapterAnalyzer;
 use App\Ai\Agents\EditorialNotesAgent;
 use App\Ai\Support\TextPrep;
 use App\Jobs\Concerns\PersistsChapterAnalysis;
+use App\Jobs\Concerns\RunsManuscriptAnalyses;
 use App\Jobs\Concerns\UpdatesEditorialReview;
 use App\Models\AiSetting;
 use App\Models\Book;
@@ -28,7 +29,7 @@ use Throwable;
  */
 class AnalyzeReviewChapterJob implements ShouldQueue
 {
-    use Batchable, Dispatchable, InteractsWithQueue, PersistsChapterAnalysis, Queueable, SerializesModels, UpdatesEditorialReview;
+    use Batchable, Dispatchable, InteractsWithQueue, PersistsChapterAnalysis, Queueable, RunsManuscriptAnalyses, SerializesModels, UpdatesEditorialReview;
 
     public int $tries = 1;
 
@@ -92,8 +93,10 @@ class AnalyzeReviewChapterJob implements ShouldQueue
     }
 
     /**
-     * Phase 0 — refresh a stale chapter analysis. Failures are logged and
-     * skipped so a single bad chapter never derails the whole review.
+     * Phase 0 — refresh a stale chapter analysis, including the manuscript
+     * analyses (character consistency, plot deviation) that the synthesis
+     * sections aggregate. Failures are logged and skipped so a single bad
+     * chapter never derails the whole review.
      */
     private function refreshChapterAnalysis(Chapter $chapter, string $capped): void
     {
@@ -102,6 +105,8 @@ class AnalyzeReviewChapterJob implements ShouldQueue
             $response = $agent->prompt("Analyze this chapter:\n\nTitle: {$chapter->title}\n\n{$capped}", timeout: 180);
 
             $this->persistChapterAnalysis($this->book, $chapter, $response->toArray());
+
+            $this->runManuscriptAnalyses($this->book, $chapter);
 
             $chapter->update([
                 'prepared_content_hash' => $chapter->content_hash,

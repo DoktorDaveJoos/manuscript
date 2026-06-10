@@ -1,26 +1,7 @@
 <?php
 
-use App\Ai\Agents\ChapterAnalyzer;
-use App\Ai\Agents\EntityExtractor;
-use App\Ai\Agents\StoryBibleBuilder;
-use App\Jobs\PrepareBookForAi;
-use App\Models\AiPreparation;
 use App\Models\Chapter;
 use App\Models\Scene;
-
-function fakeAiAgents(): void
-{
-    ChapterAnalyzer::fake(fn () => [
-        'summary' => 'Summary.', 'key_events' => [], 'characters_present' => [],
-        'tension_score' => 5, 'hook_score' => 5, 'hook_type' => 'closed',
-        'hook_reasoning' => 'OK.', 'plot_points' => [],
-    ]);
-    EntityExtractor::fake(fn () => ['characters' => [], 'entities' => []]);
-    StoryBibleBuilder::fake(fn () => [
-        'characters' => [], 'setting' => [], 'plot_outline' => [],
-        'themes' => [], 'style_rules' => [], 'genre_rules' => [], 'timeline' => [],
-    ]);
-}
 
 test('refreshContentHash computes correct xxh128 from scenes', function () {
     [$book, $chapters] = createBookWithChapters(1);
@@ -134,90 +115,4 @@ test('scene reorder triggers hash refresh via controller', function () {
 
     $chapter->refresh();
     expect($chapter->content_hash)->not->toBe($originalHash);
-});
-
-test('pipeline skips per-chapter work but still completes when nothing is dirty', function () {
-    fakeAiAgents();
-
-    [$book, $chapters] = createBookWithChapters(2);
-
-    // Mark all chapters as already prepared so none are dirty.
-    foreach ($chapters as $chapter) {
-        $chapter->update(['prepared_content_hash' => $chapter->content_hash]);
-    }
-
-    $preparation = AiPreparation::create([
-        'book_id' => $book->id,
-        'status' => 'pending',
-    ]);
-
-    $job = new PrepareBookForAi($book, $preparation);
-    $job->handle();
-
-    $preparation->refresh();
-    expect($preparation->status)->toBe('completed')
-        ->and($preparation->completed_phases)->toContain('chunking')
-        ->and($preparation->completed_phases)->toContain('health_analysis');
-
-    // Singleton steps (writing style, story bible) still run when selected, but
-    // the expensive per-chapter work is skipped for clean chapters — so none of
-    // them get re-analyzed.
-    foreach ($chapters as $chapter) {
-        expect($chapter->fresh()->summary)->toBeNull();
-    }
-});
-
-test('pipeline only processes dirty chapters', function () {
-    fakeAiAgents();
-
-    [$book, $chapters] = createBookWithChapters(3);
-
-    // Mark first two as already prepared
-    $chapters[0]->update(['prepared_content_hash' => $chapters[0]->content_hash]);
-    $chapters[1]->update(['prepared_content_hash' => $chapters[1]->content_hash]);
-
-    // Third chapter stays dirty (prepared_content_hash is null)
-    $preparation = AiPreparation::create([
-        'book_id' => $book->id,
-        'status' => 'pending',
-    ]);
-
-    $job = new PrepareBookForAi($book, $preparation);
-    $job->handle();
-
-    $preparation->refresh();
-    expect($preparation->status)->toBe('completed')
-        ->and($preparation->total_chapters)->toBe(3);
-
-    // Only the dirty chapter should have been analyzed
-    $chapters[0]->refresh();
-    $chapters[1]->refresh();
-    $chapters[2]->refresh();
-
-    expect($chapters[0]->summary)->toBeNull()
-        ->and($chapters[1]->summary)->toBeNull()
-        ->and($chapters[2]->summary)->toBe('Summary.');
-});
-
-test('completed preparation stamps prepared_content_hash and ai_prepared_at', function () {
-    fakeAiAgents();
-
-    [$book, $chapters] = createBookWithChapters(2);
-
-    $preparation = AiPreparation::create([
-        'book_id' => $book->id,
-        'status' => 'pending',
-    ]);
-
-    $job = new PrepareBookForAi($book, $preparation);
-    $job->handle();
-
-    $preparation->refresh();
-    expect($preparation->status)->toBe('completed');
-
-    foreach ($chapters as $chapter) {
-        $chapter->refresh();
-        expect($chapter->prepared_content_hash)->toBe($chapter->content_hash)
-            ->and($chapter->ai_prepared_at)->not->toBeNull();
-    }
 });

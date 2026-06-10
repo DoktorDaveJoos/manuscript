@@ -3,7 +3,6 @@
 use App\Ai\Agents\EditorialNotesAgent;
 use App\Ai\Agents\EditorialSummaryAgent;
 use App\Ai\Agents\EditorialSynthesisAgent;
-use App\Models\AiPreparation;
 use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\Chapter;
@@ -121,12 +120,7 @@ function createBookWithChapters(int $chapterCount = 3): array
         $chapters[] = $chapter;
     }
 
-    $preparation = AiPreparation::create([
-        'book_id' => $book->id,
-        'status' => 'pending',
-    ]);
-
-    return [$book, $chapters, $preparation];
+    return [$book, $chapters];
 }
 
 /**

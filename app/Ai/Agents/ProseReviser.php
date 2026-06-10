@@ -6,7 +6,6 @@ use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Models\Book;
 use App\Models\Chapter;
-use App\Services\StoryBibleService;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
@@ -90,7 +89,6 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
 
         $sections[] = $this->buildCharactersSection();
         $sections[] = $this->buildWikiEntriesSection();
-        $sections[] = $this->buildStoryBibleSection();
         $sections[] = $this->buildNarrativePositionSection();
 
         $content = collect($sections)->filter()->implode("\n");
@@ -147,11 +145,6 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
         }
 
         return implode("\n", $lines);
-    }
-
-    private function buildStoryBibleSection(): string
-    {
-        return app(StoryBibleService::class)->getContext($this->book);
     }
 
     private function buildNarrativePositionSection(): string

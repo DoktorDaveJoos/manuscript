@@ -310,27 +310,11 @@ class Book extends Model
     }
 
     /**
-     * @return HasMany<AiPreparation, $this>
-     */
-    public function aiPreparations(): HasMany
-    {
-        return $this->hasMany(AiPreparation::class);
-    }
-
-    /**
      * @return HasMany<WritingSession, $this>
      */
     public function writingSessions(): HasMany
     {
         return $this->hasMany(WritingSession::class);
-    }
-
-    /**
-     * @return HasMany<HealthSnapshot, $this>
-     */
-    public function healthSnapshots(): HasMany
-    {
-        return $this->hasMany(HealthSnapshot::class);
     }
 
     /**

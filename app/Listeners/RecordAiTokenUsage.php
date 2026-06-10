@@ -42,10 +42,7 @@ class RecordAiTokenUsage
         return match (class_basename($agent)) {
             'BookChatAgent' => 'chat',
             'ChapterAnalyzer', 'ManuscriptAnalyzer' => 'analysis',
-            'ProseReviser', 'NextChapterAdvisor' => 'suggestions',
-            'TextBeautifier' => 'beautify',
-            'StoryBibleBuilder' => 'story_bible',
-            'EntityExtractor', 'EntityConsolidator' => 'entity_extraction',
+            'ProseReviser' => 'suggestions',
             'EditorialNotesAgent', 'EditorialSynthesisAgent', 'EditorialSummaryAgent' => 'editorial_review',
             'EditorialChatAgent' => 'editorial_review_chat',
             default => 'other',

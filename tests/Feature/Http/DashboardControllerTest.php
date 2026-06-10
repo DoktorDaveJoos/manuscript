@@ -2,7 +2,6 @@
 
 use App\Models\Book;
 use App\Models\Chapter;
-use App\Models\HealthSnapshot;
 use App\Models\License;
 use App\Models\Storyline;
 use App\Models\WritingSession;
@@ -100,36 +99,6 @@ test('dismiss milestone sets milestone_dismissed', function () {
 
     $book->refresh();
     expect($book->milestone_dismissed)->toBeTrue();
-});
-
-test('health snapshot upsert is idempotent', function () {
-    $book = Book::factory()->create();
-    $today = now()->toDateString();
-    $baseData = [
-        'book_id' => $book->id,
-        'recorded_at' => $today,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ];
-
-    $allColumns = ['composite_score', 'hooks_score', 'pacing_score', 'tension_score', 'weave_score', 'scene_purpose_score', 'tension_dynamics_score', 'emotional_arc_score', 'craft_score', 'updated_at'];
-
-    // First upsert creates
-    HealthSnapshot::query()->upsert(
-        [...$baseData, 'composite_score' => 50, 'hooks_score' => 60, 'pacing_score' => 55, 'tension_score' => 50, 'weave_score' => 0, 'scene_purpose_score' => 45, 'tension_dynamics_score' => 50, 'emotional_arc_score' => 55, 'craft_score' => 60],
-        ['book_id', 'recorded_at'],
-        $allColumns,
-    );
-
-    // Second upsert updates
-    HealthSnapshot::query()->upsert(
-        [...$baseData, 'composite_score' => 75, 'hooks_score' => 80, 'pacing_score' => 70, 'tension_score' => 65, 'weave_score' => 0, 'scene_purpose_score' => 70, 'tension_dynamics_score' => 65, 'emotional_arc_score' => 72, 'craft_score' => 78],
-        ['book_id', 'recorded_at'],
-        $allColumns,
-    );
-
-    expect(HealthSnapshot::where('book_id', $book->id)->count())->toBe(1);
-    expect(HealthSnapshot::where('book_id', $book->id)->first()->composite_score)->toBe(75);
 });
 
 test('writing goal update accepts target_word_count', function () {

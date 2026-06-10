@@ -3,29 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Ai\Agents\BookChatAgent;
-use App\Ai\Agents\NextChapterAdvisor;
 use App\Ai\Agents\ProseReviser;
-use App\Ai\Agents\TextBeautifier;
-use App\Enums\AnalysisType;
-use App\Enums\BulkRevisionType;
 use App\Enums\VersionSource;
 use App\Enums\VersionStatus;
 use App\Http\Controllers\Concerns\EnsuresAiConfigured;
 use App\Http\Controllers\Concerns\EnsuresChapterVersion;
 use App\Http\Controllers\Concerns\StreamsConversation;
-use App\Http\Requests\RunAnalysisRequest;
-use App\Jobs\AnalyzeChapterJob;
-use App\Jobs\BulkRevisionJob;
-use App\Jobs\ExtractEntitiesJob;
-use App\Jobs\GenerateEmbeddingsJob;
-use App\Jobs\RunAnalysisJob;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\Scene;
 use App\Services\Normalization\NormalizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Responses\StreamableAgentResponse;
@@ -34,47 +23,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class AiController extends Controller
 {
     use EnsuresAiConfigured, EnsuresChapterVersion, StreamsConversation;
-
-    public function analyzeChapter(Book $book, Chapter $chapter): JsonResponse
-    {
-        $chapter->update([
-            'analysis_status' => 'pending',
-            'analysis_error' => null,
-        ]);
-
-        AnalyzeChapterJob::dispatch($book, $chapter);
-
-        return response()->json(['status' => 'pending']);
-    }
-
-    public function chapterAnalysisStatus(Book $book, Chapter $chapter): JsonResponse
-    {
-        $analyses = $chapter->analyses()
-            ->get()
-            ->keyBy(fn ($a) => $a->type->value);
-
-        return response()->json([
-            'analysis_status' => $chapter->analysis_status,
-            'analysis_error' => $chapter->analysis_error,
-            'analyzed_at' => $chapter->analyzed_at?->toISOString(),
-            'tension_score' => $chapter->tension_score,
-            'hook_score' => $chapter->hook_score,
-            'hook_type' => $chapter->hook_type,
-            'summary' => $chapter->summary,
-            'scene_purpose' => $chapter->scene_purpose,
-            'value_shift' => $chapter->value_shift,
-            'emotional_state_open' => $chapter->emotional_state_open,
-            'emotional_state_close' => $chapter->emotional_state_close,
-            'emotional_shift_magnitude' => $chapter->emotional_shift_magnitude,
-            'micro_tension_score' => $chapter->micro_tension_score,
-            'pacing_feel' => $chapter->pacing_feel,
-            'entry_hook_score' => $chapter->entry_hook_score,
-            'exit_hook_score' => $chapter->exit_hook_score,
-            'sensory_grounding' => $chapter->sensory_grounding,
-            'information_delivery' => $chapter->information_delivery,
-            'analyses' => $analyses,
-        ]);
-    }
 
     public function chat(Request $request, Book $book): JsonResponse|StreamedResponse
     {
@@ -101,51 +49,6 @@ class AiController extends Controller
                 $conversationId,
             );
         });
-    }
-
-    public function analyze(RunAnalysisRequest $request, Book $book): JsonResponse
-    {
-        $type = AnalysisType::from($request->validated('type'));
-        $chapterId = $request->validated('chapter_id');
-        $chapter = $chapterId ? Chapter::query()->findOrFail($chapterId) : null;
-
-        RunAnalysisJob::dispatch($book, $type, $chapter);
-
-        return response()->json(['message' => __('Analysis started.')]);
-    }
-
-    public function extractCharacters(Book $book, Chapter $chapter): JsonResponse
-    {
-        ExtractEntitiesJob::dispatch($book, $chapter);
-
-        return response()->json(['message' => __('Entity extraction started.')]);
-    }
-
-    public function nextChapter(Book $book): JsonResponse
-    {
-        $this->ensureAiConfigured();
-
-        $agent = new NextChapterAdvisor($book);
-        $response = $agent->prompt(
-            "Based on the current state of '{$book->title}', suggest what should happen in the next chapter.",
-        );
-
-        return response()->json($response->toArray());
-    }
-
-    public function embed(Book $book): JsonResponse
-    {
-        $chapters = $book->chapters()->with('currentVersion')->get();
-        $dispatched = 0;
-
-        foreach ($chapters as $chapter) {
-            if ($chapter->currentVersion) {
-                GenerateEmbeddingsJob::dispatch($book, $chapter->currentVersion);
-                $dispatched++;
-            }
-        }
-
-        return response()->json(['message' => __(':count embedding jobs dispatched.', ['count' => $dispatched])]);
     }
 
     public function revise(Book $book, Chapter $chapter): StreamableAgentResponse
@@ -236,19 +139,6 @@ class AiController extends Controller
         }
 
         return $parts === [] ? null : implode("\n\n", $parts);
-    }
-
-    public function beautify(Book $book, Chapter $chapter): StreamableAgentResponse
-    {
-        return $this->streamAgentRevision(
-            $book,
-            $chapter,
-            new TextBeautifier($book),
-            __('Restructure the following chapter text:'),
-            VersionSource::Beautify,
-            __('AI text beautification'),
-            expectedVersionId: $this->validatedExpectedVersionId(),
-        );
     }
 
     private function validatedExpectedVersionId(): ?int
@@ -345,52 +235,10 @@ class AiController extends Controller
         });
     }
 
-    public function beautifyAll(Book $book): JsonResponse
-    {
-        return $this->dispatchBulkRevision($book, BulkRevisionType::Beautify);
-    }
-
-    public function reviseAll(Book $book): JsonResponse
-    {
-        return $this->dispatchBulkRevision($book, BulkRevisionType::Revise);
-    }
-
-    public function bulkRevisionStatus(Book $book): JsonResponse
-    {
-        $status = Cache::get(BulkRevisionJob::cacheKey($book->id));
-
-        return response()->json($status ?? ['status' => 'idle']);
-    }
-
     public function resetUsage(Book $book): JsonResponse
     {
         $book->resetAiUsage();
 
         return response()->json(['message' => __('AI usage counters reset.')]);
-    }
-
-    private function dispatchBulkRevision(Book $book, BulkRevisionType $type): JsonResponse
-    {
-        $this->ensureAiConfigured();
-
-        $lock = Cache::lock("bulk_revision_lock:{$book->id}", 10);
-
-        abort_unless($lock->get(), 422, __('A bulk revision is already starting for this book.'));
-
-        try {
-            $status = Cache::get(BulkRevisionJob::cacheKey($book->id));
-
-            abort_if(
-                $status && $status['status'] === 'running',
-                422,
-                __('A bulk revision is already running for this book.'),
-            );
-
-            BulkRevisionJob::dispatch($book, $type);
-        } finally {
-            $lock->release();
-        }
-
-        return response()->json(['status' => 'started', 'type' => $type->value]);
     }
 }
