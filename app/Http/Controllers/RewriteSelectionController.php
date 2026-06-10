@@ -43,9 +43,11 @@ class RewriteSelectionController extends Controller
             hint: $request->hint(),
             beforeProse: $request->beforeProse(),
             afterProse: $request->afterProse(),
+            beforeTruncated: $request->beforeTruncated(),
+            afterTruncated: $request->afterTruncated(),
         );
 
-        $streamable = $agent->stream('Rewrite the SELECTION so it replaces the original passage and reads seamlessly with the surrounding prose.');
+        $streamable = $agent->stream($agent->userMessage());
 
         return response()->stream(function () use ($streamable) {
             try {

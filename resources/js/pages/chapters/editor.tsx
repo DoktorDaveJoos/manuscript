@@ -30,7 +30,10 @@ import GlobalFindDrawer from '@/components/editor/GlobalFindDrawer';
 import NotesPanel from '@/components/editor/NotesPanel';
 import PaneEmptyState from '@/components/editor/PaneEmptyState';
 import PlotPanel from '@/components/editor/PlotPanel';
-import RewriteSelectionDialog from '@/components/editor/RewriteSelectionDialog';
+import RewriteSelectionDialog, {
+    defaultRewriteSelectionDraft,
+} from '@/components/editor/RewriteSelectionDialog';
+import type { RewriteSelectionDraft } from '@/components/editor/RewriteSelectionDialog';
 import Sidebar from '@/components/editor/Sidebar';
 import WikiPanel from '@/components/editor/WikiPanel';
 import Button from '@/components/ui/Button';
@@ -558,7 +561,16 @@ export default function EditorPage({
         from: number;
         to: number;
     } | null>(null);
+    // Draft survives closing the dialog (research, then come back) — it only
+    // resets on submit, explicit reset, or switching chapters.
+    const [rewriteDraft, setRewriteDraft] = useState<RewriteSelectionDraft>(
+        defaultRewriteSelectionDraft,
+    );
     const rewriteSelection = useRewriteSelection();
+
+    useEffect(() => {
+        setRewriteDraft(defaultRewriteSelectionDraft);
+    }, [focusedChapterId]);
 
     const reviewForChapter = useCallback(
         (chapterId: number) => {
@@ -1037,6 +1049,11 @@ export default function EditorPage({
                         rewriteRange.to,
                         ' ',
                     )}
+                    draft={rewriteDraft}
+                    onDraftChange={setRewriteDraft}
+                    onReset={() =>
+                        setRewriteDraft(defaultRewriteSelectionDraft)
+                    }
                     onClose={() => setRewriteRange(null)}
                     onSubmit={({ hint }) => {
                         rewriteSelection.start({
@@ -1046,6 +1063,7 @@ export default function EditorPage({
                             hint,
                             selection: rewriteRange,
                         });
+                        setRewriteDraft(defaultRewriteSelectionDraft);
                     }}
                 />
             )}

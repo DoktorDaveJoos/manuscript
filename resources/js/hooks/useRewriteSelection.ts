@@ -7,6 +7,7 @@ import {
 } from '@/actions/App/Http/Controllers/RewriteSelectionController';
 import { useAiErrorToast } from '@/hooks/useAiErrorToast';
 import { flushPaneByChapter } from '@/lib/pane';
+import { proseMirrorBlockText } from '@/lib/proseText';
 import { escapeHtml, jsonFetchHeaders } from '@/lib/utils';
 import type { ChapterVersion } from '@/types/models';
 
@@ -27,26 +28,39 @@ export type RewriteSelectionReview = {
 };
 
 // Too much surrounding context and the model paraphrases the surrounds
-// instead of rewriting just the selection.
+// instead of rewriting just the selection. The agent is told when an excerpt
+// is truncated so it doesn't mistake the cut for the chapter boundary.
 const SURROUND_WORD_CAP = 200;
 
-function capWordsFromEnd(text: string, max: number): string {
+function capWordsFromEnd(
+    text: string,
+    max: number,
+): { text: string; truncated: boolean } {
     const words = text.match(/\S+/g);
-    if (!words || words.length <= max) return text;
-    return words.slice(-max).join(' ');
+    if (!words || words.length <= max) return { text, truncated: false };
+    return { text: words.slice(-max).join(' '), truncated: true };
 }
 
-function capWordsFromStart(text: string, max: number): string {
+function capWordsFromStart(
+    text: string,
+    max: number,
+): { text: string; truncated: boolean } {
     const words = text.match(/\S+/g);
-    if (!words || words.length <= max) return text;
-    return words.slice(0, max).join(' ');
+    if (!words || words.length <= max) return { text, truncated: false };
+    return { text: words.slice(0, max).join(' '), truncated: true };
 }
 
 function splitChapterAtSelection(
     editor: Editor,
     chapterId: number,
     range: { from: number; to: number },
-): { before: string; selectionText: string; after: string } {
+): {
+    before: string;
+    selectionText: string;
+    after: string;
+    beforeTruncated: boolean;
+    afterTruncated: boolean;
+} {
     const { from, to } = range;
     const doc = editor.state.doc;
     const docEnd = doc.content.size;
@@ -56,10 +70,14 @@ function splitChapterAtSelection(
 
     const pane = document.querySelector(`[data-pane-chapter="${chapterId}"]`);
     if (!pane) {
+        const before = capWordsFromEnd(head, SURROUND_WORD_CAP);
+        const after = capWordsFromStart(tail, SURROUND_WORD_CAP);
         return {
-            before: capWordsFromEnd(head, SURROUND_WORD_CAP),
+            before: before.text,
             selectionText,
-            after: capWordsFromStart(tail, SURROUND_WORD_CAP),
+            after: after.text,
+            beforeTruncated: before.truncated,
+            afterTruncated: after.truncated,
         };
     }
 
@@ -80,7 +98,7 @@ function splitChapterAtSelection(
         }
 
         const pm = sceneEl.querySelector<HTMLElement>('.ProseMirror');
-        const text = (pm?.textContent ?? '').trim();
+        const text = proseMirrorBlockText(pm);
         if (!text) continue;
 
         if (foundActive) {
@@ -90,10 +108,15 @@ function splitChapterAtSelection(
         }
     }
 
+    const before = capWordsFromEnd(beforeParts.join('\n\n'), SURROUND_WORD_CAP);
+    const after = capWordsFromStart(afterParts.join('\n\n'), SURROUND_WORD_CAP);
+
     return {
-        before: capWordsFromEnd(beforeParts.join('\n\n'), SURROUND_WORD_CAP),
+        before: before.text,
         selectionText,
-        after: capWordsFromStart(afterParts.join('\n\n'), SURROUND_WORD_CAP),
+        after: after.text,
+        beforeTruncated: before.truncated,
+        afterTruncated: after.truncated,
     };
 }
 
@@ -121,11 +144,13 @@ export function useRewriteSelection() {
             const controller = new AbortController();
             abortRef.current = controller;
 
-            const { before, selectionText, after } = splitChapterAtSelection(
-                editor,
-                chapterId,
-                selection,
-            );
+            const {
+                before,
+                selectionText,
+                after,
+                beforeTruncated,
+                afterTruncated,
+            } = splitChapterAtSelection(editor, chapterId, selection);
 
             editor
                 .chain()
@@ -136,13 +161,35 @@ export function useRewriteSelection() {
 
             // Coalesce SSE deltas onto rAF so we run one Tiptap transaction
             // per frame instead of one per token.
+            //
+            // insertContent() parses strings as HTML, where newlines are mere
+            // whitespace — newline runs must become real paragraph splits.
+            // Trailing newlines are held back for the next flush, since the
+            // paragraph break may continue in the next delta (the final flush
+            // drops them instead).
             let pendingDelta = '';
             let flushScheduled = false;
-            const flushDelta = () => {
-                if (pendingDelta === '') return;
-                const text = pendingDelta;
+            const flushDelta = (final = false) => {
+                let text = pendingDelta;
                 pendingDelta = '';
-                editor.chain().insertContent(escapeHtml(text)).run();
+                if (final) {
+                    text = text.replace(/\n+$/, '');
+                } else {
+                    const held = text.match(/\n+$/)?.[0];
+                    if (held) {
+                        text = text.slice(0, -held.length);
+                        pendingDelta = held;
+                    }
+                }
+                if (text === '') return;
+                const chain = editor.chain();
+                text.split(/\n+/).forEach((paragraph, index) => {
+                    if (index > 0) chain.splitBlock();
+                    if (paragraph !== '') {
+                        chain.insertContent(escapeHtml(paragraph));
+                    }
+                });
+                chain.run();
             };
             const scheduleFlush = () => {
                 if (flushScheduled) return;
@@ -171,6 +218,8 @@ export function useRewriteSelection() {
                             hint,
                             before,
                             after,
+                            before_truncated: beforeTruncated,
+                            after_truncated: afterTruncated,
                         }),
                     },
                 );
@@ -242,7 +291,7 @@ export function useRewriteSelection() {
                     }
                 }
 
-                flushDelta();
+                flushDelta(true);
 
                 if (streamErrored) return;
 

@@ -7,6 +7,7 @@ import {
 } from '@/actions/App/Http/Controllers/ContinueWritingController';
 import { useAiErrorToast } from '@/hooks/useAiErrorToast';
 import { flushPaneByChapter } from '@/lib/pane';
+import { proseMirrorBlockText } from '@/lib/proseText';
 import { stripTags } from '@/lib/ruleCheckers';
 import { escapeHtml, jsonFetchHeaders } from '@/lib/utils';
 import type { ChapterVersion } from '@/types/models';
@@ -47,17 +48,6 @@ function capWords(
     const words = text.match(/\S+/g);
     if (!words || words.length <= max) return { text, truncated: false };
     return { text: words.slice(0, max).join(' '), truncated: true };
-}
-
-// Root-level textContent glues block boundaries together ("…end.Start…").
-// Join the top-level block nodes with blank lines instead so the prompt sees
-// real paragraph breaks.
-function proseMirrorBlockText(pm: HTMLElement | null): string {
-    if (!pm) return '';
-    return Array.from(pm.children)
-        .map((el) => el.textContent?.trim() ?? '')
-        .filter(Boolean)
-        .join('\n\n');
 }
 
 // Recover the live editor instance for the active scene from its ProseMirror
