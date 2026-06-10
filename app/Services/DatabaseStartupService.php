@@ -54,8 +54,14 @@ class DatabaseStartupService
         // Under NativePHP the Electron main process runs `migrate --force`
         // once per launch, so the request path only migrates when finishing a
         // repair (a web-detected repair leaves a schemaless fresh DB behind).
-        // Outside NativePHP (browser dev) this is the only migration path.
+        // Outside NativePHP (browser dev) this is the only migration path —
+        // but a full migrator boot costs ~150ms, so requests where the cheap
+        // schema-currency probe confirms nothing is pending skip it entirely.
         if (! config('nativephp-internal.running') || $repairInfo !== null) {
+            if ($repairInfo === null && $this->schemaIsCurrent()) {
+                return;
+            }
+
             try {
                 Artisan::call('migrate', ['--force' => true, '--no-interaction' => true]);
             } catch (\Throwable $e) {
@@ -85,6 +91,45 @@ class DatabaseStartupService
         @unlink(SqliteVecConnector::markerPath());
 
         $this->reportRepairToSentry($repairInfo);
+    }
+
+    /**
+     * Whether the database has already run the newest migration file on disk.
+     *
+     * Two sub-millisecond queries instead of a full `Artisan::call('migrate')`
+     * boot (which loads every migration file on every request in browser dev).
+     * Compares the lexically-newest filename in database/migrations against
+     * MAX(migration) — timestamp prefixes make lexical order chronological.
+     * Only ever short-circuits on an exact match: a fresh/wiped database, a
+     * rollback, a brand-new migration file, or a vendor migration recorded
+     * ahead of the app's all fall through to the real migrator.
+     */
+    private function schemaIsCurrent(): bool
+    {
+        try {
+            $latestFile = null;
+
+            foreach (scandir(database_path('migrations'), SCANDIR_SORT_DESCENDING) ?: [] as $entry) {
+                if (str_ends_with($entry, '.php')) {
+                    $latestFile = substr($entry, 0, -4);
+                    break;
+                }
+            }
+
+            if ($latestFile === null) {
+                return true;
+            }
+
+            $connection = $this->app['db']->connection();
+
+            if (! $connection->getSchemaBuilder()->hasTable('migrations')) {
+                return false;
+            }
+
+            return $connection->table('migrations')->max('migration') === $latestFile;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**

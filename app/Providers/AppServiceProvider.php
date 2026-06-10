@@ -113,7 +113,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureSentry();
-        $this->healStaleNativePhpSecret();
+        $this->healStaleNativePhpConfig();
 
         Event::listen(AgentPrompted::class, RecordAiTokenUsage::class);
         Event::listen(AgentStreamed::class, RecordAiTokenUsage::class);
@@ -125,34 +125,45 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Reconcile a stale NativePHP secret cache at request time.
+     * Reconcile per-launch NativePHP config values from the runtime env.
      *
-     * Electron generates a fresh `NATIVEPHP_SECRET` per launch and hands it to
-     * PHP via the process env. NativePHP regenerates the config cache on each
-     * boot via `artisan optimize`, but that call is non-fatal in vendor code
-     * (vendor/nativephp/desktop/resources/electron/electron-plugin/src/server/php.ts:437).
-     * If optimize ever fails, the server boots against the previous launch's
-     * cached secret and `PreventRegularBrowserAccess` 403s every
-     * `/_native/api/events` call until the user relaunches — see Sentry issue
-     * 113317190. Reading env() directly sidesteps the cache.
+     * Electron generates a fresh `NATIVEPHP_SECRET` and control-API port
+     * (`NATIVEPHP_API_URL`) per launch and hands them to PHP via the process
+     * env. The cached config holds the values from whichever launch last ran
+     * `artisan optimize` — and since our php.js patch version-guards optimize
+     * (it only runs on the first launch after an install/update; see
+     * tests/Unit/OptimizePatchTest.php), the cache is stale on every
+     * subsequent launch. A stale secret makes `PreventRegularBrowserAccess`
+     * 403 every `/_native/api/events` call (Sentry issue 113317190); a stale
+     * api_url sends Window/Menu/etc. facade calls to a dead port. Reading
+     * env() directly sidesteps the cache.
      */
-    protected function healStaleNativePhpSecret(): void
+    protected function healStaleNativePhpConfig(): void
     {
         if (! config('nativephp-internal.running')) {
             return;
         }
 
-        $runtimeSecret = env('NATIVEPHP_SECRET');
+        $this->healConfigKeyFromEnv('nativephp-internal.secret', 'NATIVEPHP_SECRET');
+        $this->healConfigKeyFromEnv('nativephp-internal.api_url', 'NATIVEPHP_API_URL');
+    }
 
-        if ($runtimeSecret === null || $runtimeSecret === '') {
+    /**
+     * Overwrite a cached config value with the live env value when they differ.
+     */
+    private function healConfigKeyFromEnv(string $configKey, string $envVar): void
+    {
+        $runtimeValue = env($envVar);
+
+        if ($runtimeValue === null || $runtimeValue === '') {
             return;
         }
 
-        if (config('nativephp-internal.secret') === $runtimeSecret) {
+        if (config($configKey) === $runtimeValue) {
             return;
         }
 
-        config()->set('nativephp-internal.secret', $runtimeSecret);
+        config()->set($configKey, $runtimeValue);
     }
 
     /**
