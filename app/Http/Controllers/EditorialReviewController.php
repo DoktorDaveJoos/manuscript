@@ -43,6 +43,7 @@ class EditorialReviewController extends Controller
             'reviews' => $reviews,
             'latestReview' => $latestReview,
             'chapters' => $this->chapterList($book),
+            'editedChaptersCount' => $this->chaptersEditedSinceLastReview($book),
         ]);
     }
 
@@ -124,6 +125,7 @@ class EditorialReviewController extends Controller
             'latestReview' => $review,
             'chapters' => $this->chapterList($book),
             'reviews' => $book->editorialReviews()->latest('id')->limit(20)->get(),
+            'editedChaptersCount' => $this->chaptersEditedSinceLastReview($book),
         ]);
     }
 
@@ -195,6 +197,26 @@ class EditorialReviewController extends Controller
                 $conversationId,
             );
         });
+    }
+
+    /**
+     * Chapters whose scenes changed after the newest completed review
+     * finished — the signal for whether another review round is worthwhile.
+     * Null when the book has no completed review to compare against.
+     */
+    private function chaptersEditedSinceLastReview(Book $book): ?int
+    {
+        $lastCompletedAt = $book->editorialReviews()
+            ->where('status', 'completed')
+            ->max('completed_at');
+
+        if (! $lastCompletedAt) {
+            return null;
+        }
+
+        return $book->chapters()
+            ->whereHas('scenes', fn ($query) => $query->where('updated_at', '>', $lastCompletedAt))
+            ->count();
     }
 
     /**

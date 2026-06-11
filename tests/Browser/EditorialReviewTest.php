@@ -54,6 +54,34 @@ it('renders completed review with sections and scores', function () {
         ->assertSee('Characters');
 });
 
+it('shows the dimension grid and the edited-chapters hint', function () {
+    [$book] = createBookWithChapters(2);
+
+    $review = EditorialReview::factory()->for($book)->create([
+        'completed_at' => now()->subDay(),
+    ]);
+
+    EditorialReviewSection::factory()->for($review)->create([
+        'type' => EditorialSectionType::Plot,
+        'score' => 68,
+        'findings' => [
+            [
+                'severity' => 'warning',
+                'description' => 'The midpoint reversal comes too late.',
+                'chapter_references' => [],
+                'recommendation' => 'Move the reversal earlier.',
+            ],
+        ],
+    ]);
+
+    $page = visit("/books/{$book->id}/ai/editorial-review");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSee('Dimensions')
+        ->assertSee('1 remaining')
+        ->assertSee("You've edited 2 chapters since the last review");
+});
+
 it('shows chapter notes when present', function () {
     [$book, $chapters] = createBookWithChapters(1);
 

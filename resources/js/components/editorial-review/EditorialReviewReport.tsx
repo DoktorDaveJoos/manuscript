@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { Check, PencilLine } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -6,9 +7,14 @@ import Dialog from '@/components/ui/Dialog';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
 import { useToggleFinding } from '@/hooks/useToggleFinding';
+import { qualityBarColor, scoreQuality } from '@/lib/editorial-constants';
+import type { ScoreQuality } from '@/lib/editorial-constants';
+import { cn } from '@/lib/utils';
 import type {
     Chapter,
     EditorialReview,
+    EditorialReviewSection as EditorialReviewSectionModel,
+    EditorialSectionType,
     OnDiscussFinding,
 } from '@/types/models';
 import EditorialReviewSection from './EditorialReviewSection';
@@ -41,7 +47,7 @@ function ScoreDisplay({
     qualityLabel,
 }: {
     score: number;
-    qualityLabel: { good: string; fair: string; needsWork: string };
+    qualityLabel: Record<ScoreQuality, string>;
 }) {
     return (
         <div className="flex flex-col items-center gap-1 rounded-lg bg-neutral-bg px-5 py-3">
@@ -49,11 +55,7 @@ function ScoreDisplay({
                 {score}
             </span>
             <span className="text-[11px] font-medium text-ink-faint">
-                {score >= 76
-                    ? qualityLabel.good
-                    : score >= 60
-                      ? qualityLabel.fair
-                      : qualityLabel.needsWork}
+                {qualityLabel[scoreQuality(score)]}
             </span>
         </div>
     );
@@ -85,10 +87,66 @@ function StrengthsAndImprovements({
     );
 }
 
+function DimensionTile({
+    label,
+    section,
+    openCount,
+    onClick,
+}: {
+    label: string;
+    section: EditorialReviewSectionModel;
+    openCount: number;
+    onClick: () => void;
+}) {
+    const { t } = useTranslation('editorial-review');
+    const totalFindings = (section.findings ?? []).length;
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="flex flex-col gap-3 rounded-xl border border-border-light bg-surface-card p-4 text-left transition-colors hover:border-border"
+        >
+            <span className="text-xs font-medium text-ink-muted">{label}</span>
+
+            <span className="text-2xl leading-none font-semibold tracking-[-0.01em] text-ink">
+                {section.score ?? '—'}
+            </span>
+
+            <div className="mt-auto flex w-full flex-col gap-2">
+                <div className="h-1 w-full overflow-hidden rounded bg-neutral-bg">
+                    {section.score !== null && (
+                        <div
+                            className={cn(
+                                'h-full rounded',
+                                qualityBarColor[scoreQuality(section.score)],
+                            )}
+                            style={{ width: `${section.score}%` }}
+                        />
+                    )}
+                </div>
+
+                {totalFindings > 0 &&
+                    (openCount === 0 ? (
+                        <span className="flex items-center gap-1 text-[11px] font-medium text-status-final">
+                            <Check size={12} />
+                            {t('section.allResolved')}
+                        </span>
+                    ) : (
+                        <span className="text-[11px] font-medium text-ink-faint">
+                            {t('section.remaining', { count: openCount })}
+                        </span>
+                    ))}
+            </div>
+        </button>
+    );
+}
+
 export default function EditorialReviewReport({
     review,
     reviews,
     chapters,
+    editedChaptersCount,
     onSelectReview,
     onStartNew,
     starting,
@@ -98,6 +156,7 @@ export default function EditorialReviewReport({
     review: EditorialReview;
     reviews: EditorialReview[];
     chapters: Chapter[];
+    editedChaptersCount: number | null;
     onSelectReview: (review: EditorialReview) => void;
     onStartNew: () => void;
     starting: boolean;
@@ -106,6 +165,12 @@ export default function EditorialReviewReport({
 }) {
     const { t, i18n } = useTranslation('editorial-review');
     const [showConfirm, setShowConfirm] = useState(false);
+    const [openSections, setOpenSections] = useState<Set<EditorialSectionType>>(
+        () => new Set(),
+    );
+    const sectionRefs = useRef<
+        Partial<Record<EditorialSectionType, HTMLDivElement | null>>
+    >({});
 
     const resolvedFindings = review.resolved_findings ?? [];
     const resolvedSet = useMemo(
@@ -142,11 +207,82 @@ export default function EditorialReviewReport({
 
     const orderedSections = sectionOrder
         .map((type) => review.sections.find((s) => s.type === type))
-        .filter(Boolean);
+        .filter(Boolean) as EditorialReviewSectionModel[];
+
+    const openFindingsCount = (section: EditorialReviewSectionModel) =>
+        (section.findings ?? []).filter((f) => !resolvedSet.has(f.key)).length;
+
+    const setSectionOpen = (type: EditorialSectionType, open: boolean) => {
+        setOpenSections((prev) => {
+            const next = new Set(prev);
+            if (open) {
+                next.add(type);
+            } else {
+                next.delete(type);
+            }
+            return next;
+        });
+    };
+
+    const openAndScrollTo = (type: EditorialSectionType) => {
+        setSectionOpen(type, true);
+        requestAnimationFrame(() => {
+            sectionRefs.current[type]?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        });
+    };
 
     return (
         <>
             <div className="flex flex-col gap-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Select
+                        variant="compact"
+                        value={review.id}
+                        onChange={(e) => {
+                            const selected = reviews.find(
+                                (r) => r.id === Number(e.target.value),
+                            );
+                            if (selected) onSelectReview(selected);
+                        }}
+                    >
+                        {reviews.map((r) => (
+                            <option key={r.id} value={r.id}>
+                                {t('report.reviewFrom', {
+                                    date:
+                                        formatDate(r.completed_at) ||
+                                        `#${r.id}`,
+                                })}
+                            </option>
+                        ))}
+                    </Select>
+
+                    <div className="flex items-center gap-4">
+                        {(editedChaptersCount ?? 0) > 0 && (
+                            <span className="flex items-center gap-1.5 text-xs text-ink-muted">
+                                <PencilLine
+                                    size={12}
+                                    className="shrink-0 text-ink-faint"
+                                />
+                                {t('report.editedChaptersHint', {
+                                    count: editedChaptersCount ?? 0,
+                                })}
+                            </span>
+                        )}
+
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => setShowConfirm(true)}
+                            disabled={starting}
+                        >
+                            {t('report.startNew')}
+                        </Button>
+                    </div>
+                </div>
+
                 <Card className="flex flex-col gap-6 p-6">
                     <SectionLabel>{t('report.summary')}</SectionLabel>
 
@@ -184,59 +320,48 @@ export default function EditorialReviewReport({
 
                 {!review.is_pre_editorial && (
                     <>
-                        <div className="flex items-center justify-between">
-                            <Select
-                                variant="compact"
-                                value={review.id}
-                                onChange={(e) => {
-                                    const selected = reviews.find(
-                                        (r) => r.id === Number(e.target.value),
-                                    );
-                                    if (selected) onSelectReview(selected);
-                                }}
-                            >
-                                {reviews.map((r) => (
-                                    <option key={r.id} value={r.id}>
-                                        {t('report.reviewFrom', {
-                                            date:
-                                                formatDate(r.completed_at) ||
-                                                `#${r.id}`,
-                                        })}
-                                    </option>
+                        <div className="flex flex-col gap-3">
+                            <SectionLabel>
+                                {t('report.dimensions')}
+                            </SectionLabel>
+                            <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+                                {orderedSections.map((section) => (
+                                    <DimensionTile
+                                        key={section.id}
+                                        label={t(`section.${section.type}`)}
+                                        section={section}
+                                        openCount={openFindingsCount(section)}
+                                        onClick={() =>
+                                            openAndScrollTo(section.type)
+                                        }
+                                    />
                                 ))}
-                            </Select>
-
-                            <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => setShowConfirm(true)}
-                                disabled={starting}
-                            >
-                                {t('report.startNew')}
-                            </Button>
+                            </div>
                         </div>
 
-                        <SectionLabel>
-                            {t('sectionLabel.editorialReview')}
-                        </SectionLabel>
-
-                        <div className="flex max-w-3xl flex-col gap-4">
-                            {orderedSections.map(
-                                (section) =>
-                                    section && (
-                                        <EditorialReviewSection
-                                            key={section.id}
-                                            section={section}
-                                            chapters={chapters}
-                                            bookId={review.book_id}
-                                            resolvedSet={resolvedSet}
-                                            onToggleFinding={
-                                                handleToggleFinding
-                                            }
-                                            onDiscussFinding={onDiscussFinding}
-                                        />
-                                    ),
-                            )}
+                        <div className="flex flex-col gap-4">
+                            {orderedSections.map((section) => (
+                                <div
+                                    key={section.id}
+                                    ref={(el) => {
+                                        sectionRefs.current[section.type] = el;
+                                    }}
+                                    className="scroll-mt-6"
+                                >
+                                    <EditorialReviewSection
+                                        section={section}
+                                        chapters={chapters}
+                                        bookId={review.book_id}
+                                        resolvedSet={resolvedSet}
+                                        onToggleFinding={handleToggleFinding}
+                                        onDiscussFinding={onDiscussFinding}
+                                        open={openSections.has(section.type)}
+                                        onOpenChange={(open) =>
+                                            setSectionOpen(section.type, open)
+                                        }
+                                    />
+                                </div>
+                            ))}
                         </div>
                     </>
                 )}
@@ -254,16 +379,6 @@ export default function EditorialReviewReport({
                                     dotColor="bg-accent"
                                 />
                             )}
-                        <div className="pt-2">
-                            <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => setShowConfirm(true)}
-                                disabled={starting}
-                            >
-                                {t('report.startNew')}
-                            </Button>
-                        </div>
                     </Card>
                 )}
             </div>

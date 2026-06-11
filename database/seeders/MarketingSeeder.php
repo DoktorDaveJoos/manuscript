@@ -16,7 +16,6 @@ use App\Enums\StorylineType;
 use App\Enums\VersionSource;
 use App\Enums\WikiEntryKind;
 use App\Models\Act;
-use App\Models\AiPreparation;
 use App\Models\Analysis;
 use App\Models\Beat;
 use App\Models\Book;
@@ -26,7 +25,6 @@ use App\Models\Character;
 use App\Models\EditorialReview;
 use App\Models\EditorialReviewChapterNote;
 use App\Models\EditorialReviewSection;
-use App\Models\HealthSnapshot;
 use App\Models\PlotPoint;
 use App\Models\PlotPointConnection;
 use App\Models\Scene;
@@ -55,9 +53,7 @@ class MarketingSeeder extends Seeder
         $plotPoints = $this->createPlotStructure($book, $actOne, $actTwo, $actThree, $characters, $chapters);
         $this->createAnalyses($book, $chapters);
         $this->createEditorialReview($book, $chapters);
-        $this->createHealthSnapshots($book);
         $this->createWritingSessions($book);
-        $this->createAiPreparation($book);
     }
 
     private function createBook(): Book
@@ -516,36 +512,51 @@ class MarketingSeeder extends Seeder
     private function createAnalyses(Book $book, array $chapters): void
     {
         $analysisData = [
-            [AnalysisType::Pacing, [
-                ['score' => 8, 'notes' => 'Well-paced opening that balances exposition with forward momentum. Scene transitions are clean.'],
-                ['score' => 7, 'notes' => 'Good conversational rhythm in the Reed interview. Could tighten the transition between scenes.'],
-                ['score' => 8, 'notes' => 'Effective escalation from routine research to genuine threat. The parking lot scene is taut.'],
-                ['score' => 6, 'notes' => 'Pacing feels uneven — the records office scene is slower than the confrontation warrants. Consider intercutting.'],
+            [AnalysisType::Plothole, [
+                'score' => 78,
+                'findings' => [
+                    'Elena tapes a backup floppy disk under her desk drawer in Chapter 3, but no present-day thread accounts for it.',
+                    'The sealed county commissioner records mentioned in Chapter 4 are never requested by Harlow.',
+                ],
+                'recommendations' => [
+                    'Have Harlow recover the hidden disk to bridge the timelines.',
+                    'Let the sealed records become an obstacle in the present-day investigation.',
+                ],
             ]],
-            [AnalysisType::ChapterHook, [
-                ['score' => 9, 'notes' => 'Strong exit hook with the pinned photograph. Reader compelled to continue.'],
-                ['score' => 7, 'notes' => 'Reed\'s reveal about contamination provides good chapter-end tension.'],
-                ['score' => 8, 'notes' => 'Dramatic irony of knowing Elena\'s fate creates inherent tension throughout.'],
-                ['score' => 6, 'notes' => 'The confrontation with Aldridge Sr. is effective but the exit could be sharper.'],
+            [AnalysisType::CharacterConsistency, [
+                'score' => 84,
+                'findings' => [
+                    'Elena\'s internal voice in Chapter 4 reads closer to Harlow\'s than her established academic diction in Chapter 3.',
+                ],
+                'recommendations' => [
+                    'Give Elena longer, more analytical observations to differentiate the POVs.',
+                ],
+                'summary' => 'Character voices are largely distinct and consistent across POV shifts. Harlow\'s obsessive attention to detail tracks from Chapter 1 onward; only Elena\'s Chapter 4 interiority drifts.',
             ]],
-            [AnalysisType::SceneAudit, [
-                ['score' => 8, 'notes' => 'Three scenes, each with distinct purpose. Scene economy is strong.'],
-                ['score' => 7, 'notes' => 'Two scenes that complement each other well. The archive reveal is the centerpiece.'],
-                ['score' => 7, 'notes' => 'Both scenes serve the narrative. The warning note is a strong catalytic moment.'],
-                ['score' => 5, 'notes' => 'The records office scene duplicates information the reader already has. Consider consolidating.'],
+            [AnalysisType::PlotDeviation, [
+                'score' => 81,
+                'findings' => [
+                    'The planned Institutional Betrayal turning point has no chapter coverage yet — both beats remain unanchored.',
+                ],
+                'recommendations' => [
+                    'Draft the chapter where Harlow discovers the original case was pressured shut before continuing Act 3.',
+                ],
+                'summary' => 'The manuscript tracks the planned structure closely through Act 1 and the first half of Act 2. The contamination cover-up arc is fully realized; the institutional betrayal arc is the only planned thread without on-page progress.',
+            ]],
+            [AnalysisType::NextChapterSuggestion, [
+                'title' => 'The Pressure From Above',
+                'description' => 'Harlow digs into the original 1987 case file and finds evidence the investigation was closed under pressure — setting up the Institutional Betrayal turning point.',
+                'chapter_id' => null,
             ]],
         ];
 
-        foreach ($analysisData as [$type, $chapterResults]) {
-            foreach ($chapterResults as $i => $result) {
-                Analysis::create([
-                    'book_id' => $book->id,
-                    'chapter_id' => $chapters[$i]->id,
-                    'type' => $type,
-                    'result' => $result,
-                    'ai_generated' => true,
-                ]);
-            }
+        foreach ($analysisData as [$type, $result]) {
+            Analysis::create([
+                'book_id' => $book->id,
+                'type' => $type,
+                'result' => $result,
+                'ai_generated' => true,
+            ]);
         }
     }
 
@@ -627,47 +638,6 @@ class MarketingSeeder extends Seeder
                 'notes' => $notes,
             ]);
         }
-    }
-
-    private function createHealthSnapshots(Book $book): void
-    {
-        $snapshots = [
-            ['composite' => 62, 'hooks' => 58, 'pacing' => 60, 'tension' => 65, 'weave' => 55, 'scene_purpose' => 64, 'tension_dynamics' => 61, 'emotional_arc' => 63, 'craft' => 60, 'days_ago' => 14],
-            ['composite' => 68, 'hooks' => 65, 'pacing' => 66, 'tension' => 70, 'weave' => 62, 'scene_purpose' => 71, 'tension_dynamics' => 67, 'emotional_arc' => 69, 'craft' => 65, 'days_ago' => 10],
-            ['composite' => 71, 'hooks' => 72, 'pacing' => 68, 'tension' => 74, 'weave' => 66, 'scene_purpose' => 73, 'tension_dynamics' => 70, 'emotional_arc' => 72, 'craft' => 69, 'days_ago' => 7],
-            ['composite' => 74, 'hooks' => 78, 'pacing' => 70, 'tension' => 76, 'weave' => 68, 'scene_purpose' => 75, 'tension_dynamics' => 73, 'emotional_arc' => 74, 'craft' => 72, 'days_ago' => 3],
-            ['composite' => 76, 'hooks' => 80, 'pacing' => 72, 'tension' => 78, 'weave' => 70, 'scene_purpose' => 77, 'tension_dynamics' => 75, 'emotional_arc' => 76, 'craft' => 74, 'days_ago' => 0],
-        ];
-
-        foreach ($snapshots as $data) {
-            HealthSnapshot::create([
-                'book_id' => $book->id,
-                'composite_score' => $data['composite'],
-                'hooks_score' => $data['hooks'],
-                'pacing_score' => $data['pacing'],
-                'tension_score' => $data['tension'],
-                'weave_score' => $data['weave'],
-                'scene_purpose_score' => $data['scene_purpose'],
-                'tension_dynamics_score' => $data['tension_dynamics'],
-                'emotional_arc_score' => $data['emotional_arc'],
-                'craft_score' => $data['craft'],
-                'recorded_at' => Carbon::today()->subDays($data['days_ago']),
-            ]);
-        }
-    }
-
-    private function createAiPreparation(Book $book): void
-    {
-        AiPreparation::create([
-            'book_id' => $book->id,
-            'status' => 'completed',
-            'total_chapters' => 4,
-            'processed_chapters' => 4,
-            'embedded_chunks' => 24,
-            'completed_phases' => ['analyze', 'embed'],
-            'phase_errors' => [],
-            'consecutive_failures' => 0,
-        ]);
     }
 
     private function createWritingSessions(Book $book): void

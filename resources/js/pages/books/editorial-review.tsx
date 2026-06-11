@@ -27,11 +27,13 @@ export default function EditorialReviewPage({
     reviews,
     latestReview,
     chapters,
+    editedChaptersCount,
 }: {
     book: Book;
     reviews: EditorialReview[];
     latestReview: EditorialReview | null;
     chapters: Chapter[];
+    editedChaptersCount: number | null;
 }) {
     const { t } = useTranslation('editorial-review');
     const storylines = useSidebarStorylines();
@@ -171,9 +173,11 @@ export default function EditorialReviewPage({
 
                         {review?.status === 'completed' && review && (
                             <EditorialReviewReport
+                                key={review.id}
                                 review={review}
                                 reviews={completedReviews}
                                 chapters={chapters}
+                                editedChaptersCount={editedChaptersCount}
                                 onSelectReview={selectReview}
                                 onStartNew={handleStart}
                                 starting={starting}

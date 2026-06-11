@@ -6,6 +6,7 @@ use App\Models\Book;
 use App\Models\EditorialReview;
 use App\Models\EditorialReviewSection;
 use App\Models\License;
+use App\Models\Scene;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
@@ -618,6 +619,70 @@ test('index caps reviews to 20', function () {
         ->assertInertia(fn ($page) => $page
             ->component('books/editorial-review')
             ->has('reviews', 20)
+        );
+});
+
+// --- Edited chapters count ---
+
+test('index reports chapters edited since the last completed review', function () {
+    [$book, $chapters] = createBookWithChapters(3);
+
+    EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+        'completed_at' => now()->subDay(),
+    ]);
+
+    Scene::query()
+        ->whereIn('chapter_id', [$chapters[0]->id, $chapters[1]->id])
+        ->update(['updated_at' => now()]);
+    Scene::query()
+        ->where('chapter_id', $chapters[2]->id)
+        ->update(['updated_at' => now()->subDays(2)]);
+
+    $this->get(route('books.ai.editorial-review.index', $book))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->where('editedChaptersCount', 2)
+        );
+});
+
+test('index reports null edited chapters count without a completed review', function () {
+    $book = Book::factory()->withAi()->create();
+    EditorialReview::factory()->failed()->create([
+        'book_id' => $book->id,
+    ]);
+
+    $this->get(route('books.ai.editorial-review.index', $book))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->where('editedChaptersCount', null)
+        );
+});
+
+test('edited chapters count is measured against the newest completed review', function () {
+    [$book, $chapters] = createBookWithChapters(2);
+
+    EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+        'completed_at' => now()->subDays(10),
+    ]);
+    $latest = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+        'completed_at' => now()->subDay(),
+    ]);
+
+    // Edited between the two reviews — only the older review predates it.
+    Scene::query()
+        ->whereIn('chapter_id', collect($chapters)->pluck('id'))
+        ->update(['updated_at' => now()->subDays(5)]);
+
+    $this->get(route('books.ai.editorial-review.show', [$book, $latest]))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->where('editedChaptersCount', 0)
         );
 });
 
