@@ -9,7 +9,8 @@ import { useAiErrorToast } from '@/hooks/useAiErrorToast';
 import { flushPaneByChapter } from '@/lib/pane';
 import { proseMirrorBlockText } from '@/lib/proseText';
 import { stripTags } from '@/lib/ruleCheckers';
-import { escapeHtml, jsonFetchHeaders } from '@/lib/utils';
+import { insertStreamedParagraphs } from '@/lib/streamedParagraphs';
+import { jsonFetchHeaders } from '@/lib/utils';
 import type { ChapterVersion } from '@/types/models';
 
 type StartArgs = {
@@ -253,14 +254,7 @@ export function useContinueWriting() {
                     }
                 }
                 if (text === '') return;
-                const chain = liveEditor.chain();
-                text.split(/\n+/).forEach((paragraph, index) => {
-                    if (index > 0) chain.splitBlock();
-                    if (paragraph !== '') {
-                        chain.insertContent(escapeHtml(paragraph));
-                    }
-                });
-                chain.run();
+                insertStreamedParagraphs(liveEditor, text);
             };
             const scheduleFlush = () => {
                 if (flushScheduled) return;
