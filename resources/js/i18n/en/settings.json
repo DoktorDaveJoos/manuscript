@@ -100,6 +100,9 @@
     "welcome.title": "Welcome to Manuscript",
     "welcome.description": "Enter your license key to get started.",
     "welcome.buyLicense": "Don't have a license? Get one at getmanuscript.app",
+    "welcome.startTrial": "Or start your free 7-day trial",
+    "welcome.trialStarting": "Starting trial...",
+    "welcome.trialExpired": "Your free trial has ended. Enter a license key to keep writing.",
 
     "aiProviders.title": "AI Providers",
     "aiProviders.description": "Choose your AI provider and configure its API key.",

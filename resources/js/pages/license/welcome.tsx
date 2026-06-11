@@ -1,17 +1,21 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { activate } from '@/actions/App/Http/Controllers/LicenseController';
+import { start as startTrial } from '@/actions/App/Http/Controllers/TrialController';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { jsonFetchHeaders } from '@/lib/utils';
+import type { Trial } from '@/types/models';
 
 export default function LicenseWelcome() {
     const { t } = useTranslation('settings');
+    const { trial } = usePage<{ trial: Trial }>().props;
     const [key, setKey] = useState('');
     const [activating, setActivating] = useState(false);
+    const [startingTrial, setStartingTrial] = useState(false);
     const [error, setError] = useState('');
 
     const handleActivate = useCallback(
@@ -42,6 +46,26 @@ export default function LicenseWelcome() {
         },
         [key, t],
     );
+
+    const handleStartTrial = useCallback(() => {
+        setStartingTrial(true);
+        setError('');
+
+        fetch(startTrial.url(), {
+            method: 'POST',
+            headers: jsonFetchHeaders(),
+        })
+            .then(async (res) => {
+                if (!res.ok) {
+                    const json = await res.json();
+                    setError(json.message || t('license.error.failed'));
+                    return;
+                }
+                router.visit('/');
+            })
+            .catch(() => setError(t('license.error.failed')))
+            .finally(() => setStartingTrial(false));
+    }, [t]);
 
     return (
         <>
@@ -88,6 +112,24 @@ export default function LicenseWelcome() {
                                 ? t('license.activating')
                                 : t('license.activate')}
                         </Button>
+                        {trial.available && (
+                            <Button
+                                variant="ghost"
+                                type="button"
+                                onClick={handleStartTrial}
+                                disabled={startingTrial}
+                                className="underline-offset-4 hover:underline"
+                            >
+                                {startingTrial
+                                    ? t('welcome.trialStarting')
+                                    : t('welcome.startTrial')}
+                            </Button>
+                        )}
+                        {trial.expired && (
+                            <p className="text-center text-[13px] text-ink-muted">
+                                {t('welcome.trialExpired')}
+                            </p>
+                        )}
                     </form>
 
                     <a

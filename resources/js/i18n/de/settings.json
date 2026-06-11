@@ -100,6 +100,9 @@
     "welcome.title": "Willkommen bei Manuscript",
     "welcome.description": "Gib deinen Lizenzschlüssel ein, um zu starten.",
     "welcome.buyLicense": "Noch keine Lizenz? Hol dir eine auf getmanuscript.app",
+    "welcome.startTrial": "Oder starte deine kostenlose 7-Tage-Testphase",
+    "welcome.trialStarting": "Testphase wird gestartet...",
+    "welcome.trialExpired": "Deine kostenlose Testphase ist abgelaufen. Gib einen Lizenzschlüssel ein, um weiterzuschreiben.",
 
     "aiProviders.title": "KI-Anbieter",
     "aiProviders.description": "Wähle deinen KI-Anbieter und konfiguriere den API-Schlüssel.",
