@@ -83,7 +83,7 @@ class EpubExporter implements Exporter
         $css .= "\n".$this->template->sceneBreakCss();
 
         if ($options->dropCaps) {
-            $css .= "\n".$this->template->dropCapCss();
+            $css .= "\n".$this->template->epubDropCapCss($pairing);
         }
 
         $zip->addFromString('OEBPS/Styles/stylesheet.css', $css);

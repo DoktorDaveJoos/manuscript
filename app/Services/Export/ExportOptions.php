@@ -2,6 +2,7 @@
 
 namespace App\Services\Export;
 
+use App\Enums\BleedMode;
 use App\Enums\ChapterHeading;
 use App\Enums\ExportFormat;
 use App\Enums\FontPairing;
@@ -39,6 +40,7 @@ final readonly class ExportOptions
         public ?string $coverImagePath = null,
         public bool $cmyk = false,
         public float $bleed = 0.0,
+        public BleedMode $bleedMode = BleedMode::All,
         public ?float $customWidth = null,
         public ?float $customHeight = null,
     ) {}
@@ -73,6 +75,7 @@ final readonly class ExportOptions
             coverImagePath: isset($data['cover_image_path']) ? (string) $data['cover_image_path'] : null,
             cmyk: (bool) ($data['cmyk'] ?? false),
             bleed: (float) ($data['bleed'] ?? 0),
+            bleedMode: BleedMode::tryFrom((string) ($data['bleed_mode'] ?? '')) ?? BleedMode::All,
             customWidth: isset($data['custom_width']) ? (float) $data['custom_width'] : null,
             customHeight: isset($data['custom_height']) ? (float) $data['custom_height'] : null,
         );

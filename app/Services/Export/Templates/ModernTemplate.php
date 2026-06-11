@@ -30,7 +30,7 @@ class ModernTemplate implements ExportTemplate
             'headingColor' => '#111111',
             'pdfLineHeight' => 1.4,
             'epubLineHeight' => 1.6,
-            'chapterLabelSizeEm' => 1.0,
+            'chapterLabelSizeEm' => 2.2,
             'titleSizeEm' => 1.2,
             'titleWeight' => 'normal',
             'runningHeaderStyle' => 'normal',
@@ -97,11 +97,12 @@ class ModernTemplate implements ExportTemplate
             -webkit-hyphens: auto;
         }
         .chapter-label {
-            font-size: 1em;
+            font-family: {$headingFontFamily};
+            font-size: 2.2em;
             font-weight: bold;
             text-align: left;
-            color: #333333;
-            margin: 4.5em 0 0.3em;
+            color: #111111;
+            margin: 2em 0 0.1em;
             text-indent: 0;
         }
         h1 {
@@ -109,7 +110,7 @@ class ModernTemplate implements ExportTemplate
             font-size: 1.2em;
             font-weight: normal;
             text-align: left;
-            margin: 0 0 1.5em;
+            margin: 0 0 2em;
             color: #111111;
         }
         .act-break {
@@ -243,11 +244,12 @@ class ModernTemplate implements ExportTemplate
             -webkit-hyphens: auto;
         }
         .chapter-label {
-            font-size: 1em;
+            font-family: {$headingFamily};
+            font-size: 2.2em;
             font-weight: bold;
             text-align: left;
-            color: #333333;
-            margin: 4.5em 0 0.3em;
+            color: #111111;
+            margin: 2em 0 0.1em;
         }
         h1 {
             font-family: {$headingFamily};
@@ -381,6 +383,12 @@ class ModernTemplate implements ExportTemplate
             margin: 1.5em 0;
             text-indent: 0;
         }
+        .scene-break--fleuron,
+        .scene-break--flourish,
+        .scene-break--ornament {
+            font-family: dejavusans, sans-serif;
+            font-size: 0.85em;
+        }
         .scene-break--rule {
             border: none;
             border-top: 1px solid #cccccc;
@@ -393,9 +401,46 @@ class ModernTemplate implements ExportTemplate
         CSS;
     }
 
-    public function dropCapCss(): string
+    public function dropCapCss(?FontPairing $fontPairing = null): string
     {
-        return '';
+        $pairing = $fontPairing ?? $this->defaultFontPairing();
+        $headingFontKey = $pairing->headingFontKey();
+
+        return <<<CSS
+        .drop-cap-paragraph {
+            text-indent: 0;
+            line-stacking-strategy: block-line-height;
+        }
+        .drop-cap {
+            font-family: {$headingFontKey}, 'Helvetica Neue', sans-serif;
+            font-size: 2.4em;
+            font-weight: bold;
+            padding-right: 0.08em;
+            color: #111111;
+        }
+        CSS;
+    }
+
+    public function epubDropCapCss(?FontPairing $fontPairing = null): string
+    {
+        $pairing = $fontPairing ?? $this->defaultFontPairing();
+        $headingFamily = $pairing->headingFontFamily();
+
+        return <<<CSS
+        .drop-cap-paragraph {
+            text-indent: 0;
+        }
+        .drop-cap {
+            float: left;
+            font-family: {$headingFamily};
+            font-size: 2.6em;
+            line-height: 0.9;
+            padding-right: 0.08em;
+            margin-top: 0.04em;
+            font-weight: bold;
+            color: #111111;
+        }
+        CSS;
     }
 
     public function chapterHeaderHtml(int $index, string $title, string $locale = 'en', bool $includeTitle = true): string

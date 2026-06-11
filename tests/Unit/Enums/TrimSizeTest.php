@@ -3,9 +3,9 @@
 use App\Enums\TrimSize;
 
 it('exposes the new metric formats with millimetre dimensions', function () {
-    expect(TrimSize::A5->dimensions())->toBe(['width' => 148, 'height' => 210]);
-    expect(TrimSize::A4->dimensions())->toBe(['width' => 210, 'height' => 297]);
-    expect(TrimSize::Novel13x19->dimensions())->toBe(['width' => 130, 'height' => 190]);
+    expect(TrimSize::A5->dimensions())->toBe(['width' => 148.0, 'height' => 210.0]);
+    expect(TrimSize::A4->dimensions())->toBe(['width' => 210.0, 'height' => 297.0]);
+    expect(TrimSize::Novel13x19->dimensions())->toBe(['width' => 130.0, 'height' => 190.0]);
     expect(TrimSize::Novel13x19->value)->toBe('13x19cm');
 });
 

@@ -4,6 +4,7 @@ namespace App\Services\Export\Exporters;
 
 use App\Contracts\Exporter;
 use App\Contracts\ExportTemplate;
+use App\Enums\BleedMode;
 use App\Enums\ExportFormat;
 use App\Enums\TrimSize;
 use App\Models\Book;
@@ -96,7 +97,7 @@ class PdfExporter implements Exporter
         $css .= "\n".$this->template->sceneBreakCss();
 
         if ($options->dropCaps) {
-            $css .= "\n".$this->template->dropCapCss();
+            $css .= "\n".$this->template->dropCapCss($pairing);
         }
 
         // For print-ready CMYK output, render body copy as true K-only black
@@ -128,8 +129,14 @@ class PdfExporter implements Exporter
     /**
      * Resolve the print page geometry (millimetres) for an export: the trim
      * size — either a preset or user-supplied custom dimensions — grown by the
-     * configured bleed on every side, with each margin shifted by the same
+     * configured bleed, with each bleed-facing margin shifted by the same
      * bleed so the text block stays put relative to the trim edge.
+     *
+     * BleedMode::All grows every edge (Lulu / BoD / epubli / tredition style).
+     * BleedMode::Outer leaves the binding edge alone (KDP / IngramSpark): the
+     * sheet is trim + 1×bleed wide and the gutter margin does not shift — the
+     * mirrored @page :left/:right margins put the grown outer margin on the
+     * outside edge of both recto and verso pages.
      *
      * @return array{width: float, height: float, margins: array{top: float, bottom: float, outer: float, gutter: float}}
      */
@@ -150,13 +157,15 @@ class PdfExporter implements Exporter
         $bleed = max(0.0, $options->bleed);
 
         if ($bleed > 0) {
-            $width += 2 * $bleed;
+            $outerOnly = $options->bleedMode === BleedMode::Outer;
+
+            $width += $outerOnly ? $bleed : 2 * $bleed;
             $height += 2 * $bleed;
             $margins = [
                 'top' => $margins['top'] + $bleed,
                 'bottom' => $margins['bottom'] + $bleed,
                 'outer' => $margins['outer'] + $bleed,
-                'gutter' => $margins['gutter'] + $bleed,
+                'gutter' => $margins['gutter'] + ($outerOnly ? 0 : $bleed),
             ];
         }
 
@@ -201,8 +210,11 @@ class PdfExporter implements Exporter
             'margin_bottom' => $margins['bottom'],
             'margin_left' => $margins['gutter'],
             'margin_right' => $margins['outer'],
-            'margin_header' => $isEbookPreview ? 0 : 5,
-            'margin_footer' => $isEbookPreview ? 0 : 5,
+            // Folio sits ~9 mm inside the trim edge — clear of the printer's
+            // safety zone, with visible separation from the text block. Bleed
+            // grows the sheet beyond the trim, so it shifts the folio too.
+            'margin_header' => $isEbookPreview ? 0 : 9 + max(0.0, $options->bleed),
+            'margin_footer' => $isEbookPreview ? 0 : 9 + max(0.0, $options->bleed),
             'default_font_size' => $fontSize,
             'default_font' => $bodyFontKey,
             'fontDir' => $fontDirs,

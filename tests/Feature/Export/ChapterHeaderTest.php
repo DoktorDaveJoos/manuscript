@@ -113,7 +113,7 @@ describe('template design tokens', function () {
 
         expect($tokens['titleSizeEm'])->toBe(1.2);
         expect($tokens['titleWeight'])->toBe('normal');
-        expect($tokens['chapterLabelSizeEm'])->toBe(1.0);
+        expect($tokens['chapterLabelSizeEm'])->toBe(2.2);
     });
 
     it('Classic has bumped title size', function () {

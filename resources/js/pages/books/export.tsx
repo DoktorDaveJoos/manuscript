@@ -1,17 +1,20 @@
 import { Head } from '@inertiajs/react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { updateExportSettings } from '@/actions/App/Http/Controllers/BookSettingsController';
 import { reorder as reorderChapters } from '@/actions/App/Http/Controllers/ChapterController';
 import Sidebar from '@/components/editor/Sidebar';
 import ExportPreview from '@/components/export/ExportPreview';
 import ExportReadingOrder from '@/components/export/ExportReadingOrder';
 import ExportSettings from '@/components/export/ExportSettings';
 import type {
+    BleedMode,
     ChapterHeading,
     ChapterRow,
     FontPairingDef,
     Format,
     MatterItem,
+    SavedExportSettings,
     SceneBreakStyleDef,
     StorylineRef,
     TemplateDef,
@@ -30,6 +33,18 @@ interface Props {
     templates: TemplateDef[];
     fontPairings: FontPairingDef[];
     sceneBreakStyles: SceneBreakStyleDef[];
+    exportSettings: SavedExportSettings | null;
+}
+
+function applySavedChecks(
+    items: MatterItem[],
+    savedIds: string[] | undefined,
+): MatterItem[] {
+    if (!savedIds) return items;
+    return items.map((item) => ({
+        ...item,
+        checked: savedIds.includes(item.id),
+    }));
 }
 
 export default function Export({
@@ -40,9 +55,16 @@ export default function Export({
     templates,
     fontPairings,
     sceneBreakStyles,
+    exportSettings,
 }: Props) {
     const { t } = useTranslation('export');
     const sidebarStorylines = useSidebarStorylines();
+
+    // Saved UI selections from the last visit (books.export_settings)
+    const saved = useMemo<SavedExportSettings>(
+        () => exportSettings ?? {},
+        [exportSettings],
+    );
 
     // Epilogue detection
     const hasEpilogue = useMemo(
@@ -57,7 +79,7 @@ export default function Export({
     );
 
     // Format
-    const [format, setFormat] = useState<Format>('epub');
+    const [format, setFormat] = useState<Format>(saved.format ?? 'epub');
 
     // Chapters
     const sortedFromProps = useMemo(
@@ -72,22 +94,35 @@ export default function Export({
     }
 
     const [selectedChapterIds, setSelectedChapterIds] = useState<Set<number>>(
-        () => new Set(chapters.map((ch) => ch.id)),
+        () => {
+            const excluded = new Set(saved.excluded_chapter_ids ?? []);
+            return new Set(
+                chapters
+                    .filter((ch) => !excluded.has(ch.id))
+                    .map((ch) => ch.id),
+            );
+        },
     );
 
     // Template & customization
     const defaultTemplate = templates[0];
-    const [template, setTemplate] = useState(
-        defaultTemplate?.slug ?? 'classic',
+    const [template, setTemplate] = useState(() =>
+        saved.template && templates.some((t) => t.slug === saved.template)
+            ? saved.template
+            : (defaultTemplate?.slug ?? 'classic'),
     );
     const [fontPairing, setFontPairing] = useState(
-        defaultTemplate?.defaultFontPairing ?? 'classic-serif',
+        saved.font_pairing ??
+            defaultTemplate?.defaultFontPairing ??
+            'classic-serif',
     );
     const [sceneBreakStyle, setSceneBreakStyle] = useState(
-        defaultTemplate?.defaultSceneBreakStyle ?? 'asterisks',
+        saved.scene_break_style ??
+            defaultTemplate?.defaultSceneBreakStyle ??
+            'asterisks',
     );
     const [dropCaps, setDropCaps] = useState(
-        defaultTemplate?.defaultDropCaps ?? true,
+        saved.drop_caps ?? defaultTemplate?.defaultDropCaps ?? true,
     );
 
     const selectedTemplateDef = useMemo(
@@ -118,17 +153,34 @@ export default function Export({
     );
 
     // Options
-    const [chapterHeading, setChapterHeading] =
-        useState<ChapterHeading>('full');
-    const [includeActBreaks, setIncludeActBreaks] = useState(false);
-    const [showPageNumbers, setShowPageNumbers] = useState(true);
-    const [trimSize, setTrimSize] = useState('6x9');
-    const [fontSize, setFontSize] = useState(11);
-    const [cmyk, setCmyk] = useState(false);
-    const [bleed, setBleed] = useState(0);
-    const [customWidth, setCustomWidth] = useState(130);
-    const [customHeight, setCustomHeight] = useState(190);
-    const [includeCover, setIncludeCover] = useState(!!book.cover_image_path);
+    const [chapterHeading, setChapterHeading] = useState<ChapterHeading>(
+        saved.chapter_heading ?? 'full',
+    );
+    const [includeActBreaks, setIncludeActBreaks] = useState(
+        saved.include_act_breaks ?? false,
+    );
+    const [showPageNumbers, setShowPageNumbers] = useState(
+        saved.show_page_numbers ?? true,
+    );
+    const [trimSize, setTrimSize] = useState(() =>
+        saved.trim_size === 'custom' ||
+        trimSizes.some((t) => t.value === saved.trim_size)
+            ? saved.trim_size!
+            : '6x9',
+    );
+    const [fontSize, setFontSize] = useState(saved.font_size ?? 11);
+    const [cmyk, setCmyk] = useState(saved.cmyk ?? false);
+    const [bleed, setBleed] = useState(saved.bleed ?? 0);
+    const [bleedMode, setBleedMode] = useState<BleedMode>(
+        saved.bleed_mode ?? 'all',
+    );
+    const [customWidth, setCustomWidth] = useState(saved.custom_width ?? 130);
+    const [customHeight, setCustomHeight] = useState(
+        saved.custom_height ?? 190,
+    );
+    const [includeCover, setIncludeCover] = useState(
+        (saved.include_cover ?? true) && !!book.cover_image_path,
+    );
     const [exporting, setExporting] = useState(false);
     const [exportError, setExportError] = useState<string | null>(null);
 
@@ -204,8 +256,12 @@ export default function Export({
         return items;
     }, [t, hasEpilogue]);
 
-    const [frontMatter, setFrontMatter] = useState(initialFrontMatter);
-    const [backMatter, setBackMatter] = useState(initialBackMatter);
+    const [frontMatter, setFrontMatter] = useState(() =>
+        applySavedChecks(initialFrontMatter, saved.front_matter),
+    );
+    const [backMatter, setBackMatter] = useState(() =>
+        applySavedChecks(initialBackMatter, saved.back_matter),
+    );
 
     // If hasEpilogue changes, we need to reset back matter
     const [prevHasEpilogue, setPrevHasEpilogue] = useState(hasEpilogue);
@@ -220,6 +276,69 @@ export default function Export({
         setPrevHasPrologue(hasPrologue);
         setFrontMatter(initialFrontMatter);
     }
+
+    // Persist every selection change immediately so the page state survives
+    // navigation and app restarts (no debounce — local SQLite, no network cost).
+    const settingsSnapshot = useMemo<SavedExportSettings>(
+        () => ({
+            format,
+            template,
+            font_pairing: fontPairing,
+            scene_break_style: sceneBreakStyle,
+            drop_caps: dropCaps,
+            chapter_heading: chapterHeading,
+            include_act_breaks: includeActBreaks,
+            show_page_numbers: showPageNumbers,
+            trim_size: trimSize,
+            font_size: fontSize,
+            cmyk,
+            bleed,
+            bleed_mode: bleedMode,
+            custom_width: customWidth,
+            custom_height: customHeight,
+            include_cover: includeCover,
+            front_matter: frontMatter.filter((i) => i.checked).map((i) => i.id),
+            back_matter: backMatter.filter((i) => i.checked).map((i) => i.id),
+            excluded_chapter_ids: chapters
+                .filter((ch) => !selectedChapterIds.has(ch.id))
+                .map((ch) => ch.id),
+        }),
+        [
+            format,
+            template,
+            fontPairing,
+            sceneBreakStyle,
+            dropCaps,
+            chapterHeading,
+            includeActBreaks,
+            showPageNumbers,
+            trimSize,
+            fontSize,
+            cmyk,
+            bleed,
+            bleedMode,
+            customWidth,
+            customHeight,
+            includeCover,
+            frontMatter,
+            backMatter,
+            chapters,
+            selectedChapterIds,
+        ],
+    );
+
+    const isInitialSnapshot = useRef(true);
+    useEffect(() => {
+        if (isInitialSnapshot.current) {
+            isInitialSnapshot.current = false;
+            return;
+        }
+        fetch(updateExportSettings.url(book.id), {
+            method: 'PUT',
+            headers: jsonFetchHeaders(),
+            body: JSON.stringify({ settings: settingsSnapshot }),
+        });
+    }, [settingsSnapshot, book.id]);
 
     const includeToc = useMemo(
         () => frontMatter.find((item) => item.id === 'toc')?.checked ?? false,
@@ -330,6 +449,7 @@ export default function Export({
             data.font_size = fontSize;
             data.cmyk = cmyk;
             data.bleed = bleed;
+            data.bleed_mode = bleedMode;
             if (trimSize === 'custom') {
                 data.custom_width = customWidth;
                 data.custom_height = customHeight;
@@ -362,6 +482,7 @@ export default function Export({
         fontSize,
         cmyk,
         bleed,
+        bleedMode,
         customWidth,
         customHeight,
         frontMatter,
@@ -409,6 +530,8 @@ export default function Export({
                     onCmykChange={setCmyk}
                     bleed={bleed}
                     onBleedChange={setBleed}
+                    bleedMode={bleedMode}
+                    onBleedModeChange={setBleedMode}
                     customWidth={customWidth}
                     onCustomWidthChange={setCustomWidth}
                     customHeight={customHeight}

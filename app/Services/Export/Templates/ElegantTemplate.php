@@ -110,7 +110,7 @@ class ElegantTemplate implements ExportTemplate
             font-size: 2.0em;
             font-weight: normal;
             text-align: center;
-            margin: 0 0 1.5em;
+            margin: 0 0 2em;
             color: #1a1a1a;
         }
         .act-break {
@@ -140,8 +140,9 @@ class ElegantTemplate implements ExportTemplate
             text-indent: 0;
         }
         .toc-title {
+            font-family: {$headingFontFamily};
             font-size: 2.0em;
-            font-weight: bold;
+            font-weight: normal;
             text-align: center;
             margin: 2em 0 1.5em;
             color: #1a1a1a;
@@ -390,6 +391,12 @@ class ElegantTemplate implements ExportTemplate
             color: #999999;
             text-indent: 0;
         }
+        .scene-break--fleuron,
+        .scene-break--flourish,
+        .scene-break--ornament {
+            font-family: dejavusans, sans-serif;
+            font-size: 0.85em;
+        }
         .scene-break--rule {
             border: none;
             border-top: 1px solid #cccccc;
@@ -402,17 +409,52 @@ class ElegantTemplate implements ExportTemplate
         CSS;
     }
 
-    public function dropCapCss(): string
+    public function dropCapCss(?FontPairing $fontPairing = null): string
     {
-        return <<<'CSS'
+        $pairing = $fontPairing ?? $this->defaultFontPairing();
+        $headingFontKey = $pairing->headingFontKey();
+
+        return <<<CSS
+        .drop-cap-paragraph {
+            text-indent: 0;
+            line-stacking-strategy: block-line-height;
+        }
+        .drop-cap {
+            font-family: {$headingFontKey}, Georgia, serif;
+            font-size: 3em;
+            font-weight: normal;
+            padding-right: 0.05em;
+            color: #1a1a1a;
+        }
+        .drop-cap-phrase {
+            font-variant: small-caps;
+            letter-spacing: 0.05em;
+        }
+        CSS;
+    }
+
+    public function epubDropCapCss(?FontPairing $fontPairing = null): string
+    {
+        $pairing = $fontPairing ?? $this->defaultFontPairing();
+        $headingFamily = $pairing->headingFontFamily();
+
+        return <<<CSS
+        .drop-cap-paragraph {
+            text-indent: 0;
+        }
         .drop-cap {
             float: left;
+            font-family: {$headingFamily};
             font-size: 3.2em;
-            line-height: 0.8;
-            padding-right: 0.08em;
-            margin-top: 0.05em;
+            line-height: 0.83;
+            padding-right: 0.06em;
+            margin-top: 0.03em;
             font-weight: normal;
             color: #1a1a1a;
+        }
+        .drop-cap-phrase {
+            font-variant: small-caps;
+            letter-spacing: 0.05em;
         }
         CSS;
     }

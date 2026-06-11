@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\BackMatterType;
+use App\Enums\BleedMode;
 use App\Enums\ChapterHeading;
 use App\Enums\ExportFormat;
 use App\Enums\FontPairing;
@@ -34,6 +35,7 @@ class ExportBookRequest extends FormRequest
             'custom_width' => ['nullable', 'required_if:trim_size,custom', 'numeric', 'min:50', 'max:500'],
             'custom_height' => ['nullable', 'required_if:trim_size,custom', 'numeric', 'min:50', 'max:500'],
             'bleed' => ['nullable', 'numeric', 'min:0', 'max:25'],
+            'bleed_mode' => ['nullable', Rule::enum(BleedMode::class)],
             'font_size' => ['nullable', 'integer', 'in:10,11,12,13,14'],
             'front_matter' => ['nullable', 'array'],
             'front_matter.*' => ['string', Rule::enum(FrontMatterType::class)],

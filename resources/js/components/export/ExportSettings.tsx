@@ -1,9 +1,11 @@
 import { Download } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import CustomizePanel from '@/components/export/CustomizePanel';
 import TemplateSelector from '@/components/export/TemplateSelector';
 import { VISUAL_FORMATS } from '@/components/export/types';
 import type {
+    BleedMode,
     ChapterHeading,
     FontPairingDef,
     Format,
@@ -36,6 +38,8 @@ type ExportSettingsProps = {
     onCmykChange: (v: boolean) => void;
     bleed: number;
     onBleedChange: (v: number) => void;
+    bleedMode: BleedMode;
+    onBleedModeChange: (v: BleedMode) => void;
     customWidth: number;
     onCustomWidthChange: (v: number) => void;
     customHeight: number;
@@ -68,6 +72,10 @@ type ExportSettingsProps = {
 const FORMATS: Format[] = ['epub', 'pdf', 'docx', 'txt'];
 const FONT_SIZES = [10, 11, 12, 13, 14];
 
+// Provider bleed presets (mm): 3 = IngramSpark/epubli, 3.175 = 0.125″ for
+// KDP/Lulu, 5 = BoD/tredition. Anything else is entered as a custom value.
+const BLEED_PRESETS = [0, 3, 3.175, 5];
+
 export default function ExportSettings({
     format,
     onFormatChange,
@@ -81,6 +89,8 @@ export default function ExportSettings({
     onCmykChange,
     bleed,
     onBleedChange,
+    bleedMode,
+    onBleedModeChange,
     customWidth,
     onCustomWidthChange,
     customHeight,
@@ -115,6 +125,10 @@ export default function ExportSettings({
     const useMetricLabels = !i18n.language.startsWith('en');
     const pdfHintKey =
         bleed > 0 ? 'bleedHint' : cmyk ? 'cmykHint' : 'trimSizeHint';
+    const [bleedIsCustom, setBleedIsCustom] = useState(
+        () => !BLEED_PRESETS.includes(bleed),
+    );
+    const bleedSelectValue = bleedIsCustom ? 'custom' : String(bleed);
 
     return (
         <div className="flex flex-1 flex-col overflow-y-auto bg-surface">
@@ -279,16 +293,79 @@ export default function ExportSettings({
                                     <span className="text-[13px] text-ink-soft">
                                         {t('bleed')}
                                     </span>
-                                    <NumberInput
-                                        value={bleed}
-                                        onChange={onBleedChange}
-                                        min={0}
-                                        max={25}
-                                        step={0.5}
-                                        unit="mm"
+                                    <Select
+                                        variant="compact"
+                                        value={bleedSelectValue}
+                                        onChange={(e) => {
+                                            const v = e.target.value;
+                                            if (v === 'custom') {
+                                                setBleedIsCustom(true);
+                                            } else {
+                                                setBleedIsCustom(false);
+                                                onBleedChange(Number(v));
+                                            }
+                                        }}
+                                        className="w-auto"
                                         aria-label={t('bleed')}
-                                    />
+                                    >
+                                        <option value="0">
+                                            {t('bleedNone')}
+                                        </option>
+                                        <option value="3">
+                                            3 mm — IngramSpark, epubli
+                                        </option>
+                                        <option value="3.175">
+                                            3.175 mm (0.125″) — KDP, Lulu
+                                        </option>
+                                        <option value="5">
+                                            5 mm — BoD, tredition
+                                        </option>
+                                        <option value="custom">
+                                            {t('bleedCustom')}
+                                        </option>
+                                    </Select>
                                 </div>
+                                {bleedIsCustom && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[13px] text-ink-soft">
+                                            {t('bleedCustomValue')}
+                                        </span>
+                                        <NumberInput
+                                            value={bleed}
+                                            onChange={onBleedChange}
+                                            min={0}
+                                            max={25}
+                                            step={0.5}
+                                            unit="mm"
+                                            aria-label={t('bleedCustomValue')}
+                                        />
+                                    </div>
+                                )}
+                                {bleed > 0 && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[13px] text-ink-soft">
+                                            {t('bleedMode')}
+                                        </span>
+                                        <Select
+                                            variant="compact"
+                                            value={bleedMode}
+                                            onChange={(e) =>
+                                                onBleedModeChange(
+                                                    e.target.value as BleedMode,
+                                                )
+                                            }
+                                            className="w-auto"
+                                            aria-label={t('bleedMode')}
+                                        >
+                                            <option value="all">
+                                                {t('bleedModeAll')}
+                                            </option>
+                                            <option value="outer">
+                                                {t('bleedModeOuter')}
+                                            </option>
+                                        </Select>
+                                    </div>
+                                )}
                                 <div className="flex items-center justify-between">
                                     <span className="text-[13px] text-ink-soft">
                                         {t('cmyk')}

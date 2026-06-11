@@ -50,7 +50,41 @@ export type Format = 'epub' | 'pdf' | 'docx' | 'txt' | 'kdp';
 
 export type ChapterHeading = 'none' | 'number' | 'full';
 
+/**
+ * Which trim edges the bleed extends past — keep in sync with App\Enums\BleedMode.
+ * 'all' = all four edges (Lulu, BoD, epubli, tredition);
+ * 'outer' = outside edges only, never the binding edge (KDP, IngramSpark).
+ */
+export type BleedMode = 'all' | 'outer';
+
 export const VISUAL_FORMATS: Set<Format> = new Set(['pdf', 'epub', 'kdp']);
+
+/**
+ * Persisted snapshot of the export page's UI selections — stored in
+ * books.export_settings, keep keys in sync with
+ * BookSettingsController::updateExportSettings.
+ */
+export type SavedExportSettings = {
+    format?: Format;
+    template?: string;
+    font_pairing?: string;
+    scene_break_style?: string;
+    drop_caps?: boolean;
+    chapter_heading?: ChapterHeading;
+    include_act_breaks?: boolean;
+    show_page_numbers?: boolean;
+    trim_size?: string;
+    font_size?: number;
+    cmyk?: boolean;
+    bleed?: number;
+    bleed_mode?: BleedMode;
+    custom_width?: number;
+    custom_height?: number;
+    include_cover?: boolean;
+    front_matter?: string[];
+    back_matter?: string[];
+    excluded_chapter_ids?: number[];
+};
 
 export type MatterItem = {
     id: string;
