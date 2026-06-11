@@ -1,13 +1,14 @@
 <?php
 
-it('renders publish page with book metadata sections', function () {
+it('renders publishing settings with book metadata sections', function () {
     [$book] = createBookWithChapters(1);
 
+    // Legacy publish URL redirects to the publishing settings page; the cover
+    // moved to its own page under book settings.
     $page = visit("/books/{$book->id}/publish");
 
     $page->assertNoJavaScriptErrors()
         ->assertSee('Publish')
-        ->assertSee('Cover Image')
         ->assertSee('Book Metadata')
         ->assertSee('Front Matter')
         ->assertSee('Back Matter');

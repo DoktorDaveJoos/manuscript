@@ -1,24 +1,26 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowUpFromLine,
-    BookMarked,
     BookOpen,
     LayoutGrid,
     LibraryBig,
     PanelLeftClose,
     PanelLeftOpen,
     Settings,
+    Settings2,
     Sparkles,
     Waypoints,
 } from 'lucide-react';
 import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { index } from '@/actions/App/Http/Controllers/BookController';
-import { exportMethod } from '@/actions/App/Http/Controllers/BookSettingsController';
+import {
+    exportMethod,
+    index as bookSettingsIndex,
+} from '@/actions/App/Http/Controllers/BookSettingsController';
 import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
 import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
 import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotController';
-import { show as showPublish } from '@/actions/App/Http/Controllers/PublishController';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
 import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
@@ -106,8 +108,9 @@ export default function Sidebar({
     const isWiki = currentUrl.includes('/wiki');
     const isPlot = currentUrl.endsWith('/plot');
     const isAi = currentUrl.includes('/ai/');
-    const isPublish = currentUrl.includes('/publish');
     const isExport = currentUrl.includes('/settings/export');
+    const isBookSettings =
+        /\/books\/\d+\/settings/.test(currentUrl) && !isExport;
 
     const totalWords = storylines.reduce(
         (sum, s) =>
@@ -250,6 +253,18 @@ export default function Sidebar({
                         }
                     />
                     <NavItem
+                        label={t('nav.bookSettings')}
+                        href={bookSettingsIndex.url(book)}
+                        isActive={isBookSettings}
+                        iconOnly={isCollapsed}
+                        icon={
+                            <Settings2
+                                size={16}
+                                className="shrink-0 text-ink-faint"
+                            />
+                        }
+                    />
+                    <NavItem
                         label={t('nav.wiki')}
                         href={indexWiki.url(book)}
                         isActive={isWiki}
@@ -280,18 +295,6 @@ export default function Sidebar({
                         iconOnly={isCollapsed}
                         icon={
                             <Sparkles
-                                size={16}
-                                className="shrink-0 text-ink-faint"
-                            />
-                        }
-                    />
-                    <NavItem
-                        label={t('nav.publish')}
-                        href={showPublish.url(book)}
-                        isActive={isPublish}
-                        iconOnly={isCollapsed}
-                        icon={
-                            <BookMarked
                                 size={16}
                                 className="shrink-0 text-ink-faint"
                             />

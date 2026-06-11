@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { show as publishShow } from '@/actions/App/Http/Controllers/PublishController';
+import { publishing } from '@/actions/App/Http/Controllers/BookSettingsController';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import type {
     ChapterRow,
@@ -225,7 +225,7 @@ export default function ExportReadingOrder({
 }: ExportReadingOrderProps) {
     const { t } = useTranslation('export');
     const pageUrl = usePage().url;
-    const bookPublishUrl = publishShow.url(bookId);
+    const bookPublishUrl = publishing.url(bookId);
     const [activeChapter, setActiveChapter] = useState<ChapterRow | null>(null);
 
     const { width, isCollapsed, toggleCollapsed, panelRef, handleMouseDown } =

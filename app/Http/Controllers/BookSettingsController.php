@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Enums\ExportFormat;
 use App\Enums\FontPairing;
+use App\Enums\Genre;
 use App\Enums\SceneBreakStyle;
 use App\Enums\TrimSize;
 use App\Http\Requests\ExportBookRequest;
+use App\Http\Requests\UpdateBookGeneralSettingsRequest;
 use App\Models\Book;
 use App\Services\Export\ContentPreparer;
 use App\Services\Export\Exporters\PdfExporter;
@@ -18,6 +20,7 @@ use App\Services\Export\Templates\ElegantTemplate;
 use App\Services\Export\Templates\ModernTemplate;
 use App\Services\WritingStyleService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -26,9 +29,32 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BookSettingsController extends Controller
 {
+    public function index(Book $book): RedirectResponse
+    {
+        return redirect()->route('books.settings.general', $book);
+    }
+
+    public function general(Book $book): Response
+    {
+        return Inertia::render('books/settings/general', [
+            'book' => $book->only('id', 'title', 'author', 'language', 'genre', 'secondary_genres'),
+            'genres' => collect(Genre::cases())->map(fn (Genre $genre) => [
+                'value' => $genre->value,
+                'label' => $genre->label(),
+            ]),
+        ]);
+    }
+
+    public function updateGeneral(UpdateBookGeneralSettingsRequest $request, Book $book): RedirectResponse
+    {
+        $book->update($request->validated());
+
+        return back();
+    }
+
     public function writingStyle(Book $book): Response
     {
-        return Inertia::render('settings/book/writing-style', [
+        return Inertia::render('books/settings/writing-style', [
             'book' => $book->only('id', 'title', 'writing_style_text', 'writing_style'),
             'writing_style_display' => $book->writing_style_display,
         ]);
@@ -79,11 +105,53 @@ class BookSettingsController extends Controller
         ]);
     }
 
-    public function prosePassRules(Book $book): Response
+    public function proseRules(Book $book): Response
     {
-        return Inertia::render('settings/book/prose-pass-rules', [
+        return Inertia::render('books/settings/prose-rules', [
             'book' => $book->only('id', 'title'),
-            'rules' => $book->prose_pass_rules ?? Book::defaultProsePassRules(),
+            'rules' => $book->prosePassRules(),
+        ]);
+    }
+
+    public function publishing(Book $book): Response
+    {
+        $book->load(['chapters' => fn ($q) => $q->orderBy('reader_order')]);
+
+        return Inertia::render('books/settings/publishing', [
+            'book' => $book->only(
+                'id', 'title', 'author', 'language',
+                'copyright_text', 'dedication_text', 'epigraph_text', 'epigraph_attribution',
+                'acknowledgment_text', 'about_author_text', 'also_by_text', 'klappentext',
+                'publisher_name', 'isbn',
+            ),
+            'chapters' => $book->chapters->map(fn ($ch) => [
+                'id' => $ch->id,
+                'title' => $ch->title,
+                'is_epilogue' => $ch->is_epilogue,
+                'is_prologue' => $ch->is_prologue,
+            ]),
+        ]);
+    }
+
+    public function cover(Book $book): Response
+    {
+        $bookData = $book->only('id', 'title', 'author', 'cover_settings', 'klappentext');
+
+        // Cache-bust the served cover so a freshly generated/replaced image refreshes in-place.
+        $bookData['cover_image_url'] = $book->cover_image_path
+            ? route('books.publish.cover.serve', $book).'?v='.($book->updated_at?->timestamp ?? '')
+            : null;
+
+        // Seed the cover generator with the book's own metadata when it has no saved settings yet.
+        $bookData['cover_genre'] = $book->genre?->label() ?? '';
+
+        return Inertia::render('books/settings/cover', [
+            'book' => $bookData,
+            'trimSizes' => collect(TrimSize::cases())->map(fn (TrimSize $t) => [
+                'value' => $t->value,
+                'label' => $t->label(),
+                'labelMetric' => $t->metricLabel(),
+            ]),
         ]);
     }
 

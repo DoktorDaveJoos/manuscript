@@ -17,7 +17,6 @@ import type { AppSettings } from '@/types/models';
 
 interface Props {
     settings: AppSettings;
-    book?: { id: number; title: string } | null;
     version: string;
 }
 
@@ -69,7 +68,7 @@ function SettingRow({
     );
 }
 
-export default function Appearance({ settings, book, version }: Props) {
+export default function Appearance({ settings, version }: Props) {
     const { t } = useTranslation('settings');
     const { theme, setTheme } = useTheme();
     const {
@@ -98,7 +97,6 @@ export default function Appearance({ settings, book, version }: Props) {
     return (
         <SettingsLayout
             activeSection="appearance"
-            book={book}
             title={t('appearance.title')}
         >
             <div className="flex flex-col gap-6">

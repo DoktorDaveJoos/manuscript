@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { updateProsePassRules } from '@/actions/App/Http/Controllers/SettingsController';
+import { updateProsePassRules } from '@/actions/App/Http/Controllers/BookSettingsController';
 import PageHeader from '@/components/ui/PageHeader';
 import Toggle from '@/components/ui/Toggle';
-import SettingsLayout from '@/layouts/SettingsLayout';
+import BookSettingsLayout from '@/layouts/BookSettingsLayout';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { ProsePassRule } from '@/types/models';
 
@@ -14,7 +14,7 @@ interface Props {
     rules: ProsePassRule[];
 }
 
-export default function ProsePassRules({ book, rules: initialRules }: Props) {
+export default function ProseRules({ book, rules: initialRules }: Props) {
     const { t } = useTranslation('settings');
     const [rules, setRules] = useState(initialRules);
 
@@ -25,7 +25,7 @@ export default function ProsePassRules({ book, rules: initialRules }: Props) {
             );
             setRules(updated);
 
-            fetch(updateProsePassRules.url(), {
+            fetch(updateProsePassRules.url(book.id), {
                 method: 'PUT',
                 headers: jsonFetchHeaders(),
                 body: JSON.stringify({ rules: updated }),
@@ -33,12 +33,12 @@ export default function ProsePassRules({ book, rules: initialRules }: Props) {
                 setRules(rules);
             });
         },
-        [rules],
+        [book.id, rules],
     );
 
     return (
-        <SettingsLayout
-            activeSection="prose-pass-rules"
+        <BookSettingsLayout
+            activeSection="prose-rules"
             book={book}
             title={t('prosePassRules.pageTitle', { bookTitle: book.title })}
         >
@@ -65,7 +65,7 @@ export default function ProsePassRules({ book, rules: initialRules }: Props) {
                                 />
                             </div>
                             <div className="flex-1">
-                                <span className="text-[14px] font-medium text-ink">
+                                <span className="text-sm font-medium text-ink">
                                     {t(
                                         `prosePassRules.rules.${rule.key}.label`,
                                         {
@@ -84,6 +84,6 @@ export default function ProsePassRules({ book, rules: initialRules }: Props) {
                     ))}
                 </div>
             </div>
-        </SettingsLayout>
+        </BookSettingsLayout>
     );
 }

@@ -9,6 +9,7 @@
     "metadata.isbnPlaceholder": "z. B. 978-3-16-148410-0",
     "metadata.isbnHint": "Optional. Leer lassen, wenn du noch keine hast.",
     "cover.title": "Coverbild",
+    "cover.pageTitle": "Cover — {{title}}",
     "cover.description": "Lade dein Buchcover hoch. JPG, PNG oder PDF — PDFs werden automatisch umgewandelt. Empfohlene Mindestgröße: 1600 × 2560 px.",
     "cover.upload": "Cover hochladen",
     "cover.replace": "Ersetzen",

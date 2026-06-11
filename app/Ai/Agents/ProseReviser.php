@@ -36,7 +36,7 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
     {
         $writingStyle = $this->book->writingStyleSnippet();
 
-        $rules = Book::globalProsePassRules();
+        $rules = $this->book->prosePassRules();
         $enabledRules = collect($rules)->filter(fn ($rule) => $rule['enabled']);
         $rulesSection = $enabledRules->isNotEmpty()
             ? "\n\nApply these prose revision rules:\n".$enabledRules->map(fn ($rule) => "- {$rule['label']}: {$rule['description']}")->implode("\n")

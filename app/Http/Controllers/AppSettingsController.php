@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\AppSetting;
-use App\Models\Book;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -34,11 +33,8 @@ class AppSettingsController extends Controller
             ->mapWithKeys(fn ($value, $key) => [$key => $value === 'true' ? true : ($value === 'false' ? false : $value)])
             ->all();
 
-        $book = Book::query()->select('id', 'title')->first();
-
         return Inertia::render('settings/appearance', [
             'settings' => $settings,
-            'book' => $book?->only('id', 'title'),
             'version' => config('app.version', '0.0.0'),
         ]);
     }

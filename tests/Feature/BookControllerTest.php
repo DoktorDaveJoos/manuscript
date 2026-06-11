@@ -161,9 +161,12 @@ test('duplicates a book with all relationships', function () {
     expect($copyPlotPoint->act_id)->toBe($copy->acts->first()->id);
 });
 
-test('duplicate resets AI-derived fields', function () {
+test('duplicate keeps per-book writing style and prose rules', function () {
+    // Style and rules live only on the book (no global fallback), so a
+    // duplicate must carry them over or the copy would silently lose them.
     $book = Book::factory()->withAi()->create([
         'writing_style' => ['tone' => 'dark'],
+        'writing_style_text' => 'Dark and moody.',
         'prose_pass_rules' => [['key' => 'test', 'enabled' => true]],
     ]);
 
@@ -171,6 +174,7 @@ test('duplicate resets AI-derived fields', function () {
         ->assertRedirect(route('books.index'));
 
     $copy = Book::query()->where('title', 'like', '%(Copy)%')->first();
-    expect($copy->writing_style)->toBeNull()
-        ->and($copy->prose_pass_rules)->toBeNull();
+    expect($copy->writing_style)->toBe(['tone' => 'dark'])
+        ->and($copy->writing_style_text)->toBe('Dark and moody.')
+        ->and($copy->prose_pass_rules)->toBe([['key' => 'test', 'enabled' => true]]);
 });

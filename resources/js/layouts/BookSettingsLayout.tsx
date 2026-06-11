@@ -1,28 +1,37 @@
 import { Head, Link } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
-import { index as booksIndex } from '@/actions/App/Http/Controllers/BookController';
+import { show as showDashboard } from '@/actions/App/Http/Controllers/DashboardController';
 import NavItem from '@/components/ui/NavItem';
 import SectionLabel from '@/components/ui/SectionLabel';
 import UpdateBanner from '@/components/ui/UpdateBanner';
 
-type ActiveSection = 'appearance' | 'license' | 'ai-providers';
+type ActiveSection =
+    | 'general'
+    | 'writing-style'
+    | 'prose-rules'
+    | 'publishing'
+    | 'cover';
+
+type BookRef = { id: number; title: string };
 
 interface Props {
     activeSection: ActiveSection;
+    book: BookRef;
     title?: string;
 }
 
-export default function SettingsLayout({
+export default function BookSettingsLayout({
     children,
     activeSection,
+    book,
     title,
 }: PropsWithChildren<Props>) {
     const { t } = useTranslation('settings');
 
     return (
         <>
-            <Head title={title ?? t('title')} />
+            <Head title={title ?? t('bookSettings.title')} />
             <div className="flex h-screen flex-col overflow-hidden bg-surface">
                 <UpdateBanner />
                 <div className="flex min-h-0 flex-1">
@@ -31,7 +40,7 @@ export default function SettingsLayout({
                         {/* Header — Back link */}
                         <div className="px-5 py-4">
                             <Link
-                                href={booksIndex.url()}
+                                href={showDashboard.url(book.id)}
                                 className="flex items-center gap-1.5 text-[12px] font-medium text-ink-muted transition-colors hover:text-ink"
                             >
                                 <svg
@@ -53,29 +62,38 @@ export default function SettingsLayout({
                             </Link>
                         </div>
 
-                        {/* App settings */}
                         <div className="px-2.5">
                             <SectionLabel
                                 variant="section"
-                                className="mb-1.5 block px-2.5"
+                                className="mb-1.5 block truncate px-2.5"
                             >
-                                {t('section.app')}
+                                {book.title}
                             </SectionLabel>
                             <div className="flex flex-col gap-0.5">
                                 <NavItem
-                                    label={t('section.appearance')}
-                                    href="/settings/appearance"
-                                    isActive={activeSection === 'appearance'}
+                                    label={t('section.general')}
+                                    href={`/books/${book.id}/settings/general`}
+                                    isActive={activeSection === 'general'}
                                 />
                                 <NavItem
-                                    label={t('section.license')}
-                                    href="/settings/license"
-                                    isActive={activeSection === 'license'}
+                                    label={t('section.writingStyle')}
+                                    href={`/books/${book.id}/settings/writing-style`}
+                                    isActive={activeSection === 'writing-style'}
                                 />
                                 <NavItem
-                                    label={t('section.aiProviders')}
-                                    href="/settings/ai"
-                                    isActive={activeSection === 'ai-providers'}
+                                    label={t('section.prosePassRules')}
+                                    href={`/books/${book.id}/settings/prose-rules`}
+                                    isActive={activeSection === 'prose-rules'}
+                                />
+                                <NavItem
+                                    label={t('section.publishing')}
+                                    href={`/books/${book.id}/settings/publishing`}
+                                    isActive={activeSection === 'publishing'}
+                                />
+                                <NavItem
+                                    label={t('section.cover')}
+                                    href={`/books/${book.id}/settings/cover`}
+                                    isActive={activeSection === 'cover'}
                                 />
                             </div>
                         </div>

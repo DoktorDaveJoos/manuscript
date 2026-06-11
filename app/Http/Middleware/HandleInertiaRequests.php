@@ -107,7 +107,6 @@ class HandleInertiaRequests extends Middleware
                         : null,
                 ];
             },
-            'books_list' => fn () => Book::query()->select('id', 'title')->get(),
             'app_settings' => fn () => [
                 'show_ai_features' => AppSetting::get('show_ai_features', true),
                 'hide_formatting_toolbar' => AppSetting::get('hide_formatting_toolbar', false),

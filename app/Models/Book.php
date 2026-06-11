@@ -116,12 +116,6 @@ class Book extends Model
 
     public function getWritingStyleDisplayAttribute(): string
     {
-        // Check global setting first, fall back to book's own column
-        $globalText = AppSetting::get('writing_style_text');
-        if ($globalText) {
-            return $globalText;
-        }
-
         if ($this->writing_style_text) {
             return $this->writing_style_text;
         }
@@ -134,47 +128,41 @@ class Book extends Model
     }
 
     /**
-     * Get global prose pass rules. Saved configurations are merged with current defaults
+     * The book's prose pass rules. Saved configurations are merged with current defaults
      * so newly added rules appear automatically without requiring users to re-save.
      *
      * @return array<int, array{key: string, label: string, description: string, enabled: bool}>
      */
-    public static function globalProsePassRules(): array
+    public function prosePassRules(): array
     {
         $defaults = self::defaultProsePassRules();
-        $json = AppSetting::get('prose_pass_rules');
+        $saved = $this->prose_pass_rules;
 
-        if (! $json) {
+        if (! is_array($saved) || empty($saved)) {
             return $defaults;
         }
 
-        $decoded = is_string($json) ? json_decode($json, true) : $json;
-
-        if (! is_array($decoded) || empty($decoded)) {
-            return $defaults;
-        }
-
-        $savedKeys = collect($decoded)->pluck('key')->all();
+        $savedKeys = collect($saved)->pluck('key')->all();
         $missing = collect($defaults)
             ->reject(fn ($rule) => in_array($rule['key'], $savedKeys, true))
             ->values()
             ->all();
 
-        return [...$decoded, ...$missing];
+        return [...$saved, ...$missing];
     }
 
     /**
-     * Rules from globalProsePassRules() that make sense to apply during fresh generation
+     * Rules from prosePassRules() that make sense to apply during fresh generation
      * (Continue Writing), not just revision. Mechanical/structural rules transfer cleanly;
      * corrective ones (show_dont_tell, dialogue_tags) are left to the revision pass.
      *
      * @return array<int, array{key: string, label: string, description: string, enabled: bool}>
      */
-    public static function generationApplicableProsePassRules(): array
+    public function generationApplicableProsePassRules(): array
     {
         $applicable = ['shorten_long_sentences', 'sentence_variety', 'tightening', 'passive_voice', 'filter_words'];
 
-        return collect(self::globalProsePassRules())
+        return collect($this->prosePassRules())
             ->filter(fn ($rule) => in_array($rule['key'], $applicable, true))
             ->values()
             ->all();

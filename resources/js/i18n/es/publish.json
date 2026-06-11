@@ -9,6 +9,7 @@
     "metadata.isbnPlaceholder": "p. ej., 978-3-16-148410-0",
     "metadata.isbnHint": "Opcional. Déjalo en blanco si aún no tienes uno.",
     "cover.title": "Imagen de portada",
+    "cover.pageTitle": "Portada — {{title}}",
     "cover.description": "Sube la portada de tu libro. JPG, PNG o PDF — los PDF se convierten automáticamente. Tamaño mínimo recomendado: 1600 × 2560 px.",
     "cover.upload": "Subir portada",
     "cover.replace": "Reemplazar",

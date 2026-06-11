@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\TrimSize;
 use App\Http\Requests\GenerateCoverRequest;
 use App\Http\Requests\UpdatePublishSettingsRequest;
 use App\Http\Requests\UploadCoverImageRequest;
@@ -13,48 +12,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Inertia\Inertia;
-use Inertia\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PublishController extends Controller
 {
-    public function show(Book $book): Response
-    {
-        $book->load(['chapters' => fn ($q) => $q->orderBy('reader_order'), 'storylines']);
-
-        $bookData = $book->only(
-            'id', 'title', 'author', 'language',
-            'copyright_text', 'dedication_text', 'epigraph_text', 'epigraph_attribution',
-            'acknowledgment_text', 'about_author_text', 'also_by_text', 'klappentext',
-            'publisher_name', 'isbn', 'cover_image_path', 'cover_settings',
-        );
-
-        // Cache-bust the served cover so a freshly generated/replaced image refreshes in-place.
-        $bookData['cover_image_url'] = $book->cover_image_path
-            ? route('books.publish.cover.serve', $book).'?v='.($book->updated_at?->timestamp ?? '')
-            : null;
-
-        // Seed the cover generator with the book's own metadata when it has no saved settings yet.
-        $bookData['cover_genre'] = $book->genre?->label() ?? '';
-
-        return Inertia::render('books/publish', [
-            'book' => $bookData,
-            'chapters' => $book->chapters->map(fn ($ch) => [
-                'id' => $ch->id,
-                'title' => $ch->title,
-                'is_epilogue' => $ch->is_epilogue,
-                'is_prologue' => $ch->is_prologue,
-            ]),
-            'trimSizes' => collect(TrimSize::cases())->map(fn (TrimSize $t) => [
-                'value' => $t->value,
-                'label' => $t->label(),
-                'labelMetric' => $t->metricLabel(),
-            ]),
-        ]);
-    }
-
     public function update(UpdatePublishSettingsRequest $request, Book $book): RedirectResponse
     {
         $book->update($request->validated());

@@ -38,6 +38,7 @@ use App\Http\Controllers\WikiController;
 use App\Http\Controllers\WikiPanelController;
 use App\Http\Controllers\WritingGoalController;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Models\Book;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -157,8 +158,6 @@ Route::post('/update/install', [UpdateController::class, 'install'])->name('upda
 // Unified settings page
 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::put('/settings', [AppSettingsController::class, 'update'])->name('settings.update');
-Route::put('/settings/writing-style', [SettingsController::class, 'updateWritingStyle'])->name('settings.writing-style.update');
-Route::put('/settings/prose-pass-rules', [SettingsController::class, 'updateProsePassRules'])->name('settings.prose-pass-rules.update');
 Route::put('/settings/proofreading', [SettingsController::class, 'updateProofreadingConfig'])->name('settings.proofreading.update');
 Route::put('/books/{book}/settings/custom-dictionary', [SettingsController::class, 'updateCustomDictionary'])->name('books.settings.custom-dictionary.update');
 Route::post('/books/{book}/settings/custom-dictionary/seed', [SettingsController::class, 'seedCustomDictionary'])->name('books.settings.custom-dictionary.seed');
@@ -256,15 +255,23 @@ Route::post('/books/{book}/plot/ai/beats', [PlotAiController::class, 'suggestBea
 Route::post('/books/{book}/plot/ai/tension', [PlotAiController::class, 'generateTensionArc'])->name('books.plot.ai.tension');
 Route::get('/books/{book}/plot/ai/status', [PlotAiController::class, 'analysisStatus'])->name('books.plot.ai.status');
 
-// Book-level settings — legacy GET routes redirect to unified settings
-Route::get('/books/{book}/settings/writing-style', fn () => redirect('/settings'))->name('books.settings.writing-style');
-Route::get('/books/{book}/settings/prose-pass-rules', fn () => redirect('/settings'))->name('books.settings.prose-pass-rules');
+// Book settings — per-book area beneath Dashboard
+Route::get('/books/{book}/settings', [BookSettingsController::class, 'index'])->name('books.settings');
+Route::get('/books/{book}/settings/general', [BookSettingsController::class, 'general'])->name('books.settings.general');
+Route::put('/books/{book}/settings/general', [BookSettingsController::class, 'updateGeneral'])->name('books.settings.general.update');
+Route::get('/books/{book}/settings/writing-style', [BookSettingsController::class, 'writingStyle'])->name('books.settings.writing-style');
+Route::put('/books/{book}/settings/writing-style', [BookSettingsController::class, 'updateWritingStyle'])->name('books.settings.writing-style.update');
+Route::get('/books/{book}/settings/prose-rules', [BookSettingsController::class, 'proseRules'])->name('books.settings.prose-rules');
+Route::put('/books/{book}/settings/prose-rules', [BookSettingsController::class, 'updateProsePassRules'])->name('books.settings.prose-rules.update');
+Route::get('/books/{book}/settings/prose-pass-rules', fn (Book $book) => redirect()->route('books.settings.prose-rules', $book))->name('books.settings.prose-pass-rules');
+Route::get('/books/{book}/settings/publishing', [BookSettingsController::class, 'publishing'])->name('books.settings.publishing');
+Route::get('/books/{book}/settings/cover', [BookSettingsController::class, 'cover'])->name('books.settings.cover');
 Route::get('/books/{book}/settings/export', [BookSettingsController::class, 'export'])->name('books.settings.export');
 Route::post('/books/{book}/settings/export', [BookSettingsController::class, 'doExport'])->name('books.settings.export.run');
 Route::post('/books/{book}/export/preview', [BookSettingsController::class, 'previewPdf'])->name('books.export.preview');
 
-// Publish page — book metadata and matter content
-Route::get('/books/{book}/publish', [PublishController::class, 'show'])->name('books.publish');
+// Publish endpoints — the page now lives under book settings; the legacy URL redirects there
+Route::get('/books/{book}/publish', fn (Book $book) => redirect()->route('books.settings.publishing', $book))->name('books.publish');
 Route::put('/books/{book}/publish', [PublishController::class, 'update'])->name('books.publish.update');
 Route::post('/books/{book}/publish/cover', [PublishController::class, 'uploadCover'])->name('books.publish.cover');
 Route::post('/books/{book}/publish/cover/generate', [PublishController::class, 'generateCover'])->name('books.publish.cover.generate');
