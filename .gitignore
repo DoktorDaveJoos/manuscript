@@ -32,6 +32,8 @@ yarn-error.log
 .claude/*.lock
 .DS_Store
 /screenshots
+# Runtime state of the local backup feature — never source-controlled
+/database/.backup-state.json
 
 # Local marketing assets (large binaries) — not part of the app
 /marketing
