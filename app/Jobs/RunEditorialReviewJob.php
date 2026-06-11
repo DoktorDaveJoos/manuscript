@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\EditorialReviewErrorCode;
 use App\Jobs\Concerns\UpdatesEditorialReview;
 use App\Jobs\Editorial\AnalyzeReviewChapterJob;
 use App\Jobs\Editorial\EmbedReviewChapterJob;
@@ -41,7 +42,7 @@ class RunEditorialReviewJob implements ShouldQueue
         $setting = AiSetting::activeProvider();
 
         if (! $setting || ! $setting->isConfigured()) {
-            $this->markReviewFailed($this->review, 'No AI provider configured.');
+            $this->markReviewFailed($this->review, 'No AI provider configured.', EditorialReviewErrorCode::NoProvider);
 
             return;
         }
@@ -106,6 +107,10 @@ class RunEditorialReviewJob implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
-        $this->markReviewFailed($this->review, $exception?->getMessage() ?? 'Unknown error');
+        $this->markReviewFailed(
+            $this->review,
+            $exception?->getMessage() ?? 'Unknown error',
+            $exception ? EditorialReviewErrorCode::fromThrowable($exception) : EditorialReviewErrorCode::Unknown,
+        );
     }
 }

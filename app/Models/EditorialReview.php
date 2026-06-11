@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EditorialReviewErrorCode;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,6 +33,7 @@ class EditorialReview extends Model
             ->update([
                 'status' => 'failed',
                 'error_message' => __('Review timed out. Please try again.'),
+                'error_code' => EditorialReviewErrorCode::Timeout->value,
                 'updated_at' => now(),
             ]);
     }

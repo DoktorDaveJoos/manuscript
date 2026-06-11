@@ -41,6 +41,7 @@ export default function EditorialReviewPage({
         starting,
         error,
         handleStart,
+        handleResume,
         selectReview,
         updateResolved,
     } = useEditorialReview(book.id, latestReview);
@@ -121,19 +122,38 @@ export default function EditorialReviewPage({
                                 >
                                     <AlertTitle>{t('failed.title')}</AlertTitle>
                                     <AlertDescription>
-                                        {error ||
-                                            review?.error_message ||
-                                            t('failed.title')}
+                                        {review?.status === 'failed'
+                                            ? t(
+                                                  `failed.reasons.${review.error_code ?? 'unknown'}`,
+                                                  {
+                                                      defaultValue: t(
+                                                          'failed.reasons.unknown',
+                                                      ),
+                                                  },
+                                              )
+                                            : error}
                                     </AlertDescription>
                                 </Alert>
                                 {review?.status === 'failed' && (
-                                    <Button
-                                        variant="primary"
-                                        onClick={handleStart}
-                                        disabled={starting}
-                                    >
-                                        {t('failed.retry')}
-                                    </Button>
+                                    <>
+                                        <p className="max-w-xl text-center text-[13px] text-ink-muted">
+                                            {t('failed.progressKept')}
+                                        </p>
+                                        {(!review.error_code ||
+                                            review.error_code === 'unknown') &&
+                                            review.error_message && (
+                                                <p className="max-w-xl text-center text-xs text-ink-faint">
+                                                    {review.error_message}
+                                                </p>
+                                            )}
+                                        <Button
+                                            variant="primary"
+                                            onClick={handleResume}
+                                            disabled={starting}
+                                        >
+                                            {t('failed.continue')}
+                                        </Button>
+                                    </>
                                 )}
                             </div>
                         )}

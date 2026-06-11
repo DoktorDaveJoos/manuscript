@@ -75,6 +75,43 @@ class EditorialReviewController extends Controller
         ]);
     }
 
+    /**
+     * Resume a failed review on the same record: the pipeline skips chapter
+     * notes and sections persisted before the failure, so only the missing
+     * work is redone.
+     */
+    public function resume(Book $book, EditorialReview $review): JsonResponse
+    {
+        abort_if($review->book_id !== $book->id, 404);
+
+        $this->ensureAiConfigured();
+
+        abort_if($review->status !== 'failed', 422, __('Only a failed review can be resumed.'));
+
+        EditorialReview::failStale($book);
+
+        abort_if(
+            $book->editorialReviews()
+                ->whereNotIn('status', ['completed', 'failed'])
+                ->exists(),
+            422,
+            __('An editorial review is already in progress for this book.'),
+        );
+
+        $review->update([
+            'status' => 'pending',
+            'error_message' => null,
+            'error_code' => null,
+        ]);
+
+        RunEditorialReviewJob::dispatch($book, $review);
+
+        return response()->json([
+            'message' => __('Editorial review resumed.'),
+            'review' => $review,
+        ]);
+    }
+
     public function show(Book $book, EditorialReview $review): Response
     {
         abort_if($review->book_id !== $book->id, 404);
@@ -98,6 +135,7 @@ class EditorialReviewController extends Controller
             'status' => $review->status,
             'progress' => $review->progress,
             'error_message' => $review->error_message,
+            'error_code' => $review->error_code,
         ]);
     }
 

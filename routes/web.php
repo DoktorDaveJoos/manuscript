@@ -238,6 +238,7 @@ Route::post('/books/{book}/ai/reset-usage', [AiController::class, 'resetUsage'])
 Route::post('/books/{book}/ai/editorial-review', [EditorialReviewController::class, 'store'])->name('books.ai.editorial-review.store');
 Route::get('/books/{book}/ai/editorial-review/{review}', [EditorialReviewController::class, 'show'])->name('books.ai.editorial-review.show');
 Route::get('/books/{book}/ai/editorial-review/{review}/progress', [EditorialReviewController::class, 'progress'])->name('books.ai.editorial-review.progress');
+Route::post('/books/{book}/ai/editorial-review/{review}/resume', [EditorialReviewController::class, 'resume'])->name('books.ai.editorial-review.resume');
 Route::post('/books/{book}/ai/editorial-review/{review}/chat', [EditorialReviewController::class, 'chat'])->name('books.ai.editorial-review.chat');
 Route::post('/books/{book}/ai/editorial-review/{review}/toggle-finding', [EditorialReviewController::class, 'toggleFinding'])->name('books.ai.editorial-review.toggle-finding');
 

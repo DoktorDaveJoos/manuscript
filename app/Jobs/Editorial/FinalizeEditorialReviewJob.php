@@ -5,6 +5,7 @@ namespace App\Jobs\Editorial;
 use App\Ai\Agents\EditorialSummaryAgent;
 use App\Ai\Agents\EditorialSynthesisAgent;
 use App\Enums\AnalysisType;
+use App\Enums\EditorialReviewErrorCode;
 use App\Enums\EditorialSectionType;
 use App\Jobs\Concerns\UpdatesEditorialReview;
 use App\Models\AiSetting;
@@ -48,7 +49,7 @@ class FinalizeEditorialReviewJob implements ShouldQueue
         $setting = AiSetting::activeProvider();
 
         if (! $setting || ! $setting->isConfigured()) {
-            $this->markReviewFailed($this->review, 'No AI provider configured.');
+            $this->markReviewFailed($this->review, 'No AI provider configured.', EditorialReviewErrorCode::NoProvider);
 
             return;
         }
@@ -56,7 +57,7 @@ class FinalizeEditorialReviewJob implements ShouldQueue
         $setting->injectConfig();
 
         if (! $this->review->chapterNotes()->exists()) {
-            $this->markReviewFailed($this->review, __('No chapter content available for editorial review.'));
+            $this->markReviewFailed($this->review, __('No chapter content available for editorial review.'), EditorialReviewErrorCode::NoContent);
 
             return;
         }
@@ -70,7 +71,7 @@ class FinalizeEditorialReviewJob implements ShouldQueue
             $this->generateExecutiveSummary();
         } catch (Throwable $e) {
             report($e);
-            $this->markReviewFailed($this->review, $e->getMessage());
+            $this->markReviewFailed($this->review, $e->getMessage(), EditorialReviewErrorCode::fromThrowable($e));
         }
     }
 
@@ -80,11 +81,17 @@ class FinalizeEditorialReviewJob implements ShouldQueue
             report($exception);
         }
 
-        $this->markReviewFailed($this->review, $exception?->getMessage() ?? 'Unknown error');
+        $this->markReviewFailed(
+            $this->review,
+            $exception?->getMessage() ?? 'Unknown error',
+            $exception ? EditorialReviewErrorCode::fromThrowable($exception) : EditorialReviewErrorCode::Unknown,
+        );
     }
 
     /**
-     * Phase 2 — synthesis: run EditorialSynthesisAgent per section.
+     * Phase 2 — synthesis: run EditorialSynthesisAgent per section. Sections
+     * persisted by an earlier run are skipped, so a resumed review only pays
+     * for the sections that are still missing.
      *
      * @param  Collection<int, Chapter>  $chapters
      */
@@ -94,7 +101,13 @@ class FinalizeEditorialReviewJob implements ShouldQueue
 
         $chapterNotes = $this->review->chapterNotes()->with('chapter')->get();
 
+        $synthesized = $this->review->sections()->pluck('type')->all();
+
         foreach (EditorialSectionType::cases() as $sectionType) {
+            if (in_array($sectionType, $synthesized, true)) {
+                continue;
+            }
+
             $this->updateReviewProgress($this->review, 'synthesizing', current_section: $sectionType->value);
 
             $aggregatedData = $this->buildAggregatedDataForSection($sectionType, $chapters, $chapterNotes);

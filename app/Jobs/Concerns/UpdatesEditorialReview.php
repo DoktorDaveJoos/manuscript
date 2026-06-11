@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Concerns;
 
+use App\Enums\EditorialReviewErrorCode;
 use App\Models\EditorialReview;
 
 trait UpdatesEditorialReview
@@ -33,11 +34,15 @@ trait UpdatesEditorialReview
         $review->update(['progress' => $progress]);
     }
 
-    protected function markReviewFailed(EditorialReview $review, string $message): void
-    {
+    protected function markReviewFailed(
+        EditorialReview $review,
+        string $message,
+        EditorialReviewErrorCode $code = EditorialReviewErrorCode::Unknown,
+    ): void {
         $review->update([
             'status' => 'failed',
             'error_message' => $message,
+            'error_code' => $code->value,
         ]);
     }
 }

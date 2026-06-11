@@ -58,6 +58,16 @@ export type ChapterEditorialFinding = {
     recommendation: string;
 };
 
+export type EditorialReviewErrorCode =
+    | 'rate_limited'
+    | 'overloaded'
+    | 'insufficient_credits'
+    | 'invalid_key'
+    | 'no_provider'
+    | 'no_content'
+    | 'timeout'
+    | 'unknown';
+
 export type EditorialReview = {
     id: number;
     book_id: number;
@@ -69,6 +79,7 @@ export type EditorialReview = {
         current_section?: string;
     } | null;
     error_message: string | null;
+    error_code: EditorialReviewErrorCode | null;
     overall_score: number | null;
     executive_summary: string | null;
     top_strengths: string[] | null;

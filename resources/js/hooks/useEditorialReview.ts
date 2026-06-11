@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     progress,
+    resume,
     show,
     store,
 } from '@/actions/App/Http/Controllers/EditorialReviewController';
@@ -75,6 +76,7 @@ export function useEditorialReview(
                         status: data.status,
                         progress: data.progress,
                         error_message: data.error_message,
+                        error_code: data.error_code,
                     };
                 });
             } catch {
@@ -111,6 +113,37 @@ export function useEditorialReview(
         }
     }, [bookId]);
 
+    const handleResume = useCallback(async () => {
+        if (!review) {
+            return;
+        }
+
+        setStarting(true);
+        setError(null);
+
+        try {
+            const res = await fetch(
+                resume.url({ book: bookId, review: review.id }),
+                {
+                    method: 'POST',
+                    headers: jsonFetchHeaders(),
+                },
+            );
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || 'Failed to resume');
+            }
+
+            const data = await res.json();
+            setReview(data.review);
+        } catch (e) {
+            setError((e as Error).message);
+        } finally {
+            setStarting(false);
+        }
+    }, [bookId, review]);
+
     const selectReview = useCallback(
         (selected: EditorialReview) => {
             router.visit(show.url({ book: bookId, review: selected.id }));
@@ -130,6 +163,7 @@ export function useEditorialReview(
         starting,
         error,
         handleStart,
+        handleResume,
         selectReview,
         updateResolved,
     };
