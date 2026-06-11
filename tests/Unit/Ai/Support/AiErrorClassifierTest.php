@@ -80,6 +80,54 @@ test('classifies 429 as rate_limited', function () {
     expect(AiErrorClassifier::classify($e)['kind'])->toBe(AiErrorClassifier::KIND_RATE_LIMITED);
 });
 
+test('classifies OpenAI 429 insufficient_quota as insufficient_credits', function () {
+    $e = fakeRequestException(429, [
+        'error' => [
+            'type' => 'insufficient_quota',
+            'message' => 'You exceeded your current quota, please check your plan and billing details.',
+        ],
+    ]);
+
+    expect(AiErrorClassifier::classify($e)['kind'])->toBe(AiErrorClassifier::KIND_INSUFFICIENT_CREDITS);
+});
+
+test('classifies RateLimitedException wrapping a quota-exhausted response as insufficient_credits', function () {
+    $http = fakeRequestException(429, [
+        'error' => [
+            'type' => 'insufficient_quota',
+            'message' => 'You exceeded your current quota, please check your plan and billing details.',
+        ],
+    ]);
+
+    $e = RateLimitedException::forProvider('openai', previous: $http);
+
+    $result = AiErrorClassifier::classify($e, provider: 'openai');
+
+    expect($result['kind'])->toBe(AiErrorClassifier::KIND_INSUFFICIENT_CREDITS);
+    expect($result['message'])->toBe('You exceeded your current quota, please check your plan and billing details.');
+});
+
+test('classifies RateLimitedException wrapping a genuine rate limit as rate_limited', function () {
+    $http = fakeRequestException(429, [
+        'error' => ['message' => 'Rate limit reached for requests. Please try again in 20s.'],
+    ]);
+
+    $e = RateLimitedException::forProvider('openai', previous: $http);
+
+    expect(AiErrorClassifier::classify($e)['kind'])->toBe(AiErrorClassifier::KIND_RATE_LIMITED);
+});
+
+test('extracts the provider message from a wrapped response on typed SDK exceptions', function () {
+    $http = fakeRequestException(429, [
+        'error' => ['message' => 'Rate limit reached for requests. Please try again in 20s.'],
+    ]);
+
+    $e = RateLimitedException::forProvider('openai', previous: $http);
+
+    expect(AiErrorClassifier::classify($e)['message'])
+        ->toBe('Rate limit reached for requests. Please try again in 20s.');
+});
+
 test('classifies 503/529 as overloaded', function () {
     expect(AiErrorClassifier::classify(fakeRequestException(503, ['error' => ['message' => 'overloaded']]))['kind'])
         ->toBe(AiErrorClassifier::KIND_OVERLOADED);

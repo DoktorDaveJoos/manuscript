@@ -15,7 +15,7 @@
     "error.toast.invalid_key.title": "Clave API no válida",
     "error.toast.invalid_key.body": "{{provider}} rechazó tu clave API. Abre los ajustes para volver a introducirla.",
     "error.toast.insufficient_credits.title": "Sin créditos",
-    "error.toast.insufficient_credits.body": "{{provider}} indica que te has quedado sin créditos o has alcanzado tu límite de facturación.",
+    "error.toast.insufficient_credits.body": "Tu cuenta de {{provider}} se ha quedado sin crédito, así que la solicitud fue rechazada. Añade crédito en la consola de {{provider}} y vuelve a intentarlo.",
     "error.toast.rate_limited.title": "Demasiadas solicitudes",
     "error.toast.rate_limited.body": "{{provider}} está limitando tu cuenta. Inténtalo de nuevo en un momento.",
     "error.toast.overloaded.title": "Proveedor saturado",

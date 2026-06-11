@@ -16,7 +16,7 @@
     "error.toast.invalid_key.title": "Invalid API key",
     "error.toast.invalid_key.body": "{{provider}} rejected your API key. Open settings to re-enter it.",
     "error.toast.insufficient_credits.title": "Out of credits",
-    "error.toast.insufficient_credits.body": "{{provider}} reports you're out of credits or have hit your billing limit.",
+    "error.toast.insufficient_credits.body": "Your {{provider}} account is out of credit, so the request was declined. Add credits in the {{provider}} console, then try again.",
     "error.toast.rate_limited.title": "Too many requests",
     "error.toast.rate_limited.body": "{{provider}} is rate-limiting your account. Try again in a moment.",
     "error.toast.overloaded.title": "Provider is overloaded",

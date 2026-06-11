@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Ai\Support\AiErrorClassifier;
 use App\Enums\AiProvider;
 use App\Http\Requests\UpdateAiSettingRequest;
 use App\Models\AiSetting;
@@ -71,9 +72,12 @@ class AiSettingsController extends Controller
                 'message' => __('Connection successful.'),
             ]);
         } catch (\Throwable $e) {
+            $classified = AiErrorClassifier::classify($e, $provider->value);
+
             return response()->json([
                 'success' => false,
-                'message' => __('Connection failed: :error', ['error' => $e->getMessage()]),
+                'kind' => $classified['kind'],
+                'message' => __('Connection failed: :error', ['error' => $classified['message']]),
             ], 422);
         }
     }

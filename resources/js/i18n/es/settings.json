@@ -111,82 +111,81 @@
     "aiProviders.testConnection": "Probar conexión",
     "aiProviders.saveFailed": "No se pudo guardar la configuración.",
     "aiProviders.testFailed": "La prueba de conexión falló.",
+    "aiProviders.testResult.invalid_key": "El proveedor rechazó esta API key. Comprueba que copiaste la clave completa, o crea una nueva y guárdala aquí.",
+    "aiProviders.testResult.insufficient_credits": "Tu API key funciona, pero tu cuenta no tiene crédito. Añade crédito en la consola del proveedor — consulta «Cómo obtener una API key» — y vuelve a probar.",
+    "aiProviders.testResult.rate_limited": "El proveedor está limitando tu cuenta en este momento. Espera un momento y vuelve a probar.",
+    "aiProviders.testResult.overloaded": "El proveedor está sobrecargado en este momento. Inténtalo de nuevo en un minuto.",
+    "aiProviders.testResult.timeout": "El proveedor no respondió a tiempo. Comprueba tu conexión a internet e inténtalo de nuevo.",
 
     "aiProviders.howToGetKey.trigger": "Cómo obtener una API key",
     "aiProviders.howToGetKey.title": "Cómo obtener tu API key de {{provider}}",
-    "aiProviders.howToGetKey.intro": "Sigue estos pasos para generar una API key para {{provider}}. Manuscript la guarda cifrada en este dispositivo — tu clave nunca sale de tu equipo.",
+    "aiProviders.howToGetKey.intro": "Sigue estos pasos para generar una API key para {{provider}} y añadir crédito a tu cuenta. Manuscript la guarda cifrada en este dispositivo — tu clave nunca sale de tu equipo.",
     "aiProviders.howToGetKey.close": "Cerrar",
+    "aiProviders.howToGetKey.copyHint": "Copia este enlace y pégalo en tu navegador para abrir la consola del proveedor.",
+    "aiProviders.howToGetKey.copy": "Copiar enlace",
+    "aiProviders.howToGetKey.copied": "¡Copiado!",
 
-    "aiProviders.howToGetKey.anthropic.consoleLabel": "Abrir Anthropic Console",
     "aiProviders.howToGetKey.anthropic.steps": [
-        "Abre console.anthropic.com en tu navegador.",
-        "Inicia sesión o crea una cuenta gratuita en Anthropic.",
-        "Ve a Settings → API Keys en la barra lateral.",
-        "Pulsa Create Key y ponle un nombre como «Manuscript».",
-        "Copia la clave (empieza por sk-ant-) — solo se muestra una vez — y pégala aquí."
+        "Copia el enlace de abajo y abre console.anthropic.com en tu navegador. Inicia sesión o crea una cuenta.",
+        "Añade crédito primero: abre Settings → Billing y compra créditos (mínimo 5 $). Sin crédito, todas las solicitudes fallan.",
+        "Abre Settings → API Keys y pulsa Create Key. Ponle un nombre como «Manuscript».",
+        "Copia la clave (empieza por sk-ant-) de inmediato — solo se muestra una vez.",
+        "Pégala aquí, pulsa Guardar y luego Probar conexión."
     ],
 
-    "aiProviders.howToGetKey.openai.consoleLabel": "Abrir OpenAI Platform",
     "aiProviders.howToGetKey.openai.steps": [
-        "Abre platform.openai.com e inicia sesión.",
-        "Pulsa tu perfil (arriba a la derecha) y elige View API keys.",
-        "Pulsa Create new secret key y ponle un nombre.",
-        "Copia la clave (empieza por sk-) — solo se muestra una vez — y pégala aquí.",
-        "Configura un método de pago en Settings → Billing si todavía no lo tienes."
+        "Copia el enlace de abajo y abre platform.openai.com/api-keys en tu navegador. Inicia sesión o crea una cuenta.",
+        "Añade crédito primero: abre Settings → Billing, añade un método de pago y compra créditos (p. ej. 5 $). ChatGPT Plus no incluye crédito de API.",
+        "En la página de API keys, pulsa Create new secret key y ponle un nombre.",
+        "Copia la clave (empieza por sk-) de inmediato — solo se muestra una vez.",
+        "Pégala aquí, pulsa Guardar y luego Probar conexión."
     ],
 
-    "aiProviders.howToGetKey.gemini.consoleLabel": "Abrir Google AI Studio",
     "aiProviders.howToGetKey.gemini.steps": [
-        "Abre aistudio.google.com en tu navegador.",
-        "Inicia sesión con tu cuenta de Google.",
-        "Pulsa Get API key en la esquina superior derecha.",
-        "Elige un proyecto de Google Cloud existente o crea uno nuevo y pulsa Create API key.",
-        "Copia la clave y pégala aquí."
+        "Copia el enlace de abajo y abre aistudio.google.com/apikey en tu navegador. Inicia sesión con tu cuenta de Google.",
+        "Pulsa Create API key y elige o crea un proyecto de Google Cloud.",
+        "Copia la clave de inmediato, pégala aquí, pulsa Guardar y luego Probar conexión.",
+        "El nivel gratuito basta para empezar. Si alcanzas los límites, activa la facturación del proyecto en Google AI Studio."
     ],
 
-    "aiProviders.howToGetKey.groq.consoleLabel": "Abrir Groq Console",
     "aiProviders.howToGetKey.groq.steps": [
-        "Abre console.groq.com e inicia sesión (Google, GitHub o email).",
-        "Abre la pestaña API Keys en la barra lateral.",
+        "Copia el enlace de abajo y abre console.groq.com/keys en tu navegador. Inicia sesión (Google, GitHub o correo).",
         "Pulsa Create API Key y ponle un nombre.",
-        "Copia la clave (empieza por gsk_) — solo se muestra una vez.",
-        "Pégala aquí."
+        "Copia la clave (empieza por gsk_) de inmediato — solo se muestra una vez.",
+        "Pégala aquí, pulsa Guardar y luego Probar conexión.",
+        "El nivel gratuito tiene límites diarios. Para un uso regular, mejora tu plan en Settings → Billing."
     ],
 
-    "aiProviders.howToGetKey.xai.consoleLabel": "Abrir xAI Console",
     "aiProviders.howToGetKey.xai.steps": [
-        "Abre console.x.ai e inicia sesión con tu cuenta de X / xAI.",
-        "Abre la pestaña API Keys.",
-        "Pulsa Create API Key y ponle un nombre.",
-        "Copia la clave (empieza por xai-) — solo se muestra una vez.",
-        "Pégala aquí."
+        "Copia el enlace de abajo y abre console.x.ai en tu navegador. Inicia sesión o crea una cuenta de xAI.",
+        "Añade crédito primero: abre Billing → Credits y compra créditos. Sin crédito, todas las solicitudes fallan.",
+        "Abre API Keys y pulsa Create API Key.",
+        "Copia la clave (empieza por xai-) de inmediato — solo se muestra una vez.",
+        "Pégala aquí, pulsa Guardar y luego Probar conexión."
     ],
 
-    "aiProviders.howToGetKey.deepseek.consoleLabel": "Abrir DeepSeek Platform",
     "aiProviders.howToGetKey.deepseek.steps": [
-        "Abre platform.deepseek.com e inicia sesión o crea una cuenta.",
-        "Abre la página API Keys en la barra lateral.",
-        "Pulsa Create new API key.",
-        "Copia la clave — solo se muestra una vez.",
-        "Pégala aquí. Si hace falta, añade saldo antes en la página Billing."
+        "Copia el enlace de abajo y abre platform.deepseek.com/api_keys en tu navegador. Inicia sesión o crea una cuenta.",
+        "Añade saldo primero: abre Billing → Top up e ingresa fondos. Sin saldo, todas las solicitudes fallan.",
+        "En la página de API Keys, pulsa Create new API key.",
+        "Copia la clave de inmediato — solo se muestra una vez.",
+        "Pégala aquí, pulsa Guardar y luego Probar conexión."
     ],
 
-    "aiProviders.howToGetKey.mistral.consoleLabel": "Abrir Mistral Console",
     "aiProviders.howToGetKey.mistral.steps": [
-        "Abre console.mistral.ai e inicia sesión o crea una cuenta.",
-        "Abre la pestaña API Keys dentro de tu workspace.",
-        "Pulsa Create new key y ponle un nombre.",
-        "Copia la clave — solo se muestra una vez.",
-        "Pégala aquí. Si hace falta, añade antes un método de pago en Billing."
+        "Copia el enlace de abajo y abre console.mistral.ai/api-keys en tu navegador. Inicia sesión o crea una cuenta.",
+        "Activa la facturación primero: abre Workspace → Billing y añade un método de pago (o activa el plan gratuito Experiment).",
+        "En la página de API Keys, pulsa Create new key.",
+        "Copia la clave de inmediato — solo se muestra una vez.",
+        "Pégala aquí, pulsa Guardar y luego Probar conexión."
     ],
 
-    "aiProviders.howToGetKey.openrouter.consoleLabel": "Abrir OpenRouter",
     "aiProviders.howToGetKey.openrouter.steps": [
-        "Abre openrouter.ai e inicia sesión (Google, GitHub o email).",
-        "Pulsa tu avatar (arriba a la derecha) y elige Keys.",
-        "Pulsa Create Key y ponle un nombre.",
-        "Copia la clave (empieza por sk-or-) — solo se muestra una vez.",
-        "Pégala aquí y carga saldo en la página Credits para empezar a usarla."
+        "Copia el enlace de abajo y abre openrouter.ai/keys en tu navegador. Inicia sesión (Google, GitHub o correo).",
+        "Compra créditos primero: abre openrouter.ai/credits y recarga. Sin créditos, todas las solicitudes fallan.",
+        "En la página Keys, pulsa Create Key y ponle un nombre.",
+        "Copia la clave (empieza por sk-or-) de inmediato — solo se muestra una vez.",
+        "Pégala aquí, pulsa Guardar y luego Probar conexión."
     ],
     "aiProviders.advancedSettings": "Configuración avanzada",
     "aiProviders.advancedDescription": "La aplicación selecciona automáticamente el mejor modelo para cada tarea. Cambia estos valores solo si conoces bien las diferencias entre modelos — una selección incorrecta puede reducir la calidad del resultado o aumentar los costos.",

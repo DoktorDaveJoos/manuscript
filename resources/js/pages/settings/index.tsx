@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
+import { Check, Copy, Trash2 } from 'lucide-react';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -550,19 +550,25 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
         })
             .then(async (res) => {
                 const json = await res.json();
-                setTestStatus(
-                    json.success
-                        ? { type: 'success', message: json.message }
-                        : { type: 'error', message: json.message },
-                );
-                setTimeout(() => setTestStatus({ type: 'idle' }), 5000);
+                if (json.success) {
+                    setTestStatus({ type: 'success', message: json.message });
+                    setTimeout(() => setTestStatus({ type: 'idle' }), 5000);
+                    return;
+                }
+                // Actionable failures (no credits, bad key, …) get a precise
+                // localized explanation and stay visible until the next test.
+                setTestStatus({
+                    type: 'error',
+                    message: isExplainedTestFailure(json.kind)
+                        ? t(`aiProviders.testResult.${json.kind}`)
+                        : json.message || t('aiProviders.testFailed'),
+                });
             })
             .catch(() => {
                 setTestStatus({
                     type: 'error',
                     message: t('aiProviders.testFailed'),
                 });
-                setTimeout(() => setTestStatus({ type: 'idle' }), 5000);
             });
     }, [setting.provider, t]);
 
@@ -665,12 +671,12 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                                 {testStatus.message}
                             </span>
                         )}
-                        {testStatus.type === 'error' && (
-                            <span className="text-[12px] font-medium text-danger">
-                                {testStatus.message}
-                            </span>
-                        )}
                     </div>
+                    {testStatus.type === 'error' && (
+                        <p className="text-[12px] leading-[1.5] font-medium text-danger">
+                            {testStatus.message}
+                        </p>
+                    )}
                 </div>
             </form>
             {guideOpen && (
@@ -681,6 +687,26 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                 />
             )}
         </>
+    );
+}
+
+// Test failures that have a dedicated, actionable explanation in the
+// settings locale files (aiProviders.testResult.*). Anything else falls
+// back to the provider's raw error message.
+const EXPLAINED_TEST_FAILURES = [
+    'invalid_key',
+    'insufficient_credits',
+    'rate_limited',
+    'overloaded',
+    'timeout',
+] as const;
+
+function isExplainedTestFailure(
+    kind: unknown,
+): kind is (typeof EXPLAINED_TEST_FAILURES)[number] {
+    return (
+        typeof kind === 'string' &&
+        (EXPLAINED_TEST_FAILURES as readonly string[]).includes(kind)
     );
 }
 
@@ -705,6 +731,7 @@ function GetApiKeyDialog({
     onClose: () => void;
 }) {
     const { t } = useTranslation('settings');
+    const [copied, setCopied] = useState(false);
     const titleText = t('aiProviders.howToGetKey.title', {
         provider: providerLabel,
     });
@@ -713,7 +740,13 @@ function GetApiKeyDialog({
     });
     const steps = Array.isArray(rawSteps) ? (rawSteps as string[]) : [];
     const consoleUrl = PROVIDER_CONSOLE_URLS[provider] ?? '';
-    const consoleLabel = t(`aiProviders.howToGetKey.${provider}.consoleLabel`);
+
+    const handleCopy = useCallback(() => {
+        navigator.clipboard.writeText(consoleUrl).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    }, [consoleUrl]);
 
     return (
         <Dialog onClose={onClose} title={titleText} width={520}>
@@ -737,18 +770,30 @@ function GetApiKeyDialog({
                     </li>
                 ))}
             </ol>
-            <div className="mt-7 flex items-center justify-end gap-2">
+            <div className="mt-7 rounded-lg border border-border-light bg-neutral-bg p-4">
+                <p className="text-[12px] leading-[1.5] text-ink-muted">
+                    {t('aiProviders.howToGetKey.copyHint')}
+                </p>
+                <div className="mt-2.5 flex items-center gap-2">
+                    <code className="min-w-0 flex-1 truncate font-mono text-[13px] text-ink">
+                        {consoleUrl}
+                    </code>
+                    <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        onClick={handleCopy}
+                    >
+                        {copied ? <Check size={14} /> : <Copy size={14} />}
+                        {copied
+                            ? t('aiProviders.howToGetKey.copied')
+                            : t('aiProviders.howToGetKey.copy')}
+                    </Button>
+                </div>
+            </div>
+            <div className="mt-5 flex items-center justify-end">
                 <Button type="button" variant="secondary" onClick={onClose}>
                     {t('aiProviders.howToGetKey.close')}
-                </Button>
-                <Button asChild variant="primary">
-                    <a
-                        href={consoleUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        {consoleLabel}
-                    </a>
                 </Button>
             </div>
         </Dialog>
