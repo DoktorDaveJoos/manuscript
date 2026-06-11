@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.7.0 (2026-06-11)
+
+### Features
+
+- **Book settings** — a per-book settings area replaces the Publish page; prose and proofreading configuration moved from global settings to the book level (48dbeb97, 78e94ba5)
+- **AI consolidation** — editorial review is now the single AI destination: the AI dashboard, preparation pipeline, beautify, bulk revise, extraction, and story bible are removed, and the AI panel slims to three revise actions with merged editorial notes (0bbf3ffb, 91d5b192, ef45d09f, 70c17d48, beb25125)
+- **Editorial review** — review runs refresh the semantic index and writing style themselves (3e962a9e); failures carry classified error codes and runs are resumable (04c720b9); the report shows how many chapters were edited since the last review, with shared quality bands across score tiles (d7873877)
+- **Editorial rewrite** — rewrite a chapter directly from unresolved editorial feedback (388d4f4d)
+- **Scene structure** — the AI proposes a scene segmentation for a chapter, reviewed in a dialog with per-scene titles and word counts; accepting writes a new chapter version tracked in history (95ca4c11)
+- **Writing-style gate** — before the first prose-generating action, a dialog offers to derive the book's writing style from existing chapters; analyze inline, skip once, or dismiss permanently (db5fd1d8)
+- **Print-ready export** — bleed modes (all edges vs outer-only) with KDP/IngramSpark-compatible presets, exact trim dimensions, per-template drop caps, and export settings that persist per book (328b2f92)
+- **Free trial** — a one-shot 7-day trial can be started from the welcome screen and satisfies the license gate while active; it never restarts after expiry (f5fbe0ff)
+- **Plot coach** — board-aware foundations guidance with onboarding hints (7d9c5f08); coach is the default mode and the board refetches latest state on switch (36dae435); the empty plot board leads with a coach CTA (9ff8130b)
+- **AI providers** — funding-aware setup guides and a clear out-of-credits error (1afb73a7)
+
+### Fixes
+
+- Backup: exports were saved without a file extension, blocking re-import, and imports sent multipart requests with a forced JSON content type (5279f99f, 144d047e)
+- Editor: streamed multi-paragraph insertions ran in a single Tiptap chain and could crash with a RangeError mid-stream (f5190a78)
+
+### Other Changes
+
+- Perf: per-launch optimize is version-guarded, opcache uses a version-keyed file cache, and boot migrations short-circuit when the schema is current (6a861746); de/es locales are code-split out of the entry bundle (58c6656a)
+- Onboarding: a primary "Start empty" action with an or-import divider replaces the trailing Skip button (ff561c05)
+- UI: shared settings side-nav component and design-system primary CTAs (ff561c05)
+
 ## v0.6.0 (2026-06-10)
 
 ### Features
