@@ -225,7 +225,7 @@ function LicenseSection() {
                                         className="font-mono"
                                     />
                                     <Button
-                                        variant="accent"
+                                        variant="primary"
                                         type="submit"
                                         disabled={activating || !key}
                                         className="h-9"
@@ -956,7 +956,7 @@ function UpdatesSection({
                     <div>
                         {updateState.status === 'ready' ? (
                             <Button
-                                variant="accent"
+                                variant="primary"
                                 type="button"
                                 onClick={installUpdate}
                             >

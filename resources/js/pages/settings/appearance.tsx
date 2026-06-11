@@ -242,7 +242,7 @@ export default function Appearance({ settings, version }: Props) {
                         <div>
                             {updateState.status === 'ready' ? (
                                 <Button
-                                    variant="accent"
+                                    variant="primary"
                                     size="sm"
                                     type="button"
                                     onClick={installUpdate}

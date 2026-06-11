@@ -62,8 +62,9 @@
     "progressBar.revised": "revisado",
     "progressBar.draft": "borrador",
 
-    "uploadPhase.subtitle": "Importa tus archivos de manuscrito — uno por trama",
-    "uploadPhase.skip": "Omitir — comenzar en blanco",
+    "uploadPhase.subtitle": "Empieza de cero o trae tu manuscrito existente",
+    "uploadPhase.startEmpty": "Empezar en blanco",
+    "uploadPhase.orImport": "o importa tu manuscrito existente",
     "uploadPhase.importFiles_one": "Importar {{count}} archivo",
     "uploadPhase.importFiles_other": "Importar {{count}} archivos",
     "uploadPhase.uploading": "Subiendo…",

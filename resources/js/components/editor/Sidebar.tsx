@@ -52,7 +52,7 @@ export default function Sidebar({
     onChapterNavigate,
     onOpenInNewPane,
 }: {
-    book: Book;
+    book: Pick<Book, 'id'>;
     storylines: Storyline[];
     activeChapterId?: number;
     activeChapterTitle?: string;

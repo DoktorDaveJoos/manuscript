@@ -62,8 +62,9 @@
     "progressBar.revised": "Überarbeitet",
     "progressBar.draft": "Entwurf",
 
-    "uploadPhase.subtitle": "Importiere deine Manuskriptdateien — eine pro Handlungsstrang",
-    "uploadPhase.skip": "Überspringen — leer starten",
+    "uploadPhase.subtitle": "Beginne neu oder bringe dein bestehendes Manuskript mit",
+    "uploadPhase.startEmpty": "Leer beginnen",
+    "uploadPhase.orImport": "oder importiere dein bestehendes Manuskript",
     "uploadPhase.importFiles_one": "{{count}} Datei importieren",
     "uploadPhase.importFiles_other": "{{count}} Dateien importieren",
     "uploadPhase.uploading": "Wird hochgeladen…",

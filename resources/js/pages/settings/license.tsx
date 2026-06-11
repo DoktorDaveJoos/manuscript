@@ -158,7 +158,7 @@ export default function LicensePage() {
                                     )}
                                 </div>
                                 <Button
-                                    variant="accent"
+                                    variant="primary"
                                     type="submit"
                                     disabled={activating || !key}
                                     className="h-9"

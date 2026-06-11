@@ -143,7 +143,7 @@ export default function BatchProposalCard({
                 {!isResolved && (
                     <>
                         <Button
-                            variant="accent"
+                            variant="primary"
                             size="sm"
                             onClick={() => onApprove(proposalId)}
                             disabled={dimmed}

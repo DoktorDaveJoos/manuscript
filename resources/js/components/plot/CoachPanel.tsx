@@ -103,7 +103,7 @@ function GateCard({ icon, title, body, cta, href }: GateCardProps) {
                 {body}
             </p>
             <div className="mt-6">
-                <Button variant="accent" size="sm" asChild>
+                <Button variant="primary" size="sm" asChild>
                     <Link href={href}>{cta}</Link>
                 </Button>
             </div>
