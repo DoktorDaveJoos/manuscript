@@ -1311,6 +1311,7 @@ function BackupSection({
                                     type="submit"
                                     variant="primary"
                                     disabled={!importFile || phase !== 'idle'}
+                                    data-testid="backup-import-submit"
                                 >
                                     {phase === 'importing'
                                         ? t('backup.import.busy')

@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\License;
+use App\Services\BackupEncryptionService;
+use App\Services\BackupService;
 
 it('renders settings page with all tabs', function () {
     $page = visit('/settings');
@@ -49,4 +51,47 @@ it('shows active license status when pro is enabled', function () {
     $page->assertNoJavaScriptErrors()
         ->assertSee('License active')
         ->assertSee('Deactivate');
+});
+
+it('imports a backup file through the backup section', function () {
+    // Isolate BackupService on a temp database — stageImport renames the
+    // live DB aside, which must never touch the test app's database.
+    $workDir = sys_get_temp_dir().'/manuscript-backup-browser-'.uniqid();
+    mkdir($workDir);
+
+    $liveDb = $workDir.'/live.sqlite';
+    $pdo = new PDO('sqlite:'.$liveDb);
+    $pdo->exec('CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT)');
+    $pdo = null;
+
+    $backupFile = $workDir.'/manuscript-backup-restore.sqlite';
+    $pdo = new PDO('sqlite:'.$backupFile);
+    $pdo->exec('CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT)');
+    $pdo = null;
+
+    app()->instance(
+        BackupService::class,
+        new BackupService(new BackupEncryptionService, $liveDb),
+    );
+
+    $page = visit('/settings');
+
+    // The import fetch must send the file as real multipart — forcing a JSON
+    // content type on the FormData body makes the server drop the upload and
+    // answer "The backup field is required."
+    $page->assertNoJavaScriptErrors()
+        ->click('Backup')
+        ->assertSee('Restore your data')
+        ->attach('input[type="file"]', $backupFile)
+        ->assertSee('manuscript-backup-restore.sqlite')
+        ->click('[data-testid="backup-import-submit"]')
+        ->assertSee('Quit Manuscript and reopen');
+
+    expect(file_exists($liveDb.'.pending-import'))->toBeTrue();
+
+    foreach (glob($workDir.'/*') ?: [] as $f) {
+        @unlink($f);
+    }
+    @unlink($workDir.'/.backup-state.json');
+    @rmdir($workDir);
 });
