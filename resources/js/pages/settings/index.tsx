@@ -1079,9 +1079,12 @@ function BackupSection({
                 if (exportPassphrase) {
                     formData.append('passphrase', exportPassphrase);
                 }
+                // No explicit Content-Type: the FormData body must set its
+                // own multipart boundary, or PHP never parses the passphrase
+                // and silently exports unencrypted.
                 const res = await fetch(backupExport.url(), {
                     method: 'POST',
-                    headers: jsonFetchHeaders(),
+                    headers: { Accept: 'application/json' },
                     body: formData,
                 });
                 if (!res.ok) {
@@ -1131,9 +1134,11 @@ function BackupSection({
                 if (importPassphrase) {
                     formData.append('passphrase', importPassphrase);
                 }
+                // No explicit Content-Type — see handleExport: a forced JSON
+                // content type makes PHP drop the multipart body entirely.
                 const res = await fetch(backupImport.url(), {
                     method: 'POST',
-                    headers: jsonFetchHeaders(),
+                    headers: { Accept: 'application/json' },
                     body: formData,
                 });
                 const json = await res.json().catch(() => ({}));

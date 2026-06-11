@@ -1,8 +1,6 @@
 <?php
 
 use App\Models\License;
-use App\Services\BackupEncryptionService;
-use App\Services\BackupService;
 
 it('renders settings page with all tabs', function () {
     $page = visit('/settings');
@@ -53,45 +51,49 @@ it('shows active license status when pro is enabled', function () {
         ->assertSee('Deactivate');
 });
 
-it('imports a backup file through the backup section', function () {
-    // Isolate BackupService on a temp database — stageImport renames the
-    // live DB aside, which must never touch the test app's database.
+it('sends the backup import as plain multipart without a forced content type', function () {
+    // The browser-test bridge cannot deliver multipart file bodies to the
+    // in-process app (same limitation as ImportTest), so this asserts the
+    // request shape instead: the import fetch must NOT set a Content-Type
+    // header — fetch has to derive the multipart boundary from the FormData
+    // body. When a JSON content type was forced, PHP dropped the upload and
+    // every import failed with "The backup field is required."
     $workDir = sys_get_temp_dir().'/manuscript-backup-browser-'.uniqid();
     mkdir($workDir);
-
-    $liveDb = $workDir.'/live.sqlite';
-    $pdo = new PDO('sqlite:'.$liveDb);
-    $pdo->exec('CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT)');
-    $pdo = null;
-
     $backupFile = $workDir.'/manuscript-backup-restore.sqlite';
     $pdo = new PDO('sqlite:'.$backupFile);
     $pdo->exec('CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT)');
     $pdo = null;
 
-    app()->instance(
-        BackupService::class,
-        new BackupService(new BackupEncryptionService, $liveDb),
-    );
-
     $page = visit('/settings');
 
-    // The import fetch must send the file as real multipart — forcing a JSON
-    // content type on the FormData body makes the server drop the upload and
-    // answer "The backup field is required."
     $page->assertNoJavaScriptErrors()
         ->click('Backup')
         ->assertSee('Restore your data')
         ->attach('input[type="file"]', $backupFile)
-        ->assertSee('manuscript-backup-restore.sqlite')
-        ->click('[data-testid="backup-import-submit"]')
-        ->assertSee('Quit Manuscript and reopen');
+        ->assertSee('manuscript-backup-restore.sqlite');
 
-    expect(file_exists($liveDb.'.pending-import'))->toBeTrue();
+    $page->script(<<<'JS'
+        window.__importRequest = null;
+        const originalFetch = window.fetch;
+        window.fetch = (...args) => {
+            window.__importRequest = {
+                headers: (args[1] && args[1].headers) || {},
+                isFormData: args[1]?.body instanceof FormData,
+            };
+            return originalFetch(...args);
+        };
+    JS);
 
-    foreach (glob($workDir.'/*') ?: [] as $f) {
-        @unlink($f);
-    }
-    @unlink($workDir.'/.backup-state.json');
+    $page->click('[data-testid="backup-import-submit"]')->wait(1);
+
+    $captured = $page->script('window.__importRequest');
+
+    expect($captured)->not->toBeNull('the import button did not trigger a request');
+    expect($captured['isFormData'])->toBeTrue();
+    $headerNames = array_map('strtolower', array_keys($captured['headers']));
+    expect($headerNames)->not->toContain('content-type');
+
+    @unlink($backupFile);
     @rmdir($workDir);
 });
