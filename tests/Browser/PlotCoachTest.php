@@ -242,6 +242,37 @@ it('does not render the coach insights panel in board mode', function () {
         ->assertDontSee('What the coach can see');
 });
 
+it('shows onboarding hints in the insights panel when the board is empty', function () {
+    License::factory()->create();
+    $book = Book::factory()->withAi()->create();
+
+    PlotCoachSession::factory()->create(['book_id' => $book->id]);
+
+    $page = visit("/books/{$book->id}/plot");
+
+    $page->assertNoJavaScriptErrors();
+
+    // Empty board → the panel invites instead of assuming structure exists.
+    $page->assertSee('What can you do for me?');
+    $page->assertDontSee('Turn the approved beats into chapter stubs.');
+});
+
+it('shows working hints in the insights panel once the board has structure', function () {
+    License::factory()->create();
+    $book = Book::factory()->withAi()->create();
+
+    PlotCoachSession::factory()->create(['book_id' => $book->id]);
+
+    Act::factory()->create(['book_id' => $book->id, 'number' => 1, 'title' => 'Act I']);
+
+    $page = visit("/books/{$book->id}/plot");
+
+    $page->assertNoJavaScriptErrors();
+
+    $page->assertSee('Turn the approved beats into chapter stubs.');
+    $page->assertDontSee('What can you do for me?');
+});
+
 // No-Pro redirect happens at middleware level (see PlotCoachControllerTest
 // feature test for the 403). Browser tests can't reliably test that due to
 // RefreshDatabase transaction isolation — same reason noted in

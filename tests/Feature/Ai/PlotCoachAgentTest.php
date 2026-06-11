@@ -952,6 +952,94 @@ test('plot coach agent skips temperature on OpenAI to avoid reasoning-model reje
     expect($agent->temperature())->toBe(0.6);
 });
 
+test('plot coach appends foundations guidance when the board has no structure', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create([
+        'stage' => PlotCoachStage::Intake,
+    ]);
+
+    $instructions = (string) (new PlotCoachAgent($book, $session))->instructions();
+
+    expect($instructions)
+        ->toContain('Foundations first')
+        ->toContain("Hero's Journey")
+        ->toContain('what KIND of story');
+});
+
+test('plot coach appends foundations guidance even in plotting stage when the board is empty', function () {
+    // A session can sit in plotting with an empty board (legacy data, or the
+    // author deleted the structure). Foundations are keyed on the BOARD, not
+    // the stage.
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create([
+        'stage' => PlotCoachStage::Plotting,
+    ]);
+
+    $instructions = (string) (new PlotCoachAgent($book, $session))->instructions();
+
+    expect($instructions)
+        ->toContain('Current stage: Plotting')
+        ->toContain('Foundations first');
+});
+
+test('plot coach drops foundations guidance once acts exist on the board', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create([
+        'stage' => PlotCoachStage::Plotting,
+    ]);
+
+    Act::factory()->for($book)->create(['number' => 1, 'title' => 'Act I']);
+
+    $instructions = (string) (new PlotCoachAgent($book, $session))->instructions();
+
+    expect($instructions)->not->toContain('Foundations first');
+});
+
+test('plot coach drops foundations guidance when plot points exist without acts', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create([
+        'stage' => PlotCoachStage::Plotting,
+    ]);
+
+    PlotPoint::factory()->for($book)->create(['title' => 'Opening']);
+
+    $instructions = (string) (new PlotCoachAgent($book, $session))->instructions();
+
+    expect($instructions)->not->toContain('Foundations first');
+});
+
+test('plot coach persona teaches plotting vocabulary in plain words across all stages', function () {
+    foreach (PlotCoachStage::cases() as $stage) {
+        $book = Book::factory()->create();
+        $session = PlotCoachSession::factory()->for($book, 'book')->create([
+            'stage' => $stage,
+        ]);
+
+        $instructions = (string) (new PlotCoachAgent($book, $session))->instructions();
+
+        expect($instructions)
+            ->toContain('Teaching')
+            ->toContain('plain words');
+    }
+});
+
+test('plot coach intake guidance recommends a structure framework by name', function () {
+    $book = Book::factory()->create();
+    $session = PlotCoachSession::factory()->for($book, 'book')->create([
+        'stage' => PlotCoachStage::Intake,
+    ]);
+
+    // With structure already on the board the foundations block is gone —
+    // the framework recommendation must live in the intake guidance itself.
+    Act::factory()->for($book)->create(['number' => 1, 'title' => 'Act I']);
+
+    $instructions = (string) (new PlotCoachAgent($book, $session))->instructions();
+
+    expect($instructions)
+        ->not->toContain('Foundations first')
+        ->toContain('Save the Cat');
+});
+
 test('plot coach agent does not churn session updates while the digest is empty', function () {
     $book = Book::factory()->create();
 

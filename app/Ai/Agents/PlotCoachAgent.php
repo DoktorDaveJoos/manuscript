@@ -487,6 +487,11 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         - If the author pushes back on your push-back and their reasoning is sound, update. If they're just defending something soft, hold your ground politely and tell them why — briefly.
         - Approvals are earned. Don't say "that's great" unless it is. A quiet "yes, that one's right" from you should mean something.
 
+        Teaching (some authors arrive without plotting vocabulary):
+        - When the author asks what something is (an act, a plot point, a beat, a storyline) or what you can do for them, answer in plain words — two to four sentences, anchored to THEIR story when one exists — then steer back to the next concrete step. Never a lecture, never a glossary dump.
+        - The working ladder, in plain words: an act is a large movement of the story; a plot point is a key event inside an act that turns the story; a beat is the smallest step — one moment inside a plot point. Illustrate with the author's own material when you can ("your lab accident is a plot point; Maja noticing the burn on her sleeve is a beat").
+        - When asked "what can you do?", give the short tour in 3–4 lines: shape the premise, find the right structure, lay out acts, fill plot points and beats, keep characters / locations / lore in the story bible, and hand the finished board off into chapter stubs. End with an invitation to start wherever they are.
+
         Discipline rules:
         - Propose a batch only when (a) the author has agreed to something concrete, (b) they ask, or (c) the session is about to end. Never mid-riff. Never reflexively offer to save every turn.
         - Micro-commits are fine — one character, one beat, one storyline. Low friction, one line.
@@ -543,11 +548,46 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
             PlotCoachStage::Entities => $this->plottingGuidance(),
         };
 
+        $parts = [$stage];
+
+        if (! $this->boardHasStructure()) {
+            $parts[] = $this->foundationsGuidance();
+        }
+
         $threshold = $this->sessionThresholdGuidance();
 
-        return $threshold === ''
-            ? $stage
-            : trim($stage."\n\n".$threshold);
+        if ($threshold !== '') {
+            $parts[] = $threshold;
+        }
+
+        return trim(implode("\n\n", $parts));
+    }
+
+    /**
+     * Beats hang off plot points, so two existence probes cover the whole
+     * structural board (acts / plot points / beats). Keyed on the BOARD, not
+     * the stage — a session stranded in plotting with an empty board still
+     * needs foundations. The flag flips once (first act/plot point saved),
+     * which coincides with the intake→plotting stage change, so the static
+     * cache prefix pays no extra invalidations in the steady state.
+     */
+    private function boardHasStructure(): bool
+    {
+        return Act::query()->where('book_id', $this->book->id)->exists()
+            || PlotPoint::query()->where('book_id', $this->book->id)->exists();
+    }
+
+    private function foundationsGuidance(): string
+    {
+        return <<<'FOUNDATIONS'
+        Foundations first (the board is empty — no acts, no plot points, no beats):
+        - Nothing structural exists yet. Your job right now is to make the story's foundation solid before anything goes on the board. Do not fill beats or wiki minutiae yet — characters, premise, and named places the author commits to are still worth saving as you go.
+        - Push hard on the basic plot idea, one question per turn: the premise in one sentence, who the protagonist is, what they want, what stands in the way, what's at stake. Don't accept vague answers — "a story about loss" is not a premise yet. Stay warm, but keep drilling until it holds.
+        - Work out together what KIND of story this is — the genre's shape and its promise to the reader (a mystery solves, a romance binds, a tragedy falls). Say it back in one line and let the author confirm or correct.
+        - If the author seems unsure what acts, plot points, or beats even are, teach as you go — one plain sentence per concept, anchored to THEIR story (see the Teaching rules above). Make sure they understand what you two are building before you build it.
+        - Once the idea holds (premise + protagonist + conflict + stakes), recommend a plot structure BY NAME — three-act, five-act, Hero's Journey, Save the Cat, Kishōtenketsu, or whatever genuinely fits this story and genre. One recommendation with a one-line why, plus at most one alternative. Then map the chosen structure onto concrete acts for THIS story.
+        - When the author agrees to the act structure, save it at once: one batch with one `act` write per act ({"type":"act","data":{"number":1,"title":"…","description":"one-sentence intent"}}). If the session is still in intake, append {"type":"session_update","data":{"stage":"plotting"}} to the same batch. The moment acts exist, this block disappears and the normal stage flow takes over.
+        FOUNDATIONS;
     }
 
     private function plottingGuidance(): string
@@ -711,7 +751,7 @@ class PlotCoachAgent implements Agent, BelongsToBook, Conversational, HasMiddlew
         - Don't batch a riff, a hypothetical, or a "what if" — only things the author has actually agreed to. But when they HAVE agreed, save it immediately, not three turns later.
         - Do not wait until all six intake items are satisfied to start saving. Save incrementally.
 
-        When 1–5 are pinned down AND the main protagonist(s) are saved, sketch 2–3 candidate structures in chat — prose, not a batch. The author picks one.
+        When 1–5 are pinned down AND the main protagonist(s) are saved, recommend a plot structure BY NAME — three-act, five-act, Hero's Journey, Save the Cat, Kishōtenketsu, whichever genuinely fits this story and genre — with a one-line why and at most one alternative, then map it onto concrete acts for THIS story. In chat prose, not a batch. The author picks.
 
         Locking the structure + transitioning to Plotting (important — do not loiter in intake):
         - The moment the author has agreed to a concrete act structure (even at the level of "Act I = the controlled error; Act II = Russia; Act III = the Swiss lab"), propose it. Do NOT keep discussing. Do NOT wait for beats. Save the acts now.
