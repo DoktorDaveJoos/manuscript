@@ -1090,11 +1090,16 @@ function BackupSection({
                     return;
                 }
                 const blob = await res.blob();
+                // Symfony may emit the filename quoted or as a bare token —
+                // match both, and keep an importable extension on the
+                // fallback so the import picker can always select the file.
                 const filename =
                     res.headers
                         .get('content-disposition')
-                        ?.match(/filename="([^"]+)"/)?.[1] ||
-                    'manuscript-backup';
+                        ?.match(/filename="?([^";]+)"?/)?.[1] ||
+                    (exportPassphrase
+                        ? 'manuscript-backup.msbk'
+                        : 'manuscript-backup.sqlite');
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
