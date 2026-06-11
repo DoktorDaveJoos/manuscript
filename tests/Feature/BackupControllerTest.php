@@ -60,6 +60,24 @@ test('export endpoint returns encrypted MSBK with passphrase', function () {
     expect($disposition)->toMatch('/manuscript-backup-\d{4}-\d{2}-\d{2}-\d{6}\.msbk/');
 });
 
+test('export content-disposition quotes the filename so the frontend can parse it', function () {
+    // The settings page extracts the download name with /filename="([^"]+)"/.
+    // Symfony emits token filenames UNQUOTED, so the regex never matched and
+    // every export was saved as extensionless "manuscript-backup" — which the
+    // import picker (accept=".msbk,.sqlite") then refuses to select.
+    $plain = $this->post(route('settings.backup.export'));
+    $plain->assertOk();
+    expect($plain->headers->get('content-disposition'))
+        ->toMatch('/filename="manuscript-backup-\d{4}-\d{2}-\d{2}-\d{6}\.sqlite"/');
+
+    $encrypted = $this->post(route('settings.backup.export'), [
+        'passphrase' => 'strong-pass',
+    ]);
+    $encrypted->assertOk();
+    expect($encrypted->headers->get('content-disposition'))
+        ->toMatch('/filename="manuscript-backup-\d{4}-\d{2}-\d{2}-\d{6}\.msbk"/');
+});
+
 test('export rejects passphrase shorter than 8 characters', function () {
     $this->post(route('settings.backup.export'), [
         'passphrase' => 'short',
