@@ -158,7 +158,6 @@ Route::post('/update/install', [UpdateController::class, 'install'])->name('upda
 // Unified settings page
 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::put('/settings', [AppSettingsController::class, 'update'])->name('settings.update');
-Route::put('/settings/proofreading', [SettingsController::class, 'updateProofreadingConfig'])->name('settings.proofreading.update');
 Route::put('/books/{book}/settings/custom-dictionary', [SettingsController::class, 'updateCustomDictionary'])->name('books.settings.custom-dictionary.update');
 Route::post('/books/{book}/settings/custom-dictionary/seed', [SettingsController::class, 'seedCustomDictionary'])->name('books.settings.custom-dictionary.seed');
 
@@ -264,6 +263,8 @@ Route::put('/books/{book}/settings/writing-style', [BookSettingsController::clas
 Route::get('/books/{book}/settings/prose-rules', [BookSettingsController::class, 'proseRules'])->name('books.settings.prose-rules');
 Route::put('/books/{book}/settings/prose-rules', [BookSettingsController::class, 'updateProsePassRules'])->name('books.settings.prose-rules.update');
 Route::get('/books/{book}/settings/prose-pass-rules', fn (Book $book) => redirect()->route('books.settings.prose-rules', $book))->name('books.settings.prose-pass-rules');
+Route::get('/books/{book}/settings/proofreading', [BookSettingsController::class, 'proofreading'])->name('books.settings.proofreading');
+Route::put('/books/{book}/settings/proofreading', [BookSettingsController::class, 'updateProofreadingConfig'])->name('books.settings.proofreading.update');
 Route::get('/books/{book}/settings/publishing', [BookSettingsController::class, 'publishing'])->name('books.settings.publishing');
 Route::get('/books/{book}/settings/cover', [BookSettingsController::class, 'cover'])->name('books.settings.cover');
 Route::get('/books/{book}/settings/export', [BookSettingsController::class, 'export'])->name('books.settings.export');

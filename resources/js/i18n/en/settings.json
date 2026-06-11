@@ -242,6 +242,7 @@
 
     "sidebar.proofreading": "Proofreading",
     "proofreading.title": "Proofreading",
+    "proofreading.pageTitle": "Proofreading — {{bookTitle}}",
     "proofreading.description": "Real-time spelling and grammar checking in the editor.",
     "proofreading.spelling.title": "Spell Check",
     "proofreading.spelling.enabled": "Enable spell check",

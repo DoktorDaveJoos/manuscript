@@ -10,6 +10,7 @@ type ActiveSection =
     | 'general'
     | 'writing-style'
     | 'prose-rules'
+    | 'proofreading'
     | 'publishing'
     | 'cover';
 
@@ -84,6 +85,11 @@ export default function BookSettingsLayout({
                                     label={t('section.prosePassRules')}
                                     href={`/books/${book.id}/settings/prose-rules`}
                                     isActive={activeSection === 'prose-rules'}
+                                />
+                                <NavItem
+                                    label={t('sidebar.proofreading')}
+                                    href={`/books/${book.id}/settings/proofreading`}
+                                    isActive={activeSection === 'proofreading'}
                                 />
                                 <NavItem
                                     label={t('section.publishing')}

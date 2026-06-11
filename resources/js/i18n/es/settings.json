@@ -242,6 +242,7 @@
 
     "sidebar.proofreading": "Corrección",
     "proofreading.title": "Corrección",
+    "proofreading.pageTitle": "Corrección — {{bookTitle}}",
     "proofreading.description": "Corrección ortográfica y gramatical en tiempo real en el editor.",
     "proofreading.spelling.title": "Corrección ortográfica",
     "proofreading.spelling.enabled": "Activar corrección ortográfica",

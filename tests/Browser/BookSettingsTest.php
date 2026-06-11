@@ -29,6 +29,8 @@ it('navigates between the book settings sections via the rail', function () {
         ->assertSee('Describe the prose voice')
         ->click('Revision Rules')
         ->assertSee("Show, don't tell")
+        ->click('Proofreading')
+        ->assertSee('Enable spell check')
         ->click('Publishing')
         ->assertSee('Klappentext')
         ->click('Cover')

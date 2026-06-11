@@ -5,22 +5,39 @@ use App\Models\Book;
 use App\Models\Character;
 use App\Models\WikiEntry;
 
-test('proofreading config can be updated', function () {
+test('book proofreading config can be updated', function () {
+    $book = Book::factory()->create();
     $config = Book::defaultProofreadingConfig();
     $config['spelling_enabled'] = false;
 
-    $this->put('/settings/proofreading', ['config' => $config])
+    $this->put(route('books.settings.proofreading.update', $book), ['config' => $config])
         ->assertOk()
         ->assertJson(['message' => 'Proofreading settings updated.']);
 
-    $stored = json_decode(AppSetting::get('proofreading_config'), true);
+    $stored = $book->refresh()->proofreading_config;
     expect($stored['spelling_enabled'])->toBeFalse();
     expect($stored['grammar_enabled'])->toBeTrue();
 });
 
 test('proofreading config validates required fields', function () {
-    $this->putJson('/settings/proofreading', ['config' => ['spelling_enabled' => true]])
-        ->assertUnprocessable();
+    $book = Book::factory()->create();
+
+    $this->putJson(route('books.settings.proofreading.update', $book), [
+        'config' => ['spelling_enabled' => true],
+    ])->assertUnprocessable();
+});
+
+test('proofreading page renders the book config', function () {
+    $config = Book::defaultProofreadingConfig();
+    $config['spelling_enabled'] = false;
+    $book = Book::factory()->create(['proofreading_config' => $config]);
+
+    $this->get(route('books.settings.proofreading', $book))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('books/settings/proofreading')
+            ->where('config.spelling_enabled', false)
+        );
 });
 
 test('custom dictionary can be updated', function () {
@@ -54,10 +71,10 @@ test('custom dictionary can be seeded from entities', function () {
     expect($words)->toContain('Aragorn', 'Strider', 'Elessar', 'Rivendell');
 });
 
-test('settings index includes proofreading config', function () {
+test('settings index no longer exposes proofreading config', function () {
     $this->get('/settings')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->has('proofreading_config'));
+        ->assertInertia(fn ($page) => $page->missing('proofreading_config'));
 });
 
 test('default proofreading config has correct structure', function () {
@@ -71,18 +88,40 @@ test('default proofreading config has correct structure', function () {
     expect($config['grammar_checks']['passive'])->toBeFalse();
 });
 
-test('global proofreading config falls back to defaults when not set', function () {
-    $config = Book::globalProofreadingConfig();
+test('book proofreading config falls back to defaults when not set', function () {
+    $book = Book::factory()->create();
 
-    expect($config)->toBe(Book::defaultProofreadingConfig());
+    expect($book->proofreadingConfig())->toBe(Book::defaultProofreadingConfig());
 });
 
-test('global proofreading config reads from app settings when set', function () {
+test('book proofreading config ignores the legacy global setting', function () {
     $custom = Book::defaultProofreadingConfig();
     $custom['spelling_enabled'] = false;
-
     AppSetting::set('proofreading_config', json_encode($custom));
+    AppSetting::clearCache();
 
-    $config = Book::globalProofreadingConfig();
-    expect($config['spelling_enabled'])->toBeFalse();
+    $book = Book::factory()->create();
+
+    expect($book->proofreadingConfig()['spelling_enabled'])->toBeTrue();
+});
+
+test('migration moves the global proofreading config onto books', function () {
+    $own = Book::defaultProofreadingConfig();
+    $own['grammar_checks']['passive'] = true;
+    $withOwn = Book::factory()->create(['proofreading_config' => $own]);
+    $without = Book::factory()->create();
+
+    $global = Book::defaultProofreadingConfig();
+    $global['grammar_enabled'] = false;
+    AppSetting::set('proofreading_config', json_encode($global));
+
+    $path = collect(glob(database_path('migrations/*_move_global_proofreading_config_to_books.php')))->sole();
+    $migration = require $path;
+    $migration->up();
+    AppSetting::clearCache();
+
+    expect($withOwn->refresh()->proofreading_config['grammar_checks']['passive'])->toBeTrue()
+        ->and($withOwn->proofreading_config['grammar_enabled'])->toBeTrue()
+        ->and($without->refresh()->proofreading_config['grammar_enabled'])->toBeFalse()
+        ->and(AppSetting::get('proofreading_config'))->toBeNull();
 });

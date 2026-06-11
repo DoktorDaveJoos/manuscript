@@ -113,6 +113,30 @@ class BookSettingsController extends Controller
         ]);
     }
 
+    public function proofreading(Book $book): Response
+    {
+        return Inertia::render('books/settings/proofreading', [
+            'book' => $book->only('id', 'title'),
+            'config' => $book->proofreadingConfig(),
+        ]);
+    }
+
+    public function updateProofreadingConfig(Request $request, Book $book): JsonResponse
+    {
+        $request->validate([
+            'config' => ['required', 'array'],
+            'config.spelling_enabled' => ['required', 'boolean'],
+            'config.grammar_enabled' => ['required', 'boolean'],
+            'config.grammar_checks' => ['required', 'array'],
+        ]);
+
+        $book->update([
+            'proofreading_config' => $request->input('config'),
+        ]);
+
+        return response()->json(['message' => __('Proofreading settings updated.')]);
+    }
+
     public function publishing(Book $book): Response
     {
         $book->load(['chapters' => fn ($q) => $q->orderBy('reader_order')]);

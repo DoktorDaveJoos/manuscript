@@ -36,6 +36,7 @@ class Book extends Model
             'export_drop_caps' => 'boolean',
             'custom_dictionary' => 'array',
             'cover_settings' => 'array',
+            'proofreading_config' => 'array',
         ];
     }
 
@@ -193,16 +194,12 @@ class Book extends Model
     /**
      * @return array{spelling_enabled: bool, grammar_enabled: bool, grammar_checks: array<string, bool>}
      */
-    public static function globalProofreadingConfig(): array
+    public function proofreadingConfig(): array
     {
-        $json = AppSetting::get('proofreading_config');
+        $saved = $this->proofreading_config;
 
-        if ($json) {
-            $decoded = is_string($json) ? json_decode($json, true) : $json;
-
-            if (is_array($decoded) && ! empty($decoded)) {
-                return $decoded;
-            }
+        if (is_array($saved) && ! empty($saved)) {
+            return $saved;
         }
 
         return self::defaultProofreadingConfig();

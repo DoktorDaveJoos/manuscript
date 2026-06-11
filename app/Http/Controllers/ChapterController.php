@@ -123,7 +123,7 @@ class ChapterController extends Controller
         return response()->json([
             'chapter' => $chapter,
             'prosePassRules' => $book->prosePassRules(),
-            'proofreadingConfig' => Book::globalProofreadingConfig(),
+            'proofreadingConfig' => $book->proofreadingConfig(),
             'customDictionary' => $book->custom_dictionary ?? [],
             'editorialChapterNote' => $latestCompletedReview?->chapterNoteFor($chapter->id),
             'editorialFindings' => $latestCompletedReview?->unresolvedFindingsForChapter($chapter->id) ?? [],

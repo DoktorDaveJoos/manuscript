@@ -37,27 +37,12 @@ class SettingsController extends Controller
         return Inertia::render('settings/index', [
             'settings' => $settings,
             'ai_providers' => $aiProviders,
-            'proofreading_config' => Book::globalProofreadingConfig(),
             'version' => config('app.version', '0.0.0'),
             'backup' => [
                 'has_rollback' => $this->backups->state()['has_rollback'],
                 'last_export_at' => AppSetting::get(BackupService::LAST_EXPORT_AT_KEY),
             ],
         ]);
-    }
-
-    public function updateProofreadingConfig(Request $request): JsonResponse
-    {
-        $request->validate([
-            'config' => ['required', 'array'],
-            'config.spelling_enabled' => ['required', 'boolean'],
-            'config.grammar_enabled' => ['required', 'boolean'],
-            'config.grammar_checks' => ['required', 'array'],
-        ]);
-
-        AppSetting::set('proofreading_config', json_encode($request->input('config')));
-
-        return response()->json(['message' => __('Proofreading settings updated.')]);
     }
 
     public function updateCustomDictionary(Request $request, Book $book): JsonResponse

@@ -242,6 +242,7 @@
 
     "sidebar.proofreading": "Korrekturlesen",
     "proofreading.title": "Korrekturlesen",
+    "proofreading.pageTitle": "Korrekturlesen — {{bookTitle}}",
     "proofreading.description": "Echtzeit-Rechtschreib- und Grammatikprüfung im Editor.",
     "proofreading.spelling.title": "Rechtschreibprüfung",
     "proofreading.spelling.enabled": "Rechtschreibprüfung aktivieren",
