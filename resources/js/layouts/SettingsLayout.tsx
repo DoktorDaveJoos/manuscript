@@ -1,35 +1,24 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
 import { index as booksIndex } from '@/actions/App/Http/Controllers/BookController';
-import BookSwitcher from '@/components/settings/BookSwitcher';
 import NavItem from '@/components/ui/NavItem';
 import SectionLabel from '@/components/ui/SectionLabel';
 import UpdateBanner from '@/components/ui/UpdateBanner';
 
-type ActiveSection =
-    | 'appearance'
-    | 'license'
-    | 'ai-providers'
-    | 'writing-style'
-    | 'prose-pass-rules';
-
-type BookRef = { id: number; title: string };
+type ActiveSection = 'appearance' | 'license' | 'ai-providers';
 
 interface Props {
     activeSection: ActiveSection;
-    book?: BookRef | null;
     title?: string;
 }
 
 export default function SettingsLayout({
     children,
     activeSection,
-    book,
     title,
 }: PropsWithChildren<Props>) {
     const { t } = useTranslation('settings');
-    const { books_list } = usePage<{ books_list: BookRef[] }>().props;
 
     return (
         <>
@@ -42,11 +31,7 @@ export default function SettingsLayout({
                         {/* Header — Back link */}
                         <div className="px-5 py-4">
                             <Link
-                                href={
-                                    book
-                                        ? `/books/${book.id}/dashboard`
-                                        : booksIndex.url()
-                                }
+                                href={booksIndex.url()}
                                 className="flex items-center gap-1.5 text-[12px] font-medium text-ink-muted transition-colors hover:text-ink"
                             >
                                 <svg
@@ -94,37 +79,6 @@ export default function SettingsLayout({
                                 />
                             </div>
                         </div>
-
-                        {/* Book-specific settings */}
-                        {book && (
-                            <>
-                                <div className="mx-2.5 my-3 border-t border-border" />
-                                <div className="flex flex-1 flex-col overflow-y-auto px-2.5">
-                                    <BookSwitcher
-                                        currentBook={book}
-                                        books={books_list ?? []}
-                                    />
-                                    <div className="mt-1.5 flex flex-col gap-0.5">
-                                        <NavItem
-                                            label={t('section.writingStyle')}
-                                            href={`/books/${book.id}/settings/writing-style`}
-                                            isActive={
-                                                activeSection ===
-                                                'writing-style'
-                                            }
-                                        />
-                                        <NavItem
-                                            label={t('section.prosePassRules')}
-                                            href={`/books/${book.id}/settings/prose-pass-rules`}
-                                            isActive={
-                                                activeSection ===
-                                                'prose-pass-rules'
-                                            }
-                                        />
-                                    </div>
-                                </div>
-                            </>
-                        )}
                     </aside>
 
                     {/* Main content */}

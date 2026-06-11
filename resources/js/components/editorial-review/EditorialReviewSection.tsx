@@ -139,6 +139,8 @@ export default function EditorialReviewSection({
     resolvedSet,
     onToggleFinding,
     onDiscussFinding,
+    open,
+    onOpenChange,
 }: {
     section: EditorialReviewSectionType;
     chapters: Chapter[];
@@ -146,9 +148,10 @@ export default function EditorialReviewSection({
     resolvedSet: Set<string>;
     onToggleFinding: (key: string) => void;
     onDiscussFinding: OnDiscussFinding;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
 }) {
     const { t } = useTranslation('editorial-review');
-    const [open, setOpen] = useState(false);
 
     const findings = section.findings ?? [];
     const strengths = section.strengths ?? [];
@@ -159,7 +162,7 @@ export default function EditorialReviewSection({
     return (
         <Collapsible
             open={open}
-            onOpenChange={setOpen}
+            onOpenChange={onOpenChange}
             className="overflow-hidden rounded-lg border border-border-light bg-surface-card"
         >
             <CollapsibleTrigger className="flex w-full items-center gap-2 px-4 py-3 transition-colors hover:bg-neutral-bg">

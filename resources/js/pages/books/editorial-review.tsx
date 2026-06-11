@@ -1,8 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { Sparkles, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { index as aiDashboardIndex } from '@/actions/App/Http/Controllers/AiDashboardController';
 import AiChatDrawer from '@/components/editor/AiChatDrawer';
 import Sidebar from '@/components/editor/Sidebar';
 import EditorialReviewEmptyState from '@/components/editorial-review/EditorialReviewEmptyState';
@@ -28,11 +27,13 @@ export default function EditorialReviewPage({
     reviews,
     latestReview,
     chapters,
+    editedChaptersCount,
 }: {
     book: Book;
     reviews: EditorialReview[];
     latestReview: EditorialReview | null;
     chapters: Chapter[];
+    editedChaptersCount: number | null;
 }) {
     const { t } = useTranslation('editorial-review');
     const storylines = useSidebarStorylines();
@@ -42,6 +43,7 @@ export default function EditorialReviewPage({
         starting,
         error,
         handleStart,
+        handleResume,
         selectReview,
         updateResolved,
     } = useEditorialReview(book.id, latestReview);
@@ -96,18 +98,6 @@ export default function EditorialReviewPage({
                                 />
                             }
                         />
-
-                        <div className="flex gap-1 border-b border-border-light">
-                            <Link
-                                href={aiDashboardIndex.url(book)}
-                                className="border-b-2 border-transparent px-3 pb-2 text-[13px] font-medium text-ink-muted transition-colors hover:text-ink"
-                            >
-                                {t('tabs.dashboard')}
-                            </Link>
-                            <span className="border-b-2 border-ink px-3 pb-2 text-[13px] font-medium text-ink">
-                                {t('tabs.editorialReview')}
-                            </span>
-                        </div>
                     </div>
 
                     <div className="flex flex-1 flex-col px-12 py-6">
@@ -134,19 +124,38 @@ export default function EditorialReviewPage({
                                 >
                                     <AlertTitle>{t('failed.title')}</AlertTitle>
                                     <AlertDescription>
-                                        {error ||
-                                            review?.error_message ||
-                                            t('failed.title')}
+                                        {review?.status === 'failed'
+                                            ? t(
+                                                  `failed.reasons.${review.error_code ?? 'unknown'}`,
+                                                  {
+                                                      defaultValue: t(
+                                                          'failed.reasons.unknown',
+                                                      ),
+                                                  },
+                                              )
+                                            : error}
                                     </AlertDescription>
                                 </Alert>
                                 {review?.status === 'failed' && (
-                                    <Button
-                                        variant="primary"
-                                        onClick={handleStart}
-                                        disabled={starting}
-                                    >
-                                        {t('failed.retry')}
-                                    </Button>
+                                    <>
+                                        <p className="max-w-xl text-center text-[13px] text-ink-muted">
+                                            {t('failed.progressKept')}
+                                        </p>
+                                        {(!review.error_code ||
+                                            review.error_code === 'unknown') &&
+                                            review.error_message && (
+                                                <p className="max-w-xl text-center text-xs text-ink-faint">
+                                                    {review.error_message}
+                                                </p>
+                                            )}
+                                        <Button
+                                            variant="primary"
+                                            onClick={handleResume}
+                                            disabled={starting}
+                                        >
+                                            {t('failed.continue')}
+                                        </Button>
+                                    </>
                                 )}
                             </div>
                         )}
@@ -164,9 +173,11 @@ export default function EditorialReviewPage({
 
                         {review?.status === 'completed' && review && (
                             <EditorialReviewReport
+                                key={review.id}
                                 review={review}
                                 reviews={completedReviews}
                                 chapters={chapters}
+                                editedChaptersCount={editedChaptersCount}
                                 onSelectReview={selectReview}
                                 onStartNew={handleStart}
                                 starting={starting}

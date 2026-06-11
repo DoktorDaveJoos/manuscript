@@ -1,14 +1,9 @@
 {
     "title": "KI-Assistent",
     "subtitle": "Der Lektoratspartner für Ihr Manuskript",
-
-    "tabs.dashboard": "KI-Dashboard",
-    "tabs.editorialReview": "Lektorat",
-
     "emptyState.heading": "Sehen Sie Ihre Geschichte mit den Augen eines Lektors",
     "emptyState.description": "Das Lektorat ist für fertige Erstentwürfe konzipiert. Es analysiert Ihr gesamtes Manuskript in acht redaktionellen Dimensionen und ist token-intensiv. Für laufendes Feedback während des Schreibens nutzen Sie stattdessen die Kapitelanalyse.",
     "emptyState.button": "Lektorat starten",
-
     "emptyState.features.title": "WAS DAS LEKTORAT ABDECKT",
     "emptyState.features.bigPicture.title": "Das große Ganze",
     "emptyState.features.bigPicture.description": "Plotstruktur, thematische Tiefe und ob Ihre Geschichte so ankommt, wie Sie es beabsichtigt haben.",
@@ -18,15 +13,12 @@
     "emptyState.features.pacing.description": "Wo die Geschichte atmet, wo sie eilt und wo Leser den Faden verlieren könnten.",
     "emptyState.features.prose.title": "Prosa & Handwerk",
     "emptyState.features.prose.description": "Stil auf Satzebene, Szenenkonstruktion und die kleinen Entscheidungen, die das Leseerlebnis prägen.",
-
     "confirm.title": "Lektorat starten?",
     "confirm.description": "Dies wird Ihr gesamtes Manuskript analysieren. Das Lektorat funktioniert am besten mit fertigen Erstentwürfen. Fortfahren?",
-
     "progress.refreshing": "Kapitelanalysen werden aktualisiert...",
     "progress.analyzing": "Kapitel {{current}} von {{total}} wird analysiert...",
     "progress.synthesizing": "{{section}} wird zusammengefasst...",
     "progress.pending": "Lektorat wird gestartet...",
-
     "report.overallScore": "Gesamtbewertung",
     "report.quality.good": "Gut",
     "report.quality.fair": "Befriedigend",
@@ -36,9 +28,11 @@
     "report.improvements": "Verbesserungspotenzial",
     "report.startNew": "Neues Lektorat starten",
     "report.reviewFrom": "Lektorat vom {{date}}",
+    "report.dimensions": "Dimensionen",
+    "report.editedChaptersHint_one": "Sie haben seit dem letzten Lektorat {{count}} Kapitel bearbeitet",
+    "report.editedChaptersHint_other": "Sie haben seit dem letzten Lektorat {{count}} Kapitel bearbeitet",
     "report.manuscriptPreview": "Manuskript-Vorschau",
     "report.summary": "Zusammenfassung",
-
     "section.plot": "Handlung",
     "section.characters": "Figuren",
     "section.pacing": "Erzähltempo",
@@ -47,7 +41,6 @@
     "section.scene_craft": "Szenengestaltung",
     "section.prose_style": "Prosastil",
     "section.chapter_notes": "Kapitelnotizen",
-
     "section.summary": "Zusammenfassung",
     "section.strengths": "Stärken",
     "section.findings": "Befunde",
@@ -56,16 +49,21 @@
     "section.chapters": "Kap. {{chapters}}",
     "section.allResolved": "Alle erledigt",
     "section.remaining": "{{count}} offen",
-
     "severity.critical": "Kritisch",
     "severity.warning": "Warnung",
     "severity.suggestion": "Vorschlag",
-
-    "failed.title": "Lektorat fehlgeschlagen",
-    "failed.retry": "Erneut versuchen",
-
+    "failed.title": "Lektorat unterbrochen",
+    "failed.continue": "Lektorat fortsetzen",
+    "failed.progressKept": "Ihr Fortschritt ist gespeichert. Beim Fortsetzen macht das Lektorat genau dort weiter, wo es aufgehört hat — es beginnt nicht von vorn.",
+    "failed.reasons.rate_limited": "Ihr KI-Anbieter erhält gerade zu viele Anfragen. Das kommt gelegentlich vor und hat nichts mit Ihrem Manuskript zu tun. Warten Sie einen Moment und fahren Sie dann fort.",
+    "failed.reasons.overloaded": "Ihr KI-Anbieter ist vorübergehend überlastet. Das behebt sich meist innerhalb weniger Minuten.",
+    "failed.reasons.insufficient_credits": "Ihr KI-Anbieter-Konto hat kein Guthaben mehr oder das Nutzungslimit ist erreicht. Laden Sie Ihr Konto auf und fahren Sie dann fort.",
+    "failed.reasons.invalid_key": "Ihr KI-Anbieter hat den API-Schlüssel abgelehnt. Prüfen Sie den Schlüssel in den KI-Einstellungen und fahren Sie dann fort.",
+    "failed.reasons.no_provider": "Es ist kein KI-Anbieter eingerichtet. Fügen Sie in den KI-Einstellungen einen hinzu und fahren Sie dann fort.",
+    "failed.reasons.no_content": "Es gab keinen Kapiteltext zu prüfen. Stellen Sie sicher, dass Ihre Kapitel Inhalt haben, und fahren Sie dann fort.",
+    "failed.reasons.timeout": "Das Lektorat wurde unerwartet unterbrochen. Das kann passieren, wenn eine Anfrage zu lange dauert oder die App während eines Lektorats geschlossen wird.",
+    "failed.reasons.unknown": "Bei der Kommunikation mit Ihrem KI-Anbieter ist etwas Unerwartetes schiefgelaufen.",
     "sectionLabel.editorialReview": "Lektorat",
-
     "preEditorial.heading": "Vorab-Einschätzung",
     "preEditorial.description": "Dieses Manuskript benötigt grundlegende Überarbeitung, bevor ein vollständiges Lektorat sinnvoll wäre. Konzentriere dich zuerst auf die folgenden Bereiche und starte dann eine neue Bewertung.",
     "experimentalAlert": "Dies ist ein experimentelles Feature. Qualität und Genauigkeit der Ergebnisse können variieren.",

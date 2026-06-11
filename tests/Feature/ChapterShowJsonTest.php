@@ -21,6 +21,28 @@ it('returns chapter data as json', function () {
         ]);
 });
 
+test('showJson returns the book own prose pass rules', function () {
+    $rules = Book::defaultProsePassRules();
+    $rules[0]['enabled'] = false;
+    $book = Book::factory()->create(['prose_pass_rules' => $rules]);
+    $chapter = Chapter::factory()->for($book)->create();
+
+    $this->getJson("/books/{$book->id}/chapters/{$chapter->id}/json")
+        ->assertOk()
+        ->assertJsonPath('prosePassRules.0.enabled', false);
+});
+
+test('showJson returns the book own proofreading config', function () {
+    $config = Book::defaultProofreadingConfig();
+    $config['spelling_enabled'] = false;
+    $book = Book::factory()->create(['proofreading_config' => $config]);
+    $chapter = Chapter::factory()->for($book)->create();
+
+    $this->getJson("/books/{$book->id}/chapters/{$chapter->id}/json")
+        ->assertOk()
+        ->assertJsonPath('proofreadingConfig.spelling_enabled', false);
+});
+
 test('showJson returns editorialChapterNote from latest completed review', function () {
     $book = Book::factory()->create();
     $chapter = Chapter::factory()->for($book)->create();

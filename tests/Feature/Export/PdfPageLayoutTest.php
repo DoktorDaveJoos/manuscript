@@ -380,13 +380,18 @@ test('german text is hyphenated in a narrow column', function () {
     $book = Book::factory()->create(['title' => 'Hyphen', 'author' => 'Autor', 'language' => 'de']);
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Kapitel']);
+    // Compounds longer than the measure force a mid-word break on every cycle —
+    // shorter words only hyphenate when a line happens to need it, which made
+    // this test flip with any reflow (font metrics, margins, trim tweaks).
     $para = '<p>'.trim(str_repeat('Die Geschwindigkeitsbegrenzung der Bibliotheksverwaltung '
-        .'erforderte umfangreiche Dokumentationspflichten. ', 14)).'</p>';
+        .'erforderte umfangreiche Dokumentationspflichten. '
+        .'Die Kraftfahrzeughaftpflichtversicherungsbeitragserhöhung überraschte die '
+        .'Donaudampfschifffahrtsgesellschaftskapitänswitwe ausgesprochen heftig. ', 10)).'</p>';
     Scene::factory()->for($chapter)->create(['content' => $para, 'sort_order' => 1]);
 
-    // Pocket (5x8) — a narrow measure that forces line breaks inside long compounds.
+    // Mass market (4.25x6.87) — the narrowest measure, forcing line breaks inside long compounds.
     $bytes = file_get_contents(
-        (new ExportService)->export($book, ['format' => 'pdf', 'scope' => 'full', 'trim_size' => '5x8'])
+        (new ExportService)->export($book, ['format' => 'pdf', 'scope' => 'full', 'trim_size' => '4.25x6.87'])
             ->getFile()->getPathname()
     );
 

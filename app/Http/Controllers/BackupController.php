@@ -35,13 +35,20 @@ class BackupController extends Controller
         $extension = pathinfo($tempPath, PATHINFO_EXTENSION);
         $filename = "manuscript-backup-{$stamp}.{$extension}";
 
-        return response()
+        $response = response()
             ->download($tempPath, $filename)
-            ->deleteFileAfterSend(true)
-            ->setContentDisposition(
-                ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-                $filename,
-            );
+            ->deleteFileAfterSend(true);
+
+        // Symfony's makeDisposition leaves RFC-token filenames unquoted, but
+        // the settings page parses the quoted form to name the download —
+        // without the extension the import picker can't select the file.
+        // The filename is generated above (ASCII, no quotes), so no escaping.
+        $response->headers->set(
+            'Content-Disposition',
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT.'; filename="'.$filename.'"',
+        );
+
+        return $response;
     }
 
     /**

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ActivateLicenseRequest;
-use App\Models\Book;
 use App\Models\License;
 use App\Services\PolarService;
 use Illuminate\Http\Client\ConnectionException;
@@ -18,11 +17,7 @@ class LicenseController extends Controller
 
     public function index(): Response
     {
-        $book = Book::query()->select('id', 'title')->first();
-
-        return Inertia::render('settings/license', [
-            'book' => $book?->only('id', 'title'),
-        ]);
+        return Inertia::render('settings/license');
     }
 
     public function activate(ActivateLicenseRequest $request): JsonResponse

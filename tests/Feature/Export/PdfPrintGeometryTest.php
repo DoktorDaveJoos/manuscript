@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\BleedMode;
+use App\Enums\TrimSize;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\License;
@@ -53,7 +55,7 @@ test('resolveGeometry returns preset dimensions and margins unchanged with no bl
 
     expect($geo['width'])->toEqual(130);
     expect($geo['height'])->toEqual(190);
-    expect($geo['margins'])->toEqual(['top' => 16, 'bottom' => 18, 'outer' => 14, 'gutter' => 19]);
+    expect($geo['margins'])->toEqual(['top' => 18, 'bottom' => 19, 'outer' => 15, 'gutter' => 20]);
 });
 
 test('resolveGeometry adds bleed to both dimensions and every margin', function () {
@@ -61,7 +63,7 @@ test('resolveGeometry adds bleed to both dimensions and every margin', function 
 
     expect($geo['width'])->toEqual(136);  // 130 + 2 * 3
     expect($geo['height'])->toEqual(196); // 190 + 2 * 3
-    expect($geo['margins'])->toEqual(['top' => 19, 'bottom' => 21, 'outer' => 17, 'gutter' => 22]);
+    expect($geo['margins'])->toEqual(['top' => 21, 'bottom' => 22, 'outer' => 18, 'gutter' => 23]);
 });
 
 test('resolveGeometry uses custom dimensions over any preset', function () {
@@ -90,6 +92,65 @@ test('export options parses bleed and custom dimensions', function () {
     expect($defaults->bleed)->toEqual(0.0);
     expect($defaults->customWidth)->toBeNull();
     expect($defaults->customHeight)->toBeNull();
+});
+
+/*
+ * Bug: imperial trim presets were stored rounded to whole millimetres (6×9″ as
+ * 152×229 instead of 152.4×228.6), so every export was up to 0.5 mm off the
+ * size the printer's template expects. KDP matches the PDF page size against
+ * the chosen trim with a tight tolerance; IngramSpark prints files as sent.
+ */
+test('imperial trim presets use exact inch-derived dimensions, not whole-millimetre roundings', function () {
+    expect(TrimSize::MassMarket->dimensions())->toEqual(['width' => 107.95, 'height' => 174.5])
+        ->and(TrimSize::Pocket->dimensions())->toEqual(['width' => 127.0, 'height' => 203.2])
+        ->and(TrimSize::Digest->dimensions())->toEqual(['width' => 133.35, 'height' => 203.2])
+        ->and(TrimSize::SmallTrade->dimensions())->toEqual(['width' => 139.7, 'height' => 215.9])
+        ->and(TrimSize::UsTrade->dimensions())->toEqual(['width' => 152.4, 'height' => 228.6])
+        ->and(TrimSize::Royal->dimensions())->toEqual(['width' => 177.8, 'height' => 254.0])
+        ->and(TrimSize::Manuscript->dimensions())->toEqual(['width' => 215.9, 'height' => 279.4]);
+});
+
+test('metric trim presets keep their exact metric dimensions', function () {
+    expect(TrimSize::Novel13x19->dimensions())->toEqual(['width' => 130.0, 'height' => 190.0])
+        ->and(TrimSize::A5->dimensions())->toEqual(['width' => 148.0, 'height' => 210.0])
+        ->and(TrimSize::A4->dimensions())->toEqual(['width' => 210.0, 'height' => 297.0]);
+});
+
+test('export options parses the bleed mode and defaults to all edges', function () {
+    expect(ExportOptions::fromArray(['bleed_mode' => 'outer'])->bleedMode)->toBe(BleedMode::Outer)
+        ->and(ExportOptions::fromArray(['bleed_mode' => 'all'])->bleedMode)->toBe(BleedMode::All)
+        ->and(ExportOptions::fromArray([])->bleedMode)->toBe(BleedMode::All);
+});
+
+/*
+ * KDP and IngramSpark forbid bleed on the binding edge: the sheet must be
+ * trim + 1×bleed wide (bleed on the outside edge only, which alternates
+ * recto/verso via the mirrored @page margins) and trim + 2×bleed tall.
+ * The gutter margin therefore must NOT shift — only top/bottom/outer do.
+ */
+test('resolveGeometry with outer bleed grows the width by a single bleed and never shifts the gutter', function () {
+    $geo = PdfExporter::resolveGeometry(ExportOptions::fromArray([
+        'trim_size' => '13x19cm',
+        'bleed' => 3,
+        'bleed_mode' => 'outer',
+    ]));
+
+    expect($geo['width'])->toEqual(133)   // 130 + 1 * 3 — outside edge only
+        ->and($geo['height'])->toEqual(196) // 190 + 2 * 3
+        ->and($geo['margins'])->toEqual(['top' => 21, 'bottom' => 22, 'outer' => 18, 'gutter' => 20]);
+});
+
+test('an outer-bleed export produces a KDP-style media box: one bleed wide, two bleeds tall', function () {
+    [$book, $chapters] = geometryTestBook();
+
+    $bytes = (new PdfExporter(new ContentPreparer, new FontService, new ClassicTemplate))
+        ->generatePdfString($book, $chapters, ExportOptions::fromArray([
+            'trim_size' => '13x19cm',
+            'bleed' => 3,
+            'bleed_mode' => 'outer',
+        ]));
+
+    expect(in_array([133, 196], pdfMediaBoxesMm($bytes), true))->toBeTrue();
 });
 
 test('a bleed export produces a PDF media box at trim size plus bleed', function () {
@@ -146,11 +207,12 @@ test('bleed does not change the page count', function () {
     $chapters = $book->chapters()->with(['scenes' => fn ($q) => $q->orderBy('sort_order'), 'act'])->orderBy('reader_order')->get();
 
     $exporter = new PdfExporter(new ContentPreparer, new FontService, new ClassicTemplate);
-    $pageCountFor = function (float $bleed) use ($exporter, $book, $chapters): int {
+    $pageCountFor = function (float $bleed, string $bleedMode = 'all') use ($exporter, $book, $chapters): int {
         $bytes = $exporter->generatePdfString($book, $chapters, ExportOptions::fromArray([
             'trim_size' => 'voyage',
             'font_size' => 11,
             'bleed' => $bleed,
+            'bleed_mode' => $bleedMode,
         ]));
 
         $pdf = tempnam(sys_get_temp_dir(), 'pdf').'.pdf';
@@ -165,19 +227,21 @@ test('bleed does not change the page count', function () {
 
     expect($noBleed)->toBeGreaterThan(1)
         ->and($pageCountFor(3))->toBe($noBleed)
-        ->and($pageCountFor(5))->toBe($noBleed);
+        ->and($pageCountFor(5))->toBe($noBleed)
+        ->and($pageCountFor(3, 'outer'))->toBe($noBleed);
 });
 
 /*
  * Guards the root cause directly: the @page CSS must mirror the bleed-adjusted
  * geometry the mPDF constructor uses, so the two can never disagree again.
  */
-test('the @page CSS uses the same bleed-adjusted geometry as the mPDF constructor', function () {
+test('the @page CSS uses the same bleed-adjusted geometry as the mPDF constructor', function (string $bleedMode) {
     $book = Book::factory()->create(['language' => 'en']);
 
     $options = ExportOptions::fromArray([
         'trim_size' => 'voyage',
         'bleed' => 3,
+        'bleed_mode' => $bleedMode,
     ]);
 
     $html = (new PdfExporter(new ContentPreparer, new FontService, new ClassicTemplate))
@@ -195,4 +259,4 @@ test('the @page CSS uses the same bleed-adjusted geometry as the mPDF constructo
         $geometry['margins']['bottom'],
         $geometry['margins']['outer'],
     ));
-});
+})->with(['all', 'outer']);

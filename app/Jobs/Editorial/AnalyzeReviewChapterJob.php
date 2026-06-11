@@ -5,7 +5,9 @@ namespace App\Jobs\Editorial;
 use App\Ai\Agents\ChapterAnalyzer;
 use App\Ai\Agents\EditorialNotesAgent;
 use App\Ai\Support\TextPrep;
+use App\Enums\EditorialReviewErrorCode;
 use App\Jobs\Concerns\PersistsChapterAnalysis;
+use App\Jobs\Concerns\RunsManuscriptAnalyses;
 use App\Jobs\Concerns\UpdatesEditorialReview;
 use App\Models\AiSetting;
 use App\Models\Book;
@@ -28,7 +30,7 @@ use Throwable;
  */
 class AnalyzeReviewChapterJob implements ShouldQueue
 {
-    use Batchable, Dispatchable, InteractsWithQueue, PersistsChapterAnalysis, Queueable, SerializesModels, UpdatesEditorialReview;
+    use Batchable, Dispatchable, InteractsWithQueue, PersistsChapterAnalysis, Queueable, RunsManuscriptAnalyses, SerializesModels, UpdatesEditorialReview;
 
     public int $tries = 1;
 
@@ -79,8 +81,8 @@ class AnalyzeReviewChapterJob implements ShouldQueue
 
         $capped = TextPrep::plainTextCapped($content);
 
-        if ($chapter->needsAiPreparation()) {
-            $this->refreshChapterAnalysis($chapter, $capped);
+        if ($chapter->needsAiPreparation() && ! $this->refreshChapterAnalysis($chapter, $capped)) {
+            return;
         }
 
         $this->gapFillChapter($chapter, $capped);
@@ -92,10 +94,14 @@ class AnalyzeReviewChapterJob implements ShouldQueue
     }
 
     /**
-     * Phase 0 — refresh a stale chapter analysis. Failures are logged and
-     * skipped so a single bad chapter never derails the whole review.
+     * Phase 0 — refresh a stale chapter analysis, including the manuscript
+     * analyses (character consistency, plot deviation) that the synthesis
+     * sections aggregate. Failures are logged and skipped so a single bad
+     * chapter never derails the whole review — except temporary provider
+     * failures, which halt the run so it can be resumed. Returns false when
+     * the run was halted.
      */
-    private function refreshChapterAnalysis(Chapter $chapter, string $capped): void
+    private function refreshChapterAnalysis(Chapter $chapter, string $capped): bool
     {
         try {
             $agent = new ChapterAnalyzer($this->book);
@@ -103,24 +109,39 @@ class AnalyzeReviewChapterJob implements ShouldQueue
 
             $this->persistChapterAnalysis($this->book, $chapter, $response->toArray());
 
+            $this->runManuscriptAnalyses($this->book, $chapter);
+
             $chapter->update([
                 'prepared_content_hash' => $chapter->content_hash,
             ]);
         } catch (Throwable $e) {
             report($e);
+
+            if ($this->haltForProviderIssue($e, $chapter)) {
+                return false;
+            }
+
             Log::warning("Editorial review: chapter refresh failed for chapter {$chapter->id}", [
                 'review_id' => $this->review->id,
                 'chapter_id' => $chapter->id,
                 'error' => $e->getMessage(),
             ]);
         }
+
+        return true;
     }
 
     /**
-     * Phase 1 — gap-fill editorial notes for one chapter.
+     * Phase 1 — gap-fill editorial notes for one chapter. Skipped when this
+     * review already holds a note for the chapter's current content, so a
+     * resumed run only pays for the chapters that are still missing.
      */
     private function gapFillChapter(Chapter $chapter, string $capped): void
     {
+        if ($this->hasFreshNote($chapter)) {
+            return;
+        }
+
         $notes = $this->reusableNotes($chapter);
 
         if ($notes === null) {
@@ -135,6 +156,11 @@ class AnalyzeReviewChapterJob implements ShouldQueue
                 $notes = $agent->prompt($capped, timeout: 180)->toArray();
             } catch (Throwable $e) {
                 report($e);
+
+                if ($this->haltForProviderIssue($e, $chapter)) {
+                    return;
+                }
+
                 Log::warning("Editorial review: chapter gap-fill failed for chapter {$chapter->id}", [
                     'review_id' => $this->review->id,
                     'chapter_id' => $chapter->id,
@@ -150,6 +176,59 @@ class AnalyzeReviewChapterJob implements ShouldQueue
             'content_hash' => $chapter->content_hash,
             'notes' => $notes,
         ]);
+    }
+
+    /**
+     * Whether this review already has a note for the chapter's current
+     * content. Notes whose hash no longer matches (the chapter was edited
+     * between a failure and the resume) are pruned so they regenerate.
+     */
+    private function hasFreshNote(Chapter $chapter): bool
+    {
+        $existing = $this->review->chapterNotes()
+            ->where('chapter_id', $chapter->id)
+            ->latest('id')
+            ->first();
+
+        if (! $existing) {
+            return false;
+        }
+
+        if ($chapter->content_hash !== null && $existing->content_hash === $chapter->content_hash) {
+            return true;
+        }
+
+        $this->review->chapterNotes()->where('chapter_id', $chapter->id)->delete();
+
+        return false;
+    }
+
+    /**
+     * On a temporary provider failure (rate limit, overload, out of credits)
+     * or an invalid API key, the whole run halts: the review is marked failed
+     * with a resumable error code and the batch is cancelled so remaining
+     * jobs exit without burning further AI calls. Returns true when the run
+     * was halted.
+     */
+    private function haltForProviderIssue(Throwable $e, Chapter $chapter): bool
+    {
+        $code = EditorialReviewErrorCode::fromThrowable($e);
+
+        if (! $code->shouldHaltRun()) {
+            return false;
+        }
+
+        Log::warning("Editorial review: provider unavailable during chapter {$chapter->id}, halting for resume", [
+            'review_id' => $this->review->id,
+            'chapter_id' => $chapter->id,
+            'error_code' => $code->value,
+            'error' => $e->getMessage(),
+        ]);
+
+        $this->markReviewFailed($this->review, $e->getMessage(), $code);
+        $this->batch()?->cancel();
+
+        return true;
     }
 
     /**

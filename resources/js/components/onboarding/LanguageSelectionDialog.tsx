@@ -3,6 +3,7 @@ import { Globe } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Dialog from '@/components/ui/Dialog';
+import { setAppLanguage } from '@/i18n';
 import { saveAppSetting } from '@/lib/utils';
 
 const LANGUAGE_CODES = ['en', 'de', 'es'] as const;
@@ -13,7 +14,7 @@ export default function LanguageSelectionDialog() {
     const [submitting, setSubmitting] = useState(false);
 
     const handleSelect = (code: LanguageCode) => {
-        i18n.changeLanguage(code);
+        void setAppLanguage(code);
     };
 
     const handleContinue = () => {

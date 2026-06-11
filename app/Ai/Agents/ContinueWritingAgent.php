@@ -116,7 +116,7 @@ class ContinueWritingAgent implements Agent, BelongsToBook, HasMiddleware
 
     private function buildStyleRulesSection(): string
     {
-        $enabled = collect(Book::generationApplicableProsePassRules())
+        $enabled = collect($this->book->generationApplicableProsePassRules())
             ->filter(fn ($rule) => $rule['enabled']);
 
         if ($enabled->isEmpty()) {

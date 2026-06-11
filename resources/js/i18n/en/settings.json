@@ -13,6 +13,20 @@
     "section.aiProviders": "AI Providers",
     "section.writingStyle": "Writing Style",
     "section.prosePassRules": "Revision Rules",
+    "bookSettings.title": "Book Settings",
+    "section.general": "General",
+    "section.publishing": "Publishing",
+    "section.cover": "Cover",
+    "general.title": "General",
+    "general.pageTitle": "General — {{bookTitle}}",
+    "general.description": "Title, author, language, and genre of your book.",
+    "general.labelTitle": "Title",
+    "general.labelAuthor": "Author",
+    "general.labelLanguage": "Language",
+    "general.labelGenre": "Genre",
+    "general.labelSecondaryGenres": "Secondary Genres",
+    "general.placeholderGenre": "Select a genre (optional)",
+    "general.placeholderSecondaryGenres": "Add genre...",
     "section.export": "Export",
 
     "language.sectionLabel": "LANGUAGE",
@@ -86,6 +100,9 @@
     "welcome.title": "Welcome to Manuscript",
     "welcome.description": "Enter your license key to get started.",
     "welcome.buyLicense": "Don't have a license? Get one at getmanuscript.app",
+    "welcome.startTrial": "Or start your free 7-day trial",
+    "welcome.trialStarting": "Starting trial...",
+    "welcome.trialExpired": "Your free trial has ended. Enter a license key to keep writing.",
 
     "aiProviders.title": "AI Providers",
     "aiProviders.description": "Choose your AI provider and configure its API key.",
@@ -111,82 +128,81 @@
     "aiProviders.testConnection": "Test connection",
     "aiProviders.saveFailed": "Failed to save settings.",
     "aiProviders.testFailed": "Connection test failed.",
+    "aiProviders.testResult.invalid_key": "The provider rejected this API key. Check that you copied the complete key, or create a new one and save it here.",
+    "aiProviders.testResult.insufficient_credits": "Your API key works, but your account has no credit. Add credits in the provider console — see “How to get an API key” — then test again.",
+    "aiProviders.testResult.rate_limited": "The provider is rate-limiting your account right now. Wait a moment and test again.",
+    "aiProviders.testResult.overloaded": "The provider is overloaded right now. Try again in a minute.",
+    "aiProviders.testResult.timeout": "The provider did not respond in time. Check your internet connection and try again.",
 
     "aiProviders.howToGetKey.trigger": "How to get an API key",
     "aiProviders.howToGetKey.title": "How to get your {{provider}} API key",
-    "aiProviders.howToGetKey.intro": "Follow these steps to generate an API key for {{provider}}. Manuscript stores it encrypted on this device — your key never leaves your machine.",
+    "aiProviders.howToGetKey.intro": "Follow these steps to create an API key for {{provider}} and add credit to your account. Manuscript stores the key encrypted on this device — it never leaves your machine.",
     "aiProviders.howToGetKey.close": "Close",
+    "aiProviders.howToGetKey.copyHint": "Copy this link and paste it into your browser to open the provider console.",
+    "aiProviders.howToGetKey.copy": "Copy link",
+    "aiProviders.howToGetKey.copied": "Copied!",
 
-    "aiProviders.howToGetKey.anthropic.consoleLabel": "Open Anthropic Console",
     "aiProviders.howToGetKey.anthropic.steps": [
-        "Open console.anthropic.com in your browser.",
-        "Sign in or create a free Anthropic account.",
-        "Open Settings → API Keys from the sidebar.",
-        "Click Create Key and give it a name like \"Manuscript\".",
-        "Copy the key (starts with sk-ant-) — it's only shown once — and paste it here."
+        "Copy the link below and open console.anthropic.com in your browser. Sign in or create an account.",
+        "Add credit first: open Settings → Billing and buy credits (minimum $5). Without credit, every request fails.",
+        "Open Settings → API Keys and click Create Key. Name it e.g. “Manuscript”.",
+        "Copy the key (starts with sk-ant-) right away — it is only shown once.",
+        "Paste it here, click Save, then Test connection."
     ],
 
-    "aiProviders.howToGetKey.openai.consoleLabel": "Open OpenAI Platform",
     "aiProviders.howToGetKey.openai.steps": [
-        "Open platform.openai.com and sign in.",
-        "Click your profile (top right) and choose View API keys.",
-        "Click Create new secret key and give it a name.",
-        "Copy the key (starts with sk-) — it's only shown once — and paste it here.",
-        "Add a payment method under Settings → Billing if you haven't already."
+        "Copy the link below and open platform.openai.com/api-keys in your browser. Sign in or create an account.",
+        "Add credit first: open Settings → Billing, add a payment method and buy credits (e.g. $5). ChatGPT Plus does not include API credit.",
+        "On the API keys page, click Create new secret key and give it a name.",
+        "Copy the key (starts with sk-) right away — it is only shown once.",
+        "Paste it here, click Save, then Test connection."
     ],
 
-    "aiProviders.howToGetKey.gemini.consoleLabel": "Open Google AI Studio",
     "aiProviders.howToGetKey.gemini.steps": [
-        "Open aistudio.google.com in your browser.",
-        "Sign in with your Google account.",
-        "Click Get API key in the top right.",
-        "Pick an existing Google Cloud project or create one, then click Create API key.",
-        "Copy the key and paste it here."
+        "Copy the link below and open aistudio.google.com/apikey in your browser. Sign in with your Google account.",
+        "Click Create API key and pick or create a Google Cloud project.",
+        "Copy the key right away, paste it here, click Save, then Test connection.",
+        "The free tier is enough to start. If you hit rate limits, enable billing for the project in Google AI Studio."
     ],
 
-    "aiProviders.howToGetKey.groq.consoleLabel": "Open Groq Console",
     "aiProviders.howToGetKey.groq.steps": [
-        "Open console.groq.com and sign in (Google, GitHub, or email).",
-        "Open the API Keys tab in the sidebar.",
+        "Copy the link below and open console.groq.com/keys in your browser. Sign in (Google, GitHub, or email).",
         "Click Create API Key and give it a name.",
-        "Copy the key (starts with gsk_) — it's only shown once.",
-        "Paste it here."
+        "Copy the key (starts with gsk_) right away — it is only shown once.",
+        "Paste it here, click Save, then Test connection.",
+        "The free tier has daily limits. For steady use, upgrade under Settings → Billing."
     ],
 
-    "aiProviders.howToGetKey.xai.consoleLabel": "Open xAI Console",
     "aiProviders.howToGetKey.xai.steps": [
-        "Open console.x.ai and sign in with your X / xAI account.",
-        "Open the API Keys tab.",
-        "Click Create API Key and give it a name.",
-        "Copy the key (starts with xai-) — it's only shown once.",
-        "Paste it here."
+        "Copy the link below and open console.x.ai in your browser. Sign in or create an xAI account.",
+        "Add credit first: open Billing → Credits and buy credits. Without credit, every request fails.",
+        "Open API Keys and click Create API Key.",
+        "Copy the key (starts with xai-) right away — it is only shown once.",
+        "Paste it here, click Save, then Test connection."
     ],
 
-    "aiProviders.howToGetKey.deepseek.consoleLabel": "Open DeepSeek Platform",
     "aiProviders.howToGetKey.deepseek.steps": [
-        "Open platform.deepseek.com and sign in or create an account.",
-        "Open the API Keys page from the sidebar.",
-        "Click Create new API key.",
-        "Copy the key — it's only shown once.",
-        "Paste it here. Top up credit on the Billing page if needed."
+        "Copy the link below and open platform.deepseek.com/api_keys in your browser. Sign in or create an account.",
+        "Add balance first: open Billing → Top up and add funds. Without balance, every request fails.",
+        "On the API Keys page, click Create new API key.",
+        "Copy the key right away — it is only shown once.",
+        "Paste it here, click Save, then Test connection."
     ],
 
-    "aiProviders.howToGetKey.mistral.consoleLabel": "Open Mistral Console",
     "aiProviders.howToGetKey.mistral.steps": [
-        "Open console.mistral.ai and sign in or create an account.",
-        "Open the API Keys tab inside your workspace.",
-        "Click Create new key and give it a name.",
-        "Copy the key — it's only shown once.",
-        "Paste it here. Add a payment method on the Billing page first if you don't have free trial credit."
+        "Copy the link below and open console.mistral.ai/api-keys in your browser. Sign in or create an account.",
+        "Activate billing first: open Workspace → Billing and add a payment method (or activate the free Experiment plan).",
+        "On the API Keys page, click Create new key.",
+        "Copy the key right away — it is only shown once.",
+        "Paste it here, click Save, then Test connection."
     ],
 
-    "aiProviders.howToGetKey.openrouter.consoleLabel": "Open OpenRouter",
     "aiProviders.howToGetKey.openrouter.steps": [
-        "Open openrouter.ai and sign in (Google, GitHub, or email).",
-        "Click your avatar (top right) and choose Keys.",
-        "Click Create Key and give it a name.",
-        "Copy the key (starts with sk-or-) — it's only shown once.",
-        "Paste it here. Top up credit on the Credits page to start using it."
+        "Copy the link below and open openrouter.ai/keys in your browser. Sign in (Google, GitHub, or email).",
+        "Buy credits first: open openrouter.ai/credits and top up. Without credits, every request fails.",
+        "On the Keys page, click Create Key and give it a name.",
+        "Copy the key (starts with sk-or-) right away — it is only shown once.",
+        "Paste it here, click Save, then Test connection."
     ],
     "aiProviders.advancedSettings": "Advanced Settings",
     "aiProviders.advancedDescription": "The app automatically picks the best model for each task. Only change these if you fully understand the differences between models — wrong choices may reduce output quality or increase costs.",
@@ -206,14 +222,12 @@
     "writingStyle.regenerate": "Regenerate",
     "writingStyle.placeholder": "Describe the prose voice, sentence rhythm, vocabulary, and distinctive features...",
     "writingStyle.saving": "Saving...",
-    "writingStyle.saved": "Saved",
     "writingStyle.saveFailed": "Failed to save.",
     "writingStyle.regenerateFailed": "Failed to regenerate writing style.",
-    "writingStyle.markdown": "Markdown",
 
     "prosePassRules.title": "Revision Rules",
     "prosePassRules.pageTitle": "Revision Rules — {{bookTitle}}",
-    "prosePassRules.description": "These rules are applied when you use Revise Prose. Enabled rules will guide how AI reviews and improves your text.",
+    "prosePassRules.description": "These rules guide the AI whenever it works with your prose — revising, rewriting a selection, or continuing your draft.",
     "prosePassRules.rules.show_dont_tell.label": "Show, don't tell",
     "prosePassRules.rules.show_dont_tell.description": "Convert telling statements to showing through action and detail.",
     "prosePassRules.rules.dialogue_tags.label": "Dialogue tag cleanup",
@@ -231,6 +245,7 @@
 
     "sidebar.proofreading": "Proofreading",
     "proofreading.title": "Proofreading",
+    "proofreading.pageTitle": "Proofreading — {{bookTitle}}",
     "proofreading.description": "Real-time spelling and grammar checking in the editor.",
     "proofreading.spelling.title": "Spell Check",
     "proofreading.spelling.enabled": "Enable spell check",

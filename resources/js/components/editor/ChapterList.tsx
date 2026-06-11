@@ -43,6 +43,7 @@ import {
     update as updateStoryline,
 } from '@/actions/App/Http/Controllers/StorylineController';
 import { Collapsible, CollapsibleTrigger } from '@/components/ui/Collapsible';
+import SectionLabel from '@/components/ui/SectionLabel';
 import { typedClosestCenter } from '@/lib/dnd';
 import {
     addSceneToChapter,
@@ -224,20 +225,33 @@ function SortableStorylineGroup({
                 {showHeader && (
                     <span
                         onContextMenu={onContextMenu}
-                        className={`flex items-center justify-between px-2.5 py-[7px] text-[13px] text-ink ${isFirst ? '' : 'mt-1'}`}
+                        className={`flex items-center justify-between gap-2 px-2.5 py-[7px] ${isFirst ? '' : 'mt-1'}`}
                     >
-                        <span className="flex items-center gap-1.5">
+                        <span className="flex min-w-0 flex-1 items-center gap-1.5">
                             <span
                                 {...listeners}
                                 className="flex shrink-0 cursor-grab items-center text-ink-faint active:cursor-grabbing"
                             >
                                 <GripVertical size={12} />
                             </span>
-                            <CollapsibleTrigger className="cursor-pointer">
-                                {storyline.name}
+                            <span
+                                className={`size-1.5 shrink-0 rounded-full ${storyline.color ? '' : 'bg-ink-faint'}`}
+                                style={
+                                    storyline.color
+                                        ? { backgroundColor: storyline.color }
+                                        : undefined
+                                }
+                            />
+                            <CollapsibleTrigger
+                                data-storyline-header
+                                className="min-w-0 flex-1 cursor-pointer text-left"
+                            >
+                                <SectionLabel className="block truncate">
+                                    {storyline.name}
+                                </SectionLabel>
                             </CollapsibleTrigger>
                         </span>
-                        <CollapsibleTrigger className="flex items-center gap-1 text-ink-faint">
+                        <CollapsibleTrigger className="flex shrink-0 items-center gap-1 text-ink-faint">
                             <span className="text-[11px]">{chapterCount}</span>
                             <ChevronDown
                                 size={12}
@@ -1166,8 +1180,21 @@ export default function ChapterList({
                         </div>
                     )}
                     {activeItem?.type === 'storyline' && (
-                        <div className="rounded-md bg-surface-card px-2.5 py-[7px] text-[13px] text-ink-muted opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
-                            {activeItem.storyline.name}
+                        <div className="flex items-center gap-1.5 rounded-md bg-surface-card px-2.5 py-[7px] opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
+                            <span
+                                className={`size-1.5 shrink-0 rounded-full ${activeItem.storyline.color ? '' : 'bg-ink-faint'}`}
+                                style={
+                                    activeItem.storyline.color
+                                        ? {
+                                              backgroundColor:
+                                                  activeItem.storyline.color,
+                                          }
+                                        : undefined
+                                }
+                            />
+                            <SectionLabel className="block min-w-0 flex-1 truncate">
+                                {activeItem.storyline.name}
+                            </SectionLabel>
                         </div>
                     )}
                 </DragOverlay>

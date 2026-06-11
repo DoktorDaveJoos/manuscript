@@ -6,6 +6,7 @@ use App\Models\Book;
 use App\Models\EditorialReview;
 use App\Models\EditorialReviewSection;
 use App\Models\License;
+use App\Models\Scene;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
@@ -483,9 +484,107 @@ test('store fails a stale stuck review instead of blocking new reviews', functio
 
     $stale->refresh();
     expect($stale->status)->toBe('failed')
-        ->and($stale->error_message)->toContain('timed out');
+        ->and($stale->error_message)->toContain('timed out')
+        ->and($stale->error_code)->toBe('timeout');
 
     Queue::assertPushed(RunEditorialReviewJob::class);
+});
+
+// --- Resume tests ---
+
+test('resume requires license', function () {
+    clearLicense();
+
+    $book = Book::factory()->create();
+    $review = EditorialReview::factory()->failed()->create(['book_id' => $book->id]);
+
+    $this->postJson(route('books.ai.editorial-review.resume', [$book, $review]))
+        ->assertForbidden();
+});
+
+test('resume requires AI configured', function () {
+    $book = Book::factory()->create();
+    $review = EditorialReview::factory()->failed()->create(['book_id' => $book->id]);
+
+    $this->postJson(route('books.ai.editorial-review.resume', [$book, $review]))
+        ->assertUnprocessable();
+});
+
+test('resume returns 404 for review from different book', function () {
+    $book = Book::factory()->withAi()->create();
+    $otherBook = Book::factory()->create();
+    $review = EditorialReview::factory()->failed()->create(['book_id' => $otherBook->id]);
+
+    $this->postJson(route('books.ai.editorial-review.resume', [$book, $review]))
+        ->assertNotFound();
+});
+
+test('resume rejects reviews that have not failed', function () {
+    Queue::fake();
+
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+    ]);
+
+    $this->postJson(route('books.ai.editorial-review.resume', [$book, $review]))
+        ->assertUnprocessable()
+        ->assertJsonPath('message', 'Only a failed review can be resumed.');
+
+    Queue::assertNothingPushed();
+});
+
+test('resume rejects when another review is already in progress', function () {
+    Queue::fake();
+
+    $book = Book::factory()->withAi()->create();
+    $failed = EditorialReview::factory()->failed()->create(['book_id' => $book->id]);
+    EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'analyzing',
+    ]);
+
+    $this->postJson(route('books.ai.editorial-review.resume', [$book, $failed]))
+        ->assertUnprocessable();
+
+    Queue::assertNothingPushed();
+});
+
+test('resume resets the failed review and re-dispatches the pipeline on the same record', function () {
+    Queue::fake();
+
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->failed()->create([
+        'book_id' => $book->id,
+        'error_code' => 'rate_limited',
+    ]);
+
+    $this->postJson(route('books.ai.editorial-review.resume', [$book, $review]))
+        ->assertOk()
+        ->assertJsonPath('review.id', $review->id);
+
+    $review->refresh();
+
+    expect($review->status)->toBe('pending')
+        ->and($review->error_message)->toBeNull()
+        ->and($review->error_code)->toBeNull()
+        ->and(EditorialReview::where('book_id', $book->id)->count())->toBe(1);
+
+    Queue::assertPushed(RunEditorialReviewJob::class, fn ($job) => $job->review->is($review));
+});
+
+test('progress includes the error code for failed reviews', function () {
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->failed()->create([
+        'book_id' => $book->id,
+        'error_code' => 'rate_limited',
+    ]);
+
+    $this->getJson(route('books.ai.editorial-review.progress', [$book, $review]))
+        ->assertSuccessful()
+        ->assertJsonPath('status', 'failed')
+        ->assertJsonPath('error_code', 'rate_limited');
 });
 
 test('store leaves stale reviews of other books to the scheduled cleanup', function () {
@@ -520,6 +619,70 @@ test('index caps reviews to 20', function () {
         ->assertInertia(fn ($page) => $page
             ->component('books/editorial-review')
             ->has('reviews', 20)
+        );
+});
+
+// --- Edited chapters count ---
+
+test('index reports chapters edited since the last completed review', function () {
+    [$book, $chapters] = createBookWithChapters(3);
+
+    EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+        'completed_at' => now()->subDay(),
+    ]);
+
+    Scene::query()
+        ->whereIn('chapter_id', [$chapters[0]->id, $chapters[1]->id])
+        ->update(['updated_at' => now()]);
+    Scene::query()
+        ->where('chapter_id', $chapters[2]->id)
+        ->update(['updated_at' => now()->subDays(2)]);
+
+    $this->get(route('books.ai.editorial-review.index', $book))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->where('editedChaptersCount', 2)
+        );
+});
+
+test('index reports null edited chapters count without a completed review', function () {
+    $book = Book::factory()->withAi()->create();
+    EditorialReview::factory()->failed()->create([
+        'book_id' => $book->id,
+    ]);
+
+    $this->get(route('books.ai.editorial-review.index', $book))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->where('editedChaptersCount', null)
+        );
+});
+
+test('edited chapters count is measured against the newest completed review', function () {
+    [$book, $chapters] = createBookWithChapters(2);
+
+    EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+        'completed_at' => now()->subDays(10),
+    ]);
+    $latest = EditorialReview::factory()->create([
+        'book_id' => $book->id,
+        'status' => 'completed',
+        'completed_at' => now()->subDay(),
+    ]);
+
+    // Edited between the two reviews — only the older review predates it.
+    Scene::query()
+        ->whereIn('chapter_id', collect($chapters)->pluck('id'))
+        ->update(['updated_at' => now()->subDays(5)]);
+
+    $this->get(route('books.ai.editorial-review.show', [$book, $latest]))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->where('editedChaptersCount', 0)
         );
 });
 

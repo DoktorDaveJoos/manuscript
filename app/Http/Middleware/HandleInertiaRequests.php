@@ -6,6 +6,7 @@ use App\Models\AiSetting;
 use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\License;
+use App\Support\Trial;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Laravel\Ai\Ai;
@@ -107,7 +108,12 @@ class HandleInertiaRequests extends Middleware
                         : null,
                 ];
             },
-            'books_list' => fn () => Book::query()->select('id', 'title')->get(),
+            'trial' => fn () => [
+                'available' => ! Trial::hasStarted(),
+                'active' => Trial::isActive(),
+                'expired' => Trial::hasExpired(),
+                'days_remaining' => Trial::daysRemaining(),
+            ],
             'app_settings' => fn () => [
                 'show_ai_features' => AppSetting::get('show_ai_features', true),
                 'hide_formatting_toolbar' => AppSetting::get('hide_formatting_toolbar', false),

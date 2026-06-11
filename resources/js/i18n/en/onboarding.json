@@ -62,8 +62,9 @@
     "progressBar.revised": "revised",
     "progressBar.draft": "draft",
 
-    "uploadPhase.subtitle": "Import your manuscript files — one per storyline",
-    "uploadPhase.skip": "Skip — start blank",
+    "uploadPhase.subtitle": "Start fresh or bring your existing manuscript",
+    "uploadPhase.startEmpty": "Start empty",
+    "uploadPhase.orImport": "or import your existing manuscript",
     "uploadPhase.importFiles_one": "Import {{count}} file",
     "uploadPhase.importFiles_other": "Import {{count}} files",
     "uploadPhase.uploading": "Uploading…",

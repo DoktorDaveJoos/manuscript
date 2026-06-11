@@ -2,6 +2,7 @@
 
 use App\Models\AppSetting;
 use App\Models\Book;
+use App\Models\Chapter;
 use App\Models\Storyline;
 
 it('completes full onboarding: create book and skip import', function () {
@@ -19,8 +20,9 @@ it('completes full onboarding: create book and skip import', function () {
         ->assertPathEndsWith('/import')
         ->assertNoJavaScriptErrors()
         ->assertSee('My First Novel')
-        ->assertSee('Skip — start blank')
-        ->click('Skip — start blank')
+        ->assertSee('Start empty')
+        ->assertSee('or import your existing manuscript')
+        ->click('Start empty')
         ->assertNoJavaScriptErrors()
         ->assertSee('No chapters yet')
         ->assertSee('Create first chapter')
@@ -28,6 +30,7 @@ it('completes full onboarding: create book and skip import', function () {
 
     expect(Book::where('title', 'My First Novel')->exists())->toBeTrue();
     expect(Storyline::where('name', 'Main Storyline')->exists())->toBeTrue();
+    expect(Chapter::count())->toBe(0);
 });
 
 it('import page renders correctly and shows file after attach', function () {
@@ -42,7 +45,7 @@ it('import page renders correctly and shows file after attach', function () {
         ->assertSee('How import works')
         ->assertSee('One file per storyline')
         ->assertSee('Chapters detected automatically')
-        ->assertSee('Skip — start blank');
+        ->assertSee('Start empty');
 
     // Attach a file — UI should reflect it even though FormData
     // serialization won't work in headless Playwright
@@ -60,12 +63,13 @@ it('skip import creates a default storyline and reaches the editor', function ()
 
     $page->assertNoJavaScriptErrors()
         ->assertSee('Blank Book')
-        ->click('Skip — start blank')
+        ->click('Start empty')
         ->assertNoJavaScriptErrors()
         ->assertSee('No chapters yet');
 
     expect($book->fresh()->storylines()->count())->toBe(1);
     expect($book->fresh()->storylines()->first()->name)->toBe('Main Storyline');
+    expect($book->fresh()->chapters()->count())->toBe(0);
 });
 
 it('shows the book library when books exist', function () {

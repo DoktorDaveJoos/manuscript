@@ -10,8 +10,8 @@ test('manuscript analyzer returns structured analysis', function () {
 
     $book = Book::factory()->withAi()->create();
 
-    $agent = new ManuscriptAnalyzer($book, AnalysisType::Pacing);
-    $response = $agent->prompt('Analyze pacing of the manuscript (book ID: 1).');
+    $agent = new ManuscriptAnalyzer($book, AnalysisType::Plothole);
+    $response = $agent->prompt('Analyze plot holes of the manuscript (book ID: 1).');
 
     expect($response['score'])->toBeInt()
         ->and($response['findings'])->toBeArray()
@@ -30,17 +30,15 @@ test('manuscript analyzer uses correct instructions per analysis type', function
 
     expect((string) $instructions)->toContain($expectedKeyword);
 })->with([
-    'pacing' => [AnalysisType::Pacing, 'pacing'],
     'plothole' => [AnalysisType::Plothole, 'plot holes'],
     'character_consistency' => [AnalysisType::CharacterConsistency, 'character consistency'],
-    'density' => [AnalysisType::Density, 'density'],
     'plot_deviation' => [AnalysisType::PlotDeviation, 'plot progression'],
 ]);
 
 test('manuscript analyzer includes book title in instructions', function () {
     $book = Book::factory()->create(['title' => 'The Great Novel']);
 
-    $agent = new ManuscriptAnalyzer($book, AnalysisType::Pacing);
+    $agent = new ManuscriptAnalyzer($book, AnalysisType::Plothole);
     $instructions = $agent->instructions();
 
     expect((string) $instructions)->toContain('The Great Novel');
@@ -49,7 +47,7 @@ test('manuscript analyzer includes book title in instructions', function () {
 test('manuscript analyzer exposes retrieval tools when no inline context is given', function () {
     $book = Book::factory()->withAi()->create();
 
-    $agent = new ManuscriptAnalyzer($book, AnalysisType::Pacing);
+    $agent = new ManuscriptAnalyzer($book, AnalysisType::Plothole);
 
     expect(iterator_to_array($agent->tools()))->toHaveCount(2);
 });
@@ -79,7 +77,7 @@ test('manuscript analyzer caches the persona prefix but not the inline context f
 
 test('manuscript analyzer includes middleware', function () {
     $book = Book::factory()->withAi()->create();
-    $agent = new ManuscriptAnalyzer($book, AnalysisType::Pacing);
+    $agent = new ManuscriptAnalyzer($book, AnalysisType::Plothole);
 
     expect($agent->middleware())->toHaveCount(1);
 });

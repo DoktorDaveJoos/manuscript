@@ -48,6 +48,7 @@ class EditorialReviewFactory extends Factory
         return $this->state([
             'status' => 'failed',
             'error_message' => 'AI provider returned an error.',
+            'error_code' => 'unknown',
             'overall_score' => null,
             'executive_summary' => null,
             'top_strengths' => null,

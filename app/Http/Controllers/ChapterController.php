@@ -57,6 +57,7 @@ class ChapterController extends Controller
             'book' => $book,
             'initialPanes' => $request->query('panes'),
             'fallbackChapterId' => $firstChapter?->id,
+            'writingStylePromptable' => $book->writingStylePromptable(),
         ]);
     }
 
@@ -120,20 +121,13 @@ class ChapterController extends Controller
             ->latest()
             ->first();
 
-        $editorialChapterNote = null;
-        if ($latestCompletedReview) {
-            $reviewNote = $latestCompletedReview->chapterNotes()
-                ->where('chapter_id', $chapter->id)
-                ->first();
-            $editorialChapterNote = $reviewNote?->notes['chapter_note'] ?? null;
-        }
-
         return response()->json([
             'chapter' => $chapter,
-            'prosePassRules' => Book::globalProsePassRules(),
-            'proofreadingConfig' => Book::globalProofreadingConfig(),
+            'prosePassRules' => $book->prosePassRules(),
+            'proofreadingConfig' => $book->proofreadingConfig(),
             'customDictionary' => $book->custom_dictionary ?? [],
-            'editorialChapterNote' => $editorialChapterNote,
+            'editorialChapterNote' => $latestCompletedReview?->chapterNoteFor($chapter->id),
+            'editorialFindings' => $latestCompletedReview?->unresolvedFindingsForChapter($chapter->id) ?? [],
         ]);
     }
 

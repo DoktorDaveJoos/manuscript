@@ -73,10 +73,6 @@ const panelLabelKeys: Partial<
     plot: { open: 'palette.openPlot', close: 'palette.closePlot' },
     ai: { open: 'palette.openAiAssistant', close: 'palette.closeAiAssistant' },
     chat: { open: 'palette.openChat', close: 'palette.closeChat' },
-    editorial: {
-        open: 'palette.openEditorialReview',
-        close: 'palette.closeEditorialReview',
-    },
 };
 
 export default function CommandPalette({

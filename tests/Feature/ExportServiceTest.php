@@ -687,6 +687,28 @@ test('export endpoint accepts a custom trim size with bleed', function () {
     ])->assertJsonMissingValidationErrors(['trim_size', 'custom_width', 'custom_height', 'bleed']);
 });
 
+test('export endpoint rejects an unknown bleed mode', function () {
+    $book = Book::factory()->create();
+
+    $this->postJson(route('books.settings.export.run', $book), [
+        'format' => 'pdf',
+        'scope' => 'full',
+        'bleed' => 3,
+        'bleed_mode' => 'diagonal',
+    ])->assertJsonValidationErrors(['bleed_mode']);
+});
+
+test('export endpoint accepts the outer bleed mode', function () {
+    $book = Book::factory()->create();
+
+    $this->postJson(route('books.settings.export.run', $book), [
+        'format' => 'pdf',
+        'scope' => 'full',
+        'bleed' => 3.175,
+        'bleed_mode' => 'outer',
+    ])->assertJsonMissingValidationErrors(['bleed', 'bleed_mode']);
+});
+
 test('export endpoint validates font_size', function () {
     $book = Book::factory()->create();
 

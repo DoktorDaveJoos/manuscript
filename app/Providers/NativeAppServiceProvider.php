@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\BackupService;
+use Illuminate\Support\Facades\File;
 use Native\Desktop\Contracts\ProvidesPhpIni;
 use Native\Desktop\Facades\AutoUpdater;
 use Native\Desktop\Facades\Window;
@@ -87,8 +88,49 @@ class NativeAppServiceProvider implements ProvidesPhpIni
         // for a large speedup. In dev keep the default so PHP edits hot-reload.
         if (app()->isProduction()) {
             $ini['opcache.validate_timestamps'] = '0';
+
+            // Every launch spawns several short-lived PHP processes
+            // (native:php-ini, native:config, optimize/migrate after updates,
+            // the queue worker, the cli-server) and OPcache shared memory dies
+            // with each one. A file cache persists compiled opcodes across
+            // processes AND launches, so only the first launch after an update
+            // pays the framework compile. The directory is keyed by app
+            // version because validate_timestamps=0 would otherwise serve
+            // stale opcodes after an update.
+            if ($fileCacheDir = $this->ensureOpcacheFileCacheDirectory()) {
+                $ini['opcache.file_cache'] = $fileCacheDir;
+            }
         }
 
         return $ini;
+    }
+
+    /**
+     * Create (and return) the version-keyed OPcache file-cache directory,
+     * pruning directories left behind by previous app versions. Best-effort:
+     * returns null on any failure so a filesystem hiccup can never block the
+     * launch — PHP simply falls back to per-process in-memory OPcache.
+     */
+    private function ensureOpcacheFileCacheDirectory(): ?string
+    {
+        try {
+            $version = preg_replace('/[^A-Za-z0-9._-]/', '_', (string) config('nativephp.version', '0.0.0'));
+            $base = storage_path('framework/cache/opcache');
+            $directory = $base.DIRECTORY_SEPARATOR.$version;
+
+            if (is_dir($base)) {
+                foreach (File::directories($base) as $existing) {
+                    if (basename($existing) !== $version) {
+                        File::deleteDirectory($existing);
+                    }
+                }
+            }
+
+            File::ensureDirectoryExists($directory);
+
+            return is_dir($directory) && is_writable($directory) ? $directory : null;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

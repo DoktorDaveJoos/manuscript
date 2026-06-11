@@ -21,7 +21,7 @@ class Book extends Model
     {
         return [
             'writing_style' => 'array',
-            'story_bible' => 'array',
+            'writing_style_prompt_dismissed' => 'boolean',
             'prose_pass_rules' => 'array',
             'daily_word_count_goal' => 'integer',
             'target_word_count' => 'integer',
@@ -37,6 +37,8 @@ class Book extends Model
             'export_drop_caps' => 'boolean',
             'custom_dictionary' => 'array',
             'cover_settings' => 'array',
+            'proofreading_config' => 'array',
+            'export_settings' => 'array',
         ];
     }
 
@@ -117,12 +119,6 @@ class Book extends Model
 
     public function getWritingStyleDisplayAttribute(): string
     {
-        // Check global setting first, fall back to book's own column
-        $globalText = AppSetting::get('writing_style_text');
-        if ($globalText) {
-            return $globalText;
-        }
-
         if ($this->writing_style_text) {
             return $this->writing_style_text;
         }
@@ -135,47 +131,41 @@ class Book extends Model
     }
 
     /**
-     * Get global prose pass rules. Saved configurations are merged with current defaults
+     * The book's prose pass rules. Saved configurations are merged with current defaults
      * so newly added rules appear automatically without requiring users to re-save.
      *
      * @return array<int, array{key: string, label: string, description: string, enabled: bool}>
      */
-    public static function globalProsePassRules(): array
+    public function prosePassRules(): array
     {
         $defaults = self::defaultProsePassRules();
-        $json = AppSetting::get('prose_pass_rules');
+        $saved = $this->prose_pass_rules;
 
-        if (! $json) {
+        if (! is_array($saved) || empty($saved)) {
             return $defaults;
         }
 
-        $decoded = is_string($json) ? json_decode($json, true) : $json;
-
-        if (! is_array($decoded) || empty($decoded)) {
-            return $defaults;
-        }
-
-        $savedKeys = collect($decoded)->pluck('key')->all();
+        $savedKeys = collect($saved)->pluck('key')->all();
         $missing = collect($defaults)
             ->reject(fn ($rule) => in_array($rule['key'], $savedKeys, true))
             ->values()
             ->all();
 
-        return [...$decoded, ...$missing];
+        return [...$saved, ...$missing];
     }
 
     /**
-     * Rules from globalProsePassRules() that make sense to apply during fresh generation
+     * Rules from prosePassRules() that make sense to apply during fresh generation
      * (Continue Writing), not just revision. Mechanical/structural rules transfer cleanly;
      * corrective ones (show_dont_tell, dialogue_tags) are left to the revision pass.
      *
      * @return array<int, array{key: string, label: string, description: string, enabled: bool}>
      */
-    public static function generationApplicableProsePassRules(): array
+    public function generationApplicableProsePassRules(): array
     {
         $applicable = ['shorten_long_sentences', 'sentence_variety', 'tightening', 'passive_voice', 'filter_words'];
 
-        return collect(self::globalProsePassRules())
+        return collect($this->prosePassRules())
             ->filter(fn ($rule) => in_array($rule['key'], $applicable, true))
             ->values()
             ->all();
@@ -206,16 +196,12 @@ class Book extends Model
     /**
      * @return array{spelling_enabled: bool, grammar_enabled: bool, grammar_checks: array<string, bool>}
      */
-    public static function globalProofreadingConfig(): array
+    public function proofreadingConfig(): array
     {
-        $json = AppSetting::get('proofreading_config');
+        $saved = $this->proofreading_config;
 
-        if ($json) {
-            $decoded = is_string($json) ? json_decode($json, true) : $json;
-
-            if (is_array($decoded) && ! empty($decoded)) {
-                return $decoded;
-            }
+        if (is_array($saved) && ! empty($saved)) {
+            return $saved;
         }
 
         return self::defaultProofreadingConfig();
@@ -241,6 +227,75 @@ class Book extends Model
         }
 
         return $snippet;
+    }
+
+    /**
+     * Below this many words of prose, style extraction produces noise rather
+     * than signal — sampling refuses and callers must treat the style as
+     * not-yet-derivable.
+     */
+    public const STYLE_SAMPLE_MIN_WORDS = 300;
+
+    public const STYLE_SAMPLE_MAX_WORDS = 5000;
+
+    public const STYLE_SAMPLE_CHAPTERS = 3;
+
+    /**
+     * Build the prose sample used for writing-style extraction: the first
+     * chapters (by reader order) that actually contain prose, tags stripped
+     * but paragraph breaks preserved, capped in length. Returns null when the
+     * book holds too little prose for a meaningful analysis.
+     */
+    public function writingStyleSample(): ?string
+    {
+        $sampleTexts = $this->chapters()
+            ->with('currentVersion')
+            ->orderBy('reader_order')
+            ->get()
+            ->map(fn (Chapter $chapter) => $chapter->currentVersion?->content)
+            ->filter()
+            ->take(self::STYLE_SAMPLE_CHAPTERS)
+            ->map(function (string $content) {
+                $withBreaks = preg_replace('#</(p|h[1-6]|li|blockquote|div)>#i', "$0\n\n", $content);
+
+                return trim(strip_tags($withBreaks));
+            })
+            ->filter()
+            ->values()
+            ->all();
+
+        if (empty($sampleTexts)) {
+            return null;
+        }
+
+        $combined = implode("\n\n---\n\n", $sampleTexts);
+        $words = preg_split('/\s+/', trim($combined));
+
+        if (count($words) < self::STYLE_SAMPLE_MIN_WORDS) {
+            return null;
+        }
+
+        if (count($words) > self::STYLE_SAMPLE_MAX_WORDS) {
+            // Slice by token (word + following whitespace) so paragraph breaks
+            // survive the cap — the analysis reads them as structure.
+            $tokens = preg_split('/(\s+)/', trim($combined), -1, PREG_SPLIT_DELIM_CAPTURE);
+            $combined = implode('', array_slice($tokens, 0, self::STYLE_SAMPLE_MAX_WORDS * 2 - 1));
+        }
+
+        return $combined;
+    }
+
+    /**
+     * Whether the editor should offer to derive a writing style before running
+     * a prose-generating AI feature: no style yet, the offer was not dismissed,
+     * and there is enough prose to analyze. Uses the cheap word_count sum as a
+     * proxy for the authoritative writingStyleSample() check.
+     */
+    public function writingStylePromptable(): bool
+    {
+        return $this->writing_style_display === ''
+            && ! $this->writing_style_prompt_dismissed
+            && $this->chapters()->sum('word_count') >= self::STYLE_SAMPLE_MIN_WORDS;
     }
 
     /**
@@ -310,27 +365,11 @@ class Book extends Model
     }
 
     /**
-     * @return HasMany<AiPreparation, $this>
-     */
-    public function aiPreparations(): HasMany
-    {
-        return $this->hasMany(AiPreparation::class);
-    }
-
-    /**
      * @return HasMany<WritingSession, $this>
      */
     public function writingSessions(): HasMany
     {
         return $this->hasMany(WritingSession::class);
-    }
-
-    /**
-     * @return HasMany<HealthSnapshot, $this>
-     */
-    public function healthSnapshots(): HasMany
-    {
-        return $this->hasMany(HealthSnapshot::class);
     }
 
     /**

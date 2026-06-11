@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EditorialReviewErrorCode;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,6 +33,7 @@ class EditorialReview extends Model
             ->update([
                 'status' => 'failed',
                 'error_message' => __('Review timed out. Please try again.'),
+                'error_code' => EditorialReviewErrorCode::Timeout->value,
                 'updated_at' => now(),
             ]);
     }
@@ -51,6 +53,43 @@ class EditorialReview extends Model
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * The review's chapter note for one chapter, or null when none exists.
+     */
+    public function chapterNoteFor(int $chapterId): ?string
+    {
+        return $this->chapterNotes()
+            ->where('chapter_id', $chapterId)
+            ->latest('id')
+            ->first()
+            ?->notes['chapter_note'] ?? null;
+    }
+
+    /**
+     * Findings across all sections that reference the chapter and have not
+     * been marked resolved by the user.
+     *
+     * @return list<array{key: string, section: string, severity: string, description: string, recommendation: string}>
+     */
+    public function unresolvedFindingsForChapter(int $chapterId): array
+    {
+        $resolvedKeys = $this->resolved_findings ?? [];
+
+        return $this->sections
+            ->flatMap(fn (EditorialReviewSection $section) => collect($section->findings ?? [])
+                ->filter(fn (array $finding) => in_array($chapterId, array_map('intval', $finding['chapter_references'] ?? []), true)
+                    && ! in_array($finding['key'] ?? '', $resolvedKeys, true))
+                ->map(fn (array $finding) => [
+                    'key' => $finding['key'] ?? '',
+                    'section' => $section->type->value,
+                    'severity' => $finding['severity'] ?? 'suggestion',
+                    'description' => $finding['description'] ?? '',
+                    'recommendation' => $finding['recommendation'] ?? '',
+                ]))
+            ->values()
+            ->all();
     }
 
     /**

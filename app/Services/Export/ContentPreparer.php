@@ -58,34 +58,56 @@ class ContentPreparer
      * Add a drop cap to the first letter of the first non-empty paragraph,
      * capturing any leading punctuation (quotes, brackets) into the drop cap span.
      * Handles inline tags (em, strong, span) wrapping the first letter.
+     *
+     * The paragraph itself is tagged `drop-cap-paragraph` (templates use it to
+     * keep the opening line's leading even), and the rest of the opening phrase
+     * — the remainder of the first word plus up to two more words, when plain
+     * text — is wrapped in `drop-cap-phrase` so templates can set it in small
+     * caps, the traditional companion to an initial cap.
      */
     public function addDropCap(string $html): string
     {
         // Match first <p> tag, then any number of opening inline tags, then optional
-        // punctuation, then the first letter. Captures:
+        // punctuation, then the first letter, then the remaining opening phrase.
+        // Captures:
         // 1: <p...>
         // 2: optional whitespace
         // 3: zero or more opening inline tags like <em>, <strong>, <span class="...">
         // 4: leading punctuation (quotes, brackets)
         // 5: first letter
-        $pattern = '/(<p[^>]*>)([\s]*)((?:<[^\/][^>]*>)*)(["\'"\'\x{201C}\x{201D}\x{2018}\x{2019}\x{00AB}\x{00BF}\x{00A1}\(\[]*)([\p{L}\p{N}])/u';
+        // 6: rest of the first word plus up to two more words (plain text only)
+        $pattern = '/(<p[^>]*>)([\s]*)((?:<[^\/][^>]*>)*)(["\'"\'\x{201C}\x{201D}\x{2018}\x{2019}\x{00AB}\x{00BF}\x{00A1}\(\[]*)([\p{L}\p{N}])([^\s<]*(?:\s+[^\s<]+){0,2})?/u';
 
         return preg_replace_callback(
             $pattern,
             function ($matches) {
-                $openTag = $matches[1];
+                $openTag = $this->addClassToTag($matches[1], 'drop-cap-paragraph');
                 $whitespace = $matches[2];
                 $inlineTags = $matches[3];
                 $punctuation = $matches[4];
                 $letter = $matches[5];
+                $phrase = $matches[6] ?? '';
 
                 $dropCapContent = $punctuation.$letter;
+                $phraseHtml = $phrase !== '' ? "<span class=\"drop-cap-phrase\">{$phrase}</span>" : '';
 
-                return "{$openTag}{$whitespace}{$inlineTags}<span class=\"drop-cap\">{$dropCapContent}</span>";
+                return "{$openTag}{$whitespace}{$inlineTags}<span class=\"drop-cap\">{$dropCapContent}</span>{$phraseHtml}";
             },
             $html,
             1,
         );
+    }
+
+    /**
+     * Append a class to an existing HTML open tag, merging with any class attribute.
+     */
+    private function addClassToTag(string $openTag, string $class): string
+    {
+        if (preg_match('/class="([^"]*)"/', $openTag, $m)) {
+            return str_replace($m[0], 'class="'.$m[1].' '.$class.'"', $openTag);
+        }
+
+        return preg_replace('/^<(\w+)/', '<$1 class="'.$class.'"', $openTag);
     }
 
     /**

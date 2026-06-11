@@ -13,6 +13,20 @@
     "section.aiProviders": "KI-Anbieter",
     "section.writingStyle": "Schreibstil",
     "section.prosePassRules": "Überarbeitungsregeln",
+    "bookSettings.title": "Bucheinstellungen",
+    "section.general": "Allgemein",
+    "section.publishing": "Veröffentlichung",
+    "section.cover": "Cover",
+    "general.title": "Allgemein",
+    "general.pageTitle": "Allgemein — {{bookTitle}}",
+    "general.description": "Titel, Autor, Sprache und Genre deines Buchs.",
+    "general.labelTitle": "Titel",
+    "general.labelAuthor": "Autor",
+    "general.labelLanguage": "Sprache",
+    "general.labelGenre": "Genre",
+    "general.labelSecondaryGenres": "Weitere Genres",
+    "general.placeholderGenre": "Genre auswählen (optional)",
+    "general.placeholderSecondaryGenres": "Genre hinzufügen…",
     "section.export": "Export",
 
     "language.sectionLabel": "SPRACHE",
@@ -86,6 +100,9 @@
     "welcome.title": "Willkommen bei Manuscript",
     "welcome.description": "Gib deinen Lizenzschlüssel ein, um zu starten.",
     "welcome.buyLicense": "Noch keine Lizenz? Hol dir eine auf getmanuscript.app",
+    "welcome.startTrial": "Oder starte deine kostenlose 7-Tage-Testphase",
+    "welcome.trialStarting": "Testphase wird gestartet...",
+    "welcome.trialExpired": "Deine kostenlose Testphase ist abgelaufen. Gib einen Lizenzschlüssel ein, um weiterzuschreiben.",
 
     "aiProviders.title": "KI-Anbieter",
     "aiProviders.description": "Wähle deinen KI-Anbieter und konfiguriere den API-Schlüssel.",
@@ -111,82 +128,81 @@
     "aiProviders.testConnection": "Verbindung testen",
     "aiProviders.saveFailed": "Einstellungen konnten nicht gespeichert werden.",
     "aiProviders.testFailed": "Verbindungstest fehlgeschlagen.",
+    "aiProviders.testResult.invalid_key": "Der Anbieter hat diesen API-Key abgelehnt. Prüfe, ob du den vollständigen Schlüssel kopiert hast, oder erstelle einen neuen und speichere ihn hier.",
+    "aiProviders.testResult.insufficient_credits": "Dein API-Key funktioniert, aber dein Konto hat kein Guthaben. Lade in der Anbieter-Konsole Guthaben auf — siehe „API-Key erhalten“ — und teste dann erneut.",
+    "aiProviders.testResult.rate_limited": "Der Anbieter drosselt dein Konto gerade. Warte einen Moment und teste erneut.",
+    "aiProviders.testResult.overloaded": "Der Anbieter ist gerade überlastet. Versuche es in einer Minute erneut.",
+    "aiProviders.testResult.timeout": "Der Anbieter hat nicht rechtzeitig geantwortet. Prüfe deine Internetverbindung und versuche es erneut.",
 
     "aiProviders.howToGetKey.trigger": "API-Key erhalten",
     "aiProviders.howToGetKey.title": "So bekommst du deinen {{provider}}-API-Key",
-    "aiProviders.howToGetKey.intro": "Folge diesen Schritten, um einen API-Key für {{provider}} zu erstellen. Manuscript speichert ihn verschlüsselt auf diesem Gerät — dein Schlüssel verlässt niemals deinen Rechner.",
+    "aiProviders.howToGetKey.intro": "Folge diesen Schritten, um einen API-Key für {{provider}} zu erstellen und dein Konto mit Guthaben aufzuladen. Manuscript speichert ihn verschlüsselt auf diesem Gerät — dein Schlüssel verlässt niemals deinen Rechner.",
     "aiProviders.howToGetKey.close": "Schließen",
+    "aiProviders.howToGetKey.copyHint": "Kopiere diesen Link und füge ihn in deinen Browser ein, um die Konsole des Anbieters zu öffnen.",
+    "aiProviders.howToGetKey.copy": "Link kopieren",
+    "aiProviders.howToGetKey.copied": "Kopiert!",
 
-    "aiProviders.howToGetKey.anthropic.consoleLabel": "Anthropic Console öffnen",
     "aiProviders.howToGetKey.anthropic.steps": [
-        "Öffne console.anthropic.com im Browser.",
-        "Melde dich an oder erstelle ein kostenloses Anthropic-Konto.",
-        "Wähle in der Seitenleiste Settings → API Keys.",
-        "Klicke auf Create Key und vergib einen Namen wie „Manuscript“.",
-        "Kopiere den Schlüssel (beginnt mit sk-ant-) — er wird nur einmal angezeigt — und füge ihn hier ein."
+        "Kopiere den Link unten und öffne console.anthropic.com in deinem Browser. Melde dich an oder erstelle ein Konto.",
+        "Lade zuerst Guthaben auf: Öffne Settings → Billing und kaufe Credits (mindestens 5 $). Ohne Guthaben schlägt jede Anfrage fehl.",
+        "Öffne Settings → API Keys und klicke auf Create Key. Vergib einen Namen wie „Manuscript“.",
+        "Kopiere den Schlüssel (beginnt mit sk-ant-) sofort — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen."
     ],
 
-    "aiProviders.howToGetKey.openai.consoleLabel": "OpenAI Platform öffnen",
     "aiProviders.howToGetKey.openai.steps": [
-        "Öffne platform.openai.com und melde dich an.",
-        "Klicke oben rechts auf dein Profil und wähle View API keys.",
-        "Klicke auf Create new secret key und vergib einen Namen.",
-        "Kopiere den Schlüssel (beginnt mit sk-) — er wird nur einmal angezeigt — und füge ihn hier ein.",
-        "Hinterlege unter Settings → Billing eine Zahlungsmethode, falls noch nicht geschehen."
+        "Kopiere den Link unten und öffne platform.openai.com/api-keys in deinem Browser. Melde dich an oder erstelle ein Konto.",
+        "Lade zuerst Guthaben auf: Öffne Settings → Billing, hinterlege eine Zahlungsmethode und kaufe Credits (z. B. 5 $). ChatGPT Plus enthält kein API-Guthaben.",
+        "Klicke auf der API-Keys-Seite auf Create new secret key und vergib einen Namen.",
+        "Kopiere den Schlüssel (beginnt mit sk-) sofort — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen."
     ],
 
-    "aiProviders.howToGetKey.gemini.consoleLabel": "Google AI Studio öffnen",
     "aiProviders.howToGetKey.gemini.steps": [
-        "Öffne aistudio.google.com im Browser.",
-        "Melde dich mit deinem Google-Konto an.",
-        "Klicke oben rechts auf Get API key.",
-        "Wähle ein bestehendes Google-Cloud-Projekt oder lege ein neues an und klicke auf Create API key.",
-        "Kopiere den Schlüssel und füge ihn hier ein."
+        "Kopiere den Link unten und öffne aistudio.google.com/apikey in deinem Browser. Melde dich mit deinem Google-Konto an.",
+        "Klicke auf Create API key und wähle ein Google-Cloud-Projekt aus oder erstelle eines.",
+        "Kopiere den Schlüssel sofort, füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen.",
+        "Die kostenlose Stufe reicht für den Einstieg. Wenn du an Rate-Limits stößt, aktiviere die Abrechnung für dein Projekt in Google AI Studio."
     ],
 
-    "aiProviders.howToGetKey.groq.consoleLabel": "Groq Console öffnen",
     "aiProviders.howToGetKey.groq.steps": [
-        "Öffne console.groq.com und melde dich an (Google, GitHub oder E-Mail).",
-        "Öffne in der Seitenleiste den Tab API Keys.",
+        "Kopiere den Link unten und öffne console.groq.com/keys in deinem Browser. Melde dich an (Google, GitHub oder E-Mail).",
         "Klicke auf Create API Key und vergib einen Namen.",
-        "Kopiere den Schlüssel (beginnt mit gsk_) — er wird nur einmal angezeigt.",
-        "Füge ihn hier ein."
+        "Kopiere den Schlüssel (beginnt mit gsk_) sofort — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen.",
+        "Die kostenlose Stufe hat Tageslimits. Für regelmäßige Nutzung führe unter Settings → Billing ein Upgrade durch."
     ],
 
-    "aiProviders.howToGetKey.xai.consoleLabel": "xAI Console öffnen",
     "aiProviders.howToGetKey.xai.steps": [
-        "Öffne console.x.ai und melde dich mit deinem X-/xAI-Konto an.",
-        "Öffne den Tab API Keys.",
-        "Klicke auf Create API Key und vergib einen Namen.",
-        "Kopiere den Schlüssel (beginnt mit xai-) — er wird nur einmal angezeigt.",
-        "Füge ihn hier ein."
+        "Kopiere den Link unten und öffne console.x.ai in deinem Browser. Melde dich an oder erstelle ein xAI-Konto.",
+        "Lade zuerst Guthaben auf: Öffne Billing → Credits und kaufe Credits. Ohne Guthaben schlägt jede Anfrage fehl.",
+        "Öffne API Keys und klicke auf Create API Key.",
+        "Kopiere den Schlüssel (beginnt mit xai-) sofort — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen."
     ],
 
-    "aiProviders.howToGetKey.deepseek.consoleLabel": "DeepSeek Platform öffnen",
     "aiProviders.howToGetKey.deepseek.steps": [
-        "Öffne platform.deepseek.com und melde dich an oder lege ein Konto an.",
-        "Öffne in der Seitenleiste die Seite API Keys.",
-        "Klicke auf Create new API key.",
-        "Kopiere den Schlüssel — er wird nur einmal angezeigt.",
-        "Füge ihn hier ein. Lade bei Bedarf zuvor unter Billing Guthaben auf."
+        "Kopiere den Link unten und öffne platform.deepseek.com/api_keys in deinem Browser. Melde dich an oder erstelle ein Konto.",
+        "Lade zuerst Guthaben auf: Öffne Billing → Top up und zahle ein. Ohne Guthaben schlägt jede Anfrage fehl.",
+        "Klicke auf der API-Keys-Seite auf Create new API key.",
+        "Kopiere den Schlüssel sofort — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen."
     ],
 
-    "aiProviders.howToGetKey.mistral.consoleLabel": "Mistral Console öffnen",
     "aiProviders.howToGetKey.mistral.steps": [
-        "Öffne console.mistral.ai und melde dich an oder lege ein Konto an.",
-        "Öffne in deinem Workspace den Tab API Keys.",
-        "Klicke auf Create new key und vergib einen Namen.",
-        "Kopiere den Schlüssel — er wird nur einmal angezeigt.",
-        "Füge ihn hier ein. Hinterlege bei Bedarf zuvor unter Billing eine Zahlungsmethode."
+        "Kopiere den Link unten und öffne console.mistral.ai/api-keys in deinem Browser. Melde dich an oder erstelle ein Konto.",
+        "Aktiviere zuerst die Abrechnung: Öffne Workspace → Billing und hinterlege eine Zahlungsmethode (oder aktiviere den kostenlosen Experiment-Plan).",
+        "Klicke auf der API-Keys-Seite auf Create new key.",
+        "Kopiere den Schlüssel sofort — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen."
     ],
 
-    "aiProviders.howToGetKey.openrouter.consoleLabel": "OpenRouter öffnen",
     "aiProviders.howToGetKey.openrouter.steps": [
-        "Öffne openrouter.ai und melde dich an (Google, GitHub oder E-Mail).",
-        "Klicke oben rechts auf dein Profilbild und wähle Keys.",
-        "Klicke auf Create Key und vergib einen Namen.",
-        "Kopiere den Schlüssel (beginnt mit sk-or-) — er wird nur einmal angezeigt.",
-        "Füge ihn hier ein und lade unter Credits Guthaben auf, um den Key zu nutzen."
+        "Kopiere den Link unten und öffne openrouter.ai/keys in deinem Browser. Melde dich an (Google, GitHub oder E-Mail).",
+        "Kaufe zuerst Credits: Öffne openrouter.ai/credits und lade Guthaben auf. Ohne Credits schlägt jede Anfrage fehl.",
+        "Klicke auf der Keys-Seite auf Create Key und vergib einen Namen.",
+        "Kopiere den Schlüssel (beginnt mit sk-or-) sofort — er wird nur einmal angezeigt.",
+        "Füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen."
     ],
     "aiProviders.advancedSettings": "Erweiterte Einstellungen",
     "aiProviders.advancedDescription": "Die App wählt automatisch das beste Modell für jede Aufgabe. Ändere diese nur, wenn du die Unterschiede zwischen Modellen genau kennst — falsche Entscheidungen können die Ausgabequalität verringern oder Kosten erhöhen.",
@@ -206,14 +222,12 @@
     "writingStyle.regenerate": "Neu generieren",
     "writingStyle.placeholder": "Beschreibe die Erzählstimme, den Satzrhythmus, das Vokabular und besondere Merkmale...",
     "writingStyle.saving": "Speichern...",
-    "writingStyle.saved": "Gespeichert",
     "writingStyle.saveFailed": "Speichern fehlgeschlagen.",
     "writingStyle.regenerateFailed": "Schreibstil konnte nicht neu generiert werden.",
-    "writingStyle.markdown": "Markdown",
 
     "prosePassRules.title": "Überarbeitungsregeln",
     "prosePassRules.pageTitle": "Überarbeitungsregeln — {{bookTitle}}",
-    "prosePassRules.description": "Diese Regeln werden beim Überarbeiten von Prosa angewendet. Aktivierte Regeln bestimmen, wie die KI deinen Text überprüft und verbessert.",
+    "prosePassRules.description": "Diese Regeln leiten die KI bei jeder Arbeit an deiner Prosa – beim Überarbeiten, beim Umschreiben einer Auswahl und beim Weiterschreiben.",
     "prosePassRules.rules.show_dont_tell.label": "Zeigen statt erzählen",
     "prosePassRules.rules.show_dont_tell.description": "Erzählende Aussagen durch Handlung und Detail in zeigende verwandeln.",
     "prosePassRules.rules.dialogue_tags.label": "Dialogverben straffen",
@@ -231,6 +245,7 @@
 
     "sidebar.proofreading": "Korrekturlesen",
     "proofreading.title": "Korrekturlesen",
+    "proofreading.pageTitle": "Korrekturlesen — {{bookTitle}}",
     "proofreading.description": "Echtzeit-Rechtschreib- und Grammatikprüfung im Editor.",
     "proofreading.spelling.title": "Rechtschreibprüfung",
     "proofreading.spelling.enabled": "Rechtschreibprüfung aktivieren",

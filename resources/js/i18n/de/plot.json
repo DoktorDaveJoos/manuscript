@@ -101,7 +101,11 @@
     "readingOrder.confirmContinue": "Fortfahren",
 
     "emptyState.title": "Jede große Geschichte hat eine Form",
-    "emptyState.subtitle": "Hinter jedem Pageturner steckt eine Struktur, die der Leser nie sieht \u2014 aber immer sp\u00fcrt.\nW\u00e4hle eine bew\u00e4hrte Vorlage. Wir zeigen dir genau, wie sie funktioniert.",
+    "emptyState.subtitle": "Hinter jedem Pageturner steckt eine Struktur, die der Leser nie sieht \u2014 aber immer sp\u00fcrt. Du musst sie nicht allein finden.",
+    "emptyState.coachCta.title": "Entwickle deinen Plot mit dem Coach",
+    "emptyState.coachCta.text": "Der Coach stellt dir die richtigen Fragen und baut die Struktur Schritt f\u00fcr Schritt mit dir auf \u2014 aus deiner Idee, in deinem Tempo.",
+    "emptyState.coachCta.button": "Mit dem Coach starten",
+    "emptyState.orTemplates": "Oder w\u00e4hle eine bew\u00e4hrte Vorlage",
     "emptyState.hint": "Das hier ist ein Startpunkt, kein Vertrag. Benenne um, ordne neu und forme alles sp\u00e4ter um.",
     "emptyState.fitsBadge": "BELIEBT",
     "emptyState.select": "Auswählen",

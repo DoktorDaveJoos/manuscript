@@ -30,7 +30,19 @@ interface ExportTemplate
 
     public function sceneBreakCss(): string;
 
-    public function dropCapCss(): string;
+    /**
+     * Drop-cap CSS for mPDF rendering. mPDF cannot float inline elements, so
+     * templates set a raised cap: an oversized initial sitting on the first
+     * baseline, with `line-stacking-strategy: block-line-height` keeping the
+     * opening line's leading even.
+     */
+    public function dropCapCss(?FontPairing $fontPairing = null): string;
+
+    /**
+     * Drop-cap CSS for EPUB rendering, where reader engines support a true
+     * floated drop cap.
+     */
+    public function epubDropCapCss(?FontPairing $fontPairing = null): string;
 
     /**
      * HTML markup for the chapter opening: the number label, plus the title when $includeTitle is true.

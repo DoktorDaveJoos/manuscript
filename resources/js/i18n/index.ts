@@ -1,22 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import deAiDashboard from './de/ai-dashboard.json';
-import deAi from './de/ai.json';
-import deCommon from './de/common.json';
-import deDashboard from './de/dashboard.json';
-import deEditor from './de/editor.json';
-import deEditorialReview from './de/editorial-review.json';
-import deExport from './de/export.json';
-import deOnboarding from './de/onboarding.json';
-import dePlotCoach from './de/plot-coach.json';
-import dePlotPanel from './de/plot-panel.json';
-import dePlot from './de/plot.json';
-import dePublish from './de/publish.json';
-import deSettings from './de/settings.json';
-import deWikiPanel from './de/wiki-panel.json';
-import deWiki from './de/wiki.json';
-import enAiDashboard from './en/ai-dashboard.json';
 import enAi from './en/ai.json';
 import enCommon from './en/common.json';
 import enDashboard from './en/dashboard.json';
@@ -32,21 +16,17 @@ import enSettings from './en/settings.json';
 import enWikiPanel from './en/wiki-panel.json';
 import enWiki from './en/wiki.json';
 
-import esAiDashboard from './es/ai-dashboard.json';
-import esAi from './es/ai.json';
-import esCommon from './es/common.json';
-import esDashboard from './es/dashboard.json';
-import esEditor from './es/editor.json';
-import esEditorialReview from './es/editorial-review.json';
-import esExport from './es/export.json';
-import esOnboarding from './es/onboarding.json';
-import esPlotCoach from './es/plot-coach.json';
-import esPlotPanel from './es/plot-panel.json';
-import esPlot from './es/plot.json';
-import esPublish from './es/publish.json';
-import esSettings from './es/settings.json';
-import esWikiPanel from './es/wiki-panel.json';
-import esWiki from './es/wiki.json';
+// Only the fallback locale ships in the entry bundle. The other locales are
+// code-split by Vite via the lazy import.meta.glob below and fetched from the
+// local server the first time setAppLanguage() switches to them — keeping
+// ~2/3 of the locale JSON out of the main-thread parse on every window open.
+const lazyLocaleLoaders: Record<
+    string,
+    Record<string, () => Promise<unknown>>
+> = {
+    de: import.meta.glob('./de/*.json'),
+    es: import.meta.glob('./es/*.json'),
+};
 
 i18n.use(initReactI18next).init({
     resources: {
@@ -65,41 +45,6 @@ i18n.use(initReactI18next).init({
             ai: enAi,
             export: enExport,
             'editorial-review': enEditorialReview,
-            'ai-dashboard': enAiDashboard,
-        },
-        de: {
-            common: deCommon,
-            editor: deEditor,
-            dashboard: deDashboard,
-            settings: deSettings,
-            onboarding: deOnboarding,
-            plot: dePlot,
-            'plot-coach': dePlotCoach,
-            'plot-panel': dePlotPanel,
-            publish: dePublish,
-            wiki: deWiki,
-            'wiki-panel': deWikiPanel,
-            ai: deAi,
-            export: deExport,
-            'editorial-review': deEditorialReview,
-            'ai-dashboard': deAiDashboard,
-        },
-        es: {
-            common: esCommon,
-            editor: esEditor,
-            dashboard: esDashboard,
-            settings: esSettings,
-            onboarding: esOnboarding,
-            plot: esPlot,
-            'plot-coach': esPlotCoach,
-            'plot-panel': esPlotPanel,
-            publish: esPublish,
-            wiki: esWiki,
-            'wiki-panel': esWikiPanel,
-            ai: esAi,
-            export: esExport,
-            'editorial-review': esEditorialReview,
-            'ai-dashboard': esAiDashboard,
         },
     },
     lng: 'en',
@@ -120,11 +65,38 @@ i18n.use(initReactI18next).init({
         'ai',
         'export',
         'editorial-review',
-        'ai-dashboard',
     ],
     interpolation: {
         escapeValue: false,
     },
 });
+
+/**
+ * Switch the app language, lazy-loading the locale's namespaces first when
+ * they aren't bundled. Loading is best-effort: if a chunk fails, the switch
+ * still happens and missing keys fall back to English.
+ */
+export async function setAppLanguage(locale: string): Promise<void> {
+    const loaders = lazyLocaleLoaders[locale];
+
+    if (loaders && !i18n.hasResourceBundle(locale, 'common')) {
+        try {
+            await Promise.all(
+                Object.entries(loaders).map(async ([path, load]) => {
+                    const namespace = path
+                        .split('/')
+                        .pop()!
+                        .replace(/\.json$/, '');
+                    const module = (await load()) as { default: object };
+                    i18n.addResourceBundle(locale, namespace, module.default);
+                }),
+            );
+        } catch (error) {
+            console.error(`[i18n] Failed to load locale "${locale}":`, error);
+        }
+    }
+
+    await i18n.changeLanguage(locale);
+}
 
 export default i18n;

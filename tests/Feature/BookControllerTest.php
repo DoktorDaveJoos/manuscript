@@ -67,6 +67,14 @@ test('skip import creates default storyline and redirects to editor', function (
         ->and($book->storylines->first()->name)->toBe('Main Storyline');
 });
 
+test('starting empty does not create any chapter', function () {
+    $book = Book::factory()->create();
+
+    $this->post(route('books.import.skip', $book));
+
+    expect($book->chapters()->count())->toBe(0);
+});
+
 test('validates title is required', function () {
     $this->post(route('books.store'), [
         'title' => '',
@@ -161,10 +169,12 @@ test('duplicates a book with all relationships', function () {
     expect($copyPlotPoint->act_id)->toBe($copy->acts->first()->id);
 });
 
-test('duplicate resets AI-derived fields', function () {
+test('duplicate keeps per-book writing style and prose rules', function () {
+    // Style and rules live only on the book (no global fallback), so a
+    // duplicate must carry them over or the copy would silently lose them.
     $book = Book::factory()->withAi()->create([
         'writing_style' => ['tone' => 'dark'],
-        'story_bible' => ['setting' => 'Medieval'],
+        'writing_style_text' => 'Dark and moody.',
         'prose_pass_rules' => [['key' => 'test', 'enabled' => true]],
     ]);
 
@@ -172,7 +182,7 @@ test('duplicate resets AI-derived fields', function () {
         ->assertRedirect(route('books.index'));
 
     $copy = Book::query()->where('title', 'like', '%(Copy)%')->first();
-    expect($copy->writing_style)->toBeNull()
-        ->and($copy->story_bible)->toBeNull()
-        ->and($copy->prose_pass_rules)->toBeNull();
+    expect($copy->writing_style)->toBe(['tone' => 'dark'])
+        ->and($copy->writing_style_text)->toBe('Dark and moody.')
+        ->and($copy->prose_pass_rules)->toBe([['key' => 'test', 'enabled' => true]]);
 });

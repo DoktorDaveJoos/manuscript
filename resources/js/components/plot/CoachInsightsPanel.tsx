@@ -19,7 +19,8 @@ type CoachInsightsPanelProps = {
     onClose: () => void;
 };
 
-const HINT_KEYS = [
+// Shown while the board has structure — these all assume acts/beats exist.
+const WORKING_HINT_KEYS = [
     'insights.hints.discuss_act',
     'insights.hints.beats_to_chapters',
     'insights.hints.fill_empty_plot_point',
@@ -32,6 +33,16 @@ const HINT_KEYS = [
     'insights.hints.character_wound',
 ] as const;
 
+// Shown while the board is empty — invite the author in and teach the vocabulary.
+const ONBOARDING_HINT_KEYS = [
+    'insights.hints.what_can_you_do',
+    'insights.hints.what_is_act_plot_beat',
+    'insights.hints.idea_where_to_start',
+    'insights.hints.find_structure',
+    'insights.hints.before_plotting',
+    'insights.hints.structure_for_genre',
+] as const;
+
 export default function CoachInsightsPanel({
     providerLabel,
     modelName,
@@ -41,6 +52,8 @@ export default function CoachInsightsPanel({
 }: CoachInsightsPanelProps) {
     const { t } = useTranslation('plot-coach');
     const contextRows = buildContextRows(counts, t);
+    const boardIsEmpty = counts.acts + counts.plotPoints + counts.beats === 0;
+    const hintKeys = boardIsEmpty ? ONBOARDING_HINT_KEYS : WORKING_HINT_KEYS;
 
     return (
         <aside className="flex h-full min-h-0 shrink-0 flex-col border-l border-border-light bg-surface-sidebar">
@@ -62,7 +75,7 @@ export default function CoachInsightsPanel({
                 <HintsBlock
                     title={t('insights.hints.title')}
                     subtitle={t('insights.hints.subtitle')}
-                    hints={HINT_KEYS.map((key) => t(key))}
+                    hints={hintKeys.map((key) => t(key))}
                     onHintClick={onHintClick}
                 />
             </div>

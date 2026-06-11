@@ -64,6 +64,15 @@ final class AiErrorClassifier
     private static function detectKind(Throwable $e): string
     {
         if ($e instanceof RateLimitedException) {
+            // OpenAI signals an exhausted balance with HTTP 429
+            // ("insufficient_quota"), which the SDK wraps as a rate limit
+            // before its credit-pattern check runs. Re-sniff the original
+            // response so out-of-credits isn't reported as a transient
+            // "try again in a moment".
+            if (self::isQuotaExhausted(self::unwrapRequestException($e))) {
+                return self::KIND_INSUFFICIENT_CREDITS;
+            }
+
             return self::KIND_RATE_LIMITED;
         }
 
@@ -104,7 +113,9 @@ final class AiErrorClassifier
         }
 
         if ($status === 429) {
-            return self::KIND_RATE_LIMITED;
+            return self::isQuotaExhausted($e)
+                ? self::KIND_INSUFFICIENT_CREDITS
+                : self::KIND_RATE_LIMITED;
         }
 
         if (in_array($status, [502, 503, 529], true)) {
@@ -136,6 +147,40 @@ final class AiErrorClassifier
         return self::KIND_UNKNOWN;
     }
 
+    /**
+     * The original HTTP exception, when a typed SDK exception (or any other
+     * wrapper) carries it in its previous-exception chain.
+     */
+    private static function unwrapRequestException(Throwable $e): ?RequestException
+    {
+        for ($current = $e; $current !== null; $current = $current->getPrevious()) {
+            if ($current instanceof RequestException) {
+                return $current;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Whether the provider response describes an exhausted balance / quota
+     * rather than a transient rate limit. Genuine rate-limit messages talk
+     * about requests/tokens per minute and never mention billing terms.
+     */
+    private static function isQuotaExhausted(?RequestException $e): bool
+    {
+        if ($e === null || $e->response === null) {
+            return false;
+        }
+
+        $body = $e->response->json() ?? [];
+        $rawMessage = strtolower((string) ($body['error']['message'] ?? $body['message'] ?? ''));
+        $rawCode = strtolower((string) ($body['error']['code'] ?? $body['error']['type'] ?? ''));
+
+        return self::matchesAny($rawCode, ['insufficient_quota'])
+            || self::matchesAny($rawMessage, ['insufficient', 'quota', 'credit', 'billing']);
+    }
+
     private static function extractStatus(Throwable $e): int
     {
         if ($e instanceof RequestException && $e->response !== null) {
@@ -159,8 +204,10 @@ final class AiErrorClassifier
 
     private static function extractProviderMessage(Throwable $e): ?string
     {
-        if ($e instanceof RequestException && $e->response !== null) {
-            $body = $e->response->json() ?? [];
+        $http = self::unwrapRequestException($e);
+
+        if ($http?->response !== null) {
+            $body = $http->response->json() ?? [];
             $msg = trim((string) ($body['error']['message'] ?? $body['message'] ?? ''));
 
             if ($msg !== '') {

@@ -1,7 +1,6 @@
 <?php
 
 use App\Ai\Agents\ContinueWritingAgent;
-use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\Storyline;
@@ -41,10 +40,8 @@ test('continue writing agent omits rules the author has disabled', function () {
         }
     }
     unset($rule);
-    AppSetting::set('prose_pass_rules', json_encode($rules));
-    AppSetting::clearCache();
 
-    $book = Book::factory()->create();
+    $book = Book::factory()->create(['prose_pass_rules' => $rules]);
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
 
@@ -61,10 +58,8 @@ test('continue writing agent omits style rules section when nothing applicable i
         $rule['enabled'] = false;
     }
     unset($rule);
-    AppSetting::set('prose_pass_rules', json_encode($rules));
-    AppSetting::clearCache();
 
-    $book = Book::factory()->create();
+    $book = Book::factory()->create(['prose_pass_rules' => $rules]);
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
 

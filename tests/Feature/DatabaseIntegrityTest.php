@@ -4,6 +4,8 @@ use App\Database\SqliteVecConnector;
 use App\Services\DatabaseRepairService;
 use App\Services\DatabaseStartupService;
 use App\Services\SqliteVec\SqliteVecService;
+use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -111,7 +113,7 @@ test('integrity check is skipped for web requests', function () {
     // saves on every keystroke that's a per-interaction tax that grows with
     // the manuscript. The launch-time CLI migrate already checks once per
     // launch; web requests must not check (or repair) at all.
-    $webApp = new class extends Illuminate\Foundation\Application
+    $webApp = new class extends Application
     {
         public function __construct() {}
 
@@ -429,6 +431,58 @@ test('boot migrates sqlite-driver defaults regardless of connection name outside
     // the only migration path and must run for ANY sqlite-driver default.
     expect(Schema::hasTable('migrations'))->toBeTrue();
     expect(Schema::hasTable('app_settings'))->toBeTrue();
+});
+
+test('boot skips the migrator outside nativephp when the schema is already current', function () {
+    $livePath = $this->tempDir.'/dev.sqlite';
+    touch($livePath);
+
+    config(['database.connections.devsqlite' => [
+        'driver' => 'sqlite',
+        'database' => $livePath,
+        'prefix' => '',
+        'foreign_key_constraints' => true,
+    ]]);
+    config(['database.default' => 'devsqlite']);
+    config(['nativephp-internal.running' => false]);
+
+    // First boot migrates for real and brings the schema fully current.
+    (new DatabaseStartupService(app(), runningInConsole: false))->ensureSchema();
+    expect(Schema::hasTable('app_settings'))->toBeTrue();
+
+    // A second request must short-circuit on the cheap schema-currency probe
+    // instead of paying a full migrator boot (~150ms) on EVERY request.
+    Artisan::spy();
+    (new DatabaseStartupService(app(), runningInConsole: false))->ensureSchema();
+
+    Artisan::shouldNotHaveReceived('call');
+});
+
+test('boot still migrates outside nativephp when the database is behind the migration files', function () {
+    $livePath = $this->tempDir.'/dev.sqlite';
+    touch($livePath);
+
+    config(['database.connections.devsqlite' => [
+        'driver' => 'sqlite',
+        'database' => $livePath,
+        'prefix' => '',
+        'foreign_key_constraints' => true,
+    ]]);
+    config(['database.default' => 'devsqlite']);
+    config(['nativephp-internal.running' => false]);
+
+    (new DatabaseStartupService(app(), runningInConsole: false))->ensureSchema();
+
+    // Simulate a freshly added migration file: the newest recorded migration
+    // disappears from the table, so disk is ahead of the database again.
+    DB::table('migrations')->orderByDesc('migration')->limit(1)->delete();
+
+    Artisan::spy();
+    (new DatabaseStartupService(app(), runningInConsole: false))->ensureSchema();
+
+    Artisan::shouldHaveReceived('call')
+        ->withArgs(fn ($command) => $command === 'migrate')
+        ->once();
 });
 
 // ---------------------------------------------------------------------------

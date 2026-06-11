@@ -124,6 +124,23 @@ function UploadPhase({
                 </p>
             </div>
 
+            <Button
+                variant="primary"
+                size="lg"
+                type="button"
+                onClick={() => router.post(skipImport.url(book))}
+            >
+                {t('uploadPhase.startEmpty')}
+            </Button>
+
+            <div className="flex w-[560px] items-center gap-4">
+                <div className="h-px flex-1 bg-border-light" />
+                <span className="text-[13px] leading-4 text-ink-muted">
+                    {t('uploadPhase.orImport')}
+                </span>
+                <div className="h-px flex-1 bg-border-light" />
+            </div>
+
             <div className="flex w-[560px] flex-col gap-0">
                 <DropZone onFiles={handleFiles} onReject={onReject} />
 
@@ -178,16 +195,8 @@ function UploadPhase({
                 </div>
             </div>
 
-            <div className="flex items-center gap-4 pt-4">
-                <Button
-                    variant="secondary"
-                    size="lg"
-                    type="button"
-                    onClick={() => router.post(skipImport.url(book))}
-                >
-                    {t('uploadPhase.skip')}
-                </Button>
-                {files.length > 0 && (
+            {files.length > 0 && (
+                <div className="flex items-center gap-4 pt-4">
                     <Button
                         variant="primary"
                         size="lg"
@@ -202,8 +211,8 @@ function UploadPhase({
                                   count: files.length,
                               })}
                     </Button>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }

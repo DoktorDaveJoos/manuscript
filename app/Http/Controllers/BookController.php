@@ -162,11 +162,7 @@ class BookController extends Controller
     public function duplicate(Book $book): RedirectResponse
     {
         DB::transaction(function () use ($book) {
-            $newBook = $book->replicate([
-                'writing_style',
-                'story_bible',
-                'prose_pass_rules',
-            ]);
+            $newBook = $book->replicate();
             $newBook->title = $book->title.' (Copy)';
             $newBook->save();
 

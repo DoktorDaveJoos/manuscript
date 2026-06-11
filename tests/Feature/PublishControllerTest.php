@@ -12,15 +12,9 @@ beforeEach(function () {
     $this->actingAs($this->user);
 });
 
-it('renders the publish page', function () {
-    $response = $this->get(route('books.publish', $this->book));
-
-    $response->assertOk();
-    $response->assertInertia(fn ($page) => $page
-        ->component('books/publish')
-        ->has('book')
-        ->has('chapters')
-    );
+it('redirects the legacy publish page to book settings publishing', function () {
+    $this->get(route('books.publish', $this->book))
+        ->assertRedirect(route('books.settings.publishing', $this->book));
 });
 
 it('updates publish settings', function () {
@@ -51,16 +45,6 @@ it('persists the klappentext via publish settings', function () {
 
     expect($this->book->refresh()->klappentext)
         ->toBe('When the lighthouse goes dark, the village holds its breath.');
-});
-
-it('exposes the klappentext on the publish page', function () {
-    $this->book->update(['klappentext' => 'A back-cover hook.']);
-
-    $this->get(route('books.publish', $this->book))
-        ->assertInertia(fn ($page) => $page
-            ->component('books/publish')
-            ->where('book.klappentext', 'A back-cover hook.')
-        );
 });
 
 it('uploads a cover image', function () {
@@ -297,19 +281,6 @@ it('returns 404 when downloading a cover that was not generated', function () {
     $this->get(route('books.publish.cover.download', $this->book))->assertNotFound();
 });
 
-it('exposes trim sizes and cover settings on the publish page', function () {
-    $this->book->update(['cover_settings' => ['title' => 'Saved', 'trim_size' => '13x19cm']]);
-
-    $response = $this->get(route('books.publish', $this->book));
-
-    $response->assertInertia(fn ($page) => $page
-        ->component('books/publish')
-        ->has('trimSizes')
-        ->where('book.cover_settings.title', 'Saved')
-        ->has('book.cover_genre')
-    );
-});
-
 it('marks a chapter as epilogue', function () {
     $chapter = Chapter::factory()->create(['book_id' => $this->book->id]);
 
@@ -337,22 +308,6 @@ it('returns 404 for missing cover image', function () {
     $response = $this->get(route('books.publish.cover.serve', $this->book));
 
     $response->assertNotFound();
-});
-
-it('includes cover_image_url in publish page props', function () {
-    $this->book->update(['cover_image_path' => 'covers/test.jpg']);
-
-    $response = $this->get(route('books.publish', $this->book));
-
-    $response->assertOk();
-    $response->assertInertia(fn ($page) => $page
-        ->component('books/publish')
-        // URL is cache-busted with ?v=<timestamp> so a regenerated cover refreshes in place.
-        ->where('book.cover_image_url', fn ($url) => str_starts_with(
-            (string) $url,
-            route('books.publish.cover.serve', $this->book)
-        ))
-    );
 });
 
 it('unmarks epilogue when null chapter_id sent', function () {

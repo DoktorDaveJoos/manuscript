@@ -3,7 +3,6 @@
 use App\Ai\Agents\EditorialNotesAgent;
 use App\Ai\Agents\EditorialSummaryAgent;
 use App\Ai\Agents\EditorialSynthesisAgent;
-use App\Models\AiPreparation;
 use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\Chapter;
@@ -44,6 +43,13 @@ pest()->extend(TestCase::class)
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->beforeEach(function () {
+        // TestCase::setUp() calls withoutVite() so Feature/Unit runs need no
+        // built assets — but browser tests drive a real browser, which needs
+        // the real @vite script tags or every page sits on the static loader
+        // forever. Restore the binding here. Run `npm run build` first (and
+        // make sure no Vite dev server / public/hot file is interfering).
+        $this->withVite();
+
         AppSetting::set('crash_report_prompted', true);
         AppSetting::set('language_prompted', true);
 
@@ -114,12 +120,7 @@ function createBookWithChapters(int $chapterCount = 3): array
         $chapters[] = $chapter;
     }
 
-    $preparation = AiPreparation::create([
-        'book_id' => $book->id,
-        'status' => 'pending',
-    ]);
-
-    return [$book, $chapters, $preparation];
+    return [$book, $chapters];
 }
 
 /**
@@ -136,6 +137,10 @@ function createBookWithChaptersForEditorial(int $chapterCount = 3): array
     foreach ($chapters as $chapter) {
         $chapter->update(['prepared_content_hash' => $chapter->content_hash]);
     }
+
+    // A prepared book also has a writing style — without one, dispatching a
+    // review would batch a RefreshWritingStyleJob (a real AI call on sync queues).
+    $book->update(['writing_style' => ['tone' => 'measured and wry']]);
 
     return [$book, $chapters];
 }

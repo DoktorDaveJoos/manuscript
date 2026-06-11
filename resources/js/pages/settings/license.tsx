@@ -16,11 +16,7 @@ import SettingsLayout from '@/layouts/SettingsLayout';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { License } from '@/types/models';
 
-interface Props {
-    book?: { id: number; title: string } | null;
-}
-
-export default function LicensePage({ book }: Props) {
+export default function LicensePage() {
     const { t } = useTranslation('settings');
     const { license } = usePage<{ license: License }>().props;
     const [key, setKey] = useState('');
@@ -98,11 +94,7 @@ export default function LicensePage({ book }: Props) {
     }, [t]);
 
     return (
-        <SettingsLayout
-            activeSection="license"
-            book={book}
-            title={t('license.title')}
-        >
+        <SettingsLayout activeSection="license" title={t('license.title')}>
             <div className="flex flex-col gap-6">
                 <PageHeader
                     title={t('license.title')}
@@ -166,7 +158,7 @@ export default function LicensePage({ book }: Props) {
                                     )}
                                 </div>
                                 <Button
-                                    variant="accent"
+                                    variant="primary"
                                     type="submit"
                                     disabled={activating || !key}
                                     className="h-9"

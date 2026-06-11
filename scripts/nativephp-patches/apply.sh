@@ -67,6 +67,11 @@ apply "resources/electron/electron-plugin/dist/server/api/system.js"
 # so the package's src/*.ts is never recompiled — only dist/ is loaded at runtime.
 apply "resources/electron/electron-plugin/dist/index.js"
 apply "resources/electron/electron-plugin/dist/server/api.js"
+# Launch speed: version-guard the per-launch `artisan optimize` (server/php.js)
+# so it only runs on the first launch after an install/update, like migrate.
+# The per-launch config values it used to refresh are healed at request time
+# by AppServiceProvider::healStaleNativePhpConfig.
+apply "resources/electron/electron-plugin/dist/server/php.js"
 # electronPath() published-project detection (PHP, ships as-is — not compiled).
 apply "src/Drivers/Electron/ElectronServiceProvider.php"
 echo "Done."

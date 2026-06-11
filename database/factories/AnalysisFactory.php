@@ -21,7 +21,7 @@ class AnalysisFactory extends Factory
     {
         return [
             'book_id' => Book::factory(),
-            'type' => AnalysisType::Pacing,
+            'type' => AnalysisType::Plothole,
             'result' => ['score' => fake()->numberBetween(1, 10), 'notes' => fake()->sentence()],
             'ai_generated' => false,
         ];

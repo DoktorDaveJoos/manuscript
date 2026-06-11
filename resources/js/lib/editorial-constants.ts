@@ -12,6 +12,21 @@ export function getChapterNote(
     return note?.notes?.chapter_note ?? null;
 }
 
+/** Quality bands shared by the summary score and the dimension tiles. */
+export type ScoreQuality = 'good' | 'fair' | 'needsWork';
+
+export function scoreQuality(score: number): ScoreQuality {
+    if (score >= 76) return 'good';
+    if (score >= 60) return 'fair';
+    return 'needsWork';
+}
+
+export const qualityBarColor: Record<ScoreQuality, string> = {
+    good: 'bg-status-final',
+    fair: 'bg-status-revised',
+    needsWork: 'bg-status-draft',
+};
+
 export const severityOrder: Record<FindingSeverity, number> = {
     critical: 0,
     warning: 1,

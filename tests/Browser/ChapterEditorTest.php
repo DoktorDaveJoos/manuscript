@@ -64,6 +64,19 @@ it('renders chapter sidebar with multiple chapters', function () {
         ->assertSee($chapters[2]->title);
 });
 
+it('caps long storyline names to a single truncated line in the sidebar', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $book->storylines()->first()->update([
+        'name' => 'Alexander Schwarz Die Detox-Lüge und weitere sehr lange Titel',
+    ]);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertCount('[data-storyline-header]', 1)
+        ->assertCount('[data-storyline-header] .truncate', 1);
+});
+
 it('notes panel restores content after close and reopen', function () {
     [$book, $chapters] = createBookWithChapters(1);
 
@@ -149,7 +162,7 @@ it('ai chat drawer remounts cleanly when switching panes in splitscreen', functi
         ->assertNoJavaScriptErrors();
 });
 
-it('editorial panel shows chapter-specific note in splitscreen', function () {
+it('ai panel shows chapter-specific editorial note in splitscreen', function () {
     License::factory()->create();
 
     [$book, $chapters] = createBookWithChapters(2);
@@ -175,7 +188,7 @@ it('editorial panel shows chapter-specific note in splitscreen', function () {
     $page = visit("/books/{$book->id}/editor?panes={$chapters[0]->id},{$chapters[1]->id}");
 
     $page->assertNoJavaScriptErrors()
-        ->click('[data-access-bar="editorial"]')
+        ->click('[data-access-bar="ai"]')
         ->assertSee('Note for chapter one')
         ->click("[data-pane-chapter='{$chapters[1]->id}']")
         ->assertSee('Note for chapter two')

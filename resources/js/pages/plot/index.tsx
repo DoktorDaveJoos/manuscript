@@ -91,7 +91,16 @@ type PlotPageProps = {
 
 type PlotMode = 'coach' | 'board';
 
-const PLOT_MODE_STORAGE_KEY = (bookId: number) => `plot-coach-mode-${bookId}`;
+// Props the board renders from. The coach mutates these server-side outside
+// Inertia (streamed AI tool calls), so switching to the board must refetch
+// them — the page props on the client can be arbitrarily stale.
+const BOARD_PROPS = [
+    'acts',
+    'plotPoints',
+    'chapters',
+    'storylines',
+    'characters',
+];
 
 const COACH_INSIGHTS_OPEN_KEY = 'manuscript:plot-coach-insights-open';
 
@@ -282,26 +291,16 @@ export default function Plot({
         }
     }, [archiving, book.id, coachSessionId, tCoach]);
 
-    // Plot mode — Coach chat or Board view. Persisted per-book in localStorage.
-    // Default: Coach if an active unfinished session exists, Board otherwise.
-    const [mode, setMode] = useState<PlotMode>(() => {
-        const hasSession = activeCoachSessionId !== null;
-        if (typeof window === 'undefined') {
-            return hasSession ? 'coach' : 'board';
-        }
-        const stored = window.localStorage.getItem(
-            PLOT_MODE_STORAGE_KEY(book.id),
-        );
-        if (stored === 'coach' || stored === 'board') {
-            return stored;
-        }
-        return hasSession ? 'coach' : 'board';
-    });
+    // Plot mode — Coach chat or Board view. Coach is always the default;
+    // the board is reached explicitly via the toggle (or Cmd+\).
+    const [mode, setMode] = useState<PlotMode>('coach');
 
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        window.localStorage.setItem(PLOT_MODE_STORAGE_KEY(book.id), mode);
-    }, [book.id, mode]);
+    const switchMode = useCallback((next: PlotMode) => {
+        setMode(next);
+        if (next === 'board') {
+            router.reload({ only: BOARD_PROPS });
+        }
+    }, []);
 
     // Coach insights side panel — open/closed state, persisted app-wide.
     // First-time read migrates from the legacy per-book "collapsed" flag the
@@ -392,11 +391,11 @@ export default function Plot({
                 return;
             }
             event.preventDefault();
-            setMode((prev) => (prev === 'coach' ? 'board' : 'coach'));
+            switchMode(mode === 'coach' ? 'board' : 'coach');
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, []);
+    }, [mode, switchMode]);
 
     // Unified selection state (from #20)
     const [selection, setSelection] = useState<{
@@ -892,7 +891,7 @@ export default function Plot({
                                 value={mode}
                                 onValueChange={(next) => {
                                     if (next === 'coach' || next === 'board') {
-                                        setMode(next);
+                                        switchMode(next);
                                     }
                                 }}
                                 className="gap-0.5"
@@ -1096,6 +1095,7 @@ export default function Plot({
                     ) : (
                         <PlotEmptyState
                             onSelectTemplate={setSelectedTemplate}
+                            onStartCoach={() => switchMode('coach')}
                         />
                     )}
                 </main>

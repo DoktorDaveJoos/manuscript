@@ -1,8 +1,6 @@
 import { useState, useCallback } from 'react';
-import {
-    updateCustomDictionary,
-    updateProofreadingConfig,
-} from '@/actions/App/Http/Controllers/SettingsController';
+import { updateProofreadingConfig } from '@/actions/App/Http/Controllers/BookSettingsController';
+import { updateCustomDictionary } from '@/actions/App/Http/Controllers/SettingsController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { ProofreadingConfig } from '@/types/models';
 
@@ -70,7 +68,7 @@ export function useProofreading(
                       grammar_enabled: false,
                   };
 
-            fetch(updateProofreadingConfig.url(), {
+            fetch(updateProofreadingConfig.url(bookId), {
                 method: 'PUT',
                 headers: jsonFetchHeaders(),
                 body: JSON.stringify({ config: updated }),
@@ -80,7 +78,7 @@ export function useProofreading(
 
             return updated;
         });
-    }, []);
+    }, [bookId]);
 
     return {
         config,

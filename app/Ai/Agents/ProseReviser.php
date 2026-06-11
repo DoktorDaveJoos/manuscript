@@ -6,7 +6,6 @@ use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Models\Book;
 use App\Models\Chapter;
-use App\Services\StoryBibleService;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
@@ -25,6 +24,7 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
     public function __construct(
         protected Book $book,
         protected Chapter $chapter,
+        protected ?string $editorialDirective = null,
     ) {}
 
     public function book(): Book
@@ -36,13 +36,14 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
     {
         $writingStyle = $this->book->writingStyleSnippet();
 
-        $rules = Book::globalProsePassRules();
+        $rules = $this->book->prosePassRules();
         $enabledRules = collect($rules)->filter(fn ($rule) => $rule['enabled']);
         $rulesSection = $enabledRules->isNotEmpty()
             ? "\n\nApply these prose revision rules:\n".$enabledRules->map(fn ($rule) => "- {$rule['label']}: {$rule['description']}")->implode("\n")
             : '';
 
         $contextSections = $this->buildContextSections();
+        $editorialSection = $this->buildEditorialSection();
 
         return <<<INSTRUCTIONS
         You are an expert prose editor revising a chapter of '{$this->book->title}' by {$this->book->author}.
@@ -59,7 +60,7 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
         The <hr> tags mark scene boundaries — do not add or remove <hr> tags.
 
         Preserve the author's intent, plot, and character voice. Do not change plot points or character actions.
-        Return ONLY the revised text, without commentary or explanations.{$writingStyle}{$rulesSection}{$contextSections}
+        Return ONLY the revised text, without commentary or explanations.{$writingStyle}{$rulesSection}{$editorialSection}{$contextSections}
         INSTRUCTIONS;
     }
 
@@ -70,6 +71,16 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
         ];
     }
 
+    private function buildEditorialSection(): string
+    {
+        if (! $this->editorialDirective) {
+            return '';
+        }
+
+        return "\n\n--- EDITORIAL FEEDBACK TO ADDRESS ---\n{$this->editorialDirective}\n"
+            .'Resolve this feedback in your revision. Where feedback conflicts with preserving plot or character actions, preserve the plot and address the feedback at the prose level only.';
+    }
+
     private function buildContextSections(): string
     {
         $this->chapter->loadMissing(['characters', 'wikiEntries']);
@@ -78,7 +89,6 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
 
         $sections[] = $this->buildCharactersSection();
         $sections[] = $this->buildWikiEntriesSection();
-        $sections[] = $this->buildStoryBibleSection();
         $sections[] = $this->buildNarrativePositionSection();
 
         $content = collect($sections)->filter()->implode("\n");
@@ -135,11 +145,6 @@ class ProseReviser implements Agent, BelongsToBook, HasMiddleware
         }
 
         return implode("\n", $lines);
-    }
-
-    private function buildStoryBibleSection(): string
-    {
-        return app(StoryBibleService::class)->getContext($this->book);
     }
 
     private function buildNarrativePositionSection(): string

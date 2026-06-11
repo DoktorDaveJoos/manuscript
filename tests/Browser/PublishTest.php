@@ -7,15 +7,14 @@ beforeEach(function () {
     License::factory()->create();
 });
 
-it('loads the publish page without JavaScript errors', function () {
+it('redirects the legacy publish URL to the publishing settings page', function () {
     $book = Book::factory()->create(['title' => 'My Book', 'author' => 'Jane Doe']);
 
     $page = visit(route('books.publish', $book));
 
     $page->assertNoJavaScriptErrors()
-        ->assertSee('Cover')
-        // The Klappentext section sits above the cover.
-        ->assertSee('Klappentext');
+        ->assertSee('Klappentext')
+        ->assertSee('Front Matter');
 });
 
 it('shows the back/front toggle inside the cover creator dialog', function () {
@@ -25,7 +24,7 @@ it('shows the back/front toggle inside the cover creator dialog', function () {
         'klappentext' => 'A back-cover hook that sells the book.',
     ]);
 
-    $page = visit(route('books.publish', $book));
+    $page = visit(route('books.settings.cover', $book));
 
     $page->click('Create one')
         ->assertSee('Create a cover')
@@ -37,7 +36,7 @@ it('shows the back/front toggle inside the cover creator dialog', function () {
 it('opens the cover creator dialog and shows a preview', function () {
     $book = Book::factory()->create(['title' => 'My Book', 'author' => 'Jane Doe']);
 
-    $page = visit(route('books.publish', $book));
+    $page = visit(route('books.settings.cover', $book));
 
     $page->click('Create one')
         ->assertSee('Create a cover')
@@ -58,7 +57,7 @@ it('offers a separate cover PDF download for a generated cover', function () {
         ],
     ]);
 
-    $page = visit(route('books.publish', $book));
+    $page = visit(route('books.settings.cover', $book));
 
     $page->assertNoJavaScriptErrors()
         ->assertSee('Download PDF');

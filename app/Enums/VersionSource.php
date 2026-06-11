@@ -12,4 +12,6 @@ enum VersionSource: string
     case Snapshot = 'snapshot';
     case ContinueWriting = 'continue_writing';
     case RewriteSelection = 'rewrite_selection';
+    case EditorialRewrite = 'editorial_rewrite';
+    case SceneStructure = 'scene_structure';
 }

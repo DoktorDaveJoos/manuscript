@@ -27,6 +27,8 @@ const sourceBadgeVariant: Record<
     snapshot: 'success',
     continue_writing: 'revised',
     rewrite_selection: 'revised',
+    editorial_rewrite: 'revised',
+    scene_structure: 'revised',
 };
 
 export default function VersionHistoryOverlay({

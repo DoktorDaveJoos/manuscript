@@ -94,5 +94,11 @@ function persistent(kind: string): boolean {
 }
 
 function needsSettingsAction(kind: string): boolean {
-    return kind === 'invalid_key' || kind === 'model_unavailable';
+    return (
+        kind === 'invalid_key' ||
+        kind === 'model_unavailable' ||
+        // Settings hosts the per-provider guide with the billing console
+        // link, which is where an out-of-credits account gets fixed.
+        kind === 'insufficient_credits'
+    );
 }

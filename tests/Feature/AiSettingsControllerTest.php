@@ -3,6 +3,20 @@
 use App\Enums\AiProvider;
 use App\Models\AiSetting;
 use App\Models\License;
+use GuzzleHttp\Psr7\Response as Psr7Response;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response as HttpResponse;
+use Laravel\Ai\AnonymousAgent;
+use Laravel\Ai\Exceptions\RateLimitedException;
+
+/**
+ * Build a fake Illuminate RequestException with a chosen status + JSON body,
+ * mirroring what a provider returns through the SDK's HTTP client.
+ */
+function fakeProviderHttpError(int $status, array $body): RequestException
+{
+    return new RequestException(new HttpResponse(new Psr7Response($status, [], json_encode($body))));
+}
 
 test('unified settings returns user-facing ai providers', function () {
     $this->get(route('settings.index'))
@@ -111,6 +125,48 @@ test('test connection fails without api key', function () {
     $this->postJson(route('ai-settings.test', 'anthropic'))
         ->assertUnprocessable()
         ->assertJsonPath('success', false);
+});
+
+test('test connection succeeds with a working key', function () {
+    License::factory()->create();
+    AiSetting::factory()->create(['provider' => AiProvider::Anthropic]);
+    AnonymousAgent::fake(['ok']);
+
+    $this->postJson(route('ai-settings.test', 'anthropic'))
+        ->assertOk()
+        ->assertJsonPath('success', true);
+});
+
+test('test connection classifies an out-of-credits account as insufficient_credits', function () {
+    License::factory()->create();
+    AiSetting::factory()->create(['provider' => AiProvider::Openai]);
+
+    $http = fakeProviderHttpError(429, [
+        'error' => [
+            'type' => 'insufficient_quota',
+            'message' => 'You exceeded your current quota, please check your plan and billing details.',
+        ],
+    ]);
+    AnonymousAgent::fake(fn () => throw RateLimitedException::forProvider('openai', previous: $http));
+
+    $this->postJson(route('ai-settings.test', 'openai'))
+        ->assertUnprocessable()
+        ->assertJsonPath('success', false)
+        ->assertJsonPath('kind', 'insufficient_credits');
+});
+
+test('test connection classifies a rejected key as invalid_key', function () {
+    License::factory()->create();
+    AiSetting::factory()->create(['provider' => AiProvider::Anthropic]);
+
+    AnonymousAgent::fake(fn () => throw fakeProviderHttpError(401, [
+        'error' => ['message' => 'invalid x-api-key'],
+    ]));
+
+    $this->postJson(route('ai-settings.test', 'anthropic'))
+        ->assertUnprocessable()
+        ->assertJsonPath('success', false)
+        ->assertJsonPath('kind', 'invalid_key');
 });
 
 test('update openrouter setting saves successfully', function () {

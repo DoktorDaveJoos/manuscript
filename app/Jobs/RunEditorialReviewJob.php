@@ -2,9 +2,12 @@
 
 namespace App\Jobs;
 
+use App\Enums\EditorialReviewErrorCode;
 use App\Jobs\Concerns\UpdatesEditorialReview;
 use App\Jobs\Editorial\AnalyzeReviewChapterJob;
+use App\Jobs\Editorial\EmbedReviewChapterJob;
 use App\Jobs\Editorial\FinalizeEditorialReviewJob;
+use App\Jobs\Editorial\RefreshWritingStyleJob;
 use App\Models\AiSetting;
 use App\Models\Book;
 use App\Models\EditorialReview;
@@ -39,14 +42,22 @@ class RunEditorialReviewJob implements ShouldQueue
         $setting = AiSetting::activeProvider();
 
         if (! $setting || ! $setting->isConfigured()) {
-            $this->markReviewFailed($this->review, 'No AI provider configured.');
+            $this->markReviewFailed($this->review, 'No AI provider configured.', EditorialReviewErrorCode::NoProvider);
 
             return;
         }
 
         $chapters = $this->book->chapters()
+            ->with(['currentVersion', 'scenes'])
             ->orderBy('reader_order')
-            ->get(['id']);
+            ->get();
+
+        // Backfill content hashes so staleness detection works for legacy chapters.
+        foreach ($chapters as $chapter) {
+            if ($chapter->content_hash === null && $chapter->scenes->isNotEmpty()) {
+                $chapter->refreshContentHash();
+            }
+        }
 
         $total = $chapters->count();
 
@@ -57,7 +68,23 @@ class RunEditorialReviewJob implements ShouldQueue
 
         $this->updateReviewProgress($this->review, 'analyzing', current_chapter: 0, total_chapters: $total);
 
-        $jobs = $chapters
+        $staleChapters = $chapters->filter(
+            fn ($chapter) => $chapter->needsAiPreparation() && $chapter->currentVersion?->content
+        );
+
+        // Shared AI context refreshes run before analysis (single-worker FIFO):
+        // the notes agent reads the writing style, retrieval reads the chunks.
+        $jobs = [];
+
+        if ($this->book->writing_style === null || $staleChapters->isNotEmpty()) {
+            $jobs[] = new RefreshWritingStyleJob($this->book);
+        }
+
+        foreach ($staleChapters as $chapter) {
+            $jobs[] = new EmbedReviewChapterJob($this->book, $chapter->id);
+        }
+
+        $jobs = array_merge($jobs, $chapters
             ->values()
             ->map(fn ($chapter, $index) => new AnalyzeReviewChapterJob(
                 $this->book,
@@ -66,7 +93,7 @@ class RunEditorialReviewJob implements ShouldQueue
                 $index + 1,
                 $total,
             ))
-            ->all();
+            ->all());
 
         // Terminal job runs last (single-worker FIFO): synthesis + summary.
         $jobs[] = new FinalizeEditorialReviewJob($this->book, $this->review);
@@ -80,6 +107,10 @@ class RunEditorialReviewJob implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
-        $this->markReviewFailed($this->review, $exception?->getMessage() ?? 'Unknown error');
+        $this->markReviewFailed(
+            $this->review,
+            $exception?->getMessage() ?? 'Unknown error',
+            $exception ? EditorialReviewErrorCode::fromThrowable($exception) : EditorialReviewErrorCode::Unknown,
+        );
     }
 }

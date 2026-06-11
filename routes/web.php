@@ -4,8 +4,6 @@ use App\Database\SqliteVecConnector;
 use App\Http\Controllers\ActController;
 use App\Http\Controllers\AiController;
 use App\Http\Controllers\AiConversationController;
-use App\Http\Controllers\AiDashboardController;
-use App\Http\Controllers\AiPreparationController;
 use App\Http\Controllers\AiSettingsController;
 use App\Http\Controllers\AppSettingsController;
 use App\Http\Controllers\BackupController;
@@ -31,15 +29,18 @@ use App\Http\Controllers\PlotSetupController;
 use App\Http\Controllers\PublishController;
 use App\Http\Controllers\RewriteSelectionController;
 use App\Http\Controllers\SceneController;
+use App\Http\Controllers\SceneStructureController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StorylineController;
 use App\Http\Controllers\TrashController;
+use App\Http\Controllers\TrialController;
 use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\WikiController;
 use App\Http\Controllers\WikiPanelController;
 use App\Http\Controllers\WritingGoalController;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Models\Book;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -159,9 +160,6 @@ Route::post('/update/install', [UpdateController::class, 'install'])->name('upda
 // Unified settings page
 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::put('/settings', [AppSettingsController::class, 'update'])->name('settings.update');
-Route::put('/settings/writing-style', [SettingsController::class, 'updateWritingStyle'])->name('settings.writing-style.update');
-Route::put('/settings/prose-pass-rules', [SettingsController::class, 'updateProsePassRules'])->name('settings.prose-pass-rules.update');
-Route::put('/settings/proofreading', [SettingsController::class, 'updateProofreadingConfig'])->name('settings.proofreading.update');
 Route::put('/books/{book}/settings/custom-dictionary', [SettingsController::class, 'updateCustomDictionary'])->name('books.settings.custom-dictionary.update');
 Route::post('/books/{book}/settings/custom-dictionary/seed', [SettingsController::class, 'seedCustomDictionary'])->name('books.settings.custom-dictionary.seed');
 
@@ -175,13 +173,13 @@ Route::inertia('/license/welcome', 'license/welcome')->name('license.welcome');
 Route::post('/license/activate', [LicenseController::class, 'activate'])->name('license.activate');
 Route::post('/license/deactivate', [LicenseController::class, 'deactivate'])->name('license.deactivate');
 Route::post('/license/revalidate', [LicenseController::class, 'revalidate'])->name('license.revalidate');
+Route::post('/trial/start', [TrialController::class, 'start'])->name('trial.start');
 
 // Local backup — export, import (with auto-rollback), single-level revert.
 Route::post('/settings/backup/export', [BackupController::class, 'export'])->name('settings.backup.export');
 Route::post('/settings/backup/import', [BackupController::class, 'import'])->name('settings.backup.import');
 Route::post('/settings/backup/revert', [BackupController::class, 'revert'])->name('settings.backup.revert');
 
-Route::get('/books/{book}/ai/dashboard', [AiDashboardController::class, 'index'])->name('books.ai.dashboard');
 Route::get('/books/{book}/ai/editorial-review', [EditorialReviewController::class, 'index'])->name('books.ai.editorial-review.index');
 
 Route::get('/books/{book}/canvas', [CanvasController::class, 'index'])->name('books.canvas');
@@ -216,48 +214,39 @@ Route::post('/books/{book}/plot/panel/disconnect', [PlotPanelController::class, 
 Route::post('/books/{book}/plot-connections', [PlotPointConnectionController::class, 'store'])->name('plotConnections.store');
 Route::delete('/books/{book}/plot-connections/{plotPointConnection}', [PlotPointConnectionController::class, 'destroy'])->name('plotConnections.destroy');
 
-Route::post('/books/{book}/ai/prepare', [AiPreparationController::class, 'start'])->name('books.ai.prepare');
-Route::get('/books/{book}/ai/prepare/status', [AiPreparationController::class, 'status'])->name('books.ai.prepare.status');
-Route::post('/books/{book}/ai/prepare/retry', [AiPreparationController::class, 'retry'])->name('books.ai.prepare.retry');
-
 Route::put('/settings/ai/{provider}', [AiSettingsController::class, 'update'])->name('ai-settings.update');
 Route::delete('/settings/ai/{provider}/key', [AiSettingsController::class, 'deleteKey'])->name('ai-settings.delete-key');
 Route::post('/settings/ai/{provider}/test', [AiSettingsController::class, 'test'])->name('ai-settings.test');
 
-Route::post('/books/{book}/ai/analyze', [AiController::class, 'analyze'])->name('books.ai.analyze');
-Route::post('/books/{book}/ai/extract-characters/{chapter}', [AiController::class, 'extractCharacters'])->name('books.ai.extractCharacters');
-Route::post('/books/{book}/ai/next-chapter', [AiController::class, 'nextChapter'])->name('books.ai.nextChapter');
 Route::post('/books/{book}/ai/blurb', [BlurbController::class, 'stream'])->name('books.ai.blurb');
-Route::post('/books/{book}/ai/embed', [AiController::class, 'embed'])->name('books.ai.embed');
 Route::post('/books/{book}/chapters/{chapter}/ai/revise', [AiController::class, 'revise'])->name('chapters.ai.revise');
 Route::post('/books/{book}/chapters/{chapter}/scenes/{scene}/ai/revise', [AiController::class, 'reviseScene'])->name('chapters.scenes.ai.revise');
-Route::post('/books/{book}/chapters/{chapter}/ai/beautify', [AiController::class, 'beautify'])->name('chapters.ai.beautify');
+Route::post('/books/{book}/chapters/{chapter}/ai/revise-editorial', [AiController::class, 'reviseWithEditorialFeedback'])->name('chapters.ai.reviseEditorial');
 Route::post('/books/{book}/chapters/{chapter}/ai/continue-writing', [ContinueWritingController::class, 'stream'])->name('chapters.ai.continueWriting');
 Route::post('/books/{book}/chapters/{chapter}/ai/continue-writing/commit', [ContinueWritingController::class, 'commit'])->name('chapters.ai.continueWriting.commit');
 Route::post('/books/{book}/chapters/{chapter}/ai/continue-writing/refine/{version}', [ContinueWritingController::class, 'refine'])->name('chapters.ai.continueWriting.refine');
 Route::post('/books/{book}/chapters/{chapter}/ai/rewrite-selection', [RewriteSelectionController::class, 'stream'])->name('chapters.ai.rewriteSelection');
 Route::post('/books/{book}/chapters/{chapter}/ai/rewrite-selection/commit', [RewriteSelectionController::class, 'commit'])->name('chapters.ai.rewriteSelection.commit');
+Route::post('/books/{book}/chapters/{chapter}/ai/structure-scenes', [SceneStructureController::class, 'suggest'])->name('chapters.ai.structureScenes');
+Route::post('/books/{book}/chapters/{chapter}/ai/structure-scenes/apply', [SceneStructureController::class, 'apply'])->name('chapters.ai.structureScenes.apply');
 
 Route::get('/books/{book}/chapters/{chapter}/diff/{version}', [ChapterDiffController::class, 'show'])->name('chapters.diff.show');
 Route::post('/books/{book}/chapters/{chapter}/diff/{version}/open', [ChapterDiffController::class, 'openWindow'])->name('chapters.diff.open');
 Route::post('/chapters/{chapter}/diff/window/close', [ChapterDiffController::class, 'closeWindow'])->name('chapters.diff.close');
-Route::post('/books/{book}/chapters/{chapter}/ai/analyze-chapter', [AiController::class, 'analyzeChapter'])->name('chapters.ai.analyzeChapter');
-Route::get('/books/{book}/chapters/{chapter}/ai/analysis-status', [AiController::class, 'chapterAnalysisStatus'])->name('chapters.ai.analysisStatus');
 Route::post('/books/{book}/ai/chat', [AiController::class, 'chat'])->name('books.ai.chat');
 Route::get('/books/{book}/ai/conversations/{conversation}/messages', [AiConversationController::class, 'messages'])->name('books.ai.conversations.messages');
 Route::delete('/books/{book}/ai/conversations/{conversation}', [AiConversationController::class, 'destroy'])->name('books.ai.conversations.destroy');
-Route::post('/books/{book}/ai/beautify-all', [AiController::class, 'beautifyAll'])->name('books.ai.beautifyAll');
-Route::post('/books/{book}/ai/revise-all', [AiController::class, 'reviseAll'])->name('books.ai.reviseAll');
-Route::get('/books/{book}/ai/bulk-revision-status', [AiController::class, 'bulkRevisionStatus'])->name('books.ai.bulkRevisionStatus');
 Route::post('/books/{book}/ai/reset-usage', [AiController::class, 'resetUsage'])->name('books.ai.resetUsage');
 
 Route::post('/books/{book}/ai/editorial-review', [EditorialReviewController::class, 'store'])->name('books.ai.editorial-review.store');
 Route::get('/books/{book}/ai/editorial-review/{review}', [EditorialReviewController::class, 'show'])->name('books.ai.editorial-review.show');
 Route::get('/books/{book}/ai/editorial-review/{review}/progress', [EditorialReviewController::class, 'progress'])->name('books.ai.editorial-review.progress');
+Route::post('/books/{book}/ai/editorial-review/{review}/resume', [EditorialReviewController::class, 'resume'])->name('books.ai.editorial-review.resume');
 Route::post('/books/{book}/ai/editorial-review/{review}/chat', [EditorialReviewController::class, 'chat'])->name('books.ai.editorial-review.chat');
 Route::post('/books/{book}/ai/editorial-review/{review}/toggle-finding', [EditorialReviewController::class, 'toggleFinding'])->name('books.ai.editorial-review.toggle-finding');
 
 Route::post('/books/{book}/settings/writing-style/regenerate', [BookSettingsController::class, 'regenerateWritingStyle'])->name('books.settings.writing-style.regenerate');
+Route::post('/books/{book}/settings/writing-style/dismiss-prompt', [BookSettingsController::class, 'dismissWritingStylePrompt'])->name('books.settings.writing-style.dismiss-prompt');
 
 Route::post('/books/{book}/plot-coach/stream', [PlotCoachController::class, 'stream'])->name('books.plotCoach.stream');
 Route::get('/books/{book}/plot-coach/sessions', [PlotCoachController::class, 'sessionIndex'])->name('books.plotCoach.sessions.index');
@@ -271,15 +260,26 @@ Route::post('/books/{book}/plot/ai/beats', [PlotAiController::class, 'suggestBea
 Route::post('/books/{book}/plot/ai/tension', [PlotAiController::class, 'generateTensionArc'])->name('books.plot.ai.tension');
 Route::get('/books/{book}/plot/ai/status', [PlotAiController::class, 'analysisStatus'])->name('books.plot.ai.status');
 
-// Book-level settings — legacy GET routes redirect to unified settings
-Route::get('/books/{book}/settings/writing-style', fn () => redirect('/settings'))->name('books.settings.writing-style');
-Route::get('/books/{book}/settings/prose-pass-rules', fn () => redirect('/settings'))->name('books.settings.prose-pass-rules');
+// Book settings — per-book area beneath Dashboard
+Route::get('/books/{book}/settings', [BookSettingsController::class, 'index'])->name('books.settings');
+Route::get('/books/{book}/settings/general', [BookSettingsController::class, 'general'])->name('books.settings.general');
+Route::put('/books/{book}/settings/general', [BookSettingsController::class, 'updateGeneral'])->name('books.settings.general.update');
+Route::get('/books/{book}/settings/writing-style', [BookSettingsController::class, 'writingStyle'])->name('books.settings.writing-style');
+Route::put('/books/{book}/settings/writing-style', [BookSettingsController::class, 'updateWritingStyle'])->name('books.settings.writing-style.update');
+Route::get('/books/{book}/settings/prose-rules', [BookSettingsController::class, 'proseRules'])->name('books.settings.prose-rules');
+Route::put('/books/{book}/settings/prose-rules', [BookSettingsController::class, 'updateProsePassRules'])->name('books.settings.prose-rules.update');
+Route::get('/books/{book}/settings/prose-pass-rules', fn (Book $book) => redirect()->route('books.settings.prose-rules', $book))->name('books.settings.prose-pass-rules');
+Route::get('/books/{book}/settings/proofreading', [BookSettingsController::class, 'proofreading'])->name('books.settings.proofreading');
+Route::put('/books/{book}/settings/proofreading', [BookSettingsController::class, 'updateProofreadingConfig'])->name('books.settings.proofreading.update');
+Route::get('/books/{book}/settings/publishing', [BookSettingsController::class, 'publishing'])->name('books.settings.publishing');
+Route::get('/books/{book}/settings/cover', [BookSettingsController::class, 'cover'])->name('books.settings.cover');
 Route::get('/books/{book}/settings/export', [BookSettingsController::class, 'export'])->name('books.settings.export');
 Route::post('/books/{book}/settings/export', [BookSettingsController::class, 'doExport'])->name('books.settings.export.run');
+Route::put('/books/{book}/settings/export-settings', [BookSettingsController::class, 'updateExportSettings'])->name('books.settings.export-settings.update');
 Route::post('/books/{book}/export/preview', [BookSettingsController::class, 'previewPdf'])->name('books.export.preview');
 
-// Publish page — book metadata and matter content
-Route::get('/books/{book}/publish', [PublishController::class, 'show'])->name('books.publish');
+// Publish endpoints — the page now lives under book settings; the legacy URL redirects there
+Route::get('/books/{book}/publish', fn (Book $book) => redirect()->route('books.settings.publishing', $book))->name('books.publish');
 Route::put('/books/{book}/publish', [PublishController::class, 'update'])->name('books.publish.update');
 Route::post('/books/{book}/publish/cover', [PublishController::class, 'uploadCover'])->name('books.publish.cover');
 Route::post('/books/{book}/publish/cover/generate', [PublishController::class, 'generateCover'])->name('books.publish.cover.generate');

@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\AppSetting;
-use App\Models\Book;
 
 test('unified settings page loads', function () {
     $this->get(route('settings.index'))
@@ -10,8 +9,6 @@ test('unified settings page loads', function () {
             ->component('settings/index')
             ->has('settings')
             ->has('ai_providers')
-            ->has('writing_style_text')
-            ->has('prose_pass_rules')
             ->has('version')
         );
 });
@@ -72,39 +69,5 @@ test('settings/ai redirects to unified settings', function () {
         ->assertRedirect('/settings');
 });
 
-test('global writing style saves', function () {
-    $this->putJson(route('settings.writing-style.update'), [
-        'writing_style_text' => 'Dark, moody prose with short sentences.',
-    ])->assertOk();
-
-    AppSetting::clearCache();
-    expect(AppSetting::get('writing_style_text'))->toBe('Dark, moody prose with short sentences.');
-});
-
-test('global prose pass rules save', function () {
-    $rules = Book::defaultProsePassRules();
-    $rules[0]['enabled'] = false;
-
-    $this->putJson(route('settings.prose-pass-rules.update'), [
-        'rules' => $rules,
-    ])->assertOk();
-
-    AppSetting::clearCache();
-    $saved = json_decode(AppSetting::get('prose_pass_rules'), true);
-    expect($saved[0]['enabled'])->toBeFalse();
-});
-
-test('globalProsePassRules merges missing default rules into a saved configuration', function () {
-    $partial = collect(Book::defaultProsePassRules())
-        ->reject(fn ($rule) => $rule['key'] === 'shorten_long_sentences')
-        ->values()
-        ->all();
-
-    AppSetting::set('prose_pass_rules', json_encode($partial));
-    AppSetting::clearCache();
-
-    $merged = Book::globalProsePassRules();
-    $keys = collect($merged)->pluck('key')->all();
-
-    expect($keys)->toContain('shorten_long_sentences');
-});
+// Writing style and prose pass rules are book-level settings now — their
+// endpoints and merge behavior are covered in BookProseSettingsTest.

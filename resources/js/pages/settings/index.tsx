@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
+import { Check, Copy, Trash2 } from 'lucide-react';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,11 +20,6 @@ import {
     deactivate,
     revalidate,
 } from '@/actions/App/Http/Controllers/LicenseController';
-import {
-    updateWritingStyle,
-    updateProsePassRules,
-    updateProofreadingConfig,
-} from '@/actions/App/Http/Controllers/SettingsController';
 import { DEFAULT_FONT_ID, FONTS } from '@/components/editor/FontSelector';
 import {
     DEFAULT_FONT_SIZE,
@@ -47,21 +42,18 @@ import NavItem from '@/components/ui/NavItem';
 import PageHeader from '@/components/ui/PageHeader';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/RadioGroup';
 import SectionLabel from '@/components/ui/SectionLabel';
-import Textarea from '@/components/ui/Textarea';
 import Toggle from '@/components/ui/Toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
+import { setAppLanguage } from '@/i18n';
 import type { Theme } from '@/lib/theme';
 import { jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
 import type {
     AppSettings,
     AiProvider,
     AiSetting,
-    GrammarCheckKey,
     License,
-    ProofreadingConfig,
-    ProsePassRule,
 } from '@/types/models';
 
 type ProviderSetting = AiSetting & {
@@ -71,9 +63,6 @@ type ProviderSetting = AiSetting & {
 interface Props {
     settings: AppSettings;
     ai_providers: ProviderSetting[];
-    writing_style_text: string;
-    prose_pass_rules: ProsePassRule[];
-    proofreading_config: ProofreadingConfig;
     version: string;
     backup: {
         has_rollback: boolean;
@@ -236,7 +225,7 @@ function LicenseSection() {
                                         className="font-mono"
                                     />
                                     <Button
-                                        variant="accent"
+                                        variant="primary"
                                         type="submit"
                                         disabled={activating || !key}
                                         className="h-9"
@@ -264,7 +253,7 @@ function LanguageSection() {
 
     function switchLocale(locale: string) {
         if (locale === activeLocale) return;
-        i18n.changeLanguage(locale);
+        void setAppLanguage(locale);
         saveAppSetting('locale', locale);
     }
 
@@ -549,19 +538,25 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
         })
             .then(async (res) => {
                 const json = await res.json();
-                setTestStatus(
-                    json.success
-                        ? { type: 'success', message: json.message }
-                        : { type: 'error', message: json.message },
-                );
-                setTimeout(() => setTestStatus({ type: 'idle' }), 5000);
+                if (json.success) {
+                    setTestStatus({ type: 'success', message: json.message });
+                    setTimeout(() => setTestStatus({ type: 'idle' }), 5000);
+                    return;
+                }
+                // Actionable failures (no credits, bad key, …) get a precise
+                // localized explanation and stay visible until the next test.
+                setTestStatus({
+                    type: 'error',
+                    message: isExplainedTestFailure(json.kind)
+                        ? t(`aiProviders.testResult.${json.kind}`)
+                        : json.message || t('aiProviders.testFailed'),
+                });
             })
             .catch(() => {
                 setTestStatus({
                     type: 'error',
                     message: t('aiProviders.testFailed'),
                 });
-                setTimeout(() => setTestStatus({ type: 'idle' }), 5000);
             });
     }, [setting.provider, t]);
 
@@ -664,12 +659,12 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                                 {testStatus.message}
                             </span>
                         )}
-                        {testStatus.type === 'error' && (
-                            <span className="text-[12px] font-medium text-danger">
-                                {testStatus.message}
-                            </span>
-                        )}
                     </div>
+                    {testStatus.type === 'error' && (
+                        <p className="text-[12px] leading-[1.5] font-medium text-danger">
+                            {testStatus.message}
+                        </p>
+                    )}
                 </div>
             </form>
             {guideOpen && (
@@ -680,6 +675,26 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                 />
             )}
         </>
+    );
+}
+
+// Test failures that have a dedicated, actionable explanation in the
+// settings locale files (aiProviders.testResult.*). Anything else falls
+// back to the provider's raw error message.
+const EXPLAINED_TEST_FAILURES = [
+    'invalid_key',
+    'insufficient_credits',
+    'rate_limited',
+    'overloaded',
+    'timeout',
+] as const;
+
+function isExplainedTestFailure(
+    kind: unknown,
+): kind is (typeof EXPLAINED_TEST_FAILURES)[number] {
+    return (
+        typeof kind === 'string' &&
+        (EXPLAINED_TEST_FAILURES as readonly string[]).includes(kind)
     );
 }
 
@@ -704,6 +719,7 @@ function GetApiKeyDialog({
     onClose: () => void;
 }) {
     const { t } = useTranslation('settings');
+    const [copied, setCopied] = useState(false);
     const titleText = t('aiProviders.howToGetKey.title', {
         provider: providerLabel,
     });
@@ -712,7 +728,13 @@ function GetApiKeyDialog({
     });
     const steps = Array.isArray(rawSteps) ? (rawSteps as string[]) : [];
     const consoleUrl = PROVIDER_CONSOLE_URLS[provider] ?? '';
-    const consoleLabel = t(`aiProviders.howToGetKey.${provider}.consoleLabel`);
+
+    const handleCopy = useCallback(() => {
+        navigator.clipboard.writeText(consoleUrl).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    }, [consoleUrl]);
 
     return (
         <Dialog onClose={onClose} title={titleText} width={520}>
@@ -736,18 +758,30 @@ function GetApiKeyDialog({
                     </li>
                 ))}
             </ol>
-            <div className="mt-7 flex items-center justify-end gap-2">
+            <div className="mt-7 rounded-lg border border-border-light bg-neutral-bg p-4">
+                <p className="text-[12px] leading-[1.5] text-ink-muted">
+                    {t('aiProviders.howToGetKey.copyHint')}
+                </p>
+                <div className="mt-2.5 flex items-center gap-2">
+                    <code className="min-w-0 flex-1 truncate font-mono text-[13px] text-ink">
+                        {consoleUrl}
+                    </code>
+                    <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        onClick={handleCopy}
+                    >
+                        {copied ? <Check size={14} /> : <Copy size={14} />}
+                        {copied
+                            ? t('aiProviders.howToGetKey.copied')
+                            : t('aiProviders.howToGetKey.copy')}
+                    </Button>
+                </div>
+            </div>
+            <div className="mt-5 flex items-center justify-end">
                 <Button type="button" variant="secondary" onClick={onClose}>
                     {t('aiProviders.howToGetKey.close')}
-                </Button>
-                <Button asChild variant="primary">
-                    <a
-                        href={consoleUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        {consoleLabel}
-                    </a>
                 </Button>
             </div>
         </Dialog>
@@ -841,343 +875,6 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
     );
 }
 
-// ─── Markdown Textarea Section (shared) ─────────────────────────────
-
-function MarkdownTextareaSection({
-    initialText,
-    saveUrl,
-    fieldName,
-    i18nPrefix,
-    sectionLabelKey,
-}: {
-    initialText: string;
-    saveUrl: string;
-    fieldName: string;
-    i18nPrefix: string;
-    sectionLabelKey?: string;
-}) {
-    const { t } = useTranslation('settings');
-    const [text, setText] = useState(initialText);
-    const [saving, setSaving] = useState(false);
-    const [saved, setSaved] = useState(false);
-    const lastSavedRef = useRef(initialText);
-
-    const handleSave = useCallback(() => {
-        if (!text || text === lastSavedRef.current) return;
-        setSaving(true);
-        setSaved(false);
-
-        fetch(saveUrl, {
-            method: 'PUT',
-            headers: jsonFetchHeaders(),
-            body: JSON.stringify({ [fieldName]: text }),
-        })
-            .then(async (res) => {
-                if (!res.ok) throw new Error('Save failed');
-                lastSavedRef.current = text;
-                setSaved(true);
-                setTimeout(() => setSaved(false), 3000);
-            })
-            .catch(() => {})
-            .finally(() => setSaving(false));
-    }, [text, saveUrl, fieldName]);
-
-    return (
-        <div>
-            <SectionLabel variant="section">
-                {t(sectionLabelKey ?? `${i18nPrefix}.title`)}
-            </SectionLabel>
-            <Card className="mt-3 p-6">
-                <div className="flex flex-col gap-4">
-                    <div>
-                        <span className="text-sm font-medium text-ink">
-                            {t(`${i18nPrefix}.title`)}
-                        </span>
-                        <p className="mt-1 text-[13px] text-ink-muted">
-                            {t(`${i18nPrefix}.description`)}
-                        </p>
-                    </div>
-                    <div>
-                        <div className="flex items-center justify-between rounded-t-md border border-border bg-surface px-3 py-2">
-                            <div className="flex items-center gap-1.5">
-                                <svg
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                    className="text-ink-faint"
-                                >
-                                    <path
-                                        d="M2 4h12M4 8h8M6 12h4"
-                                        stroke="currentColor"
-                                        strokeWidth="1.5"
-                                        strokeLinecap="round"
-                                    />
-                                </svg>
-                                <span className="text-[12px] text-ink-faint">
-                                    {t(`${i18nPrefix}.markdown`)}
-                                </span>
-                            </div>
-                            {(saving || saved) && (
-                                <span className="text-[12px] font-medium text-status-final">
-                                    {saving
-                                        ? t(`${i18nPrefix}.saving`)
-                                        : t(`${i18nPrefix}.saved`)}
-                                </span>
-                            )}
-                        </div>
-                        <Textarea
-                            value={text}
-                            onChange={(e) => setText(e.target.value)}
-                            onBlur={handleSave}
-                            placeholder={t(`${i18nPrefix}.placeholder`)}
-                            className="h-[200px] resize-y rounded-t-none border-t-0 font-mono leading-[1.7]"
-                        />
-                    </div>
-                </div>
-            </Card>
-        </div>
-    );
-}
-
-// ─── Revision Rules Section ──────────────────────────────────────────
-
-function RevisionRulesSection({
-    initialRules,
-}: {
-    initialRules: ProsePassRule[];
-}) {
-    const { t } = useTranslation('settings');
-    const [rules, setRules] = useState(initialRules);
-
-    const toggleRule = useCallback(
-        (key: string) => {
-            const updated = rules.map((r) =>
-                r.key === key ? { ...r, enabled: !r.enabled } : r,
-            );
-            setRules(updated);
-
-            fetch(updateProsePassRules.url(), {
-                method: 'PUT',
-                headers: jsonFetchHeaders(),
-                body: JSON.stringify({ rules: updated }),
-            }).catch(() => {
-                setRules(rules);
-            });
-        },
-        [rules],
-    );
-
-    return (
-        <div>
-            <SectionLabel variant="section">
-                {t('prosePassRules.title')}
-            </SectionLabel>
-            <Card className="mt-3">
-                <div className="px-6 pt-5 pb-4">
-                    <span className="text-sm font-medium text-ink">
-                        {t('prosePassRules.title')}
-                    </span>
-                    <p className="mt-1 text-[13px] text-ink-muted">
-                        {t('prosePassRules.description')}
-                    </p>
-                </div>
-                <div className="border-t border-border" />
-                {rules.map((rule, i) => (
-                    <div key={rule.key}>
-                        <div className="flex items-center justify-between px-6 py-3.5">
-                            <div>
-                                <span className="text-[14px] font-medium text-ink">
-                                    {t(
-                                        `prosePassRules.rules.${rule.key}.label`,
-                                        {
-                                            defaultValue: rule.label,
-                                        },
-                                    )}
-                                </span>
-                                <p className="mt-0.5 text-[13px] text-ink-muted">
-                                    {t(
-                                        `prosePassRules.rules.${rule.key}.description`,
-                                        { defaultValue: rule.description },
-                                    )}
-                                </p>
-                            </div>
-                            <Toggle
-                                checked={rule.enabled}
-                                onChange={() => toggleRule(rule.key)}
-                            />
-                        </div>
-                        {i < rules.length - 1 && (
-                            <div className="border-t border-border" />
-                        )}
-                    </div>
-                ))}
-            </Card>
-        </div>
-    );
-}
-
-// ─── Proofreading Section ────────────────────────────────────────────
-
-const GRAMMAR_RULES: Array<{
-    key: GrammarCheckKey;
-    labelKey: string;
-    descKey: string;
-}> = [
-    {
-        key: 'illusion',
-        labelKey: 'proofreading.grammar.illusion',
-        descKey: 'proofreading.grammar.illusionDescription',
-    },
-    {
-        key: 'so',
-        labelKey: 'proofreading.grammar.so',
-        descKey: 'proofreading.grammar.soDescription',
-    },
-    {
-        key: 'thereIs',
-        labelKey: 'proofreading.grammar.thereIs',
-        descKey: 'proofreading.grammar.thereIsDescription',
-    },
-    {
-        key: 'tooWordy',
-        labelKey: 'proofreading.grammar.tooWordy',
-        descKey: 'proofreading.grammar.tooWordyDescription',
-    },
-    {
-        key: 'passive',
-        labelKey: 'proofreading.grammar.passive',
-        descKey: 'proofreading.grammar.passiveDescription',
-    },
-    {
-        key: 'weasel',
-        labelKey: 'proofreading.grammar.weasel',
-        descKey: 'proofreading.grammar.weaselDescription',
-    },
-    {
-        key: 'adverb',
-        labelKey: 'proofreading.grammar.adverb',
-        descKey: 'proofreading.grammar.adverbDescription',
-    },
-    {
-        key: 'cliches',
-        labelKey: 'proofreading.grammar.cliches',
-        descKey: 'proofreading.grammar.clichesDescription',
-    },
-    {
-        key: 'eprime',
-        labelKey: 'proofreading.grammar.eprime',
-        descKey: 'proofreading.grammar.eprimeDescription',
-    },
-];
-
-function ProofreadingSection({
-    initialConfig,
-}: {
-    initialConfig: ProofreadingConfig;
-}) {
-    const { t } = useTranslation('settings');
-    const [config, setConfig] = useState(initialConfig);
-
-    const persistConfig = useCallback(
-        (updated: ProofreadingConfig) => {
-            setConfig(updated);
-            fetch(updateProofreadingConfig.url(), {
-                method: 'PUT',
-                headers: jsonFetchHeaders(),
-                body: JSON.stringify({ config: updated }),
-            }).catch(() => setConfig(config));
-        },
-        [config],
-    );
-
-    return (
-        <div>
-            <SectionLabel variant="section">
-                {t('proofreading.title')}
-            </SectionLabel>
-            <Card className="mt-3">
-                {/* Spelling toggle */}
-                <div className="flex items-center justify-between px-6 py-3.5">
-                    <div>
-                        <span className="text-[14px] font-medium text-ink">
-                            {t('proofreading.spelling.enabled')}
-                        </span>
-                        <p className="mt-0.5 text-[13px] text-ink-muted">
-                            {t('proofreading.spelling.enabledDescription')}
-                        </p>
-                    </div>
-                    <Toggle
-                        checked={config.spelling_enabled}
-                        onChange={() =>
-                            persistConfig({
-                                ...config,
-                                spelling_enabled: !config.spelling_enabled,
-                            })
-                        }
-                    />
-                </div>
-
-                <div className="border-t border-border" />
-
-                {/* Grammar toggle */}
-                <div className="flex items-center justify-between px-6 py-3.5">
-                    <div>
-                        <span className="text-[14px] font-medium text-ink">
-                            {t('proofreading.grammar.enabled')}
-                        </span>
-                        <p className="mt-0.5 text-[13px] text-ink-muted">
-                            {t('proofreading.grammar.enabledDescription')}
-                        </p>
-                    </div>
-                    <Toggle
-                        checked={config.grammar_enabled}
-                        onChange={() =>
-                            persistConfig({
-                                ...config,
-                                grammar_enabled: !config.grammar_enabled,
-                            })
-                        }
-                    />
-                </div>
-
-                {/* Individual grammar rules */}
-                {config.grammar_enabled &&
-                    GRAMMAR_RULES.map((rule) => (
-                        <div key={rule.key}>
-                            <div className="border-t border-border" />
-                            <div className="flex items-center justify-between px-6 py-3.5 pl-10">
-                                <div>
-                                    <span className="text-[14px] font-medium text-ink">
-                                        {t(rule.labelKey)}
-                                    </span>
-                                    <p className="mt-0.5 text-[13px] text-ink-muted">
-                                        {t(rule.descKey)}
-                                    </p>
-                                </div>
-                                <Toggle
-                                    checked={config.grammar_checks[rule.key]}
-                                    onChange={() =>
-                                        persistConfig({
-                                            ...config,
-                                            grammar_checks: {
-                                                ...config.grammar_checks,
-                                                [rule.key]:
-                                                    !config.grammar_checks[
-                                                        rule.key
-                                                    ],
-                                            },
-                                        })
-                                    }
-                                />
-                            </div>
-                        </div>
-                    ))}
-            </Card>
-        </div>
-    );
-}
-
 // ─── Privacy Section ─────────────────────────────────────────────────
 
 function PrivacySection({
@@ -1259,7 +956,7 @@ function UpdatesSection({
                     <div>
                         {updateState.status === 'ready' ? (
                             <Button
-                                variant="accent"
+                                variant="primary"
                                 type="button"
                                 onClick={installUpdate}
                             >
@@ -1382,9 +1079,12 @@ function BackupSection({
                 if (exportPassphrase) {
                     formData.append('passphrase', exportPassphrase);
                 }
+                // No explicit Content-Type: the FormData body must set its
+                // own multipart boundary, or PHP never parses the passphrase
+                // and silently exports unencrypted.
                 const res = await fetch(backupExport.url(), {
                     method: 'POST',
-                    headers: jsonFetchHeaders(),
+                    headers: { Accept: 'application/json' },
                     body: formData,
                 });
                 if (!res.ok) {
@@ -1393,11 +1093,16 @@ function BackupSection({
                     return;
                 }
                 const blob = await res.blob();
+                // Symfony may emit the filename quoted or as a bare token —
+                // match both, and keep an importable extension on the
+                // fallback so the import picker can always select the file.
                 const filename =
                     res.headers
                         .get('content-disposition')
-                        ?.match(/filename="([^"]+)"/)?.[1] ||
-                    'manuscript-backup';
+                        ?.match(/filename="?([^";]+)"?/)?.[1] ||
+                    (exportPassphrase
+                        ? 'manuscript-backup.msbk'
+                        : 'manuscript-backup.sqlite');
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -1429,9 +1134,11 @@ function BackupSection({
                 if (importPassphrase) {
                     formData.append('passphrase', importPassphrase);
                 }
+                // No explicit Content-Type — see handleExport: a forced JSON
+                // content type makes PHP drop the multipart body entirely.
                 const res = await fetch(backupImport.url(), {
                     method: 'POST',
-                    headers: jsonFetchHeaders(),
+                    headers: { Accept: 'application/json' },
                     body: formData,
                 });
                 const json = await res.json().catch(() => ({}));
@@ -1609,6 +1316,7 @@ function BackupSection({
                                     type="submit"
                                     variant="primary"
                                     disabled={!importFile || phase !== 'idle'}
+                                    data-testid="backup-import-submit"
                                 >
                                     {phase === 'importing'
                                         ? t('backup.import.busy')
@@ -1703,9 +1411,6 @@ type SectionKey =
     | 'appearance'
     | 'toolbar'
     | 'ai-features'
-    | 'writing-style'
-    | 'revision-rules'
-    | 'proofreading'
     | 'privacy'
     | 'updates'
     | 'backup';
@@ -1728,21 +1433,6 @@ const NAV_ITEMS: NavSection[] = [
     {
         key: 'ai-features',
         label: 'sidebar.aiFeatures',
-        groupKey: 'sidebar.editor',
-    },
-    {
-        key: 'writing-style',
-        label: 'section.writingStyle',
-        groupKey: 'sidebar.editor',
-    },
-    {
-        key: 'revision-rules',
-        label: 'section.prosePassRules',
-        groupKey: 'sidebar.editor',
-    },
-    {
-        key: 'proofreading',
-        label: 'sidebar.proofreading',
         groupKey: 'sidebar.editor',
     },
     { key: 'privacy', label: 'privacy.navLabel', groupKey: 'sidebar.account' },
@@ -1823,9 +1513,6 @@ function SettingsSidebar({
 export default function Settings({
     settings,
     ai_providers,
-    writing_style_text,
-    prose_pass_rules,
-    proofreading_config,
     version,
     backup,
 }: Props) {
@@ -1836,9 +1523,6 @@ export default function Settings({
     const appearanceRef = useRef<HTMLDivElement>(null);
     const toolbarRef = useRef<HTMLDivElement>(null);
     const aiFeaturesRef = useRef<HTMLDivElement>(null);
-    const writingStyleRef = useRef<HTMLDivElement>(null);
-    const revisionRulesRef = useRef<HTMLDivElement>(null);
-    const proofreadingRef = useRef<HTMLDivElement>(null);
     const privacyRef = useRef<HTMLDivElement>(null);
     const updatesRef = useRef<HTMLDivElement>(null);
     const backupRef = useRef<HTMLDivElement>(null);
@@ -1851,9 +1535,6 @@ export default function Settings({
         appearance: appearanceRef,
         toolbar: toolbarRef,
         'ai-features': aiFeaturesRef,
-        'writing-style': writingStyleRef,
-        'revision-rules': revisionRulesRef,
-        proofreading: proofreadingRef,
         privacy: privacyRef,
         updates: updatesRef,
         backup: backupRef,
@@ -1997,33 +1678,6 @@ export default function Settings({
                                     >
                                         <AiProvidersSection
                                             providers={ai_providers}
-                                        />
-                                    </div>
-                                    <div
-                                        ref={writingStyleRef}
-                                        data-section="writing-style"
-                                    >
-                                        <MarkdownTextareaSection
-                                            initialText={writing_style_text}
-                                            saveUrl={updateWritingStyle.url()}
-                                            fieldName="writing_style_text"
-                                            i18nPrefix="writingStyle"
-                                        />
-                                    </div>
-                                    <div
-                                        ref={revisionRulesRef}
-                                        data-section="revision-rules"
-                                    >
-                                        <RevisionRulesSection
-                                            initialRules={prose_pass_rules}
-                                        />
-                                    </div>
-                                    <div
-                                        ref={proofreadingRef}
-                                        data-section="proofreading"
-                                    >
-                                        <ProofreadingSection
-                                            initialConfig={proofreading_config}
                                         />
                                     </div>
                                 </div>

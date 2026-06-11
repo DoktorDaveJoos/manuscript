@@ -3,6 +3,7 @@ import { showJson } from '@/actions/App/Http/Controllers/ChapterController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type {
     Chapter,
+    ChapterEditorialFinding,
     Character,
     CharacterChapterPivot,
     ProofreadingConfig,
@@ -21,6 +22,7 @@ export type ChapterData = {
     proofreadingConfig?: ProofreadingConfig;
     customDictionary?: string[];
     editorialChapterNote?: string | null;
+    editorialFindings?: ChapterEditorialFinding[];
 };
 
 type UseChapterDataReturn = {

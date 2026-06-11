@@ -98,6 +98,13 @@ trait StreamsConversation
 
     private function sseFlush(): void
     {
+        // Under the in-process test server, flushing would push the streamed
+        // body past the response capture buffer into the runner's stdout and
+        // the browser would receive an empty stream.
+        if (app()->runningUnitTests()) {
+            return;
+        }
+
         if (ob_get_level()) {
             ob_flush();
         }

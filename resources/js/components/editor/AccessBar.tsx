@@ -7,7 +7,6 @@ export type PanelId =
     | 'plot'
     | 'ai'
     | 'chat'
-    | 'editorial'
     | 'coach-insights';
 
 export type AccessBarPanelItem = {

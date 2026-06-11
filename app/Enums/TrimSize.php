@@ -54,43 +54,50 @@ enum TrimSize: string
     }
 
     /**
-     * Page dimensions in millimetres.
+     * Page dimensions in millimetres. Imperial presets carry the exact
+     * inch-derived values (6×9″ = 152.4×228.6) — printers match the PDF page
+     * size against the chosen trim, so rounding to whole millimetres puts
+     * every export up to 0.5 mm off the template.
      *
      * @return array{width: float, height: float}
      */
     public function dimensions(): array
     {
         return match ($this) {
-            self::MassMarket => ['width' => 108, 'height' => 175],
-            self::Novel13x19 => ['width' => 130, 'height' => 190],
-            self::Pocket => ['width' => 127, 'height' => 203],
-            self::Digest => ['width' => 133, 'height' => 203],
-            self::SmallTrade => ['width' => 140, 'height' => 216],
-            self::A5 => ['width' => 148, 'height' => 210],
-            self::UsTrade => ['width' => 152, 'height' => 229],
-            self::Royal => ['width' => 178, 'height' => 254],
-            self::A4 => ['width' => 210, 'height' => 297],
-            self::Manuscript => ['width' => 216, 'height' => 279],
+            self::MassMarket => ['width' => 107.95, 'height' => 174.5],
+            self::Novel13x19 => ['width' => 130.0, 'height' => 190.0],
+            self::Pocket => ['width' => 127.0, 'height' => 203.2],
+            self::Digest => ['width' => 133.35, 'height' => 203.2],
+            self::SmallTrade => ['width' => 139.7, 'height' => 215.9],
+            self::A5 => ['width' => 148.0, 'height' => 210.0],
+            self::UsTrade => ['width' => 152.4, 'height' => 228.6],
+            self::Royal => ['width' => 177.8, 'height' => 254.0],
+            self::A4 => ['width' => 210.0, 'height' => 297.0],
+            self::Manuscript => ['width' => 215.9, 'height' => 279.4],
         };
     }
 
     /**
-     * Page margins in millimetres.
+     * Page margins in millimetres, following trade-book conventions: the
+     * gutter is widest (binding eats into it), the bottom outweighs the top
+     * (folio + optical centring), and the outer edge keeps enough air that
+     * thumbs never cover text. Roughly: outer ≈ 0.6–0.75″, gutter ≈ outer
+     * + 5 mm, scaled with the trim.
      *
      * @return array{top: int, bottom: int, outer: int, gutter: int}
      */
     public function margins(): array
     {
         return match ($this) {
-            self::MassMarket => ['top' => 13, 'bottom' => 15, 'outer' => 11, 'gutter' => 16],
-            self::Novel13x19 => ['top' => 16, 'bottom' => 18, 'outer' => 14, 'gutter' => 19],
-            self::Pocket => ['top' => 16, 'bottom' => 18, 'outer' => 14, 'gutter' => 19],
-            self::Digest => ['top' => 16, 'bottom' => 18, 'outer' => 14, 'gutter' => 20],
-            self::SmallTrade => ['top' => 19, 'bottom' => 22, 'outer' => 16, 'gutter' => 22],
-            self::A5 => ['top' => 18, 'bottom' => 20, 'outer' => 15, 'gutter' => 20],
-            self::UsTrade => ['top' => 19, 'bottom' => 22, 'outer' => 16, 'gutter' => 22],
-            self::Royal => ['top' => 22, 'bottom' => 25, 'outer' => 19, 'gutter' => 25],
-            self::A4 => ['top' => 25, 'bottom' => 25, 'outer' => 22, 'gutter' => 25],
+            self::MassMarket => ['top' => 15, 'bottom' => 16, 'outer' => 13, 'gutter' => 17],
+            self::Novel13x19 => ['top' => 18, 'bottom' => 19, 'outer' => 15, 'gutter' => 20],
+            self::Pocket => ['top' => 18, 'bottom' => 19, 'outer' => 15, 'gutter' => 20],
+            self::Digest => ['top' => 18, 'bottom' => 20, 'outer' => 16, 'gutter' => 21],
+            self::SmallTrade => ['top' => 20, 'bottom' => 22, 'outer' => 17, 'gutter' => 22],
+            self::A5 => ['top' => 20, 'bottom' => 22, 'outer' => 17, 'gutter' => 22],
+            self::UsTrade => ['top' => 21, 'bottom' => 23, 'outer' => 19, 'gutter' => 24],
+            self::Royal => ['top' => 23, 'bottom' => 25, 'outer' => 21, 'gutter' => 26],
+            self::A4 => ['top' => 26, 'bottom' => 28, 'outer' => 23, 'gutter' => 28],
             self::Manuscript => ['top' => 25, 'bottom' => 25, 'outer' => 25, 'gutter' => 25],
         };
     }
@@ -103,11 +110,11 @@ enum TrimSize: string
      */
     public static function defaultMarginsFor(float $width, float $height): array
     {
-        $outer = (int) round($width * 0.1);
+        $outer = (int) round($width * 0.125);
 
         return [
-            'top' => (int) round($height * 0.085),
-            'bottom' => (int) round($height * 0.095),
+            'top' => (int) round($height * 0.092),
+            'bottom' => (int) round($height * 0.1),
             'outer' => $outer,
             'gutter' => $outer + 5,
         ];

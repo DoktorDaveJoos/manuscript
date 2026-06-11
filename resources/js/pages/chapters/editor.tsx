@@ -4,7 +4,6 @@ import {
     BookOpen,
     MessageCircle,
     NotebookPen,
-    NotebookText,
     Sparkles,
     Workflow,
 } from 'lucide-react';
@@ -25,7 +24,6 @@ import ContinueWritingDialog, {
     defaultContinueWritingDraft,
 } from '@/components/editor/ContinueWritingDialog';
 import type { ContinueWritingDraft } from '@/components/editor/ContinueWritingDialog';
-import EditorialReviewPanel from '@/components/editor/EditorialReviewPanel';
 import GlobalFindDrawer from '@/components/editor/GlobalFindDrawer';
 import NotesPanel from '@/components/editor/NotesPanel';
 import PaneEmptyState from '@/components/editor/PaneEmptyState';
@@ -36,6 +34,7 @@ import RewriteSelectionDialog, {
 import type { RewriteSelectionDraft } from '@/components/editor/RewriteSelectionDialog';
 import Sidebar from '@/components/editor/Sidebar';
 import WikiPanel from '@/components/editor/WikiPanel';
+import WritingStyleSetupDialog from '@/components/editor/WritingStyleSetupDialog';
 import Button from '@/components/ui/Button';
 import Kbd from '@/components/ui/Kbd';
 import SlidePanel from '@/components/ui/SlidePanel';
@@ -58,12 +57,7 @@ import {
     jsonFetchHeaders,
     saveAppSetting,
 } from '@/lib/utils';
-import type {
-    AppSettings,
-    Book,
-    Character,
-    CharacterChapterPivot,
-} from '@/types/models';
+import type { AppSettings, Book } from '@/types/models';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -90,7 +84,6 @@ const VALID_PANELS: Set<PanelId> = new Set([
     'plot',
     'ai',
     'chat',
-    'editorial',
 ]);
 
 // ─── PaneWithData wrapper ────────────────────────────────────────────────────
@@ -236,14 +229,15 @@ export default function EditorPage({
     book,
     initialPanes,
     fallbackChapterId,
+    writingStylePromptable = false,
 }: {
     book: Book;
     initialPanes: string | null;
     fallbackChapterId: number | null;
+    writingStylePromptable?: boolean;
 }) {
     const { t } = useTranslation('editor');
     const { t: tAi } = useTranslation('ai');
-    const { t: tEditorial } = useTranslation('editorial-review');
     const { t: tPlotPanel } = useTranslation('plot-panel');
     const sidebarStorylines = useSidebarStorylines();
     const { usable: aiVisible } = useAiFeatures();
@@ -471,10 +465,6 @@ export default function EditorPage({
         () => closePanelAndFocus('chat'),
         [closePanelAndFocus],
     );
-    const closeEditorial = useCallback(
-        () => closePanelAndFocus('editorial'),
-        [closePanelAndFocus],
-    );
 
     // ── Focus mode ───────────────────────────────────────────────────────
     const [isFocusMode, setIsFocusMode] = useState(() => {
@@ -543,6 +533,27 @@ export default function EditorPage({
         setIsLocalFindOpen(false);
         setLocalFindShowReplace(false);
     }, []);
+
+    // ── Writing style pre-flight gate ────────────────────────────────────
+    // Prose-generating features (continue writing, rewrite, revise) first
+    // offer to derive the book's writing style when none exists yet. The
+    // pending action runs after the dialog resolves, whichever way.
+    const [stylePromptable, setStylePromptable] = useState(
+        writingStylePromptable,
+    );
+    const [pendingStyleGateAction, setPendingStyleGateAction] = useState<
+        (() => void) | null
+    >(null);
+    const gateWritingStyle = useCallback(
+        (action: () => void) => {
+            if (stylePromptable) {
+                setPendingStyleGateAction(() => action);
+            } else {
+                action();
+            }
+        },
+        [stylePromptable],
+    );
 
     // ── Continue writing ─────────────────────────────────────────────────
     const [isContinueWritingOpen, setIsContinueWritingOpen] = useState(false);
@@ -694,15 +705,10 @@ export default function EditorPage({
                     icon: MessageCircle,
                     label: tAi('askAi'),
                 },
-                {
-                    id: 'editorial',
-                    icon: NotebookText,
-                    label: tEditorial('panel.title'),
-                },
             );
         }
         return items;
-    }, [aiVisible, t, tAi, tEditorial, tPlotPanel]);
+    }, [aiVisible, t, tAi, tPlotPanel]);
 
     // ── Sidebar callbacks ────────────────────────────────────────────────
     const handleBeforeNavigate = useCallback(async () => {
@@ -909,15 +915,19 @@ export default function EditorPage({
                             >
                                 <AiPanel
                                     key={focusedChapter.id}
-                                    characters={
-                                        (focusedChapter.characters as
-                                            | (Character & {
-                                                  pivot: CharacterChapterPivot;
-                                              })[]
-                                            | undefined) ?? []
-                                    }
                                     book={book}
                                     chapter={focusedChapter}
+                                    editorialChapterNote={
+                                        focusedChapterData?.editorialChapterNote ??
+                                        null
+                                    }
+                                    editorialFindings={
+                                        focusedChapterData?.editorialFindings ??
+                                        []
+                                    }
+                                    editorialReviewUrl={editorialReviewIndex.url(
+                                        book,
+                                    )}
                                     activeSceneId={
                                         focusedPane?.chapterId ===
                                         focusedChapter.id
@@ -934,6 +944,7 @@ export default function EditorPage({
                                     }
                                     onProseStart={handleProseStart}
                                     onProseEnd={handleProseEnd}
+                                    gateWritingStyle={gateWritingStyle}
                                 />
                             </SlidePanel>
                         )}
@@ -951,27 +962,6 @@ export default function EditorPage({
                                     book={book}
                                     chapter={focusedChapter}
                                     onClose={closeChat}
-                                />
-                            </SlidePanel>
-                        )}
-
-                        {focusedChapter && (
-                            <SlidePanel
-                                open={openPanels.has('editorial') && aiVisible}
-                                onClose={closeEditorial}
-                                storageKey="manuscript:editorial-panel-width"
-                                defaultWidth={280}
-                            >
-                                <EditorialReviewPanel
-                                    key={focusedChapter.id}
-                                    chapterNote={
-                                        focusedChapterData?.editorialChapterNote ??
-                                        null
-                                    }
-                                    editorialReviewUrl={editorialReviewIndex.url(
-                                        book,
-                                    )}
-                                    onClose={closeEditorial}
                                 />
                             </SlidePanel>
                         )}
@@ -1005,7 +995,10 @@ export default function EditorPage({
                 onToggleTypewriterMode={toggleTypewriterMode}
                 onContinueWriting={
                     aiVisible && activeEditor && focusedChapter
-                        ? () => setIsContinueWritingOpen(true)
+                        ? () =>
+                              gateWritingStyle(() =>
+                                  setIsContinueWritingOpen(true),
+                              )
                         : undefined
                 }
                 onRewriteSelection={
@@ -1013,11 +1006,28 @@ export default function EditorPage({
                         ? () => {
                               const { from, to } = activeEditor.state.selection;
                               if (from === to) return;
-                              setRewriteRange({ from, to });
+                              gateWritingStyle(() =>
+                                  setRewriteRange({ from, to }),
+                              );
                           }
                         : undefined
                 }
             />
+
+            {pendingStyleGateAction && (
+                <WritingStyleSetupDialog
+                    bookId={book.id}
+                    onProceed={(outcome) => {
+                        // A plain skip keeps the offer alive for next time;
+                        // generating or dismissing settles it for this book.
+                        if (outcome !== 'skipped') setStylePromptable(false);
+                        const action = pendingStyleGateAction;
+                        setPendingStyleGateAction(null);
+                        action();
+                    }}
+                    onClose={() => setPendingStyleGateAction(null)}
+                />
+            )}
 
             {isContinueWritingOpen && activeEditor && focusedChapter && (
                 <ContinueWritingDialog

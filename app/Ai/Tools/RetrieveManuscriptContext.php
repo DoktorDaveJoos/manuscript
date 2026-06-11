@@ -5,7 +5,6 @@ namespace App\Ai\Tools;
 use App\Ai\Support\TextPrep;
 use App\Models\Book;
 use App\Models\Chapter;
-use App\Services\StoryBibleService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Contracts\Tool;
@@ -18,7 +17,7 @@ class RetrieveManuscriptContext implements Tool
 
     public function description(): Stringable|string
     {
-        return 'Retrieves manuscript context including characters, chapter summaries, plot points, story bible, and active chapter text for the current book. When a chapter_id is provided, also returns plot beats linked to that chapter (grouped by parent plot point) and wiki entries connected to that chapter (grouped by kind).';
+        return 'Retrieves manuscript context including characters, chapter summaries, plot points, and active chapter text for the current book. When a chapter_id is provided, also returns plot beats linked to that chapter (grouped by parent plot point) and wiki entries connected to that chapter (grouped by kind).';
     }
 
     /**
@@ -52,15 +51,6 @@ class RetrieveManuscriptContext implements Tool
         $sections = [];
 
         $sections[] = "Book: {$book->title} by {$book->author} (Language: {$book->language})";
-
-        // Include Story Bible if available
-        if ($book->story_bible) {
-            $storyBibleService = app(StoryBibleService::class);
-            $bibleContext = $storyBibleService->getContext($book);
-            if ($bibleContext) {
-                $sections[] = "\n".$bibleContext;
-            }
-        }
 
         if ($includeCharacters) {
             $characters = $book->characters()->get();

@@ -2,6 +2,7 @@
 
 use App\Models\Book;
 use App\Models\License;
+use App\Support\Trial;
 
 beforeEach(fn () => clearLicense());
 
@@ -55,4 +56,52 @@ test('licensed root reaches the books index', function () {
     $this->get(route('books.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page->component('books/index'));
+});
+
+test('active trial reaches the books index without a license', function () {
+    Trial::start();
+
+    $this->get(route('books.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('books/index'));
+});
+
+test('expired trial redirects to license welcome', function () {
+    Trial::start();
+
+    $this->travel(8)->days();
+
+    $this->get(route('books.index'))
+        ->assertRedirect(route('license.welcome'));
+});
+
+test('expired trial json request returns 403', function () {
+    Trial::start();
+
+    $this->travel(8)->days();
+
+    $this->postJson(route('books.store'), ['title' => 'New Book', 'author' => 'Me'])
+        ->assertStatus(403);
+});
+
+test('welcome page offers the trial when never started', function () {
+    $this->get(route('license.welcome'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('license/welcome')
+            ->where('trial.available', true)
+            ->where('trial.expired', false));
+});
+
+test('welcome page marks an expired trial as used up', function () {
+    Trial::start();
+
+    $this->travel(8)->days();
+
+    $this->get(route('license.welcome'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('license/welcome')
+            ->where('trial.available', false)
+            ->where('trial.expired', true));
 });

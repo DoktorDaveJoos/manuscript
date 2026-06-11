@@ -49,6 +49,25 @@ export type EditorialReviewChapterNote = {
     notes: Record<string, unknown> & { chapter_note?: string };
 };
 
+/** One chapter's unresolved finding as served by ChapterController::showJson. */
+export type ChapterEditorialFinding = {
+    key: string;
+    section: string;
+    severity: FindingSeverity;
+    description: string;
+    recommendation: string;
+};
+
+export type EditorialReviewErrorCode =
+    | 'rate_limited'
+    | 'overloaded'
+    | 'insufficient_credits'
+    | 'invalid_key'
+    | 'no_provider'
+    | 'no_content'
+    | 'timeout'
+    | 'unknown';
+
 export type EditorialReview = {
     id: number;
     book_id: number;
@@ -60,6 +79,7 @@ export type EditorialReview = {
         current_section?: string;
     } | null;
     error_message: string | null;
+    error_code: EditorialReviewErrorCode | null;
     overall_score: number | null;
     executive_summary: string | null;
     top_strengths: string[] | null;
@@ -82,7 +102,9 @@ export type VersionSource =
     | 'beautify'
     | 'snapshot'
     | 'continue_writing'
-    | 'rewrite_selection';
+    | 'rewrite_selection'
+    | 'editorial_rewrite'
+    | 'scene_structure';
 export type VersionStatus = 'accepted' | 'pending';
 export type PlotPointType =
     | 'setup'
@@ -116,13 +138,6 @@ export type AiProvider =
     | 'ollama'
     | 'azure'
     | 'openrouter';
-
-export type StoryBible = {
-    themes?: string[];
-    style_rules?: string[];
-    genre_rules?: string[];
-    timeline?: string[];
-};
 
 export type ProsePassRule = {
     key: string;
@@ -169,6 +184,13 @@ export type License = {
     masked_key: string | null;
 };
 
+export type Trial = {
+    available: boolean;
+    active: boolean;
+    expired: boolean;
+    days_remaining: number;
+};
+
 export type AppSettings = {
     show_ai_features: boolean;
     hide_formatting_toolbar: boolean;
@@ -191,7 +213,6 @@ export type Book = {
     secondary_genres: string[] | null;
     prose_pass_rules: ProsePassRule[] | null;
     writing_style_text: string | null;
-    story_bible?: StoryBible | null;
     copyright_text?: string | null;
     dedication_text?: string | null;
     epigraph_text?: string | null;
@@ -444,25 +465,6 @@ export type StatusCounts = {
     final: number;
 };
 
-export type HealthMetric = { label: string; score: number };
-export type AttentionItem = {
-    severity: 'low' | 'medium' | 'high';
-    /** Legacy format (AI-generated text) */
-    type?: string;
-    title?: string;
-    description?: string;
-    /** New translatable format */
-    chapter_order?: number;
-    chapter_title?: string;
-    description_key?: string;
-    description_params?: Record<string, string | number>;
-};
-export type HealthMetrics = {
-    composite_score: number;
-    metrics: HealthMetric[];
-    last_analyzed_at: string;
-    attention_items: AttentionItem[];
-};
 export type SuggestedNext = {
     title: string;
     description: string;
@@ -544,49 +546,6 @@ export type NormalizePreviewResult = {
         total_changes: number;
     }[];
     total_changes: number;
-};
-
-export type PreparationPhase =
-    | 'chunking'
-    | 'embedding'
-    | 'writing_style'
-    | 'chapter_analysis'
-    | 'entity_extraction'
-    | 'story_bible'
-    | 'health_analysis'
-    | 'retry';
-
-export type PhaseError = {
-    phase: string;
-    chapter: string | null;
-    chapter_id: number | null;
-    error: string;
-};
-
-export type PreparationStepKey =
-    | 'semantic_index'
-    | 'writing_style'
-    | 'chapter_analysis'
-    | 'wiki'
-    | 'story_bible'
-    | 'health';
-
-export type AiPreparationStatus = {
-    id: number;
-    status: 'pending' | 'running' | 'completed' | 'failed';
-    current_phase: PreparationPhase | null;
-    current_phase_total: number;
-    current_phase_progress: number;
-    steps: PreparationStepKey[] | null;
-    total_phases: number | null;
-    total_chapters: number;
-    processed_chapters: number;
-    embedded_chunks: number;
-    completed_phases: PreparationPhase[] | null;
-    phase_errors: PhaseError[] | null;
-    error_message: string | null;
-    created_at: string;
-    updated_at: string;
 };
 
 export type AiSetting = {
