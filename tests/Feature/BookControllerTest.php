@@ -67,6 +67,14 @@ test('skip import creates default storyline and redirects to editor', function (
         ->and($book->storylines->first()->name)->toBe('Main Storyline');
 });
 
+test('starting empty does not create any chapter', function () {
+    $book = Book::factory()->create();
+
+    $this->post(route('books.import.skip', $book));
+
+    expect($book->chapters()->count())->toBe(0);
+});
+
 test('validates title is required', function () {
     $this->post(route('books.store'), [
         'title' => '',

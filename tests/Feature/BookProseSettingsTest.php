@@ -4,6 +4,8 @@ use App\Ai\Agents\ProseReviser;
 use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\ChapterVersion;
+use App\Models\Storyline;
 
 test('writing_style_display uses the book own text and ignores the global setting', function () {
     AppSetting::set('writing_style_text', 'GLOBAL STYLE');
@@ -86,6 +88,83 @@ test('prose reviser applies the book own rules, not global ones', function () {
 
     expect($instructions)->toContain('Prose tightening')
         ->and($instructions)->not->toContain('Sentence variety:');
+});
+
+test('writingStyleSample joins the first three prose chapters by reader order', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+
+    $prose = fn (string $marker) => '<p>'.trim(str_repeat("{$marker} ", 150)).'</p>';
+    $contents = [
+        1 => $prose('alpha'),
+        2 => null, // empty outline chapter must not shrink the sample
+        3 => $prose('bravo'),
+        4 => $prose('charlie'),
+        5 => $prose('delta'),
+    ];
+
+    // Create out of order to prove sampling sorts by reader_order.
+    foreach ([3, 1, 5, 2, 4] as $order) {
+        $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => $order]);
+        ChapterVersion::factory()->for($chapter)->create([
+            'is_current' => true,
+            'content' => $contents[$order],
+        ]);
+    }
+
+    $sample = $book->writingStyleSample();
+
+    expect($sample)->toContain('alpha')
+        ->toContain('bravo')
+        ->toContain('charlie')
+        ->not->toContain('delta');
+});
+
+test('writingStyleSample strips tags but preserves paragraph breaks', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+
+    $first = trim(str_repeat('first ', 200));
+    $second = trim(str_repeat('second ', 200));
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 1]);
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'content' => "<p>{$first}</p><p>{$second}</p>",
+    ]);
+
+    $sample = $book->writingStyleSample();
+
+    expect($sample)->not->toContain('<p>')
+        ->and($sample)->toMatch('/first\s*\n\s*second/');
+});
+
+test('writingStyleSample caps the sample at 5000 words', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 1]);
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'content' => '<p>'.trim(str_repeat('word ', 6000)).'</p>',
+    ]);
+
+    $sample = $book->writingStyleSample();
+
+    expect(count(preg_split('/\s+/', trim($sample))))->toBe(5000);
+});
+
+test('writingStyleSample returns null when the book has fewer than 300 words of prose', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 1]);
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'content' => '<p>'.trim(str_repeat('sparse ', 100)).'</p>',
+    ]);
+
+    expect($book->writingStyleSample())->toBeNull()
+        ->and(Book::factory()->create()->writingStyleSample())->toBeNull();
 });
 
 test('migration moves global writing style and prose rules onto books', function () {

@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BackMatterType;
+use App\Enums\BleedMode;
+use App\Enums\ChapterHeading;
 use App\Enums\ExportFormat;
 use App\Enums\FontPairing;
+use App\Enums\FrontMatterType;
 use App\Enums\Genre;
 use App\Enums\SceneBreakStyle;
 use App\Enums\TrimSize;
@@ -22,6 +26,7 @@ use App\Services\WritingStyleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Native\Desktop\Dialog;
@@ -73,21 +78,19 @@ class BookSettingsController extends Controller
         return response()->json(['message' => __('Writing style updated.')]);
     }
 
+    public function dismissWritingStylePrompt(Book $book): JsonResponse
+    {
+        $book->update(['writing_style_prompt_dismissed' => true]);
+
+        return response()->json(['message' => __('Writing style prompt dismissed.')]);
+    }
+
     public function regenerateWritingStyle(Book $book, WritingStyleService $service): JsonResponse
     {
-        $chapters = $book->chapters()
-            ->whereHas('versions', fn ($q) => $q->where('is_current', true))
-            ->with(['versions' => fn ($q) => $q->where('is_current', true)])
-            ->limit(5)
-            ->get();
+        $sampleText = $book->writingStyleSample();
 
-        $sampleText = $chapters
-            ->map(fn ($ch) => $ch->versions->first()?->content ?? '')
-            ->filter()
-            ->implode("\n\n");
-
-        if (blank($sampleText)) {
-            return response()->json(['message' => __('No chapter content available for style analysis.')], 422);
+        if ($sampleText === null) {
+            return response()->json(['message' => __('Not enough chapter content yet for style analysis.')], 422);
         }
 
         $result = $service->extract($sampleText, $book);
@@ -196,6 +199,44 @@ class BookSettingsController extends Controller
         return response()->json(['message' => __('Prose pass rules updated.')]);
     }
 
+    /**
+     * Persist the export page's UI selections so they survive navigation
+     * and app restarts. Mirrors ExportBookRequest's rules — this is a saved
+     * snapshot of the same payload, minus the per-run fields.
+     */
+    public function updateExportSettings(Request $request, Book $book): JsonResponse
+    {
+        $validated = $request->validate([
+            'settings' => ['required', 'array:format,template,font_pairing,scene_break_style,drop_caps,chapter_heading,include_act_breaks,show_page_numbers,trim_size,font_size,cmyk,bleed,bleed_mode,custom_width,custom_height,include_cover,front_matter,back_matter,excluded_chapter_ids'],
+            'settings.format' => ['sometimes', Rule::enum(ExportFormat::class)],
+            'settings.template' => ['sometimes', 'string', 'in:classic,modern,elegant,romance'],
+            'settings.font_pairing' => ['sometimes', Rule::enum(FontPairing::class)],
+            'settings.scene_break_style' => ['sometimes', Rule::enum(SceneBreakStyle::class)],
+            'settings.drop_caps' => ['sometimes', 'boolean'],
+            'settings.chapter_heading' => ['sometimes', Rule::enum(ChapterHeading::class)],
+            'settings.include_act_breaks' => ['sometimes', 'boolean'],
+            'settings.show_page_numbers' => ['sometimes', 'boolean'],
+            'settings.trim_size' => ['sometimes', 'string', Rule::in([...array_map(fn (TrimSize $t) => $t->value, TrimSize::cases()), 'custom'])],
+            'settings.font_size' => ['sometimes', 'integer', 'in:10,11,12,13,14'],
+            'settings.cmyk' => ['sometimes', 'boolean'],
+            'settings.bleed' => ['sometimes', 'numeric', 'min:0', 'max:25'],
+            'settings.bleed_mode' => ['sometimes', Rule::enum(BleedMode::class)],
+            'settings.custom_width' => ['sometimes', 'numeric', 'min:50', 'max:500'],
+            'settings.custom_height' => ['sometimes', 'numeric', 'min:50', 'max:500'],
+            'settings.include_cover' => ['sometimes', 'boolean'],
+            'settings.front_matter' => ['sometimes', 'array'],
+            'settings.front_matter.*' => ['string', Rule::enum(FrontMatterType::class)],
+            'settings.back_matter' => ['sometimes', 'array'],
+            'settings.back_matter.*' => ['string', Rule::enum(BackMatterType::class)],
+            'settings.excluded_chapter_ids' => ['sometimes', 'array'],
+            'settings.excluded_chapter_ids.*' => ['integer'],
+        ]);
+
+        $book->update(['export_settings' => $validated['settings']]);
+
+        return response()->json(['message' => __('Export settings saved.')]);
+    }
+
     public function export(Book $book): Response
     {
         $book->load('storylines', 'acts');
@@ -208,6 +249,7 @@ class BookSettingsController extends Controller
 
         return Inertia::render('books/export', [
             'book' => $book->only('id', 'title', 'author', 'cover_image_path'),
+            'exportSettings' => $book->export_settings,
             'storylines' => $book->storylines->map(fn ($s) => $s->only('id', 'name', 'color', 'type')),
             'chapters' => $chapters->map(fn ($ch) => [
                 ...$ch->only('id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count', 'is_epilogue', 'is_prologue'),

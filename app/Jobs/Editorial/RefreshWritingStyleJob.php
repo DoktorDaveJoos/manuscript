@@ -36,30 +36,13 @@ class RefreshWritingStyleJob implements ShouldQueue
             return;
         }
 
-        // Sample the first three chapters that actually contain prose — empty
-        // outline chapters at the start of a book must not shrink the sample.
-        $sampleTexts = $this->book->chapters()
-            ->with('currentVersion')
-            ->orderBy('reader_order')
-            ->get()
-            ->map(fn ($chapter) => $chapter->currentVersion?->content)
-            ->filter()
-            ->take(3)
-            ->map(fn (string $content) => strip_tags($content))
-            ->values()
-            ->all();
+        $sampleText = $this->book->writingStyleSample();
 
-        if (empty($sampleTexts)) {
+        if ($sampleText === null) {
             return;
         }
 
-        $combinedSample = implode("\n\n---\n\n", $sampleTexts);
-        $words = preg_split('/\s+/', $combinedSample);
-        if (count($words) > 5000) {
-            $combinedSample = implode(' ', array_slice($words, 0, 5000));
-        }
-
-        $this->book->update(['writing_style' => $styleService->extract($combinedSample, $this->book)]);
+        $this->book->update(['writing_style' => $styleService->extract($sampleText, $this->book)]);
     }
 
     public function failed(Throwable $exception): void

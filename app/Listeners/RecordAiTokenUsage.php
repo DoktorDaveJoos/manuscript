@@ -45,6 +45,7 @@ class RecordAiTokenUsage
             'ProseReviser' => 'suggestions',
             'EditorialNotesAgent', 'EditorialSynthesisAgent', 'EditorialSummaryAgent' => 'editorial_review',
             'EditorialChatAgent' => 'editorial_review_chat',
+            'WritingStyleExtractor' => 'writing_style',
             default => 'other',
         };
     }

@@ -29,6 +29,45 @@ test('editor renders editor page with first chapter as fallback', function () {
         );
 });
 
+test('editor marks a style-less book with enough prose as writing-style promptable', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0, 'word_count' => 400]);
+
+    $this->get(route('books.editor', $book))
+        ->assertInertia(fn ($page) => $page
+            ->component('chapters/editor')
+            ->where('writingStylePromptable', true)
+        );
+});
+
+test('editor does not mark a book as promptable when a writing style exists', function () {
+    $book = Book::factory()->create(['writing_style_text' => 'Sparse and cold.']);
+    $storyline = Storyline::factory()->for($book)->create();
+    Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0, 'word_count' => 400]);
+
+    $this->get(route('books.editor', $book))
+        ->assertInertia(fn ($page) => $page->where('writingStylePromptable', false));
+});
+
+test('editor does not mark a book as promptable after the prompt was dismissed', function () {
+    $book = Book::factory()->create(['writing_style_prompt_dismissed' => true]);
+    $storyline = Storyline::factory()->for($book)->create();
+    Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0, 'word_count' => 400]);
+
+    $this->get(route('books.editor', $book))
+        ->assertInertia(fn ($page) => $page->where('writingStylePromptable', false));
+});
+
+test('editor does not mark a book as promptable below the minimum prose sample', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0, 'word_count' => 100]);
+
+    $this->get(route('books.editor', $book))
+        ->assertInertia(fn ($page) => $page->where('writingStylePromptable', false));
+});
+
 test('editor renders empty state when no chapters exist', function () {
     $book = Book::factory()->create();
 

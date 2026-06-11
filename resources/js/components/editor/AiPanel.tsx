@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { FileSearch, PenTool, Sparkles, Wand2 } from 'lucide-react';
+import { FileSearch, ListTree, PenTool, Sparkles, Wand2 } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -9,7 +9,10 @@ import {
     reviseWithEditorialFeedback,
 } from '@/actions/App/Http/Controllers/AiController';
 import { openWindow as openDiffWindow } from '@/actions/App/Http/Controllers/ChapterDiffController';
+import { suggest as suggestSceneStructure } from '@/actions/App/Http/Controllers/SceneStructureController';
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
+import SceneStructureDialog from '@/components/editor/SceneStructureDialog';
+import type { SceneStructureProposal } from '@/components/editor/SceneStructureDialog';
 import Button from '@/components/ui/Button';
 import PanelHeader from '@/components/ui/PanelHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
@@ -37,6 +40,7 @@ export default function AiPanel({
     proseRunning = false,
     onProseStart,
     onProseEnd,
+    gateWritingStyle,
 }: {
     book: Book;
     chapter: Chapter;
@@ -49,6 +53,8 @@ export default function AiPanel({
     proseRunning?: boolean;
     onProseStart?: (chapterId: number) => void;
     onProseEnd?: (chapterId: number) => void;
+    /** Writing-style pre-flight wrapper for prose-generating actions. */
+    gateWritingStyle?: (action: () => void) => void;
 }) {
     const { t, i18n } = useTranslation('ai');
     const pageUrl = usePage().url;
@@ -62,6 +68,9 @@ export default function AiPanel({
     const [isRunningProse, setIsRunningProse] = useState(false);
     const [isRunningSceneProse, setIsRunningSceneProse] = useState(false);
     const [isRewriting, setIsRewriting] = useState(false);
+    const [isStructuring, setIsStructuring] = useState(false);
+    const [structureProposal, setStructureProposal] =
+        useState<SceneStructureProposal | null>(null);
 
     // Chapter ref so the toast's "Compare" action resolves the post-revise
     // current version id at click time, after softRefresh has updated props.
@@ -173,39 +182,100 @@ export default function AiPanel({
         );
     }, [chapter.word_count, i18n.language, t]);
 
+    const gated = useCallback(
+        (action: () => void) =>
+            gateWritingStyle ? gateWritingStyle(action) : action(),
+        [gateWritingStyle],
+    );
+
     const handleRunProse = useCallback(() => {
         if (!confirmLongChapter()) return;
-        void runRevision(
-            revise.url({ book: book.id, chapter: chapter.id }),
-            setIsRunningProse,
-            t('error.prosePassFailed'),
+        gated(() =>
+            runRevision(
+                revise.url({ book: book.id, chapter: chapter.id }),
+                setIsRunningProse,
+                t('error.prosePassFailed'),
+            ),
         );
-    }, [book.id, chapter.id, confirmLongChapter, runRevision, t]);
+    }, [book.id, chapter.id, confirmLongChapter, gated, runRevision, t]);
 
     const handleRunSceneProse = useCallback(() => {
         if (!activeSceneId) return;
-        void runRevision(
-            reviseScene.url({
-                book: book.id,
-                chapter: chapter.id,
-                scene: activeSceneId,
-            }),
-            setIsRunningSceneProse,
-            t('error.prosePassFailed'),
+        gated(() =>
+            runRevision(
+                reviseScene.url({
+                    book: book.id,
+                    chapter: chapter.id,
+                    scene: activeSceneId,
+                }),
+                setIsRunningSceneProse,
+                t('error.prosePassFailed'),
+            ),
         );
-    }, [activeSceneId, book.id, chapter.id, runRevision, t]);
+    }, [activeSceneId, book.id, chapter.id, gated, runRevision, t]);
 
     const handleEditorialRewrite = useCallback(() => {
         if (!confirmLongChapter()) return;
-        void runRevision(
-            reviseWithEditorialFeedback.url({
-                book: book.id,
-                chapter: chapter.id,
-            }),
-            setIsRewriting,
-            t('error.rewriteFailed'),
+        gated(() =>
+            runRevision(
+                reviseWithEditorialFeedback.url({
+                    book: book.id,
+                    chapter: chapter.id,
+                }),
+                setIsRewriting,
+                t('error.rewriteFailed'),
+            ),
         );
-    }, [book.id, chapter.id, confirmLongChapter, runRevision, t]);
+    }, [book.id, chapter.id, confirmLongChapter, gated, runRevision, t]);
+
+    const handleStructureScenes = useCallback(async () => {
+        if (!confirmLongChapter()) return;
+        setIsStructuring(true);
+        onProseStart?.(chapter.id);
+        try {
+            const response = await fetch(
+                suggestSceneStructure.url({
+                    book: book.id,
+                    chapter: chapter.id,
+                }),
+                {
+                    method: 'POST',
+                    headers: {
+                        ...jsonFetchHeaders(),
+                        Accept: 'application/json',
+                    },
+                },
+            );
+
+            if (!response.ok) {
+                const body = await response.json().catch(() => null);
+                throw new Error(
+                    body?.message ?? t('structure.error.suggestFailed'),
+                );
+            }
+
+            setStructureProposal(
+                (await response.json()) as SceneStructureProposal,
+            );
+        } catch (e) {
+            onError?.(
+                e instanceof Error
+                    ? e.message
+                    : t('structure.error.suggestFailed'),
+            );
+        } finally {
+            setIsStructuring(false);
+            onProseEnd?.(chapter.id);
+        }
+    }, [
+        book.id,
+        chapter.id,
+        confirmLongChapter,
+        onError,
+        onProseStart,
+        onProseEnd,
+        t,
+    ]);
 
     const hasEditorialFeedback =
         !!editorialChapterNote || editorialFindings.length > 0;
@@ -303,6 +373,28 @@ export default function AiPanel({
                     )}
                 </div>
 
+                {/* Scene structure */}
+                {aiEnabled && (
+                    <div className="flex flex-col gap-2.5">
+                        <SectionLabel>{t('section.structure')}</SectionLabel>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={handleStructureScenes}
+                            disabled={proseRunning}
+                            className="w-full"
+                        >
+                            <ListTree size={14} strokeWidth={2.5} />
+                            {isStructuring
+                                ? t('structure.running')
+                                : t('structure.run')}
+                        </Button>
+                        <DescriptionText>
+                            {t('structure.description')}
+                        </DescriptionText>
+                    </div>
+                )}
+
                 {/* Editorial notes for this chapter */}
                 <div className="flex flex-col gap-2.5">
                     <SectionLabel>{t('section.editorialNotes')}</SectionLabel>
@@ -365,6 +457,15 @@ export default function AiPanel({
                     )}
                 </div>
             </div>
+
+            {structureProposal && (
+                <SceneStructureDialog
+                    book={book}
+                    chapter={chapter}
+                    proposal={structureProposal}
+                    onClose={() => setStructureProposal(null)}
+                />
+            )}
         </aside>
     );
 }

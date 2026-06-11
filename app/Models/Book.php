@@ -21,6 +21,7 @@ class Book extends Model
     {
         return [
             'writing_style' => 'array',
+            'writing_style_prompt_dismissed' => 'boolean',
             'prose_pass_rules' => 'array',
             'daily_word_count_goal' => 'integer',
             'target_word_count' => 'integer',
@@ -37,6 +38,7 @@ class Book extends Model
             'custom_dictionary' => 'array',
             'cover_settings' => 'array',
             'proofreading_config' => 'array',
+            'export_settings' => 'array',
         ];
     }
 
@@ -225,6 +227,75 @@ class Book extends Model
         }
 
         return $snippet;
+    }
+
+    /**
+     * Below this many words of prose, style extraction produces noise rather
+     * than signal — sampling refuses and callers must treat the style as
+     * not-yet-derivable.
+     */
+    public const STYLE_SAMPLE_MIN_WORDS = 300;
+
+    public const STYLE_SAMPLE_MAX_WORDS = 5000;
+
+    public const STYLE_SAMPLE_CHAPTERS = 3;
+
+    /**
+     * Build the prose sample used for writing-style extraction: the first
+     * chapters (by reader order) that actually contain prose, tags stripped
+     * but paragraph breaks preserved, capped in length. Returns null when the
+     * book holds too little prose for a meaningful analysis.
+     */
+    public function writingStyleSample(): ?string
+    {
+        $sampleTexts = $this->chapters()
+            ->with('currentVersion')
+            ->orderBy('reader_order')
+            ->get()
+            ->map(fn (Chapter $chapter) => $chapter->currentVersion?->content)
+            ->filter()
+            ->take(self::STYLE_SAMPLE_CHAPTERS)
+            ->map(function (string $content) {
+                $withBreaks = preg_replace('#</(p|h[1-6]|li|blockquote|div)>#i', "$0\n\n", $content);
+
+                return trim(strip_tags($withBreaks));
+            })
+            ->filter()
+            ->values()
+            ->all();
+
+        if (empty($sampleTexts)) {
+            return null;
+        }
+
+        $combined = implode("\n\n---\n\n", $sampleTexts);
+        $words = preg_split('/\s+/', trim($combined));
+
+        if (count($words) < self::STYLE_SAMPLE_MIN_WORDS) {
+            return null;
+        }
+
+        if (count($words) > self::STYLE_SAMPLE_MAX_WORDS) {
+            // Slice by token (word + following whitespace) so paragraph breaks
+            // survive the cap — the analysis reads them as structure.
+            $tokens = preg_split('/(\s+)/', trim($combined), -1, PREG_SPLIT_DELIM_CAPTURE);
+            $combined = implode('', array_slice($tokens, 0, self::STYLE_SAMPLE_MAX_WORDS * 2 - 1));
+        }
+
+        return $combined;
+    }
+
+    /**
+     * Whether the editor should offer to derive a writing style before running
+     * a prose-generating AI feature: no style yet, the offer was not dismissed,
+     * and there is enough prose to analyze. Uses the cheap word_count sum as a
+     * proxy for the authoritative writingStyleSample() check.
+     */
+    public function writingStylePromptable(): bool
+    {
+        return $this->writing_style_display === ''
+            && ! $this->writing_style_prompt_dismissed
+            && $this->chapters()->sum('word_count') >= self::STYLE_SAMPLE_MIN_WORDS;
     }
 
     /**

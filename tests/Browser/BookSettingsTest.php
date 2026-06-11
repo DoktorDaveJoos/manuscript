@@ -19,12 +19,13 @@ it('redirects the book settings index to the general page', function () {
         ->assertSee('Genre');
 });
 
-it('navigates between the book settings sections via the rail', function () {
+it('navigates between the book settings sections via the side nav', function () {
     $book = Book::factory()->create(['title' => 'My Book', 'author' => 'Jane Doe']);
 
     $page = visit("/books/{$book->id}/settings/general");
 
     $page->assertNoJavaScriptErrors()
+        ->assertSee('Book Settings')
         ->click('Writing Style')
         ->assertSee('Describe the prose voice')
         ->click('Revision Rules')
@@ -35,6 +36,20 @@ it('navigates between the book settings sections via the rail', function () {
         ->assertSee('Klappentext')
         ->click('Cover')
         ->assertSee('Upload your book cover')
+        ->assertNoJavaScriptErrors();
+});
+
+it('keeps the main sidebar with chapter navigation on book settings pages', function () {
+    [$book, $chapters] = createBookWithChapters(2);
+
+    $page = visit("/books/{$book->id}/settings/general");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSee($chapters[0]->title)
+        ->assertSee($chapters[1]->title)
+        ->click("2. {$chapters[1]->title}")
+        ->assertPathIs("/books/{$book->id}/editor")
+        ->assertSee('Chapter 2 content')
         ->assertNoJavaScriptErrors();
 });
 

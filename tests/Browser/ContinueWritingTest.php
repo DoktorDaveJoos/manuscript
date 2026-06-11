@@ -28,6 +28,7 @@ it('streams a multi-paragraph continuation without losing text', function () {
     $chapter = Chapter::factory()->for($book)->for($storyline)->create([
         'reader_order' => 1,
         'title' => 'Chapter 1',
+        'word_count' => 1,
     ]);
     // Short content on purpose: the out-of-range resolve needs the cursor to
     // sit closer to the end of the doc than the first flushed paragraph is

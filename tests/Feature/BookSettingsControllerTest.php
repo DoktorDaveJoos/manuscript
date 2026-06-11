@@ -5,9 +5,12 @@ use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\License;
 use App\Services\Export\ExportService;
+use App\Services\WritingStyleService;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Storage;
 use Native\Desktop\Dialog;
+
+use function Pest\Laravel\mock;
 
 test('book settings index redirects to the general page', function () {
     $book = Book::factory()->create();
@@ -81,6 +84,58 @@ test('writing style update persists to the book', function () {
     ])->assertOk();
 
     expect($book->refresh()->writing_style_text)->toBe('Lyrical, slow-burning prose.');
+});
+
+test('writing style regeneration rejects books with too little prose', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $chapters[0]->currentVersion()->update(['content' => '<p>Barely any prose here.</p>']);
+
+    mock(WritingStyleService::class)->shouldNotReceive('extract');
+
+    $this->postJson(route('books.settings.writing-style.regenerate', $book))
+        ->assertUnprocessable();
+});
+
+test('writing style regeneration extracts from the unified sample and persists', function () {
+    [$book, $chapters] = createBookWithChapters(4);
+    foreach ($chapters as $i => $chapter) {
+        $marker = ['firstmarker', 'secondmarker', 'thirdmarker', 'fourthmarker'][$i];
+        $chapter->currentVersion()->update([
+            'content' => '<p>'.trim(str_repeat("{$marker} ", 150)).'</p>',
+        ]);
+    }
+
+    mock(WritingStyleService::class)
+        ->shouldReceive('extract')
+        ->once()
+        ->withArgs(function (string $sample, Book $received) use ($book) {
+            // Unified sampling: first three prose chapters only, tags stripped.
+            return $received->is($book)
+                && str_contains($sample, 'firstmarker')
+                && str_contains($sample, 'thirdmarker')
+                && ! str_contains($sample, 'fourthmarker')
+                && ! str_contains($sample, '<p>');
+        })
+        ->andReturn(['tone' => 'spare and wintry']);
+
+    $this->postJson(route('books.settings.writing-style.regenerate', $book))
+        ->assertOk()
+        ->assertJsonPath('writing_style_text', Book::formatWritingStyle(['tone' => 'spare and wintry']));
+
+    $book->refresh();
+    expect($book->writing_style)->toBe(['tone' => 'spare and wintry'])
+        ->and($book->writing_style_text)->toBe('Tone: spare and wintry');
+});
+
+test('writing style prompt dismissal persists to the book', function () {
+    $book = Book::factory()->create();
+
+    expect($book->fresh()->writing_style_prompt_dismissed)->toBeFalse();
+
+    $this->postJson(route('books.settings.writing-style.dismiss-prompt', $book))
+        ->assertOk();
+
+    expect($book->refresh()->writing_style_prompt_dismissed)->toBeTrue();
 });
 
 test('prose rules page renders the book rules', function () {
@@ -223,6 +278,62 @@ test('preview endpoint never embeds cover even when include_cover is true', func
 
     expect($pdf)->not->toContain('/Subtype /Image');
     expect($pdf)->not->toContain('/Subtype/Image');
+});
+
+test('export settings update persists to the book', function () {
+    $book = Book::factory()->create();
+
+    $settings = [
+        'format' => 'pdf',
+        'template' => 'modern',
+        'font_pairing' => 'classic-serif',
+        'scene_break_style' => 'asterisks',
+        'drop_caps' => false,
+        'chapter_heading' => 'number',
+        'include_act_breaks' => true,
+        'show_page_numbers' => false,
+        'trim_size' => '5x8',
+        'font_size' => 12,
+        'cmyk' => true,
+        'bleed' => 3,
+        'bleed_mode' => 'outer',
+        'include_cover' => false,
+        'front_matter' => ['title-page', 'toc'],
+        'back_matter' => ['acknowledgments'],
+        'excluded_chapter_ids' => [7],
+    ];
+
+    $this->putJson(route('books.settings.export-settings.update', $book), [
+        'settings' => $settings,
+    ])->assertOk();
+
+    expect($book->refresh()->export_settings)->toBe($settings);
+});
+
+test('export settings update rejects invalid values', function (array $settings, string $errorKey) {
+    $book = Book::factory()->create();
+
+    $this->putJson(route('books.settings.export-settings.update', $book), [
+        'settings' => $settings,
+    ])->assertUnprocessable()->assertJsonValidationErrors($errorKey);
+})->with([
+    'unknown format' => [['format' => 'rtf'], 'settings.format'],
+    'unknown trim size' => [['trim_size' => '9x9'], 'settings.trim_size'],
+    'unknown key' => [['margin_color' => 'red'], 'settings'],
+]);
+
+test('export page exposes saved export settings', function () {
+    $book = Book::factory()->create([
+        'export_settings' => ['format' => 'pdf', 'trim_size' => 'a5'],
+    ]);
+
+    $this->get(route('books.settings.export', $book))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('books/export')
+            ->where('exportSettings.format', 'pdf')
+            ->where('exportSettings.trim_size', 'a5')
+        );
 });
 
 test('export page loads with chapters and trim sizes', function () {

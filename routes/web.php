@@ -29,10 +29,12 @@ use App\Http\Controllers\PlotSetupController;
 use App\Http\Controllers\PublishController;
 use App\Http\Controllers\RewriteSelectionController;
 use App\Http\Controllers\SceneController;
+use App\Http\Controllers\SceneStructureController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StorylineController;
 use App\Http\Controllers\TrashController;
+use App\Http\Controllers\TrialController;
 use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\WikiController;
 use App\Http\Controllers\WikiPanelController;
@@ -171,6 +173,7 @@ Route::inertia('/license/welcome', 'license/welcome')->name('license.welcome');
 Route::post('/license/activate', [LicenseController::class, 'activate'])->name('license.activate');
 Route::post('/license/deactivate', [LicenseController::class, 'deactivate'])->name('license.deactivate');
 Route::post('/license/revalidate', [LicenseController::class, 'revalidate'])->name('license.revalidate');
+Route::post('/trial/start', [TrialController::class, 'start'])->name('trial.start');
 
 // Local backup — export, import (with auto-rollback), single-level revert.
 Route::post('/settings/backup/export', [BackupController::class, 'export'])->name('settings.backup.export');
@@ -224,6 +227,8 @@ Route::post('/books/{book}/chapters/{chapter}/ai/continue-writing/commit', [Cont
 Route::post('/books/{book}/chapters/{chapter}/ai/continue-writing/refine/{version}', [ContinueWritingController::class, 'refine'])->name('chapters.ai.continueWriting.refine');
 Route::post('/books/{book}/chapters/{chapter}/ai/rewrite-selection', [RewriteSelectionController::class, 'stream'])->name('chapters.ai.rewriteSelection');
 Route::post('/books/{book}/chapters/{chapter}/ai/rewrite-selection/commit', [RewriteSelectionController::class, 'commit'])->name('chapters.ai.rewriteSelection.commit');
+Route::post('/books/{book}/chapters/{chapter}/ai/structure-scenes', [SceneStructureController::class, 'suggest'])->name('chapters.ai.structureScenes');
+Route::post('/books/{book}/chapters/{chapter}/ai/structure-scenes/apply', [SceneStructureController::class, 'apply'])->name('chapters.ai.structureScenes.apply');
 
 Route::get('/books/{book}/chapters/{chapter}/diff/{version}', [ChapterDiffController::class, 'show'])->name('chapters.diff.show');
 Route::post('/books/{book}/chapters/{chapter}/diff/{version}/open', [ChapterDiffController::class, 'openWindow'])->name('chapters.diff.open');
@@ -241,6 +246,7 @@ Route::post('/books/{book}/ai/editorial-review/{review}/chat', [EditorialReviewC
 Route::post('/books/{book}/ai/editorial-review/{review}/toggle-finding', [EditorialReviewController::class, 'toggleFinding'])->name('books.ai.editorial-review.toggle-finding');
 
 Route::post('/books/{book}/settings/writing-style/regenerate', [BookSettingsController::class, 'regenerateWritingStyle'])->name('books.settings.writing-style.regenerate');
+Route::post('/books/{book}/settings/writing-style/dismiss-prompt', [BookSettingsController::class, 'dismissWritingStylePrompt'])->name('books.settings.writing-style.dismiss-prompt');
 
 Route::post('/books/{book}/plot-coach/stream', [PlotCoachController::class, 'stream'])->name('books.plotCoach.stream');
 Route::get('/books/{book}/plot-coach/sessions', [PlotCoachController::class, 'sessionIndex'])->name('books.plotCoach.sessions.index');
@@ -269,6 +275,7 @@ Route::get('/books/{book}/settings/publishing', [BookSettingsController::class, 
 Route::get('/books/{book}/settings/cover', [BookSettingsController::class, 'cover'])->name('books.settings.cover');
 Route::get('/books/{book}/settings/export', [BookSettingsController::class, 'export'])->name('books.settings.export');
 Route::post('/books/{book}/settings/export', [BookSettingsController::class, 'doExport'])->name('books.settings.export.run');
+Route::put('/books/{book}/settings/export-settings', [BookSettingsController::class, 'updateExportSettings'])->name('books.settings.export-settings.update');
 Route::post('/books/{book}/export/preview', [BookSettingsController::class, 'previewPdf'])->name('books.export.preview');
 
 // Publish endpoints — the page now lives under book settings; the legacy URL redirects there

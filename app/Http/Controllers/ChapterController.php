@@ -57,6 +57,7 @@ class ChapterController extends Controller
             'book' => $book,
             'initialPanes' => $request->query('panes'),
             'fallbackChapterId' => $firstChapter?->id,
+            'writingStylePromptable' => $book->writingStylePromptable(),
         ]);
     }
 
