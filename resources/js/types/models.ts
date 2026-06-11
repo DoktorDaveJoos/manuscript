@@ -103,7 +103,8 @@ export type VersionSource =
     | 'snapshot'
     | 'continue_writing'
     | 'rewrite_selection'
-    | 'editorial_rewrite';
+    | 'editorial_rewrite'
+    | 'scene_structure';
 export type VersionStatus = 'accepted' | 'pending';
 export type PlotPointType =
     | 'setup'
@@ -181,6 +182,13 @@ export const DEFAULT_PROOFREADING_CONFIG: ProofreadingConfig = {
 export type License = {
     active: boolean;
     masked_key: string | null;
+};
+
+export type Trial = {
+    available: boolean;
+    active: boolean;
+    expired: boolean;
+    days_remaining: number;
 };
 
 export type AppSettings = {
