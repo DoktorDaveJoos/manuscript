@@ -16,8 +16,9 @@ use Illuminate\Support\Str;
  * Seeds an English Plot Coach conversation for the marketing book "The Vanishing Hour".
  *
  * Depends on MarketingSeeder having run first — looks up the book by title and
- * attaches a coach session + an authentic-looking 4-turn conversation about
- * Detective Harlow's character motivation. Used for screenshot capture and marketing assets.
+ * attaches a coach session + an authentic-looking 4-turn conversation grounded in the
+ * seeded board structure (Acts 1–3 and their plot points/beats).
+ * Used for screenshot capture and marketing assets.
  */
 class PlotCoachConversationSeeder extends Seeder
 {
@@ -31,7 +32,7 @@ class PlotCoachConversationSeeder extends Seeder
         DB::table('agent_conversations')->insert([
             'id' => $conversationId,
             'user_id' => null,
-            'title' => 'Harlow\'s motivation in Chapter 5',
+            'title' => 'Strengthening Act 2 — Institutional Betrayal',
             'created_at' => $now->subMinutes(6),
             'updated_at' => $now->subSeconds(30),
         ]);
@@ -54,22 +55,22 @@ class PlotCoachConversationSeeder extends Seeder
             [
                 'role' => 'user',
                 'minutes_ago' => 6,
-                'content' => "I'm stuck on Harlow's motivation for Chapter 5. After Reed gives her the Aldridge files, I want her to commit fully to the investigation — but I can't tell if that commitment is coming from a place of professional duty or personal obsession. Both feel slightly off.",
+                'content' => "Act 2 feels thin to me. \"The Contamination Cover-Up\" is fully fulfilled, but \"Institutional Betrayal\" only has two planned beats and nothing connects it back to the 1987 timeline. I'm worried the middle sags right where the stakes should be climbing.",
             ],
             [
                 'role' => 'assistant',
                 'minutes_ago' => 5,
-                'content' => "That hesitation is worth interrogating. Before we resolve it: what does Harlow lose if she investigates this case fully, and what does she lose if she walks away?\n\nIn Chapter 1 you established her as someone who got Cold Cases as a demotion after the Whitfield investigation. Is the Voss case the thing that redeems her, or the thing that finishes her? The answer changes what kind of commitment makes sense.\n\nA character who fully commits out of obsession needs to have something at stake personally. Right now Harlow is intellectually invested, but the reader doesn't yet feel that the case has hooked something deeper in her. Could there be a parallel between Voss and someone in Harlow's past — not blood relation, but emotional pattern?",
+                'content' => "You're reading your own board correctly. Look at the asymmetry: \"The Contamination Cover-Up\" carries three fulfilled beats — Reed's reveal, the Aldridge connection, Elena's confrontation with Gerald — while \"Institutional Betrayal\" sits next to it with two planned beats and no chapter anchoring either of them.\n\nStructurally, that turning point is where Act 2 earns its title, The Unraveling. Right now the unraveling happens to Elena in 1987, but not to Harlow in the present. The betrayal plot point is supposed to be Harlow's version of the warning on Elena's windshield — the moment the institution she serves shows its teeth.\n\nTwo questions before we touch the board: who inside the department pressured the original detective in 1987, and is that person — or their successor — still in a position to pressure Harlow now? If the answer is yes, the two timelines stop running in parallel and start colliding.",
             ],
             [
                 'role' => 'user',
                 'minutes_ago' => 3,
-                'content' => "That's good. Maybe Harlow's sister or a close friend disappeared briefly when she was young — not a true crime, but enough that \"voluntary disappearance\" as an explanation has always rung false to her.",
+                'content' => 'Yes — I like the idea that the captain who tells Harlow to keep her "caseload numbers presentable" is connected to whoever shut down the original investigation. Maybe he was a junior officer on the Voss case.',
             ],
             [
                 'role' => 'assistant',
                 'minutes_ago' => 1,
-                'content' => "That works. Now it isn't just a case — it's a wound being reopened. Three craft notes:\n\n1. Plant it gently in Chapter 1. A single line, no flashback. Show the reader Harlow notices the words \"voluntary disappearance\" before she reads them. Let them feel her resistance without being told why.\n\n2. Reveal the personal connection in Chapter 4, after we've watched her get obsessed but before the Aldridge confrontation. The reader should think \"oh\" — not \"aha\".\n\n3. Don't resolve it. The case can close. The wound stays open. That's the kind of ending that earns its emotional weight.\n\nWant me to add a beat to Plot Point 1 (Cold Case Reopened) tracking this personal motif, or leave it for you to draft into the chapter directly?",
+                'content' => "That closes the loop elegantly. The captain's throwaway line in Chapter 1 retroactively becomes a planted setup, and \"Institutional Betrayal\" stops being abstract — it has a face Harlow reports to every morning.\n\nThree structural notes for the board:\n\n1. Add a beat under \"Institutional Betrayal\" where Harlow finds the captain's name in the original 1987 case file — small, procedural, devastating.\n\n2. The existing beat \"Harlow's own department pushes back\" should escalate from passive (stalled paperwork) to active (the Voss file is recalled to storage). Pressure she can't prove is the thriller's best fuel.\n\n3. This also sharpens \"The Reckoning\" in Act 3: Harlow's final confrontation with Kieran Aldridge lands harder if she has already burned her standing in the department to get there.\n\nWant me to draft these beats so you can review and apply them to the board?",
             ],
         ];
 

@@ -18,7 +18,7 @@ it('captures English marketing screenshots from the seeded book', function () {
     visit("/books/{$book->id}/plot")
         ->resize(1440, 900)
         ->assertNoJavaScriptErrors()
-        ->assertSee("I'm stuck on Harlow's motivation")
+        ->assertSee('Act 2 feels thin to me')
         ->screenshot(true, 'marketing/plot-coach');
 
     // Plot Board — toggle to Board view.

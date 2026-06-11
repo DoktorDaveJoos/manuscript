@@ -114,6 +114,26 @@ it('toggles between coach and board modes via the toggle', function () {
     $page->assertSee('Hi.');
 });
 
+it('proposes the plot coach on the empty board and switches to coach mode via the CTA', function () {
+    License::factory()->create();
+    $book = Book::factory()->withAi()->create();
+
+    $page = visit("/books/{$book->id}/plot");
+
+    $page->assertNoJavaScriptErrors();
+
+    // No acts yet — the board shows the template empty state with a coach
+    // CTA above the template cards.
+    $page->click('Board');
+    $page->assertSee('Develop your plot with the Coach');
+    $page->assertSee('Or pick a proven template');
+    $page->assertSee('Every great story has a shape');
+
+    // The CTA switches back to coach mode (intake opener visible).
+    $page->click('Start with the Coach');
+    $page->assertSee('Hi.');
+});
+
 it('fetches the latest plot state when switching to the board', function () {
     License::factory()->create();
     $book = Book::factory()->withAi()->create();

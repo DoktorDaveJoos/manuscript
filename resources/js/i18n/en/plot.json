@@ -101,7 +101,11 @@
     "readingOrder.confirmContinue": "Continue",
 
     "emptyState.title": "Every great story has a shape",
-    "emptyState.subtitle": "Behind every page-turner is a structure the reader never sees — but always feels. Pick a proven blueprint and we'll show you how it works.",
+    "emptyState.subtitle": "Behind every page-turner is a structure the reader never sees — but always feels. You don't have to find it alone.",
+    "emptyState.coachCta.title": "Develop your plot with the Coach",
+    "emptyState.coachCta.text": "The Coach asks the right questions and builds your structure with you, step by step — from your idea, at your pace.",
+    "emptyState.coachCta.button": "Start with the Coach",
+    "emptyState.orTemplates": "Or pick a proven template",
     "emptyState.hint": "This is a starting point, not a contract. Rename, rearrange, and reshape everything later.",
     "emptyState.fitsBadge": "POPULAR",
     "emptyState.select": "Select",

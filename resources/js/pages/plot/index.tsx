@@ -1095,6 +1095,7 @@ export default function Plot({
                     ) : (
                         <PlotEmptyState
                             onSelectTemplate={setSelectedTemplate}
+                            onStartCoach={() => switchMode('coach')}
                         />
                     )}
                 </main>

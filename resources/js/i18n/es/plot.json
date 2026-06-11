@@ -101,7 +101,11 @@
     "readingOrder.confirmContinue": "Continuar",
 
     "emptyState.title": "Toda gran historia tiene una forma",
-    "emptyState.subtitle": "Detr\u00e1s de cada best seller hay una estructura que el lector nunca ve \u2014 pero siempre siente.\nElige una plantilla probada. Te mostraremos exactamente c\u00f3mo funciona.",
+    "emptyState.subtitle": "Detr\u00e1s de cada best seller hay una estructura que el lector nunca ve \u2014 pero siempre siente. No tienes que encontrarla solo.",
+    "emptyState.coachCta.title": "Desarrolla tu trama con el coach",
+    "emptyState.coachCta.text": "El coach te hace las preguntas adecuadas y construye la estructura contigo, paso a paso \u2014 desde tu idea, a tu ritmo.",
+    "emptyState.coachCta.button": "Empezar con el coach",
+    "emptyState.orTemplates": "O elige una plantilla probada",
     "emptyState.hint": "Esto es un punto de partida, no un contrato. Renombra, reorganiza y remodela todo m\u00e1s adelante.",
     "emptyState.fitsBadge": "SE ADAPTA A LA MAYOR\u00cdA DE HISTORIAS",
     "emptyState.select": "Seleccionar",
