@@ -32,6 +32,8 @@ use App\Http\Controllers\SceneController;
 use App\Http\Controllers\SceneStructureController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\SpeechModelController;
+use App\Http\Controllers\SpeechTranscriptionController;
 use App\Http\Controllers\StorylineController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\TrialController;
@@ -213,6 +215,12 @@ Route::post('/books/{book}/plot/panel/disconnect', [PlotPanelController::class, 
 
 Route::post('/books/{book}/plot-connections', [PlotPointConnectionController::class, 'store'])->name('plotConnections.store');
 Route::delete('/books/{book}/plot-connections/{plotPointConnection}', [PlotPointConnectionController::class, 'destroy'])->name('plotConnections.destroy');
+
+// Local speech-to-text (whisper.cpp): model lifecycle + transcription
+Route::get('/settings/speech/model', [SpeechModelController::class, 'show'])->name('speech.model.show');
+Route::post('/settings/speech/model', [SpeechModelController::class, 'store'])->name('speech.model.store');
+Route::delete('/settings/speech/model', [SpeechModelController::class, 'destroy'])->name('speech.model.destroy');
+Route::post('/speech/transcriptions', [SpeechTranscriptionController::class, 'store'])->name('speech.transcriptions.store');
 
 Route::put('/settings/ai/{provider}', [AiSettingsController::class, 'update'])->name('ai-settings.update');
 Route::delete('/settings/ai/{provider}/key', [AiSettingsController::class, 'deleteKey'])->name('ai-settings.delete-key');

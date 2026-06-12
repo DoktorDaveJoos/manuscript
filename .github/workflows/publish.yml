@@ -183,6 +183,35 @@ jobs:
           echo "macOS DMGs produced:"
           find "$DIST" -maxdepth 2 -type f -name '*.dmg'
 
+      # Speech input ships a whisper.cpp binary via NativePHP's extras/
+      # mechanism. If it goes missing from the bundle (extras/ dropped, builder
+      # config changed) or loses its signature, the mic feature silently
+      # degrades for every user of that release — fail the build instead.
+      - name: Verify whisper-cli is bundled and signed
+        shell: bash
+        run: |
+          DIST=nativephp/electron/dist
+          [ -d "$DIST" ] || DIST=vendor/nativephp/desktop/resources/electron/dist
+          FOUND=0
+          for APP in "$DIST"/mac*/*.app; do
+            [ -d "$APP" ] || continue
+            FOUND=1
+            BIN="$APP/Contents/extras/bin/mac/whisper-cli"
+            if [ ! -f "$BIN" ]; then
+              echo "::error::whisper-cli missing from $APP — extras/ was not bundled."
+              exit 1
+            fi
+            if ! codesign --verify --strict "$BIN"; then
+              echo "::error::whisper-cli in $APP is not validly signed."
+              exit 1
+            fi
+            echo "whisper-cli present and signed in $APP"
+          done
+          if [ "$FOUND" = "0" ]; then
+            echo "::error::No .app bundles found under $DIST to verify."
+            exit 1
+          fi
+
   build-windows:
     runs-on: windows-latest
 

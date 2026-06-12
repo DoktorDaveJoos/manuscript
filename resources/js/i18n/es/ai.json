@@ -76,5 +76,11 @@
     "editorial.rewriteDescription": "Revisa este capítulo aplicando el feedback pendiente de tu última revisión editorial.",
     "editorial.none": "Aún no hay feedback editorial para este capítulo. Ejecuta una revisión editorial para ver notas aquí y desbloquear reescrituras basadas en feedback.",
     "editorial.viewReport": "Abrir revisión editorial →",
-    "error.rewriteFailed": "La reescritura falló. Inténtalo de nuevo."
+    "error.rewriteFailed": "La reescritura falló. Inténtalo de nuevo.",
+    "speech.start": "Iniciar entrada de voz",
+    "speech.stop": "Detener y transcribir",
+    "speech.micDenied.title": "Acceso al micrófono denegado",
+    "speech.micDenied.body": "Permite el acceso al micrófono para Manuscript en los ajustes del sistema para usar la entrada de voz.",
+    "speech.failed.title": "Error en la entrada de voz",
+    "speech.failed.body": "No se pudo transcribir la grabación. Inténtalo de nuevo."
 }

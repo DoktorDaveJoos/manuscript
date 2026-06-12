@@ -6,6 +6,8 @@ use App\Models\AiSetting;
 use App\Models\AppSetting;
 use App\Models\Book;
 use App\Models\License;
+use App\Services\Speech\SpeechModelManager;
+use App\Services\Speech\WhisperTranscriber;
 use App\Support\Trial;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -127,6 +129,8 @@ class HandleInertiaRequests extends Middleware
                 'editor_font_size' => (int) AppSetting::get('editor_font_size', 18),
             ],
             'ai_configured' => fn () => $this->activeAiSetting()?->isConfigured() ?? false,
+            'speech_ready' => fn () => app(WhisperTranscriber::class)->isAvailable()
+                && app(SpeechModelManager::class)->isReady(),
             'ai_key_recovery_needed' => fn () => (bool) $this->activeAiSetting()?->api_key_recovery_needed,
             'ai_provider_label' => fn () => $this->activeAiSetting()?->provider->label(),
             'ai_default_model' => fn () => $this->activeDefaultTextModel(),

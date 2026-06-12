@@ -76,5 +76,11 @@
     "editorial.rewriteDescription": "Überarbeitet dieses Kapitel und berücksichtigt dabei das offene Feedback aus dem letzten Lektorat.",
     "editorial.none": "Noch kein Lektorats-Feedback für dieses Kapitel. Starte ein Lektorat, um hier Notizen zu sehen und Feedback-basierte Überarbeitungen freizuschalten.",
     "editorial.viewReport": "Lektorat öffnen →",
-    "error.rewriteFailed": "Überarbeitung fehlgeschlagen. Bitte erneut versuchen."
+    "error.rewriteFailed": "Überarbeitung fehlgeschlagen. Bitte erneut versuchen.",
+    "speech.start": "Spracheingabe starten",
+    "speech.stop": "Stoppen und transkribieren",
+    "speech.micDenied.title": "Mikrofonzugriff verweigert",
+    "speech.micDenied.body": "Erlaube Manuscript den Mikrofonzugriff in den Systemeinstellungen, um die Spracheingabe zu nutzen.",
+    "speech.failed.title": "Spracheingabe fehlgeschlagen",
+    "speech.failed.body": "Die Aufnahme konnte nicht transkribiert werden. Bitte versuche es erneut."
 }

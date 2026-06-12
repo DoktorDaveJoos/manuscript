@@ -20,6 +20,11 @@ import {
     deactivate,
     revalidate,
 } from '@/actions/App/Http/Controllers/LicenseController';
+import {
+    show as speechModelShow,
+    store as speechModelStore,
+    destroy as speechModelDestroy,
+} from '@/actions/App/Http/Controllers/SpeechModelController';
 import { DEFAULT_FONT_ID, FONTS } from '@/components/editor/FontSelector';
 import {
     DEFAULT_FONT_SIZE,
@@ -875,6 +880,155 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
     );
 }
 
+// ─── Speech Input Section ────────────────────────────────────────────
+
+type SpeechModelStatus = {
+    state: 'missing' | 'downloading' | 'error' | 'ready';
+    variant: string;
+    label: string;
+    size_bytes: number;
+    progress?: number;
+    error?: string;
+};
+
+function SpeechInputSection() {
+    const { t } = useTranslation('settings');
+    const [status, setStatus] = useState<SpeechModelStatus | null>(null);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        fetch(speechModelShow.url(), {
+            headers: jsonFetchHeaders(),
+            signal: controller.signal,
+        })
+            .then((response) => (response.ok ? response.json() : null))
+            .then((next) => {
+                if (next) setStatus(next as SpeechModelStatus);
+            })
+            .catch(() => {});
+        return () => controller.abort();
+    }, []);
+
+    // Keep the progress bar live while the queued download runs.
+    useEffect(() => {
+        if (status?.state !== 'downloading') return;
+        const id = setInterval(() => {
+            fetch(speechModelShow.url(), { headers: jsonFetchHeaders() })
+                .then((response) => (response.ok ? response.json() : null))
+                .then((next) => {
+                    if (next) setStatus(next as SpeechModelStatus);
+                })
+                .catch(() => {});
+        }, 1500);
+        return () => clearInterval(id);
+    }, [status?.state]);
+
+    const startDownload = useCallback(() => {
+        fetch(speechModelStore.url(), {
+            method: 'POST',
+            headers: jsonFetchHeaders(),
+        })
+            .then((response) => response.json())
+            .then((next) => setStatus(next as SpeechModelStatus))
+            .catch(() => {});
+    }, []);
+
+    const removeModel = useCallback(() => {
+        fetch(speechModelDestroy.url(), {
+            method: 'DELETE',
+            headers: jsonFetchHeaders(),
+        })
+            .then((response) => response.json())
+            .then((next) => setStatus(next as SpeechModelStatus))
+            .catch(() => {});
+    }, []);
+
+    const sizeLabel = status ? `${Math.round(status.size_bytes / 1e6)} MB` : '';
+
+    return (
+        <div>
+            <SectionLabel variant="section">
+                {t('speech.sectionLabel')}
+            </SectionLabel>
+            <Card className="mt-3 p-6">
+                <h3 className="text-sm font-medium text-ink">
+                    {t('speech.title')}
+                </h3>
+                <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
+                    {t('speech.description')}
+                </p>
+                {status && (
+                    <div className="mt-4">
+                        {status.state === 'missing' && (
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={startDownload}
+                            >
+                                {t('speech.download', { size: sizeLabel })}
+                            </Button>
+                        )}
+                        {status.state === 'downloading' && (
+                            <div>
+                                <div className="flex items-center justify-between text-xs text-ink-muted">
+                                    <span>{t('speech.downloading')}</span>
+                                    <span>{status.progress ?? 0}%</span>
+                                </div>
+                                <div className="mt-2 h-1.5 w-full overflow-hidden rounded bg-neutral-bg">
+                                    <div
+                                        className="h-full rounded bg-ink transition-[width] duration-500"
+                                        style={{
+                                            width: `${status.progress ?? 0}%`,
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        {status.state === 'error' && (
+                            <div className="flex flex-col gap-3">
+                                <Alert variant="destructive">
+                                    <AlertDescription>
+                                        {status.error ??
+                                            t('speech.errorFallback')}
+                                    </AlertDescription>
+                                </Alert>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="self-start"
+                                    onClick={startDownload}
+                                >
+                                    {t('speech.retry')}
+                                </Button>
+                            </div>
+                        )}
+                        {status.state === 'ready' && (
+                            <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-2 text-[13px] text-ink">
+                                    <Check className="size-4 text-ai-green" />
+                                    {t('speech.ready', { size: sizeLabel })}
+                                </span>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-ink-muted hover:text-delete"
+                                    onClick={removeModel}
+                                >
+                                    <Trash2 className="size-3.5" />
+                                    {t('speech.delete')}
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                )}
+                <p className="mt-4 text-xs text-ink-faint">
+                    {t('speech.hint')}
+                </p>
+            </Card>
+        </div>
+    );
+}
+
 // ─── Privacy Section ─────────────────────────────────────────────────
 
 function PrivacySection({
@@ -1679,6 +1833,9 @@ export default function Settings({
                                         <AiProvidersSection
                                             providers={ai_providers}
                                         />
+                                    </div>
+                                    <div data-section="speech-input">
+                                        <SpeechInputSection />
                                     </div>
                                 </div>
 
