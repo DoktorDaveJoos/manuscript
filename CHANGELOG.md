@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.1 (2026-06-12)
+
+### Features
+
+- **Speech input** — optional voice input on all AI chat inputs (plot coach, editor chat, editorial review), powered by a fully local whisper.cpp model: enable it in Settings → Speech input, the curated Whisper model downloads once (~574 MB on Apple Silicon, ~190 MB elsewhere), and audio never leaves your device (ed69630f)
+
 ## v0.7.0 (2026-06-11)
 
 ### Features
