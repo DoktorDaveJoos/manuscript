@@ -28,12 +28,10 @@
     "general.placeholderGenre": "Genre auswählen (optional)",
     "general.placeholderSecondaryGenres": "Genre hinzufügen…",
     "section.export": "Export",
-
     "language.sectionLabel": "SPRACHE",
     "language.navLabel": "Sprache",
     "language.title": "Anzeigesprache",
     "language.description": "Wähle die Sprache für die Manuscript-Oberfläche.",
-
     "appearance.title": "Erscheinungsbild",
     "appearance.description": "Passe das Aussehen und Verhalten von Manuscript an.",
     "appearance.theme.title": "Design",
@@ -71,18 +69,15 @@
     "appearance.update.later": "Später",
     "appearance.update.retry": "Erneut versuchen",
     "appearance.update.errorGeneric": "Beim Suchen nach Updates ist ein Fehler aufgetreten.",
-
     "privacy.sectionLabel": "DATENSCHUTZ",
     "privacy.navLabel": "Datenschutz",
     "privacy.description": "Hilf, Manuscript zu verbessern, indem du anonyme Absturzberichte automatisch sendest.",
-
     "updates.sectionLabel": "UPDATES",
     "updates.navLabel": "Updates",
     "updates.currentVersion": "Aktuelle Version",
     "updates.autoUpdate": "Automatische Updates",
     "updates.autoUpdateDescription": "Updates automatisch herunterladen und installieren, wenn verfügbar.",
     "updates.upToDate": "Du bist auf dem neuesten Stand.",
-
     "license.title": "Lizenz",
     "license.description": "Verwalte deine Manuscript-Lizenz.",
     "license.active": "Lizenz aktiv",
@@ -96,14 +91,12 @@
     "license.error.invalid": "Ungültiger Lizenzschlüssel.",
     "license.error.failed": "Lizenz konnte nicht aktiviert werden.",
     "license.error.network": "Der Lizenzserver ist nicht erreichbar. Bitte überprüfe deine Internetverbindung.",
-
     "welcome.title": "Willkommen bei Manuscript",
     "welcome.description": "Gib deinen Lizenzschlüssel ein, um zu starten.",
     "welcome.buyLicense": "Noch keine Lizenz? Hol dir eine auf getmanuscript.app",
     "welcome.startTrial": "Oder starte deine kostenlose 7-Tage-Testphase",
     "welcome.trialStarting": "Testphase wird gestartet...",
     "welcome.trialExpired": "Deine kostenlose Testphase ist abgelaufen. Gib einen Lizenzschlüssel ein, um weiterzuschreiben.",
-
     "aiProviders.title": "KI-Anbieter",
     "aiProviders.description": "Wähle deinen KI-Anbieter und konfiguriere den API-Schlüssel.",
     "aiProviders.configured": "Konfiguriert",
@@ -133,7 +126,6 @@
     "aiProviders.testResult.rate_limited": "Der Anbieter drosselt dein Konto gerade. Warte einen Moment und teste erneut.",
     "aiProviders.testResult.overloaded": "Der Anbieter ist gerade überlastet. Versuche es in einer Minute erneut.",
     "aiProviders.testResult.timeout": "Der Anbieter hat nicht rechtzeitig geantwortet. Prüfe deine Internetverbindung und versuche es erneut.",
-
     "aiProviders.howToGetKey.trigger": "API-Key erhalten",
     "aiProviders.howToGetKey.title": "So bekommst du deinen {{provider}}-API-Key",
     "aiProviders.howToGetKey.intro": "Folge diesen Schritten, um einen API-Key für {{provider}} zu erstellen und dein Konto mit Guthaben aufzuladen. Manuscript speichert ihn verschlüsselt auf diesem Gerät — dein Schlüssel verlässt niemals deinen Rechner.",
@@ -141,7 +133,6 @@
     "aiProviders.howToGetKey.copyHint": "Kopiere diesen Link und füge ihn in deinen Browser ein, um die Konsole des Anbieters zu öffnen.",
     "aiProviders.howToGetKey.copy": "Link kopieren",
     "aiProviders.howToGetKey.copied": "Kopiert!",
-
     "aiProviders.howToGetKey.anthropic.steps": [
         "Kopiere den Link unten und öffne console.anthropic.com in deinem Browser. Melde dich an oder erstelle ein Konto.",
         "Lade zuerst Guthaben auf: Öffne Settings → Billing und kaufe Credits (mindestens 5 $). Ohne Guthaben schlägt jede Anfrage fehl.",
@@ -149,7 +140,6 @@
         "Kopiere den Schlüssel (beginnt mit sk-ant-) sofort — er wird nur einmal angezeigt.",
         "Füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen."
     ],
-
     "aiProviders.howToGetKey.openai.steps": [
         "Kopiere den Link unten und öffne platform.openai.com/api-keys in deinem Browser. Melde dich an oder erstelle ein Konto.",
         "Lade zuerst Guthaben auf: Öffne Settings → Billing, hinterlege eine Zahlungsmethode und kaufe Credits (z. B. 5 $). ChatGPT Plus enthält kein API-Guthaben.",
@@ -157,14 +147,12 @@
         "Kopiere den Schlüssel (beginnt mit sk-) sofort — er wird nur einmal angezeigt.",
         "Füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen."
     ],
-
     "aiProviders.howToGetKey.gemini.steps": [
         "Kopiere den Link unten und öffne aistudio.google.com/apikey in deinem Browser. Melde dich mit deinem Google-Konto an.",
         "Klicke auf Create API key und wähle ein Google-Cloud-Projekt aus oder erstelle eines.",
         "Kopiere den Schlüssel sofort, füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen.",
         "Die kostenlose Stufe reicht für den Einstieg. Wenn du an Rate-Limits stößt, aktiviere die Abrechnung für dein Projekt in Google AI Studio."
     ],
-
     "aiProviders.howToGetKey.groq.steps": [
         "Kopiere den Link unten und öffne console.groq.com/keys in deinem Browser. Melde dich an (Google, GitHub oder E-Mail).",
         "Klicke auf Create API Key und vergib einen Namen.",
@@ -172,7 +160,6 @@
         "Füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen.",
         "Die kostenlose Stufe hat Tageslimits. Für regelmäßige Nutzung führe unter Settings → Billing ein Upgrade durch."
     ],
-
     "aiProviders.howToGetKey.xai.steps": [
         "Kopiere den Link unten und öffne console.x.ai in deinem Browser. Melde dich an oder erstelle ein xAI-Konto.",
         "Lade zuerst Guthaben auf: Öffne Billing → Credits und kaufe Credits. Ohne Guthaben schlägt jede Anfrage fehl.",
@@ -180,7 +167,6 @@
         "Kopiere den Schlüssel (beginnt mit xai-) sofort — er wird nur einmal angezeigt.",
         "Füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen."
     ],
-
     "aiProviders.howToGetKey.deepseek.steps": [
         "Kopiere den Link unten und öffne platform.deepseek.com/api_keys in deinem Browser. Melde dich an oder erstelle ein Konto.",
         "Lade zuerst Guthaben auf: Öffne Billing → Top up und zahle ein. Ohne Guthaben schlägt jede Anfrage fehl.",
@@ -188,7 +174,6 @@
         "Kopiere den Schlüssel sofort — er wird nur einmal angezeigt.",
         "Füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen."
     ],
-
     "aiProviders.howToGetKey.mistral.steps": [
         "Kopiere den Link unten und öffne console.mistral.ai/api-keys in deinem Browser. Melde dich an oder erstelle ein Konto.",
         "Aktiviere zuerst die Abrechnung: Öffne Workspace → Billing und hinterlege eine Zahlungsmethode (oder aktiviere den kostenlosen Experiment-Plan).",
@@ -196,7 +181,6 @@
         "Kopiere den Schlüssel sofort — er wird nur einmal angezeigt.",
         "Füge ihn hier ein, klicke auf Speichern und dann auf Verbindung testen."
     ],
-
     "aiProviders.howToGetKey.openrouter.steps": [
         "Kopiere den Link unten und öffne openrouter.ai/keys in deinem Browser. Melde dich an (Google, GitHub oder E-Mail).",
         "Kaufe zuerst Credits: Öffne openrouter.ai/credits und lade Guthaben auf. Ohne Credits schlägt jede Anfrage fehl.",
@@ -214,7 +198,6 @@
     "aiProviders.extractionModel": "Extraktion",
     "aiProviders.extractionModelDescription": "Embeddings, Figuren, Indexierung",
     "aiProviders.extractionModelHint": "Günstigstes Modell empfohlen",
-
     "writingStyle.title": "Schreibstil",
     "writingStyle.pageTitle": "Schreibstil — {{bookTitle}}",
     "writingStyle.description": "Beschreibe die Erzählstimme, der die KI bei deinem Buch folgen soll.",
@@ -224,7 +207,6 @@
     "writingStyle.saving": "Speichern...",
     "writingStyle.saveFailed": "Speichern fehlgeschlagen.",
     "writingStyle.regenerateFailed": "Schreibstil konnte nicht neu generiert werden.",
-
     "prosePassRules.title": "Überarbeitungsregeln",
     "prosePassRules.pageTitle": "Überarbeitungsregeln — {{bookTitle}}",
     "prosePassRules.description": "Diese Regeln leiten die KI bei jeder Arbeit an deiner Prosa – beim Überarbeiten, beim Umschreiben einer Auswahl und beim Weiterschreiben.",
@@ -242,7 +224,6 @@
     "prosePassRules.rules.shorten_long_sentences.description": "Einen Satz nur teilen, wenn er das Arbeitsgedächtnis der Lesenden überfordert (~4 Einheiten): große Subjekt-Verb-Distanz, mehr als zwei Verschachtelungsebenen oder Aufzählungen mit mehr als 3–4 Elementen. Lange, flüssige Sätze mit lokal verbundenen Teilsätzen bleiben erhalten.",
     "prosePassRules.rules.tightening.label": "Prosa straffen",
     "prosePassRules.rules.tightening.description": "Redundanzen entfernen und wortreiche Formulierungen kürzen.",
-
     "sidebar.proofreading": "Korrekturlesen",
     "proofreading.title": "Korrekturlesen",
     "proofreading.pageTitle": "Korrekturlesen — {{bookTitle}}",
@@ -271,7 +252,6 @@
     "proofreading.grammar.clichesDescription": "Markiert abgedroschene Ausdrücke.",
     "proofreading.grammar.eprime": "Sein-Verben",
     "proofreading.grammar.eprimeDescription": "Markiert Formen von 'sein' (ist, war, waren, etc.).",
-
     "export.title": "Export",
     "export.pageTitle": "Export — {{bookTitle}}",
     "export.description": "Exportiere dein Manuskript als Datei.",
@@ -285,7 +265,6 @@
     "export.includeActBreaks": "Aktübergänge einbeziehen",
     "export.exporting": "Exportiere...",
     "export.exportManuscript": "Manuskript exportieren",
-
     "backup.sectionLabel": "BACKUP",
     "backup.navLabel": "Backup",
     "backup.lastExport": "Letztes Backup: {{value}}",
@@ -318,5 +297,15 @@
     "backup.restart.hint": "Schließe das Fenster oder beende Manuscript über das Menü. Beim erneuten Öffnen wird der Vorgang abgeschlossen.",
     "backup.error.exportFailed": "Backup konnte nicht gespeichert werden. Bitte erneut versuchen.",
     "backup.error.importFailed": "Backup konnte nicht importiert werden.",
-    "backup.error.revertFailed": "Zurücksetzen fehlgeschlagen."
+    "backup.error.revertFailed": "Zurücksetzen fehlgeschlagen.",
+    "speech.sectionLabel": "Spracheingabe",
+    "speech.title": "Spracheingabe für KI-Chats",
+    "speech.description": "Diktiere Eingaben, statt zu tippen. Die Transkription läuft vollständig lokal mit einem Whisper-Modell — Audio verlässt deinen Computer nie.",
+    "speech.download": "Modell herunterladen ({{size}})",
+    "speech.downloading": "Modell wird heruntergeladen…",
+    "speech.ready": "Modell installiert ({{size}})",
+    "speech.delete": "Modell entfernen",
+    "speech.errorFallback": "Der Download ist fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.",
+    "speech.retry": "Erneut versuchen",
+    "speech.hint": "Das Mikrofon erscheint in KI-Chat-Eingaben, sobald das Modell installiert ist."
 }

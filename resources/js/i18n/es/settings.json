@@ -28,12 +28,10 @@
     "general.placeholderGenre": "Selecciona un género (opcional)",
     "general.placeholderSecondaryGenres": "Agregar género...",
     "section.export": "Exportar",
-
     "language.sectionLabel": "IDIOMA",
     "language.navLabel": "Idioma",
     "language.title": "Idioma de la interfaz",
     "language.description": "Elige el idioma para la interfaz de Manuscript.",
-
     "appearance.title": "Apariencia",
     "appearance.description": "Personaliza el aspecto y comportamiento de Manuscript.",
     "appearance.theme.title": "Tema",
@@ -71,18 +69,15 @@
     "appearance.update.later": "Más tarde",
     "appearance.update.retry": "Reintentar",
     "appearance.update.errorGeneric": "Algo salió mal al buscar actualizaciones.",
-
     "privacy.sectionLabel": "PRIVACIDAD",
     "privacy.navLabel": "Privacidad",
     "privacy.description": "Ayuda a mejorar Manuscript enviando automáticamente reportes anónimos de fallos.",
-
     "updates.sectionLabel": "ACTUALIZACIONES",
     "updates.navLabel": "Actualizaciones",
     "updates.currentVersion": "Versión actual",
     "updates.autoUpdate": "Actualizaciones automáticas",
     "updates.autoUpdateDescription": "Descarga e instala actualizaciones automáticamente cuando estén disponibles.",
     "updates.upToDate": "Estás al día.",
-
     "license.title": "Licencia",
     "license.description": "Administra tu licencia de Manuscript.",
     "license.active": "Licencia activa",
@@ -96,14 +91,12 @@
     "license.error.invalid": "Clave de licencia inválida.",
     "license.error.failed": "No se pudo activar la licencia.",
     "license.error.network": "No se pudo conectar al servidor de licencias. Verifica tu conexión a internet.",
-
     "welcome.title": "Bienvenido a Manuscript",
     "welcome.description": "Ingresa tu clave de licencia para empezar.",
     "welcome.buyLicense": "¿No tienes una licencia? Obtén una en getmanuscript.app",
     "welcome.startTrial": "O comienza tu prueba gratuita de 7 días",
     "welcome.trialStarting": "Iniciando la prueba...",
     "welcome.trialExpired": "Tu prueba gratuita ha terminado. Introduce una clave de licencia para seguir escribiendo.",
-
     "aiProviders.title": "Proveedores de IA",
     "aiProviders.description": "Elige tu proveedor de IA y configura su clave de API.",
     "aiProviders.configured": "Configurado",
@@ -133,7 +126,6 @@
     "aiProviders.testResult.rate_limited": "El proveedor está limitando tu cuenta en este momento. Espera un momento y vuelve a probar.",
     "aiProviders.testResult.overloaded": "El proveedor está sobrecargado en este momento. Inténtalo de nuevo en un minuto.",
     "aiProviders.testResult.timeout": "El proveedor no respondió a tiempo. Comprueba tu conexión a internet e inténtalo de nuevo.",
-
     "aiProviders.howToGetKey.trigger": "Cómo obtener una API key",
     "aiProviders.howToGetKey.title": "Cómo obtener tu API key de {{provider}}",
     "aiProviders.howToGetKey.intro": "Sigue estos pasos para generar una API key para {{provider}} y añadir crédito a tu cuenta. Manuscript la guarda cifrada en este dispositivo — tu clave nunca sale de tu equipo.",
@@ -141,7 +133,6 @@
     "aiProviders.howToGetKey.copyHint": "Copia este enlace y pégalo en tu navegador para abrir la consola del proveedor.",
     "aiProviders.howToGetKey.copy": "Copiar enlace",
     "aiProviders.howToGetKey.copied": "¡Copiado!",
-
     "aiProviders.howToGetKey.anthropic.steps": [
         "Copia el enlace de abajo y abre console.anthropic.com en tu navegador. Inicia sesión o crea una cuenta.",
         "Añade crédito primero: abre Settings → Billing y compra créditos (mínimo 5 $). Sin crédito, todas las solicitudes fallan.",
@@ -149,7 +140,6 @@
         "Copia la clave (empieza por sk-ant-) de inmediato — solo se muestra una vez.",
         "Pégala aquí, pulsa Guardar y luego Probar conexión."
     ],
-
     "aiProviders.howToGetKey.openai.steps": [
         "Copia el enlace de abajo y abre platform.openai.com/api-keys en tu navegador. Inicia sesión o crea una cuenta.",
         "Añade crédito primero: abre Settings → Billing, añade un método de pago y compra créditos (p. ej. 5 $). ChatGPT Plus no incluye crédito de API.",
@@ -157,14 +147,12 @@
         "Copia la clave (empieza por sk-) de inmediato — solo se muestra una vez.",
         "Pégala aquí, pulsa Guardar y luego Probar conexión."
     ],
-
     "aiProviders.howToGetKey.gemini.steps": [
         "Copia el enlace de abajo y abre aistudio.google.com/apikey en tu navegador. Inicia sesión con tu cuenta de Google.",
         "Pulsa Create API key y elige o crea un proyecto de Google Cloud.",
         "Copia la clave de inmediato, pégala aquí, pulsa Guardar y luego Probar conexión.",
         "El nivel gratuito basta para empezar. Si alcanzas los límites, activa la facturación del proyecto en Google AI Studio."
     ],
-
     "aiProviders.howToGetKey.groq.steps": [
         "Copia el enlace de abajo y abre console.groq.com/keys en tu navegador. Inicia sesión (Google, GitHub o correo).",
         "Pulsa Create API Key y ponle un nombre.",
@@ -172,7 +160,6 @@
         "Pégala aquí, pulsa Guardar y luego Probar conexión.",
         "El nivel gratuito tiene límites diarios. Para un uso regular, mejora tu plan en Settings → Billing."
     ],
-
     "aiProviders.howToGetKey.xai.steps": [
         "Copia el enlace de abajo y abre console.x.ai en tu navegador. Inicia sesión o crea una cuenta de xAI.",
         "Añade crédito primero: abre Billing → Credits y compra créditos. Sin crédito, todas las solicitudes fallan.",
@@ -180,7 +167,6 @@
         "Copia la clave (empieza por xai-) de inmediato — solo se muestra una vez.",
         "Pégala aquí, pulsa Guardar y luego Probar conexión."
     ],
-
     "aiProviders.howToGetKey.deepseek.steps": [
         "Copia el enlace de abajo y abre platform.deepseek.com/api_keys en tu navegador. Inicia sesión o crea una cuenta.",
         "Añade saldo primero: abre Billing → Top up e ingresa fondos. Sin saldo, todas las solicitudes fallan.",
@@ -188,7 +174,6 @@
         "Copia la clave de inmediato — solo se muestra una vez.",
         "Pégala aquí, pulsa Guardar y luego Probar conexión."
     ],
-
     "aiProviders.howToGetKey.mistral.steps": [
         "Copia el enlace de abajo y abre console.mistral.ai/api-keys en tu navegador. Inicia sesión o crea una cuenta.",
         "Activa la facturación primero: abre Workspace → Billing y añade un método de pago (o activa el plan gratuito Experiment).",
@@ -196,7 +181,6 @@
         "Copia la clave de inmediato — solo se muestra una vez.",
         "Pégala aquí, pulsa Guardar y luego Probar conexión."
     ],
-
     "aiProviders.howToGetKey.openrouter.steps": [
         "Copia el enlace de abajo y abre openrouter.ai/keys en tu navegador. Inicia sesión (Google, GitHub o correo).",
         "Compra créditos primero: abre openrouter.ai/credits y recarga. Sin créditos, todas las solicitudes fallan.",
@@ -214,7 +198,6 @@
     "aiProviders.extractionModel": "Extracción",
     "aiProviders.extractionModelDescription": "Embeddings, Personajes, Indexación",
     "aiProviders.extractionModelHint": "Se recomienda la opción más económica",
-
     "writingStyle.title": "Estilo de escritura",
     "writingStyle.pageTitle": "Estilo de escritura — {{bookTitle}}",
     "writingStyle.description": "Describe la voz narrativa que la IA debe seguir al trabajar con tu libro.",
@@ -224,7 +207,6 @@
     "writingStyle.saving": "Guardando...",
     "writingStyle.saveFailed": "No se pudo guardar.",
     "writingStyle.regenerateFailed": "No se pudo regenerar el estilo de escritura.",
-
     "prosePassRules.title": "Reglas de revisión",
     "prosePassRules.pageTitle": "Reglas de revisión — {{bookTitle}}",
     "prosePassRules.description": "Estas reglas guían a la IA siempre que trabaja con tu prosa: al revisar, al reescribir una selección o al continuar tu borrador.",
@@ -242,7 +224,6 @@
     "prosePassRules.rules.shorten_long_sentences.description": "Divide una oración solo cuando sobrecarga la memoria de trabajo del lector (~4 unidades): gran distancia entre sujeto y verbo, más de dos niveles de anidamiento de cláusulas, o enumeraciones con más de 3–4 elementos. Las oraciones largas y fluidas con cláusulas conectadas localmente se mantienen.",
     "prosePassRules.rules.tightening.label": "Ajuste de la prosa",
     "prosePassRules.rules.tightening.description": "Elimina redundancias y reduce frases excesivamente largas.",
-
     "sidebar.proofreading": "Corrección",
     "proofreading.title": "Corrección",
     "proofreading.pageTitle": "Corrección — {{bookTitle}}",
@@ -271,7 +252,6 @@
     "proofreading.grammar.clichesDescription": "Marca expresiones trilladas.",
     "proofreading.grammar.eprime": "Verbos \"ser/estar\"",
     "proofreading.grammar.eprimeDescription": "Marca formas del verbo \"ser/estar\" (es, era, fueron, etc.).",
-
     "export.title": "Exportar",
     "export.pageTitle": "Exportar — {{bookTitle}}",
     "export.description": "Exporta tu manuscrito como archivo.",
@@ -285,7 +265,6 @@
     "export.includeActBreaks": "Incluir separadores de actos",
     "export.exporting": "Exportando...",
     "export.exportManuscript": "Exportar manuscrito",
-
     "backup.sectionLabel": "RESPALDO",
     "backup.navLabel": "Respaldo",
     "backup.lastExport": "Último respaldo: {{value}}",
@@ -318,5 +297,15 @@
     "backup.restart.hint": "Cierra la ventana o sal de Manuscript desde el menú. Al volver a abrirlo se completará la operación.",
     "backup.error.exportFailed": "No se pudo guardar el respaldo. Inténtalo de nuevo.",
     "backup.error.importFailed": "No se pudo importar el respaldo.",
-    "backup.error.revertFailed": "No se pudo revertir."
+    "backup.error.revertFailed": "No se pudo revertir.",
+    "speech.sectionLabel": "Entrada de voz",
+    "speech.title": "Entrada de voz para chats de IA",
+    "speech.description": "Dicta mensajes en lugar de escribirlos. La transcripción se ejecuta completamente en tu dispositivo con un modelo Whisper local: el audio nunca sale de tu equipo.",
+    "speech.download": "Descargar modelo ({{size}})",
+    "speech.downloading": "Descargando modelo…",
+    "speech.ready": "Modelo instalado ({{size}})",
+    "speech.delete": "Eliminar modelo",
+    "speech.errorFallback": "La descarga falló. Comprueba tu conexión e inténtalo de nuevo.",
+    "speech.retry": "Intentar de nuevo",
+    "speech.hint": "El botón del micrófono aparece en los chats de IA cuando el modelo está instalado."
 }

@@ -28,12 +28,10 @@
     "general.placeholderGenre": "Select a genre (optional)",
     "general.placeholderSecondaryGenres": "Add genre...",
     "section.export": "Export",
-
     "language.sectionLabel": "LANGUAGE",
     "language.navLabel": "Language",
     "language.title": "Display Language",
     "language.description": "Choose the language for the Manuscript interface.",
-
     "appearance.title": "Appearance",
     "appearance.description": "Customize the look and behavior of Manuscript.",
     "appearance.theme.title": "Theme",
@@ -71,18 +69,15 @@
     "appearance.update.later": "Later",
     "appearance.update.retry": "Try Again",
     "appearance.update.errorGeneric": "Something went wrong while checking for updates.",
-
     "privacy.sectionLabel": "PRIVACY",
     "privacy.navLabel": "Privacy",
     "privacy.description": "Help improve Manuscript by automatically sending anonymous crash reports.",
-
     "updates.sectionLabel": "UPDATES",
     "updates.navLabel": "Updates",
     "updates.currentVersion": "Current Version",
     "updates.autoUpdate": "Automatic updates",
     "updates.autoUpdateDescription": "Download and install updates automatically when available.",
     "updates.upToDate": "You're up to date.",
-
     "license.title": "License",
     "license.description": "Manage your Manuscript license.",
     "license.active": "License active",
@@ -96,14 +91,12 @@
     "license.error.invalid": "Invalid license key.",
     "license.error.failed": "Failed to activate license.",
     "license.error.network": "Could not reach the license server. Please check your internet connection.",
-
     "welcome.title": "Welcome to Manuscript",
     "welcome.description": "Enter your license key to get started.",
     "welcome.buyLicense": "Don't have a license? Get one at getmanuscript.app",
     "welcome.startTrial": "Or start your free 7-day trial",
     "welcome.trialStarting": "Starting trial...",
     "welcome.trialExpired": "Your free trial has ended. Enter a license key to keep writing.",
-
     "aiProviders.title": "AI Providers",
     "aiProviders.description": "Choose your AI provider and configure its API key.",
     "aiProviders.configured": "Configured",
@@ -133,7 +126,6 @@
     "aiProviders.testResult.rate_limited": "The provider is rate-limiting your account right now. Wait a moment and test again.",
     "aiProviders.testResult.overloaded": "The provider is overloaded right now. Try again in a minute.",
     "aiProviders.testResult.timeout": "The provider did not respond in time. Check your internet connection and try again.",
-
     "aiProviders.howToGetKey.trigger": "How to get an API key",
     "aiProviders.howToGetKey.title": "How to get your {{provider}} API key",
     "aiProviders.howToGetKey.intro": "Follow these steps to create an API key for {{provider}} and add credit to your account. Manuscript stores the key encrypted on this device — it never leaves your machine.",
@@ -141,7 +133,6 @@
     "aiProviders.howToGetKey.copyHint": "Copy this link and paste it into your browser to open the provider console.",
     "aiProviders.howToGetKey.copy": "Copy link",
     "aiProviders.howToGetKey.copied": "Copied!",
-
     "aiProviders.howToGetKey.anthropic.steps": [
         "Copy the link below and open console.anthropic.com in your browser. Sign in or create an account.",
         "Add credit first: open Settings → Billing and buy credits (minimum $5). Without credit, every request fails.",
@@ -149,7 +140,6 @@
         "Copy the key (starts with sk-ant-) right away — it is only shown once.",
         "Paste it here, click Save, then Test connection."
     ],
-
     "aiProviders.howToGetKey.openai.steps": [
         "Copy the link below and open platform.openai.com/api-keys in your browser. Sign in or create an account.",
         "Add credit first: open Settings → Billing, add a payment method and buy credits (e.g. $5). ChatGPT Plus does not include API credit.",
@@ -157,14 +147,12 @@
         "Copy the key (starts with sk-) right away — it is only shown once.",
         "Paste it here, click Save, then Test connection."
     ],
-
     "aiProviders.howToGetKey.gemini.steps": [
         "Copy the link below and open aistudio.google.com/apikey in your browser. Sign in with your Google account.",
         "Click Create API key and pick or create a Google Cloud project.",
         "Copy the key right away, paste it here, click Save, then Test connection.",
         "The free tier is enough to start. If you hit rate limits, enable billing for the project in Google AI Studio."
     ],
-
     "aiProviders.howToGetKey.groq.steps": [
         "Copy the link below and open console.groq.com/keys in your browser. Sign in (Google, GitHub, or email).",
         "Click Create API Key and give it a name.",
@@ -172,7 +160,6 @@
         "Paste it here, click Save, then Test connection.",
         "The free tier has daily limits. For steady use, upgrade under Settings → Billing."
     ],
-
     "aiProviders.howToGetKey.xai.steps": [
         "Copy the link below and open console.x.ai in your browser. Sign in or create an xAI account.",
         "Add credit first: open Billing → Credits and buy credits. Without credit, every request fails.",
@@ -180,7 +167,6 @@
         "Copy the key (starts with xai-) right away — it is only shown once.",
         "Paste it here, click Save, then Test connection."
     ],
-
     "aiProviders.howToGetKey.deepseek.steps": [
         "Copy the link below and open platform.deepseek.com/api_keys in your browser. Sign in or create an account.",
         "Add balance first: open Billing → Top up and add funds. Without balance, every request fails.",
@@ -188,7 +174,6 @@
         "Copy the key right away — it is only shown once.",
         "Paste it here, click Save, then Test connection."
     ],
-
     "aiProviders.howToGetKey.mistral.steps": [
         "Copy the link below and open console.mistral.ai/api-keys in your browser. Sign in or create an account.",
         "Activate billing first: open Workspace → Billing and add a payment method (or activate the free Experiment plan).",
@@ -196,7 +181,6 @@
         "Copy the key right away — it is only shown once.",
         "Paste it here, click Save, then Test connection."
     ],
-
     "aiProviders.howToGetKey.openrouter.steps": [
         "Copy the link below and open openrouter.ai/keys in your browser. Sign in (Google, GitHub, or email).",
         "Buy credits first: open openrouter.ai/credits and top up. Without credits, every request fails.",
@@ -214,7 +198,6 @@
     "aiProviders.extractionModel": "Extraction",
     "aiProviders.extractionModelDescription": "Embeddings, Characters, Indexing",
     "aiProviders.extractionModelHint": "Cheapest option recommended",
-
     "writingStyle.title": "Writing Style",
     "writingStyle.pageTitle": "Writing Style — {{bookTitle}}",
     "writingStyle.description": "Describe the prose voice for AI to follow when working with your book.",
@@ -224,7 +207,6 @@
     "writingStyle.saving": "Saving...",
     "writingStyle.saveFailed": "Failed to save.",
     "writingStyle.regenerateFailed": "Failed to regenerate writing style.",
-
     "prosePassRules.title": "Revision Rules",
     "prosePassRules.pageTitle": "Revision Rules — {{bookTitle}}",
     "prosePassRules.description": "These rules guide the AI whenever it works with your prose — revising, rewriting a selection, or continuing your draft.",
@@ -242,7 +224,6 @@
     "prosePassRules.rules.shorten_long_sentences.description": "Split a sentence only when it overloads the reader's working memory (~4 chunks): wide subject-verb gaps, more than two levels of clause nesting, or chained items beyond 3–4. Long, fluent sentences with locally connected clauses stay.",
     "prosePassRules.rules.tightening.label": "Prose tightening",
     "prosePassRules.rules.tightening.description": "Remove redundancies and tighten wordy phrases.",
-
     "sidebar.proofreading": "Proofreading",
     "proofreading.title": "Proofreading",
     "proofreading.pageTitle": "Proofreading — {{bookTitle}}",
@@ -271,7 +252,6 @@
     "proofreading.grammar.clichesDescription": "Flags overused expressions.",
     "proofreading.grammar.eprime": "To-be verbs",
     "proofreading.grammar.eprimeDescription": "Flags \"to be\" verb forms (is, was, were, etc.).",
-
     "export.title": "Export",
     "export.pageTitle": "Export — {{bookTitle}}",
     "export.description": "Export your manuscript as a file.",
@@ -285,7 +265,6 @@
     "export.includeActBreaks": "Include act breaks",
     "export.exporting": "Exporting...",
     "export.exportManuscript": "Export manuscript",
-
     "backup.sectionLabel": "BACKUP",
     "backup.navLabel": "Backup",
     "backup.lastExport": "Last backup: {{value}}",
@@ -318,5 +297,15 @@
     "backup.restart.hint": "Use the menu or close the window to quit. Reopening Manuscript will finish the operation.",
     "backup.error.exportFailed": "Could not save the backup. Please try again.",
     "backup.error.importFailed": "Could not import the backup.",
-    "backup.error.revertFailed": "Could not revert."
+    "backup.error.revertFailed": "Could not revert.",
+    "speech.sectionLabel": "Speech input",
+    "speech.title": "Voice input for AI chats",
+    "speech.description": "Dictate prompts instead of typing. Transcription runs entirely on your device with a local Whisper model — audio never leaves your computer.",
+    "speech.download": "Download model ({{size}})",
+    "speech.downloading": "Downloading model…",
+    "speech.ready": "Model installed ({{size}})",
+    "speech.delete": "Remove model",
+    "speech.errorFallback": "The download failed. Check your connection and try again.",
+    "speech.retry": "Try again",
+    "speech.hint": "The microphone button appears in AI chat inputs once the model is installed."
 }

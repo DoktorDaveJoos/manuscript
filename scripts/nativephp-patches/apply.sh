@@ -72,6 +72,9 @@ apply "resources/electron/electron-plugin/dist/server/api.js"
 # The per-launch config values it used to refresh are healed at request time
 # by AppServiceProvider::healStaleNativePhpConfig.
 apply "resources/electron/electron-plugin/dist/server/php.js"
+# Speech input: microphone entitlement for getUserMedia under hardened runtime
+# (NSMicrophoneUsageDescription already ships in NativePHP's builder config).
+apply "resources/electron/build/entitlements.mac.plist"
 # electronPath() published-project detection (PHP, ships as-is — not compiled).
 apply "src/Drivers/Electron/ElectronServiceProvider.php"
 echo "Done."

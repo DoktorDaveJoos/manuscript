@@ -76,5 +76,11 @@
     "editorial.rewriteDescription": "Revises this chapter with the unresolved feedback from your latest editorial review applied.",
     "editorial.none": "No editorial feedback for this chapter yet. Run an editorial review to see notes here and unlock feedback-driven rewrites.",
     "editorial.viewReport": "Open editorial review →",
-    "error.rewriteFailed": "Rewrite failed. Please try again."
+    "error.rewriteFailed": "Rewrite failed. Please try again.",
+    "speech.start": "Start voice input",
+    "speech.stop": "Stop and transcribe",
+    "speech.micDenied.title": "Microphone access denied",
+    "speech.micDenied.body": "Allow microphone access for Manuscript in your system settings to use voice input.",
+    "speech.failed.title": "Voice input failed",
+    "speech.failed.body": "The recording could not be transcribed. Please try again."
 }
