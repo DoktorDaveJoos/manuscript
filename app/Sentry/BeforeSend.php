@@ -30,6 +30,10 @@ class BeforeSend
             return null;
         }
 
+        if (self::isExpectedVersionGuardRejection($event)) {
+            return null;
+        }
+
         if (self::isTransientCompiledViewRenameFailure($event)) {
             return null;
         }
@@ -121,6 +125,48 @@ class BeforeSend
 
             if (str_starts_with($message, 'rename(')
                 && preg_match('#[/\\\\]framework[/\\\\]views[/\\\\]#', $message) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The chapter version actions (accept / accept-partial / reject / delete)
+     * each open with an `abort_if(..., 403, ...)` business-rule guard
+     * (ChapterController): a revision can only be accepted/rejected while it is
+     * still pending, and the current / last version cannot be deleted. These
+     * guards fire on benign, user-reachable races — classically the same
+     * chapter open in two editor panes, where resolving the pending AI revision
+     * in one pane leaves the other pane's stale Accept/Reject bar pointed at an
+     * already-accepted version. Accept flips the row's status to `accepted` (the
+     * row survives), so the late reject finds it present-but-non-pending and
+     * aborts 403; the request is correctly refused and nothing is mutated. But
+     * the emptied `internalDontReport` (see isExpectedValidationFailure) lets
+     * that expected 403 reach Sentry as an unhandled `generic` crash (Sentry
+     * 126866018). The guard did its job — there is nothing to action.
+     *
+     * Match the exact guard messages rather than the route or status code, so a
+     * genuine, differently-messaged HttpException on a version route stays
+     * reportable. If a guard message in ChapterController is reworded, update
+     * this set to match.
+     */
+    private static function isExpectedVersionGuardRejection(Event $event): bool
+    {
+        $guardMessages = [
+            'Only pending versions can be accepted.',
+            'Only pending versions can be rejected.',
+            'Cannot delete the current version.',
+            'Cannot delete the last version.',
+        ];
+
+        foreach ($event->getExceptions() as $exception) {
+            if (! is_a($exception->getType(), HttpException::class, true)) {
+                continue;
+            }
+
+            if (in_array($exception->getValue(), $guardMessages, true)) {
                 return true;
             }
         }
