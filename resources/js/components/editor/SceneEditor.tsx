@@ -59,7 +59,6 @@ export default function SceneEditor({
 
     // Content auto-save
     const contentAbortRef = useRef<AbortController | null>(null);
-    const contentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingContentRef = useRef<string | null>(null);
     const retryCountRef = useRef(0);
     const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,11 +68,6 @@ export default function SceneEditor({
     const flushSelfRef = useRef<() => void | Promise<void>>(() => {});
 
     const flushContentSave = useCallback(async () => {
-        if (contentTimerRef.current) {
-            clearTimeout(contentTimerRef.current);
-            contentTimerRef.current = null;
-        }
-
         const content = pendingContentRef.current;
         if (content === null) return;
 
@@ -167,7 +161,6 @@ export default function SceneEditor({
         // Flush pending saves on unmount
         return () => {
             mountedRef.current = false;
-            if (contentTimerRef.current) clearTimeout(contentTimerRef.current);
             if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
             flushRef.current.flushContentSave();
         };
@@ -179,7 +172,7 @@ export default function SceneEditor({
             onWordCountChange(scene.id, words);
             onSaveStatusChange?.('saving');
 
-            // Cancel any in-flight retry — the new debounce supersedes it.
+            // Cancel any in-flight retry — the new content supersedes it.
             // Preserve retryCountRef so sustained outages actually back off
             // instead of restarting a 3-attempt cycle on every keystroke.
             // The counter resets on successful save (above) or on exhaustion.
@@ -188,12 +181,7 @@ export default function SceneEditor({
                 retryTimerRef.current = null;
             }
 
-            if (contentTimerRef.current) {
-                clearTimeout(contentTimerRef.current);
-            }
-            contentTimerRef.current = setTimeout(() => {
-                flushContentSave();
-            }, 1500);
+            flushContentSave();
         },
         [scene.id, onWordCountChange, onSaveStatusChange, flushContentSave],
     );

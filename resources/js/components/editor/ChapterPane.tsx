@@ -33,6 +33,7 @@ export default function ChapterPane({
     onFocus,
     onClose,
     onActiveEditorChange,
+    onChapterMetaChange,
     onSaveStatusChange,
     onVersionsChanged,
     scenesVisible,
@@ -58,6 +59,11 @@ export default function ChapterPane({
         editor: Editor | null,
         sceneId: number | null,
     ) => void;
+    onChapterMetaChange?: (meta: {
+        chapterId: number;
+        title: string;
+        wordCount: number;
+    }) => void;
     onSaveStatusChange: (status: SaveStatus) => void;
     onVersionsChanged: () => void;
     scenesVisible: boolean;
@@ -365,6 +371,16 @@ export default function ChapterPane({
     const povCharacterName = chapter.pov_character?.name ?? null;
     const povCharacterId = chapter.pov_character?.id ?? null;
     const timelineLabel = chapter.storyline?.timeline_label ?? null;
+
+    useEffect(() => {
+        if (!isFocused) return;
+
+        onChapterMetaChange?.({
+            chapterId: chapter.id,
+            title: displayTitle,
+            wordCount,
+        });
+    }, [isFocused, chapter.id, displayTitle, wordCount, onChapterMetaChange]);
 
     return (
         <div

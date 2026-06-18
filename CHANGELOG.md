@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.3 (2026-06-18)
+
+### Fixes
+
+- **Editor** — the active chapter's title and word count in the sidebar, and the window title, now update live while you write instead of lagging until the next refresh (f1c71b0d)
+
 ## v0.7.2 (2026-06-18)
 
 ### Fixes
