@@ -764,6 +764,7 @@ export default function ChapterList({
                             body: JSON.stringify({ title: newValue }),
                         },
                     );
+                    broadcastChapterDataChanged(renaming.chapter.id);
                     router.reload({ only: ['book'] });
                     break;
                 case 'storyline':

@@ -69,6 +69,7 @@ const ChapterListItem = forwardRef<HTMLButtonElement, ChapterListItemProps>(
             <button
                 ref={ref}
                 type="button"
+                data-sidebar-chapter={chapter.id}
                 onClick={handleClick}
                 onContextMenu={onContextMenu}
                 className={`relative flex w-full items-center gap-2 px-2.5 py-[7px] text-left text-[13px] leading-4 transition-colors ${

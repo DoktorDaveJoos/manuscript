@@ -64,6 +64,87 @@ it('renders chapter sidebar with multiple chapters', function () {
         ->assertSee($chapters[2]->title);
 });
 
+it('updates the sidebar chapter title while editing without a page refresh', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $chapter = $chapters[0];
+    $newTitle = 'A Live Chapter Title';
+    $chapterSelector = "[data-sidebar-chapter='{$chapter->id}']";
+    $titleSelector = 'h1[contenteditable="true"]';
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->keys($titleSelector, ['Control+a', 'Backspace'])
+        ->typeSlowly($titleSelector, $newTitle)
+        ->assertSeeIn($chapterSelector, $newTitle);
+});
+
+it('updates the sidebar chapter word count while typing without a page refresh', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $chapter = $chapters[0];
+    $scene = Scene::where('chapter_id', $chapter->id)->firstOrFail();
+    $chapterSelector = "[data-sidebar-chapter='{$chapter->id}']";
+    $wordCountSelector = "{$chapterSelector} > span:last-child";
+    $editorSelector = "#scene-{$scene->id} .ProseMirror";
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors();
+
+    $wordCountBefore = (int) $page->text($wordCountSelector);
+
+    $page->typeSlowly($editorSelector, ' live sidebar count words')
+        ->wait(1)
+        ->assertNoJavaScriptErrors();
+
+    $wordCountAfter = (int) $page->text($wordCountSelector);
+
+    expect($wordCountAfter)->toBeGreaterThan($wordCountBefore);
+});
+
+it('saves scene content immediately without a debounce', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $chapter = $chapters[0];
+    $scene = Scene::where('chapter_id', $chapter->id)->firstOrFail();
+    $editorSelector = "#scene-{$scene->id} .ProseMirror";
+    $newContent = ' immediate content save';
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->typeSlowly($editorSelector, $newContent, 10);
+
+    $deadline = microtime(true) + 1;
+    do {
+        $savedContent = $scene->fresh()->content;
+        if (str_contains($savedContent, trim($newContent))) {
+            break;
+        }
+
+        usleep(50_000);
+    } while (microtime(true) < $deadline);
+
+    expect($savedContent)->toContain(trim($newContent));
+});
+
+it('updates the editor title after renaming the chapter in the sidebar without a page refresh', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $chapter = $chapters[0];
+    $newTitle = 'Renamed From Sidebar';
+    $chapterSelector = "[data-sidebar-chapter='{$chapter->id}']";
+    $titleSelector = 'h1[contenteditable="true"]';
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->rightClick($chapterSelector)
+        ->click('Rename')
+        ->fill('input[type="text"]', $newTitle)
+        ->click('Save')
+        ->assertSeeIn($titleSelector, $newTitle)
+        ->assertNoJavaScriptErrors();
+});
+
 it('caps long storyline names to a single truncated line in the sidebar', function () {
     [$book, $chapters] = createBookWithChapters(1);
     $book->storylines()->first()->update([

@@ -101,6 +101,7 @@ function PaneWithData({
     onActiveEditorChange,
     onSaveStatusChange,
     onChapterDataReady,
+    onChapterMetaChange,
     scenesVisible,
     spellcheckEnabled,
     isTypewriterMode,
@@ -127,6 +128,11 @@ function PaneWithData({
     ) => void;
     onSaveStatusChange: (status: SaveStatus) => void;
     onChapterDataReady: (data: ChapterData) => void;
+    onChapterMetaChange: (meta: {
+        chapterId: number;
+        title: string;
+        wordCount: number;
+    }) => void;
     scenesVisible: boolean;
     spellcheckEnabled: boolean;
     isTypewriterMode: boolean;
@@ -207,6 +213,7 @@ function PaneWithData({
             onFocus={onFocus}
             onClose={onClose}
             onActiveEditorChange={onActiveEditorChange}
+            onChapterMetaChange={onChapterMetaChange}
             onSaveStatusChange={onSaveStatusChange}
             onVersionsChanged={softRefresh}
             scenesVisible={scenesVisible}
@@ -310,10 +317,22 @@ export default function EditorPage({
     // ── Focused chapter data (for panels) ────────────────────────────────
     const [focusedChapterData, setFocusedChapterData] =
         useState<ChapterData | null>(null);
+    const [liveMeta, setLiveMeta] = useState<{
+        chapterId: number;
+        title: string;
+        wordCount: number;
+    } | null>(null);
 
     const handleChapterDataReady = useCallback((data: ChapterData) => {
         setFocusedChapterData(data);
     }, []);
+
+    const handleChapterMetaChange = useCallback(
+        (meta: { chapterId: number; title: string; wordCount: number }) => {
+            setLiveMeta(meta);
+        },
+        [],
+    );
 
     const handleNotesChange = useCallback((notes: string | null) => {
         setFocusedChapterData((prev) => {
@@ -725,6 +744,14 @@ export default function EditorPage({
     const focusedDisplayTitle = focusedChapter
         ? firstLine(focusedChapter.title)
         : '';
+    const sidebarTitle =
+        liveMeta?.chapterId === focusedChapterId
+            ? liveMeta.title || undefined
+            : focusedDisplayTitle || undefined;
+    const sidebarWordCount =
+        liveMeta?.chapterId === focusedChapterId
+            ? liveMeta.wordCount
+            : focusedWordCount;
 
     // ── Create chapter from empty state / palette ────────────────────────
     const handleCreateChapter = useCallback(() => {
@@ -757,8 +784,8 @@ export default function EditorPage({
     );
 
     // ── Page title ───────────────────────────────────────────────────────
-    const pageTitle = focusedDisplayTitle
-        ? `${focusedDisplayTitle} — ${book.title}`
+    const pageTitle = sidebarTitle
+        ? `${sidebarTitle} — ${book.title}`
         : book.title;
 
     return (
@@ -769,8 +796,8 @@ export default function EditorPage({
                     book={book}
                     storylines={sidebarStorylines}
                     activeChapterId={focusedChapterId ?? undefined}
-                    activeChapterTitle={focusedDisplayTitle || undefined}
-                    activeChapterWordCount={focusedWordCount}
+                    activeChapterTitle={sidebarTitle}
+                    activeChapterWordCount={sidebarWordCount}
                     onBeforeNavigate={handleBeforeNavigate}
                     onChapterNavigate={navigateToChapter}
                     onOpenInNewPane={openInNewPane}
@@ -812,6 +839,9 @@ export default function EditorPage({
                                         pane.id,
                                     )}
                                     onChapterDataReady={handleChapterDataReady}
+                                    onChapterMetaChange={
+                                        handleChapterMetaChange
+                                    }
                                     scenesVisible={scenesVisible}
                                     spellcheckEnabled={isSpellcheckEnabled}
                                     isTypewriterMode={isTypewriterMode}
