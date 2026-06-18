@@ -44,12 +44,18 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
             body: JSON.stringify({ writing_style_text: text }),
         })
             .then(async (res) => {
-                if (!res.ok) throw new Error('Save failed');
-                const json = await res.json();
+                const json = await res.json().catch(() => null);
+                if (!res.ok) {
+                    const validationMessage =
+                        json?.errors?.writing_style_text?.[0] ?? json?.message;
+                    throw new Error(validationMessage || '');
+                }
                 setMessage(json.message);
                 setTimeout(() => setMessage(''), 3000);
             })
-            .catch(() => setMessage(t('writingStyle.saveFailed')))
+            .catch((e: Error) =>
+                setMessage(e.message || t('writingStyle.saveFailed')),
+            )
             .finally(() => setSaving(false));
     }, [book.id, text, t]);
 

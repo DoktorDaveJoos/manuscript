@@ -8,7 +8,6 @@ use App\Enums\ChapterHeading;
 use App\Enums\ExportFormat;
 use App\Enums\FontPairing;
 use App\Enums\FrontMatterType;
-use App\Enums\Genre;
 use App\Enums\SceneBreakStyle;
 use App\Enums\TrimSize;
 use App\Http\Requests\ExportBookRequest;
@@ -42,11 +41,7 @@ class BookSettingsController extends Controller
     public function general(Book $book): Response
     {
         return Inertia::render('books/settings/general', [
-            'book' => $book->only('id', 'title', 'author', 'language', 'genre', 'secondary_genres'),
-            'genres' => collect(Genre::cases())->map(fn (Genre $genre) => [
-                'value' => $genre->value,
-                'label' => $genre->label(),
-            ]),
+            'book' => $book->only('id', 'title', 'subtitle', 'author', 'language', 'genre', 'secondary_genres'),
         ]);
     }
 
@@ -68,7 +63,7 @@ class BookSettingsController extends Controller
     public function updateWritingStyle(Request $request, Book $book): JsonResponse
     {
         $request->validate([
-            'writing_style_text' => ['required', 'string', 'max:5000'],
+            'writing_style_text' => ['required', 'string', 'max:20000'],
         ]);
 
         $book->update([
