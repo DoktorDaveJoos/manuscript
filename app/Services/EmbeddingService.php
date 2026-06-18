@@ -5,8 +5,11 @@ namespace App\Services;
 use App\Models\AiSetting;
 use App\Models\Book;
 use App\Models\Chunk;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Collection;
 use Laravel\Ai\Embeddings;
+use Laravel\Ai\Exceptions\AiException;
 use Laravel\Ai\Responses\EmbeddingsResponse;
 
 class EmbeddingService
@@ -29,7 +32,20 @@ class EmbeddingService
         $chunks->chunk(20)->each(function (Collection $batch) use ($config, $book) {
             $texts = $batch->pluck('content')->all();
 
-            $response = $this->generate($texts, $config);
+            try {
+                $response = $this->generate($texts, $config);
+            } catch (RequestException|ConnectionException|AiException $e) {
+                // Bulk indexing is best-effort: a provider rejection (oversized or
+                // proxy-mangled payload — e.g. a 431, an exhausted failover, or a
+                // network blip) degrades retrieval quality but must never crash the
+                // queue worker driving an editorial review. Report once for
+                // visibility and stop — the same systemic fault would reject every
+                // remaining batch identically. Embeddings already stored for earlier
+                // batches are preserved.
+                report($e);
+
+                return false;
+            }
 
             foreach ($batch->values() as $index => $chunk) {
                 $chunk->storeEmbedding($response->embeddings[$index], $book->id);

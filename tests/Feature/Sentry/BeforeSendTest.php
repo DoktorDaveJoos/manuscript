@@ -71,6 +71,43 @@ test('still reports an unhandled HttpException raised outside the bridge routes'
 });
 
 /*
+| The chapter version actions (accept / accept-partial / reject / delete)
+| each open with an `abort_if(..., 403, ...)` business-rule guard
+| (ChapterController): a revision can only be accepted/rejected while it is
+| still pending, and the current / last version cannot be deleted. These
+| guards fire on benign, user-reachable races — classically the same chapter
+| open in two editor panes, where resolving the pending AI revision in one
+| pane leaves the other pane's stale Accept/Reject bar pointed at an
+| already-accepted version. Accept flips the row's status to `accepted` (the
+| row survives), so the late reject finds it present-but-non-pending and
+| aborts 403 — the request is correctly refused and nothing is mutated. But
+| the emptied `internalDontReport` (see isExpectedValidationFailure) lets that
+| expected 403 reach Sentry as an unhandled `generic` crash (Sentry
+| 126866018). The guard did its job; there is nothing to action.
+*/
+test('drops an expected non-pending / undeletable version-guard 403 reported as an unhandled crash', function (string $message, string $route) {
+    $event = sentryEvent(new HttpException(403, $message), $route, handled: false);
+
+    expect(BeforeSend::handle($event))->toBeNull();
+})->with([
+    'reject non-pending' => ['Only pending versions can be rejected.', '/books/10/chapters/34/versions/84/reject'],
+    'accept non-pending' => ['Only pending versions can be accepted.', '/books/10/chapters/34/versions/84/accept'],
+    'accept-partial non-pending' => ['Only pending versions can be accepted.', '/books/10/chapters/34/versions/84/accept-partial'],
+    'delete current version' => ['Cannot delete the current version.', '/books/10/chapters/34/versions/84'],
+    'delete last version' => ['Cannot delete the last version.', '/books/10/chapters/34/versions/84'],
+]);
+
+test('still reports a genuine, differently-messaged 403 on a version route', function () {
+    $event = sentryEvent(
+        new HttpException(403, 'Unexpected authorization failure.'),
+        '/books/10/chapters/34/versions/84/reject',
+        handled: false,
+    );
+
+    expect(BeforeSend::handle($event))->toBe($event);
+});
+
+/*
 | A failed form-request validation throws ValidationException, which Laravel
 | lists in `internalDontReport` and never logs. NativePHP's exception handler
 | empties that list (Native\Desktop\Exceptions\Handler), so the re-registered

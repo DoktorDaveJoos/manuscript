@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.7.2 (2026-06-18)
+
+### Fixes
+
+- **Book settings** — manual writing styles are no longer truncated, and a failed save now surfaces an error instead of failing silently (8d8141e2)
+- **AI** — when the embeddings provider rejects a batch, indexing degrades gracefully instead of failing the whole run (62554f42)
+- **Sentry** — expected version-guard 403s are no longer reported as crashes (b1c3b7e9)
+
 ## v0.7.1 (2026-06-12)
 
 ### Features

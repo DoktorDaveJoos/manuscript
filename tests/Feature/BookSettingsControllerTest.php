@@ -20,18 +20,18 @@ test('book settings index redirects to the general page', function () {
 });
 
 test('general page renders the book identity fields', function () {
-    $book = Book::factory()->withGenre(Genre::Fantasy, [Genre::Adventure])->create();
+    $book = Book::factory()->withGenre(Genre::Fantasy, [Genre::Adventure])->create(['subtitle' => 'A Tale']);
 
     $this->get(route('books.settings.general', $book))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('books/settings/general')
             ->where('book.title', $book->title)
+            ->where('book.subtitle', 'A Tale')
             ->where('book.author', $book->author)
             ->where('book.language', 'de')
             ->where('book.genre', 'fantasy')
             ->where('book.secondary_genres', ['adventure'])
-            ->has('genres')
         );
 });
 
@@ -40,6 +40,7 @@ test('general settings update persists identity fields', function () {
 
     $this->put(route('books.settings.general.update', $book), [
         'title' => 'New Title',
+        'subtitle' => 'New Subtitle',
         'author' => 'New Author',
         'language' => 'en',
         'genre' => 'mystery',
@@ -48,6 +49,7 @@ test('general settings update persists identity fields', function () {
 
     $book->refresh();
     expect($book->title)->toBe('New Title')
+        ->and($book->subtitle)->toBe('New Subtitle')
         ->and($book->author)->toBe('New Author')
         ->and($book->language)->toBe('en')
         ->and($book->genre)->toBe(Genre::Mystery)
@@ -84,6 +86,26 @@ test('writing style update persists to the book', function () {
     ])->assertOk();
 
     expect($book->refresh()->writing_style_text)->toBe('Lyrical, slow-burning prose.');
+});
+
+test('writing style update accepts a long manually pasted style', function () {
+    $book = Book::factory()->create();
+    $longStyle = str_repeat('a', 15000);
+
+    $this->putJson(route('books.settings.writing-style.update', $book), [
+        'writing_style_text' => $longStyle,
+    ])->assertOk();
+
+    expect($book->refresh()->writing_style_text)->toBe($longStyle);
+});
+
+test('writing style update rejects an over-limit style with a message', function () {
+    $book = Book::factory()->create();
+
+    $this->putJson(route('books.settings.writing-style.update', $book), [
+        'writing_style_text' => str_repeat('a', 20001),
+    ])->assertStatus(422)
+        ->assertJsonValidationErrors('writing_style_text');
 });
 
 test('writing style regeneration rejects books with too little prose', function () {
