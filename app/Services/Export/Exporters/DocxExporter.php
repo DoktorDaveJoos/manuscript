@@ -156,7 +156,10 @@ class DocxExporter implements Exporter
     private function addCopyrightPage(Section $section, Book $book, ExportOptions $options): void
     {
         $section->addTextBreak(12);
-        $text = $options->copyrightText !== '' ? $options->copyrightText : 'Copyright © '.date('Y')."\n{$book->title}\nAll rights reserved.";
+        $locale = $book->language ?? config('app.fallback_locale', 'en');
+        $text = $options->copyrightText !== ''
+            ? $options->copyrightText
+            : __('Copyright', [], $locale).' © '.date('Y')."\n{$book->title}\n".__('All rights reserved.', [], $locale);
         foreach (explode("\n", $text) as $line) {
             if (trim($line) !== '') {
                 $section->addText(htmlspecialchars(trim($line)), ['size' => 10], ['alignment' => Jc::CENTER]);
@@ -248,12 +251,14 @@ class DocxExporter implements Exporter
 
     private function addBackMatter(Section $section, Book $book, ExportOptions $options): void
     {
+        $locale = $book->language ?? config('app.fallback_locale', 'en');
+
         foreach ($options->backMatter as $item) {
             match ($item) {
                 'epilogue' => $this->addEpilogueMatter($section, $book),
-                'acknowledgments' => $this->addTextMatter($section, 'Acknowledgments', $options->acknowledgmentText),
-                'about-author' => $this->addTextMatter($section, 'About the Author', $options->aboutAuthorText),
-                'also-by' => $this->addAlsoByMatter($section, $book, $options),
+                'acknowledgments' => $this->addTextMatter($section, __('Acknowledgments', [], $locale), $options->acknowledgmentText),
+                'about-author' => $this->addTextMatter($section, __('About the Author', [], $locale), $options->aboutAuthorText),
+                'also-by' => $this->addAlsoByMatter($section, $book, $options, $locale),
                 default => null,
             };
         }
@@ -285,14 +290,14 @@ class DocxExporter implements Exporter
         }
     }
 
-    private function addAlsoByMatter(Section $section, Book $book, ExportOptions $options): void
+    private function addAlsoByMatter(Section $section, Book $book, ExportOptions $options, string $locale): void
     {
         if ($options->alsoByText === '') {
             return;
         }
         $section->addPageBreak();
         $section->addText(
-            htmlspecialchars('Also By '.($book->author ?? '')),
+            htmlspecialchars(__('Also By :author', ['author' => $book->author ?? ''], $locale)),
             ['bold' => true, 'size' => 16],
             'MatterTitle',
         );

@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.7.5 (2026-06-19)
+
+### Features
+
+- **Export** — exports now include a table of contents (a dedicated page with page numbers in PDF), and the copyright, dedication, epigraph, acknowledgments, about-the-author, and also-by pages now appear in the book's language instead of English only (fa5d1bd6)
+
+### Fixes
+
+- **Auto-update** — a downloaded update could leave Manuscript appearing to never start, as a stranded background updater looped against the running app; updates now apply only when you explicitly install them, and a boot-time guard clears any stale pending update (afd41cb1)
+
 ## v0.7.4 (2026-06-19)
 
 ### Features

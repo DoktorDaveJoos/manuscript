@@ -58,12 +58,64 @@ class PdfExporter implements Exporter
     private function buildMpdf(Book $book, Collection $chapters, ExportOptions $options): Mpdf
     {
         $isEbookPreview = in_array($options->previewFormat, [ExportFormat::Epub, ExportFormat::Kdp], true);
-        $html = $this->renderHtml($book, $chapters, $options, $isEbookPreview);
         $locale = $book->language ?? config('app.fallback_locale', 'en');
+
+        // The table of contents is rendered as an ordinary unnumbered page that
+        // lists each chapter's real folio. Those folios are only known once the
+        // body has been laid out, so a first probe pass collects them before the
+        // final render. (mPDF's native <tocpagebreak> would compute them itself,
+        // but it force-paginates the TOC onto a recto page — inserting blank
+        // versos that fight this book's continuous page-numbering scheme.)
+        $tocFolios = $this->tableOfContentsRequested($chapters, $options, $isEbookPreview)
+            ? $this->resolveTableOfContentsFolios($book, $chapters, $options, $locale)
+            : [];
+
         $mpdf = $this->createMpdf($options, $isEbookPreview, $locale);
-        $mpdf->WriteHTML($html);
+        $mpdf->WriteHTML($this->renderHtml($book, $chapters, $options, $isEbookPreview, $tocFolios));
 
         return $mpdf;
+    }
+
+    /**
+     * Whether a table of contents will be rendered for this export.
+     */
+    private function tableOfContentsRequested(Collection $chapters, ExportOptions $options, bool $isEbookPreview): bool
+    {
+        if ($isEbookPreview || $chapters->isEmpty()) {
+            return false;
+        }
+
+        return in_array('toc', $options->frontMatter, true) || $options->includeTableOfContents;
+    }
+
+    /**
+     * Probe render: lay out the body with <tocentry> markers, then read the folio
+     * (displayed page number) each chapter lands on. Chapter folios reset to 1 on
+     * the first body page, so they are independent of the TOC's own length and
+     * stay correct when the TOC is prepended in the final render.
+     *
+     * @return array<int, string> chapter index => folio
+     */
+    private function resolveTableOfContentsFolios(Book $book, Collection $chapters, ExportOptions $options, string $locale): array
+    {
+        $probe = $this->createMpdf($options, false, $locale);
+        $probe->WriteHTML($this->renderHtml($book, $chapters, $options, false, [], tocProbe: true));
+
+        // mPDF exposes the collected <tocentry> pages only on its private
+        // TableOfContents helper; read them directly (guarded by a test so an
+        // mPDF upgrade that moves this surfaces loudly rather than silently).
+        $tocProperty = new \ReflectionProperty($probe, 'tableOfContents');
+        $tocProperty->setAccessible(true);
+        $entries = $tocProperty->getValue($probe)->_toc ?? [];
+
+        $folios = [];
+        foreach (array_values($entries) as $index => $entry) {
+            if (isset($entry['p'])) {
+                $folios[$index] = (string) $probe->docPageNum($entry['p']);
+            }
+        }
+
+        return $folios;
     }
 
     /**
@@ -83,8 +135,11 @@ class PdfExporter implements Exporter
 
     /**
      * Render the HTML body content for mPDF (no doctype/head — mPDF handles that).
+     *
+     * @param  array<int, string>  $tocFolios  chapter index => folio, for the table of contents rows
+     * @param  bool  $tocProbe  emit <tocentry> markers (and skip the TOC page) so a probe render can collect folios
      */
-    public function renderHtml(Book $book, Collection $chapters, ExportOptions $options, bool $isEbookPreview = false): string
+    public function renderHtml(Book $book, Collection $chapters, ExportOptions $options, bool $isEbookPreview = false, array $tocFolios = [], bool $tocProbe = false): string
     {
         $preparedChapters = $this->prepareChapters($chapters, $options);
 
@@ -120,6 +175,9 @@ class PdfExporter implements Exporter
                 'isEbookPreview' => $isEbookPreview,
                 'contentPreparer' => $this->contentPreparer,
                 'template' => $this->template,
+                'tocFolios' => $tocFolios,
+                'tocProbe' => $tocProbe,
+                'showToc' => $this->tableOfContentsRequested($chapters, $options, $isEbookPreview),
             ])->render();
         } finally {
             app()->setLocale($previousLocale);

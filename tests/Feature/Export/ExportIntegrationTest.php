@@ -6,6 +6,7 @@ use App\Models\License;
 use App\Models\Scene;
 use App\Models\Storyline;
 use App\Models\User;
+use App\Services\Export\ExportService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -145,6 +146,75 @@ it('exports DOCX with all matter types', function () {
 
     $response->assertSuccessful();
     expect($response->headers->get('content-disposition'))->toContain('test-novel.docx');
+});
+
+it('localizes EPUB front and back matter in the book language', function () {
+    $this->book->update([
+        'language' => 'de',
+        'copyright_text' => null,
+    ]);
+
+    $path = (new ExportService)->exportToPath($this->book, [
+        'format' => 'epub',
+        'scope' => 'full',
+        'template' => 'classic',
+        'front_matter' => ['copyright', 'dedication', 'epigraph', 'toc'],
+        'back_matter' => ['acknowledgments', 'about-author', 'also-by'],
+    ]);
+
+    $zip = new ZipArchive;
+    expect($zip->open($path))->toBeTrue();
+
+    $copyright = $zip->getFromName('OEBPS/Text/copyright.xhtml');
+    $dedication = $zip->getFromName('OEBPS/Text/dedication.xhtml');
+    $epigraph = $zip->getFromName('OEBPS/Text/epigraph.xhtml');
+    $acknowledgments = $zip->getFromName('OEBPS/Text/acknowledgments.xhtml');
+    $aboutAuthor = $zip->getFromName('OEBPS/Text/about-author.xhtml');
+    $alsoBy = $zip->getFromName('OEBPS/Text/also-by.xhtml');
+    $toc = $zip->getFromName('OEBPS/toc.xhtml');
+    $navigation = $zip->getFromName('OEBPS/toc.ncx');
+    $zip->close();
+    @unlink($path);
+
+    expect($copyright)->toContain('Alle Rechte vorbehalten.')
+        ->and($dedication)->toContain('<title>Widmung</title>')
+        ->and($epigraph)->toContain('<title>Epigraph</title>')
+        ->and($acknowledgments)->toContain('<p class="matter-title">Danksagung</p>')
+        ->and($aboutAuthor)->toContain('<p class="matter-title">Über den Autor</p>')
+        ->and($alsoBy)->toContain('<p class="matter-title">Weitere Werke von Test Author</p>')
+        ->and($toc)->toContain('<h1>Inhaltsverzeichnis</h1>')
+        ->and($navigation)->toContain('<text>Copyright</text>')
+        ->and($navigation)->toContain('<text>Widmung</text>')
+        ->and($navigation)->toContain('<text>Epigraph</text>')
+        ->and($navigation)->toContain('<text>Danksagung</text>')
+        ->and($navigation)->toContain('<text>Über den Autor</text>')
+        ->and($navigation)->toContain('<text>Weitere Werke von Test Author</text>');
+});
+
+it('localizes DOCX back matter in the book language', function () {
+    $this->book->update([
+        'language' => 'de',
+        'copyright_text' => null,
+    ]);
+
+    $path = (new ExportService)->exportToPath($this->book, [
+        'format' => 'docx',
+        'scope' => 'full',
+        'front_matter' => ['copyright'],
+        'back_matter' => ['acknowledgments', 'about-author', 'also-by'],
+    ]);
+
+    $zip = new ZipArchive;
+    expect($zip->open($path))->toBeTrue();
+    $document = $zip->getFromName('word/document.xml');
+    $zip->close();
+    @unlink($path);
+
+    expect($document)
+        ->toContain('Alle Rechte vorbehalten.')
+        ->toContain('Danksagung')
+        ->toContain('Über den Autor')
+        ->toContain('Weitere Werke von Test Author');
 });
 
 it('exports TXT format', function () {
