@@ -72,6 +72,8 @@
     "privacy.sectionLabel": "DATENSCHUTZ",
     "privacy.navLabel": "Datenschutz",
     "privacy.description": "Hilf, Manuscript zu verbessern, indem du anonyme Absturzberichte automatisch sendest.",
+    "privacy.analyticsLabel": "Anonyme Nutzungsstatistiken teilen",
+    "privacy.analyticsDescription": "Hilf, Manuscript zu verbessern, indem du anonyme Funktionsnutzung teilst. Es werden keine persönlichen Daten oder Manuskriptinhalte übertragen.",
     "updates.sectionLabel": "UPDATES",
     "updates.navLabel": "Updates",
     "updates.currentVersion": "Aktuelle Version",

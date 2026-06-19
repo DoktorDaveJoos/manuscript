@@ -19,6 +19,7 @@ class AppSettingsController extends Controller
         'cohere_api_key',
         'locale',
         'send_error_reports',
+        'send_analytics',
         'crash_report_prompted',
         'language_prompted',
         'auto_update',

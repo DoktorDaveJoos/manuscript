@@ -72,6 +72,8 @@
     "privacy.sectionLabel": "PRIVACIDAD",
     "privacy.navLabel": "Privacidad",
     "privacy.description": "Ayuda a mejorar Manuscript enviando automáticamente reportes anónimos de fallos.",
+    "privacy.analyticsLabel": "Compartir estadísticas de uso anónimas",
+    "privacy.analyticsDescription": "Ayuda a mejorar Manuscript compartiendo el uso anónimo de funciones. No se incluyen datos personales ni contenido del manuscrito.",
     "updates.sectionLabel": "ACTUALIZACIONES",
     "updates.navLabel": "Actualizaciones",
     "updates.currentVersion": "Versión actual",

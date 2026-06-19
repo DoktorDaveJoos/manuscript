@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { store } from '@/actions/App/Http/Controllers/ChapterController';
 
 import ContextMenu from '@/components/ui/ContextMenu';
+import { track } from '@/lib/analytics';
 import type { Beat, BeatStatus, Storyline } from '@/types/models';
 
 type BeatContextMenuProps = {
@@ -40,7 +41,10 @@ export default function BeatContextMenu({
                 title: 'New Chapter',
                 beat_id: beat.id,
             },
-            { preserveScroll: true },
+            {
+                preserveScroll: true,
+                onSuccess: () => track('chapter_created'),
+            },
         );
         onClose();
     };

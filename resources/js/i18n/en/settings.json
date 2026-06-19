@@ -72,6 +72,8 @@
     "privacy.sectionLabel": "PRIVACY",
     "privacy.navLabel": "Privacy",
     "privacy.description": "Help improve Manuscript by automatically sending anonymous crash reports.",
+    "privacy.analyticsLabel": "Share anonymous usage statistics",
+    "privacy.analyticsDescription": "Help improve Manuscript by sharing anonymous feature usage. No personal data or manuscript content is included.",
     "updates.sectionLabel": "UPDATES",
     "updates.navLabel": "Updates",
     "updates.currentVersion": "Current Version",

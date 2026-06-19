@@ -6,6 +6,7 @@ import Dialog from '@/components/ui/Dialog';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
+import { track } from '@/lib/analytics';
 import { BOOK_LANGUAGES } from '@/lib/languages';
 
 const GENRES = [
@@ -41,7 +42,10 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
     function handleSubmit(e: FormEvent) {
         e.preventDefault();
         form.post('/books', {
-            onSuccess: () => onClose(),
+            onSuccess: () => {
+                track('book_created');
+                onClose();
+            },
         });
     }
 

@@ -21,6 +21,7 @@ import type {
     TrimSizeOption,
 } from '@/components/export/types';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
+import { track } from '@/lib/analytics';
 import { downloadExport } from '@/lib/export-download';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { Book } from '@/types/models';
@@ -462,6 +463,7 @@ export default function Export({
         data.back_matter = backMatter.filter((i) => i.checked).map((i) => i.id);
 
         downloadExport(book, data)
+            .then(() => track('book_exported'))
             .catch((err: unknown) => {
                 setExportError(
                     err instanceof Error ? err.message : String(err),

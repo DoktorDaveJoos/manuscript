@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { importMethod } from '@/actions/App/Http/Controllers/BookController';
 import { store } from '@/actions/App/Http/Controllers/ChapterController';
 import Button from '@/components/ui/Button';
+import { track } from '@/lib/analytics';
 import type { Book, Storyline } from '@/types/models';
 
 export default function ChapterEmpty({
@@ -16,10 +17,16 @@ export default function ChapterEmpty({
     function handleCreateChapter() {
         if (!firstStorylineId) return;
 
-        router.post(store.url(book), {
-            title: 'Chapter 1',
-            storyline_id: firstStorylineId,
-        });
+        router.post(
+            store.url(book),
+            {
+                title: 'Chapter 1',
+                storyline_id: firstStorylineId,
+            },
+            {
+                onSuccess: () => track('chapter_created'),
+            },
+        );
     }
 
     return (

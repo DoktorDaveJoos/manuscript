@@ -18,6 +18,7 @@ import { chat as editorialChat } from '@/actions/App/Http/Controllers/EditorialR
 import AiChatInput from '@/components/ui/AiChatInput';
 import type { AiChatInputHandle } from '@/components/ui/AiChatInput';
 import PanelHeader from '@/components/ui/PanelHeader';
+import { track } from '@/lib/analytics';
 import { severityDotColor } from '@/lib/editorial-constants';
 import { extractErrorMessage, jsonFetchHeaders } from '@/lib/utils';
 import type {
@@ -179,6 +180,9 @@ export default function AiChatDrawer({
         const trimmed = inputValueRef.current.trim();
         if (!trimmed || isStreamingRef.current) return;
 
+        track('ai_feature_used', {
+            type: editorialReview ? 'editorial' : 'chat',
+        });
         setInput('');
         setMessages((prev) => [
             ...prev,

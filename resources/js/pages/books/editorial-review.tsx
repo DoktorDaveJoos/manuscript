@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { Sparkles, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AiChatDrawer from '@/components/editor/AiChatDrawer';
 import Sidebar from '@/components/editor/Sidebar';
@@ -13,6 +13,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import SlidePanel from '@/components/ui/SlidePanel';
 import { useEditorialReview } from '@/hooks/useEditorialReview';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
+import { track } from '@/lib/analytics';
 import type {
     Book,
     Chapter,
@@ -57,6 +58,16 @@ export default function EditorialReviewPage({
         findingSeverity?: FindingSeverity;
         sectionLabel?: string;
     } | null>(null);
+
+    const handleStartReview = useCallback(() => {
+        track('ai_feature_used', { type: 'editorial' });
+        void handleStart();
+    }, [handleStart]);
+
+    const handleResumeReview = useCallback(() => {
+        track('ai_feature_used', { type: 'editorial' });
+        void handleResume();
+    }, [handleResume]);
 
     const handleDiscussFinding: OnDiscussFinding = (
         sectionType,
@@ -150,7 +161,7 @@ export default function EditorialReviewPage({
                                             )}
                                         <Button
                                             variant="primary"
-                                            onClick={handleResume}
+                                            onClick={handleResumeReview}
                                             disabled={starting}
                                         >
                                             {t('failed.continue')}
@@ -162,7 +173,7 @@ export default function EditorialReviewPage({
 
                         {!review && (
                             <EditorialReviewEmptyState
-                                onStart={handleStart}
+                                onStart={handleStartReview}
                                 starting={starting}
                             />
                         )}
@@ -179,7 +190,7 @@ export default function EditorialReviewPage({
                                 chapters={chapters}
                                 editedChaptersCount={editedChaptersCount}
                                 onSelectReview={selectReview}
-                                onStartNew={handleStart}
+                                onStartNew={handleStartReview}
                                 starting={starting}
                                 onDiscussFinding={handleDiscussFinding}
                                 onResolvedChange={updateResolved}

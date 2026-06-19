@@ -6,6 +6,7 @@ import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
+import { track } from '@/lib/analytics';
 
 const DEFAULT_WORD_GOAL = 120;
 const MIN_WORD_GOAL = 30;
@@ -52,6 +53,7 @@ export default function ContinueWritingDialog({
             MIN_WORD_GOAL,
             Math.min(MAX_WORD_GOAL, draft.wordGoal || DEFAULT_WORD_GOAL),
         );
+        track('ai_feature_used', { type: 'continue' });
         onSubmit({
             hint: draft.hint.trim(),
             wordGoal: clamped,

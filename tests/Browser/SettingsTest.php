@@ -33,6 +33,21 @@ it('shows appearance section with theme options', function () {
         ->assertSee('System');
 });
 
+it('persists the anonymous usage statistics preference', function () {
+    $toggle = '[data-testid="send-analytics-setting"] button[role="switch"]';
+    $page = visit('/settings');
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSee('Share anonymous usage statistics')
+        ->assertDataAttribute($toggle, 'state', 'checked')
+        ->click($toggle)
+        ->wait(1)
+        ->assertDataAttribute($toggle, 'state', 'unchecked')
+        ->navigate('/settings')
+        ->assertDataAttribute($toggle, 'state', 'unchecked')
+        ->assertNoJavaScriptErrors();
+});
+
 it('shows license section for activating pro', function () {
     $page = visit('/settings');
 

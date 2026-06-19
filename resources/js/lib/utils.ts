@@ -5,6 +5,7 @@ import { twMerge } from 'tailwind-merge';
 import { update } from '@/actions/App/Http/Controllers/AppSettingsController';
 import { store } from '@/actions/App/Http/Controllers/ChapterController';
 import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
+import { track } from '@/lib/analytics';
 import type { Storyline } from '@/types/models';
 
 export const CHANNEL_DIFF_APPLIED = 'manuscript:diff-applied';
@@ -47,10 +48,16 @@ export function createChapter(
         (sum, s) => sum + (s.chapters?.length ?? 0),
         0,
     );
-    router.post(store.url({ book: bookId }), {
-        title: `Chapter ${totalChapters + 1}`,
-        storyline_id: storylineId,
-    });
+    router.post(
+        store.url({ book: bookId }),
+        {
+            title: `Chapter ${totalChapters + 1}`,
+            storyline_id: storylineId,
+        },
+        {
+            onSuccess: () => track('chapter_created'),
+        },
+    );
 }
 
 export async function addSceneToChapter(

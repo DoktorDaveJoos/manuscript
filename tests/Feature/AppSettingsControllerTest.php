@@ -8,6 +8,7 @@ test('unified settings page loads', function () {
         ->assertInertia(fn ($page) => $page
             ->component('settings/index')
             ->has('settings')
+            ->where('settings.send_analytics', true)
             ->has('ai_providers')
             ->has('version')
         );
@@ -21,6 +22,27 @@ test('update setting saves value', function () {
         ->assertJsonPath('message', 'Setting updated.');
 
     expect(AppSetting::get('show_ai_features'))->toBeFalse();
+});
+
+test('send_analytics setting is accepted and persisted', function () {
+    $this->putJson(route('settings.update'), [
+        'key' => 'send_analytics',
+        'value' => false,
+    ])->assertOk()
+        ->assertJsonPath('message', 'Setting updated.');
+
+    AppSetting::clearCache();
+    expect(AppSetting::get('send_analytics'))->toBeFalse();
+});
+
+test('send_analytics defaults to true in shared inertia props', function () {
+    AppSetting::clearCache();
+
+    $this->get(route('books.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('app_settings.send_analytics', true)
+        );
 });
 
 test('show_ai_features toggle persists', function () {
