@@ -21,7 +21,12 @@ export async function initAnalytics({
 
     try {
         const aptabase = await import('@aptabase/web');
-        aptabase.init(appKey, { appVersion: version });
+        aptabase.init(appKey, {
+            appVersion: version,
+            // Local `npm run dev` events are tagged as Debug in Aptabase and
+            // filtered out of production stats; packaged builds report `false`.
+            isDebug: import.meta.env.DEV,
+        });
         trackAptabaseEvent = aptabase.trackEvent;
     } catch {
         trackAptabaseEvent = null;
