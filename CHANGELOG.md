@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.7.4 (2026-06-19)
+
+### Features
+
+- **Books** — add an optional subtitle, and pick a primary genre plus secondary genres when creating a book or from general settings (6b4761f7)
+- **Analytics** — optional anonymous usage statistics help improve Manuscript; no personal data or manuscript content is ever sent, dev and production events are kept separate, and it can be turned off in Settings → Privacy (25d643b6, ec0ec406)
+
 ## v0.7.3 (2026-06-18)
 
 ### Fixes
