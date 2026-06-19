@@ -1,37 +1,21 @@
 import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import GenreSelect from '@/components/GenreSelect';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
+import { track } from '@/lib/analytics';
+import { genreLabel } from '@/lib/genres';
 import { BOOK_LANGUAGES } from '@/lib/languages';
-
-const GENRES = [
-    { value: 'thriller', label: 'Thriller' },
-    { value: 'mystery', label: 'Mystery' },
-    { value: 'romance', label: 'Romance' },
-    { value: 'science_fiction', label: 'Science Fiction' },
-    { value: 'fantasy', label: 'Fantasy' },
-    { value: 'horror', label: 'Horror' },
-    { value: 'literary_fiction', label: 'Literary Fiction' },
-    { value: 'historical_fiction', label: 'Historical Fiction' },
-    { value: 'crime', label: 'Crime' },
-    { value: 'adventure', label: 'Adventure' },
-    { value: 'drama', label: 'Drama' },
-    { value: 'young_adult', label: 'Young Adult' },
-    { value: 'non_fiction', label: 'Non-Fiction' },
-    { value: 'memoir', label: 'Memoir' },
-    { value: 'poetry', label: 'Poetry' },
-    { value: 'western', label: 'Western' },
-    { value: 'dystopian', label: 'Dystopian' },
-];
 
 export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
     const { t } = useTranslation('onboarding');
     const form = useForm({
         title: '',
+        subtitle: '',
         author: '',
         language: 'de',
         genre: '',
@@ -41,7 +25,10 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
     function handleSubmit(e: FormEvent) {
         e.preventDefault();
         form.post('/books', {
-            onSuccess: () => onClose(),
+            onSuccess: () => {
+                track('book_created');
+                onClose();
+            },
         });
     }
 
@@ -74,6 +61,18 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                         />
                     </FormField>
 
+                    <FormField label={t('createBook.labelSubtitle')}>
+                        <Input
+                            variant="dialog"
+                            type="text"
+                            value={form.data.subtitle}
+                            onChange={(e) =>
+                                form.setData('subtitle', e.target.value)
+                            }
+                            placeholder={t('createBook.placeholderSubtitle')}
+                        />
+                    </FormField>
+
                     <FormField label={t('createBook.labelAuthor')}>
                         <Input
                             variant="dialog"
@@ -103,11 +102,11 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                     </FormField>
 
                     <FormField label={t('createBook.labelGenre')}>
-                        <Select
+                        <GenreSelect
                             variant="dialog"
                             value={form.data.genre}
-                            onChange={(e) => {
-                                const newGenre = e.target.value;
+                            placeholder={t('createBook.placeholderGenre')}
+                            onChange={(newGenre) =>
                                 form.setData((prev) => ({
                                     ...prev,
                                     genre: newGenre,
@@ -115,18 +114,9 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                                         prev.secondary_genres.filter(
                                             (g) => g !== newGenre,
                                         ),
-                                }));
-                            }}
-                        >
-                            <option value="">
-                                {t('createBook.placeholderGenre')}
-                            </option>
-                            {GENRES.map((g) => (
-                                <option key={g.value} value={g.value}>
-                                    {g.label}
-                                </option>
-                            ))}
-                        </Select>
+                                }))
+                            }
+                        />
                     </FormField>
 
                     {form.data.genre && (
@@ -134,15 +124,12 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                             {form.data.secondary_genres.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5">
                                     {form.data.secondary_genres.map((g) => {
-                                        const genre = GENRES.find(
-                                            (x) => x.value === g,
-                                        );
                                         return (
                                             <span
                                                 key={g}
                                                 className="bg-surface-raised inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-ink"
                                             >
-                                                {genre?.label ?? g}
+                                                {genreLabel(g)}
                                                 <button
                                                     type="button"
                                                     onClick={() =>
@@ -162,33 +149,25 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                                     })}
                                 </div>
                             )}
-                            <Select
+                            <GenreSelect
                                 variant="dialog"
                                 value=""
-                                onChange={(e) => {
-                                    if (e.target.value) {
+                                placeholder={t(
+                                    'createBook.placeholderSecondaryGenres',
+                                )}
+                                exclude={[
+                                    form.data.genre,
+                                    ...form.data.secondary_genres,
+                                ]}
+                                onChange={(value) => {
+                                    if (value) {
                                         form.setData('secondary_genres', [
                                             ...form.data.secondary_genres,
-                                            e.target.value,
+                                            value,
                                         ]);
                                     }
                                 }}
-                            >
-                                <option value="">
-                                    {t('createBook.placeholderSecondaryGenres')}
-                                </option>
-                                {GENRES.filter(
-                                    (g) =>
-                                        g.value !== form.data.genre &&
-                                        !form.data.secondary_genres.includes(
-                                            g.value,
-                                        ),
-                                ).map((g) => (
-                                    <option key={g.value} value={g.value}>
-                                        {g.label}
-                                    </option>
-                                ))}
-                            </Select>
+                            />
                         </FormField>
                     )}
                 </div>

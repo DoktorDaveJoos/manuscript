@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { updateGeneral } from '@/actions/App/Http/Controllers/BookSettingsController';
+import GenreSelect from '@/components/GenreSelect';
 import { Card } from '@/components/ui/Card';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
@@ -10,13 +11,13 @@ import SaveStatusIndicator from '@/components/ui/SaveStatusIndicator';
 import type { SaveStatus } from '@/components/ui/SaveStatusIndicator';
 import Select from '@/components/ui/Select';
 import BookSettingsLayout from '@/layouts/BookSettingsLayout';
+import { genreLabel } from '@/lib/genres';
 import { BOOK_LANGUAGES } from '@/lib/languages';
-
-type GenreOption = { value: string; label: string };
 
 type BookData = {
     id: number;
     title: string;
+    subtitle: string | null;
     author: string | null;
     language: string;
     genre: string | null;
@@ -25,14 +26,14 @@ type BookData = {
 
 interface Props {
     book: BookData;
-    genres: GenreOption[];
 }
 
-export default function GeneralSettings({ book, genres }: Props) {
+export default function GeneralSettings({ book }: Props) {
     const { t } = useTranslation('settings');
 
     const [data, setData] = useState({
         title: book.title ?? '',
+        subtitle: book.subtitle ?? '',
         author: book.author ?? '',
         language: book.language ?? 'en',
         genre: book.genre ?? '',
@@ -81,6 +82,20 @@ export default function GeneralSettings({ book, genres }: Props) {
                             />
                         </FormField>
 
+                        <FormField label={t('general.labelSubtitle')}>
+                            <Input
+                                value={data.subtitle}
+                                onChange={(e) =>
+                                    setData({
+                                        ...data,
+                                        subtitle: e.target.value,
+                                    })
+                                }
+                                onBlur={() => save(data)}
+                                placeholder={t('general.placeholderSubtitle')}
+                            />
+                        </FormField>
+
                         <FormField label={t('general.labelAuthor')}>
                             <Input
                                 value={data.author}
@@ -109,28 +124,19 @@ export default function GeneralSettings({ book, genres }: Props) {
                         <div className="border-t border-border-subtle" />
 
                         <FormField label={t('general.labelGenre')}>
-                            <Select
+                            <GenreSelect
                                 value={data.genre}
-                                onChange={(e) => {
-                                    const newGenre = e.target.value;
+                                placeholder={t('general.placeholderGenre')}
+                                onChange={(newGenre) =>
                                     setAndSave({
                                         genre: newGenre,
                                         secondary_genres:
                                             data.secondary_genres.filter(
                                                 (g) => g !== newGenre,
                                             ),
-                                    });
-                                }}
-                            >
-                                <option value="">
-                                    {t('general.placeholderGenre')}
-                                </option>
-                                {genres.map((g) => (
-                                    <option key={g.value} value={g.value}>
-                                        {g.label}
-                                    </option>
-                                ))}
-                            </Select>
+                                    })
+                                }
+                            />
                         </FormField>
 
                         {data.genre && (
@@ -140,15 +146,12 @@ export default function GeneralSettings({ book, genres }: Props) {
                                 {data.secondary_genres.length > 0 && (
                                     <div className="flex flex-wrap gap-1.5">
                                         {data.secondary_genres.map((g) => {
-                                            const genre = genres.find(
-                                                (x) => x.value === g,
-                                            );
                                             return (
                                                 <span
                                                     key={g}
                                                     className="bg-surface-raised inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-ink"
                                                 >
-                                                    {genre?.label ?? g}
+                                                    {genreLabel(g)}
                                                     <button
                                                         type="button"
                                                         onClick={() =>
@@ -170,41 +173,26 @@ export default function GeneralSettings({ book, genres }: Props) {
                                         })}
                                     </div>
                                 )}
-                                <Select
+                                <GenreSelect
                                     value=""
-                                    onChange={(e) => {
-                                        if (e.target.value) {
+                                    placeholder={t(
+                                        'general.placeholderSecondaryGenres',
+                                    )}
+                                    exclude={[
+                                        data.genre,
+                                        ...data.secondary_genres,
+                                    ]}
+                                    onChange={(value) => {
+                                        if (value) {
                                             setAndSave({
                                                 secondary_genres: [
                                                     ...data.secondary_genres,
-                                                    e.target.value,
+                                                    value,
                                                 ],
                                             });
                                         }
                                     }}
-                                >
-                                    <option value="">
-                                        {t(
-                                            'general.placeholderSecondaryGenres',
-                                        )}
-                                    </option>
-                                    {genres
-                                        .filter(
-                                            (g) =>
-                                                g.value !== data.genre &&
-                                                !data.secondary_genres.includes(
-                                                    g.value,
-                                                ),
-                                        )
-                                        .map((g) => (
-                                            <option
-                                                key={g.value}
-                                                value={g.value}
-                                            >
-                                                {g.label}
-                                            </option>
-                                        ))}
-                                </Select>
+                                />
                             </FormField>
                         )}
                     </div>

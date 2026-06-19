@@ -52,6 +52,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import { useAutoUpdater } from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
 import { setAppLanguage } from '@/i18n';
+import { setAnalyticsEnabled } from '@/lib/analytics';
 import type { Theme } from '@/lib/theme';
 import { jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
 import type {
@@ -1042,30 +1043,55 @@ function PrivacySection({
     const [sendErrorReports, setSendErrorReports] = useState(
         settings.send_error_reports,
     );
+    const [sendAnalytics, setSendAnalytics] = useState(settings.send_analytics);
 
     return (
         <div>
             <SectionLabel variant="section">
                 {t('privacy.sectionLabel')}
             </SectionLabel>
-            <Card className="mt-3 flex items-center justify-between px-6 py-3.5">
-                <div>
-                    <span className="text-[14px] font-medium text-ink">
-                        {t('appearance.sendErrorReports.label')}
-                    </span>
-                    <p className="mt-0.5 text-[13px] text-ink-muted">
-                        {t('privacy.description')}
-                    </p>
-                </div>
-                <Toggle
-                    checked={sendErrorReports}
-                    onChange={() => {
-                        const next = !sendErrorReports;
-                        setSendErrorReports(next);
-                        saveSetting('send_error_reports', next);
-                    }}
-                />
-            </Card>
+            <div className="mt-3 flex flex-col gap-3">
+                <Card className="flex items-center justify-between px-6 py-3.5">
+                    <div>
+                        <span className="text-sm font-medium text-ink">
+                            {t('appearance.sendErrorReports.label')}
+                        </span>
+                        <p className="mt-0.5 text-[13px] text-ink-muted">
+                            {t('privacy.description')}
+                        </p>
+                    </div>
+                    <Toggle
+                        checked={sendErrorReports}
+                        onChange={() => {
+                            const next = !sendErrorReports;
+                            setSendErrorReports(next);
+                            saveSetting('send_error_reports', next);
+                        }}
+                    />
+                </Card>
+                <Card
+                    className="flex items-center justify-between px-6 py-3.5"
+                    data-testid="send-analytics-setting"
+                >
+                    <div>
+                        <span className="text-sm font-medium text-ink">
+                            {t('privacy.analyticsLabel')}
+                        </span>
+                        <p className="mt-0.5 text-[13px] text-ink-muted">
+                            {t('privacy.analyticsDescription')}
+                        </p>
+                    </div>
+                    <Toggle
+                        checked={sendAnalytics}
+                        onChange={() => {
+                            const next = !sendAnalytics;
+                            setSendAnalytics(next);
+                            setAnalyticsEnabled(next);
+                            saveSetting('send_analytics', next);
+                        }}
+                    />
+                </Card>
+            </div>
         </div>
     );
 }

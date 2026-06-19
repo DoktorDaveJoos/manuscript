@@ -9,6 +9,8 @@
     "createBook.description": "Gib deinem Buch einen Arbeitstitel. Du kannst ihn später ändern.",
     "createBook.labelTitle": "Titel",
     "createBook.placeholderTitle": "Das Gewicht der Stille",
+    "createBook.labelSubtitle": "Untertitel",
+    "createBook.placeholderSubtitle": "Ein Untertitel (optional)",
     "createBook.labelAuthor": "Autor",
     "createBook.placeholderAuthor": "Dein Name (optional)",
     "createBook.labelLanguage": "Sprache",

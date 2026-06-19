@@ -20,6 +20,7 @@ class StoreBookRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
+            'subtitle' => ['nullable', 'string', 'max:255'],
             'author' => ['nullable', 'string', 'max:255'],
             'language' => ['required', 'string', 'max:5'],
             'genre' => ['nullable', Rule::enum(Genre::class)],

@@ -26,6 +26,7 @@ import { Alert, AlertDescription } from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAiErrorToast } from '@/hooks/useAiErrorToast';
+import { track } from '@/lib/analytics';
 import { md } from '@/lib/markdown';
 import { extractErrorMessage, jsonFetchHeaders } from '@/lib/utils';
 
@@ -757,6 +758,11 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
         );
 
         const handleSend = useCallback(() => {
+            if (!inputValueRef.current.trim() || isStreamingRef.current) {
+                return;
+            }
+
+            track('ai_feature_used', { type: 'plot_coach' });
             void sendMessage(inputValueRef.current);
         }, [sendMessage]);
 

@@ -4,6 +4,7 @@ import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import FormField from '@/components/ui/FormField';
 import Textarea from '@/components/ui/Textarea';
+import { track } from '@/lib/analytics';
 
 // Mirrors the backend Request `hint` validation rule.
 const MAX_HINT_LENGTH = 2000;
@@ -46,6 +47,7 @@ export default function RewriteSelectionDialog({
 
     function handleSubmit(e: FormEvent) {
         e.preventDefault();
+        track('ai_feature_used', { type: 'rewrite' });
         onSubmit({ hint: draft.hint.trim() });
         onClose();
     }

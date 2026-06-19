@@ -197,6 +197,7 @@ export type AppSettings = {
     typewriter_mode: boolean;
     show_scenes: boolean;
     send_error_reports: boolean;
+    send_analytics: boolean;
     crash_report_prompted: boolean;
     language_prompted: boolean;
     locale: string;

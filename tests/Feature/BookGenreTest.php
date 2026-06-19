@@ -20,6 +20,23 @@ test('store book with genre and secondary genres persists values', function () {
         ->and($book->secondary_genres)->toBe(['mystery', 'crime']);
 });
 
+test('store book with newly added genres persists values', function () {
+    $response = $this->post(route('books.store'), [
+        'title' => 'Academic Work',
+        'author' => 'Author',
+        'language' => 'en',
+        'genre' => 'dissertation',
+        'secondary_genres' => ['academic', 'reference'],
+    ]);
+
+    $response->assertRedirect();
+
+    $book = Book::query()->where('title', 'Academic Work')->firstOrFail();
+
+    expect($book->genre)->toBe(Genre::Dissertation)
+        ->and($book->secondary_genres)->toBe(['academic', 'reference']);
+});
+
 test('store book without genre leaves both fields null', function () {
     $response = $this->post(route('books.store'), [
         'title' => 'No Genre Book',

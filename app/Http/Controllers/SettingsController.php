@@ -22,6 +22,10 @@ class SettingsController extends Controller
             ->pluck('value', 'key')
             ->mapWithKeys(fn ($value, $key) => [$key => $value === 'true' ? true : ($value === 'false' ? false : $value)])
             ->all();
+        $settings = [
+            'send_analytics' => true,
+            ...$settings,
+        ];
 
         $existing = AiSetting::query()->get()->keyBy(fn ($s) => $s->provider->value);
 

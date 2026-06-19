@@ -43,6 +43,7 @@ test('lists existing books with counts', function () {
 test('creates a book with valid data and redirects to import', function () {
     $response = $this->post(route('books.store'), [
         'title' => 'My Novel',
+        'subtitle' => 'A Story of Things',
         'author' => 'Jane Doe',
         'language' => 'en',
     ]);
@@ -52,9 +53,18 @@ test('creates a book with valid data and redirects to import', function () {
     $response->assertRedirect(route('books.import', $book));
 
     expect($book)->not->toBeNull()
+        ->and($book->subtitle)->toBe('A Story of Things')
         ->and($book->author)->toBe('Jane Doe')
         ->and($book->language)->toBe('en')
         ->and($book->storylines)->toHaveCount(0);
+});
+
+test('validates subtitle max length', function () {
+    $this->post(route('books.store'), [
+        'title' => 'My Novel',
+        'subtitle' => str_repeat('a', 256),
+        'language' => 'en',
+    ])->assertSessionHasErrors('subtitle');
 });
 
 test('skip import creates default storyline and redirects to editor', function () {

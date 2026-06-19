@@ -73,6 +73,7 @@ jobs:
           APP_KEY: ${{ secrets.APP_KEY }}
           SENTRY_LARAVEL_DSN: ${{ secrets.SENTRY_LARAVEL_DSN }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_APTABASE_KEY: A-EU-5078183699
           POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
           POLAR_ORGANIZATION_ID: ${{ secrets.POLAR_ORGANIZATION_ID }}
         run: |
@@ -84,6 +85,7 @@ jobs:
           sed -i '' "s|APP_KEY=.*|APP_KEY=${APP_KEY}|" .env
           sed -i '' "s|SENTRY_LARAVEL_DSN=.*|SENTRY_LARAVEL_DSN=${SENTRY_LARAVEL_DSN}|" .env
           sed -i '' "s|VITE_SENTRY_DSN=.*|VITE_SENTRY_DSN=${VITE_SENTRY_DSN}|" .env
+          sed -i '' "s|VITE_APTABASE_KEY=.*|VITE_APTABASE_KEY=${VITE_APTABASE_KEY}|" .env
           sed -i '' "s|POLAR_ACCESS_TOKEN=.*|POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN}|" .env
           sed -i '' "s|POLAR_ORGANIZATION_ID=.*|POLAR_ORGANIZATION_ID=${POLAR_ORGANIZATION_ID}|" .env
 
@@ -102,6 +104,7 @@ jobs:
       - name: Build frontend assets
         env:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_APTABASE_KEY: A-EU-5078183699
         run: npm run build
 
       - name: Install Apple signing certificate
@@ -141,6 +144,7 @@ jobs:
           NATIVEPHP_APPLE_ID_PASS: ${{ secrets.NATIVEPHP_APPLE_ID_PASS }}
           NATIVEPHP_APPLE_TEAM_ID: ${{ secrets.NATIVEPHP_APPLE_TEAM_ID }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_APTABASE_KEY: A-EU-5078183699
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
@@ -159,6 +163,7 @@ jobs:
           NATIVEPHP_APPLE_ID_PASS: ${{ secrets.NATIVEPHP_APPLE_ID_PASS }}
           NATIVEPHP_APPLE_TEAM_ID: ${{ secrets.NATIVEPHP_APPLE_TEAM_ID }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_APTABASE_KEY: A-EU-5078183699
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
@@ -279,6 +284,7 @@ jobs:
           APP_KEY: ${{ secrets.APP_KEY }}
           SENTRY_LARAVEL_DSN: ${{ secrets.SENTRY_LARAVEL_DSN }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_APTABASE_KEY: A-EU-5078183699
           POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
           POLAR_ORGANIZATION_ID: ${{ secrets.POLAR_ORGANIZATION_ID }}
         shell: bash
@@ -291,6 +297,7 @@ jobs:
           sed -i "s|APP_KEY=.*|APP_KEY=${APP_KEY}|" .env
           sed -i "s|SENTRY_LARAVEL_DSN=.*|SENTRY_LARAVEL_DSN=${SENTRY_LARAVEL_DSN}|" .env
           sed -i "s|VITE_SENTRY_DSN=.*|VITE_SENTRY_DSN=${VITE_SENTRY_DSN}|" .env
+          sed -i "s|VITE_APTABASE_KEY=.*|VITE_APTABASE_KEY=${VITE_APTABASE_KEY}|" .env
           sed -i "s|POLAR_ACCESS_TOKEN=.*|POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN}|" .env
           sed -i "s|POLAR_ORGANIZATION_ID=.*|POLAR_ORGANIZATION_ID=${POLAR_ORGANIZATION_ID}|" .env
 
@@ -309,6 +316,7 @@ jobs:
       - name: Build frontend assets
         env:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_APTABASE_KEY: A-EU-5078183699
         run: npm run build
 
       - name: Fix electron-builder repo detection
@@ -330,6 +338,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_RELEASE_TYPE: draft
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_APTABASE_KEY: A-EU-5078183699
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}

@@ -1,4 +1,4 @@
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -10,8 +10,9 @@ import UpdateDialog from '@/components/ui/UpdateDialog';
 import { checkForUpdates } from '@/hooks/useAutoUpdater';
 import '../css/app.css';
 import { setAppLanguage } from './i18n';
-import { initTheme } from './lib/theme';
-import type { AppSettings } from './types/models';
+import { initAnalytics, screenNameFor, track } from './lib/analytics';
+import { getTheme, initTheme } from './lib/theme';
+import type { AppSettings, License } from './types/models';
 
 initTheme();
 
@@ -39,6 +40,26 @@ createInertiaApp({
 
         const appVersion =
             (props.initialPage.props.app_version as string) ?? '0.0.0';
+        const license = props.initialPage.props.license as License | undefined;
+        const aiConfigured =
+            (props.initialPage.props.ai_configured as boolean | undefined) ??
+            false;
+
+        void initAnalytics({
+            version: appVersion,
+            enabled: settings?.send_analytics ?? true,
+        }).then(() => {
+            track('app_started', {
+                version: appVersion,
+                locale: settings?.locale ?? 'en',
+                theme: getTheme(),
+                license_active: license?.active ?? false,
+                ai_configured: aiConfigured,
+            });
+            track('screen_view', {
+                name: screenNameFor(props.initialPage.component),
+            });
+        });
 
         if (import.meta.env.VITE_SENTRY_DSN) {
             import('@sentry/react').then((Sentry) => {
@@ -75,6 +96,7 @@ createInertiaApp({
                     <App {...props} />
                     <UpdateDialog currentVersion={appVersion} />
                     <UpdateScheduler />
+                    <AnalyticsTracker />
                     {databaseRepaired && <DatabaseRepairedDialog />}
                     <Toaster
                         position="bottom-center"
@@ -98,5 +120,17 @@ function UpdateScheduler() {
         const id = window.setInterval(checkForUpdates, 4 * 60 * 60 * 1000);
         return () => window.clearInterval(id);
     }, []);
+    return null;
+}
+
+function AnalyticsTracker() {
+    useEffect(() => {
+        return router.on('navigate', (event) => {
+            track('screen_view', {
+                name: screenNameFor(event.detail.page.component),
+            });
+        });
+    }, []);
+
     return null;
 }
