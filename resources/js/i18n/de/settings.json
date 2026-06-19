@@ -21,6 +21,8 @@
     "general.pageTitle": "Allgemein — {{bookTitle}}",
     "general.description": "Titel, Autor, Sprache und Genre deines Buchs.",
     "general.labelTitle": "Titel",
+    "general.labelSubtitle": "Untertitel",
+    "general.placeholderSubtitle": "Ein Untertitel (optional)",
     "general.labelAuthor": "Autor",
     "general.labelLanguage": "Sprache",
     "general.labelGenre": "Genre",

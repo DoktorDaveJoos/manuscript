@@ -22,6 +22,7 @@ class BookFactory extends Factory
     {
         return [
             'title' => fake()->sentence(3),
+            'subtitle' => null,
             'author' => fake()->name(),
             'language' => 'de',
         ];

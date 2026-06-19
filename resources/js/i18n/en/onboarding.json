@@ -9,6 +9,8 @@
     "createBook.description": "Give your book a working title. You can change it later.",
     "createBook.labelTitle": "Title",
     "createBook.placeholderTitle": "The Weight of Silence",
+    "createBook.labelSubtitle": "Subtitle",
+    "createBook.placeholderSubtitle": "A subtitle (optional)",
     "createBook.labelAuthor": "Author",
     "createBook.placeholderAuthor": "Your name (optional)",
     "createBook.labelLanguage": "Language",

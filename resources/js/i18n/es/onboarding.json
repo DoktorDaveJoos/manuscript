@@ -9,6 +9,8 @@
     "createBook.description": "Dale un título provisional a tu libro. Puedes cambiarlo más adelante.",
     "createBook.labelTitle": "Título",
     "createBook.placeholderTitle": "El peso del silencio",
+    "createBook.labelSubtitle": "Subtítulo",
+    "createBook.placeholderSubtitle": "Un subtítulo (opcional)",
     "createBook.labelAuthor": "Autor",
     "createBook.placeholderAuthor": "Tu nombre (opcional)",
     "createBook.labelLanguage": "Idioma",
