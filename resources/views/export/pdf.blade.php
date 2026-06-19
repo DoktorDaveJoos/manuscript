@@ -90,6 +90,13 @@
     @endunless
 
     @php
+        // Optional when the view is rendered directly (e.g. tests); the exporter
+        // always supplies them. $tocProbe marks the folio-collecting first pass;
+        // $showToc (from PdfExporter::tableOfContentsRequested) is the single
+        // source of truth for whether a TOC is rendered, so the probe emits a
+        // <tocentry> per chapter only when one will actually be shown.
+        $tocProbe = $tocProbe ?? false;
+        $showToc = $showToc ?? false;
         $renderedFrontContent = false;
         // True once the prologue has opened the numbered region, so the first body
         // chapter continues the count instead of resetting it back to 1.
@@ -129,7 +136,7 @@
                 @else
                     <p class="copyright-text">Copyright &copy; {{ date('Y') }}</p>
                     <p class="copyright-text">{{ $book->title }}</p>
-                    <p class="copyright-text">All rights reserved.</p>
+                    <p class="copyright-text">{{ __('All rights reserved.') }}</p>
                 @endif
             </section>
         @endif
@@ -190,24 +197,20 @@
 
         @if ($item === 'toc')
             @php $renderedFrontContent = true; @endphp
-            <section class="matter-section">
-                <p class="toc-title">Table of Contents</p>
-                @foreach ($chapters as $tocIndex => $tocChapter)
-                    <p class="toc-entry"><a href="#chapter-{{ $tocIndex }}">{{ $tocChapter->title }}</a></p>
-                @endforeach
-            </section>
+            {{-- Probe pass collects folios from the <tocentry> markers; the
+                 visible TOC page is only rendered in the final pass. --}}
+            @unless ($tocProbe)
+                @include('export.partials.toc')
+            @endunless
         @endif
     @endforeach
 
     {{-- Table of Contents (standalone, not in front matter) --}}
     @if ($options->includeTableOfContents && $chapters->isNotEmpty() && ! in_array('toc', $options->frontMatter))
         @php $renderedFrontContent = true; @endphp
-        <section class="matter-section">
-            <p class="toc-title">Table of Contents</p>
-            @foreach ($chapters as $tocIndex => $tocChapter)
-                <p class="toc-entry"><a href="#chapter-{{ $tocIndex }}">{{ $tocChapter->title }}</a></p>
-            @endforeach
-        </section>
+        @unless ($tocProbe)
+            @include('export.partials.toc')
+        @endunless
     @endif
 
     {{-- Chapters --}}
@@ -233,6 +236,9 @@
         @endif
 
         <section class="chapter-section{{ $resetHere ? ' chapter-section--continue' : '' }}"@unless ($isEbook) style="page: chapter-{{ $index }};"@endunless>
+            @if ($tocProbe && $showToc)
+                <tocentry content="{{ $chapter->title }}" level="0" />
+            @endif
             @if ($options->chapterHeading->showsNumber())
                 {!! $template->chapterHeaderHtml($index, $chapter->title, $book->language ?? config('app.fallback_locale', 'en'), $options->chapterHeading->showsTitle()) !!}
             @endif
@@ -244,9 +250,9 @@
     {{-- Back Matter --}}
     @php
         $backMatterHeadings = [
-            'acknowledgments' => 'Acknowledgments',
-            'about-author' => 'About the Author',
-            'also-by' => 'Also By ' . $book->author,
+            'acknowledgments' => __('Acknowledgments'),
+            'about-author' => __('About the Author'),
+            'also-by' => __('Also By :author', ['author' => $book->author]),
         ];
         $backMatterTexts = [
             'acknowledgments' => $options->acknowledgmentText,

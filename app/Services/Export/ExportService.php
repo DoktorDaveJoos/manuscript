@@ -77,9 +77,11 @@ class ExportService
     {
         $frontMatter = (array) ($options['front_matter'] ?? []);
         $backMatter = (array) ($options['back_matter'] ?? []);
+        $locale = $book->language ?? config('app.fallback_locale', 'en');
 
         if (in_array('copyright', $frontMatter)) {
-            $options['copyright_text'] = $book->copyright_text ?? '© '.date('Y')." {$book->author}. All rights reserved.";
+            $options['copyright_text'] = $book->copyright_text
+                ?? '© '.date('Y')." {$book->author}. ".__('All rights reserved.', [], $locale);
         }
         if (in_array('dedication', $frontMatter)) {
             $options['dedication_text'] = $book->dedication_text ?? '';

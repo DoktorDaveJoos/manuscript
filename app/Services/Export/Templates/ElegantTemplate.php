@@ -147,13 +147,21 @@ class ElegantTemplate implements ExportTemplate
             margin: 2em 0 1.5em;
             color: #1a1a1a;
         }
-        .toc-entry {
-            margin: 0.3em 0;
-            text-indent: 0;
+        div.mpdf_toc {
+            font-family: {$bodyFontFamily};
+            line-height: {$lineHeight};
         }
-        .toc-entry a {
-            text-decoration: none;
-            color: inherit;
+        span.mpdf_toc_t_level_0 {
+            font-family: {$bodyFontFamily};
+            font-size: 1em;
+            font-weight: normal;
+            color: #2a2a2a;
+        }
+        span.mpdf_toc_p_level_0 {
+            font-family: {$bodyFontFamily};
+            font-size: 1em;
+            font-weight: normal;
+            color: #999999;
         }
         .matter-title {
             font-size: 0.65em;
