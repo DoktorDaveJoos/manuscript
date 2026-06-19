@@ -72,6 +72,11 @@ apply "resources/electron/electron-plugin/dist/server/api.js"
 # The per-launch config values it used to refresh are healed at request time
 # by AppServiceProvider::healStaleNativePhpConfig.
 apply "resources/electron/electron-plugin/dist/server/php.js"
+# Auto-update: disable silent install-on-quit (autoInstallOnAppQuit=false) so a
+# downloaded update never stages a non-relaunching Squirrel install-on-quit that
+# can loop against a reopened instance ("App Still Running" / ShipIt respawn
+# storm). Updates apply only via the explicit Install action, which relaunches.
+apply "resources/electron/electron-plugin/dist/server/api/autoUpdater.js"
 # Speech input: microphone entitlement for getUserMedia under hardened runtime
 # (NSMicrophoneUsageDescription already ships in NativePHP's builder config).
 apply "resources/electron/build/entitlements.mac.plist"

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\BackupService;
+use App\Services\StaleUpdateGuard;
 use Illuminate\Support\Facades\File;
 use Native\Desktop\Contracts\ProvidesPhpIni;
 use Native\Desktop\Facades\AutoUpdater;
@@ -46,6 +47,11 @@ class NativeAppServiceProvider implements ProvidesPhpIni
         // unset to fire it now rather than at end of method, so the order
         // matches the original (window first, then updater check).
         unset($pending);
+
+        // Stop a previously-stranded Squirrel update from looping (App Still
+        // Running / ShipIt respawn storm) before we kick off a fresh check.
+        // Cheap and no-op when nothing is pending; never throws.
+        app(StaleUpdateGuard::class)->reconcile();
 
         AutoUpdater::checkForUpdates();
     }
