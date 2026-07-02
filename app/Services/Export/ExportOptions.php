@@ -43,6 +43,11 @@ final readonly class ExportOptions
         public BleedMode $bleedMode = BleedMode::All,
         public ?float $customWidth = null,
         public ?float $customHeight = null,
+        public ?float $marginTop = null,
+        public ?float $marginBottom = null,
+        public ?float $marginInner = null,
+        public ?float $marginOuter = null,
+        public bool $hyphenation = true,
     ) {}
 
     /**
@@ -78,6 +83,11 @@ final readonly class ExportOptions
             bleedMode: BleedMode::tryFrom((string) ($data['bleed_mode'] ?? '')) ?? BleedMode::All,
             customWidth: isset($data['custom_width']) ? (float) $data['custom_width'] : null,
             customHeight: isset($data['custom_height']) ? (float) $data['custom_height'] : null,
+            marginTop: isset($data['margin_top']) ? (float) $data['margin_top'] : null,
+            marginBottom: isset($data['margin_bottom']) ? (float) $data['margin_bottom'] : null,
+            marginInner: isset($data['margin_inner']) ? (float) $data['margin_inner'] : null,
+            marginOuter: isset($data['margin_outer']) ? (float) $data['margin_outer'] : null,
+            hyphenation: (bool) ($data['hyphenation'] ?? true),
         );
     }
 }

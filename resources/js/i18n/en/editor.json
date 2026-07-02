@@ -8,6 +8,8 @@
     "saveStatus.error": "Save error",
     "wordCount_one": "{{formatted}} word",
     "wordCount_other": "{{formatted}} words",
+    "copyChapter.copy": "Copy chapter",
+    "copyChapter.copied": "Copied",
     "toolbar.undo": "Undo",
     "toolbar.redo": "Redo",
     "toolbar.bold": "Bold",

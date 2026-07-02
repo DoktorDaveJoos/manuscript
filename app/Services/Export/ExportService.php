@@ -7,12 +7,14 @@ use App\Contracts\ExportTemplate;
 use App\Enums\ExportFormat;
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\DesignTemplate;
 use App\Services\Export\Exporters\DocxExporter;
 use App\Services\Export\Exporters\EpubExporter;
 use App\Services\Export\Exporters\KdpExporter;
 use App\Services\Export\Exporters\PdfExporter;
 use App\Services\Export\Exporters\TxtExporter;
 use App\Services\Export\Templates\ClassicTemplate;
+use App\Services\Export\Templates\CustomTemplate;
 use App\Services\Export\Templates\ElegantTemplate;
 use App\Services\Export\Templates\ModernTemplate;
 use Illuminate\Support\Collection;
@@ -46,6 +48,7 @@ class ExportService
         $chapters = self::resolveChapters($book, $options);
 
         self::injectMatterText($options, $book);
+        self::applyDesignTemplate($options);
 
         $exportOptions = ExportOptions::fromArray($options);
         $template = self::resolveTemplate($exportOptions->template);
@@ -163,11 +166,43 @@ class ExportService
 
     public static function resolveTemplate(string $slug): ExportTemplate
     {
+        if (str_starts_with($slug, 'custom:')) {
+            $row = DesignTemplate::find((int) substr($slug, strlen('custom:')));
+
+            if ($row === null) {
+                return new ClassicTemplate;
+            }
+
+            return new CustomTemplate(
+                self::resolveTemplate($row->based_on),
+                $row->settings ?? [],
+                $row->name,
+                $row->id,
+            );
+        }
+
         return match ($slug) {
             'modern' => new ModernTemplate,
             'elegant', 'romance' => new ElegantTemplate,
             default => new ClassicTemplate,
         };
+    }
+
+    /**
+     * When the options reference a Book Designer template, merge its page
+     * geometry and typesetting overrides into the raw options array. The
+     * template owns these values; per-run options only carry what the export
+     * page still controls (format, matter, chapter selection).
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public static function applyDesignTemplate(array &$options): void
+    {
+        $template = self::resolveTemplate((string) ($options['template'] ?? 'classic'));
+
+        if ($template instanceof CustomTemplate) {
+            $options = array_merge($options, $template->exportOverrides());
+        }
     }
 
     private function resolveExporter(ExportFormat $format, ExportTemplate $template): Exporter

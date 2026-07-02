@@ -10,6 +10,7 @@ use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BeatController;
 use App\Http\Controllers\BlurbController;
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\BookDesignController;
 use App\Http\Controllers\BookSettingsController;
 use App\Http\Controllers\CanvasController;
 use App\Http\Controllers\ChapterController;
@@ -281,6 +282,13 @@ Route::get('/books/{book}/settings/proofreading', [BookSettingsController::class
 Route::put('/books/{book}/settings/proofreading', [BookSettingsController::class, 'updateProofreadingConfig'])->name('books.settings.proofreading.update');
 Route::get('/books/{book}/settings/publishing', [BookSettingsController::class, 'publishing'])->name('books.settings.publishing');
 Route::get('/books/{book}/settings/cover', [BookSettingsController::class, 'cover'])->name('books.settings.cover');
+// Book Designer — typesetting templates for PDF export
+Route::get('/books/{book}/design', [BookDesignController::class, 'show'])->name('books.design');
+Route::post('/books/{book}/design/templates', [BookDesignController::class, 'store'])->name('books.design.templates.store');
+Route::put('/books/{book}/design/templates/{template}', [BookDesignController::class, 'update'])->name('books.design.templates.update');
+Route::delete('/books/{book}/design/templates/{template}', [BookDesignController::class, 'destroy'])->name('books.design.templates.destroy');
+Route::put('/books/{book}/design/apply', [BookDesignController::class, 'apply'])->name('books.design.apply');
+
 Route::get('/books/{book}/settings/export', [BookSettingsController::class, 'export'])->name('books.settings.export');
 Route::post('/books/{book}/settings/export', [BookSettingsController::class, 'doExport'])->name('books.settings.export.run');
 Route::put('/books/{book}/settings/export-settings', [BookSettingsController::class, 'updateExportSettings'])->name('books.settings.export-settings.update');

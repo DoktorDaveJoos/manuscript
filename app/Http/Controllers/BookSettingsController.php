@@ -204,7 +204,7 @@ class BookSettingsController extends Controller
         $validated = $request->validate([
             'settings' => ['required', 'array:format,template,font_pairing,scene_break_style,drop_caps,chapter_heading,include_act_breaks,show_page_numbers,trim_size,font_size,cmyk,bleed,bleed_mode,custom_width,custom_height,include_cover,front_matter,back_matter,excluded_chapter_ids'],
             'settings.format' => ['sometimes', Rule::enum(ExportFormat::class)],
-            'settings.template' => ['sometimes', 'string', 'in:classic,modern,elegant,romance'],
+            'settings.template' => ['sometimes', 'string', 'regex:/^(classic|modern|elegant|romance|custom:\d+)$/'],
             'settings.font_pairing' => ['sometimes', Rule::enum(FontPairing::class)],
             'settings.scene_break_style' => ['sometimes', Rule::enum(SceneBreakStyle::class)],
             'settings.drop_caps' => ['sometimes', 'boolean'],
@@ -357,6 +357,7 @@ class BookSettingsController extends Controller
         $validated['include_cover'] = false;
         $chapters = ExportService::resolveChapters($book, $validated);
         ExportService::injectMatterText($validated, $book);
+        ExportService::applyDesignTemplate($validated);
         $options = ExportOptions::fromArray($validated);
 
         $contentPreparer = new ContentPreparer;

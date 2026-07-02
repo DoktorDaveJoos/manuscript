@@ -8,6 +8,8 @@ use App\Enums\SceneBreakStyle;
 
 class ElegantTemplate implements ExportTemplate
 {
+    use BuildsDesignSettings;
+
     public function slug(): string
     {
         return 'elegant';

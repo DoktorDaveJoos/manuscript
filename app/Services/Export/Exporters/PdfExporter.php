@@ -212,6 +212,14 @@ class PdfExporter implements Exporter
             $margins = $trimSize->margins();
         }
 
+        // Book Designer margin overrides win over the trim-size defaults.
+        $margins = [
+            'top' => $options->marginTop ?? (float) $margins['top'],
+            'bottom' => $options->marginBottom ?? (float) $margins['bottom'],
+            'outer' => $options->marginOuter ?? (float) $margins['outer'],
+            'gutter' => $options->marginInner ?? (float) $margins['gutter'],
+        ];
+
         $bleed = max(0.0, $options->bleed);
 
         if ($bleed > 0) {
@@ -288,6 +296,11 @@ class PdfExporter implements Exporter
             'SHYrightmin' => 3,
             'SHYcharmin' => 4,
         ];
+
+        // Book Designer templates can turn hyphenation off entirely.
+        if (! $options->hyphenation) {
+            unset($config['SHYlang']);
+        }
 
         // Print-ready PDF: force the whole document into the CMYK colour space.
         // Every template colour is a neutral grey (r=g=b), which mPDF's RGB→CMYK

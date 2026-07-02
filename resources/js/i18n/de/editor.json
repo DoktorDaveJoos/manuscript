@@ -8,6 +8,8 @@
     "saveStatus.error": "Speicherfehler",
     "wordCount_one": "{{formatted}} Wort",
     "wordCount_other": "{{formatted}} Wörter",
+    "copyChapter.copy": "Kapitel kopieren",
+    "copyChapter.copied": "Kopiert",
     "toolbar.undo": "Rückgängig",
     "toolbar.redo": "Wiederholen",
     "toolbar.bold": "Fett",

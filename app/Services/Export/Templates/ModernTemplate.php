@@ -8,6 +8,8 @@ use App\Enums\SceneBreakStyle;
 
 class ModernTemplate implements ExportTemplate
 {
+    use BuildsDesignSettings;
+
     public function slug(): string
     {
         return 'modern';

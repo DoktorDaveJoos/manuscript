@@ -8,6 +8,8 @@
     "saveStatus.error": "Error al guardar",
     "wordCount_one": "{{formatted}} palabra",
     "wordCount_other": "{{formatted}} palabras",
+    "copyChapter.copy": "Copiar capítulo",
+    "copyChapter.copied": "Copiado",
     "toolbar.undo": "Deshacer",
     "toolbar.redo": "Rehacer",
     "toolbar.bold": "Negrita",

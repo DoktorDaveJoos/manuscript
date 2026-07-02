@@ -4,6 +4,7 @@ import { initReactI18next } from 'react-i18next';
 import enAi from './en/ai.json';
 import enCommon from './en/common.json';
 import enDashboard from './en/dashboard.json';
+import enDesign from './en/design.json';
 import enEditor from './en/editor.json';
 import enEditorialReview from './en/editorial-review.json';
 import enExport from './en/export.json';
@@ -44,6 +45,7 @@ i18n.use(initReactI18next).init({
             'wiki-panel': enWikiPanel,
             ai: enAi,
             export: enExport,
+            design: enDesign,
             'editorial-review': enEditorialReview,
         },
     },
@@ -64,6 +66,7 @@ i18n.use(initReactI18next).init({
         'wiki-panel',
         'ai',
         'export',
+        'design',
         'editorial-review',
     ],
     interpolation: {

@@ -2,6 +2,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowUpFromLine,
     BookOpen,
+    BookType,
     LayoutGrid,
     LibraryBig,
     PanelLeftClose,
@@ -14,6 +15,7 @@ import {
 import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { index } from '@/actions/App/Http/Controllers/BookController';
+import { show as showDesign } from '@/actions/App/Http/Controllers/BookDesignController';
 import {
     exportMethod,
     index as bookSettingsIndex,
@@ -109,6 +111,7 @@ export default function Sidebar({
     const isPlot = currentUrl.endsWith('/plot');
     const isAi = currentUrl.includes('/ai/');
     const isExport = currentUrl.includes('/settings/export');
+    const isDesign = /\/books\/\d+\/design/.test(currentUrl);
     const isBookSettings =
         /\/books\/\d+\/settings/.test(currentUrl) && !isExport;
 
@@ -295,6 +298,18 @@ export default function Sidebar({
                         iconOnly={isCollapsed}
                         icon={
                             <Sparkles
+                                size={16}
+                                className="shrink-0 text-ink-faint"
+                            />
+                        }
+                    />
+                    <NavItem
+                        label={t('nav.design')}
+                        href={showDesign.url(book)}
+                        isActive={isDesign}
+                        iconOnly={isCollapsed}
+                        icon={
+                            <BookType
                                 size={16}
                                 className="shrink-0 text-ink-faint"
                             />

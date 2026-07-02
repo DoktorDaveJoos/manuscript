@@ -16,6 +16,14 @@ interface ExportTemplate
      */
     public function designTokens(): array;
 
+    /**
+     * The template's typesetting defaults in the Book Designer settings shape
+     * (page / typography / headings / structure).
+     *
+     * @return array<string, mixed>
+     */
+    public function designSettings(): array;
+
     public function defaultFontPairing(): FontPairing;
 
     public function defaultSceneBreakStyle(): SceneBreakStyle;
