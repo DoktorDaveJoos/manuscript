@@ -320,6 +320,7 @@ export default function AiPanel({
                             <Button
                                 type="button"
                                 variant="primary"
+                                data-testid="run-prose-pass"
                                 onClick={handleRunProse}
                                 disabled={proseRunning}
                                 className="w-full"
