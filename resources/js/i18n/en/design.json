@@ -50,6 +50,7 @@
     "text.sceneBreak": "Scene break",
     "preview.empty": "Add chapter content to see the preview.",
     "preview.error": "Preview failed to render.",
+    "preview.pageSingle": "Page {{page}} of {{total}}",
     "preview.pageOf": "Pages {{first}}–{{last}} of {{total}}",
     "preview.previous": "Previous spread",
     "preview.next": "Next spread",

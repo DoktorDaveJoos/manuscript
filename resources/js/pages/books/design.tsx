@@ -119,6 +119,20 @@ export default function Design({
     }, [settings, trimSizes]);
 
     /**
+     * The physical sheet the PDF renders: the trim grown by bleed, mirroring
+     * PdfExporter::resolveGeometry (outer-only bleed spares the binding edge).
+     */
+    const sheetSpec = useMemo(() => {
+        const bleed = Math.max(0, settings?.page.bleed ?? 0);
+        return {
+            width:
+                trimSpec.width +
+                (settings?.page.bleed_mode === 'outer' ? bleed : 2 * bleed),
+            height: trimSpec.height + 2 * bleed,
+        };
+    }, [trimSpec, settings]);
+
+    /**
      * Every edit persists immediately. Editing a built-in silently duplicates
      * it into an editable custom template first (built-ins stay read-only).
      */
@@ -509,8 +523,8 @@ export default function Design({
                             bookId={book.id}
                             templateSlug={selectedSlug}
                             version={previewVersion}
-                            trimWidth={trimSpec.width}
-                            trimHeight={trimSpec.height}
+                            trimWidth={sheetSpec.width}
+                            trimHeight={sheetSpec.height}
                         />
                     </div>
 

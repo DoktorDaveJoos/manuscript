@@ -163,10 +163,7 @@ export default function SpreadPreview({
                         return doc;
                     });
                     setSpreadIndex((current) =>
-                        Math.min(
-                            current,
-                            Math.max(0, Math.ceil(doc.numPages / 2) - 1),
-                        ),
+                        Math.min(current, Math.floor(doc.numPages / 2)),
                     );
                     setLoading(false);
                 })
@@ -195,10 +192,13 @@ export default function SpreadPreview({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Facing pages the way a bound book opens: page 1 is a recto standing
+    // alone (blank verso beside it), then (2,3), (4,5), … — odd pages always
+    // sit on the right, so the gutter margins face the spine in the preview.
     const pageCount = pdfDoc?.numPages ?? 0;
-    const spreadCount = Math.max(1, Math.ceil(pageCount / 2));
-    const leftPage = spreadIndex * 2 + 1;
-    const rightPage = leftPage + 1;
+    const spreadCount = pageCount > 0 ? Math.floor(pageCount / 2) + 1 : 1;
+    const rightPage = spreadIndex * 2 + 1;
+    const leftPage = rightPage - 1;
 
     // Fit the spread (two pages + gap) inside the available stage
     const pageSize = useMemo(() => {
@@ -229,13 +229,28 @@ export default function SpreadPreview({
                 {error ? (
                     <p className="text-[12px] text-ink-muted">{error}</p>
                 ) : pdfDoc && pageSize.width > 0 ? (
-                    <div className="flex gap-1" data-testid="design-spread">
-                        <SpreadPageCanvas
-                            pdfDoc={pdfDoc}
-                            pageNum={leftPage}
-                            width={pageSize.width}
-                            height={pageSize.height}
-                        />
+                    <div
+                        className="flex gap-1"
+                        data-testid="design-spread"
+                        data-page-ratio={(trimHeight / trimWidth).toFixed(3)}
+                    >
+                        {leftPage >= 1 ? (
+                            <SpreadPageCanvas
+                                pdfDoc={pdfDoc}
+                                pageNum={leftPage}
+                                width={pageSize.width}
+                                height={pageSize.height}
+                            />
+                        ) : (
+                            <div
+                                className="bg-neutral-bg"
+                                data-testid="design-spread-blank"
+                                style={{
+                                    width: pageSize.width,
+                                    height: pageSize.height,
+                                }}
+                            />
+                        )}
                         {rightPage <= pageCount ? (
                             <SpreadPageCanvas
                                 pdfDoc={pdfDoc}
@@ -246,6 +261,7 @@ export default function SpreadPreview({
                         ) : (
                             <div
                                 className="bg-neutral-bg"
+                                data-testid="design-spread-blank"
                                 style={{
                                     width: pageSize.width,
                                     height: pageSize.height,
@@ -284,11 +300,17 @@ export default function SpreadPreview({
                 </Button>
                 <span className="text-[11px] text-ink-faint tabular-nums">
                     {pageCount > 0
-                        ? t('preview.pageOf', {
-                              first: leftPage,
-                              last: Math.min(rightPage, pageCount),
-                              total: pageCount,
-                          })
+                        ? Math.max(1, leftPage) ===
+                          Math.min(rightPage, pageCount)
+                            ? t('preview.pageSingle', {
+                                  page: Math.max(1, leftPage),
+                                  total: pageCount,
+                              })
+                            : t('preview.pageOf', {
+                                  first: Math.max(1, leftPage),
+                                  last: Math.min(rightPage, pageCount),
+                                  total: pageCount,
+                              })
                         : '—'}
                 </span>
                 <Button

@@ -50,6 +50,7 @@
     "text.sceneBreak": "Szenentrenner",
     "preview.empty": "Füge Kapitelinhalt hinzu, um die Vorschau zu sehen.",
     "preview.error": "Vorschau konnte nicht erstellt werden.",
+    "preview.pageSingle": "Seite {{page}} von {{total}}",
     "preview.pageOf": "Seiten {{first}}–{{last}} von {{total}}",
     "preview.previous": "Vorherige Doppelseite",
     "preview.next": "Nächste Doppelseite",

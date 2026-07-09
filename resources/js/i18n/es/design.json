@@ -50,6 +50,7 @@
     "text.sceneBreak": "Separador de escenas",
     "preview.empty": "Añade contenido a los capítulos para ver la vista previa.",
     "preview.error": "No se pudo generar la vista previa.",
+    "preview.pageSingle": "Página {{page}} de {{total}}",
     "preview.pageOf": "Páginas {{first}}–{{last}} de {{total}}",
     "preview.previous": "Doble página anterior",
     "preview.next": "Doble página siguiente",
