@@ -33,6 +33,8 @@ class ClassicTemplate implements ExportTemplate
             'pdfLineHeight' => 1.35,
             'epubLineHeight' => 1.5,
             'chapterLabelSizeEm' => 0.7,
+            'labelTopSpaceEm' => 9.0,
+            'labelBottomSpaceEm' => 0.25,
             'titleSizeEm' => 1.8,
             'titleWeight' => 'normal',
             'runningHeaderStyle' => 'italic',

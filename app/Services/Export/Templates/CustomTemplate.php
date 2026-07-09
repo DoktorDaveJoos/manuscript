@@ -179,7 +179,10 @@ class CustomTemplate implements ExportTemplate
         }
         if (isset($headings['heading_top_space_em'])) {
             $space = (float) $headings['heading_top_space_em'];
-            $rules[] = ".chapter-label {\n    margin: {$space}em 0 0.25em;\n}";
+            // Preserve the base template's own bottom spacing — only the top
+            // space is a Book Designer setting.
+            $bottom = (float) ($this->base->designTokens()['labelBottomSpaceEm'] ?? 0.25);
+            $rules[] = ".chapter-label {\n    margin: {$space}em 0 {$bottom}em;\n}";
         }
 
         return implode("\n", $rules);

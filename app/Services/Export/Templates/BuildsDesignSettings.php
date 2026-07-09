@@ -44,7 +44,7 @@ trait BuildsDesignSettings
             'headings' => [
                 'chapter_heading' => ChapterHeading::Full->value,
                 'heading_scale_em' => (float) ($tokens['titleSizeEm'] ?? 1.8),
-                'heading_top_space_em' => 9.0,
+                'heading_top_space_em' => (float) ($tokens['labelTopSpaceEm'] ?? 9.0),
                 'drop_caps' => $this->defaultDropCaps(),
                 'scene_break_style' => $this->defaultSceneBreakStyle()->value,
             ],

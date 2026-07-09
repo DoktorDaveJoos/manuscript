@@ -33,6 +33,8 @@ class ModernTemplate implements ExportTemplate
             'pdfLineHeight' => 1.4,
             'epubLineHeight' => 1.6,
             'chapterLabelSizeEm' => 2.2,
+            'labelTopSpaceEm' => 2.0,
+            'labelBottomSpaceEm' => 0.1,
             'titleSizeEm' => 1.2,
             'titleWeight' => 'normal',
             'runningHeaderStyle' => 'normal',

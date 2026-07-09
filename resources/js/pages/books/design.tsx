@@ -41,8 +41,18 @@ interface Props {
 const LINE_HEIGHTS = [1.2, 1.3, 1.35, 1.4, 1.5, 1.6, 1.8];
 const FONT_SIZES = [9, 10, 11, 12, 13, 14];
 const HEADING_SCALES = [1.4, 1.6, 1.8, 2.0, 2.2, 2.6];
-const HEADING_TOP_SPACES = [3, 6, 9, 12];
+const HEADING_TOP_SPACES = [2, 3, 6, 9, 12];
 const PARAGRAPH_SPACINGS = [0, 0.35, 0.5, 0.75, 1];
+
+/**
+ * Template settings aren't limited to the preset lists (e.g. Modern's real
+ * heading scale is 1.2em) — a select must always show its actual value.
+ */
+function withCurrent(options: number[], current: number): number[] {
+    return options.includes(current)
+        ? options
+        : [...options, current].sort((a, b) => a - b);
+}
 
 function FieldRow({
     label,
@@ -546,6 +556,7 @@ export default function Design({
                                 value={String(
                                     settings.headings.heading_scale_em,
                                 )}
+                                data-testid="design-heading-scale"
                                 onChange={(e) =>
                                     updateSettings((d) => {
                                         d.headings.heading_scale_em = Number(
@@ -554,7 +565,10 @@ export default function Design({
                                     })
                                 }
                             >
-                                {HEADING_SCALES.map((s) => (
+                                {withCurrent(
+                                    HEADING_SCALES,
+                                    settings.headings.heading_scale_em,
+                                ).map((s) => (
                                     <option key={s} value={String(s)}>
                                         {s}×
                                     </option>
@@ -574,7 +588,10 @@ export default function Design({
                                     })
                                 }
                             >
-                                {HEADING_TOP_SPACES.map((s) => (
+                                {withCurrent(
+                                    HEADING_TOP_SPACES,
+                                    settings.headings.heading_top_space_em,
+                                ).map((s) => (
                                     <option key={s} value={String(s)}>
                                         {s} em
                                     </option>
@@ -650,7 +667,10 @@ export default function Design({
                                     })
                                 }
                             >
-                                {FONT_SIZES.map((s) => (
+                                {withCurrent(
+                                    FONT_SIZES,
+                                    settings.typography.font_size,
+                                ).map((s) => (
                                     <option key={s} value={String(s)}>
                                         {s} pt
                                     </option>
@@ -669,7 +689,10 @@ export default function Design({
                                     })
                                 }
                             >
-                                {LINE_HEIGHTS.map((lh) => (
+                                {withCurrent(
+                                    LINE_HEIGHTS,
+                                    settings.typography.line_height,
+                                ).map((lh) => (
                                     <option key={lh} value={String(lh)}>
                                         {lh}
                                     </option>
@@ -689,7 +712,10 @@ export default function Design({
                                     })
                                 }
                             >
-                                {PARAGRAPH_SPACINGS.map((s) => (
+                                {withCurrent(
+                                    PARAGRAPH_SPACINGS,
+                                    settings.typography.paragraph_spacing_em,
+                                ).map((s) => (
                                     <option key={s} value={String(s)}>
                                         {s} em
                                     </option>
