@@ -117,9 +117,10 @@ settings) → worker re-`init` with new locale → full recheck.
 
 ## Testing
 
-- **Unit (Vitest):** tokenizer word-boundary cases (apostrophes, umlauts,
-  Unicode); decoration range mapping through edits; worker protocol
-  reducer logic (extracted pure where possible).
+- **No JS unit framework exists in this project** (and adding one is an
+  out-of-scope dependency change), so the worker/extension pair is covered
+  end-to-end by browser tests; tokenizer edge cases (apostrophes, umlauts,
+  digits, compounds) are exercised through chapter content in those tests.
 - **Feature (Pest):** custom dictionary endpoints already covered — extend
   if request shape changes (it shouldn't).
 - **Browser (Pest v4):** the money test — chapter containing a known
