@@ -109,3 +109,15 @@ it('coalesces rapid edits on a built-in into one custom template', function () {
         ->and($templates->first()->settings['typography']['font_pairing'])->toBe('modern-mixed')
         ->and($templates->first()->settings['page']['trim_size'])->toBe('6x9');
 });
+
+it('shows a built-in template\'s real heading size even when off the preset list', function () {
+    [$book] = createBookWithChapters(1);
+
+    $page = visit("/books/{$book->id}/design");
+
+    // Modern's actual heading scale is 1.2em — not one of the preset options.
+    $page->assertNoJavaScriptErrors()
+        ->select('[data-testid="design-template-select"]', 'modern')
+        ->wait(1)
+        ->assertValue('[data-testid="design-heading-scale"]', '1.2');
+});
