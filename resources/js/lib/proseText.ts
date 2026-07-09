@@ -8,3 +8,12 @@ export function proseMirrorBlockText(pm: HTMLElement | null): string {
         .filter(Boolean)
         .join('\n\n');
 }
+
+// Extract block-aware plain text from a stored HTML content string
+// (e.g. a scene's ProseMirror content) without needing it mounted.
+export function htmlBlockText(html: string | null): string {
+    if (!html) return '';
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    return proseMirrorBlockText(div);
+}
