@@ -109,6 +109,7 @@ function PaneWithData({
     review,
     onReviewDismiss,
     proseRunning,
+    editorLocked,
     isLocalFindOpen,
     localFindShowReplace,
     onLocalFindClose,
@@ -140,6 +141,7 @@ function PaneWithData({
     review: ContinueWritingReview | RewriteSelectionReview | null;
     onReviewDismiss: () => void;
     proseRunning: boolean;
+    editorLocked: boolean;
     isLocalFindOpen: boolean;
     localFindShowReplace: boolean;
     onLocalFindClose: () => void;
@@ -223,6 +225,7 @@ function PaneWithData({
             review={review}
             onReviewApplied={handleReviewApplied}
             proseRunning={proseRunning}
+            editorLocked={editorLocked}
             isLocalFindOpen={isLocalFindOpen}
             localFindShowReplace={localFindShowReplace}
             onLocalFindClose={onLocalFindClose}
@@ -298,6 +301,13 @@ export default function EditorPage({
     const handleProseEnd = useCallback(
         () => setProseRunningChapterId(null),
         [],
+    );
+
+    // Continue writing / rewrite selection stream INTO the editor, so they
+    // must stay visible (no blur overlay) — but user input still has to be
+    // rejected or keystrokes interleave with the stream and get committed.
+    const [streamingChapterId, setStreamingChapterId] = useState<number | null>(
+        null,
     );
 
     // ── Active editor tracking (from focused pane) ───────────────────────
@@ -853,6 +863,11 @@ export default function EditorPage({
                                     proseRunning={
                                         proseRunningChapterId === pane.chapterId
                                     }
+                                    editorLocked={
+                                        proseRunningChapterId ===
+                                            pane.chapterId ||
+                                        streamingChapterId === pane.chapterId
+                                    }
                                     isLocalFindOpen={
                                         isLocalFindOpen &&
                                         pane.id === focusedPaneId
@@ -1068,17 +1083,25 @@ export default function EditorPage({
                     }
                     onClose={() => setIsContinueWritingOpen(false)}
                     onSubmit={({ hint, wordGoal, chapterLink }) => {
-                        continueWriting.start({
-                            editor: activeEditor,
-                            activeSceneId,
-                            bookId: book.id,
-                            chapterId: focusedChapter.id,
-                            expectedCurrentVersionId:
-                                focusedChapter.current_version?.id ?? null,
-                            hint,
-                            wordGoal,
-                            chapterLink,
-                        });
+                        const chapterId = focusedChapter.id;
+                        setStreamingChapterId(chapterId);
+                        continueWriting
+                            .start({
+                                editor: activeEditor,
+                                activeSceneId,
+                                bookId: book.id,
+                                chapterId,
+                                expectedCurrentVersionId:
+                                    focusedChapter.current_version?.id ?? null,
+                                hint,
+                                wordGoal,
+                                chapterLink,
+                            })
+                            .finally(() =>
+                                setStreamingChapterId((current) =>
+                                    current === chapterId ? null : current,
+                                ),
+                            );
                         setContinueWritingDraft(defaultContinueWritingDraft);
                     }}
                 />
@@ -1098,15 +1121,23 @@ export default function EditorPage({
                     }
                     onClose={() => setRewriteRange(null)}
                     onSubmit={({ hint }) => {
-                        rewriteSelection.start({
-                            editor: activeEditor,
-                            bookId: book.id,
-                            chapterId: focusedChapter.id,
-                            expectedCurrentVersionId:
-                                focusedChapter.current_version?.id ?? null,
-                            hint,
-                            selection: rewriteRange,
-                        });
+                        const chapterId = focusedChapter.id;
+                        setStreamingChapterId(chapterId);
+                        rewriteSelection
+                            .start({
+                                editor: activeEditor,
+                                bookId: book.id,
+                                chapterId,
+                                expectedCurrentVersionId:
+                                    focusedChapter.current_version?.id ?? null,
+                                hint,
+                                selection: rewriteRange,
+                            })
+                            .finally(() =>
+                                setStreamingChapterId((current) =>
+                                    current === chapterId ? null : current,
+                                ),
+                            );
                         setRewriteDraft(defaultRewriteSelectionDraft);
                     }}
                 />

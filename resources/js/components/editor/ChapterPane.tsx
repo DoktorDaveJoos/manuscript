@@ -44,6 +44,7 @@ export default function ChapterPane({
     review,
     onReviewApplied,
     proseRunning = false,
+    editorLocked = false,
     isLocalFindOpen = false,
     localFindShowReplace = false,
     onLocalFindClose,
@@ -74,6 +75,8 @@ export default function ChapterPane({
     review: ContinueWritingReview | RewriteSelectionReview | null;
     onReviewApplied: () => void;
     proseRunning?: boolean;
+    /** True while any AI flow writes to this chapter — scene editors reject user input. */
+    editorLocked?: boolean;
     isLocalFindOpen?: boolean;
     localFindShowReplace?: boolean;
     onLocalFindClose?: () => void;
@@ -534,6 +537,7 @@ export default function ChapterPane({
                         isLocalFindOpen={isLocalFindOpen}
                         localFindShowReplace={localFindShowReplace}
                         onLocalFindClose={onLocalFindClose}
+                        locked={editorLocked}
                     />
                     {proseRunning && (
                         <div

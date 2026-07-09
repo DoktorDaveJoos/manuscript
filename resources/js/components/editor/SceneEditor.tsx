@@ -30,6 +30,7 @@ export default function SceneEditor({
     proofreadingConfig,
     bookLanguage,
     spellcheckEnabled,
+    locked = false,
 }: {
     scene: Scene;
     bookId: number;
@@ -48,6 +49,8 @@ export default function SceneEditor({
     proofreadingConfig?: ProofreadingConfig;
     bookLanguage?: string;
     spellcheckEnabled?: boolean;
+    /** Reject user input while an AI flow writes to this chapter (programmatic inserts still work). */
+    locked?: boolean;
 }) {
     // Stable refs for cross-scene navigation callbacks (avoids editor re-creation)
     const onExitUpRef = useRef<(() => void) | null>(onExitUp ?? null);
@@ -197,6 +200,14 @@ export default function SceneEditor({
         language: bookLanguage,
         spellcheckEnabled,
     });
+
+    // setEditable blocks keyboard/DOM input only — AI streams insert via
+    // commands, which still dispatch. Re-applied after every editor
+    // re-creation ([editor] dep) so a mid-lock content sync can't unlock.
+    useEffect(() => {
+        if (!editor || editor.isDestroyed) return;
+        editor.setEditable(!locked);
+    }, [editor, locked]);
 
     // Notify parent when this editor gains focus
     useEffect(() => {
