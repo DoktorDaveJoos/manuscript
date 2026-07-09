@@ -145,12 +145,12 @@ class AiController extends Controller
     private function validatedExpectedVersionId(): ?int
     {
         $validated = request()->validate([
-            'expected_current_version_id' => ['nullable', 'integer'],
+            'expected_current_version_id' => ['present', 'nullable', 'integer'],
         ]);
 
-        return isset($validated['expected_current_version_id'])
-            ? (int) $validated['expected_current_version_id']
-            : null;
+        return $validated['expected_current_version_id'] === null
+            ? null
+            : (int) $validated['expected_current_version_id'];
     }
 
     private function streamAgentRevision(

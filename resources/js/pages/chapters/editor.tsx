@@ -1073,6 +1073,8 @@ export default function EditorPage({
                             activeSceneId,
                             bookId: book.id,
                             chapterId: focusedChapter.id,
+                            expectedCurrentVersionId:
+                                focusedChapter.current_version?.id ?? null,
                             hint,
                             wordGoal,
                             chapterLink,
@@ -1100,6 +1102,8 @@ export default function EditorPage({
                             editor: activeEditor,
                             bookId: book.id,
                             chapterId: focusedChapter.id,
+                            expectedCurrentVersionId:
+                                focusedChapter.current_version?.id ?? null,
                             hint,
                             selection: rewriteRange,
                         });

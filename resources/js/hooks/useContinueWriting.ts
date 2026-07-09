@@ -9,7 +9,7 @@ import { useAiErrorToast } from '@/hooks/useAiErrorToast';
 import { flushPaneByChapter } from '@/lib/pane';
 import { proseMirrorBlockText } from '@/lib/proseText';
 import { insertStreamedParagraphs } from '@/lib/streamedParagraphs';
-import { jsonFetchHeaders } from '@/lib/utils';
+import { broadcastChapterDataChanged, jsonFetchHeaders } from '@/lib/utils';
 import { countWordsInHtml } from '@/lib/wordCount';
 import type { ChapterVersion } from '@/types/models';
 
@@ -18,6 +18,8 @@ type StartArgs = {
     activeSceneId: number | null;
     bookId: number;
     chapterId: number;
+    /** The version the client believes is current — the server 409s on mismatch. */
+    expectedCurrentVersionId: number | null;
     hint: string;
     wordGoal: number;
     chapterLink: 'auto' | 'continue' | 'fresh';
@@ -175,6 +177,7 @@ export function useContinueWriting() {
             activeSceneId,
             bookId,
             chapterId,
+            expectedCurrentVersionId,
             hint,
             wordGoal,
             chapterLink,
@@ -285,6 +288,8 @@ export function useContinueWriting() {
                             after_truncated: afterTruncated,
                             scene_follows: sceneFollows,
                             chapter_link: chapterLink,
+                            expected_current_version_id:
+                                expectedCurrentVersionId,
                         }),
                     },
                 );
@@ -372,6 +377,10 @@ export function useContinueWriting() {
                     {
                         method: 'POST',
                         headers: jsonFetchHeaders(),
+                        body: JSON.stringify({
+                            expected_current_version_id:
+                                expectedCurrentVersionId,
+                        }),
                     },
                 );
 
@@ -406,6 +415,11 @@ export function useContinueWriting() {
                     new: payload.new,
                     addedWords,
                 });
+
+                // The commit created a new current version — refresh pane data
+                // so the version badge and any later expected-version checks
+                // work against the new id.
+                broadcastChapterDataChanged(chapterId);
             } catch (e) {
                 if ((e as Error).name === 'AbortError') return;
                 showAiErrorToast({

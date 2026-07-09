@@ -121,7 +121,10 @@ test('revise streams prose revision and auto-applies the new version', function 
         'status' => VersionStatus::Accepted,
     ]);
 
-    $response = $this->post(route('chapters.ai.revise', [$book, $chapter]));
+    $response = $this->post(
+        route('chapters.ai.revise', [$book, $chapter]),
+        ['expected_current_version_id' => $original->id],
+    );
     $response->assertOk();
     $response->streamedContent(); // drains the stream so `then()` fires
 
@@ -153,14 +156,17 @@ test('revise preserves the scene title when the AI returns a single segment', fu
         'content' => '<p>Original prose.</p>',
         'sort_order' => 0,
     ]);
-    ChapterVersion::factory()->for($chapter)->create([
+    $current = ChapterVersion::factory()->for($chapter)->create([
         'is_current' => true,
         'version_number' => 1,
         'content' => '<p>Original prose.</p>',
         'status' => VersionStatus::Accepted,
     ]);
 
-    $response = $this->post(route('chapters.ai.revise', [$book, $chapter]));
+    $response = $this->post(
+        route('chapters.ai.revise', [$book, $chapter]),
+        ['expected_current_version_id' => $current->id],
+    );
     $response->assertOk();
     $response->streamedContent();
 
@@ -175,7 +181,7 @@ test('revise-editorial streams a rewrite addressing editorial feedback and appli
     $book = Book::factory()->withAi()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
-    ChapterVersion::factory()->for($chapter)->create([
+    $current = ChapterVersion::factory()->for($chapter)->create([
         'is_current' => true,
         'version_number' => 1,
         'content' => '<p>Original prose text.</p>',
@@ -201,7 +207,10 @@ test('revise-editorial streams a rewrite addressing editorial feedback and appli
         ]],
     ]);
 
-    $response = $this->post(route('chapters.ai.reviseEditorial', [$book, $chapter]));
+    $response = $this->post(
+        route('chapters.ai.reviseEditorial', [$book, $chapter]),
+        ['expected_current_version_id' => $current->id],
+    );
     $response->assertOk();
     $response->streamedContent();
 
@@ -349,7 +358,7 @@ test('reviseScene revises only the targeted scene and snapshots the chapter', fu
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
 
-    ChapterVersion::factory()->for($chapter)->create([
+    $current = ChapterVersion::factory()->for($chapter)->create([
         'is_current' => true,
         'version_number' => 1,
         'content' => '<p>Scene one prose.</p><hr><p>Scene two prose.</p>',
@@ -365,7 +374,10 @@ test('reviseScene revises only the targeted scene and snapshots the chapter', fu
         'content' => '<p>Scene two prose.</p>',
     ]);
 
-    $response = $this->post(route('chapters.scenes.ai.revise', [$book, $chapter, $sceneTwo]));
+    $response = $this->post(
+        route('chapters.scenes.ai.revise', [$book, $chapter, $sceneTwo]),
+        ['expected_current_version_id' => $current->id],
+    );
     $response->assertOk();
     $response->streamedContent();
 
@@ -408,13 +420,15 @@ test('revise fails when chapter has no content', function () {
     $book = Book::factory()->withAi()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
-    ChapterVersion::factory()->for($chapter)->create([
+    $current = ChapterVersion::factory()->for($chapter)->create([
         'is_current' => true,
         'content' => null,
     ]);
 
-    $this->post(route('chapters.ai.revise', [$book, $chapter]))
-        ->assertStatus(422);
+    $this->post(
+        route('chapters.ai.revise', [$book, $chapter]),
+        ['expected_current_version_id' => $current->id],
+    )->assertStatus(422);
 });
 
 test('revise fails without api key', function () {
@@ -425,13 +439,15 @@ test('revise fails without api key', function () {
     ]);
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
-    ChapterVersion::factory()->for($chapter)->create([
+    $current = ChapterVersion::factory()->for($chapter)->create([
         'is_current' => true,
         'content' => 'Some content.',
     ]);
 
-    $this->post(route('chapters.ai.revise', [$book, $chapter]))
-        ->assertStatus(422);
+    $this->post(
+        route('chapters.ai.revise', [$book, $chapter]),
+        ['expected_current_version_id' => $current->id],
+    )->assertStatus(422);
 });
 
 test('revise rejects chapter over 12000 words', function () {
@@ -446,14 +462,16 @@ test('revise rejects chapter over 12000 words', function () {
         'sort_order' => 0,
     ]);
 
-    ChapterVersion::factory()->for($chapter)->create([
+    $current = ChapterVersion::factory()->for($chapter)->create([
         'is_current' => true,
         'version_number' => 1,
         'content' => $longContent,
     ]);
 
-    $this->post(route('chapters.ai.revise', [$book, $chapter]))
-        ->assertStatus(422);
+    $this->post(
+        route('chapters.ai.revise', [$book, $chapter]),
+        ['expected_current_version_id' => $current->id],
+    )->assertStatus(422);
 });
 
 test('AI revision content is normalized before saving', function () {
@@ -493,7 +511,10 @@ test('revise syncs currentVersion content from scenes before processing', functi
         'sort_order' => 0,
     ]);
 
-    $this->post(route('chapters.ai.revise', [$book, $chapter]));
+    $this->post(
+        route('chapters.ai.revise', [$book, $chapter]),
+        ['expected_current_version_id' => $version->id],
+    );
 
     $version->refresh();
     expect($version->content)->toBe('<p>Fresh scene content.</p>');
@@ -515,13 +536,16 @@ test('revise uses scene breaks in prompt', function () {
         'sort_order' => 1,
     ]);
 
-    ChapterVersion::factory()->for($chapter)->create([
+    $current = ChapterVersion::factory()->for($chapter)->create([
         'is_current' => true,
         'version_number' => 1,
         'content' => 'Original.',
     ]);
 
-    $this->post(route('chapters.ai.revise', [$book, $chapter]));
+    $this->post(
+        route('chapters.ai.revise', [$book, $chapter]),
+        ['expected_current_version_id' => $current->id],
+    );
 
     ProseReviser::assertPrompted(fn ($prompt) => str_contains($prompt->prompt, '<hr>'));
 });

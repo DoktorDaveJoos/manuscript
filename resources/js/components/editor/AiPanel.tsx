@@ -139,6 +139,10 @@ export default function AiPanel({
                         ...jsonFetchHeaders(),
                         Accept: 'application/json',
                     },
+                    body: JSON.stringify({
+                        expected_current_version_id:
+                            chapterRef.current.current_version?.id ?? null,
+                    }),
                 });
 
                 if (!response.ok) {

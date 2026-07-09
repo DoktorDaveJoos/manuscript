@@ -24,7 +24,7 @@ class ContinueWritingRequest extends FormRequest
             'after_truncated' => ['nullable', 'boolean'],
             'scene_follows' => ['nullable', 'boolean'],
             'chapter_link' => ['nullable', 'string', 'in:auto,continue,fresh'],
-            'expected_current_version_id' => ['nullable', 'integer'],
+            'expected_current_version_id' => ['present', 'nullable', 'integer'],
         ];
     }
 
