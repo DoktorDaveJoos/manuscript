@@ -9,7 +9,7 @@ import type { ChapterData } from '@/hooks/useChapterData';
 import type { ContinueWritingReview } from '@/hooks/useContinueWriting';
 import { useProofreading } from '@/hooks/useProofreading';
 import type { RewriteSelectionReview } from '@/hooks/useRewriteSelection';
-import { htmlBlockText } from '@/lib/proseText';
+import { htmlBlockText, proseMirrorBlockText } from '@/lib/proseText';
 import { jsonFetchHeaders } from '@/lib/utils';
 import { DEFAULT_PROOFREADING_CONFIG } from '@/types/models';
 import type { AppSettings, ChapterVersion, Scene } from '@/types/models';
@@ -222,10 +222,23 @@ export default function ChapterPane({
     // ── Word count ───────────────────────────────────────────────────────
     const wordCount = scenes.reduce((sum, s) => sum + s.word_count, 0);
 
+    const paneRef = useRef<HTMLDivElement>(null);
+
+    // Prefer the mounted ProseMirror DOM: the scenes state only updates on
+    // server refetch, so it misses everything typed since load. The state
+    // content is the fallback for scenes that aren't rendered (yet).
     const getChapterText = useCallback(
         () =>
             scenes
-                .map((s) => htmlBlockText(s.content))
+                .map((s) => {
+                    const pm =
+                        paneRef.current?.querySelector<HTMLElement>(
+                            `#scene-${s.id} .ProseMirror`,
+                        ) ?? null;
+                    return pm
+                        ? proseMirrorBlockText(pm)
+                        : htmlBlockText(s.content);
+                })
                 .filter(Boolean)
                 .join('\n\n'),
         [scenes],
@@ -335,8 +348,6 @@ export default function ChapterPane({
     }, []);
 
     // ── Flush all pending saves ──────────────────────────────────────────
-    const paneRef = useRef<HTMLDivElement>(null);
-
     const flushAll = useCallback(async () => {
         // Flush title
         await flushTitleSave();
