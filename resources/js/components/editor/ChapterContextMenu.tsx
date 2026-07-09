@@ -48,7 +48,7 @@ export default function ChapterContextMenu({
         onClose();
     };
 
-    const handleMove = (storylineId: number) => {
+    const handleMove = async (storylineId: number) => {
         const allChapters = storylines.flatMap((s) =>
             (s.chapters ?? []).map((ch) => ({
                 id: ch.id,
@@ -60,14 +60,13 @@ export default function ChapterContextMenu({
             storyline_id: ch.id === chapter.id ? storylineId : ch.storyline_id,
         }));
 
-        router.post(
-            reorder.url(bookId),
-            { order },
-            {
-                preserveScroll: true,
-                onSuccess: () => onClose(),
-            },
-        );
+        await fetch(reorder.url(bookId), {
+            method: 'POST',
+            headers: jsonFetchHeaders(),
+            body: JSON.stringify({ order }),
+        });
+        router.reload({ only: ['book', 'sidebar_storylines'] });
+        onClose();
     };
 
     const otherStorylines = storylines.filter(
