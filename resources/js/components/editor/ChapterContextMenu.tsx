@@ -6,7 +6,7 @@ import {
     updateStatus,
 } from '@/actions/App/Http/Controllers/ChapterController';
 import ContextMenu from '@/components/ui/ContextMenu';
-import { jsonFetchHeaders } from '@/lib/utils';
+import { broadcastChapterDataChanged, jsonFetchHeaders } from '@/lib/utils';
 import type { Chapter, ChapterStatus, Storyline } from '@/types/models';
 
 const statusDotClass: Record<ChapterStatus, string> = {
@@ -44,7 +44,8 @@ export default function ChapterContextMenu({
             headers: jsonFetchHeaders(),
             body: JSON.stringify({ status }),
         });
-        router.reload({ only: ['book'] });
+        broadcastChapterDataChanged(chapter.id);
+        router.reload({ only: ['book', 'sidebar_storylines'] });
         onClose();
     };
 
