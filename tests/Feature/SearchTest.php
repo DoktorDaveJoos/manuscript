@@ -134,3 +134,31 @@ test('search across multiple chapters', function () {
     $response->assertJsonPath('total_matches', 4);
     $response->assertJsonPath('chapter_count', 2);
 });
+
+test('search does not match words joined across paragraph boundaries', function () {
+    // "to" ends one paragraph and "ward" starts the next — a naive
+    // strip_tags would glue them into a phantom "toward".
+    $this->scene->update([
+        'content' => '<p>He walked to</p><p>ward the door she went toward the light.</p>',
+    ]);
+
+    $response = $this->postJson("/books/{$this->book->id}/search", [
+        'query' => 'toward',
+    ]);
+
+    $response->assertOk();
+    $response->assertJsonPath('total_matches', 1);
+});
+
+test('search does not match words joined across line breaks', function () {
+    $this->scene->update([
+        'content' => '<p>He walked to<br>ward the door she went toward the light.</p>',
+    ]);
+
+    $response = $this->postJson("/books/{$this->book->id}/search", [
+        'query' => 'toward',
+    ]);
+
+    $response->assertOk();
+    $response->assertJsonPath('total_matches', 1);
+});
