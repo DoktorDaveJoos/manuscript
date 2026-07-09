@@ -56,7 +56,10 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
                 );
             break;
         case 'check': {
-            if (!hunspell) return;
+            if (!hunspell) {
+                post({ type: 'check-result', id: message.id, ranges: [] });
+                break;
+            }
             const ranges: MisspelledRange[] = [];
             for (const token of tokenizeWords(message.text)) {
                 if (!isCorrect(token.word)) {

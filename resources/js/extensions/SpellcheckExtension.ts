@@ -146,12 +146,17 @@ class SpellcheckView {
     private destroyed = false;
     private engineOk = false;
     private inflight = 0;
+    private readonly unsubscribeWordsChanged: () => void;
 
     constructor(
         private readonly view: EditorView,
         private readonly client: SpellcheckClient,
         customWords: string[],
     ) {
+        this.unsubscribeWordsChanged = client.onWordsChanged(() => {
+            if (this.destroyed || !this.engineOk) return;
+            this.dispatchMeta({ type: 'recheck-all' });
+        });
         void this.boot(customWords);
     }
 
@@ -235,6 +240,7 @@ class SpellcheckView {
     destroy(): void {
         this.destroyed = true;
         if (this.timer !== null) window.clearTimeout(this.timer);
+        this.unsubscribeWordsChanged();
         // The worker is a shared per-language singleton — never terminated here.
     }
 }
@@ -337,15 +343,14 @@ export const SpellcheckExtension = Extension.create<SpellcheckOptions>({
                                         view.dispatch(tr);
                                     },
                                     onAddToDictionary: () => {
+                                        // client.addWord notifies every
+                                        // SpellcheckView subscribed via
+                                        // onWordsChanged (including this
+                                        // one), which dispatches
+                                        // recheck-all — no need to do it
+                                        // here too.
                                         client.addWord(word);
                                         onAddToDictionary?.(word);
-                                        view.dispatch(
-                                            view.state.tr
-                                                .setMeta(spellcheckPluginKey, {
-                                                    type: 'recheck-all',
-                                                })
-                                                .setMeta('addToHistory', false),
-                                        );
                                     },
                                 });
                             });

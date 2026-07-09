@@ -12,6 +12,12 @@ export interface SpellcheckClient {
     suggest(word: string): Promise<string[]>;
     addWord(word: string): void;
     setCustomWords(words: string[]): void;
+    /**
+     * Subscribe to custom-dictionary changes (addWord / setCustomWords) so
+     * every editor sharing this client can recheck, not just the one that
+     * triggered the change. Returns an unsubscribe function.
+     */
+    onWordsChanged(listener: () => void): () => void;
 }
 
 const clients = new Map<string, SpellcheckClient>();
@@ -43,11 +49,23 @@ function createClient(language: string, locale: string): SpellcheckClient {
     let nextId = 1;
     const pendingChecks = new Map<number, (r: MisspelledRange[]) => void>();
     const pendingSuggests = new Map<number, (s: string[]) => void>();
+    const wordsChangedListeners = new Set<() => void>();
 
     let markReady: (ok: boolean) => void;
     const whenReady = new Promise<boolean>((resolve) => {
         markReady = resolve;
     });
+
+    const settlePendingWithFailure = (): void => {
+        for (const resolve of pendingChecks.values()) resolve([]);
+        pendingChecks.clear();
+        for (const resolve of pendingSuggests.values()) resolve([]);
+        pendingSuggests.clear();
+    };
+
+    const notifyWordsChanged = (): void => {
+        for (const listener of wordsChangedListeners) listener();
+    };
 
     worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
         const message = event.data;
@@ -56,6 +74,7 @@ function createClient(language: string, locale: string): SpellcheckClient {
         } else if (message.type === 'init-error') {
             console.warn('[Spellcheck] engine unavailable:', message.message);
             markReady(false);
+            settlePendingWithFailure();
         } else if (message.type === 'check-result') {
             pendingChecks.get(message.id)?.(message.ranges);
             pendingChecks.delete(message.id);
@@ -67,6 +86,7 @@ function createClient(language: string, locale: string): SpellcheckClient {
     worker.onerror = (event) => {
         console.warn('[Spellcheck] worker error:', event.message);
         markReady(false);
+        settlePendingWithFailure();
     };
 
     const base = `/dictionaries/${language}/${locale}`;
@@ -87,7 +107,17 @@ function createClient(language: string, locale: string): SpellcheckClient {
                 pendingSuggests.set(id, resolve);
                 send({ type: 'suggest', id, word });
             }),
-        addWord: (word) => send({ type: 'add-word', word }),
-        setCustomWords: (words) => send({ type: 'set-custom-words', words }),
+        addWord: (word) => {
+            send({ type: 'add-word', word });
+            notifyWordsChanged();
+        },
+        setCustomWords: (words) => {
+            send({ type: 'set-custom-words', words });
+            notifyWordsChanged();
+        },
+        onWordsChanged: (listener) => {
+            wordsChangedListeners.add(listener);
+            return () => wordsChangedListeners.delete(listener);
+        },
     };
 }

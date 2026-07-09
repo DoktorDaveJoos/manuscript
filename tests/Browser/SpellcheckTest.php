@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Book;
+use App\Models\Scene;
 
 it('shows spell-error decorations on chapter load without touching the text', function () {
     [$book, $chapters] = createBookWithChapters(1);
@@ -135,5 +135,35 @@ it('clears all squiggles when spell check is toggled off', function () {
         ->wait(1)
         ->click('Disable Spell Check')
         ->wait(1)
+        ->assertMissing('.editor-prose .spell-error');
+});
+
+it('clears the squiggle in sibling scenes when a word is added to the dictionary', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $book->update(['language' => 'en']);
+    $chapter = $chapters[0];
+    $content = '<p>The wizard Zaphrandor returned.</p>';
+    $firstScene = $chapter->scenes()->first();
+    $firstScene->update(['content' => $content]);
+    $secondScene = Scene::factory()->for($chapter)->create([
+        'content' => $content,
+        'sort_order' => 1,
+    ]);
+    $chapter->currentVersion->update(['content' => $content.$content]);
+    $chapter->refreshContentHash();
+
+    $firstSceneSelector = "#scene-{$firstScene->id} .ProseMirror";
+    $secondSceneSelector = "#scene-{$secondScene->id} .ProseMirror";
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->wait(3)
+        ->assertPresent("{$firstSceneSelector} .spell-error")
+        ->assertPresent("{$secondSceneSelector} .spell-error")
+        ->rightClick("{$firstSceneSelector} .spell-error")
+        ->wait(1)
+        ->click('Add to Dictionary')
+        ->wait(2)
         ->assertMissing('.editor-prose .spell-error');
 });
