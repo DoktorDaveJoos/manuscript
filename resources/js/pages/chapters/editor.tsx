@@ -397,16 +397,28 @@ export default function EditorPage({
                 const getPendingAll = (
                     el as unknown as Record<
                         string,
-                        () => { url: string; content: string }[]
+                        () => {
+                            url: string;
+                            content: string;
+                            expectedCurrentVersionId?: number | null;
+                        }[]
                     >
                 ).__getPendingAll;
                 if (typeof getPendingAll !== 'function') return;
-                for (const { url, content } of getPendingAll()) {
+                for (const {
+                    url,
+                    content,
+                    expectedCurrentVersionId,
+                } of getPendingAll()) {
                     try {
                         fetch(url, {
                             method: 'PUT',
                             headers: jsonFetchHeaders(),
-                            body: JSON.stringify({ content }),
+                            body: JSON.stringify({
+                                content,
+                                expected_current_version_id:
+                                    expectedCurrentVersionId ?? null,
+                            }),
                             keepalive: true,
                         });
                     } catch {

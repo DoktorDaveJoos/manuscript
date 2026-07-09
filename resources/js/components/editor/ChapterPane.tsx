@@ -538,6 +538,7 @@ export default function ChapterPane({
                         localFindShowReplace={localFindShowReplace}
                         onLocalFindClose={onLocalFindClose}
                         locked={editorLocked}
+                        currentVersionId={chapter.current_version?.id ?? null}
                     />
                     {proseRunning && (
                         <div

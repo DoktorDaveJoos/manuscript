@@ -56,6 +56,7 @@ export default function WritingSurface({
     bookLanguage,
     spellcheckEnabled,
     locked = false,
+    currentVersionId = null,
 }: {
     scenes: Scene[];
     bookId: number;
@@ -87,6 +88,8 @@ export default function WritingSurface({
     spellcheckEnabled?: boolean;
     /** Reject user input in every scene while an AI flow writes to this chapter. */
     locked?: boolean;
+    /** Chapter version the rendered content belongs to — scene saves carry it. */
+    currentVersionId?: number | null;
 }) {
     const { t } = useTranslation('editor');
 
@@ -469,6 +472,7 @@ export default function WritingSurface({
                                 bookLanguage={bookLanguage}
                                 spellcheckEnabled={spellcheckEnabled}
                                 locked={locked}
+                                currentVersionId={currentVersionId}
                             />
                         ))}
                     </div>

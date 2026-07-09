@@ -31,6 +31,7 @@ export default function SceneEditor({
     bookLanguage,
     spellcheckEnabled,
     locked = false,
+    currentVersionId = null,
 }: {
     scene: Scene;
     bookId: number;
@@ -51,6 +52,8 @@ export default function SceneEditor({
     spellcheckEnabled?: boolean;
     /** Reject user input while an AI flow writes to this chapter (programmatic inserts still work). */
     locked?: boolean;
+    /** Chapter version this editor's content belongs to — saves carry it so the server can refuse stale writes. */
+    currentVersionId?: number | null;
 }) {
     // Stable refs for cross-scene navigation callbacks (avoids editor re-creation)
     const onExitUpRef = useRef<(() => void) | null>(onExitUp ?? null);
@@ -69,6 +72,32 @@ export default function SceneEditor({
     // Declared before flushContentSave so scheduleRetry can re-invoke it via
     // the ref without referencing the const before its initializer completes.
     const flushSelfRef = useRef<() => void | Promise<void>>(() => {});
+
+    // Read at flush time so retries carry the freshest version id.
+    const currentVersionIdRef = useRef(currentVersionId);
+    currentVersionIdRef.current = currentVersionId;
+
+    const dropPendingSave = useCallback(() => {
+        pendingContentRef.current = null;
+        retryCountRef.current = 0;
+        if (retryTimerRef.current) {
+            clearTimeout(retryTimerRef.current);
+            retryTimerRef.current = null;
+        }
+        contentAbortRef.current?.abort();
+    }, []);
+
+    // The server replaced this scene's content out from under the editor
+    // (AI revision applied, version restored/accepted). Any buffered or
+    // retrying save was composed against the old content — flushing it would
+    // resurrect pre-revision text over the newer server state.
+    const prevServerContentRef = useRef(scene.content);
+    useEffect(() => {
+        if (scene.content === prevServerContentRef.current) return;
+        prevServerContentRef.current = scene.content;
+        dropPendingSave();
+        onSaveStatusChange?.('saved');
+    }, [scene.content, dropPendingSave, onSaveStatusChange]);
 
     const flushContentSave = useCallback(async () => {
         const content = pendingContentRef.current;
@@ -90,10 +119,24 @@ export default function SceneEditor({
                 {
                     method: 'PUT',
                     headers: jsonFetchHeaders(),
-                    body: JSON.stringify({ content }),
+                    body: JSON.stringify({
+                        content,
+                        expected_current_version_id:
+                            currentVersionIdRef.current,
+                    }),
                     signal: controller.signal,
                 },
             );
+
+            if (response.status === 409) {
+                // The chapter moved to a new version while this save was
+                // buffered — the content is superseded, retrying would only
+                // overwrite newer server state. The version-change broadcast
+                // refreshes the pane with the authoritative content.
+                dropPendingSave();
+                onSaveStatusChange?.('saved');
+                return;
+            }
 
             if (response.ok) {
                 // Only clear if content hasn't changed during the in-flight save
@@ -130,7 +173,7 @@ export default function SceneEditor({
                 onSaveStatusChange?.('error');
             }
         }
-    }, [bookId, chapterId, scene.id, onSaveStatusChange]);
+    }, [bookId, chapterId, scene.id, onSaveStatusChange, dropPendingSave]);
 
     // Expose flush for parent + keep flushSelfRef pointed at the latest closure.
     const flushRef = useRef({ flushContentSave });
@@ -157,7 +200,11 @@ export default function SceneEditor({
             (el as unknown as Record<string, unknown>).__getPending = () => {
                 const content = pendingContentRef.current;
                 if (content === null) return null;
-                return { url: saveUrlRef.current, content };
+                return {
+                    url: saveUrlRef.current,
+                    content,
+                    expectedCurrentVersionId: currentVersionIdRef.current,
+                };
             };
         }
 

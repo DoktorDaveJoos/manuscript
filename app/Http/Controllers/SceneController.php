@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\EnsuresChapterVersion;
 use App\Http\Requests\ReorderScenesRequest;
 use App\Http\Requests\StoreSceneRequest;
 use App\Http\Requests\UpdateSceneContentRequest;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\DB;
 
 class SceneController extends Controller
 {
+    use EnsuresChapterVersion;
+
     public function store(StoreSceneRequest $request, Book $book, Chapter $chapter): JsonResponse
     {
         $position = $request->validated('position') ?? $chapter->scenes()->count();
@@ -44,6 +47,17 @@ class SceneController extends Controller
 
     public function updateContent(UpdateSceneContentRequest $request, Book $book, Chapter $chapter, Scene $scene): JsonResponse
     {
+        // Autosave retries can be composed against a chapter the server has
+        // since replaced (AI revision applied, version restored). When the
+        // editor declares which version it was writing against, refuse stale
+        // writes instead of resurrecting pre-revision content. Absent field
+        // means a legacy caller — the write goes through unguarded.
+        $expectedVersionId = $request->validated('expected_current_version_id');
+        if ($expectedVersionId !== null) {
+            $chapter->loadMissing('currentVersion');
+            $this->ensureCurrentVersion($chapter, (int) $expectedVersionId);
+        }
+
         $previousSceneWordCount = $scene->word_count;
         $wordCount = WordCount::count($request->validated('content'));
 
