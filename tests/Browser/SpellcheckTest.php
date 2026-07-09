@@ -91,3 +91,49 @@ it('never flags words already in the custom dictionary', function () {
         ->wait(3)
         ->assertMissing('.editor-prose .spell-error');
 });
+
+it('checks German books with the German dictionary, including compounds', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $book->update(['language' => 'de']);
+    $chapter = $chapters[0];
+    $scene = $chapter->scenes()->first();
+    // "Haustürschlüssel" is a compound that plain word-list checkers flag;
+    // real Hunspell must accept it. "falsh" is a genuine misspelling.
+    $content = '<p>Der Haustürschlüssel liegt auf dem Küchentisch und das ist falsh.</p>';
+    $scene->update(['content' => $content]);
+    $chapter->currentVersion->update(['content' => $content]);
+    $chapter->refreshContentHash();
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->wait(5)
+        ->assertPresent('.editor-prose .spell-error')
+        ->assertSeeIn('.editor-prose .spell-error', 'falsh')
+        ->assertDontSeeIn('.editor-prose .spell-error', 'Haustürschlüssel');
+});
+
+it('clears all squiggles when spell check is toggled off', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $book->update(['language' => 'en']);
+    $chapter = $chapters[0];
+    $scene = $chapter->scenes()->first();
+    $content = '<p>Another mispeled word sits here.</p>';
+    $scene->update(['content' => $content]);
+    $chapter->currentVersion->update(['content' => $content]);
+    $chapter->refreshContentHash();
+
+    $editorSelector = "#scene-{$scene->id} .ProseMirror";
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->wait(3)
+        ->assertPresent('.editor-prose .spell-error')
+        ->click($editorSelector)
+        ->keys($editorSelector, 'Control+p')
+        ->wait(1)
+        ->click('Disable Spell Check')
+        ->wait(1)
+        ->assertMissing('.editor-prose .spell-error');
+});
