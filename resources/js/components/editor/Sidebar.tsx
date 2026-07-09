@@ -26,6 +26,7 @@ import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotControlle
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
 import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
+import NavGroup from '@/components/ui/NavGroup';
 import NavItem from '@/components/ui/NavItem';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
 import { createChapter, formatCompactCount } from '@/lib/utils';
@@ -114,6 +115,53 @@ export default function Sidebar({
     const isDesign = /\/books\/\d+\/design/.test(currentUrl);
     const isBookSettings =
         /\/books\/\d+\/settings/.test(currentUrl) && !isExport;
+
+    const storyItems = [
+        {
+            label: t('nav.wiki'),
+            href: indexWiki.url(book),
+            isActive: isWiki,
+            Icon: BookOpen,
+        },
+        {
+            label: t('nav.plot'),
+            href: indexPlot.url(book),
+            isActive: isPlot,
+            Icon: Waypoints,
+        },
+        {
+            label: t('nav.ai'),
+            href: editorialReviewIndex.url(book),
+            isActive: isAi,
+            Icon: Sparkles,
+        },
+    ];
+    const publishItems = [
+        {
+            label: t('nav.design'),
+            href: showDesign.url(book),
+            isActive: isDesign,
+            Icon: BookType,
+        },
+        {
+            label: t('nav.export'),
+            href: exportMethod.url(book),
+            isActive: isExport,
+            Icon: ArrowUpFromLine,
+        },
+    ];
+
+    const renderNavItems = (items: typeof storyItems) =>
+        items.map(({ label, href, isActive, Icon }) => (
+            <NavItem
+                key={label}
+                label={label}
+                href={href}
+                isActive={isActive}
+                iconOnly={isCollapsed}
+                icon={<Icon size={16} className="shrink-0 text-ink-faint" />}
+            />
+        ));
 
     const totalWords = storylines.reduce(
         (sum, s) =>
@@ -267,66 +315,32 @@ export default function Sidebar({
                             />
                         }
                     />
-                    <NavItem
-                        label={t('nav.wiki')}
-                        href={indexWiki.url(book)}
-                        isActive={isWiki}
-                        iconOnly={isCollapsed}
-                        icon={
-                            <BookOpen
-                                size={16}
-                                className="shrink-0 text-ink-faint"
-                            />
-                        }
-                    />
-                    <NavItem
-                        label={t('nav.plot')}
-                        href={indexPlot.url(book)}
-                        isActive={isPlot}
-                        iconOnly={isCollapsed}
-                        icon={
-                            <Waypoints
-                                size={16}
-                                className="shrink-0 text-ink-faint"
-                            />
-                        }
-                    />
-                    <NavItem
-                        label={t('nav.ai')}
-                        href={editorialReviewIndex.url(book)}
-                        isActive={isAi}
-                        iconOnly={isCollapsed}
-                        icon={
-                            <Sparkles
-                                size={16}
-                                className="shrink-0 text-ink-faint"
-                            />
-                        }
-                    />
-                    <NavItem
-                        label={t('nav.design')}
-                        href={showDesign.url(book)}
-                        isActive={isDesign}
-                        iconOnly={isCollapsed}
-                        icon={
-                            <BookType
-                                size={16}
-                                className="shrink-0 text-ink-faint"
-                            />
-                        }
-                    />
-                    <NavItem
-                        label={t('nav.export')}
-                        href={exportMethod.url(book)}
-                        isActive={isExport}
-                        iconOnly={isCollapsed}
-                        icon={
-                            <ArrowUpFromLine
-                                size={16}
-                                className="shrink-0 text-ink-faint"
-                            />
-                        }
-                    />
+                    {isCollapsed ? (
+                        <>
+                            {renderNavItems(storyItems)}
+                            {renderNavItems(publishItems)}
+                        </>
+                    ) : (
+                        <>
+                            <NavGroup
+                                label={t('nav.story')}
+                                storageKey="manuscript:nav-group-story"
+                                defaultOpen
+                                containsActive={isWiki || isPlot || isAi}
+                                testId="nav-group-story"
+                            >
+                                {renderNavItems(storyItems)}
+                            </NavGroup>
+                            <NavGroup
+                                label={t('nav.publish')}
+                                storageKey="manuscript:nav-group-publish"
+                                containsActive={isDesign || isExport}
+                                testId="nav-group-publish"
+                            >
+                                {renderNavItems(publishItems)}
+                            </NavGroup>
+                        </>
+                    )}
                 </div>
             </div>
 
