@@ -457,3 +457,46 @@ it('switches word counts between compact and raw formats', function () {
     AppSetting::clearCache();
     expect(AppSetting::get('compact_word_count'))->toBeFalse();
 });
+
+it('collapses the publish nav group by default and keeps the story group open', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertPresent("[data-testid='nav-group-story-content']")
+        ->assertNotPresent("[data-testid='nav-group-publish-content']");
+});
+
+it('expands the publish nav group on click revealing typesetting and export', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->click("[data-testid='nav-group-publish']")
+        ->assertPresent("[data-testid='nav-group-publish-content']")
+        ->assertSee('Typesetting')
+        ->assertSee('Export');
+});
+
+it('auto-expands the publish nav group when landing on a route inside it', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+
+    $page = visit("/books/{$book->id}/design");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertPresent("[data-testid='nav-group-publish-content']");
+});
+
+it('persists a manually toggled nav group state across a reload', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->click("[data-testid='nav-group-publish']")
+        ->assertPresent("[data-testid='nav-group-publish-content']")
+        ->refresh()
+        ->assertPresent("[data-testid='nav-group-publish-content']");
+});
