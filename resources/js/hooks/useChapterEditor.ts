@@ -7,7 +7,10 @@ import { useEffect, useMemo, useRef } from 'react';
 import { ProofreadExtension } from '@/extensions/ProofreadExtension';
 import { SceneBridgeExtension } from '@/extensions/SceneBridgeExtension';
 import { SearchHighlightExtension } from '@/extensions/SearchHighlightExtension';
-import { SpellcheckContextMenu } from '@/extensions/SpellcheckContextMenu';
+import {
+    SpellcheckExtension,
+    spellcheckPluginKey,
+} from '@/extensions/SpellcheckExtension';
 import { TypewriterScrollExtension } from '@/extensions/TypewriterScrollExtension';
 import { countWords } from '@/lib/wordCount';
 import type { ProofreadingConfig } from '@/types/models';
@@ -22,6 +25,8 @@ export default function useChapterEditor({
     proofreadingConfig,
     language,
     spellcheckEnabled = true,
+    customWords = [],
+    onAddToDictionary,
 }: {
     content: string;
     onUpdate: (html: string, wordCount: number) => void;
@@ -32,13 +37,15 @@ export default function useChapterEditor({
     proofreadingConfig?: ProofreadingConfig;
     language?: string;
     spellcheckEnabled?: boolean;
+    customWords?: string[];
+    onAddToDictionary?: (word: string) => void;
 }) {
     const onUpdateRef = useRef(onUpdate);
     useEffect(() => {
         onUpdateRef.current = onUpdate;
     }, [onUpdate]);
 
-    // Stable ref so the SpellcheckContextMenu plugin can read the latest
+    // Stable ref so the SpellcheckExtension plugin can read the latest
     // value without requiring editor re-creation on toggle.
     const spellcheckEnabledRef = useRef(spellcheckEnabled);
     useEffect(() => {
@@ -65,8 +72,11 @@ export default function useChapterEditor({
                     onExitDown: onExitDownRef,
                 }),
                 SearchHighlightExtension,
-                SpellcheckContextMenu.configure({
+                SpellcheckExtension.configure({
+                    language: language ?? 'en',
                     enabledRef: spellcheckEnabledRef,
+                    customWords,
+                    onAddToDictionary,
                 }),
 
                 ...(proofreadingConfig
@@ -82,6 +92,7 @@ export default function useChapterEditor({
             editorProps: {
                 attributes: {
                     class: 'editor-prose',
+                    spellcheck: 'false',
                 },
             },
             onUpdate: ({ editor }) => {
@@ -100,12 +111,16 @@ export default function useChapterEditor({
         [content, proofreadingKey],
     );
 
-    // Toggle the spellcheck DOM attribute without recreating the editor
+    // Toggle spellcheck decorations without recreating the editor.
     useEffect(() => {
         if (!editor || editor.isDestroyed) return;
-        editor.view.dom.setAttribute(
-            'spellcheck',
-            spellcheckEnabled ? 'true' : 'false',
+        editor.view.dispatch(
+            editor.state.tr
+                .setMeta(spellcheckPluginKey, {
+                    type: 'set-enabled',
+                    enabled: spellcheckEnabled,
+                })
+                .setMeta('addToHistory', false),
         );
     }, [editor, spellcheckEnabled]);
 
