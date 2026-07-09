@@ -1,8 +1,16 @@
-import type {
-    FontPairingDef,
-    SceneBreakStyleDef,
-    TrimSizeOption,
-} from '@/components/export/types';
+import type { TrimSizeOption } from '@/components/export/types';
+
+export type FontPairingDef = {
+    value: string;
+    label: string;
+    headingFont: string;
+    bodyFont: string;
+};
+
+export type SceneBreakStyleDef = {
+    value: string;
+    label: string;
+};
 
 export type DesignPageSettings = {
     trim_size: string;
@@ -63,5 +71,3 @@ export type CustomTemplateDef = {
 export type DesignTrimSizeOption = TrimSizeOption & {
     margins: { top: number; bottom: number; outer: number; gutter: number };
 };
-
-export type { FontPairingDef, SceneBreakStyleDef };

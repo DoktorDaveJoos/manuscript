@@ -189,10 +189,11 @@ class ExportService
     }
 
     /**
-     * When the options reference a Book Designer template, merge its page
-     * geometry and typesetting overrides into the raw options array. The
-     * template owns these values; per-run options only carry what the export
-     * page still controls (format, matter, chapter selection).
+     * Fill the raw options array with the referenced template's page geometry
+     * and typesetting settings. The template (built-in or Book Designer custom)
+     * owns these values; per-run options only carry what the export page still
+     * controls (format, matter, chapter selection) but explicitly passed
+     * values keep precedence for programmatic callers.
      *
      * @param  array<string, mixed>  $options
      */
@@ -200,9 +201,48 @@ class ExportService
     {
         $template = self::resolveTemplate((string) ($options['template'] ?? 'classic'));
 
-        if ($template instanceof CustomTemplate) {
-            $options = array_merge($options, $template->exportOverrides());
+        foreach (self::designDefaults($template) as $key => $value) {
+            if (! array_key_exists($key, $options) || $options[$key] === null) {
+                $options[$key] = $value;
+            }
         }
+    }
+
+    /**
+     * Map a template's Book Designer settings onto the export-option keys the
+     * pipeline reads outside of CSS.
+     *
+     * @return array<string, mixed>
+     */
+    private static function designDefaults(ExportTemplate $template): array
+    {
+        $settings = $template->designSettings();
+        $page = (array) ($settings['page'] ?? []);
+        $typography = (array) ($settings['typography'] ?? []);
+        $headings = (array) ($settings['headings'] ?? []);
+        $structure = (array) ($settings['structure'] ?? []);
+
+        $defaults = [
+            'trim_size' => $page['trim_size'] ?? null,
+            'custom_width' => $page['custom_width'] ?? null,
+            'custom_height' => $page['custom_height'] ?? null,
+            'bleed' => $page['bleed'] ?? null,
+            'bleed_mode' => $page['bleed_mode'] ?? null,
+            'margin_top' => $page['margin_top'] ?? null,
+            'margin_bottom' => $page['margin_bottom'] ?? null,
+            'margin_inner' => $page['margin_inner'] ?? null,
+            'margin_outer' => $page['margin_outer'] ?? null,
+            'font_pairing' => $typography['font_pairing'] ?? null,
+            'font_size' => isset($typography['font_size']) ? (int) $typography['font_size'] : null,
+            'hyphenation' => $typography['hyphenation'] ?? null,
+            'chapter_heading' => $headings['chapter_heading'] ?? null,
+            'scene_break_style' => $headings['scene_break_style'] ?? null,
+            'drop_caps' => $headings['drop_caps'] ?? null,
+            'show_page_numbers' => $structure['show_page_numbers'] ?? null,
+            'include_act_breaks' => $structure['include_act_breaks'] ?? null,
+        ];
+
+        return array_filter($defaults, fn ($value) => $value !== null);
     }
 
     private function resolveExporter(ExportFormat $format, ExportTemplate $template): Exporter

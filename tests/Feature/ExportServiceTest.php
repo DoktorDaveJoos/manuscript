@@ -45,6 +45,62 @@ test('exports book as docx', function () {
     expect($response->headers->get('content-disposition'))->toContain('test-book.docx');
 });
 
+test('exports docx with normseite layout', function () {
+    $book = Book::factory()->create(['title' => 'Norm Book']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Chapter One']);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Es war einmal.</p>', 'sort_order' => 1]);
+
+    $response = $this->service->export($book, [
+        'format' => 'docx',
+        'scope' => 'full',
+        'docx_layout' => 'normseite',
+    ]);
+
+    $zip = new ZipArchive;
+    $zip->open($response->getFile()->getPathname());
+    $document = $zip->getFromName('word/document.xml');
+    $styles = $zip->getFromName('word/styles.xml');
+    $zip->close();
+
+    // DIN A4 page with the wide Normseite correction margins
+    expect($document)->toContain('w:h="16838"');
+    expect($document)->toContain('w:right="2551"');
+    expect($document)->toContain('w:bottom="2551"');
+
+    // Blocksatz + 1.5 line spacing (240 twips × 1.5 = 360)
+    expect($styles)->toContain('w:val="both"');
+    expect($styles)->toContain('w:line="360"');
+    expect($styles)->not->toContain('w:line="480"');
+});
+
+test('docx defaults to the double-spaced manuscript layout', function () {
+    $book = Book::factory()->create(['title' => 'Plain Book']);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['title' => 'Chapter One']);
+    Scene::factory()->for($chapter)->create(['content' => '<p>Once upon a time.</p>', 'sort_order' => 1]);
+
+    $response = $this->service->export($book, ['format' => 'docx', 'scope' => 'full']);
+
+    $zip = new ZipArchive;
+    $zip->open($response->getFile()->getPathname());
+    $styles = $zip->getFromName('word/styles.xml');
+    $zip->close();
+
+    expect($styles)->toContain('w:line="480"');
+    expect($styles)->not->toContain('w:val="both"');
+});
+
+test('export endpoint rejects an unknown docx layout', function () {
+    $book = Book::factory()->create();
+
+    $this->postJson(route('books.settings.export.run', $book), [
+        'format' => 'docx',
+        'scope' => 'full',
+        'docx_layout' => 'typewriter',
+    ])->assertUnprocessable();
+});
+
 // === TXT Tests ===
 
 test('exports book as txt', function () {

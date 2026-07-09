@@ -102,42 +102,6 @@ class CustomTemplate implements ExportTemplate
     }
 
     /**
-     * Export-option overrides derived from the settings (page geometry and the
-     * option-level typesetting knobs the pipeline reads outside of CSS).
-     *
-     * @return array<string, mixed>
-     */
-    public function exportOverrides(): array
-    {
-        $page = (array) ($this->settings['page'] ?? []);
-        $typography = (array) ($this->settings['typography'] ?? []);
-        $headings = (array) ($this->settings['headings'] ?? []);
-        $structure = (array) ($this->settings['structure'] ?? []);
-
-        $overrides = [
-            'trim_size' => $page['trim_size'] ?? null,
-            'custom_width' => $page['custom_width'] ?? null,
-            'custom_height' => $page['custom_height'] ?? null,
-            'bleed' => $page['bleed'] ?? null,
-            'bleed_mode' => $page['bleed_mode'] ?? null,
-            'margin_top' => $page['margin_top'] ?? null,
-            'margin_bottom' => $page['margin_bottom'] ?? null,
-            'margin_inner' => $page['margin_inner'] ?? null,
-            'margin_outer' => $page['margin_outer'] ?? null,
-            'font_pairing' => $typography['font_pairing'] ?? null,
-            'font_size' => isset($typography['font_size']) ? (int) $typography['font_size'] : null,
-            'hyphenation' => $typography['hyphenation'] ?? null,
-            'chapter_heading' => $headings['chapter_heading'] ?? null,
-            'scene_break_style' => $headings['scene_break_style'] ?? null,
-            'drop_caps' => $headings['drop_caps'] ?? null,
-            'show_page_numbers' => $structure['show_page_numbers'] ?? null,
-            'include_act_breaks' => $structure['include_act_breaks'] ?? null,
-        ];
-
-        return array_filter($overrides, fn ($value) => $value !== null);
-    }
-
-    /**
      * CSS overriding the base template's typography from the stored settings.
      * Appended after the base CSS so plain selector-for-selector rules win.
      */

@@ -8,17 +8,13 @@ import ExportPreview from '@/components/export/ExportPreview';
 import ExportReadingOrder from '@/components/export/ExportReadingOrder';
 import ExportSettings from '@/components/export/ExportSettings';
 import type {
-    BleedMode,
-    ChapterHeading,
     ChapterRow,
-    FontPairingDef,
+    DocxLayout,
     Format,
     MatterItem,
     SavedExportSettings,
-    SceneBreakStyleDef,
     StorylineRef,
     TemplateDef,
-    TrimSizeOption,
 } from '@/components/export/types';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import { track } from '@/lib/analytics';
@@ -30,10 +26,8 @@ interface Props {
     book: Book;
     storylines: StorylineRef[];
     chapters: ChapterRow[];
-    trimSizes: TrimSizeOption[];
     templates: TemplateDef[];
-    fontPairings: FontPairingDef[];
-    sceneBreakStyles: SceneBreakStyleDef[];
+    currentTemplate: string;
     exportSettings: SavedExportSettings | null;
 }
 
@@ -52,10 +46,8 @@ export default function Export({
     book,
     storylines,
     chapters,
-    trimSizes,
     templates,
-    fontPairings,
-    sceneBreakStyles,
+    currentTemplate,
     exportSettings,
 }: Props) {
     const { t } = useTranslation('export');
@@ -82,6 +74,11 @@ export default function Export({
     // Format
     const [format, setFormat] = useState<Format>(saved.format ?? 'epub');
 
+    // DOCX page layout (international manuscript vs. German Normseite)
+    const [docxLayout, setDocxLayout] = useState<DocxLayout>(
+        saved.docx_layout ?? 'manuscript',
+    );
+
     // Chapters
     const sortedFromProps = useMemo(
         () => [...chapters].sort((a, b) => a.reader_order - b.reader_order),
@@ -105,80 +102,23 @@ export default function Export({
         },
     );
 
-    // Template & customization
-    const defaultTemplate = templates[0];
-    const [template, setTemplate] = useState(() =>
-        saved.template && templates.some((t) => t.slug === saved.template)
-            ? saved.template
-            : (defaultTemplate?.slug ?? 'classic'),
-    );
-    const [fontPairing, setFontPairing] = useState(
-        saved.font_pairing ??
-            defaultTemplate?.defaultFontPairing ??
-            'classic-serif',
-    );
-    const [sceneBreakStyle, setSceneBreakStyle] = useState(
-        saved.scene_break_style ??
-            defaultTemplate?.defaultSceneBreakStyle ??
-            'asterisks',
-    );
-    const [dropCaps, setDropCaps] = useState(
-        saved.drop_caps ?? defaultTemplate?.defaultDropCaps ?? true,
-    );
+    // Template — the book's applied Book Designer template wins over the
+    // saved page snapshot; typesetting itself lives in the designer.
+    const [template, setTemplate] = useState(() => {
+        const known = (slug: string | undefined) =>
+            slug !== undefined && templates.some((tpl) => tpl.slug === slug);
+        if (known(currentTemplate)) return currentTemplate;
+        if (known(saved.template)) return saved.template!;
+        return templates[0]?.slug ?? 'classic';
+    });
 
     const selectedTemplateDef = useMemo(
-        () => templates.find((t) => t.slug === template) ?? templates[0],
+        () => templates.find((tpl) => tpl.slug === template),
         [templates, template],
     );
 
-    const isCustomized = useMemo(() => {
-        if (!selectedTemplateDef) return false;
-        return (
-            fontPairing !== selectedTemplateDef.defaultFontPairing ||
-            sceneBreakStyle !== selectedTemplateDef.defaultSceneBreakStyle ||
-            dropCaps !== selectedTemplateDef.defaultDropCaps
-        );
-    }, [selectedTemplateDef, fontPairing, sceneBreakStyle, dropCaps]);
-
-    const handleTemplateChange = useCallback(
-        (slug: string) => {
-            setTemplate(slug);
-            const def = templates.find((t) => t.slug === slug);
-            if (def) {
-                setFontPairing(def.defaultFontPairing);
-                setSceneBreakStyle(def.defaultSceneBreakStyle);
-                setDropCaps(def.defaultDropCaps);
-            }
-        },
-        [templates],
-    );
-
     // Options
-    const [chapterHeading, setChapterHeading] = useState<ChapterHeading>(
-        saved.chapter_heading ?? 'full',
-    );
-    const [includeActBreaks, setIncludeActBreaks] = useState(
-        saved.include_act_breaks ?? false,
-    );
-    const [showPageNumbers, setShowPageNumbers] = useState(
-        saved.show_page_numbers ?? true,
-    );
-    const [trimSize, setTrimSize] = useState(() =>
-        saved.trim_size === 'custom' ||
-        trimSizes.some((t) => t.value === saved.trim_size)
-            ? saved.trim_size!
-            : '6x9',
-    );
-    const [fontSize, setFontSize] = useState(saved.font_size ?? 11);
     const [cmyk, setCmyk] = useState(saved.cmyk ?? false);
-    const [bleed, setBleed] = useState(saved.bleed ?? 0);
-    const [bleedMode, setBleedMode] = useState<BleedMode>(
-        saved.bleed_mode ?? 'all',
-    );
-    const [customWidth, setCustomWidth] = useState(saved.custom_width ?? 130);
-    const [customHeight, setCustomHeight] = useState(
-        saved.custom_height ?? 190,
-    );
     const [includeCover, setIncludeCover] = useState(
         (saved.include_cover ?? true) && !!book.cover_image_path,
     );
@@ -284,19 +224,8 @@ export default function Export({
         () => ({
             format,
             template,
-            font_pairing: fontPairing,
-            scene_break_style: sceneBreakStyle,
-            drop_caps: dropCaps,
-            chapter_heading: chapterHeading,
-            include_act_breaks: includeActBreaks,
-            show_page_numbers: showPageNumbers,
-            trim_size: trimSize,
-            font_size: fontSize,
+            docx_layout: docxLayout,
             cmyk,
-            bleed,
-            bleed_mode: bleedMode,
-            custom_width: customWidth,
-            custom_height: customHeight,
             include_cover: includeCover,
             front_matter: frontMatter.filter((i) => i.checked).map((i) => i.id),
             back_matter: backMatter.filter((i) => i.checked).map((i) => i.id),
@@ -307,19 +236,8 @@ export default function Export({
         [
             format,
             template,
-            fontPairing,
-            sceneBreakStyle,
-            dropCaps,
-            chapterHeading,
-            includeActBreaks,
-            showPageNumbers,
-            trimSize,
-            fontSize,
+            docxLayout,
             cmyk,
-            bleed,
-            bleedMode,
-            customWidth,
-            customHeight,
             includeCover,
             frontMatter,
             backMatter,
@@ -399,14 +317,6 @@ export default function Export({
         [book.id],
     );
 
-    const handleToggleActBreaks = useCallback(() => {
-        setIncludeActBreaks((prev) => !prev);
-    }, []);
-
-    const handleTogglePageNumbers = useCallback(() => {
-        setShowPageNumbers((prev) => !prev);
-    }, []);
-
     const handleToggleFrontMatter = useCallback((id: string) => {
         setFrontMatter((prev) =>
             prev.map((item) =>
@@ -435,32 +345,19 @@ export default function Export({
             format,
             template,
             chapter_ids: checkedOrdered,
-            chapter_heading: chapterHeading,
-            include_act_breaks: includeActBreaks,
             include_table_of_contents: includeToc,
-            show_page_numbers: showPageNumbers,
-            font_pairing: fontPairing,
-            scene_break_style: sceneBreakStyle,
-            drop_caps: dropCaps,
             include_cover: includeCover,
+            front_matter: frontMatter.filter((i) => i.checked).map((i) => i.id),
+            back_matter: backMatter.filter((i) => i.checked).map((i) => i.id),
         };
 
         if (format === 'pdf') {
-            data.trim_size = trimSize;
-            data.font_size = fontSize;
             data.cmyk = cmyk;
-            data.bleed = bleed;
-            data.bleed_mode = bleedMode;
-            if (trimSize === 'custom') {
-                data.custom_width = customWidth;
-                data.custom_height = customHeight;
-            }
         }
 
-        data.front_matter = frontMatter
-            .filter((i) => i.checked)
-            .map((i) => i.id);
-        data.back_matter = backMatter.filter((i) => i.checked).map((i) => i.id);
+        if (format === 'docx') {
+            data.docx_layout = docxLayout;
+        }
 
         downloadExport(book, data)
             .then(() => track('book_exported'))
@@ -474,24 +371,13 @@ export default function Export({
         book,
         format,
         template,
+        docxLayout,
         orderedChapters,
         selectedChapterIds,
-        chapterHeading,
-        includeActBreaks,
-        showPageNumbers,
         includeToc,
-        trimSize,
-        fontSize,
         cmyk,
-        bleed,
-        bleedMode,
-        customWidth,
-        customHeight,
         frontMatter,
         backMatter,
-        fontPairing,
-        sceneBreakStyle,
-        dropCaps,
         includeCover,
     ]);
 
@@ -520,68 +406,33 @@ export default function Export({
                 />
 
                 <ExportSettings
+                    bookId={book.id}
                     format={format}
                     onFormatChange={setFormat}
                     template={template}
-                    onTemplateChange={handleTemplateChange}
-                    trimSize={trimSize}
-                    onTrimSizeChange={setTrimSize}
-                    fontSize={fontSize}
-                    onFontSizeChange={setFontSize}
+                    onTemplateChange={setTemplate}
+                    templates={templates}
+                    docxLayout={docxLayout}
+                    onDocxLayoutChange={setDocxLayout}
                     cmyk={cmyk}
                     onCmykChange={setCmyk}
-                    bleed={bleed}
-                    onBleedChange={setBleed}
-                    bleedMode={bleedMode}
-                    onBleedModeChange={setBleedMode}
-                    customWidth={customWidth}
-                    onCustomWidthChange={setCustomWidth}
-                    customHeight={customHeight}
-                    onCustomHeightChange={setCustomHeight}
-                    trimSizes={trimSizes}
-                    chapterHeading={chapterHeading}
-                    onChapterHeadingChange={setChapterHeading}
-                    includeActBreaks={includeActBreaks}
-                    onIncludeActBreaksChange={handleToggleActBreaks}
-                    showPageNumbers={showPageNumbers}
-                    onShowPageNumbersChange={handleTogglePageNumbers}
-                    exporting={exporting}
-                    onExport={handleExport}
-                    error={exportError}
-                    templates={templates}
-                    fontPairings={fontPairings}
-                    sceneBreakStyles={sceneBreakStyles}
-                    fontPairing={fontPairing}
-                    onFontPairingChange={setFontPairing}
-                    sceneBreakStyle={sceneBreakStyle}
-                    onSceneBreakStyleChange={setSceneBreakStyle}
-                    dropCaps={dropCaps}
-                    onDropCapsChange={setDropCaps}
-                    isCustomized={isCustomized}
                     includeCover={includeCover}
                     onIncludeCoverChange={setIncludeCover}
                     hasCover={hasCover}
+                    exporting={exporting}
+                    onExport={handleExport}
+                    error={exportError}
                 />
 
                 <ExportPreview
                     bookId={book.id}
                     format={format}
-                    trimSize={trimSize}
-                    trimSizes={trimSizes}
-                    customWidth={customWidth}
-                    customHeight={customHeight}
-                    fontSize={fontSize}
-                    chapterHeading={chapterHeading}
-                    showPageNumbers={showPageNumbers}
-                    includeActBreaks={includeActBreaks}
+                    template={template}
+                    templateDef={selectedTemplateDef}
                     selectedChapterIds={selectedChapterIds}
                     orderedChapters={orderedChapters}
                     frontMatter={frontMatter}
                     backMatter={backMatter}
-                    template={template}
-                    fontPairing={fontPairing}
-                    sceneBreakStyle={sceneBreakStyle}
-                    dropCaps={dropCaps}
                 />
             </div>
         </>

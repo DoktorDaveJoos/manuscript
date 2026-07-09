@@ -4,6 +4,7 @@ namespace App\Services\Export;
 
 use App\Enums\BleedMode;
 use App\Enums\ChapterHeading;
+use App\Enums\DocxLayout;
 use App\Enums\ExportFormat;
 use App\Enums\FontPairing;
 use App\Enums\SceneBreakStyle;
@@ -48,6 +49,7 @@ final readonly class ExportOptions
         public ?float $marginInner = null,
         public ?float $marginOuter = null,
         public bool $hyphenation = true,
+        public DocxLayout $docxLayout = DocxLayout::Manuscript,
     ) {}
 
     /**
@@ -88,6 +90,7 @@ final readonly class ExportOptions
             marginInner: isset($data['margin_inner']) ? (float) $data['margin_inner'] : null,
             marginOuter: isset($data['margin_outer']) ? (float) $data['margin_outer'] : null,
             hyphenation: (bool) ($data['hyphenation'] ?? true),
+            docxLayout: DocxLayout::tryFrom((string) ($data['docx_layout'] ?? '')) ?? DocxLayout::Manuscript,
         );
     }
 }

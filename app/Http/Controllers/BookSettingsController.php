@@ -2,17 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\ExportTemplate;
 use App\Enums\BackMatterType;
-use App\Enums\BleedMode;
-use App\Enums\ChapterHeading;
+use App\Enums\DocxLayout;
 use App\Enums\ExportFormat;
-use App\Enums\FontPairing;
 use App\Enums\FrontMatterType;
-use App\Enums\SceneBreakStyle;
 use App\Enums\TrimSize;
 use App\Http\Requests\ExportBookRequest;
 use App\Http\Requests\UpdateBookGeneralSettingsRequest;
 use App\Models\Book;
+use App\Models\DesignTemplate;
 use App\Services\Export\ContentPreparer;
 use App\Services\Export\Exporters\PdfExporter;
 use App\Services\Export\ExportOptions;
@@ -202,22 +201,11 @@ class BookSettingsController extends Controller
     public function updateExportSettings(Request $request, Book $book): JsonResponse
     {
         $validated = $request->validate([
-            'settings' => ['required', 'array:format,template,font_pairing,scene_break_style,drop_caps,chapter_heading,include_act_breaks,show_page_numbers,trim_size,font_size,cmyk,bleed,bleed_mode,custom_width,custom_height,include_cover,front_matter,back_matter,excluded_chapter_ids'],
+            'settings' => ['required', 'array:format,template,cmyk,include_cover,front_matter,back_matter,excluded_chapter_ids,docx_layout'],
             'settings.format' => ['sometimes', Rule::enum(ExportFormat::class)],
+            'settings.docx_layout' => ['sometimes', Rule::enum(DocxLayout::class)],
             'settings.template' => ['sometimes', 'string', 'regex:/^(classic|modern|elegant|romance|custom:\d+)$/'],
-            'settings.font_pairing' => ['sometimes', Rule::enum(FontPairing::class)],
-            'settings.scene_break_style' => ['sometimes', Rule::enum(SceneBreakStyle::class)],
-            'settings.drop_caps' => ['sometimes', 'boolean'],
-            'settings.chapter_heading' => ['sometimes', Rule::enum(ChapterHeading::class)],
-            'settings.include_act_breaks' => ['sometimes', 'boolean'],
-            'settings.show_page_numbers' => ['sometimes', 'boolean'],
-            'settings.trim_size' => ['sometimes', 'string', Rule::in([...array_map(fn (TrimSize $t) => $t->value, TrimSize::cases()), 'custom'])],
-            'settings.font_size' => ['sometimes', 'integer', 'in:10,11,12,13,14'],
             'settings.cmyk' => ['sometimes', 'boolean'],
-            'settings.bleed' => ['sometimes', 'numeric', 'min:0', 'max:25'],
-            'settings.bleed_mode' => ['sometimes', Rule::enum(BleedMode::class)],
-            'settings.custom_width' => ['sometimes', 'numeric', 'min:50', 'max:500'],
-            'settings.custom_height' => ['sometimes', 'numeric', 'min:50', 'max:500'],
             'settings.include_cover' => ['sometimes', 'boolean'],
             'settings.front_matter' => ['sometimes', 'array'],
             'settings.front_matter.*' => ['string', Rule::enum(FrontMatterType::class)],
@@ -250,47 +238,55 @@ class BookSettingsController extends Controller
                 ...$ch->only('id', 'storyline_id', 'act_id', 'title', 'reader_order', 'word_count', 'is_epilogue', 'is_prologue'),
                 'content' => $ch->getContentWithSceneBreaks(),
             ]),
-            'trimSizes' => collect(TrimSize::cases())->map(function ($t) {
-                $dims = $t->dimensions();
-
-                return [
-                    'value' => $t->value,
-                    'label' => $t->label(),
-                    'labelMetric' => $t->metricLabel(),
-                    'width' => $dims['width'],
-                    'height' => $dims['height'],
-                ];
-            }),
             'acts' => $book->acts->map(fn ($a) => $a->only('id', 'number', 'title')),
             'copyrightText' => $book->copyright_text ?? '',
             'acknowledgmentText' => $book->acknowledgment_text ?? '',
             'aboutAuthorText' => $book->about_author_text ?? '',
             'templates' => collect([new ClassicTemplate, new ModernTemplate, new ElegantTemplate])
-                ->map(function ($t) {
-                    $pairing = $t->defaultFontPairing();
-
-                    return [
-                        'slug' => $t->slug(),
-                        'name' => $t->name(),
-                        'pack' => 'Basic',
-                        'defaultFontPairing' => $pairing->value,
-                        'defaultSceneBreakStyle' => $t->defaultSceneBreakStyle()->value,
-                        'defaultDropCaps' => $t->defaultDropCaps(),
-                        'headingFont' => $pairing->headingFont(),
-                        'bodyFont' => $pairing->bodyFont(),
-                    ];
-                }),
-            'fontPairings' => collect(FontPairing::cases())->map(fn ($fp) => [
-                'value' => $fp->value,
-                'label' => $fp->label(),
-                'headingFont' => $fp->headingFont(),
-                'bodyFont' => $fp->bodyFont(),
-            ]),
-            'sceneBreakStyles' => collect(SceneBreakStyle::cases())->map(fn ($s) => [
-                'value' => $s->value,
-                'label' => $s->label(),
-            ]),
+                ->map(fn (ExportTemplate $t) => $this->exportTemplateDef($t, 'builtin'))
+                ->concat(
+                    DesignTemplate::query()
+                        ->orderBy('name')
+                        ->get()
+                        ->map(fn (DesignTemplate $row) => $this->exportTemplateDef(
+                            ExportService::resolveTemplate($row->slug()),
+                            'custom',
+                        )),
+                )
+                ->values(),
+            'currentTemplate' => (string) ($book->export_settings['template'] ?? 'classic'),
         ]);
+    }
+
+    /**
+     * Template row for the export page's picker, including the trim dimensions
+     * the preview panel needs for its page aspect ratio.
+     *
+     * @return array<string, mixed>
+     */
+    private function exportTemplateDef(ExportTemplate $template, string $group): array
+    {
+        $pairing = $template->defaultFontPairing();
+        $page = (array) ($template->designSettings()['page'] ?? []);
+
+        if (($page['trim_size'] ?? null) === 'custom') {
+            $trimWidth = (float) ($page['custom_width'] ?? 127);
+            $trimHeight = (float) ($page['custom_height'] ?? 203.2);
+        } else {
+            $dims = (TrimSize::tryFrom((string) ($page['trim_size'] ?? '')) ?? TrimSize::Pocket)->dimensions();
+            $trimWidth = $dims['width'];
+            $trimHeight = $dims['height'];
+        }
+
+        return [
+            'slug' => $template->slug(),
+            'name' => $template->name(),
+            'group' => $group,
+            'headingFont' => $pairing->headingFont(),
+            'bodyFont' => $pairing->bodyFont(),
+            'trimWidth' => $trimWidth,
+            'trimHeight' => $trimHeight,
+        ];
     }
 
     public function doExport(ExportBookRequest $request, Book $book, ExportService $service): BinaryFileResponse|JsonResponse

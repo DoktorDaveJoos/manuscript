@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\BackMatterType;
 use App\Enums\BleedMode;
 use App\Enums\ChapterHeading;
+use App\Enums\DocxLayout;
 use App\Enums\ExportFormat;
 use App\Enums\FontPairing;
 use App\Enums\FrontMatterType;
@@ -47,6 +48,7 @@ class ExportBookRequest extends FormRequest
             'drop_caps' => ['nullable', 'boolean'],
             'include_cover' => ['nullable', 'boolean'],
             'cmyk' => ['nullable', 'boolean'],
+            'docx_layout' => ['nullable', Rule::enum(DocxLayout::class)],
         ];
     }
 }
