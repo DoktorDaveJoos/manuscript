@@ -1,6 +1,6 @@
 import type { DraggableSyntheticListeners } from '@dnd-kit/core';
 import { GripVertical } from 'lucide-react';
-import { formatCompactCount } from '@/lib/utils';
+import { formatWordCount } from '@/lib/utils';
 import type { Scene } from '@/types/models';
 
 export default function SceneListItem({
@@ -8,11 +8,15 @@ export default function SceneListItem({
     onClick,
     dragListeners,
     onContextMenu,
+    showWordCount = true,
+    compactWordCount = true,
 }: {
     scene: Scene;
     onClick: () => void;
     dragListeners?: DraggableSyntheticListeners;
     onContextMenu?: (e: React.MouseEvent) => void;
+    showWordCount?: boolean;
+    compactWordCount?: boolean;
 }) {
     return (
         <button
@@ -29,9 +33,11 @@ export default function SceneListItem({
                 <GripVertical size={12} />
             </span>
             <span className="min-w-0 flex-1 truncate">{scene.title}</span>
-            <span className="shrink-0 text-[11px]">
-                {formatCompactCount(scene.word_count)}
-            </span>
+            {showWordCount && (
+                <span className="shrink-0 text-[11px]">
+                    {formatWordCount(scene.word_count, compactWordCount)}
+                </span>
+            )}
         </button>
     );
 }

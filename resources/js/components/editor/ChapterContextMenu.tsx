@@ -8,12 +8,7 @@ import {
 import ContextMenu from '@/components/ui/ContextMenu';
 import { broadcastChapterDataChanged, jsonFetchHeaders } from '@/lib/utils';
 import type { Chapter, ChapterStatus, Storyline } from '@/types/models';
-
-const statusDotClass: Record<ChapterStatus, string> = {
-    draft: 'bg-status-draft',
-    revised: 'bg-status-revised',
-    final: 'bg-status-final',
-};
+import StatusDot from './StatusDot';
 
 const statusValues: ChapterStatus[] = ['draft', 'revised', 'final'];
 
@@ -104,9 +99,7 @@ export default function ChapterContextMenu({
                             chapter.status === value ? 'font-medium' : ''
                         }
                     >
-                        <span
-                            className={`inline-block size-[7px] rounded-full ${statusDotClass[value]}`}
-                        />
+                        <StatusDot status={value} />
                         {t(`status.${value}`)}
                     </ContextMenu.Item>
                 ))}

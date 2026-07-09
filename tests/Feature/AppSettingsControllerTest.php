@@ -45,6 +45,29 @@ test('send_analytics defaults to true in shared inertia props', function () {
         );
 });
 
+test('chapter list display settings are accepted and persisted', function (string $key) {
+    $this->putJson(route('settings.update'), [
+        'key' => $key,
+        'value' => false,
+    ])->assertOk()
+        ->assertJsonPath('message', 'Setting updated.');
+
+    AppSetting::clearCache();
+    expect(AppSetting::get($key))->toBeFalse();
+})->with(['show_status_bubbles', 'show_word_count', 'compact_word_count']);
+
+test('chapter list display settings default to true in shared inertia props', function () {
+    AppSetting::clearCache();
+
+    $this->get(route('books.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('app_settings.show_status_bubbles', true)
+            ->where('app_settings.show_word_count', true)
+            ->where('app_settings.compact_word_count', true)
+        );
+});
+
 test('show_ai_features toggle persists', function () {
     AppSetting::set('show_ai_features', true);
     expect(AppSetting::showAiFeatures())->toBeTrue();

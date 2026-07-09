@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\ChapterStatus;
+use App\Models\AppSetting;
 use App\Models\Beat;
 use App\Models\Book;
 use App\Models\Chapter;
@@ -392,5 +394,66 @@ it('updates the editor status badge after changing chapter status from the sideb
         ->assertSeeIn('[data-testid="chapter-status-badge"]', 'Revised')
         ->assertNoJavaScriptErrors();
 
-    expect($chapter->fresh()->status)->toBe(\App\Enums\ChapterStatus::Revised);
+    expect($chapter->fresh()->status)->toBe(ChapterStatus::Revised);
+});
+
+it('shows status bubbles in the chapter sidebar by default', function () {
+    [$book, $chapters] = createBookWithChapters(2);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertPresent("[data-sidebar-chapter='{$chapters[1]->id}'] [data-testid='chapter-status-dot']");
+});
+
+it('hides status bubbles via the chapter list display options', function () {
+    [$book, $chapters] = createBookWithChapters(2);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertPresent("[data-sidebar-chapter='{$chapters[1]->id}'] [data-testid='chapter-status-dot']")
+        ->click('[data-testid="chapter-list-display-options"]')
+        ->click('[data-testid="display-toggle-status-bubbles"]')
+        ->wait(1)
+        ->assertMissing("[data-sidebar-chapter='{$chapters[1]->id}'] [data-testid='chapter-status-dot']")
+        ->assertNoJavaScriptErrors();
+
+    AppSetting::clearCache();
+    expect(AppSetting::get('show_status_bubbles'))->toBeFalse();
+});
+
+it('hides word counts via the chapter list display options', function () {
+    [$book, $chapters] = createBookWithChapters(2);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertPresent("[data-sidebar-chapter='{$chapters[1]->id}'] [data-testid='chapter-word-count']")
+        ->click('[data-testid="chapter-list-display-options"]')
+        ->click('[data-testid="display-toggle-word-count"]')
+        ->wait(1)
+        ->assertMissing("[data-sidebar-chapter='{$chapters[1]->id}'] [data-testid='chapter-word-count']")
+        ->assertNoJavaScriptErrors();
+
+    AppSetting::clearCache();
+    expect(AppSetting::get('show_word_count'))->toBeFalse();
+});
+
+it('switches word counts between compact and raw formats', function () {
+    [$book, $chapters] = createBookWithChapters(2);
+    $chapters[1]->update(['word_count' => 1700]);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSeeIn("[data-sidebar-chapter='{$chapters[1]->id}']", '1.7k')
+        ->click('[data-testid="chapter-list-display-options"]')
+        ->click('[data-testid="display-toggle-compact-word-count"]')
+        ->wait(1)
+        ->assertSeeIn("[data-sidebar-chapter='{$chapters[1]->id}']", '1,700')
+        ->assertNoJavaScriptErrors();
+
+    AppSetting::clearCache();
+    expect(AppSetting::get('compact_word_count'))->toBeFalse();
 });

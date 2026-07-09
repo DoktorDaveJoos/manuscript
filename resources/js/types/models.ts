@@ -196,6 +196,9 @@ export type AppSettings = {
     hide_formatting_toolbar: boolean;
     typewriter_mode: boolean;
     show_scenes: boolean;
+    show_status_bubbles: boolean;
+    show_word_count: boolean;
+    compact_word_count: boolean;
     send_error_reports: boolean;
     send_analytics: boolean;
     crash_report_prompted: boolean;

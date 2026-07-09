@@ -3,8 +3,9 @@ import { router } from '@inertiajs/react';
 import { GripVertical } from 'lucide-react';
 import { forwardRef } from 'react';
 import { show } from '@/actions/App/Http/Controllers/ChapterController';
-import { formatCompactCount } from '@/lib/utils';
+import { formatWordCount } from '@/lib/utils';
 import type { Chapter } from '@/types/models';
+import StatusDot from './StatusDot';
 
 type ChapterListItemProps = {
     chapter: Chapter;
@@ -13,6 +14,9 @@ type ChapterListItemProps = {
     isActive: boolean;
     displayTitle?: string;
     wordCount?: number;
+    showStatusBubble?: boolean;
+    showWordCount?: boolean;
+    compactWordCount?: boolean;
     onBeforeNavigate?: () => Promise<void>;
     onChapterNavigate?: (chapterId: number) => void;
     onOpenInNewPane?: (chapterId: number) => void;
@@ -30,6 +34,9 @@ const ChapterListItem = forwardRef<HTMLButtonElement, ChapterListItemProps>(
             isActive,
             displayTitle,
             wordCount,
+            showStatusBubble = true,
+            showWordCount = true,
+            compactWordCount = true,
             onBeforeNavigate,
             onChapterNavigate,
             onOpenInNewPane,
@@ -83,14 +90,21 @@ const ChapterListItem = forwardRef<HTMLButtonElement, ChapterListItemProps>(
                 >
                     <GripVertical size={12} />
                 </span>
+                {showStatusBubble && <StatusDot status={chapter.status} />}
                 <span className="min-w-0 flex-1 truncate">
                     {index}. {displayTitle ?? chapter.title}
                 </span>
-                <span
-                    className={`shrink-0 text-[11px] ${isActive ? 'text-surface/50' : 'text-ink-faint'}`}
-                >
-                    {formatCompactCount(wordCount ?? chapter.word_count)}
-                </span>
+                {showWordCount && (
+                    <span
+                        data-testid="chapter-word-count"
+                        className={`shrink-0 text-[11px] ${isActive ? 'text-surface/50' : 'text-ink-faint'}`}
+                    >
+                        {formatWordCount(
+                            wordCount ?? chapter.word_count,
+                            compactWordCount,
+                        )}
+                    </span>
+                )}
             </button>
         );
     },
