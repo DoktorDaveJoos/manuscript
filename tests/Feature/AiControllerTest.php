@@ -41,6 +41,73 @@ test('revise rejects a stale expected_current_version_id with 409', function () 
     )->assertStatus(409);
 });
 
+test('revise requires expected_current_version_id', function () {
+    ProseReviser::fake(['<p>Whatever.</p>']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => '<p>Original.</p>',
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $this->postJson(
+        route('chapters.ai.revise', [$book, $chapter]),
+        [],
+    )->assertStatus(422)
+        ->assertJsonValidationErrors('expected_current_version_id');
+});
+
+test('reviseScene requires expected_current_version_id', function () {
+    ProseReviser::fake(['<p>Whatever.</p>']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $scene = Scene::factory()->for($chapter)->create([
+        'content' => '<p>Scene prose.</p>',
+        'sort_order' => 0,
+    ]);
+
+    $this->postJson(
+        route('chapters.scenes.ai.revise', [$book, $chapter, $scene]),
+        [],
+    )->assertStatus(422)
+        ->assertJsonValidationErrors('expected_current_version_id');
+});
+
+test('revise-editorial requires expected_current_version_id', function () {
+    ProseReviser::fake(['<p>Whatever.</p>']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'version_number' => 1,
+        'content' => '<p>Original.</p>',
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $review = EditorialReview::factory()->for($book)->create([
+        'status' => 'completed',
+        'completed_at' => now(),
+    ]);
+    $review->chapterNotes()->create([
+        'chapter_id' => $chapter->id,
+        'notes' => ['chapter_note' => 'Tighten the first scene.'],
+    ]);
+
+    $this->postJson(
+        route('chapters.ai.reviseEditorial', [$book, $chapter]),
+        [],
+    )->assertStatus(422)
+        ->assertJsonValidationErrors('expected_current_version_id');
+});
+
 test('revise streams prose revision and auto-applies the new version', function () {
     ProseReviser::fake(['<p>The revised prose text.</p>']);
 

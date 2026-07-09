@@ -185,6 +185,51 @@ test('continue writing commit rejects a stale expected_current_version_id with 4
     )->assertStatus(409);
 });
 
+test('continue writing stream requires expected_current_version_id', function () {
+    ContinueWritingAgent::fake(['ok']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Some prose.</p>']);
+
+    $this->postJson(
+        route('chapters.ai.continueWriting', [$book, $chapter]),
+        ['hint' => '', 'word_goal' => 60],
+    )->assertStatus(422)
+        ->assertJsonValidationErrors('expected_current_version_id');
+});
+
+test('continue writing commit requires expected_current_version_id', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>x</p>']);
+
+    $this->postJson(
+        route('chapters.ai.continueWriting.commit', [$book, $chapter]),
+        [],
+    )->assertStatus(422)
+        ->assertJsonValidationErrors('expected_current_version_id');
+});
+
+test('continue writing commit rejects a null expectation when a current version exists', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>x</p>']);
+    ChapterVersion::factory()->for($chapter)->create([
+        'version_number' => 2,
+        'is_current' => true,
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $this->postJson(
+        route('chapters.ai.continueWriting.commit', [$book, $chapter]),
+        ['expected_current_version_id' => null],
+    )->assertStatus(409);
+});
+
 test('continue writing 404s when chapter does not belong to the book', function () {
     ContinueWritingAgent::fake(['ok']);
 

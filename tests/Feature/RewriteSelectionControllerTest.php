@@ -382,6 +382,34 @@ test('commit rejects a stale expected_current_version_id with 409', function () 
     )->assertStatus(409);
 });
 
+test('stream requires expected_current_version_id', function () {
+    RewriteSelectionAgent::fake(['ok']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Some prose.</p>']);
+
+    $this->postJson(
+        route('chapters.ai.rewriteSelection', [$book, $chapter]),
+        ['selection' => 'Some text.'],
+    )->assertStatus(422)
+        ->assertJsonValidationErrors('expected_current_version_id');
+});
+
+test('commit requires expected_current_version_id', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>x</p>']);
+
+    $this->postJson(
+        route('chapters.ai.rewriteSelection.commit', [$book, $chapter]),
+        [],
+    )->assertStatus(422)
+        ->assertJsonValidationErrors('expected_current_version_id');
+});
+
 test('preceding chapters carry a continuity-background role and storyline labels', function () {
     $book = Book::factory()->withAi()->create();
     $mainArc = Storyline::factory()->for($book)->create(['name' => 'Main arc']);
