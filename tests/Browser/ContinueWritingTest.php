@@ -18,6 +18,55 @@ use App\Models\Storyline;
  * The faked agent stream glues the paragraph break to its surrounding words
  * in one TextDelta, which forces exactly that flush shape.
  */
+it('locks the editor while continue writing streams and unlocks after', function () {
+    // The delay keeps the SSE stream open long enough for the browser to
+    // observe the locked state; the closure runs server-side per stream.
+    ContinueWritingAgent::fake(function () {
+        usleep(1_500_000);
+
+        return 'The streamed continuation.';
+    });
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create([
+        'reader_order' => 1,
+        'title' => 'Chapter 1',
+        'word_count' => 1,
+    ]);
+    ChapterVersion::factory()->for($chapter)->create([
+        'is_current' => true,
+        'content' => '<p>Hello.</p>',
+    ]);
+    $scene = Scene::factory()->for($chapter)->create([
+        'content' => '<p>Hello.</p>',
+        'sort_order' => 0,
+        'word_count' => 1,
+    ]);
+    $chapter->refreshContentHash();
+
+    $editorSelector = "#scene-{$scene->id} .ProseMirror";
+
+    $page = visit("/books/{$book->id}/editor?panes={$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->click($editorSelector)
+        ->keys($editorSelector, 'Control+p')
+        ->click('Continue writing')
+        ->click('button[type="submit"]');
+
+    // While the AI streams, the surface must reject user input — typing
+    // during a stream corrupts insertion positions and gets committed.
+    $page->assertAttribute($editorSelector, 'contenteditable', 'false');
+
+    $page->wait(4);
+
+    // After commit the editor is writable again and the prose landed.
+    $page->assertAttribute($editorSelector, 'contenteditable', 'true')
+        ->assertSee('The streamed continuation.')
+        ->assertNoJavaScriptErrors();
+});
+
 it('streams a multi-paragraph continuation without losing text', function () {
     ContinueWritingAgent::fake(
         fn () => "The first streamed paragraph.\n\nThe second streamed paragraph."
