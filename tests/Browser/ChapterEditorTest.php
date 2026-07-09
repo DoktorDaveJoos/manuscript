@@ -376,3 +376,21 @@ it('moves a chapter to another storyline from the context menu without an error 
 
     expect($chapter->fresh()->storyline_id)->toBe($target->id);
 });
+
+it('updates the editor status badge after changing chapter status from the sidebar context menu', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $chapter = $chapters[0];
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSeeIn('[data-testid="chapter-status-badge"]', 'Draft')
+        ->rightClick("[data-sidebar-chapter='{$chapter->id}']")
+        ->click('Status')
+        ->click("[role='menuitem']:has-text('Revised')")
+        ->wait(1)
+        ->assertSeeIn('[data-testid="chapter-status-badge"]', 'Revised')
+        ->assertNoJavaScriptErrors();
+
+    expect($chapter->fresh()->status)->toBe(\App\Enums\ChapterStatus::Revised);
+});
