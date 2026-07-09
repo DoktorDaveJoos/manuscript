@@ -2,6 +2,7 @@
 
 use App\Models\DesignTemplate;
 use App\Models\License;
+use App\Services\Export\Templates\ClassicTemplate;
 
 beforeEach(function () {
     License::factory()->create();
@@ -67,7 +68,7 @@ it('opens the book like a printed one: page 1 alone on the recto', function () {
 
 it('sizes preview pages by the bleed-grown sheet, not the raw trim', function () {
     [$book] = createBookWithChapters(1);
-    $settings = (new \App\Services\Export\Templates\ClassicTemplate)->designSettings();
+    $settings = (new ClassicTemplate)->designSettings();
     $settings['page']['bleed'] = 5.0;
     $template = DesignTemplate::factory()->create(['settings' => $settings]);
     $book->update(['export_settings' => ['template' => $template->slug()]]);
