@@ -5,6 +5,7 @@
     "template.builtIn": "Built-in templates",
     "template.duplicated": "Saved as \"{{name}}\" — built-in templates stay untouched.",
     "template.copySuffix": "Custom",
+    "template.saveFailed": "Couldn't save — check the values.",
     "template.delete": "Delete template",
     "template.readOnlyHint": "Built-in template — your first change creates an editable copy.",
     "page.title": "Page setup",

@@ -5,6 +5,7 @@
     "template.builtIn": "Plantillas incluidas",
     "template.duplicated": "Guardado como «{{name}}»: las plantillas incluidas no se modifican.",
     "template.copySuffix": "Propia",
+    "template.saveFailed": "No se pudo guardar — revisa los valores.",
     "template.delete": "Eliminar plantilla",
     "template.readOnlyHint": "Plantilla incluida: el primer cambio crea una copia editable.",
     "page.title": "Configuración de página",

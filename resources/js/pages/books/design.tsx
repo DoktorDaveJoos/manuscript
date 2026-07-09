@@ -96,13 +96,38 @@ export default function Design({
     const [pageTab, setPageTab] = useState<'paper' | 'content'>('paper');
     const [notice, setNotice] = useState<string | null>(null);
     const saveChain = useRef<Promise<unknown>>(Promise.resolve());
+    // Pending edits on a built-in template while its editable copy is being
+    // created — rendered immediately, persisted once the copy exists.
+    const [builtinDraft, setBuiltinDraft] = useState<{
+        baseSlug: string;
+        settings: DesignSettings;
+    } | null>(null);
+    const draftRef = useRef<DesignSettings | null>(null);
+    const storeInFlight = useRef(false);
 
     const selectedBuiltIn = builtInTemplates.find(
         (b) => b.slug === selectedSlug,
     );
     const selectedCustom = customTemplates.find((c) => c.slug === selectedSlug);
     const settings: DesignSettings | null =
-        selectedCustom?.settings ?? selectedBuiltIn?.settings ?? null;
+        selectedCustom?.settings ??
+        (builtinDraft && builtinDraft.baseSlug === selectedSlug
+            ? builtinDraft.settings
+            : selectedBuiltIn?.settings) ??
+        null;
+
+    /**
+     * Persistence runs strictly in sequence; a failed save surfaces a notice
+     * without killing the chain for later edits.
+     */
+    const enqueue = useCallback(
+        (op: () => Promise<unknown>) => {
+            saveChain.current = saveChain.current
+                .then(op)
+                .catch(() => setNotice(t('template.saveFailed')));
+        },
+        [t],
+    );
 
     const trimSpec = useMemo(() => {
         if (!settings) return { width: 127, height: 203.2 };
@@ -134,7 +159,9 @@ export default function Design({
 
     /**
      * Every edit persists immediately. Editing a built-in silently duplicates
-     * it into an editable custom template first (built-ins stay read-only).
+     * it into an editable custom template first (built-ins stay read-only);
+     * only one duplicate is ever created — edits made while that request is
+     * in flight are folded into it.
      */
     const updateSettings = useCallback(
         (mutate: (draft: DesignSettings) => void) => {
@@ -148,8 +175,8 @@ export default function Design({
                 setCustomTemplates((list) =>
                     list.map((c) => (c.id === updated.id ? updated : c)),
                 );
-                saveChain.current = saveChain.current.then(() =>
-                    fetch(
+                enqueue(async () => {
+                    const res = await fetch(
                         updateTemplate.url([book, { id: selectedCustom.id }]),
                         {
                             method: 'PUT',
@@ -159,35 +186,71 @@ export default function Design({
                                 settings: next,
                             }),
                         },
-                    ).then(() => setPreviewVersion((v) => v + 1)),
-                );
+                    );
+                    if (!res.ok) {
+                        setNotice(t('template.saveFailed'));
+                        return;
+                    }
+                    setPreviewVersion((v) => v + 1);
+                });
             } else if (selectedBuiltIn) {
+                draftRef.current = next;
+                setBuiltinDraft({
+                    baseSlug: selectedBuiltIn.slug,
+                    settings: next,
+                });
+                if (storeInFlight.current) return;
+                storeInFlight.current = true;
+
                 const name = `${selectedBuiltIn.name} (${t('template.copySuffix')})`;
-                saveChain.current = saveChain.current.then(() =>
-                    fetch(storeTemplate.url(book), {
-                        method: 'POST',
-                        headers: jsonFetchHeaders(),
-                        body: JSON.stringify({
-                            name,
-                            based_on: selectedBuiltIn.slug,
-                            settings: next,
-                        }),
-                    })
-                        .then((res) => res.json() as Promise<CustomTemplateDef>)
-                        .then((created) => {
-                            setCustomTemplates((list) => [...list, created]);
-                            setSelectedSlug(created.slug);
-                            setNotice(
-                                t('template.duplicated', {
-                                    name: created.name,
-                                }),
+                enqueue(async () => {
+                    try {
+                        const sent = draftRef.current ?? next;
+                        const res = await fetch(storeTemplate.url(book), {
+                            method: 'POST',
+                            headers: jsonFetchHeaders(),
+                            body: JSON.stringify({
+                                name,
+                                based_on: selectedBuiltIn.slug,
+                                settings: sent,
+                            }),
+                        });
+                        if (!res.ok) {
+                            // Keep the draft so the next (valid) edit retries.
+                            setNotice(t('template.saveFailed'));
+                            return;
+                        }
+                        const created = (await res.json()) as CustomTemplateDef;
+                        if (draftRef.current && draftRef.current !== sent) {
+                            // Flush edits that arrived while the POST ran.
+                            created.settings = draftRef.current;
+                            await fetch(
+                                updateTemplate.url([book, { id: created.id }]),
+                                {
+                                    method: 'PUT',
+                                    headers: jsonFetchHeaders(),
+                                    body: JSON.stringify({
+                                        name: created.name,
+                                        settings: draftRef.current,
+                                    }),
+                                },
                             );
-                            setPreviewVersion((v) => v + 1);
-                        }),
-                );
+                        }
+                        draftRef.current = null;
+                        setBuiltinDraft(null);
+                        setCustomTemplates((list) => [...list, created]);
+                        setSelectedSlug(created.slug);
+                        setNotice(
+                            t('template.duplicated', { name: created.name }),
+                        );
+                        setPreviewVersion((v) => v + 1);
+                    } finally {
+                        storeInFlight.current = false;
+                    }
+                });
             }
         },
-        [settings, selectedCustom, selectedBuiltIn, book, t],
+        [settings, selectedCustom, selectedBuiltIn, book, t, enqueue],
     );
 
     const handleApply = useCallback(() => {
@@ -195,10 +258,16 @@ export default function Design({
             method: 'PUT',
             headers: jsonFetchHeaders(),
             body: JSON.stringify({ template: selectedSlug }),
-        }).then(() => {
-            setAppliedSlug(selectedSlug);
-            setNotice(t('actions.applied'));
-        });
+        })
+            .then((res) => {
+                if (!res.ok) {
+                    setNotice(t('template.saveFailed'));
+                    return;
+                }
+                setAppliedSlug(selectedSlug);
+                setNotice(t('actions.applied'));
+            })
+            .catch(() => setNotice(t('template.saveFailed')));
     }, [book, selectedSlug, t]);
 
     const handleDelete = useCallback(() => {
@@ -206,14 +275,20 @@ export default function Design({
         fetch(destroyTemplate.url([book, { id: selectedCustom.id }]), {
             method: 'DELETE',
             headers: jsonFetchHeaders(),
-        }).then(() => {
-            setCustomTemplates((list) =>
-                list.filter((c) => c.id !== selectedCustom.id),
-            );
-            setSelectedSlug(selectedCustom.basedOn);
-            setPreviewVersion((v) => v + 1);
-        });
-    }, [book, selectedCustom]);
+        })
+            .then((res) => {
+                if (!res.ok) {
+                    setNotice(t('template.saveFailed'));
+                    return;
+                }
+                setCustomTemplates((list) =>
+                    list.filter((c) => c.id !== selectedCustom.id),
+                );
+                setSelectedSlug(selectedCustom.basedOn);
+                setPreviewVersion((v) => v + 1);
+            })
+            .catch(() => setNotice(t('template.saveFailed')));
+    }, [book, selectedCustom, t]);
 
     if (!settings) return null;
 
@@ -334,6 +409,16 @@ export default function Design({
                                             updateSettings((d) => {
                                                 d.page.trim_size =
                                                     e.target.value;
+                                                if (
+                                                    e.target.value === 'custom'
+                                                ) {
+                                                    // Start from the previous trim so the save is
+                                                    // always a complete, valid page spec.
+                                                    d.page.custom_width ??=
+                                                        trimSpec.width;
+                                                    d.page.custom_height ??=
+                                                        trimSpec.height;
+                                                }
                                                 const preset = trimSizes.find(
                                                     (ts) =>
                                                         ts.value ===

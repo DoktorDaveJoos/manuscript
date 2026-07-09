@@ -5,6 +5,7 @@
     "template.builtIn": "Mitgelieferte Vorlagen",
     "template.duplicated": "Als „{{name}}“ gespeichert — mitgelieferte Vorlagen bleiben unverändert.",
     "template.copySuffix": "Eigene",
+    "template.saveFailed": "Speichern fehlgeschlagen — bitte Werte prüfen.",
     "template.delete": "Vorlage löschen",
     "template.readOnlyHint": "Mitgelieferte Vorlage — die erste Änderung erstellt eine bearbeitbare Kopie.",
     "page.title": "Seitenaufbau",
