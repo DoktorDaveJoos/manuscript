@@ -352,3 +352,27 @@ it('toggles typewriter mode from the formatting toolbar', function () {
         ->click('[data-testid="typewriter-toggle"]')
         ->assertAttributeMissing('[data-testid="typewriter-toggle"]', 'aria-pressed');
 });
+
+it('moves a chapter to another storyline from the context menu without an error overlay', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $chapter = $chapters[0];
+    $target = Storyline::factory()->for($book)->create([
+        'name' => 'Side Plot',
+        'sort_order' => 1,
+    ]);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->rightClick("[data-sidebar-chapter='{$chapter->id}']")
+        ->click('Move to')
+        ->click("[role='menuitem']:has-text('Side Plot')")
+        ->wait(1)
+        // The sidebar must reflect the move immediately, without a page refresh
+        ->assertSeeIn("[data-storyline-section='{$target->id}']", $chapter->title)
+        // Inertia renders non-Inertia responses in a full-screen iframe modal
+        ->assertNotPresent('iframe')
+        ->assertNoJavaScriptErrors();
+
+    expect($chapter->fresh()->storyline_id)->toBe($target->id);
+});

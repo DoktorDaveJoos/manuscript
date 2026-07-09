@@ -220,6 +220,7 @@ function SortableStorylineGroup({
                 ref={setNodeRef}
                 style={style}
                 {...attributes}
+                data-storyline-section={storyline.id}
                 className={`flex flex-col gap-px ${isDragging ? 'opacity-50' : ''}`}
             >
                 {showHeader && (
