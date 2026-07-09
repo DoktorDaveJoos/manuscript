@@ -261,3 +261,32 @@ test('applyPending is a no-op when no flags are set', function () {
     $service->applyPending();
     expect(file_get_contents($dbPath))->toBe($original);
 });
+
+test('applyPending never throws when the sidecar cannot be rewritten — a backup-swap failure must not block app launch', function () {
+    // NativeAppServiceProvider::boot() calls applyPending() BEFORE Window::open();
+    // NativePHP's NativeAppBootedController invokes boot() with no try/catch, so
+    // any exception here 500s the boot request and the window never opens.
+    [$service, $workDir, $dbPath] = makeIsolatedBackupService();
+    $this->workDir = $workDir;
+
+    // Stage a pending revert (rollback file + sidecar flag), then make the
+    // sidecar file itself unwritable so clearing the flag after the swap
+    // fails — the path that raises RuntimeException in writeSidecar().
+    copy($dbPath, $service->rollbackPath());
+    file_put_contents($service->sidecarPath(), json_encode([
+        'pending_import' => false,
+        'pending_revert' => true,
+        'has_rollback' => true,
+    ]));
+
+    chmod($service->sidecarPath(), 0444);
+
+    try {
+        $service->applyPending();
+    } finally {
+        chmod($service->sidecarPath(), 0644);
+    }
+
+    // Reaching this line means launch would have proceeded.
+    expect(true)->toBeTrue();
+});
