@@ -89,3 +89,16 @@ it('applies a template to the book without clobbering other export settings', fu
         ->and($settings['front_matter'])->toBe(['toc'])
         ->and($settings['format'])->toBe('pdf');
 });
+
+it('rejects a custom trim size without explicit page dimensions', function () {
+    $book = Book::factory()->create();
+    $settings = (new ClassicTemplate)->designSettings();
+    $settings['page']['trim_size'] = 'custom';
+    // custom_width / custom_height intentionally left null
+
+    $this->postJson(route('books.design.templates.store', $book), [
+        'name' => 'Custom Trim',
+        'based_on' => 'classic',
+        'settings' => $settings,
+    ])->assertUnprocessable();
+});

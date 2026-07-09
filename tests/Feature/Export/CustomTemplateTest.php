@@ -113,3 +113,50 @@ it('renders a pdf preview with a custom template', function () {
 
     $response->assertOk()->assertJsonStructure(['pdf']);
 });
+
+/**
+ * The value the CSS cascade ends up applying for a selector/property: the
+ * LAST declaration in source order (all rules involved share specificity).
+ */
+function winningCssValue(string $css, string $selector, string $property): ?string
+{
+    preg_match_all(
+        '/(?<![\w.+-])'.preg_quote($selector, '/').'\s*\{[^}]*?'.preg_quote($property, '/').':\s*([^;]+);/s',
+        $css,
+        $matches,
+    );
+
+    if ($matches[1] === []) {
+        return null;
+    }
+
+    // Normalize numeric formatting ("2.0em" and "2em" are the same CSS value).
+    return preg_replace('/(\d+)\.0(?=\D|$)/', '$1', trim((string) end($matches[1])));
+}
+
+it('renders a duplicated built-in template identically to its base', function (string $slug) {
+    $base = ExportService::resolveTemplate($slug);
+    // Exactly what the Book Designer stores when a built-in is first edited:
+    // the base template's own reported design settings.
+    $duplicate = new CustomTemplate($base, $base->designSettings(), 'Copy');
+
+    $baseCss = $base->pdfCss(11);
+    $duplicateCss = $duplicate->pdfCss(11);
+
+    expect(winningCssValue($duplicateCss, '.chapter-label', 'margin'))
+        ->toBe(winningCssValue($baseCss, '.chapter-label', 'margin'))
+        ->and(winningCssValue($duplicateCss, 'h1', 'font-size'))
+        ->toBe(winningCssValue($baseCss, 'h1', 'font-size'))
+        ->and(winningCssValue($duplicateCss, 'body', 'line-height'))
+        ->toBe(winningCssValue($baseCss, 'body', 'line-height'));
+})->with(['classic', 'modern', 'elegant']);
+
+it('reports the heading top space that matches each template\'s actual chapter-label CSS', function (string $slug, float $expected) {
+    $settings = ExportService::resolveTemplate($slug)->designSettings();
+
+    expect($settings['headings']['heading_top_space_em'])->toBe($expected);
+})->with([
+    'classic' => ['classic', 9.0],
+    'modern' => ['modern', 2.0],
+    'elegant' => ['elegant', 9.0],
+]);
