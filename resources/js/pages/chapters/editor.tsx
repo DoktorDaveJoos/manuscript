@@ -660,46 +660,33 @@ export default function EditorPage({
     // ── Keyboard shortcuts ───────────────────────────────────────────────
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
-            if (e.key === 'p' && (e.metaKey || e.ctrlKey)) {
+            // With Shift held, e.key reports the uppercase letter ('F', 'R')
+            // — normalize so shifted shortcuts actually match.
+            const key = e.key.toLowerCase();
+            if (key === 'p' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
                 if (isPaletteOpen) {
                     closePalette();
                 } else {
                     setIsPaletteOpen(true);
                 }
-            } else if (
-                e.key === 'f' &&
-                (e.metaKey || e.ctrlKey) &&
-                e.shiftKey
-            ) {
+            } else if (key === 'f' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
                 e.preventDefault();
                 setIsLocalFindOpen(false);
                 setIsFindOpen(true);
                 setFindShowReplace(false);
-            } else if (
-                e.key === 'f' &&
-                (e.metaKey || e.ctrlKey) &&
-                !e.shiftKey
-            ) {
+            } else if (key === 'f' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
                 e.preventDefault();
                 setIsFindOpen(false);
                 setSearchHighlight(null);
                 setIsLocalFindOpen(true);
                 setLocalFindShowReplace(false);
-            } else if (
-                e.key === 'r' &&
-                (e.metaKey || e.ctrlKey) &&
-                e.shiftKey
-            ) {
+            } else if (key === 'r' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
                 e.preventDefault();
                 setIsLocalFindOpen(false);
                 setIsFindOpen(true);
                 setFindShowReplace(true);
-            } else if (
-                e.key === 'h' &&
-                (e.metaKey || e.ctrlKey) &&
-                !e.shiftKey
-            ) {
+            } else if (key === 'h' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
                 e.preventDefault();
                 setIsFindOpen(false);
                 setSearchHighlight(null);
@@ -798,9 +785,22 @@ export default function EditorPage({
 
     // ── Find navigate ────────────────────────────────────────────────────
     const handleFindNavigate = useCallback(
-        async (chapterId: number, _sceneId: number) => {
+        (chapterId: number, sceneId: number) => {
             // Navigate to chapter in current focused pane
             navigateToChapter(chapterId);
+
+            // Bring the scene holding the match into view. The chapter may
+            // still be loading, so poll briefly until its scenes mount.
+            const deadline = Date.now() + 3000;
+            const tryScroll = () => {
+                const el = document.getElementById(`scene-${sceneId}`);
+                if (el) {
+                    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                } else if (Date.now() < deadline) {
+                    window.setTimeout(tryScroll, 100);
+                }
+            };
+            tryScroll();
         },
         [navigateToChapter],
     );

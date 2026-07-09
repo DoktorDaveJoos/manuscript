@@ -159,13 +159,24 @@ export default function ChapterFindBar({
         doCollectRef.current = doCollect;
     }, [doCollect]);
 
+    // Track the active index in a ref so re-collects triggered by doc edits
+    // can preserve the user's position without re-subscribing listeners.
+    const activeMatchIndexRef = useRef(activeMatchIndex);
+    useEffect(() => {
+        activeMatchIndexRef.current = activeMatchIndex;
+    }, [activeMatchIndex]);
+
+    // Collect when the query or options change — resets to the first match.
+    // Keyed on searchParams (not doCollect) so unrelated re-renders — e.g.
+    // navigating to another match — never schedule a collect that would
+    // snap the active match back to the first one.
     useEffect(() => {
         if (collectTimerRef.current) clearTimeout(collectTimerRef.current);
-        collectTimerRef.current = setTimeout(doCollect, 150);
+        collectTimerRef.current = setTimeout(() => doCollectRef.current(), 150);
         return () => {
             if (collectTimerRef.current) clearTimeout(collectTimerRef.current);
         };
-    }, [doCollect]);
+    }, [searchParams]);
 
     // Re-collect when editors change content (user typing while find is open)
     useEffect(() => {
@@ -175,7 +186,7 @@ export default function ChapterFindBar({
         const onEditorUpdate = () => {
             if (collectTimerRef.current) clearTimeout(collectTimerRef.current);
             collectTimerRef.current = setTimeout(
-                () => doCollectRef.current(),
+                () => doCollectRef.current(activeMatchIndexRef.current),
                 300,
             );
         };
@@ -199,7 +210,10 @@ export default function ChapterFindBar({
         setActiveMatchIndex(index);
         pushHighlights(searchParams, match);
 
-        editor.commands.focus();
+        // Move the editor selection to the match WITHOUT focusing the editor:
+        // focus must stay in the find input so Enter keeps navigating instead
+        // of typing a paragraph break into the manuscript. The active-match
+        // highlight marks the position visually.
         editor.commands.setTextSelection({
             from: match.from,
             to: match.to,

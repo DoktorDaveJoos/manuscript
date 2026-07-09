@@ -123,7 +123,11 @@ export default function WritingSurface({
     const handleEditorReady = useCallback((sceneId: number, editor: Editor) => {
         editorRegistry.current.set(sceneId, editor);
         const cleanup = () => {
-            editorRegistry.current.delete(sceneId);
+            // TipTap destroys replaced editors on a deferred schedule — only
+            // evict the entry if a newer editor hasn't been registered since.
+            if (editorRegistry.current.get(sceneId) === editor) {
+                editorRegistry.current.delete(sceneId);
+            }
         };
         editor.on('destroy', cleanup);
     }, []);
