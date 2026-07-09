@@ -1,6 +1,9 @@
 import type { Editor } from '@tiptap/react';
 import { useEditorState } from '@tiptap/react';
 import {
+    AlignCenter,
+    AlignLeft,
+    AlignRight,
     Keyboard,
     List,
     ListOrdered,
@@ -76,6 +79,8 @@ export default function FormattingToolbar({
         isBlockquote: false,
         isH1: false,
         isH2: false,
+        isAlignCenter: false,
+        isAlignRight: false,
     };
 
     const editorState =
@@ -93,6 +98,8 @@ export default function FormattingToolbar({
                     isBlockquote: e.isActive('blockquote'),
                     isH1: e.isActive('heading', { level: 1 }),
                     isH2: e.isActive('heading', { level: 2 }),
+                    isAlignCenter: e.isActive({ textAlign: 'center' }),
+                    isAlignRight: e.isActive({ textAlign: 'right' }),
                 };
             },
         }) ?? defaultState;
@@ -175,6 +182,60 @@ export default function FormattingToolbar({
                         title={t('toolbar.heading2')}
                     >
                         <span className="text-[11px] font-semibold">H2</span>
+                    </ToolbarButton>
+                </div>
+
+                <ToolbarDivider />
+
+                {/* Text alignment — "left" means no explicit alignment so
+                    saved HTML stays free of inline styles by default */}
+                <div className="flex items-center gap-[6px]">
+                    <ToolbarButton
+                        active={
+                            !editorState.isAlignCenter &&
+                            !editorState.isAlignRight
+                        }
+                        onClick={() =>
+                            run(() =>
+                                editor!.chain().focus().unsetTextAlign().run(),
+                            )
+                        }
+                        title={t('toolbar.alignLeft')}
+                        testId="align-left"
+                    >
+                        <AlignLeft size={14} />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        active={editorState.isAlignCenter}
+                        onClick={() =>
+                            run(() =>
+                                editor!
+                                    .chain()
+                                    .focus()
+                                    .setTextAlign('center')
+                                    .run(),
+                            )
+                        }
+                        title={t('toolbar.alignCenter')}
+                        testId="align-center"
+                    >
+                        <AlignCenter size={14} />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        active={editorState.isAlignRight}
+                        onClick={() =>
+                            run(() =>
+                                editor!
+                                    .chain()
+                                    .focus()
+                                    .setTextAlign('right')
+                                    .run(),
+                            )
+                        }
+                        title={t('toolbar.alignRight')}
+                        testId="align-right"
+                    >
+                        <AlignRight size={14} />
                     </ToolbarButton>
                 </div>
             </div>
