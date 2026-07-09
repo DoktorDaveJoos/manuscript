@@ -320,8 +320,10 @@ test('restore version replaces scenes', function () {
     $this->post(route('chapters.restoreVersion', [$book, $chapter, $v1]))
         ->assertRedirect();
 
+    // Single-segment snapshot without a scene_map: the first scene is
+    // updated in place (id and title survive), the excess scene is removed.
     $chapter->refresh();
     expect($chapter->scenes)->toHaveCount(1);
-    expect($chapter->scenes->first()->title)->toBe('Scene 1');
+    expect($chapter->scenes->first()->title)->toBe('Scene A');
     expect($chapter->scenes->first()->content)->toBe('Original content');
 });
