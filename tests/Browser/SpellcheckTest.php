@@ -33,3 +33,61 @@ it('does not flag correctly spelled English text', function () {
         ->wait(3)
         ->assertMissing('.editor-prose .spell-error');
 });
+
+it('replaces a misspelled word from the right-click popover', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $book->update(['language' => 'en']);
+    $chapter = $chapters[0];
+    $content = '<p>The knight was mispeled here.</p>';
+    $chapter->scenes()->first()->update(['content' => $content]);
+    $chapter->currentVersion->update(['content' => $content]);
+    $chapter->refreshContentHash();
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->wait(3)
+        ->assertPresent('.editor-prose .spell-error')
+        ->rightClick('.editor-prose .spell-error')
+        ->wait(1)
+        ->assertSee('Add to Dictionary');
+});
+
+it('adds a word to the custom dictionary and clears its squiggle', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $book->update(['language' => 'en']);
+    $chapter = $chapters[0];
+    $content = '<p>The wizard Zaphrandor smiled.</p>';
+    $chapter->scenes()->first()->update(['content' => $content]);
+    $chapter->currentVersion->update(['content' => $content]);
+    $chapter->refreshContentHash();
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->wait(3)
+        ->assertPresent('.editor-prose .spell-error')
+        ->rightClick('.editor-prose .spell-error')
+        ->wait(1)
+        ->click('Add to Dictionary')
+        ->wait(2)
+        ->assertMissing('.editor-prose .spell-error');
+
+    expect($book->fresh()->custom_dictionary)->toContain('zaphrandor');
+});
+
+it('never flags words already in the custom dictionary', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $book->update(['language' => 'en', 'custom_dictionary' => ['zaphrandor']]);
+    $chapter = $chapters[0];
+    $content = '<p>The wizard Zaphrandor smiled.</p>';
+    $chapter->scenes()->first()->update(['content' => $content]);
+    $chapter->currentVersion->update(['content' => $content]);
+    $chapter->refreshContentHash();
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->wait(3)
+        ->assertMissing('.editor-prose .spell-error');
+});

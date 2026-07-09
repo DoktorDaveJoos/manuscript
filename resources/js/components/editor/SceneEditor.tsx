@@ -30,6 +30,8 @@ export default function SceneEditor({
     proofreadingConfig,
     bookLanguage,
     spellcheckEnabled,
+    customWords,
+    onAddToDictionary,
     locked = false,
     currentVersionId = null,
 }: {
@@ -50,6 +52,8 @@ export default function SceneEditor({
     proofreadingConfig?: ProofreadingConfig;
     bookLanguage?: string;
     spellcheckEnabled?: boolean;
+    customWords?: string[];
+    onAddToDictionary?: (word: string) => void;
     /** Reject user input while an AI flow writes to this chapter (programmatic inserts still work). */
     locked?: boolean;
     /** Chapter version this editor's content belongs to — saves carry it so the server can refuse stale writes. */
@@ -246,6 +250,8 @@ export default function SceneEditor({
         proofreadingConfig,
         language: bookLanguage,
         spellcheckEnabled,
+        customWords,
+        onAddToDictionary,
     });
 
     // setEditable blocks keyboard/DOM input only — AI streams insert via

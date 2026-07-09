@@ -55,6 +55,8 @@ export default function WritingSurface({
     proofreadingConfig,
     bookLanguage,
     spellcheckEnabled,
+    customWords,
+    onAddToDictionary,
     locked = false,
     currentVersionId = null,
 }: {
@@ -86,6 +88,8 @@ export default function WritingSurface({
     proofreadingConfig?: ProofreadingConfig;
     bookLanguage?: string;
     spellcheckEnabled?: boolean;
+    customWords?: string[];
+    onAddToDictionary?: (word: string) => void;
     /** Reject user input in every scene while an AI flow writes to this chapter. */
     locked?: boolean;
     /** Chapter version the rendered content belongs to — scene saves carry it. */
@@ -475,6 +479,8 @@ export default function WritingSurface({
                                 proofreadingConfig={proofreadingConfig}
                                 bookLanguage={bookLanguage}
                                 spellcheckEnabled={spellcheckEnabled}
+                                customWords={customWords}
+                                onAddToDictionary={onAddToDictionary}
                                 locked={locked}
                                 currentVersionId={currentVersionId}
                             />

@@ -85,9 +85,13 @@ export default function ChapterPane({
     const { chapter, proofreadingConfig: initialProofreadingConfig } =
         chapterData;
 
-    const { config: proofreadingConfig } = useProofreading(
+    const {
+        config: proofreadingConfig,
+        dictionary: customDictionary,
+        addToDictionary,
+    } = useProofreading(
         initialProofreadingConfig ?? DEFAULT_PROOFREADING_CONFIG,
-        [],
+        chapterData.customDictionary ?? [],
         bookId,
     );
 
@@ -545,6 +549,8 @@ export default function ChapterPane({
                         proofreadingConfig={proofreadingConfig}
                         bookLanguage={bookLanguage}
                         spellcheckEnabled={spellcheckEnabled}
+                        customWords={customDictionary}
+                        onAddToDictionary={addToDictionary}
                         isLocalFindOpen={isLocalFindOpen}
                         localFindShowReplace={localFindShowReplace}
                         onLocalFindClose={onLocalFindClose}
