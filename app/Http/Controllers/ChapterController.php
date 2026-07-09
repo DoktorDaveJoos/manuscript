@@ -312,9 +312,17 @@ class ChapterController extends Controller
                 'source' => VersionSource::ManualEdit,
                 'change_summary' => "Restored from version {$version->version_number}",
                 'is_current' => true,
+                'scene_map' => $version->scene_map,
             ]);
 
-            $chapter->replaceScenesWithContent($version->content);
+            // Rebuild the snapshot's scene structure (<hr> breaks + scene_map
+            // titles), like acceptVersion does. Snapshots without content
+            // still need the single-scene reset so the editor has a scene.
+            if (blank($version->content)) {
+                $chapter->replaceScenesWithContent($version->content);
+            } else {
+                $chapter->replaceSceneContents($version->content, $version->scene_map);
+            }
         });
 
         return redirect()->back();
