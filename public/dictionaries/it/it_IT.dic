@@ -1,20 +1,17 @@
-95381
+95438
 / Estensione linguistica italiana - Italian Writing Aids extension
 / Forked from: Dizionario italiano, see README.txt for details
 /
 / Copyright (C) 2001, 2002 Gianluca Turconi
 / Copyright (C) 2002, 2003, 2004 Gianluca Turconi and Davide Prina
 / Copyright (C) 2004, 2005, 2006, 2007  Davide Prina
-/ Copyright (C) 2010 - 2015, Andrea Pescetti
-/ Copyright (C) 2020 - 2022, LibreItalia - Marina Latini
+/ Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Andrea Pescetti
 /
-/ E-Mail: marina.latini<AT>libreoffice<DOT>org
-/ Home: https://libreitalia.org
+/ E-Mail: pescetti<AT>apache<DOT>org
+/ Home: http://extensions.openoffice.org/project/dict-it
 / License: GNU GPL 3
 /
-/ Version 5.1.1 (07/11/2022) (DD/MM/YYYY)
-/
-/ This file is distributed under the GPL license.
+/ Version 5.0 (10/02/2016) (DD/MM/YYYY)
 /
 / This file is part of the "Estensione linguistica italiana - Italian
 / Writing Aids extension".
@@ -3080,6 +3077,7 @@ aguzzato/EyTUqrs
 aguzze
 aguzzina/QRTUqrs
 ah
+ahia
 ahimè/Tqr
 ahi/Tqr
 ai
@@ -9094,7 +9092,7 @@ attendato/EyTUqrs
 attendendo/DJ
 attendente/Us
 attendere/BTXqrJI
-attendibile/SYTU
+attendibile/SYTUW
 attendibilità/TUqs
 attendismo/OTqr
 attendista/QRTUqrs
@@ -9692,7 +9690,7 @@ autoconsumo/OTqr
 autocontemplazione/STUqrs
 autocontratto/OTqr
 autocontrollo/OTqr
-autoconvinta/TUqrs
+autoconvinto/o
 autoconvocando/D
 autoconvocare/ALKhlTXqrI
 autoconvocato/EyTUqrs
@@ -9940,7 +9938,7 @@ autonoleggiatrice/STUqrs
 autonoleggio/OTqr
 autonoma/QTUqrs
 autonomia/QTUqrs
-autonòmico/QT
+autonomico/QT
 autonomismo/OTqr
 autonomista/QRTUqrs
 autonomistica/QRTUqrs
@@ -11034,9 +11032,9 @@ balestrone/S
 balestruccio/O
 Bali
 balì
+baliaggio/O
 balia/Q
 balìa
-baliaggio/O
 baliatico/O
 baliato/O
 balilla
@@ -11646,7 +11644,6 @@ bascula/Q
 bascullante/S
 basculla/Q
 base
-Base
 baseball
 Baselice
 baselicese/S
@@ -12253,8 +12250,8 @@ beneficialista/QR
 beneficiando/D
 beneficiare/ALKhlI
 beneficiario/o
-benefit
 beneficiato/Ey
+benefit
 benefizio/O
 benemerente/S
 benemerenza/Q
@@ -12337,6 +12334,7 @@ benzinaio/o
 benzina/Q
 benzoato/O
 benzochinone/S
+benzodiazepina/Q
 benzoe/S
 benzoico/p
 benzoile/S
@@ -13422,6 +13420,7 @@ bluffatrice/S
 Blufi
 blusante/S
 blusa/Q
+blush
 blusotto/O
 boa/Q
 boario/o
@@ -14995,6 +14994,7 @@ cabrato/Ey
 cabriole
 cabriolet
 cacao
+cacare/A
 cacarella/Q
 cacatoa
 cacatua
@@ -15103,6 +15103,7 @@ cafonesco/oY
 caforio
 cagando/D
 cagare/ALKhlI
+cagasotto
 cagato/Ey
 caggiano
 cagionando/D
@@ -15190,7 +15191,6 @@ calato/Ey
 calatoia/Q
 Calavino
 calaza/Q
-Calc
 calcabile/S
 calcagna
 calcagno/O
@@ -16046,7 +16046,6 @@ capitanare/ALKhlI
 capitanato/Ey
 capitando/D
 capitaneria/Q
-capitano
 capitare/ALKhlI
 capitato/Ey
 capitavola
@@ -16467,7 +16466,7 @@ caricatrice/S
 caricaturale/S
 caricatura/Q
 caricaturista/QR
-cariche
+carico/oW
 Cariddi
 caridi
 carie
@@ -16583,7 +16582,7 @@ carotato/Ey
 carote
 carotene/S
 carotenoide/S
-carotideo/O
+carotideo/o
 carotide/S
 carotiere/S
 carovana/Q
@@ -17405,6 +17404,7 @@ cazzo/O
 cazzottata/Q
 cazzotto/O
 cazzuola/Q
+cazzuto/oW
 CD
 c'è
 cebano/O
@@ -17938,8 +17938,8 @@ charme
 charter
 chartreuse
 Charvensod
-Châtillon
 chat
+Châtillon
 chauffeur
 che
 ché
@@ -18216,6 +18216,7 @@ chirottero/O
 chirurgia/Q
 chirurgico/pY
 chirurgo/on
+chissenefrega
 chissà
 chitarra/Q
 chitarrista/QR
@@ -18324,7 +18325,6 @@ ciascun
 ciascuna
 ciascun'altalena
 ciascuno
-CIB
 cibando/D
 cibare/ALKhlI
 cibaria/Q
@@ -19044,12 +19044,12 @@ cliccare/ALKhlI
 cliccato/Ey
 cliché
 click
-client
 clientela
 clientelare/S
 clientele
 clientelismo/O
 clientelistico/pY
+client
 cliente/S
 cliffo
 clima/R
@@ -19879,6 +19879,7 @@ commendevole/S
 commensale/S
 commensurabile/S
 commensurabilità
+comment
 commentabile/S
 commentando/D
 commentare/ALKhlI
@@ -19886,7 +19887,6 @@ commentario/O
 commentato/Ey
 commentatore/S
 commentatrice/S
-commento
 commerciabile/S
 commerciabilità
 commercialista/QR
@@ -20198,6 +20198,8 @@ complottando/D
 complottare/ALKhlI
 complottato/Ey
 complottismo/O
+complottista/QR
+complottistico/p
 compluvio/O
 componendi
 componendo/DJ
@@ -20283,7 +20285,7 @@ comprove
 comptometers
 comptometrista/QR
 compulsione/S
-compulsivo/o
+compulsivo/oY
 compunto/oY
 compunzione/S
 computabile/S
@@ -21274,7 +21276,6 @@ contitolarità
 contorca
 contorce
 contorcendo/D
-contorcente/S
 contorcere/BI
 contorcimento/O
 contornabile/S
@@ -22074,7 +22075,7 @@ corresponsabilità
 corresponsione/S
 correttezza/Q
 correttivo/o
-corretto/mYJ
+corretto/mYJW
 correttore/S
 correttrice/S
 correzionale/S
@@ -22105,7 +22106,7 @@ corrisposto/o
 corritrice/S
 corrività
 corrivo/o
-corroborare/ALKhlI
+corroborare/ALKhlIz
 corroborato/Ey
 corroborazione/S
 corrodendo/D
@@ -22470,10 +22471,10 @@ covare/ALKhlI
 covariante/S
 covarianza/Q
 covato/Ey
+cover
 coventrizzando/D
 coventrizzare/ALKhlI
 coventrizzato/Ey
-cover
 covettore/S
 covile/S
 covolume/S
@@ -23130,6 +23131,7 @@ cunicolo/o
 cunicoltore/S
 cunicoltrice/S
 cunicoltura/Q
+cunnilingus
 cuocendo/D
 cuocere/BI
 cuoche
@@ -23149,6 +23151,7 @@ Cuorgnè
 cuoricino/O
 cuoriforme/S
 cupcake
+cupcakes
 cupezza/Q
 cupidigia/Q
 cupidità
@@ -23275,6 +23278,7 @@ dadino/O
 dado/O
 daffare
 d'affari
+d'arachidi
 Dafne
 daga/Q
 dagherrotipia/Q
@@ -24317,6 +24321,7 @@ denigratorii
 denigratorio/o
 denigratrice/S
 denigrazione/S
+denim
 denitrificazione/S
 Denno
 denominabile/S
@@ -24435,7 +24440,7 @@ depistaggio/O
 depistando/D
 depistare/ALKhlI
 depistato/Ey
-dépliant
+depliant
 deplorabile/S
 deplorando/D
 deplorare/ALKhlI
@@ -25325,6 +25330,7 @@ dilazionare/ALKhlI
 dilazionato/Ey
 dilazionatorio/o
 dilazione
+dildo
 dileggiabile/S
 dileggiando/D
 dileggiare/ALKhlI
@@ -25863,6 +25869,7 @@ disceverato/Ey
 dischetto/O
 dischiudere/BI
 dischiusasi
+dischiusero
 dischiuso/m
 discinesia/Q
 discinetico/p
@@ -27457,6 +27464,7 @@ dr
 dracena/Q
 dracma/Q
 draconiano/oY
+drag
 dragaggio/O
 dragamine
 dragando/D
@@ -27491,7 +27499,6 @@ drappo/O
 drasticità
 drastico/pY
 dravidico/p
-Draw
 drenaggio/O
 drenando/D
 drenare/ALKhlI
@@ -30134,6 +30141,7 @@ escoriare/ALKhlTXqrI
 escoriativo/Tqr
 escoriato/EyTUqrs
 escoriazione/STUqrs
+escort
 escreato/OT
 escrementale/STU
 escrementizia/QTUqrs
@@ -31397,6 +31405,7 @@ exploit/Tqr
 export/Tqr
 expo/Tqr
 extended/Tqr
+extension
 extracellulare/STU
 extracomunitaria/QTUqrs
 extracomunitario/OTqr
@@ -31557,7 +31566,7 @@ fagocitato/Ey
 fagocitosi
 fagopirismo
 fagostatico/p
-fagottino
+fagottino/O
 fagotto/O
 fahrenheit
 Faicchio
@@ -31642,7 +31651,7 @@ Faloppio
 falsando/D
 falsare/ALKhlI
 falsariga/Q
-falsario/O
+falsario/o
 falsato/Ey
 falsetto/O
 falsificabile/S
@@ -31701,6 +31710,7 @@ fanciullezza/Q
 fanciullino/o
 fanciullona/QR
 fanciullo/o
+fanculo
 fandango/O
 fandonia/Q
 fanello/O
@@ -31953,6 +31963,7 @@ fattispecie
 fattivo/oY
 fattizio/o
 fatto/mJ
+fattona/QR
 fattore/S
 fattoressa/Q
 fattoriale/S
@@ -32145,7 +32156,6 @@ felze/S
 femmina/Q
 femminella/Q
 femmineo/o
-femminicidio
 femminile/SY
 femminilità
 femminilizzando/D
@@ -32890,8 +32900,6 @@ fiorentissimo/o
 fiorenza
 Fiorenzo
 fiore/S
-fiorente
-fiorentina
 fiorettista/QR
 fioretto/o
 fioriera/Q
@@ -33225,6 +33233,7 @@ Fobello
 fobia/Q
 fobico/p
 focaccia/n
+focaccina/Q
 focaia/Q
 focale/S
 focalizzando/DJ
@@ -34084,6 +34093,7 @@ fratellanza/Q
 fratellastro/O
 fratellino/O
 fratello/O
+fratellone/S
 fraternità
 fraternizzando/D
 fraternizzare/ALKhlI
@@ -34234,6 +34244,7 @@ friabile/S
 friabilità
 fricassea/Q
 fricativo/o
+fricchettona/QR
 Frida
 Frido
 Frigento
@@ -34295,6 +34306,7 @@ frizzare/ALKhlI
 frizzato/o
 frizziero
 frizzore
+frociara/Q
 frocio/O
 frodabile/S
 frodando/D
@@ -37823,7 +37835,6 @@ hitleriano/OT
 HIV/T
 hl
 hm
-ho/T
 hobbit/TUq
 hobby/Tq
 hoc
@@ -37843,11 +37854,12 @@ honorem
 honoris
 Horn
 horror/Tq
-hospice
 hostess/Tq
 hosting/Tq
-hotspot
+ho/T
+hospice
 hotel/Tq
+hotspot
 hovercraft
 http/T
 Hubble/T
@@ -38983,8 +38995,8 @@ immanicatissima/QTU
 immanicatissimo/OT
 immanicato/OT
 immanicatura/QTUqrs
-immanità/TUqs
 immantinente
+immanità/TUqs
 immarcescibile/SYTU
 immateriale/SYTU
 immaterialismo/OTq
@@ -39913,7 +39925,6 @@ imprescindibilità/T
 imprescrittibile/SYTU
 imprescrittibilità/TUqs
 impresentabile/SYTU
-Impress
 impressale/TUqrs
 impressa/QTUqrs
 impressavi/Tqr
@@ -40929,6 +40940,7 @@ includere/BTXqrI
 inclusa/QTUqrs
 inclusione/STUqrs
 inclusiva/QTU
+inclusività/TUqs
 inclusivo/OYT
 incluso/OTqr
 incoagulabile/STU
@@ -45203,9 +45215,8 @@ iotacismo/O
 iotiroideo/o
 io/Tq
 Iowa/Tqr
-IPA
-iPad
 ipacusia/TUqrs
+iPad
 ipallage/STUqs
 ipate/TUqrs
 ipecacuana/QTUqrs
@@ -46539,7 +46550,7 @@ j
 jack
 Jacopo
 Jacurso
-Jacuzzi
+jacuzzi
 Jahvè
 Janeiro
 Jarno
@@ -47305,6 +47316,7 @@ lavoracci
 lavoraccio
 lavorando/D
 lavorare/ALKhlI
+lavorativamente
 lavorativo/o
 lavorato/Ey
 lavoratore/S
@@ -47645,7 +47657,7 @@ l'ersero
 l'ersi
 lesbico/o
 lesbismo/O
-Lesbo
+lesbo
 l'escluse
 l'esclusi
 l'escussero
@@ -47910,8 +47922,6 @@ librario/o
 librato/Ey
 libratore/S
 librazione/S
-LibreItalia
-LibreOffice
 libreria/Q
 libresco/o
 librettino
@@ -48071,6 +48081,8 @@ limografo/O
 limola/Q
 limolatrice/S
 limonaia/Q
+limonare/A
+limonato/O
 limonata/Q
 limoncello/o
 limoncina
@@ -48300,13 +48312,13 @@ Lisbona
 lisca/Q
 Liscate
 liscezza/Q
-liscia/n
 lisciamente
 lisciamento/O
 lisciando/D
 lisciare/ALKhlI
 lisciato/Ey
 lisciatura/Q
+liscia/n
 liscio/OW
 lisciviando/D
 lisciviare/ALKhlI
@@ -48542,9 +48554,9 @@ Lodovico
 Lodrino
 loess
 loffa/Q
-loft
 l'offese
 l'offesi
+loft
 logaritmico/p
 logaritmo/O
 loggare/AI
@@ -50011,10 +50023,9 @@ manlevando/D
 manlevare/ALKhlI
 manlevato/Ey
 Manlio
-mannaggia
-mannàggia
 mannaia/Q
 manna/Q
+mannaggia
 mannaro/O
 mannello/o
 mannite
@@ -50548,6 +50559,7 @@ maschilista/QR
 maschilistico/pY
 maschilità
 maschio/o
+maschione/S
 maschista/R
 Maschito
 Masciago
@@ -52183,6 +52195,7 @@ milite/S
 militesente/S
 miliziano/o
 milizia/Q
+milkshake
 millantando/D
 millantare/ALKhlI
 millantato/Ey
@@ -52219,7 +52232,6 @@ millimetrico/p
 millisecondo/O
 millivolt
 millivoltmetro/O
-milkshake
 m'illuse
 m'illusi
 milonite
@@ -52275,6 +52287,7 @@ minato/Ey
 minatore
 minatorio/o
 minatrice/S
+minchiata/Q
 minchionaggine/S
 minchionando/D
 minchionare/ALKhlI
@@ -54070,7 +54083,6 @@ multimilionario/o
 multimodo
 multinazionale/S
 multinfartuale/S
-multinfartuato
 multinucleare/S
 multipara/Q
 multiparità
@@ -54288,6 +54300,7 @@ nababbo/O
 Nabucodonosor
 n'accese
 nacchera/Q
+nachos
 nacquero
 nacque/S
 Nadia
@@ -57367,7 +57380,6 @@ opalizzato/EyTUqrs
 OPA/T
 OpenOffice/Tqr
 open/TUqs
-openSUSE
 operabile/STU
 operabilità/TUqs
 operaia/QTUqrs
@@ -58731,6 +58743,8 @@ ottundente/Us
 ottundere/BTXqrI
 ottundimento/OTqr
 ottupla/QTUqrs
+ottuplicare/ALKhlI
+ottuplicato/Ey
 ottuplice/STUqrs
 ottuplo/OTqr
 otturamento/OTqr
@@ -59197,6 +59211,7 @@ palese/Y
 Palestina
 palestinese/S
 palestra/Q
+palestrato/Ey
 Palestrina
 Palestro
 paletnologa/QR
@@ -59671,8 +59686,8 @@ papismo/O
 papista/QR
 Papozze
 pappafico/O
-pappagallesco/oY
 pappagallino/O
+pappagallesco/oY
 pappagallismo/O
 pappagallo/O
 pappagorgia/n
@@ -60185,6 +60200,7 @@ parroco/n
 parronchi
 parruccaio/O
 parrucca/Q
+parrucco
 parrucchiera/QR
 parrucchino/O
 parruccona/QR
@@ -60853,6 +60869,8 @@ pedonalizzazione/S
 pedone/S
 pedonizzazione/S
 pedo/O
+pedopornografia/Q
+pedopornografico/p
 pedopsichiatra/R
 pedopsichiatria
 Pedrengo
@@ -62155,7 +62173,7 @@ picnometro/O
 picnosi
 picnostilo/o
 picometro/O
-pico/o
+pico
 picosecondo/O
 picozza/Q
 picrico/p
@@ -62345,6 +62363,7 @@ pignoccata/Q
 pignolaggine/S
 pignoleria/Q
 pignolesco/o
+pignolino/o
 pignolo/o
 pignone/S
 pignorabile/S
@@ -62540,8 +62559,8 @@ pipiare/ALKhlI
 pipiato/Ey
 pipistrello/O
 pipita/Q
-pippa/Q
 pippiolino/O
+pippa/Q
 Pippo
 pippolo/O
 piramidale/S
@@ -64164,7 +64183,7 @@ Possagno
 possano
 possanza
 possedendo/D
-possedere/ÈI
+possedere/fI
 possedimento/O
 posseditrice/S
 posseduto/Ey
@@ -67193,6 +67212,7 @@ quartararo
 quartarolo
 quartavolo
 quartazione/S
+quarterback
 quarteria
 quartettista/QR
 quartetto/O
@@ -67238,8 +67258,10 @@ quattrocentocinquantamila
 quattrocentomila
 quattrofoglie
 quattromila/|!
+quattr'otto
 Quebec
 quechua
+queen
 quegli
 quei
 quel
@@ -67302,14 +67324,14 @@ quinario/o
 quinci
 quinconce/S
 quinconciale/S
-quindi
 quindicennale/S
 quindicennio/O
 quindici/@)
 quindicimila/|!
 quindicinale/SY
 quindicina/Q
-quine/S
+quindo/O
+quine
 Quingentole
 quinquagenario/o
 quinquagesimo/o
@@ -67558,6 +67580,7 @@ Racine
 Racines
 racing
 racket
+racquetball
 rad
 radancia/n
 radar
@@ -70724,6 +70747,8 @@ ridacchiando/D
 ridacchiare/ALKhlI
 ridacchiato/Ey
 ridallo
+ridammelo/o
+ridammi
 ridanciano/o
 ridando/D
 ridanno
@@ -71623,6 +71648,7 @@ rimisurare/ALKhlI
 rimisurato/Ey
 rimmarrei
 rimmel
+rimodellamento/O
 rimodellando/D
 rimodellare/ALKhlI
 rimodellato/Ey
@@ -72629,7 +72655,7 @@ risecchisce
 risecchiscono
 risecchito/Ey
 risedendo/D
-risedere/ÈI
+risedere/fI
 riseduto/Ey
 risegando/D
 risegare/ALKhlI
@@ -72824,7 +72850,8 @@ rispondendo/D
 rispondenza/Q
 rispondere/BI
 rispondessono
-risponditrici
+risponditore/S
+risponditrice/S
 risposando/D
 risposare/ALKhlI
 risposato/Ey
@@ -74561,6 +74588,7 @@ salvezza/Q
 salvia/Q
 salviate/S
 salvietta/Q
+salviettina/Q
 salvifico/p
 Salvio
 Salvirola
@@ -75121,6 +75149,8 @@ sbarcando/D
 sbarcare/ALKhlI
 sbarcato/Ey
 sbarcatoio/O
+sbarellando
+sbarellare/A
 sbarramento/O
 sbarrando/D
 sbarrare/ALKhlI
@@ -75561,6 +75591,7 @@ scaldaacqua
 scaldabagno/O
 scaldabanchi
 scaldacqua
+scaldacollo
 scaldaletto/O
 scaldamani
 scaldamuscoli
@@ -76568,7 +76599,7 @@ scippato/Ey
 scippatore/S
 scippatrice/S
 sciroccale/S
-sciroccata/Q
+sciroccato/o
 scirocco/O
 sciroppando/D
 sciroppare/ALKhlI
@@ -76607,6 +76638,8 @@ scivoloso/oYW
 scledense/S
 sclerale/S
 sclera/Q
+sclerando
+sclerare/A
 sclerenchima/R
 sclerodermia/Q
 sclerodermico/p
@@ -76782,6 +76815,9 @@ scompiacere/BI
 scompigliando/D
 scompigliare/ALKhlI
 scompigliato/Ey
+scompisciare/A
+scompisciarsi
+scompisciato/Q
 scompletando/D
 scompletare/ALKhlI
 scompletato/Ey
@@ -76927,6 +76963,7 @@ scoordinare/ALKhlI
 scoordinatamente
 scoordinato/Ey
 scooter
+scopabile/S
 scopando/D
 scopare/ALKhlI
 scopato/Ey
@@ -77471,7 +77508,7 @@ sedentarizzare/ALKhlI
 sedentarizzato/Ey
 sedentarizzazione/S
 sedente/S
-sedere/ÈSI
+sedere/fSI
 sederino/O
 sede/S
 sedetevi
@@ -77596,6 +77633,7 @@ segrete
 segreteria/Q
 segretezza/Q
 segretissimo/o
+segretuccio/O
 Segrino
 seguace/S
 seguendo/D
@@ -77876,6 +77914,7 @@ semplificare/ALKhlI
 semplificato/Ey
 semplificazione/S
 sempre
+sempreché
 sempreverde/S
 semprevivo/O
 Semproniano
@@ -78831,6 +78870,8 @@ sfuso/o
 sgabellata/Q
 sgabello/O
 sgabuzzino/O
+sgamare/AI
+sgamato/o
 sgambando/D
 sgambare/ALKhlI
 sgambato/Ey
@@ -79041,6 +79082,7 @@ sgualcibile/S
 sgualcire/tvI
 sgualcitura/Q
 sgualdrina/Q
+sgualdrinella/Q
 sguancio/O
 sguardo/O
 sguarnendo/D
@@ -79215,6 +79257,7 @@ signoret
 signoria/Q
 signorile/SY
 signorilità
+signorinella/Q
 signorinetto/o
 signorino/o
 signornò
@@ -81040,7 +81083,7 @@ soprasensibile/S
 soprasenso/O
 soprassalto/O
 soprassedendo/D
-soprassedere/ÈI
+soprassedere/fI
 soprasseduto/Ey
 soprassegnando/D
 soprassegnare/ALKhlI
@@ -83135,6 +83178,7 @@ spumosità
 spumoso/o
 spuntando/D
 spuntare/ALKhlI
+spuntatina/Q
 spuntato/Ey
 spuntatrice/S
 spuntatura/Q
@@ -84329,6 +84373,7 @@ stradoppio/o
 straducola
 strafalciona/QR
 strafatto/o
+strafelice/S
 strafilaggio
 strafilando/D
 strafilare/ALKhlI
@@ -85140,6 +85185,7 @@ successone/S
 successo/o
 successore
 successorio/o
+succhiacazzi
 succhiando/D
 succhiare/ALKhlI
 succhiato/Ey
@@ -85670,7 +85716,6 @@ suscitare/ALKhlI
 suscitato/Ey
 suscitatore/S
 suscitatrice/S
-SUSE
 Susegana
 sushi
 Susi
@@ -88061,9 +88106,11 @@ tettarella/Q
 tettato/Ey
 tette
 tettigonia/Q
+tettine
 tettogenesi
 tettogenetico/p
 tettoia/Q
+tettona/Q
 tettonico/p
 tettonite/S
 tettorio/o
@@ -88541,6 +88588,7 @@ Tocqueville
 Todi
 todino/o
 toeletta/Q
+toelettatore/S
 toelettatura/Q
 tofana
 t'offese
@@ -89083,6 +89131,7 @@ totocalcio/O
 totonero/O
 tottavilla
 touche
+touché
 toupet
 tour
 tourbillon
@@ -91271,7 +91320,6 @@ ubriache
 ubriachezza/QTUqrs
 ubriacona/TUqrs
 ubriacone/STqr
-Ubuntu
 uccel
 uccellaccio/OTqr
 uccellagione/STUqrs
@@ -92386,6 +92434,7 @@ uzzolo/OTqr
 uzzo/Tqr
 v/£
 va
+vabbè
 vacabile/S
 vacando/D
 vacanza/Q
@@ -94916,6 +94965,7 @@ wattora
 watusso/o
 wc
 web
+week
 weekend
 Wehrmacht
 Weimar
@@ -94930,13 +94980,15 @@ Wisconsin
 word
 workshop
 workstation
+wow
 wrestling
-Writer
 WTO
+wurstel
 WWF
 www
 Wyoming
 x/£$
+Xanax
 xantofilla
 xantogenato/O
 xantogenico
@@ -94994,6 +95046,7 @@ yacht
 yachting
 yachtsman
 yak
+Yale
 Yamaha
 yamatologia/Q
 yamatologo/p
@@ -95108,6 +95161,7 @@ zavorrato/Ey
 zavorre
 zazzera/Q
 zazzeruto/o
+zebedei
 zebrando/D
 zebrare/ALKhlI
 zebrato/Ey
@@ -95161,6 +95215,7 @@ zeotropica
 zeotropo
 zeppelin
 zeppola/Q
+zeppolina/Q
 zeppo/o
 zerbino/O
 zerbinotto/O
@@ -95250,6 +95305,7 @@ zittendo/D
 zittio
 zittire/tvI
 zitto/o
+zvzzxziizmmxvi
 zizzania
 zizza/Q
 zoccolaio/o
@@ -95347,6 +95403,7 @@ zoticona/QR
 zotico/pY
 Zovencedo
 zozza/Q
+zozzona/QR
 zuavo/o
 zucca/Q
 zuccata/Q

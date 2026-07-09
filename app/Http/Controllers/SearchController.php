@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\Scene;
+use App\Support\WordCount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +42,7 @@ class SearchController extends Controller
         $totalMatches = 0;
 
         foreach ($scenes as $scene) {
-            $plainText = strip_tags($scene->content ?? '');
+            $plainText = $this->htmlToSearchableText($scene->content ?? '');
 
             if ($plainText === '') {
                 continue;
@@ -125,7 +126,7 @@ class SearchController extends Controller
                 $result = $this->replaceInHtml($scene->content, $pattern, $replace);
 
                 if ($result['count'] > 0) {
-                    $wordCount = str_word_count(strip_tags($result['content']));
+                    $wordCount = WordCount::count($result['content']);
                     $scene->update([
                         'content' => $result['content'],
                         'word_count' => $wordCount,
@@ -147,6 +148,20 @@ class SearchController extends Controller
             'replaced_count' => $replacedCount,
             'affected_scenes' => count($affectedSceneIds),
         ]);
+    }
+
+    /**
+     * Convert scene HTML to plain text without gluing words together across
+     * block boundaries — a naive strip_tags turns `<p>to</p><p>ward</p>`
+     * into "toward" and produces phantom matches. Mirrors the editor, where
+     * text in different paragraphs can never form a single word.
+     */
+    private function htmlToSearchableText(string $html): string
+    {
+        $html = preg_replace('#<br\s*/?>#i', ' ', $html) ?? $html;
+        $html = preg_replace('#</(?:p|h[1-6]|li|blockquote|div)>#i', '$0 ', $html) ?? $html;
+
+        return strip_tags($html);
     }
 
     /**

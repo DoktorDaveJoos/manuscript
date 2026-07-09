@@ -1,0 +1,23 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath' | { read -r f; case \"$f\" in *.ts|*.tsx|*.js|*.jsx) npx eslint --fix --no-warn-ignored \"$f\" 2>/dev/null || true;; *) ;; esac; }",
+            "timeout": 30,
+            "statusMessage": "ESLint auto-fix..."
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath' | { read -r f; case \"$f\" in *.ts|*.tsx|*.js|*.jsx|*.css|*.yml|*.yaml|*.json) npx prettier --write \"$f\" 2>/dev/null || true;; *) ;; esac; }",
+            "timeout": 30,
+            "statusMessage": "Prettier auto-format..."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -36,7 +36,7 @@ class SceneStructureController extends Controller
 
         [$content, $blocks] = $this->chapterBlocks($chapter);
 
-        $wordCount = str_word_count(strip_tags($content));
+        $wordCount = WordCount::count($content);
         abort_if($wordCount > 12000, 422, __('Chapter is too long for AI scene structuring (:count words). Consider splitting it into smaller chapters.', ['count' => $wordCount]));
 
         $numbered = collect($blocks)

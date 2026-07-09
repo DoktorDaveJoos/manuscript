@@ -9,13 +9,15 @@ import { useAiErrorToast } from '@/hooks/useAiErrorToast';
 import { flushPaneByChapter } from '@/lib/pane';
 import { proseMirrorBlockText } from '@/lib/proseText';
 import { insertStreamedParagraphs } from '@/lib/streamedParagraphs';
-import { jsonFetchHeaders } from '@/lib/utils';
+import { broadcastChapterDataChanged, jsonFetchHeaders } from '@/lib/utils';
 import type { ChapterVersion } from '@/types/models';
 
 type StartArgs = {
     editor: Editor;
     bookId: number;
     chapterId: number;
+    /** The version the client believes is current — the server 409s on mismatch. */
+    expectedCurrentVersionId: number | null;
     hint: string;
     selection: { from: number; to: number };
 };
@@ -137,7 +139,14 @@ export function useRewriteSelection() {
     const dismissReview = useCallback(() => setReview(null), []);
 
     const start = useCallback(
-        async ({ editor, bookId, chapterId, hint, selection }: StartArgs) => {
+        async ({
+            editor,
+            bookId,
+            chapterId,
+            expectedCurrentVersionId,
+            hint,
+            selection,
+        }: StartArgs) => {
             if (isWorkingRef.current) return;
 
             isWorkingRef.current = true;
@@ -214,6 +223,8 @@ export function useRewriteSelection() {
                             after,
                             before_truncated: beforeTruncated,
                             after_truncated: afterTruncated,
+                            expected_current_version_id:
+                                expectedCurrentVersionId,
                         }),
                     },
                 );
@@ -301,6 +312,10 @@ export function useRewriteSelection() {
                     {
                         method: 'POST',
                         headers: jsonFetchHeaders(),
+                        body: JSON.stringify({
+                            expected_current_version_id:
+                                expectedCurrentVersionId,
+                        }),
                     },
                 );
 
@@ -328,6 +343,11 @@ export function useRewriteSelection() {
                     previous: payload.previous,
                     new: payload.new,
                 });
+
+                // The commit created a new current version — refresh pane data
+                // so the version badge and any later expected-version checks
+                // work against the new id.
+                broadcastChapterDataChanged(chapterId);
             } catch (e) {
                 if ((e as Error).name === 'AbortError') return;
                 showAiErrorToast({

@@ -9,6 +9,7 @@ import type { ChapterData } from '@/hooks/useChapterData';
 import type { ContinueWritingReview } from '@/hooks/useContinueWriting';
 import { useProofreading } from '@/hooks/useProofreading';
 import type { RewriteSelectionReview } from '@/hooks/useRewriteSelection';
+import { htmlBlockText, proseMirrorBlockText } from '@/lib/proseText';
 import { jsonFetchHeaders } from '@/lib/utils';
 import { DEFAULT_PROOFREADING_CONFIG } from '@/types/models';
 import type { AppSettings, ChapterVersion, Scene } from '@/types/models';
@@ -43,6 +44,7 @@ export default function ChapterPane({
     review,
     onReviewApplied,
     proseRunning = false,
+    editorLocked = false,
     isLocalFindOpen = false,
     localFindShowReplace = false,
     onLocalFindClose,
@@ -73,6 +75,8 @@ export default function ChapterPane({
     review: ContinueWritingReview | RewriteSelectionReview | null;
     onReviewApplied: () => void;
     proseRunning?: boolean;
+    /** True while any AI flow writes to this chapter — scene editors reject user input. */
+    editorLocked?: boolean;
     isLocalFindOpen?: boolean;
     localFindShowReplace?: boolean;
     onLocalFindClose?: () => void;
@@ -81,9 +85,13 @@ export default function ChapterPane({
     const { chapter, proofreadingConfig: initialProofreadingConfig } =
         chapterData;
 
-    const { config: proofreadingConfig } = useProofreading(
+    const {
+        config: proofreadingConfig,
+        dictionary: customDictionary,
+        addToDictionary,
+    } = useProofreading(
         initialProofreadingConfig ?? DEFAULT_PROOFREADING_CONFIG,
-        [],
+        chapterData.customDictionary ?? [],
         bookId,
     );
 
@@ -218,6 +226,28 @@ export default function ChapterPane({
     // ── Word count ───────────────────────────────────────────────────────
     const wordCount = scenes.reduce((sum, s) => sum + s.word_count, 0);
 
+    const paneRef = useRef<HTMLDivElement>(null);
+
+    // Prefer the mounted ProseMirror DOM: the scenes state only updates on
+    // server refetch, so it misses everything typed since load. The state
+    // content is the fallback for scenes that aren't rendered (yet).
+    const getChapterText = useCallback(
+        () =>
+            scenes
+                .map((s) => {
+                    const pm =
+                        paneRef.current?.querySelector<HTMLElement>(
+                            `#scene-${s.id} .ProseMirror`,
+                        ) ?? null;
+                    return pm
+                        ? proseMirrorBlockText(pm)
+                        : htmlBlockText(s.content);
+                })
+                .filter(Boolean)
+                .join('\n\n'),
+        [scenes],
+    );
+
     const handleSceneWordCountChange = useCallback(
         (sceneId: number, count: number) => {
             setScenes((prev) =>
@@ -322,8 +352,6 @@ export default function ChapterPane({
     }, []);
 
     // ── Flush all pending saves ──────────────────────────────────────────
-    const paneRef = useRef<HTMLDivElement>(null);
-
     const flushAll = useCallback(async () => {
         // Flush title
         await flushTitleSave();
@@ -409,6 +437,7 @@ export default function ChapterPane({
                                 }
                                 wordCount={wordCount}
                                 saveStatus={saveStatus}
+                                getChapterText={getChapterText}
                                 onVersionClick={() =>
                                     setShowVersions(!showVersions)
                                 }
@@ -520,9 +549,13 @@ export default function ChapterPane({
                         proofreadingConfig={proofreadingConfig}
                         bookLanguage={bookLanguage}
                         spellcheckEnabled={spellcheckEnabled}
+                        customWords={customDictionary}
+                        onAddToDictionary={addToDictionary}
                         isLocalFindOpen={isLocalFindOpen}
                         localFindShowReplace={localFindShowReplace}
                         onLocalFindClose={onLocalFindClose}
+                        locked={editorLocked}
+                        currentVersionId={chapter.current_version?.id ?? null}
                     />
                     {proseRunning && (
                         <div

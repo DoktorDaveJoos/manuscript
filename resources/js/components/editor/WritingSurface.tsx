@@ -55,6 +55,10 @@ export default function WritingSurface({
     proofreadingConfig,
     bookLanguage,
     spellcheckEnabled,
+    customWords,
+    onAddToDictionary,
+    locked = false,
+    currentVersionId = null,
 }: {
     scenes: Scene[];
     bookId: number;
@@ -84,6 +88,12 @@ export default function WritingSurface({
     proofreadingConfig?: ProofreadingConfig;
     bookLanguage?: string;
     spellcheckEnabled?: boolean;
+    customWords?: string[];
+    onAddToDictionary?: (word: string) => void;
+    /** Reject user input in every scene while an AI flow writes to this chapter. */
+    locked?: boolean;
+    /** Chapter version the rendered content belongs to — scene saves carry it. */
+    currentVersionId?: number | null;
 }) {
     const { t } = useTranslation('editor');
 
@@ -117,7 +127,11 @@ export default function WritingSurface({
     const handleEditorReady = useCallback((sceneId: number, editor: Editor) => {
         editorRegistry.current.set(sceneId, editor);
         const cleanup = () => {
-            editorRegistry.current.delete(sceneId);
+            // TipTap destroys replaced editors on a deferred schedule — only
+            // evict the entry if a newer editor hasn't been registered since.
+            if (editorRegistry.current.get(sceneId) === editor) {
+                editorRegistry.current.delete(sceneId);
+            }
         };
         editor.on('destroy', cleanup);
     }, []);
@@ -465,6 +479,10 @@ export default function WritingSurface({
                                 proofreadingConfig={proofreadingConfig}
                                 bookLanguage={bookLanguage}
                                 spellcheckEnabled={spellcheckEnabled}
+                                customWords={customWords}
+                                onAddToDictionary={onAddToDictionary}
+                                locked={locked}
+                                currentVersionId={currentVersionId}
                             />
                         ))}
                     </div>

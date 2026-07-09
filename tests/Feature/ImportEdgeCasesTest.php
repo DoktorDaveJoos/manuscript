@@ -8,6 +8,7 @@ use App\Services\Parsers\DocumentParserFactory;
 use App\Services\Parsers\DocxParserService;
 use App\Services\Parsers\MarkdownParserService;
 use App\Services\Parsers\TxtParserService;
+use App\Support\WordCount;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Testing\TestResponse;
@@ -967,7 +968,7 @@ test('confirm import recalculates word count from normalized content', function 
     $scene = $chapter->scenes->first();
     $normalizedContent = $chapter->currentVersion->content;
 
-    $expectedWordCount = str_word_count(strip_tags($normalizedContent));
+    $expectedWordCount = WordCount::count($normalizedContent);
 
     expect($chapter->word_count)->toBe($expectedWordCount)
         ->and($chapter->word_count)->not->toBe(99)

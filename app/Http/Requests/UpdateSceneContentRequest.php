@@ -18,6 +18,7 @@ class UpdateSceneContentRequest extends FormRequest
     {
         return [
             'content' => ['required', 'string', 'max:5000000'],
+            'expected_current_version_id' => ['nullable', 'integer'],
         ];
     }
 }

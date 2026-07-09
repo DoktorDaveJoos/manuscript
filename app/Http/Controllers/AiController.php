@@ -13,6 +13,7 @@ use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\Scene;
 use App\Services\Normalization\NormalizationService;
+use App\Support\WordCount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -144,12 +145,12 @@ class AiController extends Controller
     private function validatedExpectedVersionId(): ?int
     {
         $validated = request()->validate([
-            'expected_current_version_id' => ['nullable', 'integer'],
+            'expected_current_version_id' => ['present', 'nullable', 'integer'],
         ]);
 
-        return isset($validated['expected_current_version_id'])
-            ? (int) $validated['expected_current_version_id']
-            : null;
+        return $validated['expected_current_version_id'] === null
+            ? null
+            : (int) $validated['expected_current_version_id'];
     }
 
     private function streamAgentRevision(
@@ -179,7 +180,7 @@ class AiController extends Controller
             abort_if(blank($content), 422, __('Chapter has no content to process.'));
         }
 
-        $wordCount = str_word_count(strip_tags($content));
+        $wordCount = WordCount::count($content);
         abort_if($wordCount > 12000, 422, __('Chapter is too long for AI revision (:count words). Consider splitting it into smaller chapters.', ['count' => $wordCount]));
 
         $chapter->syncCurrentVersionContent();

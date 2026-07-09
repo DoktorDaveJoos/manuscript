@@ -48,38 +48,22 @@ export type TrimSizeOption = {
 
 export type Format = 'epub' | 'pdf' | 'docx' | 'txt' | 'kdp';
 
-export type ChapterHeading = 'none' | 'number' | 'full';
-
-/**
- * Which trim edges the bleed extends past — keep in sync with App\Enums\BleedMode.
- * 'all' = all four edges (Lulu, BoD, epubli, tredition);
- * 'outer' = outside edges only, never the binding edge (KDP, IngramSpark).
- */
-export type BleedMode = 'all' | 'outer';
+// Keep in sync with App\Enums\DocxLayout
+export type DocxLayout = 'manuscript' | 'normseite';
 
 export const VISUAL_FORMATS: Set<Format> = new Set(['pdf', 'epub', 'kdp']);
 
 /**
  * Persisted snapshot of the export page's UI selections — stored in
  * books.export_settings, keep keys in sync with
- * BookSettingsController::updateExportSettings.
+ * BookSettingsController::updateExportSettings. Typesetting lives in the
+ * Book Designer template, not here.
  */
 export type SavedExportSettings = {
     format?: Format;
     template?: string;
-    font_pairing?: string;
-    scene_break_style?: string;
-    drop_caps?: boolean;
-    chapter_heading?: ChapterHeading;
-    include_act_breaks?: boolean;
-    show_page_numbers?: boolean;
-    trim_size?: string;
-    font_size?: number;
+    docx_layout?: DocxLayout;
     cmyk?: boolean;
-    bleed?: number;
-    bleed_mode?: BleedMode;
-    custom_width?: number;
-    custom_height?: number;
     include_cover?: boolean;
     front_matter?: string[];
     back_matter?: string[];
@@ -96,22 +80,10 @@ export type MatterItem = {
 export type TemplateDef = {
     slug: string;
     name: string;
-    pack: string;
-    defaultFontPairing: string;
-    defaultSceneBreakStyle: string;
-    defaultDropCaps: boolean;
+    group: 'builtin' | 'custom';
     headingFont: string;
     bodyFont: string;
-};
-
-export type FontPairingDef = {
-    value: string;
-    label: string;
-    headingFont: string;
-    bodyFont: string;
-};
-
-export type SceneBreakStyleDef = {
-    value: string;
-    label: string;
+    /** Trim dimensions in mm — drives the preview panel's page aspect ratio. */
+    trimWidth: number;
+    trimHeight: number;
 };

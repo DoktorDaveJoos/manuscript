@@ -3,10 +3,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso } from 'react-virtuoso';
 import type {
-    ChapterHeading,
     Format,
     MatterItem,
-    TrimSizeOption,
+    TemplateDef,
 } from '@/components/export/types';
 import { VISUAL_FORMATS } from '@/components/export/types';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
@@ -15,15 +14,11 @@ import { jsonFetchHeaders } from '@/lib/utils';
 
 const PAGE_GAP = 12;
 const PAGE_PADDING = 56; // px-7 = 28px each side
-const EBOOK_SPEC: TrimSizeOption = {
-    value: 'ebook',
-    label: 'E-Reader',
-    labelMetric: 'E-Reader',
-    width: 90,
-    height: 122,
-};
+type TrimSpec = { width: number; height: number };
+
+const EBOOK_SPEC: TrimSpec = { width: 90, height: 122 };
 function computePageDimensions(
-    spec: TrimSizeOption,
+    spec: TrimSpec,
     pageWidth: number,
 ): { pageHeight: number; scaleFactor: number } {
     const pageHeight = Math.round(pageWidth * (spec.height / spec.width));
@@ -35,22 +30,13 @@ function computePageDimensions(
 interface ExportPreviewProps {
     bookId: number;
     format: Format;
-    trimSize: string;
-    trimSizes: TrimSizeOption[];
-    customWidth: number;
-    customHeight: number;
-    fontSize: number;
-    chapterHeading: ChapterHeading;
-    showPageNumbers: boolean;
-    includeActBreaks: boolean;
+    template: string;
+    /** The selected template's definition — page geometry for the preview. */
+    templateDef: TemplateDef | undefined;
     selectedChapterIds: Set<number>;
     orderedChapters: Array<{ id: number }>;
     frontMatter: MatterItem[];
     backMatter: MatterItem[];
-    template?: string;
-    fontPairing?: string;
-    sceneBreakStyle?: string;
-    dropCaps?: boolean;
 }
 
 function SkeletonPage({ width, height }: { width: number; height: number }) {
@@ -147,22 +133,12 @@ const VirtuosoFooter = () => <div className="h-6" />;
 export default function ExportPreview({
     bookId,
     format,
-    trimSize,
-    trimSizes,
-    customWidth,
-    customHeight,
-    fontSize,
-    chapterHeading = 'full',
-    showPageNumbers,
-    includeActBreaks,
+    template,
+    templateDef,
     selectedChapterIds,
     orderedChapters,
     frontMatter,
     backMatter,
-    template = 'classic',
-    fontPairing = 'classic-serif',
-    sceneBreakStyle = 'asterisks',
-    dropCaps = true,
 }: ExportPreviewProps) {
     const { t } = useTranslation('export');
 
@@ -188,19 +164,13 @@ export default function ExportPreview({
     const pageWidth = panelWidth - PAGE_PADDING;
     const isEbookFormat = format === 'epub' || format === 'kdp';
     const hasVisualPreview = VISUAL_FORMATS.has(format);
-    const trimSpec = useMemo(() => {
-        if (isEbookFormat) return EBOOK_SPEC;
-        if (trimSize === 'custom') {
-            return {
-                value: 'custom',
-                label: 'Custom',
-                labelMetric: 'Custom',
-                width: customWidth,
-                height: customHeight,
-            };
-        }
-        return trimSizes.find((t) => t.value === trimSize) ?? trimSizes[0];
-    }, [trimSizes, trimSize, isEbookFormat, customWidth, customHeight]);
+    const trimSpec = useMemo<TrimSpec>(() => {
+        if (isEbookFormat || !templateDef) return EBOOK_SPEC;
+        return {
+            width: templateDef.trimWidth,
+            height: templateDef.trimHeight,
+        };
+    }, [templateDef, isEbookFormat]);
     const { pageHeight, scaleFactor } = computePageDimensions(
         trimSpec,
         pageWidth,
@@ -254,17 +224,9 @@ export default function ExportPreview({
                 body: JSON.stringify({
                     format,
                     template,
-                    trim_size: trimSize,
-                    font_size: fontSize,
-                    chapter_heading: chapterHeading,
-                    show_page_numbers: showPageNumbers,
-                    include_act_breaks: includeActBreaks,
                     chapter_ids: orderedSelectedIds,
                     front_matter: checkedFrontMatter,
                     back_matter: checkedBackMatter,
-                    font_pairing: fontPairing,
-                    scene_break_style: sceneBreakStyle,
-                    drop_caps: dropCaps,
                 }),
             })
                 .then(async (res) => {
@@ -330,18 +292,10 @@ export default function ExportPreview({
         hasVisualPreview,
         format,
         template,
-        trimSize,
-        fontSize,
-        chapterHeading,
-        showPageNumbers,
-        includeActBreaks,
         selectedIdsArray,
         orderedChapterIds,
         checkedFrontMatter,
         checkedBackMatter,
-        fontPairing,
-        sceneBreakStyle,
-        dropCaps,
     ]);
 
     useEffect(() => {
@@ -358,7 +312,9 @@ export default function ExportPreview({
 
     const previewLabel = t('preview');
 
-    const templateLabel = template.charAt(0).toUpperCase() + template.slice(1);
+    const templateLabel =
+        templateDef?.name ??
+        template.charAt(0).toUpperCase() + template.slice(1);
 
     const VirtuosoHeader = useCallback(
         () => (

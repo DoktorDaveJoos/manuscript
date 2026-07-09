@@ -13,6 +13,7 @@ export default function StatusBadge({
 
     return (
         <span
+            data-testid="chapter-status-badge"
             className={cn(
                 'rounded-[4px] bg-neutral-bg px-2 py-0.5 text-[11px] font-medium text-ink-muted',
                 className,

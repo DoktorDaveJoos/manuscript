@@ -19,6 +19,7 @@ import SectionLabel from '@/components/ui/SectionLabel';
 import { useAiErrorToast } from '@/hooks/useAiErrorToast';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import { severityDotColor } from '@/lib/editorial-constants';
+import { flushPaneByChapter } from '@/lib/pane';
 import { broadcastChapterDataChanged, cn, jsonFetchHeaders } from '@/lib/utils';
 import type { Book, Chapter, ChapterEditorialFinding } from '@/types/models';
 
@@ -133,12 +134,20 @@ export default function AiPanel({
             setBusy(true);
             onProseStart?.(chapter.id);
             try {
+                // The backend revises scene rows — drain the pane's pending
+                // autosaves first so the AI never works from stale content.
+                await flushPaneByChapter(chapter.id);
+
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: {
                         ...jsonFetchHeaders(),
                         Accept: 'application/json',
                     },
+                    body: JSON.stringify({
+                        expected_current_version_id:
+                            chapterRef.current.current_version?.id ?? null,
+                    }),
                 });
 
                 if (!response.ok) {
@@ -233,6 +242,10 @@ export default function AiPanel({
         setIsStructuring(true);
         onProseStart?.(chapter.id);
         try {
+            // The suggest endpoint hashes the chapter's scene rows — drain
+            // pending autosaves so the hash matches what's on screen.
+            await flushPaneByChapter(chapter.id);
+
             const response = await fetch(
                 suggestSceneStructure.url({
                     book: book.id,
@@ -307,6 +320,7 @@ export default function AiPanel({
                             <Button
                                 type="button"
                                 variant="primary"
+                                data-testid="run-prose-pass"
                                 onClick={handleRunProse}
                                 disabled={proseRunning}
                                 className="w-full"

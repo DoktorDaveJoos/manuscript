@@ -1,134 +1,63 @@
-import { Download } from 'lucide-react';
-import { useState } from 'react';
+import { Link } from '@inertiajs/react';
+import { ArrowRight, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import CustomizePanel from '@/components/export/CustomizePanel';
+import { show as showDesigner } from '@/actions/App/Http/Controllers/BookDesignController';
 import TemplateSelector from '@/components/export/TemplateSelector';
 import { VISUAL_FORMATS } from '@/components/export/types';
 import type {
-    BleedMode,
-    ChapterHeading,
-    FontPairingDef,
+    DocxLayout,
     Format,
-    SceneBreakStyleDef,
     TemplateDef,
-    TrimSizeOption,
 } from '@/components/export/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert';
-import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
-import NumberInput from '@/components/ui/NumberInput';
 import PageHeader from '@/components/ui/PageHeader';
 import SectionLabel from '@/components/ui/SectionLabel';
-import Select from '@/components/ui/Select';
 import { Spinner } from '@/components/ui/spinner';
-import Toggle from '@/components/ui/Toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
 import ToggleRow from '@/components/ui/ToggleRow';
 
 type ExportSettingsProps = {
+    bookId: number;
     format: Format;
     onFormatChange: (f: Format) => void;
     template: string;
     onTemplateChange: (v: string) => void;
-    trimSize: string;
-    onTrimSizeChange: (v: string) => void;
-    fontSize: number;
-    onFontSizeChange: (v: number) => void;
+    templates: TemplateDef[];
+    docxLayout: DocxLayout;
+    onDocxLayoutChange: (v: DocxLayout) => void;
     cmyk: boolean;
     onCmykChange: (v: boolean) => void;
-    bleed: number;
-    onBleedChange: (v: number) => void;
-    bleedMode: BleedMode;
-    onBleedModeChange: (v: BleedMode) => void;
-    customWidth: number;
-    onCustomWidthChange: (v: number) => void;
-    customHeight: number;
-    onCustomHeightChange: (v: number) => void;
-    trimSizes: TrimSizeOption[];
-    chapterHeading: ChapterHeading;
-    onChapterHeadingChange: (v: ChapterHeading) => void;
-    includeActBreaks: boolean;
-    onIncludeActBreaksChange: () => void;
-    showPageNumbers: boolean;
-    onShowPageNumbersChange: () => void;
-    exporting: boolean;
-    onExport: () => void;
-    templates: TemplateDef[];
-    fontPairings: FontPairingDef[];
-    sceneBreakStyles: SceneBreakStyleDef[];
-    fontPairing: string;
-    onFontPairingChange: (v: string) => void;
-    sceneBreakStyle: string;
-    onSceneBreakStyleChange: (v: string) => void;
-    dropCaps: boolean;
-    onDropCapsChange: (v: boolean) => void;
-    isCustomized: boolean;
     includeCover: boolean;
     onIncludeCoverChange: (v: boolean) => void;
     hasCover: boolean;
+    exporting: boolean;
+    onExport: () => void;
     error: string | null;
 };
 
 const FORMATS: Format[] = ['epub', 'pdf', 'docx', 'txt'];
-const FONT_SIZES = [10, 11, 12, 13, 14];
-
-// Provider bleed presets (mm): 3 = IngramSpark/epubli, 3.175 = 0.125″ for
-// KDP/Lulu, 5 = BoD/tredition. Anything else is entered as a custom value.
-const BLEED_PRESETS = [0, 3, 3.175, 5];
 
 export default function ExportSettings({
+    bookId,
     format,
     onFormatChange,
     template,
     onTemplateChange,
-    trimSize,
-    onTrimSizeChange,
-    fontSize,
-    onFontSizeChange,
+    templates,
+    docxLayout,
+    onDocxLayoutChange,
     cmyk,
     onCmykChange,
-    bleed,
-    onBleedChange,
-    bleedMode,
-    onBleedModeChange,
-    customWidth,
-    onCustomWidthChange,
-    customHeight,
-    onCustomHeightChange,
-    trimSizes,
-    chapterHeading,
-    onChapterHeadingChange,
-    includeActBreaks,
-    onIncludeActBreaksChange,
-    showPageNumbers,
-    onShowPageNumbersChange,
-    exporting,
-    onExport,
-    templates,
-    fontPairings,
-    sceneBreakStyles,
-    fontPairing,
-    onFontPairingChange,
-    sceneBreakStyle,
-    onSceneBreakStyleChange,
-    dropCaps,
-    onDropCapsChange,
-    isCustomized,
     includeCover,
     onIncludeCoverChange,
     hasCover,
+    exporting,
+    onExport,
     error,
 }: ExportSettingsProps) {
-    const { t, i18n } = useTranslation('export');
+    const { t } = useTranslation('export');
     const isVisual = VISUAL_FORMATS.has(format);
-    // English locales read inches; metric locales (de, es) read cm.
-    const useMetricLabels = !i18n.language.startsWith('en');
-    const pdfHintKey =
-        bleed > 0 ? 'bleedHint' : cmyk ? 'cmykHint' : 'trimSizeHint';
-    const [bleedIsCustom, setBleedIsCustom] = useState(
-        () => !BLEED_PRESETS.includes(bleed),
-    );
-    const bleedSelectValue = bleedIsCustom ? 'custom' : String(bleed);
 
     return (
         <div className="flex flex-1 flex-col overflow-y-auto bg-surface">
@@ -148,7 +77,11 @@ export default function ExportSettings({
                             }}
                         >
                             {FORMATS.map((f) => (
-                                <ToggleGroupItem key={f} value={f}>
+                                <ToggleGroupItem
+                                    key={f}
+                                    value={f}
+                                    data-testid={`export-format-${f}`}
+                                >
                                     .{f}
                                 </ToggleGroupItem>
                             ))}
@@ -158,271 +91,70 @@ export default function ExportSettings({
                         </p>
                     </div>
 
+                    {/* Page layout (.docx only) — international manuscript vs. Normseite */}
+                    {format === 'docx' && (
+                        <div className="flex flex-col gap-2.5">
+                            <SectionLabel>{t('layout')}</SectionLabel>
+                            <ToggleGroup
+                                type="single"
+                                value={docxLayout}
+                                onValueChange={(val) => {
+                                    if (val)
+                                        onDocxLayoutChange(val as DocxLayout);
+                                }}
+                            >
+                                <ToggleGroupItem
+                                    value="manuscript"
+                                    data-testid="docx-layout-manuscript"
+                                >
+                                    {t('docxLayout.manuscript')}
+                                </ToggleGroupItem>
+                                <ToggleGroupItem
+                                    value="normseite"
+                                    data-testid="docx-layout-normseite"
+                                >
+                                    {t('docxLayout.normseite')}
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                            <p className="mt-1.5 text-[11px] text-ink-faint">
+                                {t(`docxLayoutDescription.${docxLayout}`)}
+                            </p>
+                        </div>
+                    )}
+
                     {/* Template (visual formats only) */}
                     {isVisual && (
                         <div className="flex flex-col gap-2.5">
-                            <div className="flex items-center gap-2">
-                                <SectionLabel>{t('template')}</SectionLabel>
-                                {isCustomized && (
-                                    <Badge
-                                        variant="warning"
-                                        className="text-[10px]"
-                                    >
-                                        {t('customLabel')}
-                                    </Badge>
-                                )}
-                            </div>
+                            <SectionLabel>{t('template')}</SectionLabel>
                             <TemplateSelector
                                 templates={templates}
                                 selectedTemplate={template}
                                 onChange={onTemplateChange}
                             />
-                            <Alert variant="info">
-                                <AlertTitle>
-                                    {t('templateAlertTitle')}
-                                </AlertTitle>
-                                <AlertDescription>
-                                    {t('templateAlertDescription')}
-                                </AlertDescription>
-                            </Alert>
-
-                            {/* Customize Panel */}
-                            <CustomizePanel
-                                fontPairings={fontPairings}
-                                sceneBreakStyles={sceneBreakStyles}
-                                selectedFontPairing={fontPairing}
-                                selectedSceneBreakStyle={sceneBreakStyle}
-                                dropCaps={dropCaps}
-                                onFontPairingChange={onFontPairingChange}
-                                onSceneBreakStyleChange={
-                                    onSceneBreakStyleChange
-                                }
-                                onDropCapsChange={onDropCapsChange}
-                                isCustomized={isCustomized}
-                            />
-                        </div>
-                    )}
-
-                    {/* PDF Options */}
-                    {format === 'pdf' && (
-                        <div className="flex flex-col gap-2.5">
-                            <SectionLabel>{t('pdfOptions')}</SectionLabel>
-                            <div className="flex flex-col gap-2.5">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[13px] text-ink-soft">
-                                        {t('trimSize')}
-                                    </span>
-                                    <Select
-                                        variant="compact"
-                                        value={trimSize}
-                                        onChange={(e) =>
-                                            onTrimSizeChange(e.target.value)
-                                        }
-                                        className="w-auto"
-                                    >
-                                        {trimSizes.map((ts) => (
-                                            <option
-                                                key={ts.value}
-                                                value={ts.value}
-                                            >
-                                                {useMetricLabels
-                                                    ? ts.labelMetric
-                                                    : ts.label}
-                                            </option>
-                                        ))}
-                                        <option value="custom">
-                                            {t('customSize')}
-                                        </option>
-                                    </Select>
-                                </div>
-                                {trimSize === 'custom' && (
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[13px] text-ink-soft">
-                                            {t('customDimensions')}
-                                        </span>
-                                        <div className="flex items-center gap-1.5">
-                                            <NumberInput
-                                                value={customWidth}
-                                                onChange={onCustomWidthChange}
-                                                min={50}
-                                                max={500}
-                                                aria-label={t(
-                                                    'customDimensions',
-                                                )}
-                                            />
-                                            <span className="text-[13px] text-ink-faint">
-                                                ×
-                                            </span>
-                                            <NumberInput
-                                                value={customHeight}
-                                                onChange={onCustomHeightChange}
-                                                min={50}
-                                                max={500}
-                                                aria-label={t(
-                                                    'customDimensions',
-                                                )}
-                                            />
-                                            <span className="text-[13px] text-ink-faint">
-                                                mm
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[13px] text-ink-soft">
-                                        {t('fontSize')}
-                                    </span>
-                                    <Select
-                                        variant="compact"
-                                        value={String(fontSize)}
-                                        onChange={(e) =>
-                                            onFontSizeChange(
-                                                Number(e.target.value),
-                                            )
-                                        }
-                                        className="w-auto"
-                                    >
-                                        {FONT_SIZES.map((s) => (
-                                            <option key={s} value={String(s)}>
-                                                {s}pt
-                                            </option>
-                                        ))}
-                                    </Select>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[13px] text-ink-soft">
-                                        {t('bleed')}
-                                    </span>
-                                    <Select
-                                        variant="compact"
-                                        value={bleedSelectValue}
-                                        onChange={(e) => {
-                                            const v = e.target.value;
-                                            if (v === 'custom') {
-                                                setBleedIsCustom(true);
-                                            } else {
-                                                setBleedIsCustom(false);
-                                                onBleedChange(Number(v));
-                                            }
-                                        }}
-                                        className="w-auto"
-                                        aria-label={t('bleed')}
-                                    >
-                                        <option value="0">
-                                            {t('bleedNone')}
-                                        </option>
-                                        <option value="3">
-                                            3 mm — IngramSpark, epubli
-                                        </option>
-                                        <option value="3.175">
-                                            3.175 mm (0.125″) — KDP, Lulu
-                                        </option>
-                                        <option value="5">
-                                            5 mm — BoD, tredition
-                                        </option>
-                                        <option value="custom">
-                                            {t('bleedCustom')}
-                                        </option>
-                                    </Select>
-                                </div>
-                                {bleedIsCustom && (
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[13px] text-ink-soft">
-                                            {t('bleedCustomValue')}
-                                        </span>
-                                        <NumberInput
-                                            value={bleed}
-                                            onChange={onBleedChange}
-                                            min={0}
-                                            max={25}
-                                            step={0.5}
-                                            unit="mm"
-                                            aria-label={t('bleedCustomValue')}
-                                        />
-                                    </div>
-                                )}
-                                {bleed > 0 && (
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[13px] text-ink-soft">
-                                            {t('bleedMode')}
-                                        </span>
-                                        <Select
-                                            variant="compact"
-                                            value={bleedMode}
-                                            onChange={(e) =>
-                                                onBleedModeChange(
-                                                    e.target.value as BleedMode,
-                                                )
-                                            }
-                                            className="w-auto"
-                                            aria-label={t('bleedMode')}
-                                        >
-                                            <option value="all">
-                                                {t('bleedModeAll')}
-                                            </option>
-                                            <option value="outer">
-                                                {t('bleedModeOuter')}
-                                            </option>
-                                        </Select>
-                                    </div>
-                                )}
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[13px] text-ink-soft">
-                                        {t('cmyk')}
-                                    </span>
-                                    <Toggle
-                                        checked={cmyk}
-                                        onChange={() => onCmykChange(!cmyk)}
-                                    />
-                                </div>
-                            </div>
-                            <p className="text-[11px] text-ink-faint">
-                                {t(pdfHintKey)}
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Options toggles */}
-                    <div className="flex flex-col">
-                        <div className="pb-2.5">
-                            <SectionLabel>{t('options')}</SectionLabel>
-                        </div>
-                        <div className="flex items-center justify-between border-b border-border-subtle py-3">
-                            <span className="text-[13px] text-ink-soft">
-                                {t('chapterHeading')}
-                            </span>
-                            <Select
-                                variant="compact"
-                                value={chapterHeading}
-                                onChange={(e) =>
-                                    onChapterHeadingChange(
-                                        e.target.value as ChapterHeading,
-                                    )
-                                }
-                                className="w-auto"
+                            <Link
+                                href={showDesigner.url(bookId)}
+                                className="inline-flex items-center gap-1 self-start text-[12px] text-ink-muted transition-colors hover:text-ink"
+                                data-testid="export-customize-link"
                             >
-                                <option value="full">
-                                    {t('chapterHeadingOptions.full')}
-                                </option>
-                                <option value="number">
-                                    {t('chapterHeadingOptions.number')}
-                                </option>
-                                <option value="none">
-                                    {t('chapterHeadingOptions.none')}
-                                </option>
-                            </Select>
+                                {t('customizeInDesigner')}
+                                <ArrowRight className="size-3" />
+                            </Link>
                         </div>
-                        <ToggleRow
-                            label={t('includeActBreaks')}
-                            checked={includeActBreaks}
-                            onChange={onIncludeActBreaksChange}
-                        />
-                        <ToggleRow
-                            label={t('showPageNumbers')}
-                            checked={showPageNumbers}
-                            onChange={onShowPageNumbersChange}
-                        />
-                        {isVisual && (
+                    )}
+
+                    {/* Options */}
+                    {isVisual && (
+                        <div className="flex flex-col">
+                            <div className="pb-2.5">
+                                <SectionLabel>{t('options')}</SectionLabel>
+                            </div>
+                            {format === 'pdf' && (
+                                <ToggleRow
+                                    label={t('cmyk')}
+                                    checked={cmyk}
+                                    onChange={() => onCmykChange(!cmyk)}
+                                />
+                            )}
                             <ToggleRow
                                 label={
                                     hasCover
@@ -435,17 +167,19 @@ export default function ExportSettings({
                                 }
                                 border={false}
                             />
-                        )}
-                        {!isVisual && (
-                            <div className="h-0" /> // spacer for non-visual last row
-                        )}
-                    </div>
+                            {format === 'pdf' && (
+                                <p className="mt-1.5 text-[11px] text-ink-faint">
+                                    {t('cmykHint')}
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Spacer */}
                 <div className="flex-1" />
 
-                {/* Export button + preview link */}
+                {/* Export button + error */}
                 <div className="flex flex-col items-start gap-3 pt-4">
                     {error && (
                         <Alert variant="destructive">

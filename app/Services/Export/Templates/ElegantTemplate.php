@@ -8,6 +8,8 @@ use App\Enums\SceneBreakStyle;
 
 class ElegantTemplate implements ExportTemplate
 {
+    use BuildsDesignSettings;
+
     public function slug(): string
     {
         return 'elegant';
@@ -31,6 +33,8 @@ class ElegantTemplate implements ExportTemplate
             'pdfLineHeight' => 1.4,
             'epubLineHeight' => 1.55,
             'chapterLabelSizeEm' => 0.85,
+            'labelTopSpaceEm' => 9.0,
+            'labelBottomSpaceEm' => 0.25,
             'titleSizeEm' => 2.0,
             'titleWeight' => 'normal',
             'runningHeaderStyle' => 'italic',

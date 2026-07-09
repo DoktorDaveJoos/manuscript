@@ -247,6 +247,50 @@ test('restoreVersion creates new current version from old version content', func
     expect($versions->where('version_number', 2)->first()->is_current)->toBeFalse();
 });
 
+test('restoreVersion recreates the scene structure from the version scene_map', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+
+    Scene::factory()->for($chapter)->create([
+        'title' => 'Only scene',
+        'content' => '<p>Current single-scene content.</p>',
+        'sort_order' => 0,
+    ]);
+
+    $multiScene = ChapterVersion::factory()->for($chapter)->create([
+        'version_number' => 1,
+        'content' => '<p>First scene prose.</p><hr><p>Second scene prose.</p>',
+        'is_current' => false,
+        'scene_map' => [
+            ['title' => 'The morning', 'sort_order' => 0],
+            ['title' => 'The evening', 'sort_order' => 1],
+        ],
+    ]);
+
+    ChapterVersion::factory()->for($chapter)->create([
+        'version_number' => 2,
+        'content' => '<p>Current single-scene content.</p>',
+        'is_current' => true,
+    ]);
+
+    $this->post(route('chapters.restoreVersion', [$book, $chapter, $multiScene]))
+        ->assertRedirect();
+
+    // Restoring a multi-scene version must bring back its scenes — not
+    // collapse everything into one scene with literal <hr> breaks inside.
+    $scenes = $chapter->fresh()->scenes()->orderBy('sort_order')->get();
+    expect($scenes)->toHaveCount(2);
+    expect($scenes[0]->title)->toBe('The morning');
+    expect($scenes[0]->content)->toBe('<p>First scene prose.</p>');
+    expect($scenes[1]->title)->toBe('The evening');
+    expect($scenes[1]->content)->toBe('<p>Second scene prose.</p>');
+
+    // The restored snapshot keeps the structure for the next restore too.
+    $newCurrent = $chapter->versions()->where('is_current', true)->first();
+    expect($newCurrent->scene_map)->toBe($multiScene->scene_map);
+});
+
 test('updateTitle saves title and returns json', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();

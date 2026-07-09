@@ -109,6 +109,7 @@ function PaneWithData({
     review,
     onReviewDismiss,
     proseRunning,
+    editorLocked,
     isLocalFindOpen,
     localFindShowReplace,
     onLocalFindClose,
@@ -140,6 +141,7 @@ function PaneWithData({
     review: ContinueWritingReview | RewriteSelectionReview | null;
     onReviewDismiss: () => void;
     proseRunning: boolean;
+    editorLocked: boolean;
     isLocalFindOpen: boolean;
     localFindShowReplace: boolean;
     onLocalFindClose: () => void;
@@ -223,6 +225,7 @@ function PaneWithData({
             review={review}
             onReviewApplied={handleReviewApplied}
             proseRunning={proseRunning}
+            editorLocked={editorLocked}
             isLocalFindOpen={isLocalFindOpen}
             localFindShowReplace={localFindShowReplace}
             onLocalFindClose={onLocalFindClose}
@@ -298,6 +301,13 @@ export default function EditorPage({
     const handleProseEnd = useCallback(
         () => setProseRunningChapterId(null),
         [],
+    );
+
+    // Continue writing / rewrite selection stream INTO the editor, so they
+    // must stay visible (no blur overlay) — but user input still has to be
+    // rejected or keystrokes interleave with the stream and get committed.
+    const [streamingChapterId, setStreamingChapterId] = useState<number | null>(
+        null,
     );
 
     // ── Active editor tracking (from focused pane) ───────────────────────
@@ -387,16 +397,28 @@ export default function EditorPage({
                 const getPendingAll = (
                     el as unknown as Record<
                         string,
-                        () => { url: string; content: string }[]
+                        () => {
+                            url: string;
+                            content: string;
+                            expectedCurrentVersionId?: number | null;
+                        }[]
                     >
                 ).__getPendingAll;
                 if (typeof getPendingAll !== 'function') return;
-                for (const { url, content } of getPendingAll()) {
+                for (const {
+                    url,
+                    content,
+                    expectedCurrentVersionId,
+                } of getPendingAll()) {
                     try {
                         fetch(url, {
                             method: 'PUT',
                             headers: jsonFetchHeaders(),
-                            body: JSON.stringify({ content }),
+                            body: JSON.stringify({
+                                content,
+                                expected_current_version_id:
+                                    expectedCurrentVersionId ?? null,
+                            }),
                             keepalive: true,
                         });
                     } catch {
@@ -638,46 +660,33 @@ export default function EditorPage({
     // ── Keyboard shortcuts ───────────────────────────────────────────────
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
-            if (e.key === 'p' && (e.metaKey || e.ctrlKey)) {
+            // With Shift held, e.key reports the uppercase letter ('F', 'R')
+            // — normalize so shifted shortcuts actually match.
+            const key = e.key.toLowerCase();
+            if (key === 'p' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
                 if (isPaletteOpen) {
                     closePalette();
                 } else {
                     setIsPaletteOpen(true);
                 }
-            } else if (
-                e.key === 'f' &&
-                (e.metaKey || e.ctrlKey) &&
-                e.shiftKey
-            ) {
+            } else if (key === 'f' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
                 e.preventDefault();
                 setIsLocalFindOpen(false);
                 setIsFindOpen(true);
                 setFindShowReplace(false);
-            } else if (
-                e.key === 'f' &&
-                (e.metaKey || e.ctrlKey) &&
-                !e.shiftKey
-            ) {
+            } else if (key === 'f' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
                 e.preventDefault();
                 setIsFindOpen(false);
                 setSearchHighlight(null);
                 setIsLocalFindOpen(true);
                 setLocalFindShowReplace(false);
-            } else if (
-                e.key === 'r' &&
-                (e.metaKey || e.ctrlKey) &&
-                e.shiftKey
-            ) {
+            } else if (key === 'r' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
                 e.preventDefault();
                 setIsLocalFindOpen(false);
                 setIsFindOpen(true);
                 setFindShowReplace(true);
-            } else if (
-                e.key === 'h' &&
-                (e.metaKey || e.ctrlKey) &&
-                !e.shiftKey
-            ) {
+            } else if (key === 'h' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
                 e.preventDefault();
                 setIsFindOpen(false);
                 setSearchHighlight(null);
@@ -776,9 +785,22 @@ export default function EditorPage({
 
     // ── Find navigate ────────────────────────────────────────────────────
     const handleFindNavigate = useCallback(
-        async (chapterId: number, _sceneId: number) => {
+        (chapterId: number, sceneId: number) => {
             // Navigate to chapter in current focused pane
             navigateToChapter(chapterId);
+
+            // Bring the scene holding the match into view. The chapter may
+            // still be loading, so poll briefly until its scenes mount.
+            const deadline = Date.now() + 3000;
+            const tryScroll = () => {
+                const el = document.getElementById(`scene-${sceneId}`);
+                if (el) {
+                    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                } else if (Date.now() < deadline) {
+                    window.setTimeout(tryScroll, 100);
+                }
+            };
+            tryScroll();
         },
         [navigateToChapter],
     );
@@ -852,6 +874,11 @@ export default function EditorPage({
                                     onReviewDismiss={dismissAllReviews}
                                     proseRunning={
                                         proseRunningChapterId === pane.chapterId
+                                    }
+                                    editorLocked={
+                                        proseRunningChapterId ===
+                                            pane.chapterId ||
+                                        streamingChapterId === pane.chapterId
                                     }
                                     isLocalFindOpen={
                                         isLocalFindOpen &&
@@ -1068,15 +1095,25 @@ export default function EditorPage({
                     }
                     onClose={() => setIsContinueWritingOpen(false)}
                     onSubmit={({ hint, wordGoal, chapterLink }) => {
-                        continueWriting.start({
-                            editor: activeEditor,
-                            activeSceneId,
-                            bookId: book.id,
-                            chapterId: focusedChapter.id,
-                            hint,
-                            wordGoal,
-                            chapterLink,
-                        });
+                        const chapterId = focusedChapter.id;
+                        setStreamingChapterId(chapterId);
+                        continueWriting
+                            .start({
+                                editor: activeEditor,
+                                activeSceneId,
+                                bookId: book.id,
+                                chapterId,
+                                expectedCurrentVersionId:
+                                    focusedChapter.current_version?.id ?? null,
+                                hint,
+                                wordGoal,
+                                chapterLink,
+                            })
+                            .finally(() =>
+                                setStreamingChapterId((current) =>
+                                    current === chapterId ? null : current,
+                                ),
+                            );
                         setContinueWritingDraft(defaultContinueWritingDraft);
                     }}
                 />
@@ -1096,13 +1133,23 @@ export default function EditorPage({
                     }
                     onClose={() => setRewriteRange(null)}
                     onSubmit={({ hint }) => {
-                        rewriteSelection.start({
-                            editor: activeEditor,
-                            bookId: book.id,
-                            chapterId: focusedChapter.id,
-                            hint,
-                            selection: rewriteRange,
-                        });
+                        const chapterId = focusedChapter.id;
+                        setStreamingChapterId(chapterId);
+                        rewriteSelection
+                            .start({
+                                editor: activeEditor,
+                                bookId: book.id,
+                                chapterId,
+                                expectedCurrentVersionId:
+                                    focusedChapter.current_version?.id ?? null,
+                                hint,
+                                selection: rewriteRange,
+                            })
+                            .finally(() =>
+                                setStreamingChapterId((current) =>
+                                    current === chapterId ? null : current,
+                                ),
+                            );
                         setRewriteDraft(defaultRewriteSelectionDraft);
                     }}
                 />
@@ -1113,7 +1160,7 @@ export default function EditorPage({
                 <WhisperChrome
                     chapterNumber={focusedChapter.reader_order}
                     chapterTitle={focusedDisplayTitle}
-                    wordCount={focusedWordCount}
+                    wordCount={sidebarWordCount}
                 />
             )}
         </>

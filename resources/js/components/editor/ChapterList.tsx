@@ -17,13 +17,12 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import {
     ChevronDown,
-    Eye,
-    EyeOff,
     GripVertical,
     Plus,
+    Settings2,
     UnfoldVertical,
     FoldVertical,
 } from 'lucide-react';
@@ -43,15 +42,23 @@ import {
     update as updateStoryline,
 } from '@/actions/App/Http/Controllers/StorylineController';
 import { Collapsible, CollapsibleTrigger } from '@/components/ui/Collapsible';
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/DropdownMenu';
 import SectionLabel from '@/components/ui/SectionLabel';
 import { typedClosestCenter } from '@/lib/dnd';
 import {
     addSceneToChapter,
     broadcastChapterDataChanged,
-    formatCompactCount,
+    formatWordCount,
     jsonFetchHeaders,
+    saveAppSetting,
 } from '@/lib/utils';
-import type { Chapter, Scene, Storyline } from '@/types/models';
+import type { AppSettings, Chapter, Scene, Storyline } from '@/types/models';
 import ChapterContextMenu from './ChapterContextMenu';
 import ChapterListItem from './ChapterListItem';
 import DeleteChapterDialog from './DeleteChapterDialog';
@@ -107,6 +114,9 @@ function SortableChapterItem({
     isActive,
     displayTitle,
     wordCount,
+    showStatusBubble,
+    showWordCount,
+    compactWordCount,
     onBeforeNavigate,
     onChapterNavigate,
     onOpenInNewPane,
@@ -119,6 +129,9 @@ function SortableChapterItem({
     isActive: boolean;
     displayTitle?: string;
     wordCount?: number;
+    showStatusBubble?: boolean;
+    showWordCount?: boolean;
+    compactWordCount?: boolean;
     onBeforeNavigate?: () => Promise<void>;
     onChapterNavigate?: (chapterId: number) => void;
     onOpenInNewPane?: (chapterId: number) => void;
@@ -163,6 +176,9 @@ function SortableChapterItem({
                 isActive={isActive}
                 displayTitle={displayTitle}
                 wordCount={wordCount}
+                showStatusBubble={showStatusBubble}
+                showWordCount={showWordCount}
+                compactWordCount={compactWordCount}
                 onBeforeNavigate={onBeforeNavigate}
                 onChapterNavigate={onChapterNavigate}
                 onOpenInNewPane={onOpenInNewPane}
@@ -220,6 +236,7 @@ function SortableStorylineGroup({
                 ref={setNodeRef}
                 style={style}
                 {...attributes}
+                data-storyline-section={storyline.id}
                 className={`flex flex-col gap-px ${isDragging ? 'opacity-50' : ''}`}
             >
                 {showHeader && (
@@ -277,10 +294,14 @@ function SortableSceneItem({
     scene,
     onClick,
     onContextMenu,
+    showWordCount,
+    compactWordCount,
 }: {
     scene: Scene;
     onClick: () => void;
     onContextMenu?: (e: React.MouseEvent) => void;
+    showWordCount?: boolean;
+    compactWordCount?: boolean;
 }) {
     const {
         attributes,
@@ -311,6 +332,8 @@ function SortableSceneItem({
                 onClick={onClick}
                 dragListeners={listeners}
                 onContextMenu={onContextMenu}
+                showWordCount={showWordCount}
+                compactWordCount={compactWordCount}
             />
         </div>
     );
@@ -322,12 +345,16 @@ function SceneList({
     chapterId,
     onSceneContextMenu,
     onReorder,
+    showWordCount,
+    compactWordCount,
 }: {
     scenes: Scene[];
     bookId: number;
     chapterId: number;
     onSceneContextMenu?: (e: React.MouseEvent, scene: Scene) => void;
     onReorder?: (orderedIds: number[]) => void;
+    showWordCount?: boolean;
+    compactWordCount?: boolean;
 }) {
     const [scenes, setScenes] = useState(initialScenes);
     const [activeScene, setActiveScene] = useState<Scene | null>(null);
@@ -397,6 +424,8 @@ function SceneList({
                         <SortableSceneItem
                             key={scene.id}
                             scene={scene}
+                            showWordCount={showWordCount}
+                            compactWordCount={compactWordCount}
                             onClick={() => {
                                 const el = document.getElementById(
                                     `scene-${scene.id}`,
@@ -436,9 +465,14 @@ function SceneList({
                         <span className="min-w-0 flex-1 truncate text-ink">
                             {activeScene.title}
                         </span>
-                        <span className="shrink-0 text-[11px] text-ink-faint">
-                            {formatCompactCount(activeScene.word_count)}
-                        </span>
+                        {showWordCount && (
+                            <span className="shrink-0 text-[11px] text-ink-faint">
+                                {formatWordCount(
+                                    activeScene.word_count,
+                                    compactWordCount ?? true,
+                                )}
+                            </span>
+                        )}
                     </div>
                 )}
             </DragOverlay>
@@ -490,6 +524,20 @@ export default function ChapterList({
     onScroll?: () => void;
 }) {
     const { t } = useTranslation('editor');
+    const { app_settings } = usePage<{ app_settings: AppSettings }>().props;
+    const [displaySettings, setDisplaySettings] = useState(() => ({
+        show_status_bubbles: app_settings.show_status_bubbles,
+        show_word_count: app_settings.show_word_count,
+        compact_word_count: app_settings.compact_word_count,
+    }));
+    const toggleDisplaySetting = useCallback(
+        (key: keyof typeof displaySettings) => {
+            const value = !displaySettings[key];
+            setDisplaySettings({ ...displaySettings, [key]: value });
+            saveAppSetting(key, value);
+        },
+        [displaySettings],
+    );
     const [storylines, setStorylines] = useState(initialStorylines);
     const [activeItem, setActiveItem] = useState<
         | { type: 'chapter'; chapter: Chapter }
@@ -940,28 +988,75 @@ export default function ChapterList({
                                 </span>
                             </span>
                             <div className="h-3 w-px bg-border" />
-                            <span className="group relative">
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        onScenesVisibleChange(!scenesVisible)
-                                    }
-                                    className="text-ink-faint transition-colors hover:text-ink"
+                            <DropdownMenu>
+                                <DropdownMenuTrigger
+                                    data-testid="chapter-list-display-options"
+                                    title={t('chapterList.displayOptions')}
+                                    className="flex items-center text-ink-faint transition-colors hover:text-ink"
                                 >
-                                    {scenesVisible ? (
-                                        <Eye size={12} />
-                                    ) : (
-                                        <EyeOff size={12} />
-                                    )}
-                                </button>
-                                <span className="pointer-events-none absolute top-full right-0 z-50 mt-1.5 rounded bg-ink px-2 py-1 text-[11px] whitespace-nowrap text-surface opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-                                    {t(
-                                        scenesVisible
-                                            ? 'chapterList.hideScenes'
-                                            : 'chapterList.showScenes',
-                                    )}
-                                </span>
-                            </span>
+                                    <Settings2 size={12} />
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuCheckboxItem
+                                        data-testid="display-toggle-status-bubbles"
+                                        checked={
+                                            displaySettings.show_status_bubbles
+                                        }
+                                        onSelect={(e) => e.preventDefault()}
+                                        onCheckedChange={() =>
+                                            toggleDisplaySetting(
+                                                'show_status_bubbles',
+                                            )
+                                        }
+                                    >
+                                        {t('chapterList.showStatusBubbles')}
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem
+                                        data-testid="display-toggle-word-count"
+                                        checked={
+                                            displaySettings.show_word_count
+                                        }
+                                        onSelect={(e) => e.preventDefault()}
+                                        onCheckedChange={() =>
+                                            toggleDisplaySetting(
+                                                'show_word_count',
+                                            )
+                                        }
+                                    >
+                                        {t('chapterList.showWordCount')}
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem
+                                        data-testid="display-toggle-scenes"
+                                        checked={scenesVisible}
+                                        onSelect={(e) => e.preventDefault()}
+                                        onCheckedChange={() =>
+                                            onScenesVisibleChange(
+                                                !scenesVisible,
+                                            )
+                                        }
+                                    >
+                                        {t('chapterList.showScenes')}
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuCheckboxItem
+                                        data-testid="display-toggle-compact-word-count"
+                                        checked={
+                                            displaySettings.compact_word_count
+                                        }
+                                        disabled={
+                                            !displaySettings.show_word_count
+                                        }
+                                        onSelect={(e) => e.preventDefault()}
+                                        onCheckedChange={() =>
+                                            toggleDisplaySetting(
+                                                'compact_word_count',
+                                            )
+                                        }
+                                    >
+                                        {t('chapterList.compactWordCount')}
+                                    </DropdownMenuCheckboxItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
                     <div
@@ -1035,6 +1130,15 @@ export default function ChapterList({
                                                         wordCount={
                                                             liveWordCount
                                                         }
+                                                        showStatusBubble={
+                                                            displaySettings.show_status_bubbles
+                                                        }
+                                                        showWordCount={
+                                                            displaySettings.show_word_count
+                                                        }
+                                                        compactWordCount={
+                                                            displaySettings.compact_word_count
+                                                        }
                                                         isInCollapsedStoryline={
                                                             showHeaders &&
                                                             collapsedStorylineIds.has(
@@ -1072,6 +1176,12 @@ export default function ChapterList({
                                                                     <SceneList
                                                                         scenes={
                                                                             liveScenes!
+                                                                        }
+                                                                        showWordCount={
+                                                                            displaySettings.show_word_count
+                                                                        }
+                                                                        compactWordCount={
+                                                                            displaySettings.compact_word_count
                                                                         }
                                                                         bookId={
                                                                             bookId
@@ -1173,11 +1283,14 @@ export default function ChapterList({
                             <span className="min-w-0 flex-1 truncate">
                                 {activeItem.chapter.title}
                             </span>
-                            <span className="shrink-0 text-[11px] text-ink-faint">
-                                {formatCompactCount(
-                                    activeItem.chapter.word_count,
-                                )}
-                            </span>
+                            {displaySettings.show_word_count && (
+                                <span className="shrink-0 text-[11px] text-ink-faint">
+                                    {formatWordCount(
+                                        activeItem.chapter.word_count,
+                                        displaySettings.compact_word_count,
+                                    )}
+                                </span>
+                            )}
                         </div>
                     )}
                     {activeItem?.type === 'storyline' && (

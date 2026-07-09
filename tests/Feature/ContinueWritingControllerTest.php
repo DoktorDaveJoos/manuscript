@@ -33,7 +33,7 @@ test('continue writing streams a paragraph as SSE', function () {
 
     $response = $this->post(
         route('chapters.ai.continueWriting', [$book, $chapter]),
-        ['hint' => '', 'word_goal' => 60],
+        ['hint' => '', 'word_goal' => 60, 'expected_current_version_id' => null],
     );
 
     $response->assertOk();
@@ -70,7 +70,7 @@ test('continue writing forwards the hint to the agent', function () {
 
     $this->post(
         route('chapters.ai.continueWriting', [$book, $chapter]),
-        ['hint' => 'Make it tense, focus on Anna', 'word_goal' => 80],
+        ['hint' => 'Make it tense, focus on Anna', 'word_goal' => 80, 'expected_current_version_id' => null],
     )->assertOk();
 
     $agent = new ContinueWritingAgent($book, $chapter, 'Make it tense, focus on Anna', 80);
@@ -120,7 +120,7 @@ test('continue writing accepts a hint up to 2000 characters', function () {
 
     $this->post(
         route('chapters.ai.continueWriting', [$book, $chapter]),
-        ['hint' => str_repeat('a', 2000), 'word_goal' => 60],
+        ['hint' => str_repeat('a', 2000), 'word_goal' => 60, 'expected_current_version_id' => null],
     )->assertOk();
 });
 
@@ -185,6 +185,51 @@ test('continue writing commit rejects a stale expected_current_version_id with 4
     )->assertStatus(409);
 });
 
+test('continue writing stream requires expected_current_version_id', function () {
+    ContinueWritingAgent::fake(['ok']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Some prose.</p>']);
+
+    $this->postJson(
+        route('chapters.ai.continueWriting', [$book, $chapter]),
+        ['hint' => '', 'word_goal' => 60],
+    )->assertStatus(422)
+        ->assertJsonValidationErrors('expected_current_version_id');
+});
+
+test('continue writing commit requires expected_current_version_id', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>x</p>']);
+
+    $this->postJson(
+        route('chapters.ai.continueWriting.commit', [$book, $chapter]),
+        [],
+    )->assertStatus(422)
+        ->assertJsonValidationErrors('expected_current_version_id');
+});
+
+test('continue writing commit rejects a null expectation when a current version exists', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>x</p>']);
+    ChapterVersion::factory()->for($chapter)->create([
+        'version_number' => 2,
+        'is_current' => true,
+        'status' => VersionStatus::Accepted,
+    ]);
+
+    $this->postJson(
+        route('chapters.ai.continueWriting.commit', [$book, $chapter]),
+        ['expected_current_version_id' => null],
+    )->assertStatus(409);
+});
+
 test('continue writing 404s when chapter does not belong to the book', function () {
     ContinueWritingAgent::fake(['ok']);
 
@@ -195,6 +240,7 @@ test('continue writing 404s when chapter does not belong to the book', function 
 
     $this->post(
         route('chapters.ai.continueWriting', [$book, $chapter]),
+        ['expected_current_version_id' => null],
     )->assertNotFound();
 });
 
@@ -277,6 +323,7 @@ test('commit snapshots scenes into a new accepted current version', function () 
 
     $response = $this->postJson(
         route('chapters.ai.continueWriting.commit', [$book, $chapter]),
+        ['expected_current_version_id' => $previous->id],
     )->assertOk();
 
     $payload = $response->json();
@@ -303,6 +350,7 @@ test('commit creates the first version when no current version exists', function
 
     $response = $this->postJson(
         route('chapters.ai.continueWriting.commit', [$book, $chapter]),
+        ['expected_current_version_id' => null],
     )->assertOk();
 
     expect($response->json('previous'))->toBeNull();
@@ -569,6 +617,7 @@ test('controller streams with the mode-aware user message', function () {
             'after' => 'The street was empty.',
             'hint' => 'Make it tense',
             'word_goal' => 80,
+            'expected_current_version_id' => null,
         ],
     )->assertOk();
 
@@ -624,6 +673,7 @@ test('controller forwards before/after to the agent', function () {
             'before' => 'She walked to the window.',
             'after' => 'The street was empty.',
             'word_goal' => 80,
+            'expected_current_version_id' => null,
         ],
     )->assertOk();
 
@@ -843,7 +893,7 @@ test('controller forwards the chapter link to the agent', function () {
 
     $this->post(
         route('chapters.ai.continueWriting', [$book, $chapter]),
-        ['chapter_link' => 'fresh', 'word_goal' => 60],
+        ['chapter_link' => 'fresh', 'word_goal' => 60, 'expected_current_version_id' => null],
     )->assertOk();
 
     ContinueWritingAgent::assertPrompted(
@@ -923,6 +973,7 @@ test('controller forwards scene follows and after truncated flags', function () 
             'after_truncated' => true,
             'scene_follows' => true,
             'word_goal' => 60,
+            'expected_current_version_id' => null,
         ],
     )->assertOk();
 

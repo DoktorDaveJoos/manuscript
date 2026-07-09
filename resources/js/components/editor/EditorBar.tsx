@@ -1,3 +1,5 @@
+import { Check, Copy } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Kbd from '@/components/ui/Kbd';
 import type { Chapter } from '@/types/models';
@@ -11,6 +13,7 @@ export default function EditorBar({
     storylineName,
     wordCount,
     saveStatus,
+    getChapterText,
     onVersionClick,
 }: {
     chapter: Chapter;
@@ -18,10 +21,36 @@ export default function EditorBar({
     storylineName: string;
     wordCount: number;
     saveStatus: SaveStatus;
+    getChapterText: () => string;
     onVersionClick: () => void;
 }) {
     const { t, i18n } = useTranslation('editor');
     const versionNumber = chapter.current_version?.version_number ?? 1;
+
+    const [copied, setCopied] = useState(false);
+    const copiedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(
+        () => () => {
+            if (copiedTimeout.current) {
+                clearTimeout(copiedTimeout.current);
+            }
+        },
+        [],
+    );
+
+    const handleCopyChapter = async () => {
+        try {
+            await navigator.clipboard.writeText(getChapterText());
+            setCopied(true);
+            if (copiedTimeout.current) {
+                clearTimeout(copiedTimeout.current);
+            }
+            copiedTimeout.current = setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // Clipboard unavailable — nothing to do.
+        }
+    };
 
     return (
         <div className="@container flex h-[38px] shrink-0 items-center justify-between px-8">
@@ -57,6 +86,23 @@ export default function EditorBar({
                     className="text-[12px] text-ink-faint transition-colors hover:text-ink"
                 >
                     v{versionNumber}
+                </button>
+                <button
+                    type="button"
+                    onClick={handleCopyChapter}
+                    title={t(
+                        copied ? 'copyChapter.copied' : 'copyChapter.copy',
+                    )}
+                    aria-label={t(
+                        copied ? 'copyChapter.copied' : 'copyChapter.copy',
+                    )}
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors hover:bg-neutral-bg ${
+                        copied
+                            ? 'text-ai-green'
+                            : 'text-ink-faint hover:text-ink'
+                    }`}
+                >
+                    {copied ? <Check size={14} /> : <Copy size={14} />}
                 </button>
                 <Kbd keys="⌘P" className="hidden @xl:inline-flex" />
             </div>

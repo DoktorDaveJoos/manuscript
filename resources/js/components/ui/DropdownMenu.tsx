@@ -1,5 +1,5 @@
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
-import { ChevronRight } from 'lucide-react';
+import { Check, ChevronRight } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import {
@@ -69,6 +69,32 @@ function DropdownMenuItem({
             )}
             {...props}
         />
+    );
+}
+
+function DropdownMenuCheckboxItem({
+    className,
+    children,
+    ...props
+}: ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>) {
+    return (
+        <DropdownMenuPrimitive.CheckboxItem
+            className={cn(
+                menuItemBase,
+                menuItemVariants.default,
+                'relative pl-8',
+                'data-[disabled]:cursor-not-allowed data-[disabled]:text-ink-faint',
+                className,
+            )}
+            {...props}
+        >
+            <span className="absolute left-3 flex items-center">
+                <DropdownMenuPrimitive.ItemIndicator>
+                    <Check size={12} strokeWidth={2.5} />
+                </DropdownMenuPrimitive.ItemIndicator>
+            </span>
+            {children as ReactNode}
+        </DropdownMenuPrimitive.CheckboxItem>
     );
 }
 
@@ -157,6 +183,7 @@ export {
     DropdownMenuTrigger,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuCheckboxItem,
     DropdownMenuSeparator,
     DropdownMenuGroup,
     DropdownMenuLabel,

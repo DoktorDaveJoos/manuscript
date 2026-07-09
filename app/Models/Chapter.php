@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ChapterStatus;
 use App\Enums\CharacterRole;
 use App\Enums\VersionStatus;
+use App\Support\WordCount;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -241,7 +242,7 @@ class Chapter extends Model
     public function replaceScenesWithContent(?string $content): void
     {
         $this->scenes()->forceDelete();
-        $wordCount = str_word_count(strip_tags($content ?? ''));
+        $wordCount = WordCount::count($content ?? '');
         $this->scenes()->create([
             'title' => 'Scene 1',
             'content' => $content,
@@ -270,7 +271,7 @@ class Chapter extends Model
 
         foreach ($segments as $index => $segment) {
             $segment = trim($segment);
-            $wordCount = str_word_count(strip_tags($segment));
+            $wordCount = WordCount::count($segment);
             $totalWordCount += $wordCount;
 
             // Title preference: sceneMap (captured at request start) →

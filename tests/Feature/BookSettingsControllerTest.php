@@ -3,6 +3,7 @@
 use App\Enums\Genre;
 use App\Models\Book;
 use App\Models\Chapter;
+use App\Models\DesignTemplate;
 use App\Models\License;
 use App\Services\Export\ExportService;
 use App\Services\WritingStyleService;
@@ -308,21 +309,12 @@ test('export settings update persists to the book', function () {
     $settings = [
         'format' => 'pdf',
         'template' => 'modern',
-        'font_pairing' => 'classic-serif',
-        'scene_break_style' => 'asterisks',
-        'drop_caps' => false,
-        'chapter_heading' => 'number',
-        'include_act_breaks' => true,
-        'show_page_numbers' => false,
-        'trim_size' => '5x8',
-        'font_size' => 12,
         'cmyk' => true,
-        'bleed' => 3,
-        'bleed_mode' => 'outer',
         'include_cover' => false,
         'front_matter' => ['title-page', 'toc'],
         'back_matter' => ['acknowledgments'],
         'excluded_chapter_ids' => [7],
+        'docx_layout' => 'normseite',
     ];
 
     $this->putJson(route('books.settings.export-settings.update', $book), [
@@ -340,7 +332,9 @@ test('export settings update rejects invalid values', function (array $settings,
     ])->assertUnprocessable()->assertJsonValidationErrors($errorKey);
 })->with([
     'unknown format' => [['format' => 'rtf'], 'settings.format'],
-    'unknown trim size' => [['trim_size' => '9x9'], 'settings.trim_size'],
+    'unknown template' => [['template' => 'fancy'], 'settings.template'],
+    'unknown docx layout' => [['docx_layout' => 'typewriter'], 'settings.docx_layout'],
+    'removed typesetting key' => [['trim_size' => '5x8'], 'settings'],
     'unknown key' => [['margin_color' => 'red'], 'settings'],
 ]);
 
@@ -358,7 +352,7 @@ test('export page exposes saved export settings', function () {
         );
 });
 
-test('export page loads with chapters and trim sizes', function () {
+test('export page loads with chapters and templates', function () {
     $book = Book::factory()->create();
 
     $this->get(route('books.settings.export', $book))
@@ -368,7 +362,27 @@ test('export page loads with chapters and trim sizes', function () {
             ->has('book')
             ->has('storylines')
             ->has('chapters')
-            ->has('trimSizes')
+            ->has('templates', 3)
+            ->where('templates.0.group', 'builtin')
+            ->has('templates.0.trimWidth')
+            ->where('currentTemplate', 'classic')
             ->has('acts')
+        );
+});
+
+test('export page lists custom designer templates after built-ins', function () {
+    $book = Book::factory()->create();
+    $row = DesignTemplate::factory()->create(['name' => 'My Look', 'based_on' => 'elegant']);
+    $book->update(['export_settings' => ['template' => 'custom:'.$row->id]]);
+
+    $this->get(route('books.settings.export', $book))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('books/export')
+            ->has('templates', 4)
+            ->where('templates.3.slug', 'custom:'.$row->id)
+            ->where('templates.3.group', 'custom')
+            ->where('templates.3.name', 'My Look')
+            ->where('currentTemplate', 'custom:'.$row->id)
         );
 });

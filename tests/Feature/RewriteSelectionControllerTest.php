@@ -38,6 +38,7 @@ test('rewrite selection streams the rewrite as SSE', function () {
             'hint' => '',
             'before' => '',
             'after' => '',
+            'expected_current_version_id' => null,
         ],
     );
 
@@ -80,6 +81,7 @@ test('rewrite selection forwards the hint and surrounding prose to the agent', f
             'hint' => 'Make it more tense.',
             'before' => 'The room was quiet.',
             'after' => 'A knock at the door.',
+            'expected_current_version_id' => null,
         ],
     )->assertOk();
 
@@ -132,6 +134,7 @@ test('rewrite selection accepts a hint up to 2000 characters', function () {
         [
             'selection' => 'Some text.',
             'hint' => str_repeat('a', 2000),
+            'expected_current_version_id' => null,
         ],
     )->assertOk();
 });
@@ -177,7 +180,7 @@ test('rewrite selection 404s when chapter does not belong to the book', function
 
     $this->post(
         route('chapters.ai.rewriteSelection', [$book, $chapter]),
-        ['selection' => 'Some text.'],
+        ['selection' => 'Some text.', 'expected_current_version_id' => null],
     )->assertNotFound();
 });
 
@@ -277,6 +280,7 @@ test('commit snapshots scenes into a new accepted rewrite_selection version', fu
 
     $response = $this->postJson(
         route('chapters.ai.rewriteSelection.commit', [$book, $chapter]),
+        ['expected_current_version_id' => $previous->id],
     )->assertOk();
 
     $payload = $response->json();
@@ -303,6 +307,7 @@ test('commit creates the first version when no current version exists', function
 
     $response = $this->postJson(
         route('chapters.ai.rewriteSelection.commit', [$book, $chapter]),
+        ['expected_current_version_id' => null],
     )->assertOk();
 
     expect($response->json('previous'))->toBeNull();
@@ -380,6 +385,34 @@ test('commit rejects a stale expected_current_version_id with 409', function () 
         route('chapters.ai.rewriteSelection.commit', [$book, $chapter]),
         ['expected_current_version_id' => $current->id + 9999],
     )->assertStatus(409);
+});
+
+test('stream requires expected_current_version_id', function () {
+    RewriteSelectionAgent::fake(['ok']);
+
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>Some prose.</p>']);
+
+    $this->postJson(
+        route('chapters.ai.rewriteSelection', [$book, $chapter]),
+        ['selection' => 'Some text.'],
+    )->assertStatus(422)
+        ->assertJsonValidationErrors('expected_current_version_id');
+});
+
+test('commit requires expected_current_version_id', function () {
+    $book = Book::factory()->withAi()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    Scene::factory()->for($chapter)->create(['content' => '<p>x</p>']);
+
+    $this->postJson(
+        route('chapters.ai.rewriteSelection.commit', [$book, $chapter]),
+        [],
+    )->assertStatus(422)
+        ->assertJsonValidationErrors('expected_current_version_id');
 });
 
 test('preceding chapters carry a continuity-background role and storyline labels', function () {
@@ -537,6 +570,7 @@ test('controller streams with the directive-aware user message', function () {
         [
             'selection' => 'Some text.',
             'hint' => 'Make it tense',
+            'expected_current_version_id' => null,
         ],
     )->assertOk();
 
@@ -562,6 +596,7 @@ test('controller forwards truncation flags to the agent', function () {
             'after' => 'Later.',
             'before_truncated' => true,
             'after_truncated' => true,
+            'expected_current_version_id' => null,
         ],
     )->assertOk();
 

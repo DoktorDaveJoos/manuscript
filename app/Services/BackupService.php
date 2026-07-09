@@ -183,6 +183,11 @@ class BackupService
      * Apply any pending file-swap operation. MUST be called before Laravel
      * opens any connection to the database file. Idempotent: if no flags
      * are set or files are missing, returns silently.
+     *
+     * Best-effort: this runs in NativeAppServiceProvider::boot() BEFORE the
+     * window opens, and NativePHP invokes that boot with no try/catch — an
+     * exception here would 500 the boot request and the app would never open.
+     * A failed swap keeps its sidecar flags and is retried on the next launch.
      */
     public function applyPending(): void
     {
@@ -193,18 +198,22 @@ class BackupService
             return;
         }
 
-        $state = $this->readSidecar();
+        try {
+            $state = $this->readSidecar();
 
-        $this->pruneDiscardedFiles();
+            $this->pruneDiscardedFiles();
 
-        if (! empty($state['pending_revert'])) {
-            $this->doRevert($state);
+            if (! empty($state['pending_revert'])) {
+                $this->doRevert($state);
 
-            return;
-        }
+                return;
+            }
 
-        if (! empty($state['pending_import'])) {
-            $this->doImport($state);
+            if (! empty($state['pending_import'])) {
+                $this->doImport($state);
+            }
+        } catch (\Throwable $e) {
+            report($e);
         }
     }
 

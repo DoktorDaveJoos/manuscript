@@ -24,6 +24,7 @@ use App\Models\PlotPoint;
 use App\Models\Storyline;
 use App\Models\WikiEntry;
 use App\Observers\BoardChangeObserver;
+use App\Support\WordCount;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -1053,7 +1054,7 @@ class PlotCoachBatchService
             ->max('reader_order') ?? -1) + 1;
 
         $seedContent = $this->seedContentForStub($session, $pivotIds['beats']);
-        $seedWords = $seedContent === '' ? 0 : str_word_count(strip_tags($seedContent));
+        $seedWords = $seedContent === '' ? 0 : WordCount::count($seedContent);
 
         $chapter = Chapter::query()->create([
             'book_id' => $session->book_id,

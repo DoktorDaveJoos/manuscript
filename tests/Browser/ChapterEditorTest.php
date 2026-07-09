@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\ChapterStatus;
+use App\Models\AppSetting;
 use App\Models\Beat;
 use App\Models\Book;
 use App\Models\Chapter;
@@ -351,4 +353,170 @@ it('toggles typewriter mode from the formatting toolbar', function () {
         ->assertAttribute('[data-testid="typewriter-toggle"]', 'aria-pressed', 'true')
         ->click('[data-testid="typewriter-toggle"]')
         ->assertAttributeMissing('[data-testid="typewriter-toggle"]', 'aria-pressed');
+});
+
+it('applies text alignment from the formatting toolbar', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->click('.editor-prose p')
+        ->assertAttribute('[data-testid="align-left"]', 'aria-pressed', 'true')
+        ->click('[data-testid="align-center"]')
+        ->assertAttribute('[data-testid="align-center"]', 'aria-pressed', 'true')
+        ->assertAttributeMissing('[data-testid="align-left"]', 'aria-pressed')
+        ->assertPresent('.editor-prose p[style*="text-align: center"]')
+        ->click('[data-testid="align-right"]')
+        ->assertAttribute('[data-testid="align-right"]', 'aria-pressed', 'true')
+        ->assertPresent('.editor-prose p[style*="text-align: right"]')
+        ->click('[data-testid="align-left"]')
+        ->assertAttribute('[data-testid="align-left"]', 'aria-pressed', 'true')
+        ->assertMissing('.editor-prose p[style*="text-align"]');
+});
+
+it('moves a chapter to another storyline from the context menu without an error overlay', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $chapter = $chapters[0];
+    $target = Storyline::factory()->for($book)->create([
+        'name' => 'Side Plot',
+        'sort_order' => 1,
+    ]);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->rightClick("[data-sidebar-chapter='{$chapter->id}']")
+        ->click('Move to')
+        ->click("[role='menuitem']:has-text('Side Plot')")
+        ->wait(1)
+        // The sidebar must reflect the move immediately, without a page refresh
+        ->assertSeeIn("[data-storyline-section='{$target->id}']", $chapter->title)
+        // Inertia renders non-Inertia responses in a full-screen iframe modal
+        ->assertNotPresent('iframe')
+        ->assertNoJavaScriptErrors();
+
+    expect($chapter->fresh()->storyline_id)->toBe($target->id);
+});
+
+it('updates the editor status badge after changing chapter status from the sidebar context menu', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+    $chapter = $chapters[0];
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSeeIn('[data-testid="chapter-status-badge"]', 'Draft')
+        ->rightClick("[data-sidebar-chapter='{$chapter->id}']")
+        ->click('Status')
+        ->click("[role='menuitem']:has-text('Revised')")
+        ->wait(1)
+        ->assertSeeIn('[data-testid="chapter-status-badge"]', 'Revised')
+        ->assertNoJavaScriptErrors();
+
+    expect($chapter->fresh()->status)->toBe(ChapterStatus::Revised);
+});
+
+it('shows status bubbles in the chapter sidebar by default', function () {
+    [$book, $chapters] = createBookWithChapters(2);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertPresent("[data-sidebar-chapter='{$chapters[1]->id}'] [data-testid='chapter-status-dot']");
+});
+
+it('hides status bubbles via the chapter list display options', function () {
+    [$book, $chapters] = createBookWithChapters(2);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertPresent("[data-sidebar-chapter='{$chapters[1]->id}'] [data-testid='chapter-status-dot']")
+        ->click('[data-testid="chapter-list-display-options"]')
+        ->click('[data-testid="display-toggle-status-bubbles"]')
+        ->wait(1)
+        ->assertMissing("[data-sidebar-chapter='{$chapters[1]->id}'] [data-testid='chapter-status-dot']")
+        ->assertNoJavaScriptErrors();
+
+    AppSetting::clearCache();
+    expect(AppSetting::get('show_status_bubbles'))->toBeFalse();
+});
+
+it('hides word counts via the chapter list display options', function () {
+    [$book, $chapters] = createBookWithChapters(2);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertPresent("[data-sidebar-chapter='{$chapters[1]->id}'] [data-testid='chapter-word-count']")
+        ->click('[data-testid="chapter-list-display-options"]')
+        ->click('[data-testid="display-toggle-word-count"]')
+        ->wait(1)
+        ->assertMissing("[data-sidebar-chapter='{$chapters[1]->id}'] [data-testid='chapter-word-count']")
+        ->assertNoJavaScriptErrors();
+
+    AppSetting::clearCache();
+    expect(AppSetting::get('show_word_count'))->toBeFalse();
+});
+
+it('switches word counts between compact and raw formats', function () {
+    [$book, $chapters] = createBookWithChapters(2);
+    $chapters[1]->update(['word_count' => 1700]);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSeeIn("[data-sidebar-chapter='{$chapters[1]->id}']", '1.7k')
+        ->click('[data-testid="chapter-list-display-options"]')
+        ->click('[data-testid="display-toggle-compact-word-count"]')
+        ->wait(1)
+        ->assertSeeIn("[data-sidebar-chapter='{$chapters[1]->id}']", '1,700')
+        ->assertNoJavaScriptErrors();
+
+    AppSetting::clearCache();
+    expect(AppSetting::get('compact_word_count'))->toBeFalse();
+});
+
+it('collapses the publish nav group by default and keeps the story group open', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertPresent("[data-testid='nav-group-story-content']")
+        ->assertNotPresent("[data-testid='nav-group-publish-content']");
+});
+
+it('expands the publish nav group on click revealing typesetting and export', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->click("[data-testid='nav-group-publish']")
+        ->assertPresent("[data-testid='nav-group-publish-content']")
+        ->assertSee('Typesetting')
+        ->assertSee('Export');
+});
+
+it('auto-expands the publish nav group when landing on a route inside it', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+
+    $page = visit("/books/{$book->id}/design");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertPresent("[data-testid='nav-group-publish-content']");
+});
+
+it('persists a manually toggled nav group state across a reload', function () {
+    [$book, $chapters] = createBookWithChapters(1);
+
+    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->click("[data-testid='nav-group-publish']")
+        ->assertPresent("[data-testid='nav-group-publish-content']")
+        ->refresh()
+        ->assertPresent("[data-testid='nav-group-publish-content']");
 });

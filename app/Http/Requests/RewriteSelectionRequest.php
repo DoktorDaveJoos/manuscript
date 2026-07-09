@@ -23,7 +23,7 @@ class RewriteSelectionRequest extends FormRequest
             'after' => ['nullable', 'string'],
             'before_truncated' => ['nullable', 'boolean'],
             'after_truncated' => ['nullable', 'boolean'],
-            'expected_current_version_id' => ['nullable', 'integer'],
+            'expected_current_version_id' => ['present', 'nullable', 'integer'],
         ];
     }
 

@@ -33,5 +33,23 @@ it('renders export page with export controls', function () {
 
     $page->assertNoJavaScriptErrors()
         ->assertSee('Export')
-        ->assertSee('Configure and export your manuscript.');
+        ->assertSee('Configure and export your manuscript.')
+        ->assertSee('Classic')
+        ->assertSee('Customize in Book Designer')
+        ->assertDontSee('Font Pairing')
+        ->assertDontSee('Trim size');
+});
+
+it('offers the Normseite layout for docx exports', function () {
+    [$book] = createBookWithChapters(1);
+
+    $page = visit("/books/{$book->id}/settings/export");
+
+    $page->assertDontSee('Normseite')
+        ->click('[data-testid="export-format-docx"]')
+        ->assertNoJavaScriptErrors()
+        ->assertSee('Standard Manuscript')
+        ->assertSee('Normseite (DIN A4)')
+        ->click('[data-testid="docx-layout-normseite"]')
+        ->assertSee('approx. 30 lines per page');
 });

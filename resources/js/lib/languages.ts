@@ -11,6 +11,7 @@ export const BOOK_LANGUAGES = [
     { value: 'it', label: 'Italiano', locale: 'it_IT' },
     { value: 'nl', label: 'Nederlands', locale: 'nl_NL' },
     { value: 'pt', label: 'Português', locale: 'pt_PT' },
+    { value: 'sv', label: 'Svenska', locale: 'sv_SE' },
 ] as const;
 
 export type BookLanguage = (typeof BOOK_LANGUAGES)[number]['value'];

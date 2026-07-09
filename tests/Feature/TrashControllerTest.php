@@ -61,11 +61,12 @@ test('scene destroy soft-deletes scene', function () {
     expect(Scene::withTrashed()->find($scene2->id))->not->toBeNull();
 });
 
-test('restoreVersion force-deletes scenes', function () {
+test('restoreVersion force-deletes excess scenes instead of trashing them', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
-    $scene = Scene::factory()->for($chapter)->create();
+    $kept = Scene::factory()->for($chapter)->create(['sort_order' => 0]);
+    $excess = Scene::factory()->for($chapter)->create(['sort_order' => 1]);
     $v1 = ChapterVersion::factory()->for($chapter)->create([
         'version_number' => 1,
         'content' => 'Old content',
@@ -79,8 +80,10 @@ test('restoreVersion force-deletes scenes', function () {
 
     $this->post(route('chapters.restoreVersion', [$book, $chapter, $v1]));
 
-    // Scene should be permanently gone, not soft-deleted
-    expect(Scene::withTrashed()->find($scene->id))->toBeNull();
+    // The single-segment snapshot updates the first scene in place; the
+    // excess scene must be permanently gone, not lingering in the trash.
+    expect($kept->fresh()->content)->toBe('Old content');
+    expect(Scene::withTrashed()->find($excess->id))->toBeNull();
 });
 
 // --- Trash index ---

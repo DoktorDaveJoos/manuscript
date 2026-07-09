@@ -6,14 +6,9 @@ import {
     updateStatus,
 } from '@/actions/App/Http/Controllers/ChapterController';
 import ContextMenu from '@/components/ui/ContextMenu';
-import { jsonFetchHeaders } from '@/lib/utils';
+import { broadcastChapterDataChanged, jsonFetchHeaders } from '@/lib/utils';
 import type { Chapter, ChapterStatus, Storyline } from '@/types/models';
-
-const statusDotClass: Record<ChapterStatus, string> = {
-    draft: 'bg-status-draft',
-    revised: 'bg-status-revised',
-    final: 'bg-status-final',
-};
+import StatusDot from './StatusDot';
 
 const statusValues: ChapterStatus[] = ['draft', 'revised', 'final'];
 
@@ -44,11 +39,12 @@ export default function ChapterContextMenu({
             headers: jsonFetchHeaders(),
             body: JSON.stringify({ status }),
         });
-        router.reload({ only: ['book'] });
+        broadcastChapterDataChanged(chapter.id);
+        router.reload({ only: ['book', 'sidebar_storylines'] });
         onClose();
     };
 
-    const handleMove = (storylineId: number) => {
+    const handleMove = async (storylineId: number) => {
         const allChapters = storylines.flatMap((s) =>
             (s.chapters ?? []).map((ch) => ({
                 id: ch.id,
@@ -60,14 +56,13 @@ export default function ChapterContextMenu({
             storyline_id: ch.id === chapter.id ? storylineId : ch.storyline_id,
         }));
 
-        router.post(
-            reorder.url(bookId),
-            { order },
-            {
-                preserveScroll: true,
-                onSuccess: () => onClose(),
-            },
-        );
+        await fetch(reorder.url(bookId), {
+            method: 'POST',
+            headers: jsonFetchHeaders(),
+            body: JSON.stringify({ order }),
+        });
+        router.reload({ only: ['book', 'sidebar_storylines'] });
+        onClose();
     };
 
     const otherStorylines = storylines.filter(
@@ -104,9 +99,7 @@ export default function ChapterContextMenu({
                             chapter.status === value ? 'font-medium' : ''
                         }
                     >
-                        <span
-                            className={`inline-block size-[7px] rounded-full ${statusDotClass[value]}`}
-                        />
+                        <StatusDot status={value} />
                         {t(`status.${value}`)}
                     </ContextMenu.Item>
                 ))}

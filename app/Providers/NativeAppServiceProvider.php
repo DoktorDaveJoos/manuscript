@@ -33,8 +33,7 @@ class NativeAppServiceProvider implements ProvidesPhpIni
             ->width(1440)
             ->height(900)
             ->minWidth(1024)
-            ->minHeight(680)
-            ->webPreferences(['spellcheck' => true]);
+            ->minHeight(680);
 
         if (app()->isProduction()) {
             // Must be an absolute URL — NativePHP forwards the string straight

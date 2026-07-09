@@ -129,3 +129,24 @@ it('dismisses crash report dialog on first visit', function () {
         ->assertSee('Create your first book')
         ->assertNoJavaScriptErrors();
 });
+
+it('keeps entered book details when clicking outside the create book dialog', function () {
+    Book::factory()->create(['title' => 'First Book']);
+
+    $page = visit('/');
+
+    $page->assertNoJavaScriptErrors()
+        ->click('Create new book')
+        ->assertSee('New book')
+        ->type('input[placeholder="The Weight of Silence"]', 'Half-Finished Draft');
+
+    // Simulate a pointer-down outside the dialog content (on the overlay)
+    $page->script(
+        "document.elementFromPoint(8, 8)?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, composed: true }))"
+    );
+
+    $page->wait(1)
+        ->assertSee('New book')
+        ->assertValue('input[placeholder="The Weight of Silence"]', 'Half-Finished Draft')
+        ->assertNoJavaScriptErrors();
+});

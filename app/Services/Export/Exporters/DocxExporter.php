@@ -4,6 +4,7 @@ namespace App\Services\Export\Exporters;
 
 use App\Contracts\Exporter;
 use App\Contracts\ExportTemplate;
+use App\Enums\DocxLayout;
 use App\Models\Book;
 use App\Services\Export\ContentPreparer;
 use App\Services\Export\ExportOptions;
@@ -24,53 +25,71 @@ class DocxExporter implements Exporter
     {
         $phpWord = new PhpWord;
 
-        // Industry manuscript format
+        // Both layouts use Times New Roman 12 pt; they differ in line spacing,
+        // body alignment, and page geometry (see DocxLayout).
+        $normseite = $options->docxLayout === DocxLayout::Normseite;
+        $lineHeight = $normseite ? 1.5 : 2.0;
+        $bodyAlignment = $normseite ? ['alignment' => Jc::BOTH] : [];
+
         $phpWord->setDefaultFontName('Times New Roman');
         $phpWord->setDefaultFontSize(12);
 
         $phpWord->addParagraphStyle('Normal', [
-            'lineHeight' => 2.0,
+            'lineHeight' => $lineHeight,
             'spaceAfter' => 0,
             'spaceBefore' => 0,
             'indentation' => ['firstLine' => 720], // 0.5 inch in twips
+            ...$bodyAlignment,
         ]);
 
         $phpWord->addParagraphStyle('NoIndent', [
-            'lineHeight' => 2.0,
+            'lineHeight' => $lineHeight,
             'spaceAfter' => 0,
             'spaceBefore' => 0,
+            ...$bodyAlignment,
         ]);
 
         $phpWord->addParagraphStyle('ChapterTitle', [
-            'lineHeight' => 2.0,
+            'lineHeight' => $lineHeight,
             'spaceAfter' => 240,
             'spaceBefore' => 2400,
             'alignment' => Jc::CENTER,
         ]);
 
         $phpWord->addParagraphStyle('SceneBreak', [
-            'lineHeight' => 2.0,
+            'lineHeight' => $lineHeight,
             'spaceAfter' => 240,
             'spaceBefore' => 240,
             'alignment' => Jc::CENTER,
         ]);
 
         $phpWord->addParagraphStyle('MatterTitle', [
-            'lineHeight' => 2.0,
+            'lineHeight' => $lineHeight,
             'spaceAfter' => 480,
             'spaceBefore' => 2400,
             'alignment' => Jc::CENTER,
         ]);
 
         $phpWord->addParagraphStyle('Centered', [
-            'lineHeight' => 2.0,
+            'lineHeight' => $lineHeight,
             'spaceAfter' => 0,
             'spaceBefore' => 0,
             'alignment' => Jc::CENTER,
         ]);
 
-        // Create section with 1-inch margins
-        $section = $phpWord->addSection([
+        // Normseite: DIN A4 with 2.5 cm top/left and 4.5 cm bottom/right
+        // correction margins — with 1.5 spacing that yields ~30 lines per page.
+        // Manuscript: 1-inch margins on the default page.
+        $section = $phpWord->addSection($normseite ? [
+            // Explicit integer twips — PhpWord's paperSize => 'A4' emits
+            // fractional pgSz values, which some validators reject.
+            'pageSizeW' => 11906,
+            'pageSizeH' => 16838,
+            'marginTop' => 1417,
+            'marginBottom' => 2551,
+            'marginLeft' => 1417,
+            'marginRight' => 2551,
+        ] : [
             'marginTop' => 1440,
             'marginBottom' => 1440,
             'marginLeft' => 1440,

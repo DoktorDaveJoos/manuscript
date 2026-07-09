@@ -39,6 +39,10 @@ export function formatCompactCount(count: number): string {
     return count.toLocaleString('en-US');
 }
 
+export function formatWordCount(count: number, compact: boolean): string {
+    return compact ? formatCompactCount(count) : count.toLocaleString('en-US');
+}
+
 export function createChapter(
     bookId: number,
     storylineId: number,

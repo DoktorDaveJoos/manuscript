@@ -86,11 +86,11 @@ class RewriteSelectionController extends Controller
         abort_unless($chapter->book_id === $book->id, 404);
 
         $validated = request()->validate([
-            'expected_current_version_id' => ['nullable', 'integer'],
+            'expected_current_version_id' => ['present', 'nullable', 'integer'],
         ]);
-        $expectedId = isset($validated['expected_current_version_id'])
-            ? (int) $validated['expected_current_version_id']
-            : null;
+        $expectedId = $validated['expected_current_version_id'] === null
+            ? null
+            : (int) $validated['expected_current_version_id'];
 
         return DB::transaction(function () use ($chapter, $expectedId) {
             $chapter->loadMissing(['scenes', 'currentVersion']);

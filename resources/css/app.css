@@ -449,6 +449,12 @@ html.dark {
     font-style: italic;
 }
 
+.editor-prose .spell-error {
+    text-decoration: underline dotted var(--color-delete);
+    text-decoration-skip-ink: none;
+    text-underline-offset: 3px;
+}
+
 /* Search match highlighting */
 .search-highlight {
     background-color: #fef3c7;
