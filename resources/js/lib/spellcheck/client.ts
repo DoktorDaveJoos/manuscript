@@ -1,4 +1,5 @@
 import { LOCALE_MAP } from '@/lib/languages';
+import spellcheckWorkerUrl from '@/workers/spellcheck.worker?worker&url';
 import type {
     MisspelledRange,
     WorkerRequest,
@@ -40,11 +41,33 @@ export function getSpellcheckClient(language: string): SpellcheckClient | null {
     return client;
 }
 
+/**
+ * In production builds `?worker&url` resolves to the bundled worker chunk on
+ * the app origin, so the worker is constructed directly. In dev, Vite serves
+ * the script from its own origin (e.g. http://[::1]:5174) while the page is
+ * served by Laravel/NativePHP — constructing a cross-origin Worker throws a
+ * SecurityError, so bounce through a same-origin blob module that imports
+ * the script (the Vite dev server sends CORS headers, and the module's own
+ * imports resolve against the Vite origin per ESM spec).
+ */
+function createWorker(): Worker {
+    const url = new URL(spellcheckWorkerUrl, self.location.href);
+    if (url.origin === self.location.origin) {
+        return new Worker(url, { type: 'module' });
+    }
+    const blob = new Blob([`import ${JSON.stringify(url.href)};`], {
+        type: 'text/javascript',
+    });
+    const objectUrl = URL.createObjectURL(blob);
+    const worker = new Worker(objectUrl, { type: 'module' });
+    const revoke = () => URL.revokeObjectURL(objectUrl);
+    worker.addEventListener('message', revoke, { once: true });
+    worker.addEventListener('error', revoke, { once: true });
+    return worker;
+}
+
 function createClient(language: string, locale: string): SpellcheckClient {
-    const worker = new Worker(
-        new URL('../../workers/spellcheck.worker.ts', import.meta.url),
-        { type: 'module' },
-    );
+    const worker = createWorker();
 
     let nextId = 1;
     const pendingChecks = new Map<number, (r: MisspelledRange[]) => void>();
@@ -89,7 +112,10 @@ function createClient(language: string, locale: string): SpellcheckClient {
         settlePendingWithFailure();
     };
 
-    const base = `/dictionaries/${language}/${locale}`;
+    // Absolute URLs: relative paths don't resolve inside a blob-URL worker
+    // (the dev-mode bounce above), and the app origin is where Laravel
+    // serves public/ in every mode.
+    const base = `${self.location.origin}/dictionaries/${language}/${locale}`;
     const send = (message: WorkerRequest) => worker.postMessage(message);
     send({ type: 'init', affUrl: `${base}.aff`, dicUrl: `${base}.dic` });
 
