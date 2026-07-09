@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\Scene;
+use App\Support\WordCount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -125,7 +126,7 @@ class SearchController extends Controller
                 $result = $this->replaceInHtml($scene->content, $pattern, $replace);
 
                 if ($result['count'] > 0) {
-                    $wordCount = str_word_count(strip_tags($result['content']));
+                    $wordCount = WordCount::count($result['content']);
                     $scene->update([
                         'content' => $result['content'],
                         'word_count' => $wordCount,

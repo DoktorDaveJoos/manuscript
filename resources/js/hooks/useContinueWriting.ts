@@ -8,9 +8,9 @@ import {
 import { useAiErrorToast } from '@/hooks/useAiErrorToast';
 import { flushPaneByChapter } from '@/lib/pane';
 import { proseMirrorBlockText } from '@/lib/proseText';
-import { stripTags } from '@/lib/ruleCheckers';
 import { insertStreamedParagraphs } from '@/lib/streamedParagraphs';
 import { jsonFetchHeaders } from '@/lib/utils';
+import { countWordsInHtml } from '@/lib/wordCount';
 import type { ChapterVersion } from '@/types/models';
 
 type StartArgs = {
@@ -38,8 +38,7 @@ export type ContinueWritingReview = {
 const AFTER_WORD_CAP = 250;
 
 function countWords(html: string | null | undefined): number {
-    if (!html) return 0;
-    return stripTags(html).match(/\S+/g)?.length ?? 0;
+    return countWordsInHtml(html);
 }
 
 function capWords(

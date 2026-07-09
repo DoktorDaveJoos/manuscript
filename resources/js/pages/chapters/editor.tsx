@@ -1113,7 +1113,7 @@ export default function EditorPage({
                 <WhisperChrome
                     chapterNumber={focusedChapter.reader_order}
                     chapterTitle={focusedDisplayTitle}
-                    wordCount={focusedWordCount}
+                    wordCount={sidebarWordCount}
                 />
             )}
         </>

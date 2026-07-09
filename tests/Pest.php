@@ -10,6 +10,7 @@ use App\Models\ChapterVersion;
 use App\Models\License;
 use App\Models\Scene;
 use App\Models\Storyline;
+use App\Support\WordCount;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -114,7 +115,7 @@ function createBookWithChapters(int $chapterCount = 3): array
         Scene::factory()->for($chapter)->create([
             'content' => $content,
             'sort_order' => 0,
-            'word_count' => str_word_count(strip_tags($content)),
+            'word_count' => WordCount::count($content),
         ]);
         $chapter->refreshContentHash();
         $chapters[] = $chapter;

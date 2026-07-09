@@ -1,4 +1,3 @@
-import CharacterCount from '@tiptap/extension-character-count';
 import Placeholder from '@tiptap/extension-placeholder';
 import Typography from '@tiptap/extension-typography';
 import { useEditor } from '@tiptap/react';
@@ -10,6 +9,7 @@ import { SceneBridgeExtension } from '@/extensions/SceneBridgeExtension';
 import { SearchHighlightExtension } from '@/extensions/SearchHighlightExtension';
 import { SpellcheckContextMenu } from '@/extensions/SpellcheckContextMenu';
 import { TypewriterScrollExtension } from '@/extensions/TypewriterScrollExtension';
+import { countWords } from '@/lib/wordCount';
 import type { ProofreadingConfig } from '@/types/models';
 
 export default function useChapterEditor({
@@ -55,7 +55,6 @@ export default function useChapterEditor({
             extensions: [
                 StarterKit,
                 Placeholder.configure({ placeholder: 'Start writing...' }),
-                CharacterCount,
                 Typography,
                 TypewriterScrollExtension.configure({
                     isEnabled: () => typewriterEnabledRef.current,
@@ -87,7 +86,14 @@ export default function useChapterEditor({
             },
             onUpdate: ({ editor }) => {
                 const html = editor.getHTML();
-                const words = editor.storage.characterCount.words();
+                const words = countWords(
+                    editor.state.doc.textBetween(
+                        0,
+                        editor.state.doc.content.size,
+                        ' ',
+                        ' ',
+                    ),
+                );
                 onUpdateRef.current(html, words);
             },
         },
