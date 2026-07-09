@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.8.0 (2026-07-09)
+
+### Features
+
+- **Book Designer** — a new typesetting studio for print layouts: build custom templates with full control over page geometry (trim size, bleed, margins), typography, chapter headings, and scene breaks, previewed as book-like bound spreads (53682a43, ed3ef126, d61412fa, a40d3035)
+- **Export** — typesetting now lives in the chosen template (built-in or Book Designer custom) instead of a long list of per-export switches, leaving the export page focused on format, template, front/back matter, and chapter selection (dd577036)
+- **Export** — DOCX exports offer two submission layouts: the international manuscript standard and the German Normseite (DIN A4, 1.5-spaced, justified, ~30 lines with correction margin) (dd577036)
+- **Spellcheck** — built-in spellcheck with deterministic squiggles across 8 languages (including Swedish), correction suggestions in a popover, and a per-book custom dictionary; replaces the previous system spellcheck (f0f0303f, a28e0531, 79c8539a, d84aba49)
+- **Editor** — align paragraphs and headings left, center, or right from the formatting toolbar (989a6238)
+- **Editor** — copy a whole chapter to the clipboard from the editor bar (f7b91e78)
+- **Sidebar** — Story and Publish navigation groups collapse, auto-expand on navigation, and remember their state (ed8b1b14)
+- **Sidebar** — chapter status bubbles in the chapter list plus a display options menu (672c3fa5)
+
+### Fixes
+
+- **Editor** — the editor now hard-locks while any AI flow writes into a chapter, autosave retries can no longer resurrect pre-revision content, and every AI mutation carries a stale-version guard, preventing silent overwrites of newer work (663c152a, 968e4535, 03d0b2cf, aa8ab5e0)
+- **Versions** — restoring a multi-scene version rebuilds the snapshot's scene structure instead of collapsing it into one scene (ffb35c1d)
+- **Search** — find/replace match navigation is stable, keyboard shortcuts work, and phantom matches no longer appear (c4f4f7c4)
+- **Editor** — word counts use a Unicode word-processor algorithm, so umlauts, numbers, and punctuation count consistently across languages (da3180f5)
+- **Editor** — copy chapter copies what's on screen rather than the last server fetch, the status badge and sidebar refresh immediately after a status change, and moving a chapter via the context menu no longer flashes a raw JSON overlay (e21e7163, 29c8223a, d28791ce)
+- **Startup** — a failed backup swap while applying a pending update can no longer block the app from launching (9a092306)
+
 ## v0.7.5 (2026-06-19)
 
 ### Features
