@@ -62,6 +62,44 @@ test('updateContent saves content and recalculates word count', function () {
     expect($chapter->word_count)->toBe(5);
 });
 
+test('updateContent rejects a stale expected_current_version_id with 409 and keeps the scene untouched', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $scene = Scene::factory()->for($chapter)->create(['content' => '<p>Revised by AI.</p>']);
+    $current = ChapterVersion::factory()->for($chapter)->create([
+        'version_number' => 2,
+        'is_current' => true,
+    ]);
+
+    // A save retry composed against the pre-revision chapter must not
+    // overwrite content the server has since replaced.
+    $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
+        'content' => '<p>Stale text from before the revision.</p>',
+        'expected_current_version_id' => $current->id - 1,
+    ])->assertStatus(409);
+
+    expect($scene->fresh()->content)->toBe('<p>Revised by AI.</p>');
+});
+
+test('updateContent accepts a matching expected_current_version_id', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $scene = Scene::factory()->for($chapter)->create(['content' => '<p>Old.</p>']);
+    $current = ChapterVersion::factory()->for($chapter)->create([
+        'version_number' => 2,
+        'is_current' => true,
+    ]);
+
+    $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
+        'content' => '<p>New words.</p>',
+        'expected_current_version_id' => $current->id,
+    ])->assertOk();
+
+    expect($scene->fresh()->content)->toBe('<p>New words.</p>');
+});
+
 test('updateContent tracks writing session for word count increase', function () {
     $book = Book::factory()->create(['daily_word_count_goal' => 10]);
     $storyline = Storyline::factory()->for($book)->create();
