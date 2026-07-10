@@ -355,26 +355,6 @@ it('toggles typewriter mode from the formatting toolbar', function () {
         ->assertAttributeMissing('[data-testid="typewriter-toggle"]', 'aria-pressed');
 });
 
-it('applies text alignment from the formatting toolbar', function () {
-    [$book, $chapters] = createBookWithChapters(1);
-
-    $page = visit("/books/{$book->id}/chapters/{$chapters[0]->id}");
-
-    $page->assertNoJavaScriptErrors()
-        ->click('.editor-prose p')
-        ->assertAttribute('[data-testid="align-left"]', 'aria-pressed', 'true')
-        ->click('[data-testid="align-center"]')
-        ->assertAttribute('[data-testid="align-center"]', 'aria-pressed', 'true')
-        ->assertAttributeMissing('[data-testid="align-left"]', 'aria-pressed')
-        ->assertPresent('.editor-prose p[style*="text-align: center"]')
-        ->click('[data-testid="align-right"]')
-        ->assertAttribute('[data-testid="align-right"]', 'aria-pressed', 'true')
-        ->assertPresent('.editor-prose p[style*="text-align: right"]')
-        ->click('[data-testid="align-left"]')
-        ->assertAttribute('[data-testid="align-left"]', 'aria-pressed', 'true')
-        ->assertMissing('.editor-prose p[style*="text-align"]');
-});
-
 it('moves a chapter to another storyline from the context menu without an error overlay', function () {
     [$book, $chapters] = createBookWithChapters(1);
     $chapter = $chapters[0];

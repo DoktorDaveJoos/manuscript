@@ -1,5 +1,4 @@
 import Placeholder from '@tiptap/extension-placeholder';
-import TextAlign from '@tiptap/extension-text-align';
 import Typography from '@tiptap/extension-typography';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -62,13 +61,6 @@ export default function useChapterEditor({
         {
             extensions: [
                 StarterKit,
-                // No defaultAlignment: unaligned blocks carry no inline style,
-                // so saved HTML stays clean and downstream surfaces (export,
-                // book preview) keep control over default alignment.
-                TextAlign.configure({
-                    types: ['heading', 'paragraph'],
-                    alignments: ['left', 'center', 'right'],
-                }),
                 Placeholder.configure({ placeholder: 'Start writing...' }),
                 Typography,
                 TypewriterScrollExtension.configure({
