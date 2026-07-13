@@ -28,6 +28,7 @@ class AppSettingsController extends Controller
         'auto_update',
         'editor_font',
         'editor_font_size',
+        'editor_text_position',
     ];
 
     public function appearance(): Response

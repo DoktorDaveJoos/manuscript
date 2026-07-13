@@ -67,6 +67,7 @@ class HandleInertiaRequests extends Middleware
                 'language_prompted',
                 'editor_font',
                 'editor_font_size',
+                'editor_text_position',
             ]);
         } catch (Throwable $e) {
             report($e);
@@ -135,6 +136,7 @@ class HandleInertiaRequests extends Middleware
                 'locale' => $locale,
                 'editor_font' => AppSetting::get('editor_font', 'eb-garamond'),
                 'editor_font_size' => (int) AppSetting::get('editor_font_size', 18),
+                'editor_text_position' => AppSetting::get('editor_text_position', 'center'),
             ],
             'ai_configured' => fn () => $this->activeAiSetting()?->isConfigured() ?? false,
             'speech_ready' => fn () => app(WhisperTranscriber::class)->isAvailable()

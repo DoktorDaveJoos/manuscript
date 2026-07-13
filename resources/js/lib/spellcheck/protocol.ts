@@ -1,3 +1,5 @@
+import type { AnalyzeOptions, StyleAnalysis } from '@/lib/style/types';
+
 export interface MisspelledRange {
     from: number; // offset within the checked text
     to: number;
@@ -9,10 +11,13 @@ export type WorkerRequest =
     | { type: 'check'; id: number; text: string }
     | { type: 'suggest'; id: number; word: string }
     | { type: 'add-word'; word: string }
-    | { type: 'set-custom-words'; words: string[] };
+    | { type: 'set-custom-words'; words: string[] }
+    | { type: 'init-style'; packUrl: string }
+    | { type: 'analyze'; id: number; text: string; options: AnalyzeOptions };
 
 export type WorkerResponse =
     | { type: 'ready' }
     | { type: 'init-error'; message: string }
     | { type: 'check-result'; id: number; ranges: MisspelledRange[] }
-    | { type: 'suggest-result'; id: number; suggestions: string[] };
+    | { type: 'suggest-result'; id: number; suggestions: string[] }
+    | { type: 'analyze-result'; id: number; analysis: StyleAnalysis };

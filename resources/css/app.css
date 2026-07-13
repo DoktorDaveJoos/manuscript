@@ -455,6 +455,49 @@ html.dark {
     text-underline-offset: 3px;
 }
 
+/* Style analysis (revision mode) decorations — all colors are theme-aware
+   tokens, so no html.dark overrides are needed. */
+.editor-prose .style-filler {
+    color: var(--color-ink-faint);
+    text-decoration: line-through;
+    text-decoration-color: var(--color-ink-faint);
+    cursor: pointer;
+}
+
+.editor-prose .style-weak-verb {
+    text-decoration: underline solid var(--color-plot-turning-text);
+    text-decoration-skip-ink: none;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.editor-prose .style-filter-word {
+    text-decoration: underline solid var(--color-plot-setup-text);
+    text-decoration-skip-ink: none;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.editor-prose .style-cliche {
+    background-color: var(--color-plot-conflict-bg);
+    box-shadow: 0 0 0 1px var(--color-plot-conflict-text);
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.editor-prose .style-pattern {
+    text-decoration: underline dotted var(--color-plot-worldbuilding-text);
+    text-decoration-skip-ink: none;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.editor-prose .style-repetition {
+    box-shadow: 0 0 0 1px var(--color-plot-resolution-text);
+    border-radius: 2px;
+    cursor: pointer;
+}
+
 /* Search match highlighting */
 .search-highlight {
     background-color: #fef3c7;
@@ -474,38 +517,6 @@ html.dark .search-highlight {
 html.dark .search-highlight-active {
     background-color: #ea580c;
     color: #fff;
-}
-
-/* Proofreading decorations */
-.spelling-error {
-    background-color: transparent;
-    border-bottom: none;
-    text-decoration: underline wavy #ef4444;
-    text-decoration-skip-ink: none;
-    text-underline-offset: 2px;
-    animation: none;
-}
-
-.spelling-warning {
-    background-color: transparent;
-    border-bottom: none;
-    text-decoration: underline wavy #3b82f6;
-    text-decoration-skip-ink: none;
-    text-underline-offset: 2px;
-    animation: none;
-}
-
-.spelling-error:hover,
-.spelling-warning:hover {
-    background-color: transparent;
-}
-
-html.dark .spelling-error {
-    text-decoration-color: #f87171;
-}
-
-html.dark .spelling-warning {
-    text-decoration-color: #60a5fa;
 }
 
 /* Chapter title placeholder */

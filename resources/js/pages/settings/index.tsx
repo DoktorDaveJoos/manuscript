@@ -59,6 +59,7 @@ import type {
     AppSettings,
     AiProvider,
     AiSetting,
+    EditorTextPosition,
     License,
 } from '@/types/models';
 
@@ -376,6 +377,9 @@ function EditorSection({
     const [editorFontSize, setEditorFontSize] = useState(
         Number(settings.editor_font_size) || DEFAULT_FONT_SIZE,
     );
+    const [editorTextPosition, setEditorTextPosition] = useState(
+        settings.editor_text_position ?? 'center',
+    );
 
     return (
         <div>
@@ -446,6 +450,36 @@ function EditorSection({
                                 className="flex size-8 items-center justify-center"
                             >
                                 {size}
+                            </ToggleGroupItem>
+                        ))}
+                    </ToggleGroup>
+                </Card>
+
+                {/* Text position in view */}
+                <Card className="flex items-center justify-between px-6 py-3.5">
+                    <div>
+                        <span className="text-[14px] font-medium text-ink">
+                            {t('appearance.editorTextPosition.label')}
+                        </span>
+                        <p className="mt-0.5 text-[13px] text-ink-muted">
+                            {t('appearance.editorTextPosition.description')}
+                        </p>
+                    </div>
+                    <ToggleGroup
+                        type="single"
+                        value={editorTextPosition}
+                        onValueChange={(val) => {
+                            if (val) {
+                                setEditorTextPosition(
+                                    val as EditorTextPosition,
+                                );
+                                saveSetting('editor_text_position', val);
+                            }
+                        }}
+                    >
+                        {(['left', 'center', 'right'] as const).map((pos) => (
+                            <ToggleGroupItem key={pos} value={pos}>
+                                {t(`appearance.editorTextPosition.${pos}`)}
                             </ToggleGroupItem>
                         ))}
                     </ToggleGroup>

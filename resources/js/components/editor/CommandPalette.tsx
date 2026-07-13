@@ -71,6 +71,7 @@ const panelLabelKeys: Partial<
     wiki: { open: 'palette.openWiki', close: 'palette.closeWiki' },
     notes: { open: 'palette.openNotes', close: 'palette.closeNotes' },
     plot: { open: 'palette.openPlot', close: 'palette.closePlot' },
+    style: { open: 'palette.openStyle', close: 'palette.closeStyle' },
     ai: { open: 'palette.openAiAssistant', close: 'palette.closeAiAssistant' },
     chat: { open: 'palette.openChat', close: 'palette.closeChat' },
 };

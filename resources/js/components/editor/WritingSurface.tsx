@@ -10,7 +10,8 @@ import {
     cancelTypewriterAnimation,
     centerCursorInContainer,
 } from '@/extensions/TypewriterScrollExtension';
-import type { ProofreadingConfig, Scene } from '@/types/models';
+import type { StyleAnalysisBridge } from '@/lib/style/types';
+import type { EditorTextPosition, Scene } from '@/types/models';
 import ChapterFindBar from './ChapterFindBar';
 import { DEFAULT_FONT_ID, getFontFamily } from './FontSelector';
 import { DEFAULT_FONT_SIZE } from './FontSizeSelector';
@@ -42,6 +43,7 @@ export default function WritingSurface({
     isTypewriterMode = false,
     editorFont = DEFAULT_FONT_ID,
     editorFontSize = DEFAULT_FONT_SIZE,
+    editorTextPosition = 'center',
     pendingFocusSceneId,
     onFocusHandled,
     onActiveSceneIdChange,
@@ -52,7 +54,7 @@ export default function WritingSurface({
     onLocalFindClose,
     autoSelectTitle,
     onTitleSelectHandled,
-    proofreadingConfig,
+    styleAnalysis,
     bookLanguage,
     spellcheckEnabled,
     customWords,
@@ -77,6 +79,8 @@ export default function WritingSurface({
     isTypewriterMode?: boolean;
     editorFont?: string;
     editorFontSize?: number;
+    /** Horizontal placement of the text column within the view. */
+    editorTextPosition?: EditorTextPosition;
     pendingFocusSceneId?: number | null;
     onFocusHandled?: () => void;
     onActiveSceneIdChange?: (sceneId: number) => void;
@@ -85,7 +89,7 @@ export default function WritingSurface({
     isLocalFindOpen?: boolean;
     localFindShowReplace?: boolean;
     onLocalFindClose?: () => void;
-    proofreadingConfig?: ProofreadingConfig;
+    styleAnalysis?: StyleAnalysisBridge;
     bookLanguage?: string;
     spellcheckEnabled?: boolean;
     customWords?: string[];
@@ -363,7 +367,13 @@ export default function WritingSurface({
             )}
             <div
                 ref={scrollContainerRef}
-                className="flex size-full items-start justify-center overflow-y-auto"
+                className={`flex size-full items-start overflow-y-auto ${
+                    editorTextPosition === 'left'
+                        ? 'justify-start'
+                        : editorTextPosition === 'right'
+                          ? 'justify-end'
+                          : 'justify-center'
+                }`}
                 style={
                     {
                         '--font-serif': fontFamily,
@@ -476,7 +486,7 @@ export default function WritingSurface({
                                 searchHighlight={
                                     isLocalFindOpen ? null : searchHighlight
                                 }
-                                proofreadingConfig={proofreadingConfig}
+                                styleAnalysis={styleAnalysis}
                                 bookLanguage={bookLanguage}
                                 spellcheckEnabled={spellcheckEnabled}
                                 customWords={customWords}

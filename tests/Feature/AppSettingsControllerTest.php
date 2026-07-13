@@ -81,6 +81,27 @@ test('show_ai_features toggle persists', function () {
     expect(AppSetting::showAiFeatures())->toBeFalse();
 });
 
+test('editor_text_position setting is accepted and persisted', function () {
+    $this->putJson(route('settings.update'), [
+        'key' => 'editor_text_position',
+        'value' => 'left',
+    ])->assertOk()
+        ->assertJsonPath('message', 'Setting updated.');
+
+    AppSetting::clearCache();
+    expect(AppSetting::get('editor_text_position'))->toBe('left');
+});
+
+test('editor_text_position defaults to center in shared inertia props', function () {
+    AppSetting::clearCache();
+
+    $this->get(route('books.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('app_settings.editor_text_position', 'center')
+        );
+});
+
 test('invalid keys are rejected', function () {
     $this->putJson(route('settings.update'), [
         'key' => 'invalid_key',

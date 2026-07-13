@@ -126,6 +126,7 @@ class ChapterController extends Controller
             'prosePassRules' => $book->prosePassRules(),
             'proofreadingConfig' => $book->proofreadingConfig(),
             'customDictionary' => $book->custom_dictionary ?? [],
+            'styleIgnoredWords' => $book->style_ignored_words ?? [],
             'editorialChapterNote' => $latestCompletedReview?->chapterNoteFor($chapter->id),
             'editorialFindings' => $latestCompletedReview?->unresolvedFindingsForChapter($chapter->id) ?? [],
         ]);

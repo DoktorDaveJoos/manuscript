@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/react';
 import { X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
@@ -10,6 +10,11 @@ import type { ContinueWritingReview } from '@/hooks/useContinueWriting';
 import { useProofreading } from '@/hooks/useProofreading';
 import type { RewriteSelectionReview } from '@/hooks/useRewriteSelection';
 import { htmlBlockText, proseMirrorBlockText } from '@/lib/proseText';
+import type {
+    AnalyzeOptions,
+    StyleAnalysis,
+    StyleAnalysisBridge,
+} from '@/lib/style/types';
 import { jsonFetchHeaders } from '@/lib/utils';
 import { DEFAULT_PROOFREADING_CONFIG } from '@/types/models';
 import type { AppSettings, ChapterVersion, Scene } from '@/types/models';
@@ -39,6 +44,9 @@ export default function ChapterPane({
     onVersionsChanged,
     scenesVisible,
     spellcheckEnabled,
+    styleAnalysisActive = false,
+    styleMutedCategories,
+    onStyleAnalysesChange,
     isTypewriterMode,
     onToggleTypewriterMode,
     review,
@@ -70,6 +78,10 @@ export default function ChapterPane({
     onVersionsChanged: () => void;
     scenesVisible: boolean;
     spellcheckEnabled: boolean;
+    styleAnalysisActive?: boolean;
+    styleMutedCategories?: ReadonlySet<string>;
+    /** Focused pane only: aggregated per-scene analyses for the Style panel. */
+    onStyleAnalysesChange?: (analyses: StyleAnalysis[]) => void;
     isTypewriterMode: boolean;
     onToggleTypewriterMode: () => void;
     review: ContinueWritingReview | RewriteSelectionReview | null;
@@ -88,11 +100,65 @@ export default function ChapterPane({
     const {
         config: proofreadingConfig,
         dictionary: customDictionary,
+        styleIgnoredWords,
         addToDictionary,
+        addStyleIgnoredWord,
     } = useProofreading(
         initialProofreadingConfig ?? DEFAULT_PROOFREADING_CONFIG,
         chapterData.customDictionary ?? [],
         bookId,
+        chapterData.styleIgnoredWords ?? [],
+    );
+
+    // ── Style analysis (revision mode) ───────────────────────────────────
+    const [sceneStyleAnalyses, setSceneStyleAnalyses] = useState<
+        Map<number, StyleAnalysis>
+    >(new Map());
+    const handleSceneStyleAnalysis = useCallback(
+        (sceneId: number, analysis: StyleAnalysis | null) => {
+            setSceneStyleAnalyses((prev) => {
+                const next = new Map(prev);
+                if (analysis === null) {
+                    next.delete(sceneId);
+                } else {
+                    next.set(sceneId, analysis);
+                }
+                return next;
+            });
+        },
+        [],
+    );
+
+    const styleAnalyzeOptions = useMemo<AnalyzeOptions>(() => {
+        const checks = proofreadingConfig.style_checks;
+        const enabled = (key: keyof typeof checks) =>
+            checks?.[key] !== false && !styleMutedCategories?.has(key);
+        return {
+            categories: {
+                filler: enabled('filler'),
+                weakVerb: enabled('weakVerb'),
+                filterWord: enabled('filterWord'),
+                cliche: enabled('cliche'),
+                pattern: enabled('pattern'),
+                repetition: enabled('repetition'),
+            },
+            ignoredWords: styleIgnoredWords,
+        };
+    }, [proofreadingConfig, styleMutedCategories, styleIgnoredWords]);
+
+    const styleAnalysisBridge = useMemo<StyleAnalysisBridge>(
+        () => ({
+            active: styleAnalysisActive,
+            options: styleAnalyzeOptions,
+            onSceneAnalysis: handleSceneStyleAnalysis,
+            onIgnoreWord: addStyleIgnoredWord,
+        }),
+        [
+            styleAnalysisActive,
+            styleAnalyzeOptions,
+            handleSceneStyleAnalysis,
+            addStyleIgnoredWord,
+        ],
     );
 
     // ── Local state ──────────────────────────────────────────────────────
@@ -119,7 +185,20 @@ export default function ChapterPane({
     useEffect(() => {
         setIsReviewing(false);
         setCompareVersion(null);
+        setSceneStyleAnalyses(new Map());
     }, [chapter.id]);
+
+    // Report aggregated analyses upward for the Style panel, pruning scenes
+    // that were removed since their last analysis arrived.
+    useEffect(() => {
+        if (!onStyleAnalysesChange || !isFocused) return;
+        const sceneIds = new Set(scenes.map((scene) => scene.id));
+        onStyleAnalysesChange(
+            [...sceneStyleAnalyses.entries()]
+                .filter(([sceneId]) => sceneIds.has(sceneId))
+                .map(([, analysis]) => analysis),
+        );
+    }, [sceneStyleAnalyses, isFocused, scenes, onStyleAnalysesChange]);
 
     const showReview = review !== null && review.previous !== null;
     const handleApplied = useCallback(() => {
@@ -213,6 +292,7 @@ export default function ChapterPane({
 
     const editorFont = appSettings.editor_font;
     const editorFontSize = appSettings.editor_font_size;
+    const editorTextPosition = appSettings.editor_text_position;
 
     // ── Sync state on chapter data change ────────────────────────────────
     useEffect(() => {
@@ -542,11 +622,12 @@ export default function ChapterPane({
                         isTypewriterMode={isTypewriterMode}
                         editorFont={editorFont}
                         editorFontSize={editorFontSize}
+                        editorTextPosition={editorTextPosition}
                         pendingFocusSceneId={pendingFocusSceneId}
                         onFocusHandled={() => setPendingFocusSceneId(null)}
                         onActiveSceneIdChange={handleActiveSceneIdChange}
                         scenesVisible={scenesVisible}
-                        proofreadingConfig={proofreadingConfig}
+                        styleAnalysis={styleAnalysisBridge}
                         bookLanguage={bookLanguage}
                         spellcheckEnabled={spellcheckEnabled}
                         customWords={customDictionary}

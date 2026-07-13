@@ -61,6 +61,24 @@ class SettingsController extends Controller
         return response()->json(['message' => __('Custom dictionary updated.')]);
     }
 
+    public function updateStyleIgnoredWords(Request $request, Book $book): JsonResponse
+    {
+        $request->validate([
+            'words' => ['present', 'array'],
+            'words.*' => ['required', 'string', 'max:100'],
+        ]);
+
+        $words = collect($request->input('words'))
+            ->map(fn (string $word) => mb_strtolower($word))
+            ->unique()
+            ->values()
+            ->all();
+
+        $book->update(['style_ignored_words' => $words]);
+
+        return response()->json(['message' => __('Ignored words updated.')]);
+    }
+
     public function seedCustomDictionary(Book $book): JsonResponse
     {
         $names = collect();

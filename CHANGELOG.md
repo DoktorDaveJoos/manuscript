@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.9.0 (2026-07-13)
+
+### Other Changes
+
+- Merge remote-tracking branch 'origin/main' into dev (91e739b)
+- feat(editor): add prose style analysis (1734ba2)
+- prose style analysis (Stilanalyse) design (34d1ca4)
+- Revert "feat(editor): text alignment controls in the formatting toolbar" (3a8334f)
+
+
 ## v0.8.0 (2026-07-09)
 
 ### Features

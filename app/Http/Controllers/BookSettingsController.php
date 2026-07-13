@@ -123,8 +123,8 @@ class BookSettingsController extends Controller
         $request->validate([
             'config' => ['required', 'array'],
             'config.spelling_enabled' => ['required', 'boolean'],
-            'config.grammar_enabled' => ['required', 'boolean'],
-            'config.grammar_checks' => ['required', 'array'],
+            'config.style_checks' => ['required', 'array'],
+            'config.style_checks.*' => ['boolean'],
         ]);
 
         $book->update([

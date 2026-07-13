@@ -1,4 +1,6 @@
 import { LOCALE_MAP } from '@/lib/languages';
+import { emptyStyleAnalysis } from '@/lib/style/analyze';
+import type { AnalyzeOptions, StyleAnalysis } from '@/lib/style/types';
 import spellcheckWorkerUrl from '@/workers/spellcheck.worker?worker&url';
 import type {
     MisspelledRange,
@@ -11,6 +13,8 @@ export interface SpellcheckClient {
     whenReady: Promise<boolean>;
     check(text: string): Promise<MisspelledRange[]>;
     suggest(word: string): Promise<string[]>;
+    /** Style analysis shares the worker; the rule pack loads lazily on first call. */
+    analyzeStyle(text: string, options: AnalyzeOptions): Promise<StyleAnalysis>;
     addWord(word: string): void;
     setCustomWords(words: string[]): void;
     /**
@@ -72,7 +76,9 @@ function createClient(language: string, locale: string): SpellcheckClient {
     let nextId = 1;
     const pendingChecks = new Map<number, (r: MisspelledRange[]) => void>();
     const pendingSuggests = new Map<number, (s: string[]) => void>();
+    const pendingAnalyses = new Map<number, (a: StyleAnalysis) => void>();
     const wordsChangedListeners = new Set<() => void>();
+    let styleInitialized = false;
 
     let markReady: (ok: boolean) => void;
     const whenReady = new Promise<boolean>((resolve) => {
@@ -84,6 +90,9 @@ function createClient(language: string, locale: string): SpellcheckClient {
         pendingChecks.clear();
         for (const resolve of pendingSuggests.values()) resolve([]);
         pendingSuggests.clear();
+        for (const resolve of pendingAnalyses.values())
+            resolve(emptyStyleAnalysis());
+        pendingAnalyses.clear();
     };
 
     const notifyWordsChanged = (): void => {
@@ -104,6 +113,9 @@ function createClient(language: string, locale: string): SpellcheckClient {
         } else if (message.type === 'suggest-result') {
             pendingSuggests.get(message.id)?.(message.suggestions);
             pendingSuggests.delete(message.id);
+        } else if (message.type === 'analyze-result') {
+            pendingAnalyses.get(message.id)?.(message.analysis);
+            pendingAnalyses.delete(message.id);
         }
     };
     worker.onerror = (event) => {
@@ -132,6 +144,19 @@ function createClient(language: string, locale: string): SpellcheckClient {
                 const id = nextId++;
                 pendingSuggests.set(id, resolve);
                 send({ type: 'suggest', id, word });
+            }),
+        analyzeStyle: (text, options) =>
+            new Promise((resolve) => {
+                if (!styleInitialized) {
+                    styleInitialized = true;
+                    send({
+                        type: 'init-style',
+                        packUrl: `${self.location.origin}/style-packs/${language}.json`,
+                    });
+                }
+                const id = nextId++;
+                pendingAnalyses.set(id, resolve);
+                send({ type: 'analyze', id, text, options });
             }),
         addWord: (word) => {
             send({ type: 'add-word', word });

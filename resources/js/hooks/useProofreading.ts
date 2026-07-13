@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react';
-import { updateProofreadingConfig } from '@/actions/App/Http/Controllers/BookSettingsController';
-import { updateCustomDictionary } from '@/actions/App/Http/Controllers/SettingsController';
+import { useCallback, useState } from 'react';
+import {
+    updateCustomDictionary,
+    updateStyleIgnoredWords,
+} from '@/actions/App/Http/Controllers/SettingsController';
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { ProofreadingConfig } from '@/types/models';
 
@@ -8,11 +10,13 @@ export function useProofreading(
     initialConfig: ProofreadingConfig,
     initialDictionary: string[],
     bookId: number,
+    initialStyleIgnoredWords: string[] = [],
 ) {
     const [config, setConfig] = useState(initialConfig);
     const [dictionary, setDictionary] = useState(initialDictionary);
-
-    const isEnabled = config.spelling_enabled || config.grammar_enabled;
+    const [styleIgnoredWords, setStyleIgnoredWords] = useState(
+        initialStyleIgnoredWords,
+    );
 
     const addToDictionary = useCallback(
         (word: string) => {
@@ -57,36 +61,37 @@ export function useProofreading(
         [bookId],
     );
 
-    const toggleEnabled = useCallback(() => {
-        setConfig((prev) => {
-            const bothOff = !prev.spelling_enabled && !prev.grammar_enabled;
-            const updated = bothOff
-                ? { ...prev, spelling_enabled: true, grammar_enabled: true }
-                : {
-                      ...prev,
-                      spelling_enabled: false,
-                      grammar_enabled: false,
-                  };
-
-            fetch(updateProofreadingConfig.url(bookId), {
-                method: 'PUT',
-                headers: jsonFetchHeaders(),
-                body: JSON.stringify({ config: updated }),
-            }).catch(() => {
-                setConfig(prev);
+    const addStyleIgnoredWord = useCallback(
+        (word: string) => {
+            const lower = word.toLowerCase();
+            setStyleIgnoredWords((prev) => {
+                if (prev.includes(lower)) return prev;
+                return [...prev, lower];
             });
 
-            return updated;
-        });
-    }, [bookId]);
+            setStyleIgnoredWords((current) => {
+                fetch(updateStyleIgnoredWords.url({ book: bookId }), {
+                    method: 'PUT',
+                    headers: jsonFetchHeaders(),
+                    body: JSON.stringify({ words: current }),
+                }).catch(() => {
+                    setStyleIgnoredWords((prev) =>
+                        prev.filter((w) => w !== lower),
+                    );
+                });
+                return current;
+            });
+        },
+        [bookId],
+    );
 
     return {
         config,
         setConfig,
         dictionary,
-        isEnabled,
+        styleIgnoredWords,
         addToDictionary,
         removeFromDictionary,
-        toggleEnabled,
+        addStyleIgnoredWord,
     };
 }

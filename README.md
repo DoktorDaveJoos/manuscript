@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="#features"><img src="https://img.shields.io/badge/features-all_in_one-blue?style=flat-square" alt="Features"></a>
-  <a href="#ai-providers"><img src="https://img.shields.io/badge/AI_providers-10+-8B5CF6?style=flat-square" alt="AI Providers"></a>
+  <a href="https://github.com/DoktorDaveJoos/manuscript/releases/latest"><img src="https://img.shields.io/github/v/release/DoktorDaveJoos/manuscript?style=flat-square&color=0EA5E9" alt="Latest Release"></a>
+  <a href="#ai-providers"><img src="https://img.shields.io/badge/AI_providers-10-8B5CF6?style=flat-square" alt="AI Providers"></a>
   <img src="https://img.shields.io/badge/platform-macOS_·_Windows_·_Linux-lightgrey?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/license-MIT-22C55E?style=flat-square" alt="License">
 </p>
@@ -23,8 +23,14 @@ Most writing tools either ignore craft entirely or try to write for you. Manuscr
 It's built on the belief that good authors already have the instinct for story, structure, and dialogue — what they need is a tool that **catches inconsistencies, visualizes pacing, and polishes prose** without overwriting their voice.
 
 - **Your data stays yours.** Everything lives in a local SQLite database. Copy it, back it up, delete it — your call.
-- **AI is a tool, not a crutch.** Every core feature works without AI. When you enable it, AI refines your prose and analyzes your structure — it never invents content.
+- **AI is a tool, not a crutch.** Every core feature works without AI. When you enable it, AI refines your prose and reviews your structure — it never invents your story.
 - **Built for craft, not content generation.** Manuscript teaches you _why_ something is a problem, not just that it is one.
+
+## Download
+
+Grab the latest release for your platform from the [**Releases page**](https://github.com/DoktorDaveJoos/manuscript/releases/latest) — or [build it yourself from source](#getting-started), free forever.
+
+> New here? A **one-shot 7-day free trial** of the Pro features can be started right from the welcome screen — no account, no credit card.
 
 ---
 
@@ -34,18 +40,19 @@ It's built on the belief that good authors already have the instinct for story, 
 
 | Feature | Description |
 |:---|:---|
-| **Rich text editor** | Full-featured TipTap editor with formatting toolbar, font selection, and keyboard shortcuts |
+| **Rich text editor** | Full-featured TipTap editor with formatting toolbar, font selection, text alignment, and keyboard shortcuts |
 | **Splitscreen editor** | Write two chapters side-by-side — `⌘-click` or right-click any chapter to open in a new pane |
 | **Scenes** | Break chapters into scenes, reorder with drag-and-drop |
 | **Version history** | Save, restore, and compare chapter snapshots with visual diffs |
 | **Accept / reject changes** | Granular control over revisions with partial acceptance |
 | **Find & replace** | Manuscript-wide search with regex, case-sensitive, and whole-word matching — results with context preview |
-| **Spellcheck** | Native OS spellchecker with multilingual dictionaries, context menu suggestions, and custom dictionary auto-seeded from your characters |
+| **Spellcheck** | Built-in spellchecker across 8 languages (English, German, Spanish, French, Italian, Dutch, Portuguese, Swedish) with correction suggestions and a per-book custom dictionary |
+| **Speech input** | Dictate into any AI chat — powered by a fully local Whisper model, your audio never leaves your device |
 | **Typewriter mode** | Cursor stays centered on screen for distraction-free flow |
 | **Focus mode** | Fullscreen writing — nothing but your words |
 | **Chapter notes** | Persistent sidebar notes with markdown, slash commands (`/todo`, `/heading`, `/callout`) |
 | **Wiki panel** | Quick-reference your story bible entries while writing, without leaving the editor |
-| **Chapter splitting** | Split a chapter at the cursor into two |
+| **Chapter management** | Split chapters at the cursor, copy a whole chapter to the clipboard, track status (draft → revised → final) with sidebar bubbles |
 | **Command palette** | `⌘P` to quickly access any action — toggle panels, navigate chapters, run AI tools |
 | **Auto-save** | Every keystroke saved immediately with status indicator |
 
@@ -81,8 +88,6 @@ A built-in wiki for your fictional world:
 
 - Global search across all entry types
 - Character role classification — Protagonist, Antagonist, Love Interest, Mentor, Ally, Rival, Cameo, Extra
-- AI-powered character extraction from your manuscript
-- Dual descriptions — your author notes and AI-generated descriptions displayed side by side, each clearly labeled
 - Chapter and storyline linking — track where characters appear and which storylines they belong to
 
 ### Dashboard & Analytics
@@ -97,7 +102,8 @@ A built-in wiki for your fictional world:
 | **Stats at a glance** | Word count, page estimates, reading time, chapter count |
 | **Page count estimation** | Customizable trim sizes and typography settings |
 | **NaNoWriMo mode** | Built-in National Novel Writing Month tracker |
-| **Health timeline** | Track manuscript health metrics over time |
+
+> Word counts use a Unicode word-processor algorithm — umlauts, numbers, and CJK text count consistently across languages.
 
 ### Import
 
@@ -117,37 +123,41 @@ Bring your existing work into Manuscript:
 - CJK-aware word counting for Asian language manuscripts
 - Unicode NFC normalization for consistent text encoding
 
+### Book Designer
+
+A full typesetting studio for print layouts — build your own export templates and see them as book-like bound spreads while you design:
+
+| Control | Options |
+|:---|:---|
+| **Page geometry** | Trim size, bleed, and margins — with KDP / IngramSpark-compatible presets |
+| **Typography** | Body and heading fonts, sizes, spacing |
+| **Chapter headings** | Style and position of chapter openers, drop caps with smart punctuation handling |
+| **Scene breaks** | Ornaments or whitespace, your pick |
+
+Custom templates sit right next to the built-in ones (**Classic** · **Modern** · **Elegant**) and carry their typesetting with them — pick a template at export time and the layout is done.
+
 ### Export & Publishing
 
-Publish-ready output in multiple formats with professional templates:
+Publish-ready output in multiple formats:
 
 | Format | Description |
 |:---|:---|
-| **PDF** | Print-ready with cover page, drop caps, scene break ornaments, and customizable trim sizes |
+| **PDF** | Print-ready with cover page, table of contents with page numbers, drop caps, scene break ornaments, and exact trim dimensions |
 | **EPUB** | Standard e-book with cover image, font pairings, and scene break styles |
 | **KDP EPUB** | Optimized for Amazon Kindle Direct Publishing |
-| **DOCX** | Proper manuscript submission format with formatting preservation |
+| **DOCX** | Two submission layouts — the international standard manuscript format and the German *Normseite* (DIN A4, 1.5-spaced, ~30 lines with correction margin) |
 | **TXT** | Clean plain text |
 
-#### Export Templates
-
-Choose from professionally designed templates and customize every detail:
-
-> **Classic** · **Modern** · **Elegant** — with more coming soon
-
-| Setting | Options |
-|:---|:---|
-| **Font pairings** | Curated heading + body font combinations per template |
-| **Scene break styles** | 8 ornament options or simple whitespace |
-| **Drop caps** | Decorative first letters with smart punctuation handling |
-| **Trim sizes** | 6×9, 5.5×8.5, 8.5×11, or custom dimensions |
+- Front and back matter rendered in your book's language — not English-only
+- Bleed modes (all edges vs. outer-only) for print-on-demand services
+- Export settings persist per book
 
 #### Publish Page
 
 Manage your book's publishing metadata in one place:
 
-- **Cover image** — Upload and manage your book cover
-- **Metadata** — ISBN, subtitle, and genre
+- **Cover** — Upload your own or create one with the built-in cover creator
+- **Metadata** — ISBN, subtitle, primary and secondary genres
 - **Front matter** — Title page, copyright, dedication, epigraph with attribution, acknowledgments
 - **Back matter** — About the author, epilogue, and configurable end sections
 - **Live PDF preview** — See your formatted book before downloading
@@ -169,41 +179,44 @@ Built-in formatter to clean up your manuscript in one click:
 
 > Preview changes before applying — works on full books or individual chapters.
 
-### Trash & Recovery
+### Backup & Recovery
 
-Soft-delete chapters, scenes, and storylines — browse deleted items, restore with one click, or permanently delete.
+- **Local backup** — encrypted on-device database backup with one-click export, import, and revert
+- **Trash** — soft-delete chapters, scenes, and storylines; browse deleted items and restore with one click
+- **Migration safety** — the database is snapshotted before schema updates and restored automatically if anything fails
 
 ### Languages
 
-English · Deutsch · Español
-
-Language selection dialog on first launch — write in your preferred language from day one.
+UI in **English · Deutsch · Español**, spellcheck in 8 languages — with a language selection dialog on first launch.
 
 ### Themes & Customization
 
 - **Light** / **Dark** / **System** theme modes
 - Font and typography preferences
 - Resizable panels — sidebar, wiki, AI chat
-- Collapsible sidebar for maximum writing space
+- Collapsible sidebar and navigation groups that remember their state
 - Hideable formatting toolbar
-- Per-book writing style and prose pass rules
+- Per-book settings — writing style, prose pass rules, proofreading language, export defaults
 
 ---
 
 ## AI Features
 
-> **Requires a one-time Pro license + your own API key.**
+> **Requires a Pro license (or the free trial) + your own API key.**
 > Bring your own provider — your keys, your data, your control.
 
-### AI Dashboard
+### Editorial Review
 
-A central hub for all AI features — see your manuscript's health at a glance:
+The heart of Manuscript's AI: a full-manuscript editorial review — like having a professional editor read your entire book.
 
-- **Manuscript health score** — Weighted composite across hook quality, pacing, tension, emotional arc, and craft
-- **Health timeline** — Track how your manuscript improves over revisions
-- **Preparation progress** — Monitor the multi-phase AI pipeline with per-chapter status
-- **Analyzed chapters table** — Browse AI insights chapter by chapter
-- **Bulk actions** — Run revision or beautification across your entire manuscript at once
+- Chapter-by-chapter editorial analysis with findings and severity levels
+- Manuscript health scores with shared quality bands across score tiles
+- Accept or dismiss individual findings, or **rewrite a chapter directly from its unresolved feedback**
+- Discuss findings with AI in an editorial chat
+- AI-generated chapter notes surfaced right in the editor
+- Opinionated editorial persona ("Lektor") with honesty rules and anti-pattern detection — fair, encouraging, and honest, with per-section strengths
+- Pre-editorial detection — tells you when your manuscript needs more work before a full review is worthwhile
+- Re-review aware — the report shows how many chapters changed since the last run; failed runs are resumable
 
 ### AI Writing Tools
 
@@ -211,59 +224,31 @@ A central hub for all AI features — see your manuscript's health at a glance:
 |:---|:---|
 | **Prose Pass** | Contextual prose refinement shown as a diff you accept or reject |
 | **Prose Pass Rules** | Show-don't-tell · Dialogue tags · Filter words · Passive voice · Sentence variety · Prose tightening — customizable per book |
-| **Bulk Revision** | Run Prose Pass across your entire manuscript in one operation |
-| **Text Beautification** | Grammar, clarity, and flow improvements |
-| **Writing Style Extraction** | AI derives your style profile from your manuscript, editable by you |
-| **AI Chat** | Context-aware conversation about your novel using RAG over your entire manuscript |
-| **Character Extraction** | Automatically identify and profile characters from your chapters |
-| **Next Chapter Suggestion** | AI recommends what to write next based on open threads and pacing needs |
-| **Story Bible Generation** | Auto-populate your wiki from manuscript content — AI descriptions stored separately from your author notes |
+| **Continue Writing** | Stream AI prose straight into the editor — bridges into the text after your cursor, honors storyline continuity, and lands as a reviewable version |
+| **Rewrite Selection** | Rewrite any passage with your directives taking priority, previewed before it touches your text |
+| **Scene Structure** | AI proposes a scene segmentation for a chapter — review per-scene titles and word counts, accept as a new tracked version |
+| **Writing Style** | AI derives your style profile from your manuscript — editable by you, offered automatically before the first prose-generating action |
+| **AI Chat** | Context-aware conversation about your novel using RAG over your entire manuscript, with linked plot beats and wiki entries in context |
+| **Blurb & Cover** | AI-assisted blurb writing and cover creation on the publish page |
 
-### Editorial Review
+Every AI edit is guarded: the editor locks while AI writes, every mutation carries a version guard, and nothing lands without your review.
 
-A full-manuscript editorial review powered by AI — like having a professional editor read your entire book:
+### Plot Coach
 
-- Chapter-by-chapter editorial analysis with findings and severity levels
-- Accept or dismiss individual findings
-- Discuss findings with AI in an editorial chat
-- AI-generated chapter notes surfaced in the editor
-- Opinionated editorial persona ("Lektor") with honesty rules and anti-pattern detection
-- Pre-editorial detection — tells you when your manuscript needs more work before a full review is worthwhile
+A conversational AI story coach docked right next to your plot board:
 
-### AI Analysis & Insights
+- Board-aware foundations guidance — it knows your acts, beats, and storylines
+- Batch proposals — the coach proposes chapters and beats in one pass, with an approval flow, undo, and live board sync
+- Entity-aware — proposals link real characters and wiki entries, with POV characters auto-attached
+
+### Plot Insights
 
 | Feature | Description |
 |:---|:---|
-| **Chapter Analysis** | Tension scoring, hook quality, pacing feel, emotional shifts, sensory grounding |
-| **Story Heartbeat Canvas** | Visualize tension arcs, chapter hooks, pacing rhythm, and storyline weave |
-| **Plot Health Dashboard** | Weighted health score across hook quality, pacing, tension, and storyline balance |
+| **Plot Health** | Weighted health score across your story's structure |
 | **Plot Hole Detection** | AI identifies inconsistencies in your story |
-| **Character Consistency** | Detects behavior contradictions across chapters |
-| **Chapter Ending Analysis** | Classifies endings — cliffhanger, soft hook, closed, or dead end |
-| **First Chapter Audit** | When does conflict appear? Are stakes clear? |
-| **Scene Audit** | Flags scenes without clear plot or character function |
-| **Next Chapter Suggestion** | Based on open plot threads, pacing needs, and character absence |
-
-### AI Usage Tracking
-
-- Token counts (input / output) per feature
-- Monthly cost breakdown
-- Per-book statistics
-- Feature-level usage attribution
-- Per-book usage reset
-
-### AI Preparation Pipeline
-
-Before AI features can analyze your manuscript, a multi-phase pipeline prepares your book:
-
-1. **Chunking** — Splits your manuscript into semantic chunks with overlap
-2. **Embedding** — Generates vector embeddings for semantic search
-3. **Analysis** — Analyzes each chapter for tension, pacing, hooks, and more
-4. **Entity Extraction** — Identifies characters, locations, and items
-5. **Story Bible Population** — Auto-fills your wiki from extracted entities
-6. **Writing Style Extraction** — Derives your prose style profile
-
-> Progress is tracked per-phase with error recovery and circuit breaker protection.
+| **Tension Arc** | Generate a tension curve across your manuscript |
+| **Beat Suggestions** | AI recommends what beats your structure is missing |
 
 ---
 
@@ -286,23 +271,21 @@ Manuscript supports **10 AI providers** — use whichever fits your workflow and
 
 > **Ollama** runs entirely on your machine — no API key, no cost, full privacy.
 
-Configure different models for different tasks:
-
-| Task Category | Used For |
-|:---|:---|
-| **Writing** | Prose pass, text beautification, editorial review |
-| **Analysis** | Manuscript analysis, chapter insights |
-| **Extraction** | Character and entity extraction |
+Setup guides walk you through getting and funding an API key per provider, and out-of-credit errors are surfaced clearly instead of failing silently.
 
 ---
 
 ## Supported Genres
 
+From thrillers to textbooks — **36 genres** across fiction, children's books, non-fiction, and poetry:
+
 <p align="center">
 
-`Thriller` · `Mystery` · `Romance` · `Science Fiction` · `Fantasy` · `Horror` · `Literary Fiction` · `Historical Fiction` · `Crime` · `Adventure` · `Drama` · `Young Adult` · `Non-Fiction` · `Memoir` · `Poetry` · `Western` · `Dystopian`
+`Thriller` · `Mystery` · `Romance` · `Science Fiction` · `Fantasy` · `Horror` · `Literary Fiction` · `Historical Fiction` · `Crime` · `Adventure` · `Drama` · `Western` · `Dystopian` · `Picture Book` · `Early Reader` · `Chapter Book` · `Middle Grade` · `Young Adult` · `Non-Fiction` · `Memoir` · `Biography` · `Self-Help` · `History` · `Popular Science` · `Travel` · `True Crime` · `Essay` · `How-To Guide` · `Reference` · `Cookbook` · `Handbook` · `Academic` · `Textbook` · `Dissertation` · `Research Paper` · `Poetry`
 
 </p>
+
+Pick a primary genre plus secondary genres per book.
 
 ---
 
@@ -311,11 +294,13 @@ Configure different models for different tasks:
 | Layer | Technology |
 |:---|:---|
 | **Desktop** | [NativePHP](https://nativephp.com) — ships as a native app on macOS, Windows, and Linux |
-| **Backend** | [Laravel 12](https://laravel.com) · PHP 8.4 |
+| **Backend** | [Laravel 13](https://laravel.com) · PHP 8.4 |
 | **Frontend** | [React 19](https://react.dev) · TypeScript · [Tailwind CSS v4](https://tailwindcss.com) |
 | **Bridge** | [Inertia.js v2](https://inertiajs.com) · [Wayfinder](https://github.com/laravel/wayfinder) |
 | **Database** | SQLite · [sqlite-vec](https://github.com/asg017/sqlite-vec) for local vector search |
 | **AI** | [Laravel AI](https://github.com/laravel/ai) · RAG with local embeddings |
+| **Speech** | [whisper.cpp](https://github.com/ggerganov/whisper.cpp) — fully local speech-to-text |
+| **Spellcheck** | Hunspell compiled to WebAssembly — no OS dependency |
 | **Editor** | [TipTap](https://tiptap.dev) rich text editor |
 | **Testing** | [Pest v4](https://pestphp.com) · PHPUnit 12 · Browser E2E tests |
 | **Code Quality** | [Laravel Pint](https://laravel.com/docs/pint) · ESLint · Prettier |
@@ -331,7 +316,9 @@ Configure different models for different tasks:
 | **No cloud sync** | Your manuscript never leaves your computer |
 | **Offline capable** | Write anywhere, no internet required |
 | **Bring your own AI keys** | API keys stored locally, used only for your requests |
+| **Local speech-to-text** | Voice input runs on-device — audio is never uploaded |
 | **Optional error reporting** | Sentry integration, off by default |
+| **Optional anonymous stats** | Usage analytics contain no personal data or manuscript content, and can be disabled in Settings → Privacy |
 
 ---
 
@@ -339,7 +326,7 @@ Configure different models for different tasks:
 
 **Manuscript is fully open source.** The complete source code is available here — build it, run it, modify it, and use it for free. Forever.
 
-If you download a **pre-built, ready-to-run desktop app**, that's the Pro version. A one-time purchase unlocks AI features in the bundled app. The license is perpetual, works offline, and never phones home.
+If you download a **pre-built, ready-to-run desktop app**, that's the Pro version. A one-time purchase unlocks AI features in the bundled app — and a **7-day free trial** lets you test everything first. The license is perpetual, works offline, and never phones home.
 
 |  | Open Source (self-built) | Pro (pre-built app) |
 |:---|:---:|:---:|
@@ -350,13 +337,14 @@ If you download a **pre-built, ready-to-run desktop app**, that's the Pro versio
 | Storylines, story bible, plot board | ✅ | ✅ |
 | Dashboard, writing goals & heatmap | ✅ | ✅ |
 | Import & export (PDF, EPUB, DOCX, …) | ✅ | ✅ |
-| Publishing page & export templates | ✅ | ✅ |
-| Text normalization & formatting | ✅ | ✅ |
-| AI Prose Pass, chat & analysis | ✅ | ✅ |
-| Editorial Review | ✅ | ✅ |
-| AI Dashboard & bulk revision | ✅ | ✅ |
-| AI Preparation Pipeline | ✅ | ✅ |
-| Pre-built native app | — | ✅ |
+| Book Designer & export templates | ✅ | ✅ |
+| Publishing page & text normalization | ✅ | ✅ |
+| Local encrypted backup | ✅ | ✅ |
+| Editorial Review & editorial rewrite | ✅ | ✅ |
+| AI writing tools (Prose Pass, Continue Writing, …) | ✅ | ✅ |
+| Plot Coach & plot insights | ✅ | ✅ |
+| Local speech input | ✅ | ✅ |
+| Pre-built native app + auto-updates | — | ✅ |
 | **Price** | **Free** | **One-time purchase** |
 
 > AI features always require your own API key — you pay the AI providers directly for the tokens you use.
@@ -427,9 +415,9 @@ vendor/bin/pint --test
 app/
   Ai/                 # AI agents, prompt builders, and context management
   Console/Commands/    # Artisan commands
-  Enums/               # AiProvider, AnalysisType, VersionSource, Genre, ...
+  Enums/               # AiProvider, Genre, VersionSource, ...
   Http/Controllers/    # Inertia page controllers
-  Jobs/                # Async jobs (analysis, embeddings, entity extraction)
+  Jobs/                # Async jobs (embeddings, editorial review, exports)
   Models/              # Eloquent models (Book, Chapter, Act, Beat, PlotPoint, ...)
   Services/            # Domain services (chunking, parsing, embeddings, export)
 resources/
