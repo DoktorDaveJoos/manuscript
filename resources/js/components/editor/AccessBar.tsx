@@ -5,6 +5,7 @@ export type PanelId =
     | 'wiki'
     | 'notes'
     | 'plot'
+    | 'style'
     | 'ai'
     | 'chat'
     | 'coach-insights';

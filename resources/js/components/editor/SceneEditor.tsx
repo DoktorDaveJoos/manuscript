@@ -7,8 +7,9 @@ import type { SaveStatus } from '@/components/editor/EditorBar';
 import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import { updateSearchHighlight } from '@/extensions/SearchHighlightExtension';
 import useChapterEditor from '@/hooks/useChapterEditor';
+import type { StyleAnalysis, StyleAnalysisBridge } from '@/lib/style/types';
 import { jsonFetchHeaders } from '@/lib/utils';
-import type { ProofreadingConfig, Scene } from '@/types/models';
+import type { Scene } from '@/types/models';
 
 const SAVE_RETRY_DELAYS = [1000, 3000, 7000];
 
@@ -27,11 +28,11 @@ export default function SceneEditor({
     typewriterEnabledRef,
     scenesVisible = true,
     searchHighlight,
-    proofreadingConfig,
     bookLanguage,
     spellcheckEnabled,
     customWords,
     onAddToDictionary,
+    styleAnalysis,
     locked = false,
     currentVersionId = null,
 }: {
@@ -49,11 +50,11 @@ export default function SceneEditor({
     typewriterEnabledRef: RefObject<boolean>;
     scenesVisible?: boolean;
     searchHighlight?: SearchHighlight | null;
-    proofreadingConfig?: ProofreadingConfig;
     bookLanguage?: string;
     spellcheckEnabled?: boolean;
     customWords?: string[];
     onAddToDictionary?: (word: string) => void;
+    styleAnalysis?: StyleAnalysisBridge;
     /** Reject user input while an AI flow writes to this chapter (programmatic inserts still work). */
     locked?: boolean;
     /** Chapter version this editor's content belongs to — saves carry it so the server can refuse stale writes. */
@@ -240,6 +241,22 @@ export default function SceneEditor({
         [scene.id, onWordCountChange, onSaveStatusChange, flushContentSave],
     );
 
+    // The extension captures these callbacks at editor creation — keep the
+    // identities stable and route through refs for the latest bridge.
+    const styleBridgeRef = useRef(styleAnalysis);
+    useEffect(() => {
+        styleBridgeRef.current = styleAnalysis;
+    }, [styleAnalysis]);
+    const handleStyleAnalysis = useCallback(
+        (analysis: StyleAnalysis | null) =>
+            styleBridgeRef.current?.onSceneAnalysis(scene.id, analysis),
+        [scene.id],
+    );
+    const handleIgnoreStyleWord = useCallback(
+        (word: string) => styleBridgeRef.current?.onIgnoreWord(word),
+        [],
+    );
+
     const editor = useChapterEditor({
         content: scene.content ?? '',
         onUpdate: handleEditorUpdate,
@@ -247,11 +264,14 @@ export default function SceneEditor({
         typewriterEnabledRef,
         onExitUpRef,
         onExitDownRef,
-        proofreadingConfig,
         language: bookLanguage,
         spellcheckEnabled,
         customWords,
         onAddToDictionary,
+        styleAnalysisActive: styleAnalysis?.active ?? false,
+        styleAnalyzeOptions: styleAnalysis?.options,
+        onStyleAnalysis: handleStyleAnalysis,
+        onIgnoreStyleWord: handleIgnoreStyleWord,
     });
 
     // setEditable blocks keyboard/DOM input only — AI streams insert via

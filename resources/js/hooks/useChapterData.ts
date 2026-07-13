@@ -21,6 +21,7 @@ export type ChapterData = {
     prosePassRules?: ProsePassRule[];
     proofreadingConfig?: ProofreadingConfig;
     customDictionary?: string[];
+    styleIgnoredWords?: string[];
     editorialChapterNote?: string | null;
     editorialFindings?: ChapterEditorialFinding[];
 };

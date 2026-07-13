@@ -2,6 +2,7 @@ import { Head, router, usePage } from '@inertiajs/react';
 import type { Editor } from '@tiptap/react';
 import {
     BookOpen,
+    Highlighter,
     MessageCircle,
     NotebookPen,
     Sparkles,
@@ -33,6 +34,7 @@ import RewriteSelectionDialog, {
 } from '@/components/editor/RewriteSelectionDialog';
 import type { RewriteSelectionDraft } from '@/components/editor/RewriteSelectionDialog';
 import Sidebar from '@/components/editor/Sidebar';
+import StylePanel from '@/components/editor/StylePanel';
 import WikiPanel from '@/components/editor/WikiPanel';
 import WritingStyleSetupDialog from '@/components/editor/WritingStyleSetupDialog';
 import Button from '@/components/ui/Button';
@@ -49,6 +51,7 @@ import type { RewriteSelectionReview } from '@/hooks/useRewriteSelection';
 import { useRewriteSelection } from '@/hooks/useRewriteSelection';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import { flushAllPanes } from '@/lib/pane';
+import type { StyleAnalysis } from '@/lib/style/types';
 import {
     addSceneToChapter,
     CHANNEL_CHAPTER_DATA_CHANGED,
@@ -57,6 +60,7 @@ import {
     jsonFetchHeaders,
     saveAppSetting,
 } from '@/lib/utils';
+import { DEFAULT_PROOFREADING_CONFIG } from '@/types/models';
 import type { AppSettings, Book } from '@/types/models';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -82,6 +86,7 @@ const VALID_PANELS: Set<PanelId> = new Set([
     'wiki',
     'notes',
     'plot',
+    'style',
     'ai',
     'chat',
 ]);
@@ -104,6 +109,9 @@ function PaneWithData({
     onChapterMetaChange,
     scenesVisible,
     spellcheckEnabled,
+    styleAnalysisActive,
+    styleMutedCategories,
+    onStyleAnalysesChange,
     isTypewriterMode,
     onToggleTypewriterMode,
     review,
@@ -136,6 +144,9 @@ function PaneWithData({
     }) => void;
     scenesVisible: boolean;
     spellcheckEnabled: boolean;
+    styleAnalysisActive: boolean;
+    styleMutedCategories: ReadonlySet<string>;
+    onStyleAnalysesChange: (analyses: StyleAnalysis[]) => void;
     isTypewriterMode: boolean;
     onToggleTypewriterMode: () => void;
     review: ContinueWritingReview | RewriteSelectionReview | null;
@@ -220,6 +231,9 @@ function PaneWithData({
             onVersionsChanged={softRefresh}
             scenesVisible={scenesVisible}
             spellcheckEnabled={spellcheckEnabled}
+            styleAnalysisActive={styleAnalysisActive}
+            styleMutedCategories={styleMutedCategories}
+            onStyleAnalysesChange={onStyleAnalysesChange}
             isTypewriterMode={isTypewriterMode}
             onToggleTypewriterMode={onToggleTypewriterMode}
             review={review}
@@ -268,6 +282,27 @@ export default function EditorPage({
     const [isSpellcheckEnabled, setIsSpellcheckEnabled] = useState(true);
     const toggleSpellcheck = useCallback(
         () => setIsSpellcheckEnabled((prev) => !prev),
+        [],
+    );
+
+    // ── Style analysis (revision mode) ─────────────────────────────────────
+    const [styleMutedCategories, setStyleMutedCategories] = useState<
+        ReadonlySet<string>
+    >(new Set());
+    const toggleStyleCategory = useCallback((category: string) => {
+        setStyleMutedCategories((prev) => {
+            const next = new Set(prev);
+            if (next.has(category)) {
+                next.delete(category);
+            } else {
+                next.add(category);
+            }
+            return next;
+        });
+    }, []);
+    const [styleAnalyses, setStyleAnalyses] = useState<StyleAnalysis[]>([]);
+    const handleStyleAnalysesChange = useCallback(
+        (analyses: StyleAnalysis[]) => setStyleAnalyses(analyses),
         [],
     );
 
@@ -336,6 +371,17 @@ export default function EditorPage({
     const handleChapterDataReady = useCallback((data: ChapterData) => {
         setFocusedChapterData(data);
     }, []);
+
+    // The persisted book setting seeds the session spellcheck toggle once;
+    // palette toggles stay session-only on top of it.
+    const spellcheckSeededRef = useRef(false);
+    useEffect(() => {
+        if (spellcheckSeededRef.current) return;
+        const config = focusedChapterData?.proofreadingConfig;
+        if (!config) return;
+        spellcheckSeededRef.current = true;
+        setIsSpellcheckEnabled(config.spelling_enabled);
+    }, [focusedChapterData]);
 
     const handleChapterMetaChange = useCallback(
         (meta: { chapterId: number; title: string; wordCount: number }) => {
@@ -500,6 +546,10 @@ export default function EditorPage({
     );
     const closeAi = useCallback(
         () => closePanelAndFocus('ai'),
+        [closePanelAndFocus],
+    );
+    const closeStyle = useCallback(
+        () => closePanelAndFocus('style'),
         [closePanelAndFocus],
     );
     const closeChat = useCallback(
@@ -721,6 +771,11 @@ export default function EditorPage({
             icon: Workflow,
             label: tPlotPanel('headerTitle'),
         });
+        items.push({
+            id: 'style',
+            icon: Highlighter,
+            label: t('style.panelTitle'),
+        });
         if (aiVisible) {
             items.push(
                 {
@@ -866,6 +921,13 @@ export default function EditorPage({
                                     }
                                     scenesVisible={scenesVisible}
                                     spellcheckEnabled={isSpellcheckEnabled}
+                                    styleAnalysisActive={
+                                        openPanels.has('style') && !isFocusMode
+                                    }
+                                    styleMutedCategories={styleMutedCategories}
+                                    onStyleAnalysesChange={
+                                        handleStyleAnalysesChange
+                                    }
                                     isTypewriterMode={isTypewriterMode}
                                     onToggleTypewriterMode={
                                         toggleTypewriterMode
@@ -945,6 +1007,28 @@ export default function EditorPage({
                                     book={book}
                                     chapter={focusedChapter}
                                     onClose={closePlot}
+                                />
+                            </SlidePanel>
+                        )}
+
+                        {focusedChapter && (
+                            <SlidePanel
+                                open={openPanels.has('style')}
+                                onClose={closeStyle}
+                                storageKey="manuscript:style-panel-width"
+                                defaultWidth={272}
+                            >
+                                <StylePanel
+                                    key={focusedChapter.id}
+                                    analyses={styleAnalyses}
+                                    wordCount={sidebarWordCount}
+                                    config={
+                                        focusedChapterData?.proofreadingConfig ??
+                                        DEFAULT_PROOFREADING_CONFIG
+                                    }
+                                    mutedCategories={styleMutedCategories}
+                                    onToggleCategory={toggleStyleCategory}
+                                    onClose={closeStyle}
                                 />
                             </SlidePanel>
                         )}

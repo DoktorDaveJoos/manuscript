@@ -15,6 +15,7 @@
         "format:check": "prettier --check resources/",
         "lint": "eslint . --fix",
         "lint:check": "eslint .",
+        "test:js": "vitest run",
         "types:check": "tsc --noEmit"
     },
     "devDependencies": {
@@ -26,13 +27,31 @@
         "@types/node": "^22.13.5",
         "all-the-german-words": "^1.1.0",
         "babel-plugin-react-compiler": "^1.0.0",
+        "dictionary-ca": "^3.0.0",
+        "dictionary-cs": "^4.0.0",
+        "dictionary-da": "^6.0.0",
         "dictionary-de": "^3.0.0",
         "dictionary-es": "^4.0.0",
+        "dictionary-et": "^2.0.0",
         "dictionary-fr": "^3.0.0",
+        "dictionary-ga": "^3.0.0",
+        "dictionary-hr": "^2.0.0",
+        "dictionary-hu": "^3.0.0",
+        "dictionary-is": "^2.0.0",
         "dictionary-it": "^2.0.0",
+        "dictionary-lb": "^4.0.0",
+        "dictionary-lt": "^2.0.0",
+        "dictionary-lv": "^2.0.0",
+        "dictionary-nb": "^3.0.0",
         "dictionary-nl": "^2.0.0",
-        "dictionary-pt": "^4.0.0",
+        "dictionary-nn": "^3.0.0",
+        "dictionary-pl": "^2.0.0",
+        "dictionary-pt-pt": "^2.0.0",
+        "dictionary-ro": "^3.0.0",
+        "dictionary-sk": "^2.0.0",
+        "dictionary-sl": "^3.0.0",
         "dictionary-sv": "^4.0.0",
+        "dictionary-tr": "^2.0.0",
         "eslint": "^9.17.0",
         "eslint-config-prettier": "^10.0.1",
         "eslint-import-resolver-typescript": "^4.4.4",
@@ -42,7 +61,8 @@
         "hunspell-asm": "^4.0.2",
         "prettier": "^3.4.2",
         "prettier-plugin-tailwindcss": "^0.6.11",
-        "typescript-eslint": "^8.23.0"
+        "typescript-eslint": "^8.23.0",
+        "vitest": "^4.1.10"
     },
     "dependencies": {
         "@aptabase/web": "^0.5.0",
@@ -86,7 +106,6 @@
         "markdown-it": "^14.3.0",
         "pdfjs-dist": "^5.5.207",
         "playwright": "^1.58.2",
-        "prosemirror-proofread": "^0.3.0",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
         "react-i18next": "^16.5.8",
@@ -95,8 +114,7 @@
         "tailwind-merge": "^3.0.1",
         "tailwindcss": "^4.0.0",
         "typescript": "^5.7.2",
-        "vite": "^7.0.4",
-        "write-good": "^1.0.8"
+        "vite": "^7.0.4"
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "4.9.5",

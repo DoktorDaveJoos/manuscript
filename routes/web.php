@@ -165,6 +165,7 @@ Route::get('/settings', [SettingsController::class, 'index'])->name('settings.in
 Route::put('/settings', [AppSettingsController::class, 'update'])->name('settings.update');
 Route::put('/books/{book}/settings/custom-dictionary', [SettingsController::class, 'updateCustomDictionary'])->name('books.settings.custom-dictionary.update');
 Route::post('/books/{book}/settings/custom-dictionary/seed', [SettingsController::class, 'seedCustomDictionary'])->name('books.settings.custom-dictionary.seed');
+Route::put('/books/{book}/settings/style-ignored-words', [SettingsController::class, 'updateStyleIgnoredWords'])->name('books.settings.style-ignored-words.update');
 
 // Legacy routes — redirect to unified settings
 Route::get('/settings/appearance', fn () => redirect('/settings'))->name('settings.appearance');

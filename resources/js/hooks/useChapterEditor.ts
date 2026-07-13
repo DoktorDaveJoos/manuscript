@@ -4,16 +4,19 @@ import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type { RefObject } from 'react';
 import { useEffect, useMemo, useRef } from 'react';
-import { ProofreadExtension } from '@/extensions/ProofreadExtension';
 import { SceneBridgeExtension } from '@/extensions/SceneBridgeExtension';
 import { SearchHighlightExtension } from '@/extensions/SearchHighlightExtension';
 import {
     SpellcheckExtension,
     spellcheckPluginKey,
 } from '@/extensions/SpellcheckExtension';
+import {
+    StyleAnalysisExtension,
+    styleAnalysisPluginKey,
+} from '@/extensions/StyleAnalysisExtension';
 import { TypewriterScrollExtension } from '@/extensions/TypewriterScrollExtension';
+import type { AnalyzeOptions, StyleAnalysis } from '@/lib/style/types';
 import { countWords } from '@/lib/wordCount';
-import type { ProofreadingConfig } from '@/types/models';
 
 export default function useChapterEditor({
     content,
@@ -22,11 +25,14 @@ export default function useChapterEditor({
     typewriterEnabledRef,
     onExitUpRef,
     onExitDownRef,
-    proofreadingConfig,
     language,
     spellcheckEnabled = true,
     customWords = [],
     onAddToDictionary,
+    styleAnalysisActive = false,
+    styleAnalyzeOptions,
+    onStyleAnalysis,
+    onIgnoreStyleWord,
 }: {
     content: string;
     onUpdate: (html: string, wordCount: number) => void;
@@ -34,28 +40,36 @@ export default function useChapterEditor({
     typewriterEnabledRef: RefObject<boolean>;
     onExitUpRef: RefObject<(() => void) | null>;
     onExitDownRef: RefObject<(() => void) | null>;
-    proofreadingConfig?: ProofreadingConfig;
     language?: string;
     spellcheckEnabled?: boolean;
     customWords?: string[];
     onAddToDictionary?: (word: string) => void;
+    styleAnalysisActive?: boolean;
+    styleAnalyzeOptions?: AnalyzeOptions;
+    onStyleAnalysis?: (analysis: StyleAnalysis | null) => void;
+    onIgnoreStyleWord?: (word: string) => void;
 }) {
     const onUpdateRef = useRef(onUpdate);
     useEffect(() => {
         onUpdateRef.current = onUpdate;
     }, [onUpdate]);
 
-    // Stable ref so the SpellcheckExtension plugin can read the latest
-    // value without requiring editor re-creation on toggle.
+    // Stable refs so the Spellcheck/StyleAnalysis plugins can read the latest
+    // values without requiring editor re-creation on toggle.
     const spellcheckEnabledRef = useRef(spellcheckEnabled);
     useEffect(() => {
         spellcheckEnabledRef.current = spellcheckEnabled;
     }, [spellcheckEnabled]);
 
-    const proofreadingKey = useMemo(
-        () => JSON.stringify({ config: proofreadingConfig ?? null, language }),
-        [proofreadingConfig, language],
-    );
+    const styleActiveRef = useRef(styleAnalysisActive);
+    useEffect(() => {
+        styleActiveRef.current = styleAnalysisActive;
+    }, [styleAnalysisActive]);
+
+    const styleOptionsRef = useRef<AnalyzeOptions>(styleAnalyzeOptions ?? {});
+    useEffect(() => {
+        styleOptionsRef.current = styleAnalyzeOptions ?? {};
+    }, [styleAnalyzeOptions]);
 
     const editor = useEditor(
         {
@@ -78,15 +92,13 @@ export default function useChapterEditor({
                     customWords,
                     onAddToDictionary,
                 }),
-
-                ...(proofreadingConfig
-                    ? [
-                          ProofreadExtension.configure({
-                              config: proofreadingConfig,
-                              language: language ?? 'en',
-                          }),
-                      ]
-                    : []),
+                StyleAnalysisExtension.configure({
+                    language: language ?? 'en',
+                    activeRef: styleActiveRef,
+                    analyzeOptionsRef: styleOptionsRef,
+                    onAnalysis: onStyleAnalysis,
+                    onIgnoreWord: onIgnoreStyleWord,
+                }),
             ],
             content,
             editorProps: {
@@ -108,7 +120,7 @@ export default function useChapterEditor({
                 onUpdateRef.current(html, words);
             },
         },
-        [content, proofreadingKey],
+        [content],
     );
 
     // Toggle spellcheck decorations without recreating the editor.
@@ -124,39 +136,32 @@ export default function useChapterEditor({
         );
     }, [editor, spellcheckEnabled]);
 
-    // prosemirror-proofread builds a decoration update from a snapshotted
-    // doc and dispatches after async grammar checks. During high-throughput
-    // inserts (continue-writing SSE), the snapshot races with new
-    // transactions and ProseMirror throws "Applying a mismatched transaction".
-    // The stale decorations are safe to drop — the next check cycle recomputes.
+    // Toggle revision-mode decorations without recreating the editor.
     useEffect(() => {
         if (!editor || editor.isDestroyed) return;
-        const view = editor.view;
-        const originalDispatch = view.dispatch.bind(view);
-        // Intentionally monkey-patch the ProseMirror view's dispatch to swallow
-        // the documented stale-proofread race described above; it cannot be
-        // moved into the editor hook since it patches a third-party view.
-        // eslint-disable-next-line react-hooks/immutability
-        view.dispatch = (tr) => {
-            try {
-                originalDispatch(tr);
-            } catch (e) {
-                if (
-                    e instanceof RangeError &&
-                    /mismatched transaction/i.test(e.message) &&
-                    tr.getMeta('proofread')
-                ) {
-                    return;
-                }
-                throw e;
-            }
-        };
-        return () => {
-            if (!editor.isDestroyed) {
-                view.dispatch = originalDispatch;
-            }
-        };
-    }, [editor]);
+        editor.view.dispatch(
+            editor.state.tr
+                .setMeta(styleAnalysisPluginKey, {
+                    type: 'set-active',
+                    active: styleAnalysisActive,
+                })
+                .setMeta('addToHistory', false),
+        );
+    }, [editor, styleAnalysisActive]);
+
+    // Category mutes / ignored words changed — re-run the analysis.
+    const styleOptionsKey = useMemo(
+        () => JSON.stringify(styleAnalyzeOptions ?? {}),
+        [styleAnalyzeOptions],
+    );
+    useEffect(() => {
+        if (!editor || editor.isDestroyed) return;
+        editor.view.dispatch(
+            editor.state.tr
+                .setMeta(styleAnalysisPluginKey, { type: 'reanalyze' })
+                .setMeta('addToHistory', false),
+        );
+    }, [editor, styleOptionsKey]);
 
     return editor;
 }

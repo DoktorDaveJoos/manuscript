@@ -6,57 +6,47 @@ import PageHeader from '@/components/ui/PageHeader';
 import Toggle from '@/components/ui/Toggle';
 import BookSettingsLayout from '@/layouts/BookSettingsLayout';
 import { jsonFetchHeaders } from '@/lib/utils';
-import type { GrammarCheckKey, ProofreadingConfig } from '@/types/models';
+import type { ProofreadingConfig, StyleCheckKey } from '@/types/models';
 
-const GRAMMAR_RULES: Array<{
-    key: GrammarCheckKey;
+const STYLE_RULES: Array<{
+    key: StyleCheckKey;
     labelKey: string;
     descKey: string;
 }> = [
     {
-        key: 'illusion',
-        labelKey: 'proofreading.grammar.illusion',
-        descKey: 'proofreading.grammar.illusionDescription',
+        key: 'filler',
+        labelKey: 'proofreading.style.filler',
+        descKey: 'proofreading.style.fillerDescription',
     },
     {
-        key: 'so',
-        labelKey: 'proofreading.grammar.so',
-        descKey: 'proofreading.grammar.soDescription',
+        key: 'weakVerb',
+        labelKey: 'proofreading.style.weakVerb',
+        descKey: 'proofreading.style.weakVerbDescription',
     },
     {
-        key: 'thereIs',
-        labelKey: 'proofreading.grammar.thereIs',
-        descKey: 'proofreading.grammar.thereIsDescription',
+        key: 'filterWord',
+        labelKey: 'proofreading.style.filterWord',
+        descKey: 'proofreading.style.filterWordDescription',
     },
     {
-        key: 'tooWordy',
-        labelKey: 'proofreading.grammar.tooWordy',
-        descKey: 'proofreading.grammar.tooWordyDescription',
+        key: 'cliche',
+        labelKey: 'proofreading.style.cliche',
+        descKey: 'proofreading.style.clicheDescription',
     },
     {
-        key: 'passive',
-        labelKey: 'proofreading.grammar.passive',
-        descKey: 'proofreading.grammar.passiveDescription',
+        key: 'pattern',
+        labelKey: 'proofreading.style.pattern',
+        descKey: 'proofreading.style.patternDescription',
     },
     {
-        key: 'weasel',
-        labelKey: 'proofreading.grammar.weasel',
-        descKey: 'proofreading.grammar.weaselDescription',
+        key: 'repetition',
+        labelKey: 'proofreading.style.repetition',
+        descKey: 'proofreading.style.repetitionDescription',
     },
     {
-        key: 'adverb',
-        labelKey: 'proofreading.grammar.adverb',
-        descKey: 'proofreading.grammar.adverbDescription',
-    },
-    {
-        key: 'cliches',
-        labelKey: 'proofreading.grammar.cliches',
-        descKey: 'proofreading.grammar.clichesDescription',
-    },
-    {
-        key: 'eprime',
-        labelKey: 'proofreading.grammar.eprime',
-        descKey: 'proofreading.grammar.eprimeDescription',
+        key: 'rhythm',
+        labelKey: 'proofreading.style.rhythm',
+        descKey: 'proofreading.style.rhythmDescription',
     },
 ];
 
@@ -120,63 +110,37 @@ export default function ProofreadingSettings({
                         />
                     </div>
 
-                    <div className="border-t border-border" />
-
-                    {/* Grammar toggle */}
-                    <div className="flex items-center justify-between px-6 py-3.5">
-                        <div>
-                            <span className="text-sm font-medium text-ink">
-                                {t('proofreading.grammar.enabled')}
-                            </span>
-                            <p className="mt-0.5 text-[13px] text-ink-muted">
-                                {t('proofreading.grammar.enabledDescription')}
-                            </p>
-                        </div>
-                        <Toggle
-                            checked={config.grammar_enabled}
-                            onChange={() =>
-                                persistConfig({
-                                    ...config,
-                                    grammar_enabled: !config.grammar_enabled,
-                                })
-                            }
-                        />
-                    </div>
-
-                    {/* Individual grammar rules */}
-                    {config.grammar_enabled &&
-                        GRAMMAR_RULES.map((rule) => (
-                            <div key={rule.key}>
-                                <div className="border-t border-border" />
-                                <div className="flex items-center justify-between px-6 py-3.5 pl-10">
-                                    <div>
-                                        <span className="text-sm font-medium text-ink">
-                                            {t(rule.labelKey)}
-                                        </span>
-                                        <p className="mt-0.5 text-[13px] text-ink-muted">
-                                            {t(rule.descKey)}
-                                        </p>
-                                    </div>
-                                    <Toggle
-                                        checked={
-                                            config.grammar_checks[rule.key]
-                                        }
-                                        onChange={() =>
-                                            persistConfig({
-                                                ...config,
-                                                grammar_checks: {
-                                                    ...config.grammar_checks,
-                                                    [rule.key]:
-                                                        !config.grammar_checks[
-                                                            rule.key
-                                                        ],
-                                                },
-                                            })
-                                        }
-                                    />
+                    {/* Style analysis categories (revision mode) */}
+                    {STYLE_RULES.map((rule) => (
+                        <div key={rule.key}>
+                            <div className="border-t border-border" />
+                            <div className="flex items-center justify-between px-6 py-3.5">
+                                <div>
+                                    <span className="text-sm font-medium text-ink">
+                                        {t(rule.labelKey)}
+                                    </span>
+                                    <p className="mt-0.5 text-[13px] text-ink-muted">
+                                        {t(rule.descKey)}
+                                    </p>
                                 </div>
+                                <Toggle
+                                    checked={config.style_checks[rule.key]}
+                                    onChange={() =>
+                                        persistConfig({
+                                            ...config,
+                                            style_checks: {
+                                                ...config.style_checks,
+                                                [rule.key]:
+                                                    !config.style_checks[
+                                                        rule.key
+                                                    ],
+                                            },
+                                        })
+                                    }
+                                />
                             </div>
-                        ))}
+                        </div>
+                    ))}
                 </Card>
             </div>
         </BookSettingsLayout>

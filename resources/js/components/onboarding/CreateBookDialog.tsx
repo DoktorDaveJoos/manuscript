@@ -100,7 +100,7 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
                         >
                             {BOOK_LANGUAGES.map((lang) => (
                                 <option key={lang.value} value={lang.value}>
-                                    {lang.label}
+                                    {t(lang.labelKey, { ns: 'common' })}
                                 </option>
                             ))}
                         </Select>

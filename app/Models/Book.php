@@ -36,6 +36,7 @@ class Book extends Model
             'secondary_genres' => 'array',
             'export_drop_caps' => 'boolean',
             'custom_dictionary' => 'array',
+            'style_ignored_words' => 'array',
             'cover_settings' => 'array',
             'proofreading_config' => 'array',
             'export_settings' => 'array',
@@ -172,39 +173,56 @@ class Book extends Model
     }
 
     /**
-     * @return array{spelling_enabled: bool, grammar_enabled: bool, grammar_checks: array<string, bool>}
+     * @return array{spelling_enabled: bool, style_checks: array<string, bool>}
      */
     public static function defaultProofreadingConfig(): array
     {
         return [
             'spelling_enabled' => true,
-            'grammar_enabled' => true,
-            'grammar_checks' => [
-                'illusion' => true,
-                'so' => true,
-                'thereIs' => true,
-                'tooWordy' => true,
-                'passive' => false,
-                'weasel' => false,
-                'adverb' => false,
-                'cliches' => false,
-                'eprime' => false,
+            'style_checks' => [
+                'filler' => true,
+                'weakVerb' => true,
+                'filterWord' => true,
+                'cliche' => true,
+                'pattern' => true,
+                'repetition' => true,
+                'rhythm' => true,
             ],
         ];
     }
 
     /**
-     * @return array{spelling_enabled: bool, grammar_enabled: bool, grammar_checks: array<string, bool>}
+     * Stored configs may predate the style engine (write-good era) or miss
+     * categories added since they were saved — normalize on read.
+     *
+     * @return array{spelling_enabled: bool, style_checks: array<string, bool>}
      */
     public function proofreadingConfig(): array
     {
         $saved = $this->proofreading_config;
+        $config = self::defaultProofreadingConfig();
 
-        if (is_array($saved) && ! empty($saved)) {
-            return $saved;
+        if (! is_array($saved) || empty($saved)) {
+            return $config;
         }
 
-        return self::defaultProofreadingConfig();
+        $config['spelling_enabled'] = (bool) ($saved['spelling_enabled'] ?? true);
+
+        if (isset($saved['style_checks']) && is_array($saved['style_checks'])) {
+            foreach ($config['style_checks'] as $category => $default) {
+                $config['style_checks'][$category] = (bool) ($saved['style_checks'][$category] ?? $default);
+            }
+
+            return $config;
+        }
+
+        // Legacy write-good config: the only preserved intent is a full
+        // grammar opt-out; individual check keys have no 1:1 equivalents.
+        if (($saved['grammar_enabled'] ?? true) === false) {
+            $config['style_checks'] = array_map(fn () => false, $config['style_checks']);
+        }
+
+        return $config;
     }
 
     /**

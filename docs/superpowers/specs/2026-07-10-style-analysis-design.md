@@ -101,9 +101,18 @@ One JSON per language: `public/style-packs/{lang}.json`, copied at build time li
 - **Pest Browser**: `tests/Browser/StyleAnalysisTest.php` — seed a scene with known fillers + a repetition pair; open style panel; assert category decorations; popover → Ignore this word → decoration gone; reload → still gone. Requires `npm run build` first.
 - **Guardrails**: no new controller (existing Feature test extends); migrations against both DBs; `superpowers:verification-before-completion` at PR time.
 
+## Implementation deviations (2026-07-10, as built)
+
+- **`hunspell-asm` has no `stem()`** (verified: `spell`/`suggest`/`addWord` only) — the fallback shipped: repetition uses the shared-prefix heuristic (≥4 letters covering ≥⅔ of the longer word), and list checks match surface forms with **inflections enumerated in the packs**.
+- **All 8 languages ship a pack**: es/it/nl/pt are stopword-only (repetition + stats tier); packs gained a `stopwords` field for the repetition check.
+- **Pack `patterns` is a flat array** `[{id, regex}]` instead of the nested passive/constructs shape; ids may repeat across regex variants (i18n keys by category, not pattern id).
+- **`style_checks` keys are singular** (`filler`, `weakVerb`, …) matching analyzer categories 1:1, plus `rhythm`.
+- **Legacy config mapping**: individual write-good check keys have no 1:1 equivalents; the only preserved intents are `spelling_enabled` and a full `grammar_enabled: false` opt-out (→ all style checks off). Everything else defaults on.
+- `StyleStats` carries `readabilityFormula` since LIX reads low-is-easy while Flesch-type formulas read high-is-easy.
+
 ## Risks
 
-- **`hunspell-asm` may not expose `stem()`** — verify first; prefix-heuristic fallback specified above.
+- ~~`hunspell-asm` may not expose `stem()`~~ — confirmed absent; fallback shipped (see deviations).
 - **Rule-pack quality for fr/sv** (no in-house domain expert) — mitigated by sourcing from established craft references and the version field for fast iteration.
 - **Decoration noise with all categories on** — mitigated by revision-mode gating, per-category eye-toggles, and per-book defaults.
 - **Passive-voice regexes overfire** (e.g. German `werden` as future tense) — accept imprecision in v1; patterns are pack data and can be tuned without code changes.

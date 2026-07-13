@@ -115,7 +115,7 @@ export default function GeneralSettings({ book }: Props) {
                             >
                                 {BOOK_LANGUAGES.map((lang) => (
                                     <option key={lang.value} value={lang.value}>
-                                        {lang.label}
+                                        {t(lang.labelKey, { ns: 'common' })}
                                     </option>
                                 ))}
                             </Select>

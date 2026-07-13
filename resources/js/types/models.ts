@@ -146,36 +146,30 @@ export type ProsePassRule = {
     enabled: boolean;
 };
 
-export type GrammarCheckKey =
-    | 'illusion'
-    | 'so'
-    | 'thereIs'
-    | 'tooWordy'
-    | 'passive'
-    | 'weasel'
-    | 'adverb'
-    | 'cliches'
-    | 'eprime';
+export type StyleCheckKey =
+    | 'filler'
+    | 'weakVerb'
+    | 'filterWord'
+    | 'cliche'
+    | 'pattern'
+    | 'repetition'
+    | 'rhythm';
 
 export type ProofreadingConfig = {
     spelling_enabled: boolean;
-    grammar_enabled: boolean;
-    grammar_checks: Record<GrammarCheckKey, boolean>;
+    style_checks: Record<StyleCheckKey, boolean>;
 };
 
 export const DEFAULT_PROOFREADING_CONFIG: ProofreadingConfig = {
     spelling_enabled: true,
-    grammar_enabled: true,
-    grammar_checks: {
-        illusion: true,
-        so: true,
-        thereIs: true,
-        tooWordy: true,
-        passive: false,
-        weasel: false,
-        adverb: false,
-        cliches: false,
-        eprime: false,
+    style_checks: {
+        filler: true,
+        weakVerb: true,
+        filterWord: true,
+        cliche: true,
+        pattern: true,
+        repetition: true,
+        rhythm: true,
     },
 };
 
@@ -206,7 +200,10 @@ export type AppSettings = {
     locale: string;
     editor_font: string;
     editor_font_size: number;
+    editor_text_position: EditorTextPosition;
 };
+
+export type EditorTextPosition = 'left' | 'center' | 'right';
 
 export type Book = {
     id: number;
