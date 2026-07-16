@@ -19,6 +19,19 @@ test('there are 10 providers', function () {
     expect(AiProvider::cases())->toHaveCount(10);
 });
 
+test('only user-facing cloud providers are exposed in settings', function () {
+    expect(AiProvider::userFacing())->toBe([
+        AiProvider::Anthropic,
+        AiProvider::Openai,
+        AiProvider::Gemini,
+        AiProvider::Groq,
+        AiProvider::Xai,
+        AiProvider::DeepSeek,
+        AiProvider::Mistral,
+        AiProvider::OpenRouter,
+    ])->not->toContain(AiProvider::Azure, AiProvider::Ollama);
+});
+
 test('azure and ollama require base url', function () {
     expect(AiProvider::Azure->requiresBaseUrl())->toBeTrue()
         ->and(AiProvider::Ollama->requiresBaseUrl())->toBeTrue();
