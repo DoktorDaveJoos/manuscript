@@ -32,6 +32,19 @@ yarn-error.log
 .claude/*.lock
 .DS_Store
 /screenshots
+# Generated visual and workflow artifacts should not live at the repository root.
+/*.avif
+/*.bmp
+/*.gif
+/*.ico
+/*.jpeg
+/*.jpg
+/*.png
+/*.svg
+/*.tif
+/*.tiff
+/*.webp
+/.superpowers/
 # Runtime state of the local backup feature — never source-controlled
 /database/.backup-state.json
 
@@ -47,3 +60,10 @@ yarn-error.log
 # Pencil design files and local workspace state
 *.pen
 .pencil/
+
+# Only Claude Code and Codex project integrations are maintained.
+/.forge/
+/.gemini/
+/.kiro/
+/GEMINI.md
+/opencode.json
