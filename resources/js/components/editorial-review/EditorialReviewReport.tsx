@@ -150,6 +150,7 @@ export default function EditorialReviewReport({
     onSelectReview,
     onStartNew,
     starting,
+    canStart,
     onDiscussFinding,
     onResolvedChange,
 }: {
@@ -160,6 +161,7 @@ export default function EditorialReviewReport({
     onSelectReview: (review: EditorialReview) => void;
     onStartNew: () => void;
     starting: boolean;
+    canStart: boolean;
     onDiscussFinding: OnDiscussFinding;
     onResolvedChange: (resolved: string[]) => void;
 }) {
@@ -172,7 +174,10 @@ export default function EditorialReviewReport({
         Partial<Record<EditorialSectionType, HTMLDivElement | null>>
     >({});
 
-    const resolvedFindings = review.resolved_findings ?? [];
+    const resolvedFindings = useMemo(
+        () => review.resolved_findings ?? [],
+        [review.resolved_findings],
+    );
     const resolvedSet = useMemo(
         () => new Set(resolvedFindings),
         [resolvedFindings],
@@ -276,7 +281,7 @@ export default function EditorialReviewReport({
                             variant="primary"
                             size="sm"
                             onClick={() => setShowConfirm(true)}
-                            disabled={starting}
+                            disabled={starting || !canStart}
                         >
                             {t('report.startNew')}
                         </Button>
@@ -384,7 +389,11 @@ export default function EditorialReviewReport({
             </div>
 
             {showConfirm && (
-                <Dialog onClose={() => setShowConfirm(false)} width={420}>
+                <Dialog
+                    onClose={() => setShowConfirm(false)}
+                    title={t('confirm.title')}
+                    width={420}
+                >
                     <div className="flex flex-col gap-6">
                         <div className="flex flex-col gap-2">
                             <h2 className="font-serif text-2xl leading-8 font-semibold tracking-[-0.01em] text-ink">
@@ -407,7 +416,7 @@ export default function EditorialReviewReport({
                                     setShowConfirm(false);
                                     onStartNew();
                                 }}
-                                disabled={starting}
+                                disabled={starting || !canStart}
                             >
                                 {t('common:confirm')}
                             </Button>

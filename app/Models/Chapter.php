@@ -287,6 +287,7 @@ class Chapter extends Model
                     'content' => $segment,
                     'sort_order' => $index,
                     'word_count' => $wordCount,
+                    'content_version' => $existingScenes[$index]->content_version + 1,
                 ]);
             } else {
                 $this->scenes()->create([

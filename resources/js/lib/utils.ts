@@ -29,24 +29,46 @@ export function escapeHtml(text: string): string {
         .replace(/>/g, '&gt;');
 }
 
-export function formatCompactCount(count: number): string {
-    if (count >= 1_000_000) {
-        return `${(count / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+function currentLocale(): string {
+    if (typeof document !== 'undefined' && document.documentElement.lang) {
+        return document.documentElement.lang;
     }
-    if (count >= 1_000) {
-        return `${(count / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
+
+    if (typeof navigator !== 'undefined' && navigator.language) {
+        return navigator.language;
     }
-    return count.toLocaleString('en-US');
+
+    return 'en';
 }
 
-export function formatWordCount(count: number, compact: boolean): string {
-    return compact ? formatCompactCount(count) : count.toLocaleString('en-US');
+export function formatCompactCount(
+    count: number,
+    locale = currentLocale(),
+): string {
+    if (count >= 1_000_000) {
+        return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(count / 1_000_000)}M`;
+    }
+    if (count >= 1_000) {
+        return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(count / 1_000)}k`;
+    }
+    return count.toLocaleString(locale);
+}
+
+export function formatWordCount(
+    count: number,
+    compact: boolean,
+    locale = currentLocale(),
+): string {
+    return compact
+        ? formatCompactCount(count, locale)
+        : count.toLocaleString(locale);
 }
 
 export function createChapter(
     bookId: number,
     storylineId: number,
     storylines: Storyline[],
+    t: (key: string, options?: Record<string, unknown>) => string,
 ): void {
     const totalChapters = storylines.reduce(
         (sum, s) => sum + (s.chapters?.length ?? 0),
@@ -55,7 +77,9 @@ export function createChapter(
     router.post(
         store.url({ book: bookId }),
         {
-            title: `Chapter ${totalChapters + 1}`,
+            title: t('chapterList.chapterDefault', {
+                number: totalChapters + 1,
+            }),
             storyline_id: storylineId,
         },
         {
@@ -70,16 +94,42 @@ export async function addSceneToChapter(
     sceneCount: number,
     t: (key: string, options?: Record<string, unknown>) => string,
 ): Promise<void> {
-    await fetch(storeScene.url({ book: bookId, chapter: chapterId }), {
-        method: 'POST',
-        headers: jsonFetchHeaders(),
-        body: JSON.stringify({
-            title: t('chapterList.sceneDefault', { number: sceneCount + 1 }),
-            position: sceneCount,
-        }),
-    });
-    router.reload({ only: ['book'] });
+    const response = await fetch(
+        storeScene.url({ book: bookId, chapter: chapterId }),
+        {
+            method: 'POST',
+            headers: jsonFetchHeaders(),
+            body: JSON.stringify({
+                title: t('chapterList.sceneDefault', {
+                    number: sceneCount + 1,
+                }),
+                position: sceneCount,
+            }),
+        },
+    );
+    await ensureSuccessfulResponse(response, t('request.failed'));
+    router.reload({ only: ['book', 'sidebar_storylines'] });
     broadcastChapterDataChanged(chapterId);
+}
+
+export async function ensureSuccessfulResponse(
+    response: Response,
+    fallback: string,
+): Promise<Response> {
+    if (response.ok) return response;
+
+    let message = fallback;
+    try {
+        const payload = (await response.clone().json()) as {
+            error?: string;
+            message?: string;
+        };
+        message = payload.error || payload.message || fallback;
+    } catch {
+        // The fallback is intentionally used for empty or non-JSON responses.
+    }
+
+    throw new Error(message);
 }
 
 export function jsonFetchHeaders(): Record<string, string> {

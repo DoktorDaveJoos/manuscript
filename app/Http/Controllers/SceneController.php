@@ -58,44 +58,87 @@ class SceneController extends Controller
             $this->ensureCurrentVersion($chapter, (int) $expectedVersionId);
         }
 
-        $previousSceneWordCount = $scene->word_count;
-        $wordCount = WordCount::count($request->validated('content'));
+        $content = $request->validated('content');
+        $wordCount = WordCount::count($content);
+        $expectedContentVersion = (int) $request->validated('expected_content_version');
+        $newContentVersion = $expectedContentVersion + 1;
 
-        $scene->update([
-            'content' => $request->validated('content'),
-            'word_count' => $wordCount,
-        ]);
+        $result = DB::transaction(function () use (
+            $book,
+            $chapter,
+            $scene,
+            $content,
+            $wordCount,
+            $expectedContentVersion,
+            $newContentVersion,
+        ): ?array {
+            $currentScene = Scene::query()
+                ->whereKey($scene->getKey())
+                ->firstOrFail(['id', 'word_count', 'content_version']);
 
-        $chapter->recalculateWordCount();
-
-        $delta = $wordCount - $previousSceneWordCount;
-        if ($delta > 0) {
-            $session = WritingSession::updateOrCreate(
-                ['book_id' => $book->id, 'date' => now()->toDateString()],
-                [],
-            );
-
-            $session->increment('words_written', $delta);
-            $session->refresh();
-
-            if ($book->daily_word_count_goal && $session->words_written >= $book->daily_word_count_goal) {
-                $session->update(['goal_met' => true]);
+            if ($currentScene->content_version !== $expectedContentVersion) {
+                return null;
             }
-        } elseif ($delta < 0) {
-            $session = $book->writingSessions()
-                ->whereDate('date', now()->toDateString())
-                ->first();
 
-            if ($session) {
-                $session->update([
-                    'words_written' => max(0, $session->words_written + $delta),
+            $updated = Scene::query()
+                ->whereKey($scene->getKey())
+                ->where('content_version', $expectedContentVersion)
+                ->update([
+                    'content' => $content,
+                    'word_count' => $wordCount,
+                    'content_version' => $newContentVersion,
                 ]);
+
+            if ($updated !== 1) {
+                return null;
             }
+
+            $chapter->recalculateWordCount();
+
+            $delta = $wordCount - $currentScene->word_count;
+            if ($delta > 0) {
+                $session = WritingSession::updateOrCreate(
+                    ['book_id' => $book->id, 'date' => now()->toDateString()],
+                    [],
+                );
+
+                $session->increment('words_written', $delta);
+                $session->refresh();
+
+                if ($book->daily_word_count_goal && $session->words_written >= $book->daily_word_count_goal) {
+                    $session->update(['goal_met' => true]);
+                }
+            } elseif ($delta < 0) {
+                $session = $book->writingSessions()
+                    ->whereDate('date', now()->toDateString())
+                    ->first();
+
+                if ($session) {
+                    $session->update([
+                        'words_written' => max(0, $session->words_written + $delta),
+                    ]);
+                }
+            }
+
+            return [
+                'chapter_word_count' => $chapter->fresh()->word_count,
+            ];
+        });
+
+        if ($result === null) {
+            return response()->json([
+                'message' => __('This scene has changed since you started — retry with the latest content version.'),
+                'conflict' => 'content_version',
+                'content_version' => (int) Scene::query()
+                    ->whereKey($scene->getKey())
+                    ->value('content_version'),
+            ], 409);
         }
 
         return response()->json([
             'word_count' => $wordCount,
-            'chapter_word_count' => $chapter->fresh()->word_count,
+            'chapter_word_count' => $result['chapter_word_count'],
+            'content_version' => $newContentVersion,
             'saved_at' => now()->toISOString(),
         ]);
     }
@@ -135,11 +178,15 @@ class SceneController extends Controller
 
     public function destroy(Book $book, Chapter $chapter, Scene $scene): JsonResponse
     {
-        if ($chapter->scenes()->count() <= 1) {
-            return response()->json(['error' => __('Cannot delete the last scene')], 422);
-        }
+        $deleted = DB::transaction(function () use ($chapter, $scene): bool {
+            $sceneIds = $chapter->scenes()
+                ->lockForUpdate()
+                ->pluck('id');
 
-        DB::transaction(function () use ($chapter, $scene) {
+            if ($sceneIds->count() <= 1) {
+                return false;
+            }
+
             $scene->delete();
             $chapter->recalculateWordCount();
 
@@ -155,7 +202,13 @@ class SceneController extends Controller
                 $idList = implode(',', $ids);
                 DB::statement("UPDATE scenes SET sort_order = CASE id {$cases}END WHERE id IN ({$idList})");
             }
+
+            return true;
         });
+
+        if (! $deleted) {
+            return response()->json(['error' => __('Cannot delete the last scene')], 422);
+        }
 
         return response()->json(['success' => true]);
     }

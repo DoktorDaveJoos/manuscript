@@ -13,7 +13,7 @@
   <a href="https://github.com/DoktorDaveJoos/manuscript/releases/latest"><img src="https://img.shields.io/github/v/release/DoktorDaveJoos/manuscript?style=flat-square&color=0EA5E9" alt="Latest Release"></a>
   <a href="#ai-providers"><img src="https://img.shields.io/badge/AI_providers-10-8B5CF6?style=flat-square" alt="AI Providers"></a>
   <img src="https://img.shields.io/badge/platform-macOS_·_Windows_·_Linux-lightgrey?style=flat-square" alt="Platform">
-  <img src="https://img.shields.io/badge/license-MIT-22C55E?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/license-PolyForm_Noncommercial-22C55E?style=flat-square" alt="License: PolyForm Noncommercial 1.0.0">
 </p>
 
 ---
@@ -28,7 +28,7 @@ It's built on the belief that good authors already have the instinct for story, 
 
 ## Download
 
-Grab the latest release for your platform from the [**Releases page**](https://github.com/DoktorDaveJoos/manuscript/releases/latest) — or [build it yourself from source](#getting-started), free forever.
+Grab the latest release for your platform from the [**Releases page**](https://github.com/DoktorDaveJoos/manuscript/releases/latest) — or [build it yourself from source](#getting-started), free for permitted noncommercial use.
 
 > New here? A **one-shot 7-day free trial** of the Pro features can be started right from the welcome screen — no account, no credit card.
 
@@ -322,13 +322,15 @@ Pick a primary genre plus secondary genres per book.
 
 ---
 
-## Open Source & Licensing
+## Source Available & Licensing
 
-**Manuscript is fully open source.** The complete source code is available here — build it, run it, modify it, and use it for free. Forever.
+**Manuscript is source-available under the PolyForm Noncommercial License 1.0.0.** You may build, run, modify, and share it for personal, educational, research, hobby, and other purposes permitted by that license.
+
+The public license does not permit use for a business or other commercial purpose. Any use not permitted by the PolyForm Noncommercial license requires a separate written license from the copyright holder.
 
 If you download a **pre-built, ready-to-run desktop app**, that's the Pro version. A one-time purchase unlocks AI features in the bundled app — and a **7-day free trial** lets you test everything first. The license is perpetual, works offline, and never phones home.
 
-|  | Open Source (self-built) | Pro (pre-built app) |
+|  | Noncommercial self-build | Pro (pre-built app) |
 |:---|:---:|:---:|
 | Multi-book management | ✅ | ✅ |
 | Splitscreen editor & focus mode | ✅ | ✅ |
@@ -345,7 +347,7 @@ If you download a **pre-built, ready-to-run desktop app**, that's the Pro versio
 | Plot Coach & plot insights | ✅ | ✅ |
 | Local speech input | ✅ | ✅ |
 | Pre-built native app + auto-updates | — | ✅ |
-| **Price** | **Free** | **One-time purchase** |
+| **Price** | **Free for permitted noncommercial use** | **One-time purchase** |
 
 > AI features always require your own API key — you pay the AI providers directly for the tokens you use.
 
@@ -434,13 +436,21 @@ database/
 
 ## Contributing
 
-Contributions are welcome. If you're fixing a bug or adding a feature:
+Bug reports and feature suggestions are welcome.
 
-1. Fork the repository
-2. Create a feature branch
-3. Write tests for your changes
-4. Make sure `php artisan test` and `vendor/bin/pint --test` pass
-5. Open a pull request
+Code contributions require prior written approval and a contributor agreement that preserves the copyright holder's ability to issue commercial licenses. Please open an issue before submitting code. Unsolicited code contributions may be declined.
+
+---
+
+## License
+
+Manuscript's source code is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE) (`PolyForm-Noncommercial-1.0.0`). This is a source-available license, not an open-source license.
+
+Personal, educational, research, hobby, and other noncommercial uses described by the license are permitted. Commercial use is not granted. Any use outside the public license requires a separate written license from David Joos.
+
+The public license does not grant permission to use the Manuscript name, logo, or branding for third-party products or services.
+
+Third-party components remain subject to their respective licenses.
 
 ---
 

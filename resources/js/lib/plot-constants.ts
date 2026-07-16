@@ -70,7 +70,7 @@ export const STATUS_PILL_OPTIONS: {
     {
         value: 'planned',
         labelKey: 'status.planned',
-        activeClass: 'bg-neutral-300/30 text-ink',
+        activeClass: 'bg-neutral-bg text-ink',
     },
     {
         value: 'fulfilled',
@@ -80,7 +80,7 @@ export const STATUS_PILL_OPTIONS: {
     {
         value: 'abandoned',
         labelKey: 'status.abandoned',
-        activeClass: 'bg-neutral-300/20 text-ink-muted line-through',
+        activeClass: 'bg-neutral-bg text-ink-muted line-through',
     },
 ];
 

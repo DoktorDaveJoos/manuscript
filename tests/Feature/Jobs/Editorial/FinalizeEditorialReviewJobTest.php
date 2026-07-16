@@ -1,5 +1,6 @@
 <?php
 
+use App\Ai\Agents\EditorialSummaryAgent;
 use App\Ai\Agents\EditorialSynthesisAgent;
 use App\Jobs\Editorial\FinalizeEditorialReviewJob;
 use App\Models\EditorialReview;
@@ -74,7 +75,7 @@ test('FinalizeEditorialReviewJob marks review as failed when there are no chapte
 
 test('FinalizeEditorialReviewJob marks review as failed on a catastrophic synthesis error', function () {
     EditorialSynthesisAgent::fake(function () {
-        throw new RuntimeException('Fatal synthesis error');
+        throw new RuntimeException('Fatal synthesis error with sensitive request details');
     });
 
     [$book, $chapters] = createBookWithChaptersForEditorial(1);
@@ -86,10 +87,32 @@ test('FinalizeEditorialReviewJob marks review as failed on a catastrophic synthe
     $review->refresh();
 
     expect($review->status)->toBe('failed')
-        ->and($review->error_message)->toContain('Fatal synthesis error');
+        ->and($review->error_code)->toBe('unknown')
+        ->and($review->error_message)->toContain('plot')
+        ->and($review->error_message)->not->toContain('sensitive request details');
 });
 
-test('FinalizeEditorialReviewJob reports synthesizing progress', function () {
+test('FinalizeEditorialReviewJob identifies executive-summary failures', function () {
+    fakeAllEditorialAgents();
+    EditorialSummaryAgent::fake(function () {
+        throw new RuntimeException('Summary response contained sensitive diagnostics');
+    });
+
+    [$book, $chapters] = createBookWithChaptersForEditorial(1);
+    $review = EditorialReview::factory()->for($book)->create(['status' => 'analyzing']);
+    seedEditorialChapterNote($review, $chapters[0]->id);
+
+    (new FinalizeEditorialReviewJob($book, $review))->handle();
+
+    $review->refresh();
+
+    expect($review->status)->toBe('failed')
+        ->and($review->progress['phase'])->toBe('summarizing')
+        ->and($review->error_message)->toContain('executive summary')
+        ->and($review->error_message)->not->toContain('sensitive diagnostics');
+});
+
+test('FinalizeEditorialReviewJob reports executive-summary progress', function () {
     fakeAllEditorialAgents();
 
     [$book, $chapters] = createBookWithChaptersForEditorial(1);
@@ -100,5 +123,5 @@ test('FinalizeEditorialReviewJob reports synthesizing progress', function () {
 
     $review->refresh();
 
-    expect($review->progress['phase'])->toBe('synthesizing');
+    expect($review->progress['phase'])->toBe('summarizing');
 });

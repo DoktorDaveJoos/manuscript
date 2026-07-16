@@ -49,7 +49,7 @@ function ContextMenuRoot({
                         className,
                     )}
                 >
-                    {children}
+                    <DropdownMenu.Group>{children}</DropdownMenu.Group>
                 </DropdownMenu.Content>
             </DropdownMenu.Portal>
         </DropdownMenu.Root>
@@ -115,7 +115,7 @@ function Submenu({
                     {label}
                 </span>
                 <ChevronRight
-                    size={10}
+                    size={12}
                     strokeWidth={2.5}
                     className="text-ink-faint"
                 />
@@ -128,7 +128,7 @@ function Submenu({
                         width,
                     )}
                 >
-                    {children}
+                    <DropdownMenu.Group>{children}</DropdownMenu.Group>
                 </DropdownMenu.SubContent>
             </DropdownMenu.Portal>
         </DropdownMenu.Sub>

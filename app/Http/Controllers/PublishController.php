@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\GenerateCoverRequest;
+use App\Http\Requests\UpdateBookMatterChapterRequest;
 use App\Http\Requests\UpdatePublishSettingsRequest;
 use App\Http\Requests\UploadCoverImageRequest;
 use App\Models\Book;
@@ -10,6 +11,7 @@ use App\Services\Export\CoverOptions;
 use App\Services\Export\CoverService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -78,28 +80,38 @@ class PublishController extends Controller
         return response()->json(['pdf' => base64_encode($pdfBytes)]);
     }
 
-    public function updateEpilogue(Book $book): RedirectResponse
+    public function updateEpilogue(UpdateBookMatterChapterRequest $request, Book $book): RedirectResponse
     {
-        $chapterId = request('chapter_id');
+        $chapterId = $request->validated('chapter_id');
 
-        $book->chapters()->update(['is_epilogue' => false]);
+        DB::transaction(function () use ($book, $chapterId): void {
+            $book->chapters()->update(['is_epilogue' => false]);
 
-        if ($chapterId) {
-            $book->chapters()->where('id', $chapterId)->update(['is_epilogue' => true]);
-        }
+            if ($chapterId !== null) {
+                $book->chapters()->where('id', $chapterId)->update([
+                    'is_epilogue' => true,
+                    'is_prologue' => false,
+                ]);
+            }
+        });
 
         return back();
     }
 
-    public function updatePrologue(Book $book): RedirectResponse
+    public function updatePrologue(UpdateBookMatterChapterRequest $request, Book $book): RedirectResponse
     {
-        $chapterId = request('chapter_id');
+        $chapterId = $request->validated('chapter_id');
 
-        $book->chapters()->update(['is_prologue' => false]);
+        DB::transaction(function () use ($book, $chapterId): void {
+            $book->chapters()->update(['is_prologue' => false]);
 
-        if ($chapterId) {
-            $book->chapters()->where('id', $chapterId)->update(['is_prologue' => true]);
-        }
+            if ($chapterId !== null) {
+                $book->chapters()->where('id', $chapterId)->update([
+                    'is_epilogue' => false,
+                    'is_prologue' => true,
+                ]);
+            }
+        });
 
         return back();
     }

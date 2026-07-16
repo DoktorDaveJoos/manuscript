@@ -40,7 +40,13 @@ export default function RenameDialog({
     }
 
     return (
-        <Dialog onClose={onClose} backdrop="none" width={360} className="gap-5">
+        <Dialog
+            onClose={onClose}
+            title={title}
+            backdrop="none"
+            width={360}
+            className="gap-5"
+        >
             <form onSubmit={handleSubmit} className="contents">
                 <h2 className="text-base font-medium text-ink">{title}</h2>
 

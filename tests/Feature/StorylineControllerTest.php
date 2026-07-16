@@ -76,6 +76,16 @@ test('update validates color format', function () {
     ])->assertUnprocessable();
 });
 
+test('nested storyline routes reject storylines from another book', function () {
+    $book = Book::factory()->create();
+    $otherBook = Book::factory()->create();
+    $foreignStoryline = Storyline::factory()->for($otherBook)->create();
+
+    $this->patchJson(route('storylines.update', [$book, $foreignStoryline]), [
+        'name' => 'Cross-book edit',
+    ])->assertNotFound();
+});
+
 test('destroy cascades chapters and redirects', function () {
     $book = Book::factory()->create();
     $storyline1 = Storyline::factory()->for($book)->create(['sort_order' => 0]);
@@ -101,6 +111,18 @@ test('destroy blocks last storyline', function () {
 
     $this->delete(route('storylines.destroy', [$book, $storyline]))
         ->assertStatus(422);
+});
+
+test('successive deletes cannot remove the final storyline', function () {
+    $book = Book::factory()->create();
+    $first = Storyline::factory()->for($book)->create(['sort_order' => 0]);
+    $second = Storyline::factory()->for($book)->create(['sort_order' => 1]);
+
+    $this->delete(route('storylines.destroy', [$book, $first]))->assertRedirect();
+    $this->delete(route('storylines.destroy', [$book, $second]))->assertStatus(422);
+
+    expect($book->storylines()->count())->toBe(1)
+        ->and($second->fresh())->not->toBeNull();
 });
 
 test('destroy redirects to editor when no chapters remain', function () {
@@ -134,4 +156,27 @@ test('reorder validates order is required', function () {
 
     $this->postJson(route('storylines.reorder', $book), [])
         ->assertUnprocessable();
+});
+
+test('reorder rejects partial duplicate and foreign storyline payloads', function () {
+    $book = Book::factory()->create();
+    $first = Storyline::factory()->for($book)->create(['sort_order' => 0]);
+    $second = Storyline::factory()->for($book)->create(['sort_order' => 1]);
+    $otherBook = Book::factory()->create();
+    $foreign = Storyline::factory()->for($otherBook)->create();
+
+    $this->postJson(route('storylines.reorder', $book), [
+        'order' => [$first->id],
+    ])->assertJsonValidationErrors('order');
+
+    $this->postJson(route('storylines.reorder', $book), [
+        'order' => [$first->id, $first->id],
+    ])->assertJsonValidationErrors('order.1');
+
+    $this->postJson(route('storylines.reorder', $book), [
+        'order' => [$first->id, $foreign->id],
+    ])->assertJsonValidationErrors('order.1');
+
+    expect($first->fresh()->sort_order)->toBe(0)
+        ->and($second->fresh()->sort_order)->toBe(1);
 });

@@ -31,6 +31,15 @@ const EVENTS = {
     ERROR: 'Native\\Desktop\\Events\\AutoUpdater\\Error',
 } as const;
 
+export const AUTO_UPDATE_PREFERENCE_CHANGED =
+    'manuscript:auto-update-preference-changed';
+
+export function announceAutomaticUpdatePreference(enabled: boolean): void {
+    window.dispatchEvent(
+        new CustomEvent(AUTO_UPDATE_PREFERENCE_CHANGED, { detail: enabled }),
+    );
+}
+
 function normalizeReleaseNotes(
     notes: string | string[] | null | undefined,
     fallback: string | null = null,

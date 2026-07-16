@@ -29,6 +29,7 @@ export default function DeleteChapterDialog({
     return (
         <Dialog
             onClose={onClose}
+            title={t('deleteChapter.title')}
             width={440}
             backdrop="light"
             className="gap-7"

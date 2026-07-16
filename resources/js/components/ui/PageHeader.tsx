@@ -20,17 +20,17 @@ export default function PageHeader({
                 {icon ? (
                     <div className="flex items-center gap-2">
                         {icon}
-                        <h1 className="font-serif text-2xl font-semibold tracking-[-0.01em] text-ink">
+                        <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
                             {title}
                         </h1>
                     </div>
                 ) : (
-                    <h1 className="font-serif text-2xl font-semibold tracking-[-0.01em] text-ink">
+                    <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink">
                         {title}
                     </h1>
                 )}
                 {subtitle && (
-                    <p className="text-[14px] text-ink-muted">{subtitle}</p>
+                    <p className="text-sm text-ink-muted">{subtitle}</p>
                 )}
                 {children}
             </div>

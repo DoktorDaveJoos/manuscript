@@ -101,6 +101,11 @@ return [
          */
         'enabled' => env('NATIVEPHP_UPDATER_ENABLED', true),
 
+        // Laravel owns the automatic startup check so it can honor the user's
+        // persisted auto_update preference. Electron still configures the
+        // updater feed and serves explicit check/download/install requests.
+        'check_on_startup' => false,
+
         /**
          * The updater provider to use.
          * Supported: "github", "s3", "spaces"

@@ -23,8 +23,25 @@ import type {
 import AiChatInput from '@/components/ui/AiChatInput';
 import type { AiChatInputHandle } from '@/components/ui/AiChatInput';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
+import { Bubble, BubbleContent, BubbleGroup } from '@/components/ui/bubble';
 import Button from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import { Marker, MarkerContent, MarkerIcon } from '@/components/ui/marker';
+import {
+    Message,
+    MessageAvatar,
+    MessageContent,
+    MessageFooter,
+    MessageHeader,
+} from '@/components/ui/message';
+import {
+    MessageScroller,
+    MessageScrollerButton,
+    MessageScrollerComposer,
+    MessageScrollerContent,
+    MessageScrollerItem,
+    MessageScrollerProvider,
+    MessageScrollerViewport,
+} from '@/components/ui/message-scroller';
 import { useAiErrorToast } from '@/hooks/useAiErrorToast';
 import { track } from '@/lib/analytics';
 import { md } from '@/lib/markdown';
@@ -300,7 +317,6 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
         const inputValueRef = useRef(input);
         inputValueRef.current = input;
 
-        const messagesEndRef = useRef<HTMLDivElement>(null);
         const inputRef = useRef<AiChatInputHandle>(null);
         const abortRef = useRef<AbortController | null>(null);
         const lastSentMessageRef = useRef<string | null>(null);
@@ -346,10 +362,6 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
         useEffect(() => {
             inputRef.current?.focus();
         }, []);
-
-        useEffect(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, [messages]);
 
         // Abort any in-flight stream + clear the tool-status delay timer on
         // unmount.
@@ -842,98 +854,155 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
         }, [messages, proposalStates]);
 
         return (
-            <div className="flex min-h-0 flex-1 flex-col bg-surface">
-                <div className="flex-1 overflow-y-auto">
-                    <div className="mx-auto flex w-full max-w-[720px] flex-col gap-6 px-6 py-10">
-                        {isLoadingHistory && (
-                            <div className="flex items-center justify-center gap-2 py-8">
-                                <Loader
-                                    size={14}
-                                    className="animate-spin text-accent"
-                                />
-                            </div>
-                        )}
+            <div
+                className="flex min-h-0 flex-1 flex-col bg-surface"
+                data-testid="plot-coach-chat-surface"
+            >
+                <div className="min-h-0 flex-1">
+                    <MessageScrollerProvider
+                        autoScroll
+                        defaultScrollPosition="end"
+                        scrollPreviousItemPeek={64}
+                    >
+                        <MessageScroller data-testid="plot-coach-message-scroller">
+                            <MessageScrollerViewport>
+                                <MessageScrollerContent
+                                    aria-busy={isStreaming}
+                                    className="mx-auto w-full max-w-[720px] gap-6 px-6 py-10"
+                                >
+                                    {isLoadingHistory && (
+                                        <MessageScrollerItem>
+                                            <Marker className="justify-center py-8">
+                                                <MarkerIcon>
+                                                    <Loader className="animate-spin text-accent" />
+                                                </MarkerIcon>
+                                            </Marker>
+                                        </MessageScrollerItem>
+                                    )}
 
-                        {showIntakeOpener && (
-                            <IntakeOpener
-                                hello={t('intake.welcome.hello')}
-                                body={t('intake.welcome.body')}
-                            />
-                        )}
+                                    {showIntakeOpener && (
+                                        <MessageScrollerItem>
+                                            <IntakeOpener
+                                                hello={t(
+                                                    'intake.welcome.hello',
+                                                )}
+                                                body={t('intake.welcome.body')}
+                                                senderLabel={t(
+                                                    'message.sender_coach',
+                                                )}
+                                            />
+                                        </MessageScrollerItem>
+                                    )}
 
-                        {messages.map((msg, i) => {
-                            const isLast = i === messages.length - 1;
-                            const isLastAssistant =
-                                msg.role === 'assistant' && isLast;
-                            if (msg.role === 'user') {
-                                return (
-                                    <UserBubble key={i} content={msg.content} />
-                                );
-                            }
-                            return (
-                                <AssistantRow
-                                    key={i}
-                                    content={msg.content}
-                                    streaming={isStreaming && isLastAssistant}
-                                    thinkingLabel={t('status.streaming')}
-                                    toolStatusLabel={
-                                        isLastAssistant && currentToolName
-                                            ? t(
-                                                  `status.tool.${currentToolName}`,
-                                                  {
-                                                      defaultValue:
-                                                          t('status.streaming'),
-                                                  },
-                                              )
-                                            : null
-                                    }
-                                    isActiveProposalRow={
-                                        i === latestActiveProposalIndex
-                                    }
-                                    proposalStates={proposalStates}
-                                    onApprove={handleBatchApprove}
-                                    onCancel={handleBatchCancel}
-                                    onUndo={handleBatchUndo}
-                                />
-                            );
-                        })}
+                                    {messages.map((msg, i) => {
+                                        const isLast =
+                                            i === messages.length - 1;
+                                        const isLastAssistant =
+                                            msg.role === 'assistant' && isLast;
 
-                        {streamError && (
-                            <ErrorCard
-                                message={streamError}
-                                retryLabel={t('status.error.retry')}
-                                onRetry={handleRetry}
-                            />
-                        )}
+                                        return (
+                                            <MessageScrollerItem
+                                                key={i}
+                                                messageId={`message-${i}`}
+                                                scrollAnchor={
+                                                    msg.role === 'user'
+                                                }
+                                            >
+                                                {msg.role === 'user' ? (
+                                                    <UserBubble
+                                                        content={msg.content}
+                                                        senderLabel={t(
+                                                            'message.sender_you',
+                                                        )}
+                                                    />
+                                                ) : (
+                                                    <AssistantRow
+                                                        content={msg.content}
+                                                        streaming={
+                                                            isStreaming &&
+                                                            isLastAssistant
+                                                        }
+                                                        thinkingLabel={t(
+                                                            'status.streaming',
+                                                        )}
+                                                        senderLabel={t(
+                                                            'message.sender_coach',
+                                                        )}
+                                                        toolStatusLabel={
+                                                            isLastAssistant &&
+                                                            currentToolName
+                                                                ? t(
+                                                                      `status.tool.${currentToolName}`,
+                                                                      {
+                                                                          defaultValue:
+                                                                              t(
+                                                                                  'status.streaming',
+                                                                              ),
+                                                                      },
+                                                                  )
+                                                                : null
+                                                        }
+                                                        isActiveProposalRow={
+                                                            i ===
+                                                            latestActiveProposalIndex
+                                                        }
+                                                        proposalStates={
+                                                            proposalStates
+                                                        }
+                                                        onApprove={
+                                                            handleBatchApprove
+                                                        }
+                                                        onCancel={
+                                                            handleBatchCancel
+                                                        }
+                                                        onUndo={handleBatchUndo}
+                                                    />
+                                                )}
+                                            </MessageScrollerItem>
+                                        );
+                                    })}
 
-                        <div ref={messagesEndRef} />
-                    </div>
-                </div>
-
-                {/* Board-changes indicator + Input bar, stick to bottom */}
-                <div className="bg-surface">
-                    {pendingBoardChanges > 0 && !isStreaming && (
-                        <div
-                            className="bg-accent-light px-6 py-1.5 text-center text-xs text-accent"
-                            data-testid="board-changes-indicator"
-                        >
-                            {t('board_changes.count', {
-                                count: pendingBoardChanges,
-                            })}
-                        </div>
-                    )}
-                    <div className="mx-auto w-full max-w-[720px] px-6 py-4">
-                        <AiChatInput
-                            ref={inputRef}
-                            value={input}
-                            onChange={setInput}
-                            onSend={handleSend}
-                            placeholder={t('input.placeholder')}
-                            ariaLabel={t('input.placeholder')}
-                            sendAriaLabel={t('input.send')}
-                            disabled={isStreaming}
-                        />
-                    </div>
+                                    {streamError && (
+                                        <MessageScrollerItem>
+                                            <ErrorCard
+                                                message={streamError}
+                                                retryLabel={t(
+                                                    'status.error.retry',
+                                                )}
+                                                onRetry={handleRetry}
+                                            />
+                                        </MessageScrollerItem>
+                                    )}
+                                </MessageScrollerContent>
+                            </MessageScrollerViewport>
+                            <MessageScrollerButton />
+                            <MessageScrollerComposer data-testid="plot-coach-composer">
+                                {pendingBoardChanges > 0 && !isStreaming && (
+                                    <div
+                                        className="bg-accent-light px-6 py-1.5 text-center text-xs text-accent"
+                                        data-testid="board-changes-indicator"
+                                    >
+                                        {t('board_changes.count', {
+                                            count: pendingBoardChanges,
+                                        })}
+                                    </div>
+                                )}
+                                <div className="mx-auto w-full max-w-[720px] px-6 py-4">
+                                    <AiChatInput
+                                        ref={inputRef}
+                                        value={input}
+                                        onChange={setInput}
+                                        onSend={handleSend}
+                                        placeholder={t('input.placeholder')}
+                                        ariaLabel={t('input.placeholder')}
+                                        sendAriaLabel={t('input.send')}
+                                        disabled={isStreaming}
+                                        className="pointer-events-auto"
+                                    />
+                                </div>
+                            </MessageScrollerComposer>
+                        </MessageScroller>
+                    </MessageScrollerProvider>
                 </div>
             </div>
         );
@@ -942,29 +1011,51 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
 
 export default ChatSurface;
 
-function IntakeOpener({ hello, body }: { hello: string; body: string }) {
+function IntakeOpener({
+    hello,
+    body,
+    senderLabel,
+}: {
+    hello: string;
+    body: string;
+    senderLabel: string;
+}) {
     return (
-        <div className="flex gap-3">
+        <Message data-message-role="assistant">
             <CoachAvatar />
-            <div className="flex-1">
-                <p className="text-sm leading-[1.55] font-medium text-ink">
-                    {hello}
-                </p>
-                <p className="mt-1 text-sm leading-[1.55] text-ink-muted">
-                    {body}
-                </p>
-            </div>
-        </div>
+            <MessageContent>
+                <MessageHeader>{senderLabel}</MessageHeader>
+                <Bubble variant="secondary">
+                    <BubbleContent>
+                        <p className="text-sm leading-[1.55] font-medium">
+                            {hello}
+                        </p>
+                        <p className="mt-1 text-sm leading-[1.55]">{body}</p>
+                    </BubbleContent>
+                </Bubble>
+            </MessageContent>
+        </Message>
     );
 }
 
-function UserBubble({ content }: { content: string }) {
+function UserBubble({
+    content,
+    senderLabel,
+}: {
+    content: string;
+    senderLabel: string;
+}) {
     return (
-        <div className="flex justify-end">
-            <Card className="max-w-[480px] px-4 py-3 text-sm leading-[1.55] text-ink">
-                <p className="whitespace-pre-wrap">{content}</p>
-            </Card>
-        </div>
+        <Message align="end" data-message-role="user">
+            <MessageContent>
+                <MessageHeader>{senderLabel}</MessageHeader>
+                <Bubble variant="muted" className="max-w-[480px]">
+                    <BubbleContent>
+                        <p className="whitespace-pre-wrap">{content}</p>
+                    </BubbleContent>
+                </Bubble>
+            </MessageContent>
+        </Message>
     );
 }
 
@@ -972,6 +1063,7 @@ type AssistantRowProps = {
     content: string;
     streaming?: boolean;
     thinkingLabel: string;
+    senderLabel: string;
     /** Humanized label for the currently-running tool, or null if none. */
     toolStatusLabel?: string | null;
     isActiveProposalRow: boolean;
@@ -985,6 +1077,7 @@ function AssistantRow({
     content,
     streaming,
     thinkingLabel,
+    senderLabel,
     toolStatusLabel,
     isActiveProposalRow,
     proposalStates,
@@ -1000,18 +1093,27 @@ function AssistantRow({
         parsed.proposal !== null;
 
     return (
-        <div className="flex gap-3">
+        <Message data-message-role="assistant">
             <CoachAvatar />
-            <div className="min-w-0 flex-1">
+            <MessageContent>
+                <MessageHeader>{senderLabel}</MessageHeader>
                 {hasAnyRendered ? (
-                    <div className="flex flex-col gap-3">
+                    <BubbleGroup className="gap-3">
                         {parsed.preamble && (
-                            <div className="flex items-start gap-1">
-                                <AssistantMessage content={parsed.preamble} />
-                                {streaming &&
-                                    !parsed.proposal &&
-                                    !parsed.postscript && <StreamingDot />}
-                            </div>
+                            <Bubble variant="secondary">
+                                <BubbleContent>
+                                    <div className="flex items-start gap-1">
+                                        <AssistantMessage
+                                            content={parsed.preamble}
+                                        />
+                                        {streaming &&
+                                            !parsed.proposal &&
+                                            !parsed.postscript && (
+                                                <StreamingDot />
+                                            )}
+                                    </div>
+                                </BubbleContent>
+                            </Bubble>
                         )}
 
                         {parsed.proposal && (
@@ -1032,43 +1134,52 @@ function AssistantRow({
                         )}
 
                         {parsed.postscript && (
-                            <div className="flex items-start gap-1">
-                                <AssistantMessage content={parsed.postscript} />
-                                {streaming && <StreamingDot />}
-                            </div>
+                            <Bubble variant="secondary">
+                                <BubbleContent>
+                                    <div className="flex items-start gap-1">
+                                        <AssistantMessage
+                                            content={parsed.postscript}
+                                        />
+                                        {streaming && <StreamingDot />}
+                                    </div>
+                                </BubbleContent>
+                            </Bubble>
                         )}
-
-                        {streaming && toolStatusLabel && (
-                            <div className="flex items-center gap-1.5 text-xs text-ink-muted">
-                                <Loader
-                                    size={12}
-                                    className="animate-spin text-accent"
-                                />
-                                <span>{toolStatusLabel}</span>
-                            </div>
-                        )}
-                    </div>
+                    </BubbleGroup>
                 ) : streaming ? (
-                    <div className="flex items-center gap-1.5">
-                        <Loader
-                            size={14}
-                            className="animate-spin text-accent"
-                        />
-                        <span className="text-xs text-ink-muted">
-                            {toolStatusLabel ?? thinkingLabel}
-                        </span>
-                    </div>
+                    <Bubble variant="secondary">
+                        <BubbleContent>
+                            <Marker>
+                                <MarkerIcon>
+                                    <Loader className="animate-spin text-accent" />
+                                </MarkerIcon>
+                                <MarkerContent>
+                                    {toolStatusLabel ?? thinkingLabel}
+                                </MarkerContent>
+                            </Marker>
+                        </BubbleContent>
+                    </Bubble>
                 ) : null}
-            </div>
-        </div>
+                {hasAnyRendered && streaming && toolStatusLabel && (
+                    <MessageFooter>
+                        <Marker>
+                            <MarkerIcon>
+                                <Loader className="animate-spin text-accent" />
+                            </MarkerIcon>
+                            <MarkerContent>{toolStatusLabel}</MarkerContent>
+                        </Marker>
+                    </MessageFooter>
+                )}
+            </MessageContent>
+        </Message>
     );
 }
 
 function CoachAvatar() {
     return (
-        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-neutral-bg text-ink">
+        <MessageAvatar>
             <Bot className="size-3.5" />
-        </div>
+        </MessageAvatar>
     );
 }
 

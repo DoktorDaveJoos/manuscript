@@ -16,6 +16,9 @@
     "input.placeholder": "Message Coach\u2026",
     "input.send": "Send",
 
+    "message.sender_you": "You",
+    "message.sender_coach": "Plot Coach",
+
     "status.streaming": "Coach is thinking\u2026",
     "status.error.retry": "Retry",
     "status.error.body": "Something went wrong. Try again.",

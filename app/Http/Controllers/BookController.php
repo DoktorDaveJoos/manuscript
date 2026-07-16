@@ -266,7 +266,8 @@ class BookController extends Controller
     public function confirmImport(ConfirmImportRequest $request, Book $book, NormalizationService $normalizer): RedirectResponse
     {
         DB::transaction(function () use ($request, $book, $normalizer) {
-            $storylineOrder = 0;
+            $storylineOrder = (int) (($book->storylines()->max('sort_order') ?? -1) + 1);
+            $chapterOrder = (int) (($book->chapters()->max('reader_order') ?? -1) + 1);
 
             foreach ($request->validated('storylines') as $storylineData) {
                 $storyline = $book->storylines()->create([
@@ -274,8 +275,6 @@ class BookController extends Controller
                     'type' => $storylineData['type'],
                     'sort_order' => $storylineOrder++,
                 ]);
-
-                $chapterOrder = 0;
 
                 foreach ($storylineData['chapters'] as $chapterData) {
                     if (! $chapterData['included']) {

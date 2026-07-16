@@ -11,7 +11,7 @@ import { Spinner } from '@/components/ui/spinner';
 import Textarea from '@/components/ui/Textarea';
 import { useAiFeatures } from '@/hooks/useAiFeatures';
 import BookSettingsLayout from '@/layouts/BookSettingsLayout';
-import { jsonFetchHeaders } from '@/lib/utils';
+import { cn, jsonFetchHeaders } from '@/lib/utils';
 
 type BookData = {
     id: number;
@@ -33,10 +33,14 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
     const [saving, setSaving] = useState(false);
     const [regenerating, setRegenerating] = useState(false);
     const [message, setMessage] = useState('');
+    const [messageKind, setMessageKind] = useState<'success' | 'error'>(
+        'success',
+    );
 
     const handleSave = useCallback(() => {
         setSaving(true);
         setMessage('');
+        setMessageKind('success');
 
         fetch(updateWritingStyle.url(book.id), {
             method: 'PUT',
@@ -50,18 +54,21 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
                         json?.errors?.writing_style_text?.[0] ?? json?.message;
                     throw new Error(validationMessage || '');
                 }
+                setMessageKind('success');
                 setMessage(json.message);
                 setTimeout(() => setMessage(''), 3000);
             })
-            .catch((e: Error) =>
-                setMessage(e.message || t('writingStyle.saveFailed')),
-            )
+            .catch((e: Error) => {
+                setMessageKind('error');
+                setMessage(e.message || t('writingStyle.saveFailed'));
+            })
             .finally(() => setSaving(false));
     }, [book.id, text, t]);
 
     const handleRegenerate = useCallback(() => {
         setRegenerating(true);
         setMessage('');
+        setMessageKind('success');
 
         fetch(regenerateWritingStyle.url(book.id), {
             method: 'POST',
@@ -73,10 +80,14 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
                     throw new Error(json.message ?? 'Regenerate failed');
                 }
                 setText(json.writing_style_text);
+                setMessageKind('success');
                 setMessage(json.message);
                 setTimeout(() => setMessage(''), 3000);
             })
-            .catch(() => setMessage(t('writingStyle.regenerateFailed')))
+            .catch(() => {
+                setMessageKind('error');
+                setMessage(t('writingStyle.regenerateFailed'));
+            })
             .finally(() => setRegenerating(false));
     }, [book.id, t]);
 
@@ -99,9 +110,9 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
                                 disabled={regenerating}
                             >
                                 {regenerating ? (
-                                    <Spinner className="size-[14px]" />
+                                    <Spinner className="size-3.5" />
                                 ) : (
-                                    <Sparkles size={14} />
+                                    <Sparkles className="size-3.5" />
                                 )}
                                 {regenerating
                                     ? t('writingStyle.regenerating')
@@ -122,7 +133,16 @@ export default function WritingStyle({ book, writing_style_display }: Props) {
                         disabled={regenerating}
                     />
                     {(message || saving) && (
-                        <span className="mt-2 block text-[12px] font-medium text-status-final">
+                        <span
+                            data-testid="writing-style-status"
+                            data-status={messageKind}
+                            className={cn(
+                                'mt-2 block text-xs font-medium',
+                                messageKind === 'error'
+                                    ? 'text-delete'
+                                    : 'text-status-final',
+                            )}
+                        >
                             {saving ? t('writingStyle.saving') : message}
                         </span>
                     )}

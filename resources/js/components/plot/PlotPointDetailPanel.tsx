@@ -4,12 +4,26 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import Button from '@/components/ui/Button';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/Command';
 import Drawer from '@/components/ui/Drawer';
 import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import MarkdownTextarea from '@/components/ui/MarkdownTextarea';
 import PanelHeader from '@/components/ui/PanelHeader';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/Popover';
 import SectionLabel from '@/components/ui/SectionLabel';
+import Select from '@/components/ui/Select';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import {
     ROLE_OPTIONS,
@@ -48,10 +62,12 @@ export default function PlotPointDetailPanel({
     const [description, setDescription] = useState(plotPoint.description ?? '');
     const [selectorOpen, setSelectorOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const selectorRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
-    const linkedCharacters = plotPoint.characters ?? [];
+    const linkedCharacters = useMemo(
+        () => plotPoint.characters ?? [],
+        [plotPoint.characters],
+    );
 
     useEffect(() => {
         titleRef.current?.focus();
@@ -167,25 +183,6 @@ export default function PlotPointDetailPanel({
         return filtered.filter((c) => c.name.toLowerCase().includes(query));
     }, [characters, linkedCharacters, searchQuery]);
 
-    // Close selector on outside click
-    useEffect(() => {
-        if (!selectorOpen) return;
-
-        function handleClickOutside(e: MouseEvent) {
-            if (
-                selectorRef.current &&
-                !selectorRef.current.contains(e.target as Node)
-            ) {
-                setSelectorOpen(false);
-                setSearchQuery('');
-            }
-        }
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () =>
-            document.removeEventListener('mousedown', handleClickOutside);
-    }, [selectorOpen]);
-
     // Focus search input when selector opens
     useEffect(() => {
         if (selectorOpen) {
@@ -194,7 +191,11 @@ export default function PlotPointDetailPanel({
     }, [selectorOpen]);
 
     return (
-        <Drawer onClose={onClose} className="w-[480px]">
+        <Drawer
+            onClose={onClose}
+            title={t('plotPoint.header')}
+            className="w-[480px]"
+        >
             <PanelHeader title={t('plotPoint.header')} onClose={onClose} />
 
             <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-5">
@@ -261,59 +262,60 @@ export default function PlotPointDetailPanel({
                 <div className="flex flex-col gap-2.5">
                     <div className="flex items-center justify-between">
                         <SectionLabel>{t('plotPoint.characters')}</SectionLabel>
-                        <div ref={selectorRef} className="relative">
-                            <button
-                                type="button"
-                                onClick={() => setSelectorOpen(!selectorOpen)}
-                                className="flex items-center justify-center text-ink-muted transition-colors hover:text-ink-soft"
-                                aria-label={t('detailPanel.addCharacter')}
-                            >
-                                <Plus size={14} />
-                            </button>
-
-                            {selectorOpen && (
-                                <div className="absolute top-full right-0 z-50 mt-1 w-[220px] rounded-lg bg-surface-card shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]">
-                                    <div className="border-b border-border p-2">
-                                        <input
-                                            ref={searchInputRef}
-                                            type="text"
-                                            value={searchQuery}
-                                            onChange={(e) =>
-                                                setSearchQuery(e.target.value)
-                                            }
-                                            placeholder={t(
-                                                'plotPoint.searchCharacters',
+                        <Popover
+                            open={selectorOpen}
+                            onOpenChange={(open) => {
+                                setSelectorOpen(open);
+                                if (!open) {
+                                    setSearchQuery('');
+                                }
+                            }}
+                        >
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-6 text-ink-muted hover:text-ink-soft"
+                                    aria-label={t('detailPanel.addCharacter')}
+                                >
+                                    <Plus size={14} />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-[220px]">
+                                <Command shouldFilter={false}>
+                                    <CommandInput
+                                        ref={searchInputRef}
+                                        value={searchQuery}
+                                        onValueChange={setSearchQuery}
+                                        placeholder={t(
+                                            'plotPoint.searchCharacters',
+                                        )}
+                                    />
+                                    <CommandList className="max-h-[180px]">
+                                        <CommandEmpty>
+                                            {t(
+                                                'plotPoint.noAvailableCharacters',
                                             )}
-                                            className="w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-[12px] text-ink outline-none placeholder:text-ink-muted focus:border-accent"
-                                        />
-                                    </div>
-                                    <div className="max-h-[180px] overflow-y-auto p-1">
-                                        {availableCharacters.length > 0 ? (
-                                            availableCharacters.map((char) => (
-                                                <button
+                                        </CommandEmpty>
+                                        <CommandGroup>
+                                            {availableCharacters.map((char) => (
+                                                <CommandItem
                                                     key={char.id}
-                                                    type="button"
-                                                    onClick={() =>
+                                                    value={char.name}
+                                                    onSelect={() =>
                                                         handleAddCharacter(
                                                             char.id,
                                                         )
                                                     }
-                                                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[12px] font-medium text-ink transition-colors hover:bg-neutral-bg"
                                                 >
                                                     {char.name}
-                                                </button>
-                                            ))
-                                        ) : (
-                                            <div className="px-2.5 py-2 text-[12px] text-ink-muted">
-                                                {t(
-                                                    'plotPoint.noAvailableCharacters',
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
 
                     {linkedCharacters.length > 0 ? (
@@ -324,7 +326,8 @@ export default function PlotPointDetailPanel({
                                     className="group flex items-center gap-1 rounded-full bg-neutral-bg px-2.5 py-1 text-[11px] font-medium text-ink-soft"
                                 >
                                     {char.name}
-                                    <select
+                                    <Select
+                                        variant="inline"
                                         value={char.pivot.role}
                                         onChange={(e) =>
                                             handleRoleChange(
@@ -333,7 +336,7 @@ export default function PlotPointDetailPanel({
                                                     .value as CharacterPlotPointRole,
                                             )
                                         }
-                                        className="ml-0.5 cursor-pointer appearance-none border-none bg-transparent p-0 text-[11px] text-ink-muted underline decoration-dotted outline-none"
+                                        className="ml-0.5 cursor-pointer text-ink-muted"
                                     >
                                         {ROLE_OPTIONS.map((role) => (
                                             <option key={role} value={role}>
@@ -342,7 +345,7 @@ export default function PlotPointDetailPanel({
                                                 )}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Select>
                                     <button
                                         type="button"
                                         onClick={() =>

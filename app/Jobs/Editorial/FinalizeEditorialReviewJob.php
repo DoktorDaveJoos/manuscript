@@ -17,6 +17,7 @@ use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\Attributes\FailOnTimeout;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
@@ -27,6 +28,7 @@ use Throwable;
  * synthesizes the eight editorial sections and the executive summary. The work
  * is bounded (eight sections + one summary), so a single job is sufficient.
  */
+#[FailOnTimeout]
 class FinalizeEditorialReviewJob implements ShouldQueue
 {
     use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels, UpdatesEditorialReview;
@@ -49,7 +51,11 @@ class FinalizeEditorialReviewJob implements ShouldQueue
         $setting = AiSetting::activeProvider();
 
         if (! $setting || ! $setting->isConfigured()) {
-            $this->markReviewFailed($this->review, 'No AI provider configured.', EditorialReviewErrorCode::NoProvider);
+            $this->markReviewFailed(
+                $this->review,
+                __('The editorial review could not continue because no configured AI provider is selected.'),
+                EditorialReviewErrorCode::NoProvider,
+            );
 
             return;
         }
@@ -71,7 +77,11 @@ class FinalizeEditorialReviewJob implements ShouldQueue
             $this->generateExecutiveSummary();
         } catch (Throwable $e) {
             report($e);
-            $this->markReviewFailed($this->review, $e->getMessage(), EditorialReviewErrorCode::fromThrowable($e));
+            $this->markReviewFailedFromThrowable(
+                $this->review,
+                $e,
+                $this->safeSynthesisFailureMessage(),
+            );
         }
     }
 
@@ -79,12 +89,18 @@ class FinalizeEditorialReviewJob implements ShouldQueue
     {
         if ($exception) {
             report($exception);
+            $this->markReviewFailedFromThrowable(
+                $this->review,
+                $exception,
+                $this->safeSynthesisFailureMessage(),
+            );
+
+            return;
         }
 
         $this->markReviewFailed(
             $this->review,
-            $exception?->getMessage() ?? 'Unknown error',
-            $exception ? EditorialReviewErrorCode::fromThrowable($exception) : EditorialReviewErrorCode::Unknown,
+            $this->safeSynthesisFailureMessage(),
         );
     }
 
@@ -121,14 +137,16 @@ class FinalizeEditorialReviewJob implements ShouldQueue
             $response = $agent->prompt('Synthesize the editorial review for this section.', timeout: 180);
             $result = $response->toArray();
 
-            $section = $this->review->sections()->create([
-                'type' => $sectionType,
-                'score' => $result['score'] ?? null,
-                'summary' => $result['summary'] ?? null,
-                'strengths' => $result['strengths'] ?? [],
-                'findings' => $result['findings'] ?? [],
-                'recommendations' => $result['recommendations'] ?? [],
-            ]);
+            $section = $this->review->sections()->updateOrCreate(
+                ['type' => $sectionType],
+                [
+                    'score' => $result['score'] ?? null,
+                    'summary' => $result['summary'] ?? null,
+                    'strengths' => $result['strengths'] ?? [],
+                    'findings' => $result['findings'] ?? [],
+                    'recommendations' => $result['recommendations'] ?? [],
+                ],
+            );
 
             $section->ensureFindingKeys();
         }
@@ -139,6 +157,8 @@ class FinalizeEditorialReviewJob implements ShouldQueue
      */
     private function generateExecutiveSummary(): void
     {
+        $this->updateReviewProgress($this->review, 'summarizing');
+
         $sections = $this->review->sections()->get();
 
         $summariesString = $sections->map(function ($section) {
@@ -311,5 +331,18 @@ class FinalizeEditorialReviewJob implements ShouldQueue
         if ($summaries) {
             $parts[] = "Chapter summaries:\n{$summaries}";
         }
+    }
+
+    private function safeSynthesisFailureMessage(): string
+    {
+        $section = $this->review->progress['current_section'] ?? null;
+
+        if (is_string($section) && $section !== '') {
+            return __('The review stopped while creating the :section section. Your completed work was saved.', [
+                'section' => str_replace('_', ' ', $section),
+            ]);
+        }
+
+        return __('The review stopped while creating the executive summary. Your completed work was saved.');
     }
 }

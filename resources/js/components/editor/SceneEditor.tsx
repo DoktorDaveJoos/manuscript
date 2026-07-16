@@ -35,6 +35,7 @@ export default function SceneEditor({
     styleAnalysis,
     locked = false,
     currentVersionId = null,
+    onContentConflict,
 }: {
     scene: Scene;
     bookId: number;
@@ -59,6 +60,8 @@ export default function SceneEditor({
     locked?: boolean;
     /** Chapter version this editor's content belongs to — saves carry it so the server can refuse stale writes. */
     currentVersionId?: number | null;
+    /** Refetch authoritative chapter data when the server rejects a stale scene save. */
+    onContentConflict?: () => void;
 }) {
     // Stable refs for cross-scene navigation callbacks (avoids editor re-creation)
     const onExitUpRef = useRef<(() => void) | null>(onExitUp ?? null);
@@ -70,6 +73,8 @@ export default function SceneEditor({
 
     // Content auto-save
     const contentAbortRef = useRef<AbortController | null>(null);
+    const saveInFlightRef = useRef(false);
+    const saveCompletionRef = useRef<Promise<void>>(Promise.resolve());
     const pendingContentRef = useRef<string | null>(null);
     const retryCountRef = useRef(0);
     const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -81,6 +86,11 @@ export default function SceneEditor({
     // Read at flush time so retries carry the freshest version id.
     const currentVersionIdRef = useRef(currentVersionId);
     currentVersionIdRef.current = currentVersionId;
+    const contentVersionRef = useRef(scene.content_version ?? 0);
+
+    useEffect(() => {
+        contentVersionRef.current = scene.content_version ?? 0;
+    }, [scene.id, scene.content_version]);
 
     const dropPendingSave = useCallback(() => {
         pendingContentRef.current = null;
@@ -108,9 +118,24 @@ export default function SceneEditor({
         const content = pendingContentRef.current;
         if (content === null) return;
 
-        contentAbortRef.current?.abort();
+        if (saveInFlightRef.current) {
+            await saveCompletionRef.current;
+            if (mountedRef.current && pendingContentRef.current !== null) {
+                await flushSelfRef.current();
+            }
+
+            return;
+        }
+
+        let resolveSaveCompletion: () => void = () => {};
+        saveCompletionRef.current = new Promise<void>((resolve) => {
+            resolveSaveCompletion = resolve;
+        });
+
         const controller = new AbortController();
         contentAbortRef.current = controller;
+        saveInFlightRef.current = true;
+        let shouldFlushNewestContent = false;
 
         onSaveStatusChange?.('saving');
 
@@ -128,12 +153,26 @@ export default function SceneEditor({
                         content,
                         expected_current_version_id:
                             currentVersionIdRef.current,
+                        expected_content_version: contentVersionRef.current,
                     }),
                     signal: controller.signal,
                 },
             );
 
             if (response.status === 409) {
+                const payload = (await response.json()) as {
+                    conflict?: string;
+                };
+                if (payload.conflict === 'content_version') {
+                    // Retrying the buffered full-scene HTML against the new
+                    // version would resurrect stale text over a book-wide
+                    // replacement (or any other authoritative server edit).
+                    dropPendingSave();
+                    onSaveStatusChange?.('saved');
+                    onContentConflict?.();
+                    return;
+                }
+
                 // The chapter moved to a new version while this save was
                 // buffered — the content is superseded, retrying would only
                 // overwrite newer server state. The version-change broadcast
@@ -144,10 +183,19 @@ export default function SceneEditor({
             }
 
             if (response.ok) {
+                const payload = (await response.json()) as {
+                    content_version?: number;
+                };
+                if (typeof payload.content_version === 'number') {
+                    contentVersionRef.current = payload.content_version;
+                }
+
                 // Only clear if content hasn't changed during the in-flight save
                 if (pendingContentRef.current === content) {
                     pendingContentRef.current = null;
                     onSaveStatusChange?.('saved');
+                } else {
+                    shouldFlushNewestContent = true;
                 }
                 retryCountRef.current = 0;
                 if (retryTimerRef.current) {
@@ -160,6 +208,20 @@ export default function SceneEditor({
         } catch (e) {
             if ((e as Error).name !== 'AbortError') {
                 scheduleRetry();
+            }
+        } finally {
+            if (contentAbortRef.current === controller) {
+                contentAbortRef.current = null;
+            }
+            saveInFlightRef.current = false;
+            resolveSaveCompletion();
+
+            if (
+                shouldFlushNewestContent &&
+                mountedRef.current &&
+                pendingContentRef.current !== null
+            ) {
+                queueMicrotask(() => flushSelfRef.current());
             }
         }
 
@@ -178,7 +240,14 @@ export default function SceneEditor({
                 onSaveStatusChange?.('error');
             }
         }
-    }, [bookId, chapterId, scene.id, onSaveStatusChange, dropPendingSave]);
+    }, [
+        bookId,
+        chapterId,
+        scene.id,
+        onSaveStatusChange,
+        onContentConflict,
+        dropPendingSave,
+    ]);
 
     // Expose flush for parent + keep flushSelfRef pointed at the latest closure.
     const flushRef = useRef({ flushContentSave });
@@ -209,6 +278,7 @@ export default function SceneEditor({
                     url: saveUrlRef.current,
                     content,
                     expectedCurrentVersionId: currentVersionIdRef.current,
+                    expectedContentVersion: contentVersionRef.current,
                 };
             };
         }
@@ -301,18 +371,37 @@ export default function SceneEditor({
 
     useEffect(() => {
         if (!editor) return;
+        const activeMatchIndex =
+            searchHighlight?.activeSceneId === scene.id
+                ? (searchHighlight.activeMatchIndex ?? -1)
+                : -1;
+
         updateSearchHighlight(editor, {
             query: searchHighlight?.query ?? '',
             caseSensitive: searchHighlight?.caseSensitive ?? false,
             wholeWord: searchHighlight?.wholeWord ?? false,
             regex: searchHighlight?.regex ?? false,
+            activeMatchIndex,
         });
+
+        if (activeMatchIndex < 0) return;
+
+        const frame = requestAnimationFrame(() => {
+            containerRef.current
+                ?.querySelector<HTMLElement>('.search-highlight-active')
+                ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        });
+
+        return () => cancelAnimationFrame(frame);
     }, [
         editor,
+        scene.id,
         searchHighlight?.query,
         searchHighlight?.caseSensitive,
         searchHighlight?.wholeWord,
         searchHighlight?.regex,
+        searchHighlight?.activeSceneId,
+        searchHighlight?.activeMatchIndex,
     ]);
 
     return (
@@ -320,7 +409,7 @@ export default function SceneEditor({
             {/* Scene divider (except first) */}
             {!isFirst && scenesVisible && (
                 <div className="flex items-center justify-center py-2 select-none">
-                    <span className="text-[9px] tracking-[0.6em] text-ink-faint/40">
+                    <span className="text-[11px] tracking-[0.6em] text-ink-faint/40">
                         •&nbsp;•&nbsp;•
                     </span>
                 </div>

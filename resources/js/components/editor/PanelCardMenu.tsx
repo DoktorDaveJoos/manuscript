@@ -1,9 +1,11 @@
 import { router } from '@inertiajs/react';
 import { Check, Ellipsis, ExternalLink, Link2Off, UserCog } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuSub,
     DropdownMenuSubContent,
@@ -41,60 +43,62 @@ export default function PanelCardMenu({
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <span
-                    role="button"
-                    tabIndex={0}
+                <Button
+                    variant="ghost"
+                    size="icon"
                     aria-label={t('textActions.moreActions')}
                     onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.stopPropagation();
-                        }
-                    }}
-                    className="shrink-0 rounded-md p-1 text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink"
+                    className="size-6 shrink-0 text-ink-faint"
                 >
                     <Ellipsis className="size-3.5" />
-                </span>
+                </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" sideOffset={4}>
-                <DropdownMenuItem onClick={() => router.visit(openUrl)}>
-                    <ExternalLink className="size-3.5" />
-                    {openLabel}
-                </DropdownMenuItem>
-                {showRoleSub && (
-                    <DropdownMenuSub>
-                        <DropdownMenuSubTrigger>
-                            <span className="flex items-center gap-2">
-                                <UserCog className="size-3.5" />
-                                {setRoleLabel}
-                            </span>
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent>
-                            {ROLE_ORDER.map((role) => (
-                                <DropdownMenuItem
-                                    key={role}
-                                    onClick={() => onChangeRole?.(role)}
-                                >
-                                    <Check
-                                        className={
-                                            'size-3.5 ' +
-                                            (currentRole === role
-                                                ? 'opacity-100'
-                                                : 'opacity-0')
-                                        }
-                                    />
-                                    {roleLabels?.[role]}
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                )}
-                {onDisconnect && (
-                    <DropdownMenuItem variant="danger" onClick={onDisconnect}>
-                        <Link2Off className="size-3.5" />
-                        {disconnectLabel}
+                <DropdownMenuGroup>
+                    <DropdownMenuItem onClick={() => router.visit(openUrl)}>
+                        <ExternalLink className="size-3.5" />
+                        {openLabel}
                     </DropdownMenuItem>
-                )}
+                    {showRoleSub && (
+                        <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                                <span className="flex items-center gap-2">
+                                    <UserCog className="size-3.5" />
+                                    {setRoleLabel}
+                                </span>
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                                <DropdownMenuGroup>
+                                    {ROLE_ORDER.map((role) => (
+                                        <DropdownMenuItem
+                                            key={role}
+                                            onClick={() => onChangeRole?.(role)}
+                                        >
+                                            <Check
+                                                className={
+                                                    'size-3.5 ' +
+                                                    (currentRole === role
+                                                        ? 'opacity-100'
+                                                        : 'opacity-0')
+                                                }
+                                            />
+                                            {roleLabels?.[role]}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuGroup>
+                            </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                    )}
+                    {onDisconnect && (
+                        <DropdownMenuItem
+                            variant="danger"
+                            onClick={onDisconnect}
+                        >
+                            <Link2Off className="size-3.5" />
+                            {disconnectLabel}
+                        </DropdownMenuItem>
+                    )}
+                </DropdownMenuGroup>
             </DropdownMenuContent>
         </DropdownMenu>
     );

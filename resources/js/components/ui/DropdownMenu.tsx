@@ -154,7 +154,7 @@ function DropdownMenuSubTrigger({
             {...props}
         >
             {children as ReactNode}
-            <ChevronRight size={10} strokeWidth={2.5} className="text-ink-faint" />
+            <ChevronRight size={12} strokeWidth={2.5} className="text-ink-faint" />
         </DropdownMenuPrimitive.SubTrigger>
     );
 }

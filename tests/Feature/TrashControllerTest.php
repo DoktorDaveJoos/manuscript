@@ -191,6 +191,27 @@ test('restore storyline cascades to chapters and scenes', function () {
     expect(Scene::find($scene->id))->not->toBeNull();
 });
 
+test('restore storyline preserves relative chapter reader order when appending', function () {
+    $book = Book::factory()->create();
+    $activeStoryline = Storyline::factory()->for($book)->create();
+    Chapter::factory()->for($book)->for($activeStoryline)->create(['reader_order' => 4]);
+    $storyline = Storyline::factory()->for($book)->create();
+    $createdFirst = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 9]);
+    $createdSecond = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 2]);
+
+    $createdFirst->delete();
+    $createdSecond->delete();
+    $storyline->delete();
+
+    $this->postJson(route('books.trash.restore', $book), [
+        'type' => 'storyline',
+        'id' => $storyline->id,
+    ])->assertSuccessful();
+
+    expect($createdSecond->fresh()->reader_order)->toBe(5)
+        ->and($createdFirst->fresh()->reader_order)->toBe(6);
+});
+
 test('restore chapter restores with scenes and appends reader_order', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\AppSetting;
 use App\Services\BackupService;
 use App\Services\StaleUpdateGuard;
 use Illuminate\Support\Facades\File;
@@ -52,7 +53,9 @@ class NativeAppServiceProvider implements ProvidesPhpIni
         // Cheap and no-op when nothing is pending; never throws.
         app(StaleUpdateGuard::class)->reconcile();
 
-        AutoUpdater::checkForUpdates();
+        if (config('nativephp.updater.enabled') && AppSetting::automaticUpdatesEnabled()) {
+            AutoUpdater::checkForUpdates();
+        }
     }
 
     /**

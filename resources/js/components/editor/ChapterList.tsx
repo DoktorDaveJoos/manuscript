@@ -1,6 +1,7 @@
 import {
     DndContext,
     DragOverlay,
+    KeyboardSensor,
     PointerSensor,
     closestCenter,
     useSensor,
@@ -13,6 +14,7 @@ import type {
 } from '@dnd-kit/core';
 import {
     SortableContext,
+    sortableKeyboardCoordinates,
     useSortable,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
@@ -28,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import {
     reorder as reorderChapters,
     updateTitle,
@@ -41,11 +44,13 @@ import {
     reorder as reorderStorylines,
     update as updateStoryline,
 } from '@/actions/App/Http/Controllers/StorylineController';
+import Button from '@/components/ui/Button';
 import { Collapsible, CollapsibleTrigger } from '@/components/ui/Collapsible';
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
@@ -54,6 +59,7 @@ import { typedClosestCenter } from '@/lib/dnd';
 import {
     addSceneToChapter,
     broadcastChapterDataChanged,
+    ensureSuccessfulResponse,
     formatWordCount,
     jsonFetchHeaders,
     saveAppSetting,
@@ -82,6 +88,17 @@ function loadCollapsedStorylineIds(): Set<number> {
         // ignore corrupt data
     }
     return new Set();
+}
+
+function orderSignature(storylines: Storyline[]): string {
+    return storylines
+        .flatMap((storyline) => [
+            `storyline:${storyline.id}`,
+            ...(storyline.chapters ?? []).map(
+                (chapter) => `chapter:${chapter.id}:${storyline.id}`,
+            ),
+        ])
+        .join('|');
 }
 
 let savedCollapsedStorylineIds = loadCollapsedStorylineIds();
@@ -160,12 +177,7 @@ function SortableChapterItem({
     };
 
     return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            className="relative"
-        >
+        <div ref={setNodeRef} style={style} className="relative">
             {isOver && (
                 <div className="absolute -top-px right-2.5 left-2.5 h-0.5 rounded bg-drop" />
             )}
@@ -183,6 +195,7 @@ function SortableChapterItem({
                 onChapterNavigate={onChapterNavigate}
                 onOpenInNewPane={onOpenInNewPane}
                 onContextMenu={onContextMenu}
+                dragAttributes={attributes}
                 dragListeners={listeners}
                 isDragging={isDragging}
             />
@@ -209,6 +222,7 @@ function SortableStorylineGroup({
     onToggleCollapse?: () => void;
     chapterCount: number;
 }) {
+    const { t } = useTranslation('editor');
     const {
         attributes,
         listeners,
@@ -235,7 +249,6 @@ function SortableStorylineGroup({
             <div
                 ref={setNodeRef}
                 style={style}
-                {...attributes}
                 data-storyline-section={storyline.id}
                 className={`flex flex-col gap-px ${isDragging ? 'opacity-50' : ''}`}
             >
@@ -245,12 +258,17 @@ function SortableStorylineGroup({
                         className={`flex items-center justify-between gap-2 px-2.5 py-[7px] ${isFirst ? '' : 'mt-1'}`}
                     >
                         <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                            <span
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label={t('drag.storyline')}
+                                {...attributes}
                                 {...listeners}
-                                className="flex shrink-0 cursor-grab items-center text-ink-faint active:cursor-grabbing"
+                                className="size-6 shrink-0 cursor-grab bg-transparent p-0 text-ink-faint hover:bg-transparent active:cursor-grabbing"
                             >
                                 <GripVertical size={12} />
-                            </span>
+                            </Button>
                             <span
                                 className={`size-1.5 shrink-0 rounded-full ${storyline.color ? '' : 'bg-ink-faint'}`}
                                 style={
@@ -324,12 +342,12 @@ function SortableSceneItem({
         <div
             ref={setNodeRef}
             style={style}
-            {...attributes}
             className={isDragging ? 'opacity-50' : ''}
         >
             <SceneListItem
                 scene={scene}
                 onClick={onClick}
+                dragAttributes={attributes}
                 dragListeners={listeners}
                 onContextMenu={onContextMenu}
                 showWordCount={showWordCount}
@@ -356,10 +374,14 @@ function SceneList({
     showWordCount?: boolean;
     compactWordCount?: boolean;
 }) {
+    const { t } = useTranslation('editor');
     const [scenes, setScenes] = useState(initialScenes);
     const [activeScene, setActiveScene] = useState<Scene | null>(null);
     const sensors = useSensors(
         useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
     );
 
     useEffect(() => {
@@ -388,24 +410,37 @@ function SceneList({
             );
             if (oldIndex === -1 || newIndex === -1) return;
 
-            const reordered = [...scenes];
+            const previousScenes = scenes;
+            const reordered = [...previousScenes];
             const [moved] = reordered.splice(oldIndex, 1);
             reordered.splice(newIndex, 0, moved);
             setScenes(reordered);
 
-            await fetch(
-                reorderScenes.url({ book: bookId, chapter: chapterId }),
-                {
-                    method: 'POST',
-                    headers: jsonFetchHeaders(),
-                    body: JSON.stringify({ order: reordered.map((s) => s.id) }),
-                },
-            );
+            try {
+                const response = await fetch(
+                    reorderScenes.url({ book: bookId, chapter: chapterId }),
+                    {
+                        method: 'POST',
+                        headers: jsonFetchHeaders(),
+                        body: JSON.stringify({
+                            order: reordered.map((s) => s.id),
+                        }),
+                    },
+                );
+                await ensureSuccessfulResponse(response, t('request.failed'));
 
-            broadcastChapterDataChanged(chapterId);
-            onReorder?.(reordered.map((s) => s.id));
+                broadcastChapterDataChanged(chapterId);
+                onReorder?.(reordered.map((s) => s.id));
+            } catch (error) {
+                setScenes(previousScenes);
+                toast.error(
+                    error instanceof Error
+                        ? error.message
+                        : t('request.failed'),
+                );
+            }
         },
-        [scenes, bookId, chapterId, onReorder],
+        [scenes, bookId, chapterId, onReorder, t],
     );
 
     return (
@@ -446,7 +481,7 @@ function SceneList({
             </SortableContext>
             <DragOverlay>
                 {activeScene && (
-                    <div className="flex items-center gap-1.5 rounded-md bg-surface-card px-2.5 py-1 text-[12px] opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
+                    <div className="flex items-center gap-1.5 rounded-md bg-surface-card px-2.5 py-1 text-xs opacity-95 shadow-lg">
                         <span className="flex shrink-0 items-center text-ink-faint">
                             <svg
                                 width="8"
@@ -534,9 +569,27 @@ export default function ChapterList({
         (key: keyof typeof displaySettings) => {
             const value = !displaySettings[key];
             setDisplaySettings({ ...displaySettings, [key]: value });
-            saveAppSetting(key, value);
+            void (async () => {
+                try {
+                    const response = await saveAppSetting(key, value);
+                    await ensureSuccessfulResponse(
+                        response,
+                        t('request.failed'),
+                    );
+                } catch (error) {
+                    setDisplaySettings((current) => ({
+                        ...current,
+                        [key]: !value,
+                    }));
+                    toast.error(
+                        error instanceof Error
+                            ? error.message
+                            : t('request.failed'),
+                    );
+                }
+            })();
         },
-        [displaySettings],
+        [displaySettings, t],
     );
     const [storylines, setStorylines] = useState(initialStorylines);
     const [activeItem, setActiveItem] = useState<
@@ -558,13 +611,18 @@ export default function ChapterList({
         | { type: 'scene'; scene: Scene; chapterId: number }
         | null
     >(null);
-    const storylinesRef = useRef(initialStorylines);
-    storylinesRef.current = initialStorylines;
+    const storylinesRef = useRef(storylines);
+    const dragSnapshotRef = useRef<Storyline[] | null>(null);
     const prevActiveChapterIdRef = useRef(activeChapterId);
 
     useEffect(() => {
         setStorylines(initialStorylines);
+        storylinesRef.current = initialStorylines;
     }, [initialStorylines]);
+
+    useEffect(() => {
+        storylinesRef.current = storylines;
+    }, [storylines]);
 
     useEffect(() => {
         savedCollapsedStorylineIds = new Set(collapsedStorylineIds);
@@ -631,6 +689,9 @@ export default function ChapterList({
 
     const sensors = useSensors(
         useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
     );
 
     let chapterIndex = 1;
@@ -641,6 +702,7 @@ export default function ChapterList({
     );
 
     const handleDragStart = useCallback((event: DragStartEvent) => {
+        dragSnapshotRef.current = storylinesRef.current;
         const data = event.active.data.current;
         if (data?.type === 'chapter') {
             setActiveItem({ type: 'chapter', chapter: data.chapter });
@@ -705,6 +767,8 @@ export default function ChapterList({
 
             const { active, over } = event;
             const activeData = active.data.current;
+            const snapshot = dragSnapshotRef.current ?? storylinesRef.current;
+            dragSnapshotRef.current = null;
 
             if (activeData?.type === 'storyline') {
                 if (!over || active.id === over.id) return;
@@ -724,19 +788,41 @@ export default function ChapterList({
                 reordered.splice(newIndex, 0, moved);
                 setStorylines(reordered);
 
-                await fetch(reorderStorylines.url(bookId), {
-                    method: 'POST',
-                    headers: jsonFetchHeaders(),
-                    body: JSON.stringify({ order: reordered.map((s) => s.id) }),
-                });
-                router.reload({ only: ['book'] });
+                try {
+                    const response = await fetch(
+                        reorderStorylines.url(bookId),
+                        {
+                            method: 'POST',
+                            headers: jsonFetchHeaders(),
+                            body: JSON.stringify({
+                                order: reordered.map((s) => s.id),
+                            }),
+                        },
+                    );
+                    await ensureSuccessfulResponse(
+                        response,
+                        t('request.failed'),
+                    );
+                    storylinesRef.current = reordered;
+                    router.reload({ only: ['book', 'sidebar_storylines'] });
+                } catch (error) {
+                    setStorylines(snapshot);
+                    storylinesRef.current = snapshot;
+                    toast.error(
+                        error instanceof Error
+                            ? error.message
+                            : t('request.failed'),
+                    );
+                }
                 return;
             }
 
             if (activeData?.type === 'chapter') {
                 // handleDragOver already did the optimistic reorder in state.
                 // Skip if nothing changed (no drag-over occurred).
-                if (storylines === storylinesRef.current) return;
+                if (orderSignature(storylines) === orderSignature(snapshot)) {
+                    return;
+                }
 
                 const order = storylines.flatMap((s) =>
                     (s.chapters ?? []).map((ch) => ({
@@ -745,20 +831,40 @@ export default function ChapterList({
                     })),
                 );
 
-                await fetch(reorderChapters.url(bookId), {
-                    method: 'POST',
-                    headers: jsonFetchHeaders(),
-                    body: JSON.stringify({ order }),
-                });
-                router.reload({ only: ['book'] });
+                try {
+                    const response = await fetch(reorderChapters.url(bookId), {
+                        method: 'POST',
+                        headers: jsonFetchHeaders(),
+                        body: JSON.stringify({ order }),
+                    });
+                    await ensureSuccessfulResponse(
+                        response,
+                        t('request.failed'),
+                    );
+                    storylinesRef.current = storylines;
+                    router.reload({ only: ['book', 'sidebar_storylines'] });
+                } catch (error) {
+                    setStorylines(snapshot);
+                    storylinesRef.current = snapshot;
+                    toast.error(
+                        error instanceof Error
+                            ? error.message
+                            : t('request.failed'),
+                    );
+                }
             }
         },
-        [storylines, bookId],
+        [storylines, bookId, t],
     );
 
     const handleDragCancel = useCallback(() => {
         setActiveItem(null);
-        setStorylines(storylinesRef.current);
+        const snapshot = dragSnapshotRef.current;
+        dragSnapshotRef.current = null;
+        if (snapshot) {
+            setStorylines(snapshot);
+            storylinesRef.current = snapshot;
+        }
     }, []);
 
     const handleChapterContextMenu = useCallback(
@@ -788,93 +894,116 @@ export default function ChapterList({
     const handleRenameSubmit = useCallback(
         async (newValue: string) => {
             if (!renaming) return;
-            switch (renaming.type) {
-                case 'chapter':
-                    setStorylines((prev) =>
-                        prev.map((s) => ({
-                            ...s,
-                            chapters: s.chapters?.map((ch) =>
-                                ch.id === renaming.chapter.id
-                                    ? { ...ch, title: newValue }
-                                    : ch,
-                            ),
-                        })),
-                    );
-                    onChapterRename?.(renaming.chapter.id, newValue);
-                    await fetch(
-                        updateTitle.url({
-                            book: bookId,
-                            chapter: renaming.chapter.id,
-                        }),
-                        {
-                            method: 'PATCH',
-                            headers: jsonFetchHeaders(),
-                            body: JSON.stringify({ title: newValue }),
-                        },
-                    );
-                    broadcastChapterDataChanged(renaming.chapter.id);
-                    router.reload({ only: ['book'] });
-                    break;
-                case 'storyline':
-                    setStorylines((prev) =>
-                        prev.map((s) =>
-                            s.id === renaming.storyline.id
-                                ? { ...s, name: newValue }
-                                : s,
-                        ),
-                    );
-                    await fetch(
-                        updateStoryline.url({
-                            book: bookId,
-                            storyline: renaming.storyline.id,
-                        }),
-                        {
-                            method: 'PATCH',
-                            headers: jsonFetchHeaders(),
-                            body: JSON.stringify({
-                                name: newValue,
-                                color: renaming.storyline.color,
+            const previousStorylines = storylinesRef.current;
+            const persist = async (url: string, options: RequestInit) => {
+                const response = await fetch(url, options);
+                await ensureSuccessfulResponse(response, t('request.failed'));
+            };
+
+            try {
+                switch (renaming.type) {
+                    case 'chapter':
+                        setStorylines((prev) =>
+                            prev.map((s) => ({
+                                ...s,
+                                chapters: s.chapters?.map((ch) =>
+                                    ch.id === renaming.chapter.id
+                                        ? { ...ch, title: newValue }
+                                        : ch,
+                                ),
+                            })),
+                        );
+                        await persist(
+                            updateTitle.url({
+                                book: bookId,
+                                chapter: renaming.chapter.id,
                             }),
-                        },
-                    );
-                    router.reload({ only: ['book'] });
-                    break;
-                case 'scene':
-                    setStorylines((prev) =>
-                        prev.map((s) => ({
-                            ...s,
-                            chapters: s.chapters?.map((ch) =>
-                                ch.id === renaming.chapterId
-                                    ? {
-                                          ...ch,
-                                          scenes: ch.scenes?.map((sc) =>
-                                              sc.id === renaming.scene.id
-                                                  ? { ...sc, title: newValue }
-                                                  : sc,
-                                          ),
-                                      }
-                                    : ch,
+                            {
+                                method: 'PATCH',
+                                headers: jsonFetchHeaders(),
+                                body: JSON.stringify({ title: newValue }),
+                            },
+                        );
+                        onChapterRename?.(renaming.chapter.id, newValue);
+                        broadcastChapterDataChanged(renaming.chapter.id);
+                        router.reload({
+                            only: ['book', 'sidebar_storylines'],
+                        });
+                        break;
+                    case 'storyline':
+                        setStorylines((prev) =>
+                            prev.map((s) =>
+                                s.id === renaming.storyline.id
+                                    ? { ...s, name: newValue }
+                                    : s,
                             ),
-                        })),
-                    );
-                    await fetch(
-                        updateSceneTitle.url({
-                            book: bookId,
-                            chapter: renaming.chapterId,
-                            scene: renaming.scene.id,
-                        }),
-                        {
-                            method: 'PATCH',
-                            headers: jsonFetchHeaders(),
-                            body: JSON.stringify({ title: newValue }),
-                        },
-                    );
-                    broadcastChapterDataChanged(renaming.chapterId);
-                    onSceneRename?.(renaming.scene.id, newValue);
-                    break;
+                        );
+                        await persist(
+                            updateStoryline.url({
+                                book: bookId,
+                                storyline: renaming.storyline.id,
+                            }),
+                            {
+                                method: 'PATCH',
+                                headers: jsonFetchHeaders(),
+                                body: JSON.stringify({
+                                    name: newValue,
+                                    color: renaming.storyline.color,
+                                }),
+                            },
+                        );
+                        router.reload({
+                            only: ['book', 'sidebar_storylines'],
+                        });
+                        break;
+                    case 'scene':
+                        setStorylines((prev) =>
+                            prev.map((s) => ({
+                                ...s,
+                                chapters: s.chapters?.map((ch) =>
+                                    ch.id === renaming.chapterId
+                                        ? {
+                                              ...ch,
+                                              scenes: ch.scenes?.map((sc) =>
+                                                  sc.id === renaming.scene.id
+                                                      ? {
+                                                            ...sc,
+                                                            title: newValue,
+                                                        }
+                                                      : sc,
+                                              ),
+                                          }
+                                        : ch,
+                                ),
+                            })),
+                        );
+                        await persist(
+                            updateSceneTitle.url({
+                                book: bookId,
+                                chapter: renaming.chapterId,
+                                scene: renaming.scene.id,
+                            }),
+                            {
+                                method: 'PATCH',
+                                headers: jsonFetchHeaders(),
+                                body: JSON.stringify({ title: newValue }),
+                            },
+                        );
+                        broadcastChapterDataChanged(renaming.chapterId);
+                        onSceneRename?.(renaming.scene.id, newValue);
+                        break;
+                }
+            } catch (error) {
+                setStorylines(previousStorylines);
+                storylinesRef.current = previousStorylines;
+                toast.error(
+                    error instanceof Error
+                        ? error.message
+                        : t('request.failed'),
+                );
             }
         },
-        [renaming, bookId, onChapterRename, onSceneRename],
+        [renaming, bookId, onChapterRename, onSceneRename, t],
     );
 
     const handleSceneContextMenu = useCallback(
@@ -898,27 +1027,45 @@ export default function ChapterList({
 
     const handleDeleteScene = useCallback(
         async (chapterId: number, sceneId: number) => {
-            await fetch(
-                destroyScene.url({
-                    book: bookId,
-                    chapter: chapterId,
-                    scene: sceneId,
-                }),
-                {
-                    method: 'DELETE',
-                    headers: jsonFetchHeaders(),
-                },
-            );
+            try {
+                const response = await fetch(
+                    destroyScene.url({
+                        book: bookId,
+                        chapter: chapterId,
+                        scene: sceneId,
+                    }),
+                    {
+                        method: 'DELETE',
+                        headers: jsonFetchHeaders(),
+                    },
+                );
+                await ensureSuccessfulResponse(response, t('request.failed'));
 
-            broadcastChapterDataChanged(chapterId);
-            onSceneDelete?.(sceneId);
+                broadcastChapterDataChanged(chapterId);
+                onSceneDelete?.(sceneId);
+            } catch (error) {
+                toast.error(
+                    error instanceof Error
+                        ? error.message
+                        : t('request.failed'),
+                );
+            }
         },
-        [bookId, onSceneDelete],
+        [bookId, onSceneDelete, t],
     );
 
     const handleAddScene = useCallback(
-        (chapterId: number, sceneCount: number) =>
-            addSceneToChapter(bookId, chapterId, sceneCount, t),
+        async (chapterId: number, sceneCount: number) => {
+            try {
+                await addSceneToChapter(bookId, chapterId, sceneCount, t);
+            } catch (error) {
+                toast.error(
+                    error instanceof Error
+                        ? error.message
+                        : t('request.failed'),
+                );
+            }
+        },
         [bookId, t],
     );
 
@@ -968,17 +1115,24 @@ export default function ChapterList({
                     <div className="flex items-center justify-end bg-neutral-bg px-4 py-0.5">
                         <div className="flex items-center gap-2">
                             <span className="group relative">
-                                <button
+                                <Button
                                     type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={t(
+                                        isAllCollapsed
+                                            ? 'chapterList.expandAll'
+                                            : 'chapterList.collapseAll',
+                                    )}
                                     onClick={handleToggleCollapseAll}
-                                    className="text-ink-faint transition-colors hover:text-ink"
+                                    className="size-6 text-ink-faint transition-colors hover:text-ink"
                                 >
                                     {isAllCollapsed ? (
                                         <UnfoldVertical size={12} />
                                     ) : (
                                         <FoldVertical size={12} />
                                     )}
-                                </button>
+                                </Button>
                                 <span className="pointer-events-none absolute top-full right-0 z-50 mt-1.5 rounded bg-ink px-2 py-1 text-[11px] whitespace-nowrap text-surface opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                                     {t(
                                         isAllCollapsed
@@ -997,64 +1151,68 @@ export default function ChapterList({
                                     <Settings2 size={12} />
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuCheckboxItem
-                                        data-testid="display-toggle-status-bubbles"
-                                        checked={
-                                            displaySettings.show_status_bubbles
-                                        }
-                                        onSelect={(e) => e.preventDefault()}
-                                        onCheckedChange={() =>
-                                            toggleDisplaySetting(
-                                                'show_status_bubbles',
-                                            )
-                                        }
-                                    >
-                                        {t('chapterList.showStatusBubbles')}
-                                    </DropdownMenuCheckboxItem>
-                                    <DropdownMenuCheckboxItem
-                                        data-testid="display-toggle-word-count"
-                                        checked={
-                                            displaySettings.show_word_count
-                                        }
-                                        onSelect={(e) => e.preventDefault()}
-                                        onCheckedChange={() =>
-                                            toggleDisplaySetting(
-                                                'show_word_count',
-                                            )
-                                        }
-                                    >
-                                        {t('chapterList.showWordCount')}
-                                    </DropdownMenuCheckboxItem>
-                                    <DropdownMenuCheckboxItem
-                                        data-testid="display-toggle-scenes"
-                                        checked={scenesVisible}
-                                        onSelect={(e) => e.preventDefault()}
-                                        onCheckedChange={() =>
-                                            onScenesVisibleChange(
-                                                !scenesVisible,
-                                            )
-                                        }
-                                    >
-                                        {t('chapterList.showScenes')}
-                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuCheckboxItem
+                                            data-testid="display-toggle-status-bubbles"
+                                            checked={
+                                                displaySettings.show_status_bubbles
+                                            }
+                                            onSelect={(e) => e.preventDefault()}
+                                            onCheckedChange={() =>
+                                                toggleDisplaySetting(
+                                                    'show_status_bubbles',
+                                                )
+                                            }
+                                        >
+                                            {t('chapterList.showStatusBubbles')}
+                                        </DropdownMenuCheckboxItem>
+                                        <DropdownMenuCheckboxItem
+                                            data-testid="display-toggle-word-count"
+                                            checked={
+                                                displaySettings.show_word_count
+                                            }
+                                            onSelect={(e) => e.preventDefault()}
+                                            onCheckedChange={() =>
+                                                toggleDisplaySetting(
+                                                    'show_word_count',
+                                                )
+                                            }
+                                        >
+                                            {t('chapterList.showWordCount')}
+                                        </DropdownMenuCheckboxItem>
+                                        <DropdownMenuCheckboxItem
+                                            data-testid="display-toggle-scenes"
+                                            checked={scenesVisible}
+                                            onSelect={(e) => e.preventDefault()}
+                                            onCheckedChange={() =>
+                                                onScenesVisibleChange(
+                                                    !scenesVisible,
+                                                )
+                                            }
+                                        >
+                                            {t('chapterList.showScenes')}
+                                        </DropdownMenuCheckboxItem>
+                                    </DropdownMenuGroup>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuCheckboxItem
-                                        data-testid="display-toggle-compact-word-count"
-                                        checked={
-                                            displaySettings.compact_word_count
-                                        }
-                                        disabled={
-                                            !displaySettings.show_word_count
-                                        }
-                                        onSelect={(e) => e.preventDefault()}
-                                        onCheckedChange={() =>
-                                            toggleDisplaySetting(
-                                                'compact_word_count',
-                                            )
-                                        }
-                                    >
-                                        {t('chapterList.compactWordCount')}
-                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuCheckboxItem
+                                            data-testid="display-toggle-compact-word-count"
+                                            checked={
+                                                displaySettings.compact_word_count
+                                            }
+                                            disabled={
+                                                !displaySettings.show_word_count
+                                            }
+                                            onSelect={(e) => e.preventDefault()}
+                                            onCheckedChange={() =>
+                                                toggleDisplaySetting(
+                                                    'compact_word_count',
+                                                )
+                                            }
+                                        >
+                                            {t('chapterList.compactWordCount')}
+                                        </DropdownMenuCheckboxItem>
+                                    </DropdownMenuGroup>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
@@ -1209,8 +1367,9 @@ export default function ChapterList({
                                                                     />
                                                                     {isActiveChapter &&
                                                                         isExpanded && (
-                                                                            <button
+                                                                            <Button
                                                                                 type="button"
+                                                                                variant="ghost"
                                                                                 data-testid="add-scene-button"
                                                                                 onClick={() => {
                                                                                     if (
@@ -1228,12 +1387,12 @@ export default function ChapterList({
                                                                                         );
                                                                                     }
                                                                                 }}
-                                                                                className="w-full rounded-md py-1 pr-2.5 pl-[42px] text-left text-[12px] text-ink-faint transition-colors hover:bg-ink/5"
+                                                                                className="h-auto w-full justify-start rounded-md py-1 pr-2.5 pl-[42px] text-left text-xs text-ink-faint transition-colors hover:bg-ink/5"
                                                                             >
                                                                                 {t(
                                                                                     'chapterList.addScene',
                                                                                 )}
-                                                                            </button>
+                                                                            </Button>
                                                                         )}
                                                                 </div>
                                                             </div>
@@ -1244,12 +1403,13 @@ export default function ChapterList({
                                     </SortableContext>
 
                                     {onAddChapter && (
-                                        <button
+                                        <Button
                                             type="button"
+                                            variant="ghost"
                                             onClick={() =>
                                                 onAddChapter(storyline.id)
                                             }
-                                            className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-[7px] text-ink-faint hover:bg-ink/5"
+                                            className="h-auto w-full justify-start gap-1.5 rounded-md px-2.5 py-[7px] text-ink-faint hover:bg-ink/5"
                                         >
                                             <Plus
                                                 size={12}
@@ -1258,25 +1418,26 @@ export default function ChapterList({
                                             <span className="text-[13px] text-ink-faint">
                                                 {t('chapterList.addChapter')}
                                             </span>
-                                        </button>
+                                        </Button>
                                     )}
                                 </SortableStorylineGroup>
                             ))}
                         </SortableContext>
-                        <button
+                        <Button
                             type="button"
+                            variant="ghost"
                             onClick={onAddStoryline}
-                            className="flex w-full items-center gap-1.5 px-2.5 pt-3.5 pb-1 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase transition-colors hover:text-ink"
+                            className="h-auto w-full justify-start gap-1.5 px-2.5 pt-3.5 pb-1 text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase transition-colors hover:text-ink"
                         >
                             <Plus size={12} />
                             <span>{t('chapterList.addStoryline')}</span>
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
                 <DragOverlay>
                     {activeItem?.type === 'chapter' && (
-                        <div className="flex items-center gap-2 rounded-lg bg-surface-card px-2.5 py-[7px] text-[13px] leading-4 text-ink opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
+                        <div className="flex items-center gap-2 rounded-lg bg-surface-card px-2.5 py-[7px] text-[13px] leading-4 text-ink opacity-95 shadow-lg">
                             <span className="flex shrink-0 items-center text-ink-faint">
                                 <GripVertical size={12} />
                             </span>
@@ -1294,7 +1455,7 @@ export default function ChapterList({
                         </div>
                     )}
                     {activeItem?.type === 'storyline' && (
-                        <div className="flex items-center gap-1.5 rounded-md bg-surface-card px-2.5 py-[7px] opacity-95 shadow-[0_4px_16px_#0000001F,0_0_0_1px_#0000000A]">
+                        <div className="flex items-center gap-1.5 rounded-md bg-surface-card px-2.5 py-[7px] opacity-95 shadow-lg">
                             <span
                                 className={`size-1.5 shrink-0 rounded-full ${activeItem.storyline.color ? '' : 'bg-ink-faint'}`}
                                 style={

@@ -142,3 +142,137 @@ it('reports one result for a single occurrence in the book-wide find', function 
         ->assertSee('1 result in 1 ch.')
         ->assertNoJavaScriptErrors();
 });
+
+it('does not restore stale book-wide results after the query is cleared', function () {
+    [$book, $chapter, $scenes] = createBookWithSceneContents([
+        '<p>A zephyrion appears once and should not return after clearing.</p>',
+    ]);
+    $editorSelector = "#scene-{$scenes[0]->id} .ProseMirror";
+    $searchInput = 'input[placeholder="Search all chapters..."]';
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->click($editorSelector)
+        ->keys($editorSelector, 'Control+Shift+F');
+
+    $page->script(<<<'JS'
+        const originalFetch = window.fetch.bind(window);
+        window.fetch = (input, init) => {
+            const url = typeof input === 'string' ? input : (input?.url ?? '');
+
+            if (url.endsWith('/search') && init?.method === 'POST') {
+                const { signal: _signal, ...requestWithoutSignal } = init;
+                return new Promise((resolve) => {
+                    setTimeout(
+                        () => resolve(originalFetch(input, requestWithoutSignal)),
+                        800,
+                    );
+                });
+            }
+
+            return originalFetch(input, init);
+        };
+        JS);
+
+    $page->fill($searchInput, 'zephyrion');
+    $page->script(<<<'JS'
+        setTimeout(() => {
+            const input = document.querySelector('input[placeholder="Search all chapters..."]');
+            const setter = Object.getOwnPropertyDescriptor(
+                HTMLInputElement.prototype,
+                'value',
+            ).set;
+            setter.call(input, '');
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }, 400);
+        JS);
+    $page->wait(2)->assertNoJavaScriptErrors();
+
+    expect($page->script("document.querySelector('{$searchInput}').value"))
+        ->toBe('')
+        ->and($page->script("document.querySelectorAll('[data-search-result]').length"))
+        ->toBe(0);
+});
+
+it('navigates to the exact occurrence selected in book-wide find', function () {
+    [$book, $chapter, $scenes] = createBookWithSceneContents([
+        '<p>First zephyrion marker. Second zephyrion target. Third zephyrion ending.</p>',
+    ]);
+    $editorSelector = "#scene-{$scenes[0]->id} .ProseMirror";
+    $secondResult = sprintf(
+        '[data-search-result][data-search-scene-id="%d"][data-search-occurrence-index="1"]',
+        $scenes[0]->id,
+    );
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors()
+        ->click($editorSelector)
+        ->keys($editorSelector, 'Control+Shift+F')
+        ->fill('input[placeholder="Search all chapters..."]', 'zephyrion')
+        ->wait(1)
+        ->click($secondResult)
+        ->wait(1)
+        ->assertNoJavaScriptErrors();
+
+    $activeMatchIndex = $page->script(<<<JS
+        (() => {
+            const scene = document.querySelector('#scene-{$scenes[0]->id}');
+            const matches = Array.from(scene.querySelectorAll('.search-highlight'));
+            return matches.indexOf(scene.querySelector('.search-highlight-active'));
+        })()
+        JS);
+
+    expect($activeMatchIndex)->toBe(1);
+});
+
+it('refreshes open editors after book-wide replacement before the next save', function () {
+    [$book, $chapter, $scenes] = createBookWithSceneContents([
+        '<p>The morning began quietly. Another morning followed.</p>',
+    ]);
+    $editorSelector = "#scene-{$scenes[0]->id} .ProseMirror";
+
+    $page = visit("/books/{$book->id}/chapters/{$chapter->id}");
+
+    $page->assertNoJavaScriptErrors();
+    $page->script(<<<'JS'
+        const originalFetch = window.fetch.bind(window);
+        window.fetch = (input, init) => {
+            const url = typeof input === 'string' ? input : (input?.url ?? '');
+
+            if (url.includes('/scenes/') && init?.method === 'PUT') {
+                return new Promise((resolve) => {
+                    setTimeout(() => resolve(originalFetch(input, init)), 1500);
+                });
+            }
+
+            return originalFetch(input, init);
+        };
+        JS);
+
+    $page->type($editorSelector, 'Unsaved morning')
+        ->keys($editorSelector, 'Control+Shift+R')
+        ->fill('input[placeholder="Search all chapters..."]', 'morning')
+        ->wait(1)
+        ->fill('input[placeholder="Replace with..."]', 'evening')
+        ->click('Replace all in book')
+        ->wait(3)
+        ->assertNoJavaScriptErrors();
+
+    $editorText = $page->script(
+        "document.querySelector('{$editorSelector}').innerText",
+    );
+    expect($editorText)
+        ->toContain('Unsaved evening')
+        ->not->toContain('morning');
+
+    $page->type($editorSelector, 'Unsaved evening End')
+        ->wait(2)
+        ->assertNoJavaScriptErrors();
+
+    expect($scenes[0]->fresh()->content)
+        ->toContain('evening')
+        ->toContain('End')
+        ->not->toContain('morning');
+});

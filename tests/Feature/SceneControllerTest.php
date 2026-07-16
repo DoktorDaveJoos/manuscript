@@ -50,13 +50,16 @@ test('updateContent saves content and recalculates word count', function () {
 
     $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
         'content' => '<p>The quick brown fox jumps</p>',
+        'expected_content_version' => 0,
     ])
         ->assertOk()
-        ->assertJsonStructure(['word_count', 'chapter_word_count', 'saved_at']);
+        ->assertJsonStructure(['word_count', 'chapter_word_count', 'content_version', 'saved_at'])
+        ->assertJsonPath('content_version', 1);
 
     $scene->refresh();
     expect($scene->word_count)->toBe(5);
     expect($scene->content)->toContain('quick brown fox');
+    expect($scene->content_version)->toBe(1);
 
     $chapter->refresh();
     expect($chapter->word_count)->toBe(5);
@@ -74,10 +77,13 @@ test('updateContent rejects a stale expected_current_version_id with 409 and kee
 
     // A save retry composed against the pre-revision chapter must not
     // overwrite content the server has since replaced.
-    $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
+    $response = $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
         'content' => '<p>Stale text from before the revision.</p>',
         'expected_current_version_id' => $current->id - 1,
+        'expected_content_version' => 0,
     ])->assertStatus(409);
+
+    expect($response->json('conflict'))->toBeNull();
 
     expect($scene->fresh()->content)->toBe('<p>Revised by AI.</p>');
 });
@@ -95,9 +101,61 @@ test('updateContent accepts a matching expected_current_version_id', function ()
     $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
         'content' => '<p>New words.</p>',
         'expected_current_version_id' => $current->id,
+        'expected_content_version' => 0,
     ])->assertOk();
 
     expect($scene->fresh()->content)->toBe('<p>New words.</p>');
+});
+
+test('updateContent rejects a stale content version without changing content or writing totals', function () {
+    $book = Book::factory()->create(['daily_word_count_goal' => 100]);
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 2]);
+    $scene = Scene::factory()->for($chapter)->create([
+        'content' => '<p>Current words</p>',
+        'word_count' => 2,
+        'content_version' => 3,
+    ]);
+    WritingSession::factory()->for($book)->create([
+        'date' => now()->toDateString(),
+        'words_written' => 7,
+    ]);
+
+    $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
+        'content' => '<p>Stale replacement with many more words</p>',
+        'expected_content_version' => 2,
+    ])
+        ->assertStatus(409)
+        ->assertJsonPath('conflict', 'content_version')
+        ->assertJsonPath('content_version', 3);
+
+    expect($scene->fresh()->content)->toBe('<p>Current words</p>')
+        ->and($scene->fresh()->content_version)->toBe(3)
+        ->and($chapter->fresh()->word_count)->toBe(2)
+        ->and($book->writingSessions()->first()->words_written)->toBe(7);
+});
+
+test('updateContent requires the caller content version', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $scene = Scene::factory()->for($chapter)->create();
+
+    $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
+        'content' => '<p>Changed</p>',
+    ])->assertJsonValidationErrors('expected_content_version');
+});
+
+test('nested scene routes reject scenes from another chapter', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $otherChapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $foreignScene = Scene::factory()->for($otherChapter)->create();
+
+    $this->patchJson(route('scenes.updateTitle', [$book, $chapter, $foreignScene]), [
+        'title' => 'Cross-parent edit',
+    ])->assertNotFound();
 });
 
 test('updateContent tracks writing session for word count increase', function () {
@@ -108,6 +166,7 @@ test('updateContent tracks writing session for word count increase', function ()
 
     $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
         'content' => '<p>The quick brown fox jumps</p>',
+        'expected_content_version' => 0,
     ])->assertOk();
 
     $session = WritingSession::where('book_id', $book->id)->first();
@@ -124,6 +183,7 @@ test('updateContent does not create session on word decrease when none exists', 
 
     $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
         'content' => '<p>Hello</p>',
+        'expected_content_version' => 0,
     ])->assertOk();
 
     expect(WritingSession::where('book_id', $book->id)->first())->toBeNull();
@@ -138,11 +198,13 @@ test('updateContent subtracts deletions from existing session', function () {
     // Write 12 words today.
     $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
         'content' => '<p>one two three four five six seven eight nine ten eleven twelve</p>',
+        'expected_content_version' => 0,
     ])->assertOk();
 
     // Delete down to 5 words — net should be 5, not 12.
     $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
         'content' => '<p>one two three four five</p>',
+        'expected_content_version' => 1,
     ])->assertOk();
 
     $session = WritingSession::where('book_id', $book->id)->first();
@@ -162,6 +224,7 @@ test('updateContent clamps session at zero when deletions exceed words written t
     // Wipe the scene — delta is -10, but session only has 3 words today.
     $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
         'content' => '<p></p>',
+        'expected_content_version' => 0,
     ])->assertOk();
 
     $session = WritingSession::where('book_id', $book->id)->first();
@@ -181,6 +244,7 @@ test('updateContent preserves goal_met when deletions drop count below goal', fu
     // Delete down to 2 words.
     $this->putJson(route('scenes.updateContent', [$book, $chapter, $scene]), [
         'content' => '<p>one two</p>',
+        'expected_content_version' => 0,
     ])->assertOk();
 
     $session = WritingSession::where('book_id', $book->id)->first();
@@ -220,6 +284,31 @@ test('reorder updates sort_order', function () {
     expect($s2->fresh()->sort_order)->toBe(2);
 });
 
+test('reorder rejects partial duplicate and foreign scene payloads', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $otherChapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $first = Scene::factory()->for($chapter)->create(['sort_order' => 0]);
+    $second = Scene::factory()->for($chapter)->create(['sort_order' => 1]);
+    $foreign = Scene::factory()->for($otherChapter)->create();
+
+    $this->postJson(route('scenes.reorder', [$book, $chapter]), [
+        'order' => [$first->id],
+    ])->assertJsonValidationErrors('order');
+
+    $this->postJson(route('scenes.reorder', [$book, $chapter]), [
+        'order' => [$first->id, $first->id],
+    ])->assertJsonValidationErrors('order.1');
+
+    $this->postJson(route('scenes.reorder', [$book, $chapter]), [
+        'order' => [$first->id, $foreign->id],
+    ])->assertJsonValidationErrors('order.1');
+
+    expect($first->fresh()->sort_order)->toBe(0)
+        ->and($second->fresh()->sort_order)->toBe(1);
+});
+
 test('destroy deletes scene and recalculates', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
@@ -245,6 +334,20 @@ test('destroy prevents deleting last scene', function () {
         ->assertUnprocessable();
 
     expect(Scene::find($scene->id))->not->toBeNull();
+});
+
+test('successive deletes cannot remove the final scene', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $first = Scene::factory()->for($chapter)->create(['sort_order' => 0]);
+    $second = Scene::factory()->for($chapter)->create(['sort_order' => 1]);
+
+    $this->deleteJson(route('scenes.destroy', [$book, $chapter, $first]))->assertOk();
+    $this->deleteJson(route('scenes.destroy', [$book, $chapter, $second]))->assertUnprocessable();
+
+    expect($chapter->scenes()->count())->toBe(1)
+        ->and($second->fresh())->not->toBeNull();
 });
 
 test('store creates default scene when creating chapter', function () {

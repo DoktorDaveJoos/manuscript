@@ -15,6 +15,10 @@ class Scene extends Model
 
     protected $guarded = [];
 
+    protected $attributes = [
+        'content_version' => 0,
+    ];
+
     /**
      * @return array<string, string>
      */
@@ -23,6 +27,7 @@ class Scene extends Model
         return [
             'sort_order' => 'integer',
             'word_count' => 'integer',
+            'content_version' => 'integer',
         ];
     }
 

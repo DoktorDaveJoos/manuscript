@@ -14,6 +14,7 @@ use App\Models\EditorialReview;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\Attributes\FailOnTimeout;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Bus;
@@ -24,6 +25,7 @@ use Throwable;
  * batch of short jobs followed by a terminal finalize job. Keeping each unit
  * small means no single job can exceed a worker timeout, however large the book.
  */
+#[FailOnTimeout]
 class RunEditorialReviewJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, UpdatesEditorialReview;
@@ -42,7 +44,11 @@ class RunEditorialReviewJob implements ShouldQueue
         $setting = AiSetting::activeProvider();
 
         if (! $setting || ! $setting->isConfigured()) {
-            $this->markReviewFailed($this->review, 'No AI provider configured.', EditorialReviewErrorCode::NoProvider);
+            $this->markReviewFailed(
+                $this->review,
+                __('The editorial review could not start because no configured AI provider is selected.'),
+                EditorialReviewErrorCode::NoProvider,
+            );
 
             return;
         }
@@ -107,10 +113,20 @@ class RunEditorialReviewJob implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
+        if ($exception) {
+            report($exception);
+            $this->markReviewFailedFromThrowable(
+                $this->review,
+                $exception,
+                __('The app could not prepare the editorial review jobs. Your saved progress is still available.'),
+            );
+
+            return;
+        }
+
         $this->markReviewFailed(
             $this->review,
-            $exception?->getMessage() ?? 'Unknown error',
-            $exception ? EditorialReviewErrorCode::fromThrowable($exception) : EditorialReviewErrorCode::Unknown,
+            __('The app could not prepare the editorial review jobs. Your saved progress is still available.'),
         );
     }
 }

@@ -9,6 +9,8 @@ export type SearchHighlight = {
     caseSensitive: boolean;
     wholeWord: boolean;
     regex: boolean;
+    activeSceneId?: number | null;
+    activeMatchIndex?: number;
 };
 
 export const searchHighlightKey = new PluginKey('searchHighlight');
@@ -43,12 +45,17 @@ export function buildPattern(
 
 function buildDecorations(
     doc: PmNode,
-    params: SearchHighlight & { activeFrom: number; activeTo: number },
+    params: SearchHighlight & {
+        activeFrom: number;
+        activeTo: number;
+        activeMatchIndex: number;
+    },
 ): DecorationSet {
     const pattern = buildPattern(params);
     if (!pattern) return DecorationSet.empty;
 
     const decorations: Decoration[] = [];
+    let matchIndex = 0;
 
     doc.descendants((node, pos) => {
         if (!node.isText || !node.text) return;
@@ -60,7 +67,8 @@ function buildDecorations(
             const from = pos + match.index;
             const to = from + match[0].length;
             const isActive =
-                from === params.activeFrom && to === params.activeTo;
+                (from === params.activeFrom && to === params.activeTo) ||
+                matchIndex === params.activeMatchIndex;
             decorations.push(
                 Decoration.inline(from, to, {
                     class: isActive
@@ -68,6 +76,7 @@ function buildDecorations(
                         : 'search-highlight',
                 }),
             );
+            matchIndex++;
 
             if (match[0].length === 0) break;
         }
@@ -79,7 +88,11 @@ function buildDecorations(
 /** Update the search highlight state on an editor and trigger a decoration rebuild. */
 export function updateSearchHighlight(
     editor: Editor,
-    params: SearchHighlight & { activeFrom?: number; activeTo?: number },
+    params: SearchHighlight & {
+        activeFrom?: number;
+        activeTo?: number;
+        activeMatchIndex?: number;
+    },
 ): void {
     if (editor.isDestroyed) return;
     const storage = (editor.extensionStorage as Record<string, any>)
@@ -91,6 +104,7 @@ export function updateSearchHighlight(
     storage.regex = params.regex;
     storage.activeFrom = params.activeFrom ?? -1;
     storage.activeTo = params.activeTo ?? -1;
+    storage.activeMatchIndex = params.activeMatchIndex ?? -1;
     editor.view.dispatch(
         editor.view.state.tr.setMeta(searchHighlightKey, true),
     );
@@ -107,6 +121,7 @@ export const SearchHighlightExtension = Extension.create({
             regex: false,
             activeFrom: -1,
             activeTo: -1,
+            activeMatchIndex: -1,
         };
     },
 

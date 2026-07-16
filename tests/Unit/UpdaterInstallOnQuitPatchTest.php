@@ -27,6 +27,8 @@ const UPDATER_PATCH_FILE = 'scripts/nativephp-patches/files/resources/electron/e
 
 const UPDATER_DIST_FILE = 'vendor/nativephp/desktop/resources/electron/electron-plugin/dist/server/api/autoUpdater.js';
 
+const UPDATER_STARTUP_PATCH_FILE = 'scripts/nativephp-patches/files/resources/electron/electron-plugin/dist/index.js';
+
 it('disables autoInstallOnAppQuit in the shipped dist patch file', function (): void {
     $patch = (string) file_get_contents(base_path(UPDATER_PATCH_FILE));
 
@@ -54,4 +56,12 @@ it('still routes the explicit install action through the relaunching quitAndInst
     expect($patch)
         ->toContain('/quit-and-install')
         ->toContain('autoUpdater.quitAndInstall()');
+});
+
+it('only allows Electron startup checks when the startup flag is explicitly enabled', function (): void {
+    $patch = (string) file_get_contents(base_path(UPDATER_STARTUP_PATCH_FILE));
+
+    expect($patch)
+        ->toContain('config.updater.check_on_startup === true')
+        ->toContain('autoUpdater.checkForUpdatesAndNotify()');
 });

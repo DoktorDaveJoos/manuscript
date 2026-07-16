@@ -3,6 +3,8 @@ import { ChevronDown, ChevronUp, Replace, Search, X } from 'lucide-react';
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 import ToggleButton from '@/components/ui/ToggleButton';
 import {
     buildPattern,
@@ -78,6 +80,7 @@ export default function ChapterFindBar({
     const inputRef = useRef<HTMLInputElement>(null);
     const collectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const rafRef = useRef(0);
+    const registry = editorRegistry.current;
 
     const searchParams = useMemo(
         () => ({
@@ -93,27 +96,29 @@ export default function ChapterFindBar({
         inputRef.current?.focus();
     }, []);
 
-    const pushHighlights = (
-        params: typeof searchParams,
-        activeMatch?: ChapterMatch,
-    ) => {
-        for (const [sceneId, editor] of editorRegistry.current) {
-            if (editor.isDestroyed) continue;
-            updateSearchHighlight(editor, {
-                ...params,
-                activeFrom:
-                    activeMatch?.sceneId === sceneId ? activeMatch.from : -1,
-                activeTo:
-                    activeMatch?.sceneId === sceneId ? activeMatch.to : -1,
-            });
-        }
-    };
+    const pushHighlights = useCallback(
+        (params: typeof searchParams, activeMatch?: ChapterMatch) => {
+            for (const [sceneId, editor] of registry) {
+                if (editor.isDestroyed) continue;
+                updateSearchHighlight(editor, {
+                    ...params,
+                    activeFrom:
+                        activeMatch?.sceneId === sceneId
+                            ? activeMatch.from
+                            : -1,
+                    activeTo:
+                        activeMatch?.sceneId === sceneId ? activeMatch.to : -1,
+                });
+            }
+        },
+        [registry],
+    );
 
     useEffect(() => {
         return () => {
             if (collectTimerRef.current) clearTimeout(collectTimerRef.current);
             cancelAnimationFrame(rafRef.current);
-            for (const [, editor] of editorRegistry.current) {
+            for (const [, editor] of registry) {
                 updateSearchHighlight(editor, {
                     query: '',
                     caseSensitive: false,
@@ -122,36 +127,35 @@ export default function ChapterFindBar({
                 });
             }
         };
-    }, [editorRegistry]);
+    }, [registry]);
 
-    const doCollect = (preserveIndex?: number) => {
-        if (!searchParams.query) {
-            setAllMatches([]);
-            setActiveMatchIndex(-1);
-            pushHighlights(searchParams);
-            return;
-        }
+    const doCollect = useCallback(
+        (preserveIndex?: number) => {
+            if (!searchParams.query) {
+                setAllMatches([]);
+                setActiveMatchIndex(-1);
+                pushHighlights(searchParams);
+                return;
+            }
 
-        const matches = collectMatches(
-            scenes,
-            editorRegistry.current,
-            searchParams,
-        );
-        setAllMatches(matches);
+            const matches = collectMatches(scenes, registry, searchParams);
+            setAllMatches(matches);
 
-        let newIndex: number;
-        if (
-            preserveIndex !== undefined &&
-            preserveIndex >= 0 &&
-            matches.length > 0
-        ) {
-            newIndex = Math.min(preserveIndex, matches.length - 1);
-        } else {
-            newIndex = matches.length > 0 ? 0 : -1;
-        }
-        setActiveMatchIndex(newIndex);
-        pushHighlights(searchParams, matches[newIndex]);
-    };
+            let newIndex: number;
+            if (
+                preserveIndex !== undefined &&
+                preserveIndex >= 0 &&
+                matches.length > 0
+            ) {
+                newIndex = Math.min(preserveIndex, matches.length - 1);
+            } else {
+                newIndex = matches.length > 0 ? 0 : -1;
+            }
+            setActiveMatchIndex(newIndex);
+            pushHighlights(searchParams, matches[newIndex]);
+        },
+        [pushHighlights, registry, scenes, searchParams],
+    );
 
     // Stable ref for doCollect so the editor update listener doesn't churn
     const doCollectRef = useRef(doCollect);
@@ -180,7 +184,6 @@ export default function ChapterFindBar({
 
     // Re-collect when editors change content (user typing while find is open)
     useEffect(() => {
-        const registry = editorRegistry.current;
         const handlers: Array<() => void> = [];
 
         const onEditorUpdate = () => {
@@ -197,53 +200,64 @@ export default function ChapterFindBar({
         }
 
         return () => handlers.forEach((h) => h());
-    }, [editorRegistry, scenes]);
+    }, [registry, scenes]);
 
     // Navigate to a specific match
-    const navigateToMatch = (index: number) => {
-        if (allMatches.length === 0 || index < 0) return;
+    const navigateToMatch = useCallback(
+        (index: number) => {
+            if (allMatches.length === 0 || index < 0) return;
 
-        const match = allMatches[index];
-        const editor = editorRegistry.current.get(match.sceneId);
-        if (!editor || editor.isDestroyed) return;
+            const match = allMatches[index];
+            const editor = registry.get(match.sceneId);
+            if (!editor || editor.isDestroyed) return;
 
-        setActiveMatchIndex(index);
-        pushHighlights(searchParams, match);
+            setActiveMatchIndex(index);
+            pushHighlights(searchParams, match);
 
-        // Move the editor selection to the match WITHOUT focusing the editor:
-        // focus must stay in the find input so Enter keeps navigating instead
-        // of typing a paragraph break into the manuscript. The active-match
-        // highlight marks the position visually.
-        editor.commands.setTextSelection({
-            from: match.from,
-            to: match.to,
-        });
+            // Move the editor selection to the match WITHOUT focusing the editor:
+            // focus must stay in the find input so Enter keeps navigating instead
+            // of typing a paragraph break into the manuscript. The active-match
+            // highlight marks the position visually.
+            editor.commands.setTextSelection({
+                from: match.from,
+                to: match.to,
+            });
 
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = requestAnimationFrame(() => {
-            const container = scrollContainerRef.current;
-            if (!container) return;
+            cancelAnimationFrame(rafRef.current);
+            rafRef.current = requestAnimationFrame(() => {
+                const container = scrollContainerRef.current;
+                if (!container) return;
 
-            try {
-                const coords = editor.view.coordsAtPos(match.from);
-                const containerRect = container.getBoundingClientRect();
-                const relativeTop = coords.top - containerRect.top;
+                try {
+                    const coords = editor.view.coordsAtPos(match.from);
+                    const containerRect = container.getBoundingClientRect();
+                    const relativeTop = coords.top - containerRect.top;
 
-                if (
-                    relativeTop < 80 ||
-                    relativeTop > containerRect.height - 80
-                ) {
-                    const targetCenter = containerRect.height / 2;
-                    container.scrollTo({
-                        top: container.scrollTop + (relativeTop - targetCenter),
-                        behavior: 'smooth',
-                    });
+                    if (
+                        relativeTop < 80 ||
+                        relativeTop > containerRect.height - 80
+                    ) {
+                        const targetCenter = containerRect.height / 2;
+                        container.scrollTo({
+                            top:
+                                container.scrollTop +
+                                (relativeTop - targetCenter),
+                            behavior: 'smooth',
+                        });
+                    }
+                } catch {
+                    // coordsAtPos can throw if position is invalid
                 }
-            } catch {
-                // coordsAtPos can throw if position is invalid
-            }
-        });
-    };
+            });
+        },
+        [
+            allMatches,
+            pushHighlights,
+            registry,
+            scrollContainerRef,
+            searchParams,
+        ],
+    );
 
     const nextMatch = useCallback(() => {
         if (allMatches.length === 0) return;
@@ -258,12 +272,12 @@ export default function ChapterFindBar({
         navigateToMatch(prev);
     }, [allMatches.length, activeMatchIndex, navigateToMatch]);
 
-    const replaceCurrent = () => {
+    const replaceCurrent = useCallback(() => {
         if (activeMatchIndex < 0 || activeMatchIndex >= allMatches.length)
             return;
 
         const match = allMatches[activeMatchIndex];
-        const editor = editorRegistry.current.get(match.sceneId);
+        const editor = registry.get(match.sceneId);
         if (!editor) return;
 
         editor
@@ -278,17 +292,13 @@ export default function ChapterFindBar({
             () => doCollectRef.current(activeMatchIndex),
             50,
         );
-    };
+    }, [activeMatchIndex, allMatches, registry, replaceText]);
 
-    const replaceAllMatches = () => {
+    const replaceAllMatches = useCallback(() => {
         if (!searchParams.query) return;
 
         // Re-collect from live doc state to avoid stale positions
-        const freshMatches = collectMatches(
-            scenes,
-            editorRegistry.current,
-            searchParams,
-        );
+        const freshMatches = collectMatches(scenes, registry, searchParams);
         if (freshMatches.length === 0) return;
 
         const byScene = new Map<number, ChapterMatch[]>();
@@ -299,7 +309,7 @@ export default function ChapterFindBar({
         }
 
         for (const [sceneId, sceneMatches] of byScene) {
-            const editor = editorRegistry.current.get(sceneId);
+            const editor = registry.get(sceneId);
             if (!editor || editor.isDestroyed) continue;
 
             const tr = editor.state.tr;
@@ -319,7 +329,7 @@ export default function ChapterFindBar({
 
         if (collectTimerRef.current) clearTimeout(collectTimerRef.current);
         collectTimerRef.current = setTimeout(() => doCollectRef.current(), 50);
-    };
+    }, [registry, replaceText, scenes, searchParams]);
 
     const handleSearchKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
@@ -391,15 +401,15 @@ export default function ChapterFindBar({
                 </div>
 
                 <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5">
-                    <Search size={13} className="shrink-0 text-ink-faint" />
-                    <input
+                    <Search size={14} className="shrink-0 text-ink-faint" />
+                    <Input
                         ref={inputRef}
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={handleSearchKeyDown}
                         placeholder={t('find.findInChapter')}
-                        className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-faint"
+                        className="h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] text-ink placeholder:text-ink-faint focus:ring-0"
                     />
                 </div>
 
@@ -409,63 +419,81 @@ export default function ChapterFindBar({
                     </span>
                 )}
 
-                <button
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={prevMatch}
                     disabled={allMatches.length === 0}
                     title={t('find.previousMatch')}
-                    className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink disabled:opacity-30"
+                    aria-label={t('find.previousMatch')}
+                    className="size-6 rounded text-ink-faint hover:bg-neutral-bg hover:text-ink disabled:opacity-30"
                 >
                     <ChevronUp size={14} />
-                </button>
-                <button
+                </Button>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={nextMatch}
                     disabled={allMatches.length === 0}
                     title={t('find.nextMatch')}
-                    className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink disabled:opacity-30"
+                    aria-label={t('find.nextMatch')}
+                    className="size-6 rounded text-ink-faint hover:bg-neutral-bg hover:text-ink disabled:opacity-30"
                 >
                     <ChevronDown size={14} />
-                </button>
-                <button
+                </Button>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={onClose}
                     title={t('find.close')}
-                    className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink"
+                    aria-label={t('find.close')}
+                    className="size-6 rounded text-ink-faint hover:bg-neutral-bg hover:text-ink"
                 >
                     <X size={14} />
-                </button>
+                </Button>
             </div>
 
             {showReplace && (
                 <div className="flex items-center gap-1.5">
                     <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5">
                         <Replace
-                            size={13}
+                            size={14}
                             className="shrink-0 text-ink-faint"
                         />
-                        <input
+                        <Input
                             type="text"
                             value={replaceText}
                             onChange={(e) => setReplaceText(e.target.value)}
                             onKeyDown={handleReplaceKeyDown}
                             placeholder={t('find.replaceWith')}
-                            className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-faint"
+                            className="h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] text-ink placeholder:text-ink-faint focus:ring-0"
                         />
                     </div>
-                    <button
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
                         onClick={replaceCurrent}
                         disabled={activeMatchIndex < 0}
                         title={t('find.replace')}
-                        className="shrink-0 rounded-md border border-border px-2.5 py-1 text-[12px] font-medium text-ink transition-colors hover:bg-neutral-bg disabled:opacity-30"
+                        className="shrink-0 border border-border px-2.5 py-1 text-xs disabled:opacity-30"
                     >
                         {t('find.replace')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
                         onClick={replaceAllMatches}
                         disabled={allMatches.length === 0}
                         title={t('find.replaceAll')}
-                        className="shrink-0 rounded-md border border-border px-2.5 py-1 text-[12px] font-medium text-ink transition-colors hover:bg-neutral-bg disabled:opacity-30"
+                        className="shrink-0 border border-border px-2.5 py-1 text-xs disabled:opacity-30"
                     >
                         {t('find.allShort')}
-                    </button>
+                    </Button>
                 </div>
             )}
         </div>

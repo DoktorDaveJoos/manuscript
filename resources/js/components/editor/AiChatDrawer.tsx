@@ -17,7 +17,28 @@ import {
 import { chat as editorialChat } from '@/actions/App/Http/Controllers/EditorialReviewController';
 import AiChatInput from '@/components/ui/AiChatInput';
 import type { AiChatInputHandle } from '@/components/ui/AiChatInput';
+import { Bubble, BubbleContent } from '@/components/ui/bubble';
+import Button from '@/components/ui/Button';
+import { Marker, MarkerContent, MarkerIcon } from '@/components/ui/marker';
+import {
+    Message,
+    MessageAvatar,
+    MessageContent,
+    MessageFooter,
+    MessageHeader,
+} from '@/components/ui/message';
+import {
+    MessageScroller,
+    MessageScrollerButton,
+    MessageScrollerComposer,
+    MessageScrollerContent,
+    MessageScrollerItem,
+    MessageScrollerProvider,
+    MessageScrollerViewport,
+} from '@/components/ui/message-scroller';
 import PanelHeader from '@/components/ui/PanelHeader';
+import { useAiErrorToast } from '@/hooks/useAiErrorToast';
+import type { AiErrorPayload } from '@/hooks/useAiErrorToast';
 import { track } from '@/lib/analytics';
 import { severityDotColor } from '@/lib/editorial-constants';
 import { extractErrorMessage, jsonFetchHeaders } from '@/lib/utils';
@@ -105,12 +126,12 @@ export default function AiChatDrawer({
     };
 }) {
     const { t } = useTranslation('ai');
+    const showAiErrorToast = useAiErrorToast();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isStreaming, setIsStreaming] = useState(false);
     const isStreamingRef = useRef(false);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<AiChatInputHandle>(null);
     const conversationIdRef = useRef<string | null>(null);
 
@@ -168,10 +189,6 @@ export default function AiChatDrawer({
     useEffect(() => {
         inputRef.current?.focus();
     }, []);
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
 
     const inputValueRef = useRef(input);
     inputValueRef.current = input;
@@ -232,11 +249,34 @@ export default function AiChatDrawer({
                     errorText,
                     t('chat.requestFailed'),
                 );
+                let errorPayload: AiErrorPayload = {
+                    kind: 'unknown',
+                    message: errorMessage,
+                };
+
+                try {
+                    const parsed = JSON.parse(errorText) as AiErrorPayload;
+                    errorPayload = {
+                        kind: parsed.kind ?? 'unknown',
+                        message: parsed.message ?? errorMessage,
+                        provider: parsed.provider,
+                    };
+                } catch {
+                    // Non-JSON responses use the safe fallback message above.
+                }
+
+                showAiErrorToast(errorPayload);
+                const visibleErrorMessage =
+                    errorPayload.kind === 'no_provider'
+                        ? (errorPayload.message ?? t('chat.requestFailed'))
+                        : t(`error.toast.${errorPayload.kind}.title`, {
+                              defaultValue: t('chat.requestFailed'),
+                          });
                 setMessages((prev) => {
                     const updated = [...prev];
                     updated[updated.length - 1] = {
                         role: 'assistant',
-                        content: errorMessage,
+                        content: visibleErrorMessage,
                     };
                     return updated;
                 });
@@ -299,7 +339,15 @@ export default function AiChatDrawer({
                             }
 
                             if (parsed.error) {
-                                pendingText += parsed.error;
+                                const kind = parsed.kind ?? 'unknown';
+                                showAiErrorToast({
+                                    kind,
+                                    message: parsed.error,
+                                    provider: parsed.provider,
+                                });
+                                pendingText += t(`error.toast.${kind}.title`, {
+                                    defaultValue: t('chat.requestFailed'),
+                                });
                                 continue;
                             }
 
@@ -340,7 +388,7 @@ export default function AiChatDrawer({
             isStreamingRef.current = false;
             setIsStreaming(false);
         }
-    }, [book.id, chapter?.id, editorialReview, lsKey, t]);
+    }, [book.id, chapter, editorialReview, lsKey, showAiErrorToast, t]);
 
     const handleReset = useCallback(() => {
         const currentId = conversationIdRef.current;
@@ -369,21 +417,27 @@ export default function AiChatDrawer({
     const wordCount = chapter?.word_count ?? 0;
 
     return (
-        <aside className="flex h-full shrink-0 flex-col border-l border-border-light bg-surface-sidebar">
+        <aside
+            className="flex h-full shrink-0 flex-col border-l border-border-light bg-surface-sidebar"
+            data-testid="ai-chat-surface"
+        >
             <PanelHeader
                 title={title ?? t('askAi')}
                 icon={<MessageCircle size={14} className="text-ink-muted" />}
                 onClose={onClose}
                 suffix={
                     messages.length > 0 && !isStreaming ? (
-                        <button
+                        <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
                             onClick={handleReset}
-                            className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:text-ink"
+                            className="size-6 rounded text-ink-faint hover:text-ink"
                             title={t('chat.newConversation')}
+                            aria-label={t('chat.newConversation')}
                         >
-                            <RotateCcw size={13} />
-                        </button>
+                            <RotateCcw size={14} />
+                        </Button>
                     ) : undefined
                 }
             />
@@ -473,71 +527,151 @@ export default function AiChatDrawer({
             )}
 
             {/* Messages */}
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-5">
-                {isLoadingHistory && messages.length === 0 && (
-                    <div className="flex items-center justify-center gap-2 py-4">
-                        <Loader
-                            size={14}
-                            className="animate-spin text-accent"
-                        />
-                        <span className="text-xs text-ink-muted">
-                            {t('chat.loadingHistory')}
-                        </span>
-                    </div>
-                )}
-                {!isLoadingHistory && messages.length === 0 && (
-                    <p className="text-center text-xs leading-relaxed text-ink-faint">
-                        {t('chat.emptyState')}
-                    </p>
-                )}
-                {messages.map((msg, i) =>
-                    msg.role === 'user' ? (
-                        <div key={i} className="flex flex-col items-end gap-1">
-                            <div className="max-w-[85%] rounded-2xl bg-neutral-bg px-4 py-3 text-sm leading-relaxed text-ink">
-                                {msg.content}
-                            </div>
-                        </div>
-                    ) : (
-                        <div key={i} className="flex flex-col gap-1.5">
-                            <Sparkles size={14} className="text-accent" />
-                            <div className="max-w-[85%] rounded-2xl border border-border-light bg-surface-card px-4 py-3 text-sm leading-relaxed text-ink">
-                                {msg.content ? (
-                                    <AssistantMessage
-                                        content={msg.content}
-                                        streaming={
-                                            isStreaming &&
-                                            i === messages.length - 1
-                                        }
-                                    />
-                                ) : isStreaming && i === messages.length - 1 ? (
-                                    <div className="flex items-center gap-[5px]">
-                                        <Loader
-                                            size={14}
-                                            className="animate-spin text-accent"
-                                        />
-                                        <span className="text-xs tracking-[0.01em] text-ink-muted">
-                                            {t('chat.thinking')}
-                                        </span>
-                                    </div>
-                                ) : null}
-                            </div>
-                        </div>
-                    ),
-                )}
-                <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input */}
-            <div className="px-5 py-3">
-                <AiChatInput
-                    ref={inputRef}
-                    value={input}
-                    onChange={setInput}
-                    onSend={handleSend}
-                    placeholder={t('chat.placeholder')}
-                    ariaLabel={t('chat.placeholder')}
-                    disabled={isStreaming}
-                />
+            <div className="min-h-0 flex-1">
+                <MessageScrollerProvider
+                    autoScroll
+                    defaultScrollPosition="end"
+                    scrollPreviousItemPeek={24}
+                >
+                    <MessageScroller
+                        canvas="panel"
+                        data-testid="ai-chat-message-scroller"
+                    >
+                        <MessageScrollerViewport>
+                            <MessageScrollerContent
+                                aria-busy={isStreaming}
+                                className="gap-4 p-5"
+                            >
+                                {isLoadingHistory && messages.length === 0 && (
+                                    <MessageScrollerItem>
+                                        <Marker className="justify-center py-4">
+                                            <MarkerIcon>
+                                                <Loader className="animate-spin text-accent" />
+                                            </MarkerIcon>
+                                            <MarkerContent>
+                                                {t('chat.loadingHistory')}
+                                            </MarkerContent>
+                                        </Marker>
+                                    </MessageScrollerItem>
+                                )}
+                                {!isLoadingHistory && messages.length === 0 && (
+                                    <MessageScrollerItem>
+                                        <Marker className="justify-center text-center">
+                                            <MarkerContent>
+                                                {t('chat.emptyState')}
+                                            </MarkerContent>
+                                        </Marker>
+                                    </MessageScrollerItem>
+                                )}
+                                {messages.map((msg, i) => (
+                                    <MessageScrollerItem
+                                        key={i}
+                                        messageId={`message-${i}`}
+                                        scrollAnchor={msg.role === 'user'}
+                                    >
+                                        {msg.role === 'user' ? (
+                                            <Message
+                                                align="end"
+                                                data-message-role="user"
+                                            >
+                                                <MessageContent>
+                                                    <MessageHeader>
+                                                        {t('chat.senderYou')}
+                                                    </MessageHeader>
+                                                    <Bubble variant="muted">
+                                                        <BubbleContent>
+                                                            {msg.content}
+                                                        </BubbleContent>
+                                                    </Bubble>
+                                                </MessageContent>
+                                            </Message>
+                                        ) : (
+                                            <Message data-message-role="assistant">
+                                                <MessageAvatar
+                                                    aria-label={t(
+                                                        'chat.senderAi',
+                                                    )}
+                                                >
+                                                    <Sparkles className="size-3.5 text-accent" />
+                                                </MessageAvatar>
+                                                <MessageContent>
+                                                    <MessageHeader>
+                                                        {t('chat.senderAi')}
+                                                    </MessageHeader>
+                                                    <Bubble variant="secondary">
+                                                        <BubbleContent>
+                                                            {msg.content ? (
+                                                                <AssistantMessage
+                                                                    content={
+                                                                        msg.content
+                                                                    }
+                                                                    streaming={
+                                                                        isStreaming &&
+                                                                        i ===
+                                                                            messages.length -
+                                                                                1
+                                                                    }
+                                                                />
+                                                            ) : isStreaming &&
+                                                              i ===
+                                                                  messages.length -
+                                                                      1 ? (
+                                                                <Marker>
+                                                                    <MarkerIcon>
+                                                                        <Loader className="animate-spin text-accent" />
+                                                                    </MarkerIcon>
+                                                                    <MarkerContent>
+                                                                        {t(
+                                                                            'chat.thinking',
+                                                                        )}
+                                                                    </MarkerContent>
+                                                                </Marker>
+                                                            ) : null}
+                                                        </BubbleContent>
+                                                    </Bubble>
+                                                    {isStreaming &&
+                                                        i ===
+                                                            messages.length -
+                                                                1 &&
+                                                        msg.content && (
+                                                            <MessageFooter>
+                                                                <Marker>
+                                                                    <MarkerIcon>
+                                                                        <Loader className="animate-spin text-accent" />
+                                                                    </MarkerIcon>
+                                                                    <MarkerContent>
+                                                                        {t(
+                                                                            'chat.thinking',
+                                                                        )}
+                                                                    </MarkerContent>
+                                                                </Marker>
+                                                            </MessageFooter>
+                                                        )}
+                                                </MessageContent>
+                                            </Message>
+                                        )}
+                                    </MessageScrollerItem>
+                                ))}
+                            </MessageScrollerContent>
+                        </MessageScrollerViewport>
+                        <MessageScrollerButton />
+                        <MessageScrollerComposer
+                            data-testid="ai-chat-composer"
+                            className="px-5 py-3"
+                        >
+                            <AiChatInput
+                                ref={inputRef}
+                                value={input}
+                                onChange={setInput}
+                                onSend={handleSend}
+                                placeholder={t('chat.placeholder')}
+                                ariaLabel={t('chat.placeholder')}
+                                disabled={isStreaming}
+                                className="pointer-events-auto"
+                            />
+                        </MessageScrollerComposer>
+                    </MessageScroller>
+                </MessageScrollerProvider>
             </div>
         </aside>
     );

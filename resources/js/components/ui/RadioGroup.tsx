@@ -21,7 +21,7 @@ function RadioGroupItem({
     return (
         <RadioGroupPrimitive.Item
             className={cn(
-                'size-[18px] shrink-0 rounded-full border-2 border-border transition-colors',
+                'size-4 shrink-0 rounded-full border-2 border-border transition-colors',
                 'data-[state=checked]:border-ink',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40',
                 'disabled:cursor-not-allowed disabled:opacity-50',
@@ -30,7 +30,7 @@ function RadioGroupItem({
             {...props}
         >
             <RadioGroupPrimitive.Indicator className="flex items-center justify-center">
-                <span className="size-[10px] rounded-full bg-ink" />
+                <span className="size-2 rounded-full bg-ink" />
             </RadioGroupPrimitive.Indicator>
         </RadioGroupPrimitive.Item>
     );

@@ -1,5 +1,6 @@
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     progress,
     resume,
@@ -9,33 +10,76 @@ import {
 import { jsonFetchHeaders } from '@/lib/utils';
 import type { EditorialReview } from '@/types/models';
 
+export type EditorialReviewRequestError = {
+    code: string | null;
+    message: string;
+};
+
+type EditorialReviewResponse = {
+    message?: string;
+    error_code?: string | null;
+    review?: EditorialReview;
+};
+
+type EditorialReviewProgressResponse = Pick<
+    EditorialReview,
+    'status' | 'progress' | 'error_message' | 'error_code'
+>;
+
+async function responsePayload(
+    response: Response,
+): Promise<EditorialReviewResponse> {
+    try {
+        return (await response.json()) as EditorialReviewResponse;
+    } catch {
+        return {};
+    }
+}
+
+function safeResponseMessage(
+    response: Response,
+    payload: EditorialReviewResponse,
+    fallback: string,
+): string {
+    if (
+        payload.message &&
+        (payload.error_code !== undefined || response.status < 500)
+    ) {
+        return payload.message;
+    }
+
+    return fallback;
+}
+
 export function useEditorialReview(
     bookId: number,
     initialReview: EditorialReview | null,
 ) {
+    const { t } = useTranslation('editorial-review');
     const [review, setReview] = useState<EditorialReview | null>(initialReview);
     const [starting, setStarting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<EditorialReviewRequestError | null>(
+        null,
+    );
+    const [pollError, setPollError] = useState<string | null>(null);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const pollingRef = useRef(false);
+    const pollFailuresRef = useRef(0);
 
     const isRunning = !!(
         review &&
         ['pending', 'analyzing', 'synthesizing'].includes(review.status)
     );
+    const reviewId = review?.id;
 
     // Sync when server provides fresh review data (e.g., after router.reload())
     useEffect(() => {
-        if (initialReview) {
-            setReview(initialReview);
-        }
-    }, [
-        initialReview?.id,
-        initialReview?.status,
-        initialReview?.sections?.length,
-    ]);
+        setReview(initialReview);
+        setError(null);
+    }, [initialReview]);
 
     useEffect(() => {
-        if (!isRunning || !review) {
+        if (!isRunning || reviewId === undefined) {
             if (pollRef.current) {
                 clearInterval(pollRef.current);
                 pollRef.current = null;
@@ -43,16 +87,51 @@ export function useEditorialReview(
             return;
         }
 
+        pollFailuresRef.current = 0;
+
         pollRef.current = setInterval(async () => {
+            if (pollingRef.current) {
+                return;
+            }
+
+            pollingRef.current = true;
+
             try {
                 const res = await fetch(
-                    progress.url({ book: bookId, review: review.id }),
+                    progress.url({ book: bookId, review: reviewId }),
                     { headers: { Accept: 'application/json' } },
                 );
-                if (!res.ok) throw new Error();
-                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error();
+                }
 
-                if (data.status === 'completed' || data.status === 'failed') {
+                const data =
+                    (await res.json()) as EditorialReviewProgressResponse;
+                pollFailuresRef.current = 0;
+                setPollError(null);
+
+                if (data.status === 'failed') {
+                    setReview((prev) =>
+                        prev
+                            ? {
+                                  ...prev,
+                                  status: data.status,
+                                  progress: data.progress,
+                                  error_message: data.error_message,
+                                  error_code: data.error_code,
+                              }
+                            : prev,
+                    );
+
+                    if (pollRef.current) {
+                        clearInterval(pollRef.current);
+                        pollRef.current = null;
+                    }
+                    router.reload();
+                    return;
+                }
+
+                if (data.status === 'completed') {
                     if (pollRef.current) {
                         clearInterval(pollRef.current);
                         pollRef.current = null;
@@ -80,18 +159,24 @@ export function useEditorialReview(
                     };
                 });
             } catch {
-                // Silently retry on next interval
+                pollFailuresRef.current += 1;
+                if (pollFailuresRef.current >= 3) {
+                    setPollError(t('progress.connectionLost'));
+                }
+            } finally {
+                pollingRef.current = false;
             }
         }, 2000);
 
         return () => {
             if (pollRef.current) clearInterval(pollRef.current);
         };
-    }, [bookId, isRunning, review?.id]);
+    }, [bookId, isRunning, reviewId, t]);
 
     const handleStart = useCallback(async () => {
         setStarting(true);
         setError(null);
+        setPollError(null);
 
         try {
             const res = await fetch(store.url(bookId), {
@@ -99,19 +184,41 @@ export function useEditorialReview(
                 headers: jsonFetchHeaders(),
             });
 
+            const data = await responsePayload(res);
+
             if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data.message || 'Failed to start');
+                if (data.review) {
+                    setReview(data.review);
+                }
+
+                if (data.error_code === 'already_running' && data.review) {
+                    return;
+                }
+
+                setError({
+                    code: data.error_code ?? null,
+                    message: safeResponseMessage(
+                        res,
+                        data,
+                        t('request.startFailed'),
+                    ),
+                });
+
+                return;
             }
 
-            const data = await res.json();
-            setReview(data.review);
-        } catch (e) {
-            setError((e as Error).message);
+            if (data.review) {
+                setReview(data.review);
+            }
+        } catch {
+            setError({
+                code: 'connection_failed',
+                message: t('request.connectionFailed'),
+            });
         } finally {
             setStarting(false);
         }
-    }, [bookId]);
+    }, [bookId, t]);
 
     const handleResume = useCallback(async () => {
         if (!review) {
@@ -120,6 +227,7 @@ export function useEditorialReview(
 
         setStarting(true);
         setError(null);
+        setPollError(null);
 
         try {
             const res = await fetch(
@@ -130,19 +238,41 @@ export function useEditorialReview(
                 },
             );
 
+            const data = await responsePayload(res);
+
             if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data.message || 'Failed to resume');
+                if (data.review) {
+                    setReview(data.review);
+                }
+
+                if (data.error_code === 'already_running' && data.review) {
+                    return;
+                }
+
+                setError({
+                    code: data.error_code ?? null,
+                    message: safeResponseMessage(
+                        res,
+                        data,
+                        t('request.resumeFailed'),
+                    ),
+                });
+
+                return;
             }
 
-            const data = await res.json();
-            setReview(data.review);
-        } catch (e) {
-            setError((e as Error).message);
+            if (data.review) {
+                setReview(data.review);
+            }
+        } catch {
+            setError({
+                code: 'connection_failed',
+                message: t('request.connectionFailed'),
+            });
         } finally {
             setStarting(false);
         }
-    }, [bookId, review]);
+    }, [bookId, review, t]);
 
     const selectReview = useCallback(
         (selected: EditorialReview) => {
@@ -162,6 +292,7 @@ export function useEditorialReview(
         isRunning,
         starting,
         error,
+        pollError,
         handleStart,
         handleResume,
         selectReview,

@@ -45,6 +45,9 @@ export default function EditorialReviewProgress({
               })
             : t('progress.synthesizing', { section: '...' });
         progressPercent = 75;
+    } else if (phase === 'summarizing') {
+        phaseLabel = t('progress.summarizing');
+        progressPercent = 90;
     } else {
         phaseLabel = t('progress.pending');
         progressPercent = 5;

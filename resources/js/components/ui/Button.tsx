@@ -13,13 +13,15 @@ const buttonVariants = cva(
                 secondary: 'bg-neutral-bg text-ink hover:bg-neutral-bg/70',
                 ghost: 'text-ink-muted hover:text-ink',
                 danger: 'bg-delete text-surface hover:bg-delete/90',
+                dangerSecondary:
+                    'bg-neutral-bg text-delete hover:bg-delete-bg',
                 accent: 'bg-accent text-surface hover:bg-accent/90',
             },
             size: {
                 default: 'px-4 py-2 text-[13px]',
                 sm: 'px-3 py-1.5 text-[12px]',
                 lg: 'px-6 py-2.5 text-sm',
-                icon: 'h-9 w-9',
+                icon: 'size-9',
             },
         },
         defaultVariants: {
@@ -35,7 +37,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
     };
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ variant, size, asChild = false, className, ...props }, ref) => {
+    ({ variant, size, asChild = false, className, type = 'button', ...props }, ref) => {
         const classes = cn(buttonVariants({ variant, size }), className);
 
         if (asChild) {
@@ -48,7 +50,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             );
         }
 
-        return <button ref={ref} className={classes} {...props} />;
+        return <button ref={ref} type={type} className={classes} {...props} />;
     },
 );
 

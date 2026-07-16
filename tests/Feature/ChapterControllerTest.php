@@ -103,11 +103,26 @@ test('show redirects to editor page with chapter as pane', function () {
         ->assertRedirect(route('books.editor', ['book' => $book, 'panes' => $chapter->id]));
 });
 
+test('nested chapter routes reject chapters from another book', function () {
+    $book = Book::factory()->create();
+    $otherBook = Book::factory()->create();
+    $otherStoryline = Storyline::factory()->for($otherBook)->create();
+    $foreignChapter = Chapter::factory()->for($otherBook)->for($otherStoryline)->create();
+
+    $this->get(route('chapters.show.json', [$book, $foreignChapter]))
+        ->assertNotFound();
+});
+
 test('updateContent saves content and returns word count', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 0]);
     ChapterVersion::factory()->for($chapter)->create(['is_current' => true, 'content' => '']);
+    $scene = Scene::factory()->for($chapter)->create([
+        'content' => '<p>Old content</p>',
+        'word_count' => 2,
+        'content_version' => 4,
+    ]);
 
     $this->putJson(route('chapters.updateContent', [$book, $chapter]), [
         'content' => '<p>The quick brown fox jumps over the lazy dog</p>',
@@ -118,6 +133,9 @@ test('updateContent saves content and returns word count', function () {
     $chapter->refresh();
     expect($chapter->word_count)->toBeGreaterThan(0);
     expect($chapter->currentVersion->content)->toContain('quick brown fox');
+    expect($scene->fresh()->content)->toContain('quick brown fox')
+        ->and($scene->fresh()->content_version)->toBe(5)
+        ->and($chapter->content_hash)->toBe(hash('xxh128', $chapter->getFullContent()));
 });
 
 test('updateContent validates content is required', function () {
@@ -142,6 +160,17 @@ test('versions returns version list as json', function () {
         ->assertOk()
         ->assertJsonCount(2)
         ->assertJsonFragment(['version_number' => 2, 'is_current' => true]);
+});
+
+test('nested version routes reject versions from another chapter', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $otherChapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $foreignVersion = ChapterVersion::factory()->for($otherChapter)->create();
+
+    $this->post(route('chapters.restoreVersion', [$book, $chapter, $foreignVersion]))
+        ->assertNotFound();
 });
 
 test('applyMerge creates a new accepted current version on top of the existing current', function () {
@@ -606,6 +635,47 @@ test('reorder validates order is required', function () {
 
     $this->postJson(route('chapters.reorder', $book), [])
         ->assertUnprocessable();
+});
+
+test('reorder rejects partial duplicate and foreign chapter payloads', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $first = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 0]);
+    $second = Chapter::factory()->for($book)->for($storyline)->create(['reader_order' => 1]);
+
+    $otherBook = Book::factory()->create();
+    $otherStoryline = Storyline::factory()->for($otherBook)->create();
+    $foreignChapter = Chapter::factory()->for($otherBook)->for($otherStoryline)->create();
+
+    $this->postJson(route('chapters.reorder', $book), [
+        'order' => [
+            ['id' => $first->id, 'storyline_id' => $storyline->id],
+        ],
+    ])->assertJsonValidationErrors('order');
+
+    $this->postJson(route('chapters.reorder', $book), [
+        'order' => [
+            ['id' => $first->id, 'storyline_id' => $storyline->id],
+            ['id' => $first->id, 'storyline_id' => $storyline->id],
+        ],
+    ])->assertJsonValidationErrors('order.1.id');
+
+    $this->postJson(route('chapters.reorder', $book), [
+        'order' => [
+            ['id' => $first->id, 'storyline_id' => $storyline->id],
+            ['id' => $foreignChapter->id, 'storyline_id' => $storyline->id],
+        ],
+    ])->assertJsonValidationErrors('order.1.id');
+
+    $this->postJson(route('chapters.reorder', $book), [
+        'order' => [
+            ['id' => $first->id, 'storyline_id' => $otherStoryline->id],
+            ['id' => $second->id, 'storyline_id' => $storyline->id],
+        ],
+    ])->assertJsonValidationErrors('order.0.storyline_id');
+
+    expect($first->fresh()->reader_order)->toBe(0)
+        ->and($second->fresh()->reader_order)->toBe(1);
 });
 
 test('updateNotes saves notes and returns json', function () {

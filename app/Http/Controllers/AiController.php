@@ -208,7 +208,12 @@ class AiController extends Controller
                 $this->ensureCurrentVersion($chapter, $currentVersion?->id);
 
                 if ($scene) {
-                    $scene->update(['content' => $normalized['content']]);
+                    $scene->update([
+                        'content' => $normalized['content'],
+                        'word_count' => WordCount::count($normalized['content']),
+                        'content_version' => $scene->content_version + 1,
+                    ]);
+                    $chapter->recalculateWordCount();
                     $chapter->load('scenes');
                     $fullContent = $chapter->getContentWithSceneBreaks();
                 } else {

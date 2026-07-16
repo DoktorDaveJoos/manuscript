@@ -32,7 +32,12 @@ export default function DeleteBookDialog({
     }
 
     return (
-        <Dialog onClose={onClose} backdrop="dark" className="gap-6">
+        <Dialog
+            onClose={onClose}
+            title={t('deleteBook.title')}
+            backdrop="dark"
+            className="gap-6"
+        >
             <div className="flex flex-col gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-delete-bg">
                     <svg

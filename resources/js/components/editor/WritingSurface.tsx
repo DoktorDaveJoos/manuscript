@@ -61,6 +61,7 @@ export default function WritingSurface({
     onAddToDictionary,
     locked = false,
     currentVersionId = null,
+    onContentConflict,
 }: {
     scenes: Scene[];
     bookId: number;
@@ -98,6 +99,7 @@ export default function WritingSurface({
     locked?: boolean;
     /** Chapter version the rendered content belongs to — scene saves carry it. */
     currentVersionId?: number | null;
+    onContentConflict?: () => void;
 }) {
     const { t } = useTranslation('editor');
 
@@ -315,7 +317,7 @@ export default function WritingSurface({
     const metadataParts: React.ReactNode[] = [];
     if (povCharacterName) {
         if (povCharacterId) {
-            const marker = ' NAME ';
+            const marker = '__MANUSCRIPT_POV_CHARACTER_NAME__';
             const povText = t('writingSurface.pov', { name: marker });
             const [before, after] = povText.split(marker);
             const povHref = wikiIndex.url(
@@ -417,7 +419,7 @@ export default function WritingSurface({
                         >
                             <Kbd keys="⇧↵" />
                             <span className="font-sans text-xs text-ink-faint">
-                                new line
+                                {t('writingSurface.newLine')}
                             </span>
                         </div>
                     </div>
@@ -493,6 +495,7 @@ export default function WritingSurface({
                                 onAddToDictionary={onAddToDictionary}
                                 locked={locked}
                                 currentVersionId={currentVersionId}
+                                onContentConflict={onContentConflict}
                             />
                         ))}
                     </div>

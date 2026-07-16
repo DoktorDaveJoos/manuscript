@@ -43,3 +43,7 @@ yarn-error.log
 
 # Local planning docs — not source-controlled
 /docs/plans
+
+# Pencil design files and local workspace state
+*.pen
+.pencil/

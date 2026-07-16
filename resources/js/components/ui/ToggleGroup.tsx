@@ -16,15 +16,22 @@ function ToggleGroup({
 
 function ToggleGroupItem({
     className,
+    variant = 'default',
     ...props
-}: ComponentProps<typeof ToggleGroupPrimitive.Item>) {
+}: ComponentProps<typeof ToggleGroupPrimitive.Item> & {
+    variant?: 'default' | 'pill';
+}) {
     return (
         <ToggleGroupPrimitive.Item
             className={cn(
-                'rounded-md px-4 py-[7px] text-[12px] transition-colors',
-                'bg-neutral-bg text-ink-muted hover:text-ink',
-                'data-[state=on]:bg-ink data-[state=on]:font-semibold data-[state=on]:text-surface',
-                'disabled:opacity-60 disabled:hover:text-ink-muted',
+                variant === 'default'
+                    ? [
+                          'rounded-md px-4 py-1.5 text-xs transition-colors',
+                          'bg-neutral-bg text-ink-muted hover:text-ink',
+                          'data-[state=on]:bg-ink data-[state=on]:font-semibold data-[state=on]:text-surface',
+                          'disabled:opacity-60 disabled:hover:text-ink-muted',
+                      ]
+                    : 'rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-60',
                 className,
             )}
             {...props}

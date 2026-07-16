@@ -30,6 +30,7 @@ import {
     CommandSeparator,
     CommandShortcut,
 } from '@/components/ui/Command';
+import Dialog from '@/components/ui/Dialog';
 
 function PaletteIcon({ children }: { children: ReactNode }) {
     return (
@@ -78,6 +79,7 @@ const panelLabelKeys: Partial<
 
 export default function CommandPalette({
     editor,
+    hasSelection,
     isOpen,
     onClose,
     onSplitScene,
@@ -97,6 +99,7 @@ export default function CommandPalette({
     onRewriteSelection,
 }: {
     editor: Editor | null;
+    hasSelection: boolean;
     isOpen: boolean;
     onClose: () => void;
     onSplitScene: () => Promise<void>;
@@ -144,279 +147,258 @@ export default function CommandPalette({
     };
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-surface/40"
-            onClick={onClose}
+        <Dialog
+            onClose={onClose}
+            title={t('palette.searchActions')}
+            width={420}
+            backdrop="light"
+            className="overflow-hidden p-0 shadow-xl"
         >
-            <div
-                className="w-[420px] overflow-hidden rounded-xl bg-surface-card shadow-[0_8px_32px_#1A1A1A18,0_2px_8px_#1A1A1A0A]"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <Command>
-                    <CommandInput
-                        ref={inputRef}
-                        placeholder={t('palette.searchActions')}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Escape') {
-                                e.preventDefault();
-                                onClose();
-                            }
-                        }}
-                    >
-                        <span className="flex items-center gap-1">
-                            <span className="inline-flex items-center justify-center rounded-md border border-border bg-surface-card px-[5px] py-[3px]">
-                                <CommandIcon
-                                    size={12}
-                                    className="text-ink-muted"
-                                />
-                            </span>
-                            <span className="inline-flex items-center justify-center rounded-md border border-border bg-surface-card px-[7px] py-[3px] text-[11px] font-medium text-ink-muted">
-                                P
-                            </span>
+            <Command>
+                <CommandInput
+                    ref={inputRef}
+                    placeholder={t('palette.searchActions')}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                            e.preventDefault();
+                            onClose();
+                        }
+                    }}
+                >
+                    <span className="flex items-center gap-1">
+                        <span className="inline-flex items-center justify-center rounded-md border border-border bg-surface-card px-[5px] py-[3px]">
+                            <CommandIcon size={12} className="text-ink-muted" />
                         </span>
-                    </CommandInput>
-                    <CommandList>
-                        <CommandEmpty>
-                            {t('palette.noMatchingActions')}
-                        </CommandEmpty>
+                        <span className="inline-flex items-center justify-center rounded-md border border-border bg-surface-card px-[7px] py-[3px] text-[11px] font-medium text-ink-muted">
+                            P
+                        </span>
+                    </span>
+                </CommandInput>
+                <CommandList>
+                    <CommandEmpty>
+                        {t('palette.noMatchingActions')}
+                    </CommandEmpty>
 
-                        <CommandGroup heading={t('palette.section.editor')}>
-                            <CommandItem
-                                value={focusModeLabel}
-                                onSelect={() =>
-                                    handleSelect(() => onEnterFocusMode?.())
-                                }
-                            >
-                                <PaletteIcon>
-                                    <Maximize size={16} />
-                                </PaletteIcon>
-                                <span className="flex-1">{focusModeLabel}</span>
-                                {isFocusMode && (
-                                    <CommandShortcut>
-                                        <ShortcutKeys shortcut="Esc" />
-                                    </CommandShortcut>
-                                )}
-                            </CommandItem>
+                    <CommandGroup heading={t('palette.section.editor')}>
+                        <CommandItem
+                            value={focusModeLabel}
+                            onSelect={() =>
+                                handleSelect(() => onEnterFocusMode?.())
+                            }
+                        >
+                            <PaletteIcon>
+                                <Maximize size={16} />
+                            </PaletteIcon>
+                            <span className="flex-1">{focusModeLabel}</span>
+                            {isFocusMode && (
+                                <CommandShortcut>
+                                    <ShortcutKeys shortcut="Esc" />
+                                </CommandShortcut>
+                            )}
+                        </CommandItem>
 
-                            <CommandItem
-                                value={typewriterLabel}
-                                onSelect={() =>
-                                    handleSelect(() =>
-                                        onToggleTypewriterMode?.(),
-                                    )
-                                }
-                            >
-                                <PaletteIcon>
-                                    <Keyboard size={16} />
-                                </PaletteIcon>
-                                <span className="flex-1">
-                                    {typewriterLabel}
-                                </span>
-                            </CommandItem>
+                        <CommandItem
+                            value={typewriterLabel}
+                            onSelect={() =>
+                                handleSelect(() => onToggleTypewriterMode?.())
+                            }
+                        >
+                            <PaletteIcon>
+                                <Keyboard size={16} />
+                            </PaletteIcon>
+                            <span className="flex-1">{typewriterLabel}</span>
+                        </CommandItem>
 
-                            <CommandItem
-                                value={spellcheckLabel}
-                                onSelect={() =>
-                                    handleSelect(() => onToggleSpellcheck?.())
-                                }
-                            >
-                                <PaletteIcon>
-                                    <SpellCheck size={16} />
-                                </PaletteIcon>
-                                <span className="flex-1">
-                                    {spellcheckLabel}
-                                </span>
-                            </CommandItem>
-                        </CommandGroup>
+                        <CommandItem
+                            value={spellcheckLabel}
+                            onSelect={() =>
+                                handleSelect(() => onToggleSpellcheck?.())
+                            }
+                        >
+                            <PaletteIcon>
+                                <SpellCheck size={16} />
+                            </PaletteIcon>
+                            <span className="flex-1">{spellcheckLabel}</span>
+                        </CommandItem>
+                    </CommandGroup>
 
-                        <CommandSeparator />
+                    <CommandSeparator />
 
-                        <CommandGroup heading={t('palette.section.assistance')}>
-                            <CommandItem
-                                value={t('palette.continueWriting', {
+                    <CommandGroup heading={t('palette.section.assistance')}>
+                        <CommandItem
+                            value={t('palette.continueWriting', {
+                                defaultValue: 'Continue writing',
+                            })}
+                            disabled={!onContinueWriting}
+                            onSelect={() =>
+                                handleSelect(() => onContinueWriting?.())
+                            }
+                        >
+                            <PaletteIcon>
+                                <Sparkles size={16} />
+                            </PaletteIcon>
+                            <span className="flex-1">
+                                {t('palette.continueWriting', {
                                     defaultValue: 'Continue writing',
                                 })}
-                                disabled={!onContinueWriting}
-                                onSelect={() =>
-                                    handleSelect(() => onContinueWriting?.())
-                                }
-                            >
-                                <PaletteIcon>
-                                    <Sparkles size={16} />
-                                </PaletteIcon>
-                                <span className="flex-1">
-                                    {t('palette.continueWriting', {
-                                        defaultValue: 'Continue writing',
-                                    })}
-                                </span>
-                            </CommandItem>
+                            </span>
+                        </CommandItem>
 
-                            <CommandItem
-                                value={t('palette.rewriteSelection', {
+                        <CommandItem
+                            value={t('palette.rewriteSelection', {
+                                defaultValue: 'Rewrite selection',
+                            })}
+                            disabled={!onRewriteSelection}
+                            onSelect={() =>
+                                handleSelect(() => onRewriteSelection?.())
+                            }
+                        >
+                            <PaletteIcon>
+                                <Wand2 size={16} />
+                            </PaletteIcon>
+                            <span className="flex-1">
+                                {t('palette.rewriteSelection', {
                                     defaultValue: 'Rewrite selection',
                                 })}
-                                disabled={!onRewriteSelection}
-                                onSelect={() =>
-                                    handleSelect(() => onRewriteSelection?.())
-                                }
-                            >
-                                <PaletteIcon>
-                                    <Wand2 size={16} />
-                                </PaletteIcon>
-                                <span className="flex-1">
-                                    {t('palette.rewriteSelection', {
-                                        defaultValue: 'Rewrite selection',
-                                    })}
+                            </span>
+                        </CommandItem>
+
+                        {panelItems.map((item) => {
+                            if (item.kind === 'action') return null;
+                            const isActive = openPanels.has(item.id);
+                            const keys = panelLabelKeys[item.id];
+                            if (!keys) return null;
+                            const label = t(isActive ? keys.close : keys.open);
+                            const Icon = item.icon;
+                            return (
+                                <CommandItem
+                                    key={item.id}
+                                    value={label}
+                                    onSelect={() =>
+                                        handleSelect(() =>
+                                            onTogglePanel(item.id),
+                                        )
+                                    }
+                                >
+                                    <PaletteIcon>
+                                        <Icon size={16} />
+                                    </PaletteIcon>
+                                    <span className="flex-1">{label}</span>
+                                </CommandItem>
+                            );
+                        })}
+                    </CommandGroup>
+
+                    <CommandSeparator />
+
+                    <CommandGroup heading={t('palette.section.textStyle')}>
+                        <CommandItem
+                            value={t('palette.bold')}
+                            onSelect={() =>
+                                handleSelect(() =>
+                                    editor?.chain().focus().toggleBold().run(),
+                                )
+                            }
+                        >
+                            <PaletteIcon>
+                                <span className="text-sm leading-none font-bold">
+                                    B
                                 </span>
-                            </CommandItem>
+                            </PaletteIcon>
+                            <span className="flex-1">{t('palette.bold')}</span>
+                            <CommandShortcut>
+                                <ShortcutKeys shortcut={'\u2318B'} />
+                            </CommandShortcut>
+                        </CommandItem>
 
-                            {panelItems.map((item) => {
-                                if (item.kind === 'action') return null;
-                                const isActive = openPanels.has(item.id);
-                                const keys = panelLabelKeys[item.id];
-                                if (!keys) return null;
-                                const label = t(
-                                    isActive ? keys.close : keys.open,
-                                );
-                                const Icon = item.icon;
-                                return (
-                                    <CommandItem
-                                        key={item.id}
-                                        value={label}
-                                        onSelect={() =>
-                                            handleSelect(() =>
-                                                onTogglePanel(item.id),
-                                            )
-                                        }
-                                    >
-                                        <PaletteIcon>
-                                            <Icon size={16} />
-                                        </PaletteIcon>
-                                        <span className="flex-1">{label}</span>
-                                    </CommandItem>
-                                );
-                            })}
-                        </CommandGroup>
+                        <CommandItem
+                            value={t('palette.italic')}
+                            onSelect={() =>
+                                handleSelect(() =>
+                                    editor
+                                        ?.chain()
+                                        .focus()
+                                        .toggleItalic()
+                                        .run(),
+                                )
+                            }
+                        >
+                            <PaletteIcon>
+                                <span className="text-sm leading-none">I</span>
+                            </PaletteIcon>
+                            <span className="flex-1">
+                                {t('palette.italic')}
+                            </span>
+                            <CommandShortcut>
+                                <ShortcutKeys shortcut={'\u2318I'} />
+                            </CommandShortcut>
+                        </CommandItem>
+                    </CommandGroup>
 
-                        <CommandSeparator />
+                    <CommandSeparator />
 
-                        <CommandGroup heading={t('palette.section.textStyle')}>
-                            <CommandItem
-                                value={t('palette.bold')}
-                                onSelect={() =>
-                                    handleSelect(() =>
-                                        editor
-                                            ?.chain()
-                                            .focus()
-                                            .toggleBold()
-                                            .run(),
-                                    )
-                                }
-                            >
-                                <PaletteIcon>
-                                    <span className="text-sm leading-none font-bold">
-                                        B
-                                    </span>
-                                </PaletteIcon>
-                                <span className="flex-1">
-                                    {t('palette.bold')}
-                                </span>
-                                <CommandShortcut>
-                                    <ShortcutKeys shortcut={'\u2318B'} />
-                                </CommandShortcut>
-                            </CommandItem>
+                    <CommandGroup heading={t('palette.section.chapter')}>
+                        <CommandItem
+                            value={t('palette.newChapter')}
+                            onSelect={() => handleSelect(onNewChapter)}
+                        >
+                            <PaletteIcon>
+                                <Plus size={16} />
+                            </PaletteIcon>
+                            <span className="flex-1">
+                                {t('palette.newChapter')}
+                            </span>
+                        </CommandItem>
 
-                            <CommandItem
-                                value={t('palette.italic')}
-                                onSelect={() =>
-                                    handleSelect(() =>
-                                        editor
-                                            ?.chain()
-                                            .focus()
-                                            .toggleItalic()
-                                            .run(),
-                                    )
-                                }
-                            >
-                                <PaletteIcon>
-                                    <span className="text-sm leading-none">
-                                        I
-                                    </span>
-                                </PaletteIcon>
-                                <span className="flex-1">
-                                    {t('palette.italic')}
-                                </span>
-                                <CommandShortcut>
-                                    <ShortcutKeys shortcut={'\u2318I'} />
-                                </CommandShortcut>
-                            </CommandItem>
-                        </CommandGroup>
+                        <CommandItem
+                            value={t('palette.newScene')}
+                            disabled={!onAddScene}
+                            onSelect={() => handleSelect(() => onAddScene?.())}
+                        >
+                            <PaletteIcon>
+                                <Minus size={16} />
+                            </PaletteIcon>
+                            <span className="flex-1">
+                                {t('palette.newScene')}
+                            </span>
+                        </CommandItem>
 
-                        <CommandSeparator />
+                        <CommandItem
+                            value={t('palette.makeSelectionOwnScene')}
+                            disabled={!hasSelection}
+                            onSelect={() =>
+                                handleSelect(() => {
+                                    onSplitScene();
+                                })
+                            }
+                        >
+                            <PaletteIcon>
+                                <GitBranch size={16} />
+                            </PaletteIcon>
+                            <span className="flex-1">
+                                {t('palette.makeSelectionOwnScene')}
+                            </span>
+                        </CommandItem>
 
-                        <CommandGroup heading={t('palette.section.chapter')}>
-                            <CommandItem
-                                value={t('palette.newChapter')}
-                                onSelect={() => handleSelect(onNewChapter)}
-                            >
-                                <PaletteIcon>
-                                    <Plus size={16} />
-                                </PaletteIcon>
-                                <span className="flex-1">
-                                    {t('palette.newChapter')}
-                                </span>
-                            </CommandItem>
-
-                            <CommandItem
-                                value={t('palette.newScene')}
-                                disabled={!onAddScene}
-                                onSelect={() =>
-                                    handleSelect(() => onAddScene?.())
-                                }
-                            >
-                                <PaletteIcon>
-                                    <Minus size={16} />
-                                </PaletteIcon>
-                                <span className="flex-1">
-                                    {t('palette.newScene')}
-                                </span>
-                            </CommandItem>
-
-                            <CommandItem
-                                value={t('palette.makeSelectionOwnScene')}
-                                onSelect={() =>
-                                    handleSelect(() => {
-                                        onSplitScene();
-                                    })
-                                }
-                            >
-                                <PaletteIcon>
-                                    <GitBranch size={16} />
-                                </PaletteIcon>
-                                <span className="flex-1">
-                                    {t('palette.makeSelectionOwnScene')}
-                                </span>
-                            </CommandItem>
-
-                            <CommandItem
-                                value={t('palette.makeSelectionOwnChapter')}
-                                onSelect={() =>
-                                    handleSelect(() => {
-                                        onSplitChapter();
-                                    })
-                                }
-                            >
-                                <PaletteIcon>
-                                    <BookOpen size={16} />
-                                </PaletteIcon>
-                                <span className="flex-1">
-                                    {t('palette.makeSelectionOwnChapter')}
-                                </span>
-                            </CommandItem>
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
-            </div>
-        </div>
+                        <CommandItem
+                            value={t('palette.makeSelectionOwnChapter')}
+                            disabled={!hasSelection}
+                            onSelect={() =>
+                                handleSelect(() => {
+                                    onSplitChapter();
+                                })
+                            }
+                        >
+                            <PaletteIcon>
+                                <BookOpen size={16} />
+                            </PaletteIcon>
+                            <span className="flex-1">
+                                {t('palette.makeSelectionOwnChapter')}
+                            </span>
+                        </CommandItem>
+                    </CommandGroup>
+                </CommandList>
+            </Command>
+        </Dialog>
     );
 }

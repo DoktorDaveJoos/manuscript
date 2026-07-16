@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { updateTitle } from '@/actions/App/Http/Controllers/ChapterController';
 import { openWindow as openDiffWindow } from '@/actions/App/Http/Controllers/ChapterDiffController';
+import Button from '@/components/ui/Button';
+import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import type { ChapterData } from '@/hooks/useChapterData';
 import type { ContinueWritingReview } from '@/hooks/useContinueWriting';
 import { useProofreading } from '@/hooks/useProofreading';
@@ -56,6 +58,7 @@ export default function ChapterPane({
     isLocalFindOpen = false,
     localFindShowReplace = false,
     onLocalFindClose,
+    searchHighlight,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -92,6 +95,7 @@ export default function ChapterPane({
     isLocalFindOpen?: boolean;
     localFindShowReplace?: boolean;
     onLocalFindClose?: () => void;
+    searchHighlight?: SearchHighlight | null;
 }) {
     const { t } = useTranslation('editor');
     const { chapter, proofreadingConfig: initialProofreadingConfig } =
@@ -383,7 +387,6 @@ export default function ChapterPane({
     const flushTitleSave = useCallback(async () => {
         const title = pendingTitleRef.current;
         if (title === null) return;
-        pendingTitleRef.current = null;
 
         titleAbortRef.current?.abort();
         const controller = new AbortController();
@@ -404,7 +407,10 @@ export default function ChapterPane({
 
             if (!response.ok) throw new Error('Save failed');
 
-            handleLocalSaveStatusChange('saved');
+            if (pendingTitleRef.current === title) {
+                pendingTitleRef.current = null;
+                handleLocalSaveStatusChange('saved');
+            }
         } catch (e) {
             if ((e as Error).name !== 'AbortError') {
                 handleLocalSaveStatusChange('error');
@@ -457,12 +463,22 @@ export default function ChapterPane({
             flushAllRef.current();
         (el as unknown as Record<string, unknown>).__getPendingAll = () => {
             const sceneEls = el.querySelectorAll('[id^="scene-"]');
-            const pending: { url: string; content: string }[] = [];
+            const pending: {
+                url: string;
+                content: string;
+                expectedCurrentVersionId?: number | null;
+                expectedContentVersion?: number;
+            }[] = [];
             sceneEls.forEach((sceneEl) => {
                 const getPending = (
                     sceneEl as unknown as Record<
                         string,
-                        () => { url: string; content: string } | null
+                        () => {
+                            url: string;
+                            content: string;
+                            expectedCurrentVersionId?: number | null;
+                            expectedContentVersion?: number;
+                        } | null
                     >
                 ).__getPending;
                 if (typeof getPending === 'function') {
@@ -523,8 +539,11 @@ export default function ChapterPane({
                                 }
                             />
                         </div>
-                        <button
+                        <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={t('pane.close')}
                             onMouseDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -533,7 +552,7 @@ export default function ChapterPane({
                             className="mr-2 flex h-6 w-6 shrink-0 items-center justify-center rounded text-ink-faint transition-colors hover:bg-neutral-bg hover:text-ink"
                         >
                             <X size={14} />
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
@@ -635,8 +654,10 @@ export default function ChapterPane({
                         isLocalFindOpen={isLocalFindOpen}
                         localFindShowReplace={localFindShowReplace}
                         onLocalFindClose={onLocalFindClose}
+                        searchHighlight={searchHighlight}
                         locked={editorLocked}
                         currentVersionId={chapter.current_version?.id ?? null}
+                        onContentConflict={onVersionsChanged}
                     />
                     {proseRunning && (
                         <div

@@ -63,8 +63,14 @@ export type EditorialReviewErrorCode =
     | 'overloaded'
     | 'insufficient_credits'
     | 'invalid_key'
+    | 'model_unavailable'
+    | 'context_too_long'
+    | 'bad_request'
+    | 'connection_failed'
     | 'no_provider'
     | 'no_content'
+    | 'app_unavailable'
+    | 'queue_unavailable'
     | 'timeout'
     | 'unknown';
 
@@ -195,6 +201,7 @@ export type AppSettings = {
     compact_word_count: boolean;
     send_error_reports: boolean;
     send_analytics: boolean;
+    auto_update: boolean;
     crash_report_prompted: boolean;
     language_prompted: boolean;
     locale: string;
@@ -208,6 +215,8 @@ export type EditorTextPosition = 'left' | 'center' | 'right';
 export type Book = {
     id: number;
     title: string;
+    notes?: string | null;
+    notes_version?: number;
     author: string;
     language: string;
     genre: string | null;
@@ -377,6 +386,7 @@ export type Scene = {
     content: string | null;
     sort_order: number;
     word_count: number;
+    content_version?: number;
 };
 
 export type ChapterVersion = {

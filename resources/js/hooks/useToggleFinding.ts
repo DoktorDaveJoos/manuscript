@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { toggleFinding } from '@/actions/App/Http/Controllers/EditorialReviewController';
-import { jsonFetchHeaders } from '@/lib/utils';
+import { ensureSuccessfulResponse, jsonFetchHeaders } from '@/lib/utils';
 
 export function useToggleFinding(
     bookId: number,
@@ -8,6 +10,8 @@ export function useToggleFinding(
     resolvedFindings: string[],
     onUpdate: (resolved: string[]) => void,
 ) {
+    const { t } = useTranslation('editorial-review');
+
     return useCallback(
         async (key: string) => {
             const newResolved = resolvedFindings.includes(key)
@@ -26,13 +30,17 @@ export function useToggleFinding(
                     },
                 );
 
-                if (!res.ok) {
-                    onUpdate(resolvedFindings);
-                }
+                await ensureSuccessfulResponse(
+                    res,
+                    t('finding.saveFailed.description'),
+                );
             } catch {
                 onUpdate(resolvedFindings);
+                toast.error(t('finding.saveFailed.title'), {
+                    description: t('finding.saveFailed.description'),
+                });
             }
         },
-        [bookId, reviewId, resolvedFindings, onUpdate],
+        [bookId, reviewId, resolvedFindings, onUpdate, t],
     );
 }

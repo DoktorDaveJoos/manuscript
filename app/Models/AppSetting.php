@@ -86,6 +86,11 @@ class AppSetting extends Model
         return (bool) self::get('show_ai_features', true);
     }
 
+    public static function automaticUpdatesEnabled(): bool
+    {
+        return (bool) self::get('auto_update', true);
+    }
+
     public static function clearCache(): void
     {
         self::$cache = [];

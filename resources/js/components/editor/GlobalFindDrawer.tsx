@@ -12,6 +12,7 @@ import {
     replaceAll,
     search,
 } from '@/actions/App/Http/Controllers/SearchController';
+import { Alert } from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
 import {
     Collapsible,
@@ -23,7 +24,8 @@ import PanelHeader from '@/components/ui/PanelHeader';
 import ToggleButton from '@/components/ui/ToggleButton';
 import type { SearchHighlight } from '@/extensions/SearchHighlightExtension';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
-import { cn, jsonFetchHeaders } from '@/lib/utils';
+import { flushAllPanes } from '@/lib/pane';
+import { broadcastChapterDataChanged, cn, jsonFetchHeaders } from '@/lib/utils';
 
 type MatchResult = {
     scene_id: number;
@@ -45,6 +47,24 @@ type SearchResponse = {
     total_matches: number;
     chapter_count: number;
 };
+
+type ReplaceResponse = {
+    replaced_count: number;
+    affected_scenes: number;
+    affected_chapter_ids: number[];
+};
+
+async function responseErrorMessage(
+    response: Response,
+    fallback: string,
+): Promise<string> {
+    try {
+        const payload = (await response.json()) as { message?: string };
+        return payload.message || fallback;
+    } catch {
+        return fallback;
+    }
+}
 
 export default function GlobalFindDrawer({
     bookId,
@@ -77,6 +97,7 @@ export default function GlobalFindDrawer({
     const [query, setQuery] = useState('');
     const [replaceQuery, setReplaceQuery] = useState('');
     const [results, setResults] = useState<ChapterResult[]>([]);
+    const [searchError, setSearchError] = useState<string | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [isReplacing, setIsReplacing] = useState(false);
     const [caseSensitive, setCaseSensitive] = useState(false);
@@ -104,7 +125,11 @@ export default function GlobalFindDrawer({
     const performSearch = useCallback(async () => {
         const q = query.trim();
         if (!q) {
+            abortRef.current?.abort();
+            abortRef.current = null;
             setResults([]);
+            setSearchError(null);
+            setIsSearching(false);
             return;
         }
 
@@ -113,6 +138,7 @@ export default function GlobalFindDrawer({
         abortRef.current = controller;
 
         setIsSearching(true);
+        setSearchError(null);
         try {
             const response = await fetch(search.url(bookId), {
                 method: 'POST',
@@ -126,24 +152,43 @@ export default function GlobalFindDrawer({
                 signal: controller.signal,
             });
 
-            if (!response.ok) throw new Error('Search failed');
+            if (!response.ok) {
+                throw new Error(
+                    await responseErrorMessage(response, 'Search failed'),
+                );
+            }
 
             const data: SearchResponse = await response.json();
+            if (controller.signal.aborted || abortRef.current !== controller) {
+                return;
+            }
             setResults(data.results);
             setExpandedChapters(new Set(data.results.map((r) => r.chapter_id)));
         } catch (e) {
-            if ((e as Error).name !== 'AbortError') {
+            if (
+                (e as Error).name !== 'AbortError' &&
+                abortRef.current === controller
+            ) {
                 setResults([]);
+                setSearchError((e as Error).message);
             }
         } finally {
-            setIsSearching(false);
+            if (abortRef.current === controller) {
+                abortRef.current = null;
+                setIsSearching(false);
+            }
         }
     }, [bookId, query, caseSensitive, wholeWord, useRegex]);
 
     useEffect(() => {
         const q = query.trim();
+        abortRef.current?.abort();
+        abortRef.current = null;
+        setIsSearching(false);
+        setSearchError(null);
+        setResults([]);
+
         if (!q) {
-            setResults([]);
             onSearchChange?.(null);
             return;
         }
@@ -153,6 +198,7 @@ export default function GlobalFindDrawer({
             wholeWord,
             regex: useRegex,
         });
+        setIsSearching(true);
         const timer = setTimeout(performSearch, 300);
         return () => clearTimeout(timer);
     }, [
@@ -165,15 +211,19 @@ export default function GlobalFindDrawer({
     ]);
 
     const handleReplaceAll = useCallback(async () => {
-        if (!query.trim() || isReplacing) return;
+        const normalizedQuery = query.trim();
+        if (!normalizedQuery || isReplacing) return;
 
         setIsReplacing(true);
+        setSearchError(null);
         try {
+            await flushAllPanes();
+
             const response = await fetch(replaceAll.url(bookId), {
                 method: 'POST',
                 headers: jsonFetchHeaders(),
                 body: JSON.stringify({
-                    search: query,
+                    search: normalizedQuery,
                     replace: replaceQuery,
                     case_sensitive: caseSensitive,
                     whole_word: wholeWord,
@@ -181,17 +231,25 @@ export default function GlobalFindDrawer({
                 }),
             });
 
-            if (!response.ok) throw new Error('Replace failed');
+            if (!response.ok) {
+                throw new Error(
+                    await responseErrorMessage(response, 'Replace failed'),
+                );
+            }
 
-            const data = await response.json();
+            const data: ReplaceResponse = await response.json();
 
             if (data.replaced_count > 0) {
-                router.reload({
-                    onFinish: () => performSearch(),
-                });
+                data.affected_chapter_ids.forEach(broadcastChapterDataChanged);
             }
-        } catch {
-            // Ignore
+
+            await performSearch();
+
+            if (data.replaced_count > 0) {
+                router.reload({ only: ['book', 'sidebar_storylines'] });
+            }
+        } catch (error) {
+            setSearchError((error as Error).message);
         } finally {
             setIsReplacing(false);
         }
@@ -205,6 +263,31 @@ export default function GlobalFindDrawer({
         isReplacing,
         performSearch,
     ]);
+
+    const handleResultClick = useCallback(
+        (chapterId: number, match: MatchResult, occurrenceIndex: number) => {
+            onSearchChange?.({
+                query: query.trim(),
+                caseSensitive,
+                wholeWord,
+                regex: useRegex,
+                activeSceneId: match.scene_id,
+                activeMatchIndex: occurrenceIndex,
+            });
+            if (chapterId !== currentChapterId) {
+                onNavigate(chapterId, match.scene_id);
+            }
+        },
+        [
+            query,
+            caseSensitive,
+            wholeWord,
+            useRegex,
+            currentChapterId,
+            onSearchChange,
+            onNavigate,
+        ],
+    );
 
     const toggleChapter = useCallback((chapterId: number) => {
         setExpandedChapters((prev) => {
@@ -346,7 +429,11 @@ export default function GlobalFindDrawer({
 
             {/* Results List */}
             <div className="flex-1 overflow-y-auto">
-                {results.length === 0 && query.trim() && !isSearching ? (
+                {searchError ? (
+                    <Alert variant="destructive" className="m-4 p-3">
+                        {searchError}
+                    </Alert>
+                ) : results.length === 0 && query.trim() && !isSearching ? (
                     <div className="px-4 py-8 text-center text-[12px] text-ink-faint">
                         {t('common:noResults')}
                     </div>
@@ -362,7 +449,7 @@ export default function GlobalFindDrawer({
                                 chapter.chapter_id === currentChapterId
                             }
                             onToggle={() => toggleChapter(chapter.chapter_id)}
-                            onResultClick={onNavigate}
+                            onResultClick={handleResultClick}
                         />
                     ))
                 )}
@@ -387,8 +474,23 @@ const ChapterGroup = memo(function ChapterGroup({
     isExpanded: boolean;
     isCurrentChapter: boolean;
     onToggle: () => void;
-    onResultClick: (chapterId: number, sceneId: number) => void;
+    onResultClick: (
+        chapterId: number,
+        match: MatchResult,
+        occurrenceIndex: number,
+    ) => void;
 }) {
+    const matchesWithOccurrence = useMemo(() => {
+        const countsByScene = new Map<number, number>();
+
+        return chapter.matches.map((match) => {
+            const occurrenceIndex = countsByScene.get(match.scene_id) ?? 0;
+            countsByScene.set(match.scene_id, occurrenceIndex + 1);
+
+            return { match, occurrenceIndex };
+        });
+    }, [chapter.matches]);
+
     return (
         <Collapsible open={isExpanded} onOpenChange={onToggle}>
             <CollapsibleTrigger className="flex w-full items-start justify-between px-4 py-2 transition-colors hover:bg-neutral-bg">
@@ -412,11 +514,12 @@ const ChapterGroup = memo(function ChapterGroup({
                 </span>
             </CollapsibleTrigger>
             <CollapsibleContent>
-                {chapter.matches.map((match, i) => (
+                {matchesWithOccurrence.map(({ match, occurrenceIndex }, i) => (
                     <ResultItem
                         key={`${match.scene_id}-${match.match_start}-${i}`}
                         match={match}
                         chapterId={chapter.chapter_id}
+                        occurrenceIndex={occurrenceIndex}
                         onClick={onResultClick}
                     />
                 ))}
@@ -428,15 +531,24 @@ const ChapterGroup = memo(function ChapterGroup({
 const ResultItem = memo(function ResultItem({
     match,
     chapterId,
+    occurrenceIndex,
     onClick,
 }: {
     match: MatchResult;
     chapterId: number;
-    onClick: (chapterId: number, sceneId: number) => void;
+    occurrenceIndex: number;
+    onClick: (
+        chapterId: number,
+        match: MatchResult,
+        occurrenceIndex: number,
+    ) => void;
 }) {
     return (
         <button
-            onClick={() => onClick(chapterId, match.scene_id)}
+            onClick={() => onClick(chapterId, match, occurrenceIndex)}
+            data-search-result
+            data-search-scene-id={match.scene_id}
+            data-search-occurrence-index={occurrenceIndex}
             className="flex w-full flex-col items-start gap-0.5 px-4 py-1.5 pl-8 text-left transition-colors hover:bg-neutral-bg"
         >
             <span className="line-clamp-1 text-[12px] text-ink-soft">

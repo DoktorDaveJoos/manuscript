@@ -70,11 +70,15 @@ class StorylineController extends Controller
 
     public function destroy(Book $book, Storyline $storyline): RedirectResponse
     {
-        if ($book->storylines()->count() <= 1) {
-            abort(422, __('Cannot delete the last storyline.'));
-        }
+        DB::transaction(function () use ($book, $storyline) {
+            $storylines = $book->storylines()
+                ->lockForUpdate()
+                ->get(['id']);
 
-        DB::transaction(function () use ($storyline) {
+            if ($storylines->count() <= 1) {
+                abort(422, __('Cannot delete the last storyline.'));
+            }
+
             Scene::whereIn('chapter_id', $storyline->chapters()->select('id'))->delete();
             $storyline->chapters()->delete();
             $storyline->delete();

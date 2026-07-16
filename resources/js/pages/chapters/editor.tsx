@@ -1,4 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
+import { DOMSerializer } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
 import {
     BookOpen,
@@ -10,7 +11,10 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { split as splitChapter } from '@/actions/App/Http/Controllers/ChapterController';
 import { index as editorialReviewIndex } from '@/actions/App/Http/Controllers/EditorialReviewController';
+import { store as storeScene } from '@/actions/App/Http/Controllers/SceneController';
 import AccessBar from '@/components/editor/AccessBar';
 import type {
     AccessBarItemConfig,
@@ -50,13 +54,15 @@ import usePaneManager from '@/hooks/usePaneManager';
 import type { RewriteSelectionReview } from '@/hooks/useRewriteSelection';
 import { useRewriteSelection } from '@/hooks/useRewriteSelection';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
-import { flushAllPanes } from '@/lib/pane';
+import { flushAllPanes, flushPaneByChapter } from '@/lib/pane';
 import type { StyleAnalysis } from '@/lib/style/types';
 import {
     addSceneToChapter,
+    broadcastChapterDataChanged,
     CHANNEL_CHAPTER_DATA_CHANGED,
     CHANNEL_DIFF_APPLIED,
     createChapter,
+    ensureSuccessfulResponse,
     jsonFetchHeaders,
     saveAppSetting,
 } from '@/lib/utils';
@@ -66,6 +72,23 @@ import type { AppSettings, Book } from '@/types/models';
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const NOOP_EDITOR_CHANGE = () => {};
+
+function selectedHtml(
+    editor: Editor,
+    selection: { from: number; to: number },
+): string | null {
+    const { from, to } = selection;
+    if (from === to) return null;
+
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(
+        DOMSerializer.fromSchema(editor.schema).serializeFragment(
+            editor.state.doc.cut(from, to).content,
+        ),
+    );
+
+    return wrapper.innerHTML;
+}
 
 function useChapterRefreshChannel(
     channelName: string,
@@ -121,6 +144,7 @@ function PaneWithData({
     isLocalFindOpen,
     localFindShowReplace,
     onLocalFindClose,
+    searchHighlight,
 }: {
     bookId: number;
     bookLanguage: string;
@@ -156,7 +180,9 @@ function PaneWithData({
     isLocalFindOpen: boolean;
     localFindShowReplace: boolean;
     onLocalFindClose: () => void;
+    searchHighlight: SearchHighlight | null;
 }) {
+    const { t } = useTranslation('editor');
     const { data, isLoading, error, refresh, softRefresh } = useChapterData(
         bookId,
         chapterId,
@@ -196,21 +222,25 @@ function PaneWithData({
         prevFocusedRef.current = isFocused;
     }, [isFocused, softRefresh]);
 
-    if (isLoading || !data) {
+    if (error) {
         return (
-            <div className="flex min-w-0 flex-1 items-center justify-center">
-                <div className="size-5 animate-spin rounded-full border-2 border-ink-faint border-t-transparent" />
+            <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-3 text-sm text-ink-muted">
+                {t('chapter.loadFailed')}
+                <Button variant="secondary" size="sm" onClick={refresh}>
+                    {t('chapter.tryAgain')}
+                </Button>
             </div>
         );
     }
 
-    if (error) {
+    if (isLoading || !data) {
         return (
-            <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-3 text-sm text-ink-muted">
-                Failed to load chapter
-                <Button variant="secondary" size="sm" onClick={refresh}>
-                    Try again
-                </Button>
+            <div className="flex min-w-0 flex-1 items-center justify-center">
+                <div
+                    role="status"
+                    aria-label={t('chapter.loading')}
+                    className="size-5 animate-spin rounded-full border-2 border-ink-faint border-t-transparent"
+                />
             </div>
         );
     }
@@ -243,6 +273,7 @@ function PaneWithData({
             isLocalFindOpen={isLocalFindOpen}
             localFindShowReplace={localFindShowReplace}
             onLocalFindClose={onLocalFindClose}
+            searchHighlight={searchHighlight}
         />
     );
 }
@@ -310,10 +341,14 @@ export default function EditorPage({
     const [isTypewriterMode, setIsTypewriterMode] = useState(
         app_settings.typewriter_mode,
     );
-    const toggleTypewriterMode = useCallback(
-        () => setIsTypewriterMode((prev) => !prev),
-        [],
-    );
+    const toggleTypewriterMode = useCallback(() => {
+        setIsTypewriterMode((previousValue) => {
+            const nextValue = !previousValue;
+            void saveAppSetting('typewriter_mode', nextValue);
+
+            return nextValue;
+        });
+    }, []);
 
     // ── Scenes visibility ───────────────────────────────────────────────
     const [scenesVisible, setScenesVisible] = useState(
@@ -447,6 +482,7 @@ export default function EditorPage({
                             url: string;
                             content: string;
                             expectedCurrentVersionId?: number | null;
+                            expectedContentVersion?: number;
                         }[]
                     >
                 ).__getPendingAll;
@@ -455,6 +491,7 @@ export default function EditorPage({
                     url,
                     content,
                     expectedCurrentVersionId,
+                    expectedContentVersion,
                 } of getPendingAll()) {
                     try {
                         fetch(url, {
@@ -464,6 +501,8 @@ export default function EditorPage({
                                 content,
                                 expected_current_version_id:
                                     expectedCurrentVersionId ?? null,
+                                expected_content_version:
+                                    expectedContentVersion ?? 0,
                             }),
                             keepalive: true,
                         });
@@ -617,7 +656,8 @@ export default function EditorPage({
     // ── Find / Replace ───────────────────────────────────────────────────
     const [isFindOpen, setIsFindOpen] = useState(false);
     const [findShowReplace, setFindShowReplace] = useState(false);
-    const [, setSearchHighlight] = useState<SearchHighlight | null>(null);
+    const [searchHighlight, setSearchHighlight] =
+        useState<SearchHighlight | null>(null);
     const [isLocalFindOpen, setIsLocalFindOpen] = useState(false);
     const [localFindShowReplace, setLocalFindShowReplace] = useState(false);
     const closeLocalFind = useCallback(() => {
@@ -698,12 +738,23 @@ export default function EditorPage({
 
     // ── Command palette ──────────────────────────────────────────────────
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+    const paletteSelectionRef = useRef<{
+        from: number;
+        to: number;
+    } | null>(null);
     const closePalette = useCallback(() => {
         setIsPaletteOpen(false);
         // Return focus to the active editor at its prior selection so the
         // user can keep typing without clicking back into the canvas.
         requestAnimationFrame(() => {
-            activeEditorRef.current?.commands.focus();
+            const editor = activeEditorRef.current;
+            if (!editor) return;
+            const selection = paletteSelectionRef.current;
+            if (selection) {
+                editor.chain().setTextSelection(selection).focus().run();
+            } else {
+                editor.commands.focus();
+            }
         });
     }, []);
 
@@ -718,6 +769,12 @@ export default function EditorPage({
                 if (isPaletteOpen) {
                     closePalette();
                 } else {
+                    const editor = activeEditorRef.current;
+                    const selection = editor?.state.selection;
+                    paletteSelectionRef.current =
+                        selection && !selection.empty
+                            ? { from: selection.from, to: selection.to }
+                            : null;
                     setIsPaletteOpen(true);
                 }
             } else if (key === 'f' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
@@ -799,8 +856,14 @@ export default function EditorPage({
     }, []);
 
     // Derive sidebar-visible info from focused chapter data
-    const focusedChapter = focusedChapterData?.chapter ?? null;
-    const focusedScenes = focusedChapter?.scenes ?? [];
+    const focusedChapter =
+        focusedChapterData?.chapter.id === focusedChapterId
+            ? focusedChapterData.chapter
+            : null;
+    const focusedScenes = useMemo(
+        () => focusedChapter?.scenes ?? [],
+        [focusedChapter?.scenes],
+    );
     const focusedWordCount = focusedScenes.reduce(
         (sum, s) => sum + s.word_count,
         0,
@@ -822,21 +885,161 @@ export default function EditorPage({
         const storylineId =
             focusedChapter?.storyline_id ?? sidebarStorylines[0]?.id;
         if (storylineId) {
-            createChapter(book.id, storylineId, sidebarStorylines);
+            createChapter(book.id, storylineId, sidebarStorylines, t);
         }
-    }, [book.id, focusedChapter?.storyline_id, sidebarStorylines]);
+    }, [book.id, focusedChapter?.storyline_id, sidebarStorylines, t]);
 
     // ── Create scene in focused chapter from palette ────────────────────
     const focusedSceneCount = focusedScenes.length;
     const handleAddScene = useCallback(async () => {
         if (!focusedChapter) return;
-        await addSceneToChapter(
-            book.id,
-            focusedChapter.id,
-            focusedSceneCount,
-            t,
-        );
+        try {
+            await addSceneToChapter(
+                book.id,
+                focusedChapter.id,
+                focusedSceneCount,
+                t,
+            );
+        } catch (error) {
+            toast.error(
+                error instanceof Error ? error.message : t('request.failed'),
+            );
+        }
     }, [book.id, focusedChapter, focusedSceneCount, t]);
+
+    const handleSplitSelectionToScene = useCallback(async () => {
+        if (!activeEditor || !focusedChapter || activeSceneId === null) {
+            toast.error(t('palette.selectionRequired'));
+            return;
+        }
+
+        const selection = paletteSelectionRef.current;
+        const content = selection
+            ? selectedHtml(activeEditor, selection)
+            : null;
+        const activeSceneIndex = focusedScenes.findIndex(
+            (scene) => scene.id === activeSceneId,
+        );
+
+        if (!selection || !content || activeSceneIndex < 0) {
+            toast.error(t('palette.selectionRequired'));
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                storeScene.url({
+                    book: book.id,
+                    chapter: focusedChapter.id,
+                }),
+                {
+                    method: 'POST',
+                    headers: jsonFetchHeaders(),
+                    body: JSON.stringify({
+                        title: t('chapterList.sceneDefault', {
+                            number: focusedScenes.length + 1,
+                        }),
+                        position: activeSceneIndex + 1,
+                        content,
+                    }),
+                },
+            );
+            await ensureSuccessfulResponse(response, t('palette.splitFailed'));
+
+            activeEditor
+                .chain()
+                .focus()
+                .setTextSelection(selection)
+                .deleteSelection()
+                .run();
+            await flushPaneByChapter(focusedChapter.id);
+
+            broadcastChapterDataChanged(focusedChapter.id);
+            router.reload({ only: ['book', 'sidebar_storylines'] });
+            toast.success(t('palette.sceneCreated'));
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : t('palette.splitFailed'),
+            );
+        }
+    }, [
+        activeEditor,
+        activeSceneId,
+        book.id,
+        focusedChapter,
+        focusedScenes,
+        t,
+    ]);
+
+    const handleSplitSelectionToChapter = useCallback(async () => {
+        if (!activeEditor || !focusedChapter) {
+            toast.error(t('palette.selectionRequired'));
+            return;
+        }
+
+        const selection = paletteSelectionRef.current;
+        const content = selection
+            ? selectedHtml(activeEditor, selection)
+            : null;
+        if (!selection || !content) {
+            toast.error(t('palette.selectionRequired'));
+            return;
+        }
+
+        const totalChapters = sidebarStorylines.reduce(
+            (sum, storyline) => sum + (storyline.chapters?.length ?? 0),
+            0,
+        );
+
+        try {
+            const response = await fetch(
+                splitChapter.url({
+                    book: book.id,
+                    chapter: focusedChapter.id,
+                }),
+                {
+                    method: 'POST',
+                    headers: jsonFetchHeaders(),
+                    body: JSON.stringify({
+                        title: t('chapterList.chapterDefault', {
+                            number: totalChapters + 1,
+                        }),
+                        initial_content: content,
+                    }),
+                },
+            );
+            await ensureSuccessfulResponse(response, t('palette.splitFailed'));
+            const payload = (await response.json()) as { chapter_id: number };
+
+            activeEditor
+                .chain()
+                .focus()
+                .setTextSelection(selection)
+                .deleteSelection()
+                .run();
+            await flushPaneByChapter(focusedChapter.id);
+
+            broadcastChapterDataChanged(focusedChapter.id);
+            navigateToChapter(payload.chapter_id);
+            router.reload({ only: ['book', 'sidebar_storylines'] });
+            toast.success(t('palette.chapterCreated'));
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : t('palette.splitFailed'),
+            );
+        }
+    }, [
+        activeEditor,
+        book.id,
+        focusedChapter,
+        navigateToChapter,
+        sidebarStorylines,
+        t,
+    ]);
 
     // ── Find navigate ────────────────────────────────────────────────────
     const handleFindNavigate = useCallback(
@@ -948,6 +1151,7 @@ export default function EditorPage({
                                     }
                                     localFindShowReplace={localFindShowReplace}
                                     onLocalFindClose={closeLocalFind}
+                                    searchHighlight={searchHighlight}
                                 />
                             </div>
                         ))
@@ -1118,11 +1322,12 @@ export default function EditorPage({
 
             {/* Command palette */}
             <CommandPalette
-                editor={activeEditor}
+                editor={focusedChapter ? activeEditor : null}
+                hasSelection={paletteSelectionRef.current !== null}
                 isOpen={isPaletteOpen}
                 onClose={closePalette}
-                onSplitScene={async () => {}}
-                onSplitChapter={async () => {}}
+                onSplitScene={handleSplitSelectionToScene}
+                onSplitChapter={handleSplitSelectionToChapter}
                 onNewChapter={handleCreateChapter}
                 onAddScene={focusedChapter ? handleAddScene : undefined}
                 onEnterFocusMode={toggleFocusMode}
@@ -1145,10 +1350,10 @@ export default function EditorPage({
                 onRewriteSelection={
                     aiVisible && activeEditor && focusedChapter
                         ? () => {
-                              const { from, to } = activeEditor.state.selection;
-                              if (from === to) return;
+                              const selection = paletteSelectionRef.current;
+                              if (!selection) return;
                               gateWritingStyle(() =>
-                                  setRewriteRange({ from, to }),
+                                  setRewriteRange(selection),
                               );
                           }
                         : undefined

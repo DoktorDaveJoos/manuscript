@@ -24,6 +24,7 @@ class SettingsController extends Controller
             ->all();
         $settings = [
             'send_analytics' => true,
+            'auto_update' => true,
             ...$settings,
         ];
 

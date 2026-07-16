@@ -1,8 +1,10 @@
 import { EllipsisVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
@@ -23,46 +25,50 @@ export default function TextActionsDropdown({
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <button
-                    type="button"
+                <Button
+                    variant="ghost"
+                    size="icon"
                     title={t('textActions.moreActions')}
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-xs text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
+                    aria-label={t('textActions.moreActions')}
+                    className="size-7 text-ink-muted"
                 >
                     <EllipsisVertical size={14} strokeWidth={2.5} />
-                </button>
+                </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-[220px]">
-                <DropdownMenuItem
-                    className="flex-col items-start gap-0.5"
-                    onSelect={onNormalizeClick}
-                >
-                    <span className="text-xs font-medium text-ink">
-                        {t('textActions.normalize')}
-                    </span>
-                    <span className="text-[11px] text-ink-faint">
-                        {t('textActions.normalizeDescription')}
-                    </span>
-                </DropdownMenuItem>
-
-                {visible && (
+                <DropdownMenuGroup>
                     <DropdownMenuItem
                         className="flex-col items-start gap-0.5"
-                        disabled={!usable || isBeautifying}
-                        onSelect={onBeautifyClick}
+                        onSelect={onNormalizeClick}
                     >
-                        <span className="flex items-center gap-1.5 text-xs font-medium text-ink">
-                            {t('textActions.beautify')}
-                            <span className="rounded bg-ink-faint/10 px-1 py-0.5 text-[11px] font-medium text-ink-faint">
-                                AI
-                            </span>
+                        <span className="text-xs font-medium text-ink">
+                            {t('textActions.normalize')}
                         </span>
                         <span className="text-[11px] text-ink-faint">
-                            {isBeautifying
-                                ? t('textActions.processing')
-                                : t('textActions.beautifyDescription')}
+                            {t('textActions.normalizeDescription')}
                         </span>
                     </DropdownMenuItem>
-                )}
+
+                    {visible && (
+                        <DropdownMenuItem
+                            className="flex-col items-start gap-0.5"
+                            disabled={!usable || isBeautifying}
+                            onSelect={onBeautifyClick}
+                        >
+                            <span className="flex items-center gap-1.5 text-xs font-medium text-ink">
+                                {t('textActions.beautify')}
+                                <span className="rounded bg-ink-faint/10 px-1 py-0.5 text-[11px] font-medium text-ink-faint">
+                                    AI
+                                </span>
+                            </span>
+                            <span className="text-[11px] text-ink-faint">
+                                {isBeautifying
+                                    ? t('textActions.processing')
+                                    : t('textActions.beautifyDescription')}
+                            </span>
+                        </DropdownMenuItem>
+                    )}
+                </DropdownMenuGroup>
             </DropdownMenuContent>
         </DropdownMenu>
     );

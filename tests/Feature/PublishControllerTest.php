@@ -294,6 +294,36 @@ it('marks a chapter as epilogue', function () {
     expect($chapter->is_epilogue)->toBeTrue();
 });
 
+it('makes an epilogue mutually exclusive with the prologue', function () {
+    $chapter = Chapter::factory()->create([
+        'book_id' => $this->book->id,
+        'is_prologue' => true,
+    ]);
+
+    $this->put(route('books.publish.epilogue', $this->book), [
+        'chapter_id' => $chapter->id,
+    ])->assertRedirect();
+
+    expect($chapter->refresh())
+        ->is_epilogue->toBeTrue()
+        ->is_prologue->toBeFalse();
+});
+
+it('rejects an epilogue chapter from another book without clearing the current selection', function () {
+    $current = Chapter::factory()->create([
+        'book_id' => $this->book->id,
+        'is_epilogue' => true,
+    ]);
+    $foreign = Chapter::factory()->create();
+
+    $this->put(route('books.publish.epilogue', $this->book), [
+        'chapter_id' => $foreign->id,
+    ])->assertSessionHasErrors('chapter_id');
+
+    expect($current->refresh()->is_epilogue)->toBeTrue()
+        ->and($foreign->refresh()->is_epilogue)->toBeFalse();
+});
+
 it('serves a cover image', function () {
     Storage::fake('local');
     Storage::disk('local')->put('covers/test.jpg', 'fake-image-data');
@@ -337,6 +367,36 @@ it('marks a chapter as prologue', function () {
 
     $chapter->refresh();
     expect($chapter->is_prologue)->toBeTrue();
+});
+
+it('makes a prologue mutually exclusive with the epilogue', function () {
+    $chapter = Chapter::factory()->create([
+        'book_id' => $this->book->id,
+        'is_epilogue' => true,
+    ]);
+
+    $this->put(route('books.publish.prologue', $this->book), [
+        'chapter_id' => $chapter->id,
+    ])->assertRedirect();
+
+    expect($chapter->refresh())
+        ->is_prologue->toBeTrue()
+        ->is_epilogue->toBeFalse();
+});
+
+it('rejects a prologue chapter from another book without clearing the current selection', function () {
+    $current = Chapter::factory()->create([
+        'book_id' => $this->book->id,
+        'is_prologue' => true,
+    ]);
+    $foreign = Chapter::factory()->create();
+
+    $this->put(route('books.publish.prologue', $this->book), [
+        'chapter_id' => $foreign->id,
+    ])->assertSessionHasErrors('chapter_id');
+
+    expect($current->refresh()->is_prologue)->toBeTrue()
+        ->and($foreign->refresh()->is_prologue)->toBeFalse();
 });
 
 it('unmarks prologue when null chapter_id sent', function () {

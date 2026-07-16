@@ -139,7 +139,8 @@ test('RunEditorialReviewJob marks review as failed when no AI provider configure
     $review->refresh();
 
     expect($review->status)->toBe('failed')
-        ->and($review->error_message)->toBe('No AI provider configured.');
+        ->and($review->error_code)->toBe('no_provider')
+        ->and($review->error_message)->toContain('no configured AI provider');
 
     Bus::assertNothingBatched();
 });
@@ -243,7 +244,6 @@ test('a resumed review regenerates notes for chapters edited since the failure',
         'content_hash' => 'stale-hash-from-before-the-edit',
         'notes' => ['chapter_note' => 'Stale note'],
     ]);
-
     $review->update(['status' => 'pending', 'error_message' => null, 'error_code' => null]);
 
     (new RunEditorialReviewJob($book, $review))->handle();
@@ -271,6 +271,25 @@ test('a provider rate limit during chapter analysis halts the run with a resumab
     // a resumable code and the batch is cancelled before synthesis starts.
     expect($review->status)->toBe('failed')
         ->and($review->error_code)->toBe('rate_limited')
+        ->and($review->chapterNotes()->count())->toBe(0)
+        ->and($review->sections()->count())->toBe(0);
+});
+
+test('an unexpected required chapter-note failure never produces a partial completed review', function () {
+    EditorialNotesAgent::fake(function () {
+        throw new RuntimeException('Malformed structured response with secret payload');
+    });
+
+    [$book] = createBookWithChaptersForEditorial(2);
+    $review = EditorialReview::factory()->for($book)->create(['status' => 'pending']);
+
+    (new RunEditorialReviewJob($book, $review))->handle();
+
+    $review->refresh();
+
+    expect($review->status)->toBe('failed')
+        ->and($review->error_code)->toBe('unknown')
+        ->and($review->error_message)->not->toContain('secret payload')
         ->and($review->chapterNotes()->count())->toBe(0)
         ->and($review->sections()->count())->toBe(0);
 });

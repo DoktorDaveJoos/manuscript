@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { Check, ShieldCheck, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import { saveAppSetting } from '@/lib/utils';
 
@@ -26,19 +27,20 @@ export default function CrashReportDialog() {
     return (
         <Dialog
             onClose={() => {}}
+            title={t('crashReport.title')}
             width={440}
             backdrop="dark"
-            className="overflow-hidden rounded-2xl p-0 shadow-[0_16px_48px_-4px_rgba(0,0,0,0.15),0_4px_12px_rgba(0,0,0,0.05)]"
+            className="overflow-hidden p-0 shadow-xl"
         >
             {/* Header */}
             <div className="flex flex-col items-center gap-4 px-10 pt-8">
                 <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-b from-accent-light to-surface-warm">
                     <ShieldCheck className="h-7 w-7 text-accent" />
                 </div>
-                <h2 className="text-[22px] font-semibold tracking-[-0.3px] text-ink">
+                <h2 className="text-xl font-semibold tracking-[-0.01em] text-ink">
                     {t('crashReport.title')}
                 </h2>
-                <p className="text-center text-[14px] leading-[1.55] text-ink-muted">
+                <p className="text-center text-sm leading-[1.55] text-ink-muted">
                     {t('crashReport.description')}
                 </p>
             </div>
@@ -72,22 +74,24 @@ export default function CrashReportDialog() {
             {/* Footer */}
             <div className="flex flex-col items-center gap-4 px-10 pt-6 pb-8">
                 <div className="flex w-full flex-col gap-3">
-                    <button
-                        type="button"
+                    <Button
+                        variant="primary"
+                        size="lg"
                         disabled={submitting}
                         onClick={() => dismiss(true)}
-                        className="flex h-11 w-full items-center justify-center rounded-lg bg-ink text-[14px] font-semibold text-surface shadow-[0_1px_3px_rgba(0,0,0,0.1)] disabled:opacity-50"
+                        className="h-11 w-full"
                     >
                         {t('crashReport.enable')}
-                    </button>
-                    <button
-                        type="button"
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        size="lg"
                         disabled={submitting}
                         onClick={() => dismiss(false)}
-                        className="flex h-11 w-full items-center justify-center rounded-lg border border-border bg-surface-card text-[14px] font-medium text-ink-muted disabled:opacity-50"
+                        className="h-11 w-full"
                     >
                         {t('crashReport.notNow')}
-                    </button>
+                    </Button>
                 </div>
                 <span className="text-center text-[12px] text-ink-faint">
                     {t('crashReport.settingsNote')}

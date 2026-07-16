@@ -1,4 +1,4 @@
-export const menuShadow = 'shadow-[0_4px_24px_#0000001F,0_0_0_1px_#0000000A]';
+export const menuShadow = 'border border-border-light shadow-lg';
 
 export const menuContentBase =
     'z-50 rounded-lg bg-surface-card p-1';

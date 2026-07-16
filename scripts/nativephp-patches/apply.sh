@@ -61,8 +61,9 @@ echo "Applying Manuscript NativePHP patches to $PACKAGE_DIR..."
 apply "resources/electron/electron-plugin/src/preload/index.mts"
 apply "resources/electron/electron-plugin/dist/preload/index.mjs"
 apply "resources/electron/electron-plugin/dist/server/api/system.js"
-# Startup resilience: single-instance lock + startup-failure dialog (index.js)
-# and the API port-bind retry (server/api.js). These patch the COMPILED dist
+# Startup resilience: single-instance lock + startup-failure dialog (index.js),
+# user-controlled updater startup checks (index.js), and the API port-bind retry
+# (server/api.js). These patch the COMPILED dist
 # because the publish build runs `electron-vite build`, never `plugin:build`/tsc,
 # so the package's src/*.ts is never recompiled — only dist/ is loaded at runtime.
 apply "resources/electron/electron-plugin/dist/index.js"

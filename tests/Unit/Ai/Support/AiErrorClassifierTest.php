@@ -2,11 +2,13 @@
 
 use App\Ai\Support\AiErrorClassifier;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response as HttpResponse;
 use Laravel\Ai\Exceptions\InsufficientCreditsException;
 use Laravel\Ai\Exceptions\ProviderOverloadedException;
 use Laravel\Ai\Exceptions\RateLimitedException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * Build a fake Illuminate RequestException with a chosen status + JSON body
@@ -146,6 +148,14 @@ test('classifies timeout errors by message', function () {
     $e = new RuntimeException('cURL error 28: Operation timed out after 60000 milliseconds');
 
     expect(AiErrorClassifier::classify($e)['kind'])->toBe(AiErrorClassifier::KIND_TIMEOUT);
+});
+
+test('classifies connection failures and missing provider errors', function () {
+    expect(AiErrorClassifier::classify(new ConnectionException('Connection refused'))['kind'])
+        ->toBe(AiErrorClassifier::KIND_CONNECTION_FAILED);
+
+    expect(AiErrorClassifier::classify(new HttpException(422, 'No AI provider configured.'))['kind'])
+        ->toBe(AiErrorClassifier::KIND_NO_PROVIDER);
 });
 
 test('falls back to unknown for unclassifiable exceptions', function () {

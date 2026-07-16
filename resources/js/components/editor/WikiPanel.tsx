@@ -112,7 +112,7 @@ export default function WikiPanel({
         } catch {
             setExpandedIds(new Set());
         }
-    }, [fetchConnected]);
+    }, [fetchConnected, chapter.id]);
 
     // Persist expanded state
     useEffect(() => {

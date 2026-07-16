@@ -93,7 +93,7 @@ function CommandItem({
     return (
         <CommandPrimitive.Item
             className={cn(
-                'flex w-full cursor-default items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-sm leading-4 text-ink outline-none',
+                'flex w-full cursor-default items-center gap-2.5 rounded-md px-2.5 py-2 text-sm leading-4 text-ink outline-none',
                 'data-[selected=true]:bg-neutral-bg',
                 'data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-40',
                 className,

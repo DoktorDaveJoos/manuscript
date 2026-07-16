@@ -18,6 +18,7 @@ use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\Attributes\FailOnTimeout;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
@@ -28,6 +29,7 @@ use Throwable;
  * (if needed) and runs the editorial gap-fill agent to produce that chapter's
  * notes. One short job per chapter so the review never exceeds a worker timeout.
  */
+#[FailOnTimeout]
 class AnalyzeReviewChapterJob implements ShouldQueue
 {
     use Batchable, Dispatchable, InteractsWithQueue, PersistsChapterAnalysis, Queueable, RunsManuscriptAnalyses, SerializesModels, UpdatesEditorialReview;
@@ -53,6 +55,15 @@ class AnalyzeReviewChapterJob implements ShouldQueue
         $setting = AiSetting::activeProvider();
 
         if (! $setting || ! $setting->isConfigured()) {
+            $this->markReviewFailed(
+                $this->review,
+                __('Chapter :chapter could not be analyzed because no configured AI provider is selected.', [
+                    'chapter' => $this->position,
+                ]),
+                EditorialReviewErrorCode::NoProvider,
+            );
+            $this->batch()?->cancel();
+
             return;
         }
 
@@ -91,6 +102,14 @@ class AnalyzeReviewChapterJob implements ShouldQueue
     public function failed(Throwable $exception): void
     {
         report($exception);
+        $this->markReviewFailedFromThrowable(
+            $this->review,
+            $exception,
+            __('The review worker stopped while analyzing chapter :chapter. Your completed work was saved.', [
+                'chapter' => $this->position,
+            ]),
+        );
+        $this->batch()?->cancel();
     }
 
     /**
@@ -157,25 +176,19 @@ class AnalyzeReviewChapterJob implements ShouldQueue
             } catch (Throwable $e) {
                 report($e);
 
-                if ($this->haltForProviderIssue($e, $chapter)) {
-                    return;
-                }
-
-                Log::warning("Editorial review: chapter gap-fill failed for chapter {$chapter->id}", [
-                    'review_id' => $this->review->id,
-                    'chapter_id' => $chapter->id,
-                    'error' => $e->getMessage(),
-                ]);
+                $this->haltForFailure($e, $chapter);
 
                 return;
             }
         }
 
-        $this->review->chapterNotes()->create([
-            'chapter_id' => $chapter->id,
-            'content_hash' => $chapter->content_hash,
-            'notes' => $notes,
-        ]);
+        $this->review->chapterNotes()->updateOrCreate(
+            ['chapter_id' => $chapter->id],
+            [
+                'content_hash' => $chapter->content_hash,
+                'notes' => $notes,
+            ],
+        );
     }
 
     /**
@@ -225,10 +238,42 @@ class AnalyzeReviewChapterJob implements ShouldQueue
             'error' => $e->getMessage(),
         ]);
 
-        $this->markReviewFailed($this->review, $e->getMessage(), $code);
+        $this->markReviewFailed(
+            $this->review,
+            __('The AI provider stopped while preparing chapter :chapter. Your completed work was saved.', [
+                'chapter' => $this->position,
+            ]),
+            $code,
+        );
         $this->batch()?->cancel();
 
         return true;
+    }
+
+    /**
+     * Editorial notes are required for synthesis. Any failure here must halt
+     * the batch; otherwise FinalizeEditorialReviewJob could publish a partial
+     * report while silently omitting this chapter.
+     */
+    private function haltForFailure(Throwable $e, Chapter $chapter): void
+    {
+        $code = EditorialReviewErrorCode::fromThrowable($e);
+
+        Log::warning("Editorial review: required notes failed for chapter {$chapter->id}, halting for resume", [
+            'review_id' => $this->review->id,
+            'chapter_id' => $chapter->id,
+            'error_code' => $code->value,
+            'error' => $e->getMessage(),
+        ]);
+
+        $this->markReviewFailed(
+            $this->review,
+            __('Editorial notes could not be generated for chapter :chapter. Your completed work was saved.', [
+                'chapter' => $this->position,
+            ]),
+            $code,
+        );
+        $this->batch()?->cancel();
     }
 
     /**

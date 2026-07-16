@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import Button from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
 type PanelHeaderProps = {
@@ -7,9 +8,17 @@ type PanelHeaderProps = {
     onClose?: () => void;
     suffix?: React.ReactNode;
     className?: string;
+    closeLabel?: string;
 };
 
-export default function PanelHeader({ title, icon, onClose, suffix, className }: PanelHeaderProps) {
+export default function PanelHeader({
+    title,
+    icon,
+    onClose,
+    suffix,
+    className,
+    closeLabel = 'Close',
+}: PanelHeaderProps) {
     return (
         <div className={cn('flex h-11 shrink-0 items-center justify-between border-b border-border px-4', className)}>
             <div className="flex items-center gap-2">
@@ -21,13 +30,15 @@ export default function PanelHeader({ title, icon, onClose, suffix, className }:
             <div className="flex items-center gap-1.5">
                 {suffix}
                 {onClose && (
-                    <button
-                        type="button"
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={onClose}
-                        className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:text-ink"
+                        aria-label={closeLabel}
+                        className="size-6 rounded text-ink-faint hover:text-ink"
                     >
                         <X size={14} />
-                    </button>
+                    </Button>
                 )}
             </div>
         </div>

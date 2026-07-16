@@ -81,6 +81,86 @@ it('hydrates prior messages when an active coach session exists', function () {
     // An active session means Coach is the default mode already.
     $page->assertSee('I want to write a noir mystery.');
     $page->assertSee('Great. Tell me about your detective.');
+    $page->assertPresent('[data-testid="plot-coach-chat-surface"].bg-surface')
+        ->assertPresent('[data-testid="plot-coach-message-scroller"][data-slot="message-scroller"][data-canvas="editor"].bg-surface')
+        ->assertPresent('[data-testid="plot-coach-composer"][data-slot="message-scroller-composer"]')
+        ->assertPresent('[data-message-role="user"] [data-slot="message-header"]')
+        ->assertPresent('[data-message-role="user"] [data-slot="bubble"][data-variant="muted"]')
+        ->assertPresent('[data-message-role="assistant"] [data-slot="message-avatar"]')
+        ->assertPresent('[data-message-role="assistant"] [data-slot="message-header"]')
+        ->assertPresent('[data-message-role="assistant"] [data-slot="bubble-group"]')
+        ->assertPresent('[data-message-role="assistant"] [data-slot="bubble"][data-variant="secondary"]')
+        ->assertNotPresent('[data-slot="bubble-reactions"]');
+
+    $borderWidths = $page->script(<<<'JS'
+        (() => {
+            const scroller = document.querySelector('[data-testid="plot-coach-message-scroller"]');
+            const style = window.getComputedStyle(scroller);
+
+            return [
+                style.borderTopWidth,
+                style.borderRightWidth,
+                style.borderBottomWidth,
+                style.borderLeftWidth,
+            ];
+        })()
+    JS);
+
+    expect($borderWidths)->toBe(['0px', '0px', '0px', '0px']);
+
+    $chatColorsMatch = $page->script(<<<'JS'
+        (() => {
+            const scroller = document.querySelector('[data-testid="plot-coach-message-scroller"]');
+            const user = document.querySelector('[data-message-role="user"] [data-slot="bubble-content"]');
+            const assistant = document.querySelector('[data-message-role="assistant"] [data-slot="bubble-content"]');
+            const scrollerStyle = window.getComputedStyle(scroller);
+            const userStyle = window.getComputedStyle(user);
+            const assistantStyle = window.getComputedStyle(assistant);
+
+            return userStyle.backgroundColor !== assistantStyle.backgroundColor
+                && userStyle.color === assistantStyle.color
+                && assistantStyle.backgroundColor !== scrollerStyle.backgroundColor;
+        })()
+    JS);
+
+    expect($chatColorsMatch)->toBeTrue();
+
+    $composerOverlaysTranscript = $page->script(<<<'JS'
+        (() => {
+            const scroller = document.querySelector('[data-testid="plot-coach-message-scroller"]');
+            const viewport = scroller?.querySelector('[data-slot="message-scroller-viewport"]');
+            const content = scroller?.querySelector('[data-slot="message-scroller-content"]');
+            const composer = scroller?.querySelector('[data-testid="plot-coach-composer"]');
+            const scrollButton = scroller?.querySelector('[data-slot="message-scroller-button"]');
+
+            if (!scroller || !viewport || !content || !composer || !scrollButton) {
+                return false;
+            }
+
+            const scrollerRect = scroller.getBoundingClientRect();
+            const viewportRect = viewport.getBoundingClientRect();
+            const composerRect = composer.getBoundingClientRect();
+            const composerHeight = composerRect.height;
+            const measuredHeight = Number.parseFloat(
+                getComputedStyle(scroller).getPropertyValue('--message-scroller-composer-height'),
+            );
+            const contentInset = Number.parseFloat(
+                getComputedStyle(content, '::after').height,
+            );
+            const scrollButtonBottom = Number.parseFloat(
+                getComputedStyle(scrollButton).bottom,
+            );
+
+            return Math.abs(viewportRect.bottom - scrollerRect.bottom) < 1
+                && composerRect.top < viewportRect.bottom
+                && Math.abs(composerRect.bottom - scrollerRect.bottom) < 1
+                && Math.abs(measuredHeight - composerHeight) < 1
+                && contentInset >= composerHeight - 1
+                && scrollButtonBottom >= composerHeight + 15;
+        })()
+    JS);
+
+    expect($composerOverlaysTranscript)->toBeTrue();
 });
 
 it('renders both mode toggle buttons on the plot page', function () {

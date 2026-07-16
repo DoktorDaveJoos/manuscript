@@ -75,28 +75,49 @@ export default function PublishingSettings({ book, chapters }: Props) {
         dataRef.current = data;
     }, [data]);
 
-    const save = useCallback(() => {
-        setSaveStatus('saving');
-        router.put(update.url(book.id), dataRef.current, {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => setSaveStatus('saved'),
-            onError: () => setSaveStatus('error'),
-        });
-    }, [book.id]);
+    const save = useCallback(
+        (nextData: typeof data) => {
+            setSaveStatus('saving');
+            router.put(update.url(book.id), nextData, {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => setSaveStatus('saved'),
+                onError: () => setSaveStatus('error'),
+            });
+        },
+        [book.id],
+    );
+    const saveCurrent = useCallback(() => save(dataRef.current), [save]);
 
     const handleFieldChange = useCallback(
         (field: keyof typeof data, value: string) => {
-            setData((prev) => ({ ...prev, [field]: value }));
+            setData((previousData) => {
+                const nextData = { ...previousData, [field]: value };
+                dataRef.current = nextData;
+
+                return nextData;
+            });
         },
         [],
     );
 
     const handleGenerateKlappentext = useCallback(async () => {
-        await generateKlappentext(book.id, (full) =>
-            handleFieldChange('klappentext', full),
+        const generatedKlappentext = await generateKlappentext(
+            book.id,
+            (full) => handleFieldChange('klappentext', full),
         );
-        save();
+
+        if (generatedKlappentext === null) {
+            return;
+        }
+
+        const nextData = {
+            ...dataRef.current,
+            klappentext: generatedKlappentext,
+        };
+        dataRef.current = nextData;
+        setData(nextData);
+        save(nextData);
     }, [book.id, generateKlappentext, handleFieldChange, save]);
 
     useEffect(() => {
@@ -196,7 +217,7 @@ export default function PublishingSettings({ book, chapters }: Props) {
                                         e.target.value,
                                     )
                                 }
-                                onBlur={save}
+                                onBlur={saveCurrent}
                                 placeholder={t('klappentext.placeholder')}
                                 rows={6}
                                 disabled={isGeneratingKlappentext}
@@ -226,7 +247,7 @@ export default function PublishingSettings({ book, chapters }: Props) {
                                             e.target.value,
                                         )
                                     }
-                                    onBlur={save}
+                                    onBlur={saveCurrent}
                                     placeholder={t(
                                         'metadata.publisherNamePlaceholder',
                                     )}
@@ -243,7 +264,7 @@ export default function PublishingSettings({ book, chapters }: Props) {
                                             e.target.value,
                                         )
                                     }
-                                    onBlur={save}
+                                    onBlur={saveCurrent}
                                     placeholder={t('metadata.isbnPlaceholder')}
                                 />
                                 <p className="mt-1.5 text-xs text-ink-faint">
@@ -277,7 +298,7 @@ export default function PublishingSettings({ book, chapters }: Props) {
                                             e.target.value,
                                         )
                                     }
-                                    onBlur={save}
+                                    onBlur={saveCurrent}
                                     placeholder={t(
                                         'frontMatter.copyrightPlaceholder',
                                     )}
@@ -297,7 +318,7 @@ export default function PublishingSettings({ book, chapters }: Props) {
                                             e.target.value,
                                         )
                                     }
-                                    onBlur={save}
+                                    onBlur={saveCurrent}
                                     placeholder={t(
                                         'frontMatter.dedicationPlaceholder',
                                     )}
@@ -319,7 +340,7 @@ export default function PublishingSettings({ book, chapters }: Props) {
                                             e.target.value,
                                         )
                                     }
-                                    onBlur={save}
+                                    onBlur={saveCurrent}
                                     placeholder={t(
                                         'frontMatter.epigraphPlaceholder',
                                     )}
@@ -338,7 +359,7 @@ export default function PublishingSettings({ book, chapters }: Props) {
                                             e.target.value,
                                         )
                                     }
-                                    onBlur={save}
+                                    onBlur={saveCurrent}
                                     placeholder={t(
                                         'frontMatter.epigraphAttributionPlaceholder',
                                     )}
@@ -402,7 +423,7 @@ export default function PublishingSettings({ book, chapters }: Props) {
                                             e.target.value,
                                         )
                                     }
-                                    onBlur={save}
+                                    onBlur={saveCurrent}
                                     placeholder={t(
                                         'backMatter.acknowledgmentsPlaceholder',
                                     )}
@@ -422,7 +443,7 @@ export default function PublishingSettings({ book, chapters }: Props) {
                                             e.target.value,
                                         )
                                     }
-                                    onBlur={save}
+                                    onBlur={saveCurrent}
                                     placeholder={t(
                                         'backMatter.aboutAuthorPlaceholder',
                                     )}
@@ -442,7 +463,7 @@ export default function PublishingSettings({ book, chapters }: Props) {
                                             e.target.value,
                                         )
                                     }
-                                    onBlur={save}
+                                    onBlur={saveCurrent}
                                     placeholder={t(
                                         'backMatter.alsoByPlaceholder',
                                     )}

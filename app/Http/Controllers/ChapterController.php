@@ -150,38 +150,42 @@ class ChapterController extends Controller
             return response()->json(['error' => 'No current version found'], 404);
         }
 
-        $version->update([
-            'content' => $request->validated('content'),
-        ]);
-
+        $content = $request->validated('content');
         $previousWordCount = $chapter->word_count;
-        $wordCount = WordCount::count($request->validated('content'));
-        $chapter->update(['word_count' => $wordCount]);
 
-        $delta = $wordCount - $previousWordCount;
-        if ($delta > 0) {
-            $session = WritingSession::updateOrCreate(
-                ['book_id' => $book->id, 'date' => now()->toDateString()],
-                [],
-            );
+        $wordCount = DB::transaction(function () use ($book, $chapter, $content, $previousWordCount, $version): int {
+            $version->update(['content' => $content]);
+            $chapter->replaceSceneContents($content, $version->scene_map);
 
-            $session->increment('words_written', $delta);
-            $session->refresh();
+            $wordCount = (int) $chapter->fresh()->word_count;
+            $delta = $wordCount - $previousWordCount;
 
-            if ($book->daily_word_count_goal && $session->words_written >= $book->daily_word_count_goal) {
-                $session->update(['goal_met' => true]);
+            if ($delta > 0) {
+                $session = WritingSession::updateOrCreate(
+                    ['book_id' => $book->id, 'date' => now()->toDateString()],
+                    [],
+                );
+
+                $session->increment('words_written', $delta);
+                $session->refresh();
+
+                if ($book->daily_word_count_goal && $session->words_written >= $book->daily_word_count_goal) {
+                    $session->update(['goal_met' => true]);
+                }
+            } elseif ($delta < 0) {
+                $session = $book->writingSessions()
+                    ->whereDate('date', now()->toDateString())
+                    ->first();
+
+                if ($session) {
+                    $session->update([
+                        'words_written' => max(0, $session->words_written + $delta),
+                    ]);
+                }
             }
-        } elseif ($delta < 0) {
-            $session = $book->writingSessions()
-                ->whereDate('date', now()->toDateString())
-                ->first();
 
-            if ($session) {
-                $session->update([
-                    'words_written' => max(0, $session->words_written + $delta),
-                ]);
-            }
-        }
+            return $wordCount;
+        });
 
         return response()->json([
             'word_count' => $wordCount,

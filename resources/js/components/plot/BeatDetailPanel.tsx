@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { FileText, Plus, Search, Trash2, X } from 'lucide-react';
+import { FileText, Plus, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -9,6 +9,7 @@ import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import MarkdownTextarea from '@/components/ui/MarkdownTextarea';
 import PanelHeader from '@/components/ui/PanelHeader';
+import SearchInput from '@/components/ui/SearchInput';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Select from '@/components/ui/Select';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
@@ -156,7 +157,11 @@ export default function BeatDetailPanel({
     const plotPointType = beat.plot_point?.type;
 
     return (
-        <Drawer onClose={onClose} className="w-[480px]">
+        <Drawer
+            onClose={onClose}
+            title={t('beat.details')}
+            className="w-[480px]"
+        >
             <PanelHeader title={t('beat.details')} onClose={onClose} />
 
             <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-5">
@@ -262,24 +267,13 @@ export default function BeatDetailPanel({
                     {showChapterPicker && (
                         <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-2.5">
                             {/* Search */}
-                            <div className="relative">
-                                <Search
-                                    size={14}
-                                    className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-ink-faint"
-                                />
-                                <input
-                                    ref={searchInputRef}
-                                    type="text"
-                                    value={chapterSearch}
-                                    onChange={(e) =>
-                                        setChapterSearch(e.target.value)
-                                    }
-                                    placeholder={t(
-                                        'beat.chapterSearchPlaceholder',
-                                    )}
-                                    className="w-full rounded-md border border-border bg-surface py-1.5 pr-3 pl-8 text-[12px] text-ink placeholder:text-ink-faint focus:ring-1 focus:ring-accent focus:outline-none"
-                                />
-                            </div>
+                            <SearchInput
+                                ref={searchInputRef}
+                                value={chapterSearch}
+                                onChange={setChapterSearch}
+                                placeholder={t('beat.chapterSearchPlaceholder')}
+                                className="rounded-md border border-border bg-surface"
+                            />
 
                             {/* Storyline filter */}
                             {storylines.length > 1 && (
