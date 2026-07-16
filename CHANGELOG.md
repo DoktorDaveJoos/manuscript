@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.10.1 (2026-07-16)
+
+### Features
+
+- expand manuscript editing workflows (d083ebb)
+
+### Other Changes
+
+- fix(desktop): serialize child processes (b169900)
+- update changelog for v0.10.0 (739e90f)
+- Merge remote-tracking branch 'origin/main' into dev (b35791f)
+- ignore Pencil design files (9886428)
+- chore(license)!: adopt PolyForm Noncommercial (5bd3d76)
+- plan full-screen book notes (2bd2ea8)
+- design full-screen book notes (dc655b8)
+- fix(ci): serialize release publishers (53a8254)
+
+
 ## v0.10.0 (2026-07-16)
 
 ### Features
