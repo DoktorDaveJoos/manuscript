@@ -170,6 +170,54 @@ jobs:
           SENTRY_RELEASE: ${{ github.ref_name }}
         run: php artisan native:publish mac x64 --no-interaction
 
+      - name: Verify packaged startup recovery
+        shell: bash
+        run: |
+          DIST=nativephp/electron/dist
+          [ -d "$DIST" ] || DIST=vendor/nativephp/desktop/resources/electron/dist
+          ELECTRON_ROOT="${DIST%/dist}"
+          ASAR_BIN="$ELECTRON_ROOT/node_modules/@electron/asar/bin/asar.js"
+
+          if [ ! -f "$ASAR_BIN" ]; then
+            echo "::error::Cannot inspect packaged app.asar; @electron/asar is missing."
+            exit 1
+          fi
+
+          ARM64_APP="$DIST/mac-arm64/Manuscript.app"
+          X64_APP="$DIST/mac/Manuscript.app"
+
+          for APP in "$ARM64_APP" "$X64_APP"; do
+            if [ ! -d "$APP" ]; then
+              echo "::error::Expected packaged app is missing: $APP"
+              exit 1
+            fi
+
+            EXTRACT_DIR="$RUNNER_TEMP/manuscript-asar-$RANDOM"
+            node "$ASAR_BIN" extract "$APP/Contents/Resources/app.asar" "$EXTRACT_DIR"
+            MAIN="$EXTRACT_DIR/out/main/index.js"
+            PROVIDER="$APP/Contents/Resources/build/app/vendor/nativephp/desktop/src/NativeServiceProvider.php"
+            CHILD_PROCESS="$APP/Contents/Resources/build/app/vendor/nativephp/desktop/src/ChildProcess.php"
+
+            for NEEDLE in nativephp-recovery prepareRecoveryLaunch notifyLaravelOrThrow waitForMainWindow getWindowLoadPromise nativephp-child-process-ready before-quit-for-update isQuitting bootstrapPromise serializeProcess EADDRINUSE; do
+              if ! grep -Fq "$NEEDLE" "$MAIN"; then
+                echo "::error::$NEEDLE is missing from packaged Electron main process in $APP."
+                exit 1
+              fi
+            done
+
+            if [ ! -f "$PROVIDER" ] || ! grep -Fq 'reconcileRuntimeConfig' "$PROVIDER" || ! grep -Fq 'NATIVEPHP_DATABASE_PATH' "$PROVIDER" || ! grep -Fq 'catch (\Throwable $exception)' "$PROVIDER"; then
+              echo "::error::NativePHP runtime startup hardening is missing from $APP."
+              exit 1
+            fi
+            if [ ! -f "$CHILD_PROCESS" ] || ! grep -Fq 'NativePHP child process failed to start:' "$CHILD_PROCESS"; then
+              echo "::error::NativePHP child-process startup acknowledgment is missing from $APP."
+              exit 1
+            fi
+
+            rm -rf "$EXTRACT_DIR"
+            echo "Startup recovery verified in $APP"
+          done
+
       # native:publish can silently exit 0 if its internal npm steps fail
       # (e.g. cross-env missing because npm ci errored). Without this guard
       # the workflow goes green with no DMG uploaded.
@@ -180,13 +228,16 @@ jobs:
           # build time; older desktop versions emitted to the vendor path.
           DIST=nativephp/electron/dist
           [ -d "$DIST" ] || DIST=vendor/nativephp/desktop/resources/electron/dist
-          if [ ! -d "$DIST" ] || [ -z "$(find $DIST -maxdepth 2 -type f -name '*.dmg' 2>/dev/null)" ]; then
-            echo "::error::No .dmg artifacts in $DIST — native:publish silently failed."
-            ls -la "$DIST" 2>/dev/null || echo "(dist/ does not exist)"
-            exit 1
-          fi
-          echo "macOS DMGs produced:"
-          find "$DIST" -maxdepth 2 -type f -name '*.dmg'
+
+          for DMG in "$DIST/Manuscript-arm64.dmg" "$DIST/Manuscript-x64.dmg"; do
+            if [ ! -f "$DMG" ]; then
+              echo "::error::Expected macOS artifact is missing: $DMG"
+              ls -la "$DIST" 2>/dev/null || echo "(dist/ does not exist)"
+              exit 1
+            fi
+
+            echo "macOS DMG produced: $DMG"
+          done
 
       # Speech input ships a whisper.cpp binary via NativePHP's extras/
       # mechanism. If it goes missing from the bundle (extras/ dropped, builder

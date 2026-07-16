@@ -18,6 +18,45 @@ fail() { echo -e "${cross_mark} $1"; }
 warn() { echo -e "${YELLOW}⚠ $1${RESET}"; }
 divider() { echo -e "${DIM}──────────────────────────────────────────${RESET}"; }
 
+latest_release_tag() {
+    local tag
+
+    while IFS= read -r tag; do
+        if [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "$tag"
+
+            return 0
+        fi
+    done < <(git tag --list 'v*' --sort=-version:refname)
+
+    return 1
+}
+
+commit_category() {
+    local message="$1"
+    local feature_pattern='^feat(\([^)]*\))?!?:[[:space:]]*'
+    local fix_pattern='^fix(\([^)]*\))?!?:[[:space:]]*'
+
+    if [[ "$message" =~ $feature_pattern ]]; then
+        echo "features"
+    elif [[ "$message" =~ $fix_pattern ]]; then
+        echo "fixes"
+    else
+        echo "other"
+    fi
+}
+
+clean_commit_subject() {
+    local message="$1"
+    local conventional_pattern='^(feat|fix|chore|docs|refactor|style|perf|test|ci|build|revert)(\([^)]*\))?!?:[[:space:]]*'
+
+    if [[ "$message" =~ $conventional_pattern ]]; then
+        message="${message:${#BASH_REMATCH[0]}}"
+    fi
+
+    echo "$message"
+}
+
 # --- Pre-flight checks ---
 preflight_checks() {
     info "Pre-flight checks"
@@ -50,7 +89,7 @@ preflight_checks() {
     success "On dev branch"
 
     # 4. Up-to-date with remote
-    git fetch origin dev --quiet
+    git fetch origin dev main --tags --quiet
     local behind
     behind=$(git rev-list HEAD..origin/dev --count)
     if [ "$behind" -gt 0 ]; then
@@ -69,7 +108,7 @@ show_current_state() {
     divider
 
     local latest_tag
-    latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+    latest_tag=$(latest_release_tag || echo "")
 
     if [ -z "$latest_tag" ]; then
         warn "No existing tags found. This will be the first release."
@@ -226,20 +265,22 @@ generate_changelog() {
         local short_hash="${hash:0:7}"
         local message="${line#* }"
 
-        if [[ "$message" =~ ^feat:\ * ]]; then
-            local clean="${message#feat: }"
-            clean="${clean#feat:}"
-            features="${features}\n- ${clean} (${short_hash})"
-        elif [[ "$message" =~ ^fix:\ * ]]; then
-            local clean="${message#fix: }"
-            clean="${clean#fix:}"
-            fixes="${fixes}\n- ${clean} (${short_hash})"
-        else
-            # Strip any conventional commit prefix for cleaner display
-            local clean="$message"
-            clean=$(echo "$clean" | sed -E 's/^(chore|docs|refactor|style|perf|test|ci|build|revert)(\(.+\))?: //')
-            other="${other}\n- ${clean} (${short_hash})"
-        fi
+        local category
+        local clean
+        category=$(commit_category "$message")
+        clean=$(clean_commit_subject "$message")
+
+        case "$category" in
+            features)
+                features="${features}\n- ${clean} (${short_hash})"
+                ;;
+            fixes)
+                fixes="${fixes}\n- ${clean} (${short_hash})"
+                ;;
+            *)
+                other="${other}\n- ${clean} (${short_hash})"
+                ;;
+        esac
     done < <(git log "$log_range" --oneline --no-decorate)
 
     # Build the new section
@@ -356,4 +397,6 @@ main() {
     echo ""
 }
 
-main
+if [[ "${BASH_SOURCE[0]-$0}" == "$0" ]]; then
+    main "$@"
+fi

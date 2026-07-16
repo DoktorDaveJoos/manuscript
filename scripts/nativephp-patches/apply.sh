@@ -61,22 +61,29 @@ echo "Applying Manuscript NativePHP patches to $PACKAGE_DIR..."
 apply "resources/electron/electron-plugin/src/preload/index.mts"
 apply "resources/electron/electron-plugin/dist/preload/index.mjs"
 apply "resources/electron/electron-plugin/dist/server/api/system.js"
-# Startup resilience: single-instance lock + startup-failure dialog (index.js),
-# user-controlled updater startup checks (index.js), and the API port-bind retry
-# (server/api.js). These patch the COMPILED dist
+# Startup resilience: single-instance lock + bounded relaunch recovery
+# (index.js), strict startup requests (server/utils.js), durable window-load
+# tracking (server/api/window.js), user-controlled updater startup checks
+# (index.js), and the API port-bind retry (server/api.js).
+# These patch the COMPILED dist
 # because the publish build runs `electron-vite build`, never `plugin:build`/tsc,
 # so the package's src/*.ts is never recompiled — only dist/ is loaded at runtime.
 apply "resources/electron/electron-plugin/dist/index.js"
+apply "resources/electron/electron-plugin/dist/server/utils.js"
+apply "resources/electron/electron-plugin/dist/server/api/window.js"
 apply "resources/electron/electron-plugin/dist/server/api.js"
-# Child-process API responses must exclude Electron's UtilityProcess instance.
-# Express cannot JSON-serialize that internal object, so Laravel otherwise
-# receives null and crashes while starting the production queue worker.
+# Child-process startup waits for the wrapped command's real spawn event before
+# acknowledging success. The API returns serializable process data (never
+# Electron's UtilityProcess object), and PHP rejects explicit startup errors so
+# bounded queue-worker retries have a truthful failure signal.
+apply "resources/electron/electron-plugin/src/server/childProcess.ts"
+apply "resources/electron/electron-plugin/dist/server/childProcess.js"
 apply "resources/electron/electron-plugin/src/server/api/childProcess.ts"
 apply "resources/electron/electron-plugin/dist/server/api/childProcess.js"
-# Launch speed: version-guard the per-launch `artisan optimize` (server/php.js)
-# so it only runs on the first launch after an install/update, like migrate.
-# The per-launch config values it used to refresh are healed at request time
-# by AppServiceProvider::healStaleNativePhpConfig.
+# Launch speed and recovery: version-guard `artisan optimize` on normal starts,
+# but on the bounded recovery launch remove only generated Laravel caches and
+# force a rebuild. Bootstrap commands receive the complete live NativePHP
+# runtime tuple after the Electron control API has selected its port.
 apply "resources/electron/electron-plugin/dist/server/php.js"
 # Auto-update: disable silent install-on-quit (autoInstallOnAppQuit=false) so a
 # downloaded update never stages a non-relaunching Squirrel install-on-quit that
@@ -88,4 +95,11 @@ apply "resources/electron/electron-plugin/dist/server/api/autoUpdater.js"
 apply "resources/electron/build/entitlements.mac.plist"
 # electronPath() published-project detection (PHP, ships as-is — not compiled).
 apply "src/Drivers/Electron/ElectronServiceProvider.php"
+# Atomically replace every cached per-launch NativePHP value (running flag,
+# storage/database paths, API URL, and secret), then gate queue workers behind
+# database readiness with bounded retries that never abort the window boot.
+apply "src/NativeServiceProvider.php"
+# Surface Electron child-process startup errors to PHP instead of hydrating a
+# false-success object that prevents the queue retry policy from running.
+apply "src/ChildProcess.php"
 echo "Done."

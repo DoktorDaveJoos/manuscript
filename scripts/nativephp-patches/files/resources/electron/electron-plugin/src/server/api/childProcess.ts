@@ -13,57 +13,90 @@ import { fileURLToPath } from 'url';
 import { join } from 'path';
 
 const router = express.Router();
+const startingProcesses = new Map();
 
-function startProcess(settings, useNodeRuntime = false) {
-    const { alias, cmd, cwd, env, persistent, spawnTimeout = 30000 } = settings;
+function notifyStartupError(alias, error) {
+    console.error(`Failed to start process [${alias}]: ${error.message}`);
+
+    notifyLaravel('events', {
+        event: 'Native\\Desktop\\Events\\ChildProcess\\StartupError',
+        payload: {
+            alias,
+            error: error.toString(),
+        },
+    });
+}
+
+async function startProcess(settings, useNodeRuntime = false) {
+    const { alias, cmd, cwd, env, persistent } = settings;
+    const spawnTimeout =
+        settings.spawnTimeout ?? (alias.startsWith('queue_') ? 10000 : 30000);
 
     if (getProcess(alias) !== undefined) {
         return state.processes[alias];
     }
 
-    try {
-        const proc = utilityProcess.fork(
-            fileURLToPath(
-                new URL(
-                    '../../electron-plugin/dist/server/childProcess.js',
-                    import.meta.url,
-                ),
-            ),
-            cmd,
-            {
-                cwd,
-                stdio: 'pipe',
-                serviceName: alias,
-                env: {
-                    ...process.env,
-                    ...env,
-                    USE_NODE_RUNTIME: useNodeRuntime ? '1' : '0',
-                },
-            },
-        );
+    if (startingProcesses.has(alias)) {
+        return startingProcesses.get(alias);
+    }
 
-        // Set timeout to detect if process never spawns
-        const startTimeout = setTimeout(() => {
-            if (!state.processes[alias] || !state.processes[alias].pid) {
-                console.error(
-                    `Process [${alias}] failed to start within timeout period`,
-                );
+    const startupPromise = new Promise((resolve, reject) => {
+        let proc;
+        let startTimeout;
+        let startupSettled = false;
+        let didBecomeReady = false;
 
-                // Attempt to clean up
-                try {
-                    proc.kill();
-                } catch (e) {
-                    // Ignore kill errors
-                }
-
-                notifyLaravel('events', {
-                    event: 'Native\\Desktop\\Events\\ChildProcess\\StartupError',
-                    payload: {
-                        alias,
-                        error: 'Startup timeout exceeded',
-                    },
-                });
+        const failStartup = (error) => {
+            if (startupSettled) {
+                return;
             }
+
+            startupSettled = true;
+            clearTimeout(startTimeout);
+            notifyStartupError(alias, error);
+
+            try {
+                proc.kill();
+            } catch (_error) {
+                // The wrapper may already have exited.
+            }
+
+            reject(error);
+        };
+
+        try {
+            proc = utilityProcess.fork(
+                fileURLToPath(
+                    new URL(
+                        '../../electron-plugin/dist/server/childProcess.js',
+                        import.meta.url,
+                    ),
+                ),
+                cmd,
+                {
+                    cwd,
+                    stdio: 'pipe',
+                    serviceName: alias,
+                    env: {
+                        ...process.env,
+                        ...env,
+                        USE_NODE_RUNTIME: useNodeRuntime ? '1' : '0',
+                    },
+                },
+            );
+        } catch (error) {
+            notifyStartupError(alias, error);
+            reject(error);
+
+            return;
+        }
+
+        startTimeout = setTimeout(() => {
+            failStartup(
+                new Error(
+                    `Process [${alias}] did not acknowledge startup within ${spawnTimeout}ms.`,
+                ),
+            );
         }, spawnTimeout);
 
         proc.stdout.on('data', (data) => {
@@ -91,25 +124,33 @@ function startProcess(settings, useNodeRuntime = false) {
             });
         });
 
-        // Experimental feature on Electron,
-        // I keep this here to remember and retry when we upgrade
-        // https://www.electronjs.org/docs/latest/api/utility-process#event-error-experimental
-        // proc.on('error', (error) => {
-        //     clearTimeout(startTimeout);
-        //     console.error(`Process [${alias}] error: ${error.message}`);
-        //
-        //     notifyLaravel('events', {
-        //         event: 'Native\\Desktop\\Events\\ChildProcess\\StartupError',
-        //         payload: {
-        //             alias,
-        //             error: error.toString(),
-        //         }
-        //     });
-        // });
-
         proc.on('spawn', () => {
+            console.log('Process wrapper [' + alias + '] spawned.');
+        });
+
+        proc.on('message', (message) => {
+            if (message?.type === 'nativephp-child-process-startup-error') {
+                failStartup(
+                    new Error(
+                        message.error ||
+                            `Process [${alias}] failed before startup.`,
+                    ),
+                );
+
+                return;
+            }
+
+            if (
+                message?.type !== 'nativephp-child-process-ready' ||
+                startupSettled
+            ) {
+                return;
+            }
+
+            startupSettled = true;
+            didBecomeReady = true;
             clearTimeout(startTimeout);
-            console.log('Process [' + alias + '] spawned!');
+            console.log('Process [' + alias + '] acknowledged startup.');
 
             state.processes[alias] = {
                 pid: proc.pid,
@@ -121,10 +162,33 @@ function startProcess(settings, useNodeRuntime = false) {
                 event: 'Native\\Desktop\\Events\\ChildProcess\\ProcessSpawned',
                 payload: [alias, proc.pid],
             });
+
+            resolve(state.processes[alias]);
+        });
+
+        proc.on('error', (type, location) => {
+            if (!didBecomeReady) {
+                failStartup(
+                    new Error(
+                        `Process wrapper [${alias}] failed with ${type} at ${location}.`,
+                    ),
+                );
+            }
         });
 
         proc.on('exit', (code) => {
             clearTimeout(startTimeout);
+
+            if (!didBecomeReady) {
+                failStartup(
+                    new Error(
+                        `Process [${alias}] exited with code [${code}] before acknowledging startup.`,
+                    ),
+                );
+
+                return;
+            }
+
             console.log(`Process [${alias}] exited with code [${code}].`);
 
             notifyLaravel('events', {
@@ -140,33 +204,26 @@ function startProcess(settings, useNodeRuntime = false) {
 
             if (settings?.persistent) {
                 console.log('Process [' + alias + '] watchdog restarting...');
-                // Add delay to prevent rapid restart loops
-                setTimeout(() => startProcess(settings), 1000);
+                setTimeout(() => {
+                    startProcess(settings).catch((error) => {
+                        console.error(
+                            `Persistent process [${alias}] restart failed:`,
+                            error,
+                        );
+                    });
+                }, 1000);
             }
         });
+    });
 
-        return {
-            pid: null,
-            proc,
-            settings,
-        };
-    } catch (error) {
-        console.error(`Failed to create process [${alias}]: ${error.message}`);
+    startingProcesses.set(alias, startupPromise);
 
-        notifyLaravel('events', {
-            event: 'Native\\Desktop\\Events\\ChildProcess\\StartupError',
-            payload: {
-                alias,
-                error: error.toString(),
-            },
-        });
-
-        return {
-            pid: null,
-            proc: null,
-            settings,
-            error: error.message,
-        };
+    try {
+        return await startupPromise;
+    } finally {
+        if (startingProcesses.get(alias) === startupPromise) {
+            startingProcesses.delete(alias);
+        }
     }
 }
 
@@ -260,22 +317,31 @@ function serializeProcesses(processes) {
     );
 }
 
-router.post('/start', (req, res) => {
-    const proc = startProcess(req.body);
-
-    res.json(serializeProcess(proc));
+router.post('/start', async (req, res) => {
+    try {
+        const proc = await startProcess(req.body);
+        res.json(serializeProcess(proc));
+    } catch (error) {
+        res.status(503).json({ error: error.message });
+    }
 });
 
-router.post('/start-node', (req, res) => {
-    const proc = startProcess(req.body, true);
-
-    res.json(serializeProcess(proc));
+router.post('/start-node', async (req, res) => {
+    try {
+        const proc = await startProcess(req.body, true);
+        res.json(serializeProcess(proc));
+    } catch (error) {
+        res.status(503).json({ error: error.message });
+    }
 });
 
-router.post('/start-php', (req, res) => {
-    const proc = startPhpProcess(req.body);
-
-    res.json(serializeProcess(proc));
+router.post('/start-php', async (req, res) => {
+    try {
+        const proc = await startPhpProcess(req.body);
+        res.json(serializeProcess(proc));
+    } catch (error) {
+        res.status(503).json({ error: error.message });
+    }
 });
 
 router.post('/stop', (req, res) => {
@@ -289,14 +355,16 @@ router.post('/stop', (req, res) => {
 router.post('/restart', async (req, res) => {
     const { alias } = req.body;
 
-    const settings = { ...getSettings(alias) };
+    const existingSettings = getSettings(alias);
 
-    stopProcess(alias);
-
-    if (settings === undefined) {
+    if (existingSettings === undefined) {
         res.sendStatus(410);
         return;
     }
+
+    const settings = { ...existingSettings };
+
+    stopProcess(alias);
 
     // Wait for the process to stop with a timeout of 5s
     const waitForProcessDeletion = async (timeout, retry) => {
@@ -312,8 +380,13 @@ router.post('/restart', async (req, res) => {
     await waitForProcessDeletion(5000, 100);
 
     console.log('Process [' + alias + '] restarting...');
-    const proc = startProcess(settings);
-    res.json(serializeProcess(proc));
+
+    try {
+        const proc = await startProcess(settings);
+        res.json(serializeProcess(proc));
+    } catch (error) {
+        res.status(503).json({ error: error.message });
+    }
 });
 
 router.get('/get/:alias', (req, res) => {

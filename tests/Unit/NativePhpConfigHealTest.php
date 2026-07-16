@@ -1,11 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Providers\AppServiceProvider;
 use Tests\TestCase;
 
 uses(TestCase::class);
 
-const HEALED_ENV_VARS = ['NATIVEPHP_SECRET', 'NATIVEPHP_API_URL'];
+const HEALED_ENV_VARS = [
+    'NATIVEPHP_RUNNING',
+    'NATIVEPHP_STORAGE_PATH',
+    'NATIVEPHP_DATABASE_PATH',
+    'NATIVEPHP_SECRET',
+    'NATIVEPHP_API_URL',
+];
 
 function callHeal(): void
 {
@@ -21,7 +29,16 @@ function setHealEnv(string $name, string $value): void
     $_SERVER[$name] = $value;
 }
 
-beforeEach(function () {
+function setCompleteNativePhpRuntimeEnv(): void
+{
+    setHealEnv('NATIVEPHP_RUNNING', 'true');
+    setHealEnv('NATIVEPHP_STORAGE_PATH', '/tmp/manuscript-runtime/storage');
+    setHealEnv('NATIVEPHP_DATABASE_PATH', '/tmp/manuscript-runtime/database.sqlite');
+    setHealEnv('NATIVEPHP_SECRET', 'fresh-secret-this-launch');
+    setHealEnv('NATIVEPHP_API_URL', 'http://localhost:4017/api/');
+}
+
+beforeEach(function (): void {
     $this->originalEnv = [];
 
     foreach (HEALED_ENV_VARS as $name) {
@@ -31,7 +48,7 @@ beforeEach(function () {
     }
 });
 
-afterEach(function () {
+afterEach(function (): void {
     foreach (HEALED_ENV_VARS as $name) {
         if ($this->originalEnv[$name] === false) {
             putenv($name);
@@ -42,91 +59,59 @@ afterEach(function () {
     }
 });
 
-it('overrides the cached secret when it differs from the runtime env', function () {
-    config()->set('nativephp-internal.running', true);
-    config()->set('nativephp-internal.secret', 'stale-secret-from-previous-launch');
-    setHealEnv('NATIVEPHP_SECRET', 'fresh-secret-this-launch');
+it('atomically overrides the complete cached runtime tuple', function (): void {
+    config()->set([
+        'nativephp-internal.running' => false,
+        'nativephp-internal.storage_path' => '/stale/storage',
+        'nativephp-internal.database_path' => '/stale/database.sqlite',
+        'nativephp-internal.secret' => 'stale-secret',
+        'nativephp-internal.api_url' => 'http://localhost:4000/api/',
+    ]);
+    setCompleteNativePhpRuntimeEnv();
 
     callHeal();
 
-    expect(config('nativephp-internal.secret'))->toBe('fresh-secret-this-launch');
-});
-
-it('leaves the cached secret alone when it already matches the runtime env', function () {
-    config()->set('nativephp-internal.running', true);
-    config()->set('nativephp-internal.secret', 'matching-secret');
-    setHealEnv('NATIVEPHP_SECRET', 'matching-secret');
-
-    callHeal();
-
-    expect(config('nativephp-internal.secret'))->toBe('matching-secret');
-});
-
-it('overrides the cached api_url when it differs from the runtime env', function () {
-    config()->set('nativephp-internal.running', true);
-    config()->set('nativephp-internal.api_url', 'http://localhost:4000/api/');
-    setHealEnv('NATIVEPHP_API_URL', 'http://localhost:4017/api/');
-
-    callHeal();
-
-    expect(config('nativephp-internal.api_url'))->toBe('http://localhost:4017/api/');
-});
-
-it('leaves the cached api_url alone when it already matches the runtime env', function () {
-    config()->set('nativephp-internal.running', true);
-    config()->set('nativephp-internal.api_url', 'http://localhost:4001/api/');
-    setHealEnv('NATIVEPHP_API_URL', 'http://localhost:4001/api/');
-
-    callHeal();
-
-    expect(config('nativephp-internal.api_url'))->toBe('http://localhost:4001/api/');
-});
-
-it('is a no-op outside the NativePHP runtime', function () {
-    config()->set('nativephp-internal.running', false);
-    config()->set('nativephp-internal.secret', 'cached-secret');
-    config()->set('nativephp-internal.api_url', 'http://localhost:4001/api/');
-    setHealEnv('NATIVEPHP_SECRET', 'different-env-secret');
-    setHealEnv('NATIVEPHP_API_URL', 'http://localhost:4099/api/');
-
-    callHeal();
-
-    expect(config('nativephp-internal.secret'))->toBe('cached-secret')
-        ->and(config('nativephp-internal.api_url'))->toBe('http://localhost:4001/api/');
-});
-
-it('is a no-op when the env vars are missing', function () {
-    config()->set('nativephp-internal.running', true);
-    config()->set('nativephp-internal.secret', 'cached-secret');
-    config()->set('nativephp-internal.api_url', 'http://localhost:4001/api/');
-
-    callHeal();
-
-    expect(config('nativephp-internal.secret'))->toBe('cached-secret')
-        ->and(config('nativephp-internal.api_url'))->toBe('http://localhost:4001/api/');
-});
-
-it('is a no-op when the env vars are empty', function () {
-    config()->set('nativephp-internal.running', true);
-    config()->set('nativephp-internal.secret', 'cached-secret');
-    config()->set('nativephp-internal.api_url', 'http://localhost:4001/api/');
-    setHealEnv('NATIVEPHP_SECRET', '');
-    setHealEnv('NATIVEPHP_API_URL', '');
-
-    callHeal();
-
-    expect(config('nativephp-internal.secret'))->toBe('cached-secret')
-        ->and(config('nativephp-internal.api_url'))->toBe('http://localhost:4001/api/');
-});
-
-it('heals each key independently when only one env var is present', function () {
-    config()->set('nativephp-internal.running', true);
-    config()->set('nativephp-internal.secret', 'cached-secret');
-    config()->set('nativephp-internal.api_url', 'http://localhost:4001/api/');
-    setHealEnv('NATIVEPHP_API_URL', 'http://localhost:4017/api/');
-
-    callHeal();
-
-    expect(config('nativephp-internal.secret'))->toBe('cached-secret')
+    expect(config('nativephp-internal.running'))->toBeTrue()
+        ->and(config('nativephp-internal.storage_path'))->toBe('/tmp/manuscript-runtime/storage')
+        ->and(config('nativephp-internal.database_path'))->toBe('/tmp/manuscript-runtime/database.sqlite')
+        ->and(config('nativephp-internal.secret'))->toBe('fresh-secret-this-launch')
         ->and(config('nativephp-internal.api_url'))->toBe('http://localhost:4017/api/');
+});
+
+it('rejects an incomplete live runtime without partially changing cached config', function (): void {
+    $cachedConfig = [
+        'nativephp-internal.running' => true,
+        'nativephp-internal.storage_path' => '/stale/storage',
+        'nativephp-internal.database_path' => '/stale/database.sqlite',
+        'nativephp-internal.secret' => 'stale-secret',
+        'nativephp-internal.api_url' => 'http://localhost:4000/api/',
+    ];
+    config()->set($cachedConfig);
+    setCompleteNativePhpRuntimeEnv();
+    setHealEnv('NATIVEPHP_SECRET', '');
+
+    expect(fn () => callHeal())
+        ->toThrow(RuntimeException::class, 'NATIVEPHP_SECRET');
+
+    foreach ($cachedConfig as $configKey => $cachedValue) {
+        expect(config($configKey))->toBe($cachedValue);
+    }
+});
+
+it('does not use cached running state outside a live NativePHP runtime', function (): void {
+    config()->set([
+        'nativephp-internal.running' => true,
+        'nativephp-internal.storage_path' => '/cached/storage',
+        'nativephp-internal.database_path' => '/cached/database.sqlite',
+        'nativephp-internal.secret' => 'cached-secret',
+        'nativephp-internal.api_url' => 'http://localhost:4001/api/',
+    ]);
+
+    callHeal();
+
+    expect(config('nativephp-internal.running'))->toBeTrue()
+        ->and(config('nativephp-internal.storage_path'))->toBe('/cached/storage')
+        ->and(config('nativephp-internal.database_path'))->toBe('/cached/database.sqlite')
+        ->and(config('nativephp-internal.secret'))->toBe('cached-secret')
+        ->and(config('nativephp-internal.api_url'))->toBe('http://localhost:4001/api/');
 });

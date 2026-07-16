@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { mkdirSync, statSync, writeFileSync, existsSync, readFileSync } from 'fs';
 import fs_extra from 'fs-extra';
-const { copySync, mkdirpSync } = fs_extra;
+const { copySync, emptyDirSync, mkdirpSync } = fs_extra;
 import Store from 'electron-store';
 import { promisify } from 'util';
 import { join } from 'path';
@@ -22,6 +22,7 @@ const storagePath = join(app.getPath('userData'), 'storage');
 const databasePath = join(app.getPath('userData'), 'database');
 const databaseFile = join(databasePath, 'database.sqlite');
 const bootstrapCache = join(app.getPath('userData'), 'bootstrap', 'cache');
+const RECOVERY_ARG = '--nativephp-recovery';
 const argumentEnv = getArgumentEnv();
 mkdirpSync(bootstrapCache);
 mkdirpSync(join(storagePath, 'logs'));
@@ -37,15 +38,31 @@ function shouldMigrateDatabase(store) {
     return store.get('migrated_version') !== app.getVersion()
         && process.env.NODE_ENV !== 'development';
 }
+function isRecoveryLaunch() {
+    return process.argv.includes(RECOVERY_ARG);
+}
 function shouldOptimize(store) {
     // Manuscript patch: version-guard optimize exactly like shouldMigrateDatabase.
     // Stock NativePHP re-runs `artisan optimize` (a full synchronous PHP boot +
     // config/event/view cache rebuild) on EVERY production launch even though it
-    // stores `optimized_version` below. The per-launch values baked into the
-    // cached config (NATIVEPHP_SECRET, NATIVEPHP_API_URL) are reconciled at
-    // request time by AppServiceProvider::healStaleNativePhpConfig.
-    return store.get('optimized_version') !== app.getVersion()
+    // stores `optimized_version` below. A recovery launch always rebuilds the
+    // disposable caches after removing stale or corrupt copies.
+    return (isRecoveryLaunch()
+        || store.get('optimized_version') !== app.getVersion())
         && process.env.NODE_ENV !== 'development';
+}
+function prepareRecoveryLaunch() {
+    if (!isRecoveryLaunch() || !runningSecureBuild()) {
+        return;
+    }
+    emptyDirSync(bootstrapCache);
+    emptyDirSync(join(storagePath, 'framework', 'views'));
+    emptyDirSync(join(storagePath, 'framework', 'cache', 'opcache'));
+    const store = new Store({
+        name: 'nativephp',
+    });
+    store.delete('optimized_version');
+    console.warn('Cleared disposable Laravel caches for recovery launch.');
 }
 function hasNightwatchInstalled(appPath) {
     const candidateRoots = [
@@ -125,7 +142,7 @@ function canBindToPort(port) {
 }
 function retrievePhpIniSettings() {
     return __awaiter(this, void 0, void 0, function* () {
-        const env = getDefaultEnvironmentVariables();
+        const env = getDefaultEnvironmentVariables(state.randomSecret, state.electronApiPort);
         const appPath = getAppPath();
         const phpOptions = {
             cwd: appPath,
@@ -140,7 +157,7 @@ function retrievePhpIniSettings() {
 }
 function retrieveNativePHPConfig() {
     return __awaiter(this, void 0, void 0, function* () {
-        const env = getDefaultEnvironmentVariables();
+        const env = getDefaultEnvironmentVariables(state.randomSecret, state.electronApiPort);
         const appPath = getAppPath();
         const phpOptions = {
             cwd: appPath,
@@ -385,4 +402,4 @@ function serveApp(secret, apiPort, phpIniSettings) {
         });
     }));
 }
-export { startScheduler, serveApp, getAppPath, retrieveNativePHPConfig, retrievePhpIniSettings, getDefaultEnvironmentVariables, getDefaultPhpIniSettings, runningSecureBuild };
+export { startScheduler, serveApp, getAppPath, prepareRecoveryLaunch, retrieveNativePHPConfig, retrievePhpIniSettings, getDefaultEnvironmentVariables, getDefaultPhpIniSettings, runningSecureBuild };

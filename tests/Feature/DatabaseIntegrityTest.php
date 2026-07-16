@@ -374,9 +374,10 @@ test('boot recovery runs when the default connection is named nativephp', functi
     config(['database.default' => 'nativephp']);
     config(['nativephp-internal.running' => true]);
 
-    (new DatabaseStartupService(app(), runningInConsole: false))->ensureSchema();
+    $isReady = (new DatabaseStartupService(app(), runningInConsole: false))->ensureSchema();
 
     // Fresh DB got its schema, then the user's data back.
+    expect($isReady)->toBeTrue();
     expect(Schema::hasTable('app_settings'))->toBeTrue();
     expect(DB::table('app_settings')->where('key', 'recovery_probe')->value('value'))->toBe('user-value');
 
@@ -389,7 +390,7 @@ test('boot recovery runs when the default connection is named nativephp', functi
     expect(file_exists($this->tempDir.'/.repairing'))->toBeFalse();
 });
 
-test('boot skips migrate under nativephp when no repair is pending', function () {
+test('boot falls back to migrate under nativephp when launch migration left the schema behind', function () {
     $livePath = $this->tempDir.'/nativephp.sqlite';
     touch($livePath);
 
@@ -402,14 +403,37 @@ test('boot skips migrate under nativephp when no repair is pending', function ()
     config(['database.default' => 'nativephp']);
     config(['nativephp-internal.running' => true]);
 
-    (new DatabaseStartupService(app(), runningInConsole: false))->ensureSchema();
+    $isReady = (new DatabaseStartupService(app(), runningInConsole: false))->ensureSchema();
 
-    // The Electron main process already runs `migrate --force` once per
-    // launch — re-running it on every web request is wasted work.
-    $pdo = new PDO("sqlite:{$livePath}");
-    $migrationsTable = $pdo->query("SELECT count(*) FROM sqlite_master WHERE name = 'migrations'")->fetchColumn();
-    expect((int) $migrationsTable)->toBe(0);
+    // Electron normally migrates before starting the server. If that attempt
+    // failed or was interrupted, the request-side readiness barrier repairs
+    // the gap before queue workers are allowed to start.
+    expect($isReady)->toBeTrue();
+    expect(Schema::hasTable('migrations'))->toBeTrue();
+    expect(Schema::hasTable('app_settings'))->toBeTrue();
     expect(app()->bound('database.repaired'))->toBeFalse();
+});
+
+test('boot reports the native database as not ready when fallback migration fails', function () {
+    $livePath = $this->tempDir.'/nativephp.sqlite';
+    touch($livePath);
+
+    config(['database.connections.nativephp' => [
+        'driver' => 'sqlite',
+        'database' => $livePath,
+        'prefix' => '',
+        'foreign_key_constraints' => true,
+    ]]);
+    config(['database.default' => 'nativephp']);
+    config(['nativephp-internal.running' => true]);
+
+    Artisan::shouldReceive('call')
+        ->once()
+        ->andThrow(new RuntimeException('database is locked'));
+
+    $isReady = (new DatabaseStartupService(app(), runningInConsole: false))->ensureSchema();
+
+    expect($isReady)->toBeFalse();
 });
 
 test('boot migrates sqlite-driver defaults regardless of connection name outside nativephp', function () {
@@ -425,10 +449,11 @@ test('boot migrates sqlite-driver defaults regardless of connection name outside
     config(['database.default' => 'devsqlite']);
     config(['nativephp-internal.running' => false]);
 
-    (new DatabaseStartupService(app(), runningInConsole: false))->ensureSchema();
+    $isReady = (new DatabaseStartupService(app(), runningInConsole: false))->ensureSchema();
 
     // Outside NativePHP there is no launch-time migrate — the boot path is
     // the only migration path and must run for ANY sqlite-driver default.
+    expect($isReady)->toBeTrue();
     expect(Schema::hasTable('migrations'))->toBeTrue();
     expect(Schema::hasTable('app_settings'))->toBeTrue();
 });
