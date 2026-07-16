@@ -47,6 +47,7 @@
     "bookCard.editedMonthsAgo_one": "Vor {{count}} Monat bearbeitet",
     "bookCard.editedMonthsAgo_other": "Vor {{count}} Monaten bearbeitet",
 
+    "bookCardMenu.actions": "Buchaktionen",
     "bookCardMenu.rename": "Umbenennen",
     "bookCardMenu.duplicate": "Duplizieren",
     "bookCardMenu.delete": "Buch löschen …",

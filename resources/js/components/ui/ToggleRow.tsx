@@ -10,7 +10,12 @@ type ToggleRowProps = {
 
 export default function ToggleRow({ label, checked, onChange, border = true }: ToggleRowProps) {
     return (
-        <div className={cn('flex items-center justify-between py-3', border && 'border-b border-border-subtle')}>
+        <div
+            className={cn(
+                'flex items-center justify-between py-3.5',
+                border && 'border-b border-border-subtle',
+            )}
+        >
             <span className="text-[13px] text-ink-soft">{label}</span>
             <Toggle checked={checked} onChange={onChange} />
         </div>

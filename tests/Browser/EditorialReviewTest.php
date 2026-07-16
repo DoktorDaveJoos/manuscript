@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\EditorialSectionType;
+use App\Models\Book;
 use App\Models\EditorialReview;
 use App\Models\EditorialReviewChapterNote;
 use App\Models\EditorialReviewSection;
@@ -16,6 +17,20 @@ it('shows empty state when no review exists', function () {
     $page->assertNoJavaScriptErrors()
         ->assertSee('Editorial Review')
         ->assertSee('Start Editorial Review');
+});
+
+it('explains missing AI configuration and links to settings', function () {
+    $book = Book::factory()->create();
+
+    $page = visit("/books/{$book->id}/ai/editorial-review");
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSee('AI provider required')
+        ->assertSee('cannot start, continue, or answer questions')
+        ->assertSee('Open AI Settings')
+        ->click('Open AI Settings')
+        ->assertSee('AI Providers')
+        ->assertNoJavaScriptErrors();
 });
 
 it('renders completed review with sections and scores', function () {

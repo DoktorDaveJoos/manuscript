@@ -356,7 +356,7 @@ test('reviseScene revises only the targeted scene and snapshots the chapter', fu
 
     $book = Book::factory()->withAi()->create();
     $storyline = Storyline::factory()->for($book)->create();
-    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['word_count' => 6]);
 
     $current = ChapterVersion::factory()->for($chapter)->create([
         'is_current' => true,
@@ -368,10 +368,13 @@ test('reviseScene revises only the targeted scene and snapshots the chapter', fu
     $sceneOne = Scene::factory()->for($chapter)->create([
         'sort_order' => 0,
         'content' => '<p>Scene one prose.</p>',
+        'word_count' => 3,
     ]);
     $sceneTwo = Scene::factory()->for($chapter)->create([
         'sort_order' => 1,
         'content' => '<p>Scene two prose.</p>',
+        'word_count' => 3,
+        'content_version' => 6,
     ]);
 
     $response = $this->post(
@@ -384,8 +387,11 @@ test('reviseScene revises only the targeted scene and snapshots the chapter', fu
     ProseReviser::assertPrompted(fn ($prompt) => str_contains($prompt->prompt, 'Scene two prose')
         && ! str_contains($prompt->prompt, 'Scene one prose'));
 
-    expect($sceneOne->fresh()->content)->toBe('<p>Scene one prose.</p>');
-    expect($sceneTwo->fresh()->content)->toContain('Polished scene two');
+    expect($sceneOne->fresh()->content)->toBe('<p>Scene one prose.</p>')
+        ->and($sceneTwo->fresh()->content)->toContain('Polished scene two')
+        ->and($sceneTwo->fresh()->content_version)->toBe(7)
+        ->and($sceneTwo->fresh()->word_count)->toBe(3)
+        ->and($chapter->fresh()->word_count)->toBe(6);
 
     $newVersion = $chapter->versions()->orderByDesc('version_number')->first();
     expect($newVersion->version_number)->toBe(2);

@@ -63,3 +63,30 @@ it('shows the book prose rules on the revision rules page', function () {
         ->assertSee("Show, don't tell")
         ->assertSee('Prose tightening');
 });
+
+it('renders writing style save failures with error styling', function () {
+    $book = Book::factory()->create(['writing_style_text' => 'A clear style.']);
+
+    $page = visit("/books/{$book->id}/settings/writing-style");
+
+    $page->assertNoJavaScriptErrors();
+    $page->script(<<<'JS'
+        const textarea = document.querySelector('textarea');
+        const valueSetter = Object.getOwnPropertyDescriptor(
+            HTMLTextAreaElement.prototype,
+            'value',
+        ).set;
+        textarea.focus();
+        valueSetter.call(textarea, '');
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        textarea.blur();
+        null;
+        JS);
+    $page->wait(1)
+        ->assertAttribute('[data-testid="writing-style-status"]', 'data-status', 'error')
+        ->assertAttribute(
+            '[data-testid="writing-style-status"]',
+            'class',
+            'mt-2 block text-xs font-medium text-delete',
+        );
+});

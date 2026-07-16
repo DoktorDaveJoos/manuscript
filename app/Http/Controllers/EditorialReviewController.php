@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Ai\Agents\EditorialChatAgent;
+use App\Enums\EditorialReviewErrorCode;
 use App\Enums\EditorialSectionType;
 use App\Http\Controllers\Concerns\StreamsConversation;
 use App\Jobs\RunEditorialReviewJob;
@@ -11,6 +12,7 @@ use App\Models\Book;
 use App\Models\Chapter;
 use App\Models\EditorialReview;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +20,7 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class EditorialReviewController extends Controller
 {
@@ -25,6 +28,8 @@ class EditorialReviewController extends Controller
 
     public function index(Book $book): Response
     {
+        EditorialReview::failStale($book);
+
         $reviews = $book->editorialReviews()
             ->latest('id')
             ->limit(20)
@@ -49,74 +54,132 @@ class EditorialReviewController extends Controller
 
     public function store(Book $book): JsonResponse
     {
-        $this->ensureAiConfigured();
+        if ($configurationError = $this->configureAiForRequest()) {
+            return $configurationError;
+        }
 
-        // A run whose worker died would otherwise block new reviews until the
-        // hourly cleanup; fail this book's stale runs before the duplicate check.
-        EditorialReview::failStale($book);
+        try {
+            $result = DB::transaction(function () use ($book): array {
+                Book::query()->whereKey($book->id)->lockForUpdate()->firstOrFail();
 
-        abort_if(
-            $book->editorialReviews()
-                ->whereNotIn('status', ['completed', 'failed'])
-                ->exists(),
-            422,
-            __('An editorial review is already in progress for this book.'),
+                // A run whose worker died would otherwise block new reviews until
+                // the hourly cleanup; fail this book's stale runs first.
+                EditorialReview::failStale($book);
+
+                $activeReview = $this->activeReview($book);
+                if ($activeReview) {
+                    return ['created' => false, 'review' => $activeReview];
+                }
+
+                return [
+                    'created' => true,
+                    'review' => $book->editorialReviews()->create([
+                        'status' => 'pending',
+                        'started_at' => now(),
+                        'progress' => ['phase' => 'pending'],
+                    ]),
+                ];
+            });
+        } catch (QueryException $exception) {
+            report($exception);
+
+            return $this->applicationUnavailableResponse(
+                __('The app could not save the new editorial review. No review was started; try again in a moment.'),
+            );
+        }
+
+        if (! $result['created']) {
+            return $this->reviewAlreadyRunningResponse($result['review']);
+        }
+
+        return $this->dispatchReview(
+            $book,
+            $result['review'],
+            __('Editorial review started.'),
         );
-
-        $review = $book->editorialReviews()->create([
-            'status' => 'pending',
-            'started_at' => now(),
-        ]);
-
-        RunEditorialReviewJob::dispatch($book, $review);
-
-        return response()->json([
-            'message' => __('Editorial review started.'),
-            'review' => $review,
-        ]);
     }
 
     /**
      * Resume a failed review on the same record: the pipeline skips chapter
-     * notes and sections persisted before the failure, so only the missing
-     * work is redone.
+     * notes and sections that are still valid, while invalidating synthesis
+     * if chapter content changed after the failure.
      */
     public function resume(Book $book, EditorialReview $review): JsonResponse
     {
         abort_if($review->book_id !== $book->id, 404);
 
-        $this->ensureAiConfigured();
+        if ($configurationError = $this->configureAiForRequest()) {
+            return $configurationError;
+        }
 
-        abort_if($review->status !== 'failed', 422, __('Only a failed review can be resumed.'));
+        try {
+            $result = DB::transaction(function () use ($book, $review): array {
+                Book::query()->whereKey($book->id)->lockForUpdate()->firstOrFail();
+                EditorialReview::failStale($book);
 
-        EditorialReview::failStale($book);
+                $lockedReview = EditorialReview::query()
+                    ->whereKey($review->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-        abort_if(
-            $book->editorialReviews()
-                ->whereNotIn('status', ['completed', 'failed'])
-                ->exists(),
-            422,
-            __('An editorial review is already in progress for this book.'),
+                $activeReview = $this->activeReview($book);
+                if ($activeReview) {
+                    return ['resumed' => false, 'review' => $activeReview];
+                }
+
+                abort_if($lockedReview->status !== 'failed', 422, __('Only a failed review can be resumed.'));
+
+                $invalidateSynthesis = $this->synthesisIsStale($book, $lockedReview);
+
+                if ($invalidateSynthesis) {
+                    $lockedReview->sections()->delete();
+                }
+
+                $lockedReview->update([
+                    'status' => 'pending',
+                    'progress' => ['phase' => 'pending'],
+                    'error_message' => null,
+                    'error_code' => null,
+                    'batch_id' => null,
+                    'completed_at' => null,
+                    ...($invalidateSynthesis ? [
+                        'overall_score' => null,
+                        'executive_summary' => null,
+                        'top_strengths' => null,
+                        'top_improvements' => null,
+                        'is_pre_editorial' => false,
+                        'resolved_findings' => [],
+                    ] : []),
+                ]);
+
+                return ['resumed' => true, 'review' => $lockedReview];
+            });
+        } catch (QueryException $exception) {
+            report($exception);
+
+            return $this->applicationUnavailableResponse(
+                __('The app could not save the resumed editorial review. Your previous failed state is unchanged; try again in a moment.'),
+                $review,
+            );
+        }
+
+        if (! $result['resumed']) {
+            return $this->reviewAlreadyRunningResponse($result['review']);
+        }
+
+        return $this->dispatchReview(
+            $book,
+            $result['review'],
+            __('Editorial review resumed.'),
         );
-
-        $review->update([
-            'status' => 'pending',
-            'error_message' => null,
-            'error_code' => null,
-        ]);
-
-        RunEditorialReviewJob::dispatch($book, $review);
-
-        return response()->json([
-            'message' => __('Editorial review resumed.'),
-            'review' => $review,
-        ]);
     }
 
     public function show(Book $book, EditorialReview $review): Response
     {
         abort_if($review->book_id !== $book->id, 404);
 
+        EditorialReview::failStale($book);
+        $review->refresh();
         $review->load(['sections', 'chapterNotes']);
         $review->sections->each->ensureFindingKeys();
 
@@ -132,6 +195,9 @@ class EditorialReviewController extends Controller
     public function progress(Book $book, EditorialReview $review): JsonResponse
     {
         abort_if($review->book_id !== $book->id, 404);
+
+        EditorialReview::failStale($book);
+        $review->refresh();
 
         return response()->json([
             'status' => $review->status,
@@ -268,9 +334,133 @@ class EditorialReviewController extends Controller
         abort_if(
             ! $setting || ! $setting->isConfigured(),
             422,
-            __('No AI provider configured.'),
+            $this->missingProviderMessage(),
         );
 
         $setting->injectConfig();
+    }
+
+    private function configureAiForRequest(): ?JsonResponse
+    {
+        $setting = AiSetting::activeProvider();
+
+        if (! $setting || ! $setting->isConfigured()) {
+            return response()->json([
+                'message' => $this->missingProviderMessage(),
+                'error_code' => EditorialReviewErrorCode::NoProvider->value,
+            ], 422);
+        }
+
+        $setting->injectConfig();
+
+        return null;
+    }
+
+    private function missingProviderMessage(): string
+    {
+        return __('Editorial Review needs an active AI provider. Open AI Settings to select a provider and add its credentials, then return here to start or continue.');
+    }
+
+    private function activeReview(Book $book): ?EditorialReview
+    {
+        return $book->editorialReviews()
+            ->whereNotIn('status', ['completed', 'failed'])
+            ->latest('id')
+            ->first();
+    }
+
+    private function reviewAlreadyRunningResponse(EditorialReview $review): JsonResponse
+    {
+        return response()->json([
+            'message' => __('An editorial review is already in progress for this book. Showing its current status instead.'),
+            'error_code' => 'already_running',
+            'review' => $review,
+        ], 422);
+    }
+
+    private function dispatchReview(Book $book, EditorialReview $review, string $successMessage): JsonResponse
+    {
+        try {
+            RunEditorialReviewJob::dispatch($book, $review);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            $message = __('The app could not queue the editorial review. Your saved progress is safe; try again in a moment.');
+
+            try {
+                $review->update([
+                    'status' => 'failed',
+                    'error_message' => $message,
+                    'error_code' => EditorialReviewErrorCode::QueueUnavailable->value,
+                ]);
+            } catch (Throwable $persistenceException) {
+                report($persistenceException);
+
+                $review->forceFill([
+                    'status' => 'failed',
+                    'error_message' => $message,
+                    'error_code' => EditorialReviewErrorCode::QueueUnavailable->value,
+                ]);
+            }
+
+            return response()->json([
+                'message' => $message,
+                'error_code' => EditorialReviewErrorCode::QueueUnavailable->value,
+                'review' => $review,
+            ], 503);
+        }
+
+        return response()->json([
+            'message' => $successMessage,
+            'review' => $review,
+        ]);
+    }
+
+    private function applicationUnavailableResponse(string $message, ?EditorialReview $review = null): JsonResponse
+    {
+        return response()->json([
+            'message' => $message,
+            'error_code' => EditorialReviewErrorCode::AppUnavailable->value,
+            ...($review ? ['review' => $review] : []),
+        ], 503);
+    }
+
+    /**
+     * Existing synthesized sections are only reusable while every current
+     * chapter still has a note for its current content hash.
+     */
+    private function synthesisIsStale(Book $book, EditorialReview $review): bool
+    {
+        if (! $review->sections()->exists() && ! $review->executive_summary) {
+            return false;
+        }
+
+        $hasUnhashedContent = $book->chapters()
+            ->whereNull('content_hash')
+            ->whereHas('scenes', fn ($query) => $query
+                ->whereNotNull('content')
+                ->where('content', '!=', ''))
+            ->exists();
+
+        if ($hasUnhashedContent) {
+            return true;
+        }
+
+        $currentHashes = $book->chapters()->pluck('content_hash', 'id');
+        $noteHashes = $review->chapterNotes()
+            ->latest('id')
+            ->get(['chapter_id', 'content_hash'])
+            ->unique('chapter_id')
+            ->pluck('content_hash', 'chapter_id');
+
+        $currentChapterChanged = $currentHashes->contains(
+            fn (?string $hash, int|string $chapterId): bool => $hash !== null && $noteHashes->get($chapterId) !== $hash,
+        );
+
+        $reviewReferencesDeletedChapter = $noteHashes->keys()->contains(
+            fn (int|string $chapterId): bool => ! $currentHashes->has($chapterId),
+        );
+
+        return $currentChapterChanged || $reviewReferencesDeletedChapter;
     }
 }

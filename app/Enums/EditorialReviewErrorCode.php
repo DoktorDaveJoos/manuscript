@@ -17,15 +17,20 @@ enum EditorialReviewErrorCode: string
     case Overloaded = 'overloaded';
     case InsufficientCredits = 'insufficient_credits';
     case InvalidKey = 'invalid_key';
+    case ModelUnavailable = 'model_unavailable';
+    case ContextTooLong = 'context_too_long';
+    case BadRequest = 'bad_request';
+    case ConnectionFailed = 'connection_failed';
     case NoProvider = 'no_provider';
     case NoContent = 'no_content';
+    case AppUnavailable = 'app_unavailable';
+    case QueueUnavailable = 'queue_unavailable';
     case Timeout = 'timeout';
     case Unknown = 'unknown';
 
     /**
      * Classify a throwable via AiErrorClassifier; kinds without a matching
-     * case (model_unavailable, context_too_long, bad_request) fall back to
-     * Unknown, where the UI shows the technical message alongside.
+     * case fall back to Unknown, where the UI shows a safe generic message.
      */
     public static function fromThrowable(Throwable $exception): self
     {
@@ -40,6 +45,16 @@ enum EditorialReviewErrorCode: string
      */
     public function shouldHaltRun(): bool
     {
-        return in_array($this, [self::RateLimited, self::Overloaded, self::InsufficientCredits, self::InvalidKey], true);
+        return in_array($this, [
+            self::RateLimited,
+            self::Overloaded,
+            self::InsufficientCredits,
+            self::InvalidKey,
+            self::ModelUnavailable,
+            self::ContextTooLong,
+            self::BadRequest,
+            self::ConnectionFailed,
+            self::Timeout,
+        ], true);
     }
 }

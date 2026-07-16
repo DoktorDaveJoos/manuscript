@@ -11,6 +11,7 @@ use App\Http\Controllers\BeatController;
 use App\Http\Controllers\BlurbController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\BookDesignController;
+use App\Http\Controllers\BookNotesController;
 use App\Http\Controllers\BookSettingsController;
 use App\Http\Controllers\CanvasController;
 use App\Http\Controllers\ChapterController;
@@ -93,6 +94,8 @@ Route::post('/books/{book}/import/confirm', [BookController::class, 'confirmImpo
 Route::post('/books/{book}/import/skip', [BookController::class, 'skipImport'])->name('books.import.skip');
 
 Route::get('/books/{book}/dashboard', [DashboardController::class, 'show'])->name('books.dashboard');
+Route::get('/books/{book}/notes', [BookNotesController::class, 'index'])->name('books.notes');
+Route::patch('/books/{book}/notes', [BookNotesController::class, 'update'])->name('books.notes.update');
 Route::put('/books/{book}/writing-goal', [WritingGoalController::class, 'update'])->name('books.writing-goal.update');
 Route::patch('/books/{book}/milestone/dismiss', [DashboardController::class, 'dismissMilestone'])->name('books.milestone.dismiss');
 Route::get('/books/{book}/wiki', [WikiController::class, 'index'])->name('books.wiki');
@@ -110,41 +113,43 @@ Route::patch('/books/{book}/wiki/panel/characters/{character}/role', [WikiPanelC
 Route::patch('/books/{book}/wiki/panel/wiki-entries/{wikiEntry}', [WikiPanelController::class, 'updateWikiEntry'])->name('wiki.panel.updateWikiEntry');
 // Plot board routes are gated behind Pro (see license middleware group below)
 
-Route::get('/books/{book}/editor', [ChapterController::class, 'editor'])->name('books.editor');
-Route::post('/books/{book}/chapters', [ChapterController::class, 'store'])->name('chapters.store');
-Route::get('/books/{book}/chapters/{chapter}', [ChapterController::class, 'show'])->name('chapters.show');
-Route::get('/books/{book}/chapters/{chapter}/json', [ChapterController::class, 'showJson'])->name('chapters.show.json');
-Route::patch('/books/{book}/chapters/{chapter}/title', [ChapterController::class, 'updateTitle'])->name('chapters.updateTitle');
-Route::put('/books/{book}/chapters/{chapter}/content', [ChapterController::class, 'updateContent'])->name('chapters.updateContent');
-Route::get('/books/{book}/chapters/{chapter}/versions', [ChapterController::class, 'versions'])->name('chapters.versions');
-Route::post('/books/{book}/chapters/{chapter}/versions', [ChapterController::class, 'createSnapshot'])->name('chapters.createSnapshot');
-Route::post('/books/{book}/chapters/{chapter}/versions/{version}/restore', [ChapterController::class, 'restoreVersion'])->name('chapters.restoreVersion');
-Route::delete('/books/{book}/chapters/{chapter}/versions/{version}', [ChapterController::class, 'destroyVersion'])->name('chapters.destroyVersion');
-Route::post('/books/{book}/chapters/{chapter}/versions/{version}/accept', [ChapterController::class, 'acceptVersion'])->name('chapters.acceptVersion');
-Route::post('/books/{book}/chapters/{chapter}/versions/{version}/accept-partial', [ChapterController::class, 'acceptPartialVersion'])->name('chapters.acceptPartialVersion');
-Route::post('/books/{book}/chapters/{chapter}/versions/{version}/reject', [ChapterController::class, 'rejectVersion'])->name('chapters.rejectVersion');
-Route::post('/books/{book}/chapters/{chapter}/versions/merge', [ChapterController::class, 'applyMerge'])->name('chapters.applyMerge');
-Route::patch('/books/{book}/chapters/{chapter}/notes', [ChapterController::class, 'updateNotes'])->name('chapters.updateNotes');
-Route::post('/books/{book}/chapters/{chapter}/split', [ChapterController::class, 'split'])->name('chapters.split');
-Route::delete('/books/{book}/chapters/{chapter}', [ChapterController::class, 'destroy'])->name('chapters.destroy');
-Route::patch('/books/{book}/chapters/{chapter}/status', [ChapterController::class, 'updateStatus'])->name('chapters.updateStatus');
-Route::patch('/books/{book}/chapters/{chapter}/act', [ChapterController::class, 'assignAct'])->name('chapters.assignAct');
-Route::post('/books/{book}/chapters/reorder', [ChapterController::class, 'reorder'])->name('chapters.reorder');
-Route::post('/books/{book}/chapters/interleave', [ChapterController::class, 'interleave'])->name('chapters.interleave');
+Route::scopeBindings()->group(function () {
+    Route::get('/books/{book}/editor', [ChapterController::class, 'editor'])->name('books.editor');
+    Route::post('/books/{book}/chapters', [ChapterController::class, 'store'])->name('chapters.store');
+    Route::get('/books/{book}/chapters/{chapter}', [ChapterController::class, 'show'])->name('chapters.show');
+    Route::get('/books/{book}/chapters/{chapter}/json', [ChapterController::class, 'showJson'])->name('chapters.show.json');
+    Route::patch('/books/{book}/chapters/{chapter}/title', [ChapterController::class, 'updateTitle'])->name('chapters.updateTitle');
+    Route::put('/books/{book}/chapters/{chapter}/content', [ChapterController::class, 'updateContent'])->name('chapters.updateContent');
+    Route::get('/books/{book}/chapters/{chapter}/versions', [ChapterController::class, 'versions'])->name('chapters.versions');
+    Route::post('/books/{book}/chapters/{chapter}/versions', [ChapterController::class, 'createSnapshot'])->name('chapters.createSnapshot');
+    Route::post('/books/{book}/chapters/{chapter}/versions/{version}/restore', [ChapterController::class, 'restoreVersion'])->name('chapters.restoreVersion');
+    Route::delete('/books/{book}/chapters/{chapter}/versions/{version}', [ChapterController::class, 'destroyVersion'])->name('chapters.destroyVersion');
+    Route::post('/books/{book}/chapters/{chapter}/versions/{version}/accept', [ChapterController::class, 'acceptVersion'])->name('chapters.acceptVersion');
+    Route::post('/books/{book}/chapters/{chapter}/versions/{version}/accept-partial', [ChapterController::class, 'acceptPartialVersion'])->name('chapters.acceptPartialVersion');
+    Route::post('/books/{book}/chapters/{chapter}/versions/{version}/reject', [ChapterController::class, 'rejectVersion'])->name('chapters.rejectVersion');
+    Route::post('/books/{book}/chapters/{chapter}/versions/merge', [ChapterController::class, 'applyMerge'])->name('chapters.applyMerge');
+    Route::patch('/books/{book}/chapters/{chapter}/notes', [ChapterController::class, 'updateNotes'])->name('chapters.updateNotes');
+    Route::post('/books/{book}/chapters/{chapter}/split', [ChapterController::class, 'split'])->name('chapters.split');
+    Route::delete('/books/{book}/chapters/{chapter}', [ChapterController::class, 'destroy'])->name('chapters.destroy');
+    Route::patch('/books/{book}/chapters/{chapter}/status', [ChapterController::class, 'updateStatus'])->name('chapters.updateStatus');
+    Route::patch('/books/{book}/chapters/{chapter}/act', [ChapterController::class, 'assignAct'])->name('chapters.assignAct');
+    Route::post('/books/{book}/chapters/reorder', [ChapterController::class, 'reorder'])->name('chapters.reorder');
+    Route::post('/books/{book}/chapters/interleave', [ChapterController::class, 'interleave'])->name('chapters.interleave');
 
-Route::post('/books/{book}/chapters/{chapter}/scenes', [SceneController::class, 'store'])->name('scenes.store');
-Route::put('/books/{book}/chapters/{chapter}/scenes/{scene}/content', [SceneController::class, 'updateContent'])->name('scenes.updateContent');
-Route::patch('/books/{book}/chapters/{chapter}/scenes/{scene}/title', [SceneController::class, 'updateTitle'])->name('scenes.updateTitle');
-Route::post('/books/{book}/chapters/{chapter}/scenes/reorder', [SceneController::class, 'reorder'])->name('scenes.reorder');
-Route::delete('/books/{book}/chapters/{chapter}/scenes/{scene}', [SceneController::class, 'destroy'])->name('scenes.destroy');
+    Route::post('/books/{book}/chapters/{chapter}/scenes', [SceneController::class, 'store'])->name('scenes.store');
+    Route::put('/books/{book}/chapters/{chapter}/scenes/{scene}/content', [SceneController::class, 'updateContent'])->name('scenes.updateContent');
+    Route::patch('/books/{book}/chapters/{chapter}/scenes/{scene}/title', [SceneController::class, 'updateTitle'])->name('scenes.updateTitle');
+    Route::post('/books/{book}/chapters/{chapter}/scenes/reorder', [SceneController::class, 'reorder'])->name('scenes.reorder');
+    Route::delete('/books/{book}/chapters/{chapter}/scenes/{scene}', [SceneController::class, 'destroy'])->name('scenes.destroy');
+
+    Route::post('/books/{book}/storylines', [StorylineController::class, 'store'])->name('storylines.store');
+    Route::patch('/books/{book}/storylines/{storyline}', [StorylineController::class, 'update'])->name('storylines.update');
+    Route::delete('/books/{book}/storylines/{storyline}', [StorylineController::class, 'destroy'])->name('storylines.destroy');
+    Route::post('/books/{book}/storylines/reorder', [StorylineController::class, 'reorder'])->name('storylines.reorder');
+});
 
 Route::post('/books/{book}/search', [SearchController::class, 'search'])->name('books.search');
 Route::post('/books/{book}/search/replace-all', [SearchController::class, 'replaceAll'])->name('books.search.replaceAll');
-
-Route::post('/books/{book}/storylines', [StorylineController::class, 'store'])->name('storylines.store');
-Route::patch('/books/{book}/storylines/{storyline}', [StorylineController::class, 'update'])->name('storylines.update');
-Route::delete('/books/{book}/storylines/{storyline}', [StorylineController::class, 'destroy'])->name('storylines.destroy');
-Route::post('/books/{book}/storylines/reorder', [StorylineController::class, 'reorder'])->name('storylines.reorder');
 
 Route::get('/books/{book}/trash', [TrashController::class, 'index'])->name('books.trash.index');
 Route::post('/books/{book}/trash/restore', [TrashController::class, 'restore'])->name('books.trash.restore');

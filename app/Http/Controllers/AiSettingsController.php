@@ -7,6 +7,9 @@ use App\Enums\AiProvider;
 use App\Http\Requests\UpdateAiSettingRequest;
 use App\Models\AiSetting;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 use function Laravel\Ai\agent;
 
@@ -16,19 +19,30 @@ class AiSettingsController extends Controller
     {
         $data = $request->validated();
 
-        // If enabling this provider, use selectProvider to enforce single selection
-        if (! empty($data['enabled'])) {
-            $setting = AiSetting::selectProvider($provider);
-        } else {
-            $setting = AiSetting::forProvider($provider);
-        }
-
         // Only update api_key if provided (don't clear on empty)
         if (! array_key_exists('api_key', $data) || $data['api_key'] === null) {
             unset($data['api_key']);
         }
 
-        $setting->update($data);
+        $setting = DB::transaction(function () use ($data, $provider): AiSetting {
+            $setting = AiSetting::forProvider($provider);
+
+            if (! $data['enabled']) {
+                $setting->update($data);
+
+                return $setting;
+            }
+
+            $setting->update(Arr::except($data, ['enabled']));
+
+            if (! $setting->isConfigured()) {
+                throw ValidationException::withMessages([
+                    'enabled' => __('Configure this provider before selecting it.'),
+                ]);
+            }
+
+            return AiSetting::selectProvider($provider);
+        });
 
         return response()->json([
             'message' => __(':provider settings updated.', ['provider' => $provider->label()]),

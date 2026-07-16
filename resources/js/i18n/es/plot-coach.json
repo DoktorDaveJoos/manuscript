@@ -16,6 +16,9 @@
     "input.placeholder": "Mensaje para Coach\u2026",
     "input.send": "Enviar",
 
+    "message.sender_you": "Tú",
+    "message.sender_coach": "Coach de trama",
+
     "status.streaming": "Coach est\u00e1 pensando\u2026",
     "status.error.retry": "Reintentar",
     "status.error.body": "Algo sali\u00f3 mal. Int\u00e9ntalo de nuevo.",

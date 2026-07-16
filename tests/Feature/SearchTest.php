@@ -91,10 +91,12 @@ test('replace all replaces content in HTML text nodes', function () {
     $response->assertOk();
     $response->assertJsonPath('replaced_count', 3);
     $response->assertJsonPath('affected_scenes', 1);
+    $response->assertJsonPath('affected_chapter_ids', [$this->chapter->id]);
 
     $this->scene->refresh();
     expect($this->scene->content)->toContain('evening');
     expect($this->scene->content)->not->toContain('morning');
+    expect($this->scene->content_version)->toBe(1);
     // HTML structure preserved
     expect($this->scene->content)->toContain('<p>');
     expect($this->scene->content)->toContain('</p>');
@@ -161,4 +163,103 @@ test('search does not match words joined across line breaks', function () {
 
     $response->assertOk();
     $response->assertJsonPath('total_matches', 1);
+});
+
+test('search decodes HTML entities and normalizes non-breaking spaces', function () {
+    $this->scene->update([
+        'content' => '<p>Rock &amp; roll&nbsp;forever.</p>',
+    ]);
+
+    $this->postJson("/books/{$this->book->id}/search", [
+        'query' => '&',
+    ])->assertOk()->assertJsonPath('total_matches', 1);
+
+    $this->postJson("/books/{$this->book->id}/search", [
+        'query' => 'roll forever',
+    ])->assertOk()->assertJsonPath('total_matches', 1);
+
+    $this->scene->update(['content' => '<p>The literal text &amp;amp; stays searchable.</p>']);
+    $this->postJson("/books/{$this->book->id}/search", [
+        'query' => '&amp;',
+    ])->assertOk()->assertJsonPath('total_matches', 1);
+});
+
+test('literal replacement preserves dollar signs and escapes HTML', function () {
+    $this->scene->update([
+        'content' => '<p>morning &amp; morning</p>',
+    ]);
+
+    $response = $this->postJson("/books/{$this->book->id}/search/replace-all", [
+        'search' => 'morning',
+        'replace' => '$1 <strong>unsafe</strong> &',
+    ]);
+
+    $response->assertOk()->assertJsonPath('replaced_count', 2);
+
+    expect($this->scene->fresh()->content)
+        ->toBe('<p>$1 &lt;strong&gt;unsafe&lt;/strong&gt; &amp; &amp; $1 &lt;strong&gt;unsafe&lt;/strong&gt; &amp;</p>')
+        ->not->toContain('<strong>unsafe</strong>');
+});
+
+test('replacement never changes tag attributes containing angle brackets', function () {
+    $this->scene->update([
+        'content' => '<p><a title="morning > dawn">morning</a></p>',
+    ]);
+
+    $response = $this->postJson("/books/{$this->book->id}/search/replace-all", [
+        'search' => 'morning',
+        'replace' => 'evening',
+    ]);
+
+    $response->assertOk()->assertJsonPath('replaced_count', 1);
+    expect($this->scene->fresh()->content)
+        ->toBe('<p><a title="morning > dawn">evening</a></p>');
+});
+
+test('regex replacement expands captures and accepts slash delimiters', function () {
+    $this->scene->update([
+        'content' => '<p>morning path/to morning</p>',
+    ]);
+
+    $this->postJson("/books/{$this->book->id}/search", [
+        'query' => 'path/to',
+        'regex' => true,
+    ])->assertOk()->assertJsonPath('total_matches', 1);
+
+    $response = $this->postJson("/books/{$this->book->id}/search/replace-all", [
+        'search' => '(morn)(ing)',
+        'replace' => '$2-$1',
+        'regex' => true,
+    ]);
+
+    $response->assertOk()->assertJsonPath('replaced_count', 2);
+    expect($this->scene->fresh()->content)->toBe('<p>ing-morn path/to ing-morn</p>');
+});
+
+test('invalid regular expressions return a validation error', function () {
+    $this->postJson("/books/{$this->book->id}/search", [
+        'query' => '[',
+        'regex' => true,
+    ])->assertUnprocessable()->assertJsonPath('code', 'invalid_regex');
+
+    $this->postJson("/books/{$this->book->id}/search/replace-all", [
+        'search' => '[',
+        'replace' => 'x',
+        'regex' => true,
+    ])->assertUnprocessable()->assertJsonPath('code', 'invalid_regex');
+});
+
+test('search and replacement use the same trimmed query', function () {
+    $searchResponse = $this->postJson("/books/{$this->book->id}/search", [
+        'query' => '  morning  ',
+    ]);
+
+    $searchResponse->assertOk()->assertJsonPath('total_matches', 3);
+
+    $replaceResponse = $this->postJson("/books/{$this->book->id}/search/replace-all", [
+        'search' => '  morning  ',
+        'replace' => 'evening',
+    ]);
+
+    $replaceResponse->assertOk()->assertJsonPath('replaced_count', 3);
 });

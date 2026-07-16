@@ -2,10 +2,12 @@
 
 namespace App\Ai\Support;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Laravel\Ai\Exceptions\InsufficientCreditsException;
 use Laravel\Ai\Exceptions\ProviderOverloadedException;
 use Laravel\Ai\Exceptions\RateLimitedException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
 
 /**
@@ -39,6 +41,10 @@ final class AiErrorClassifier
     public const KIND_CONTEXT_TOO_LONG = 'context_too_long';
 
     public const KIND_BAD_REQUEST = 'bad_request';
+
+    public const KIND_CONNECTION_FAILED = 'connection_failed';
+
+    public const KIND_NO_PROVIDER = 'no_provider';
 
     public const KIND_TIMEOUT = 'timeout';
 
@@ -84,6 +90,16 @@ final class AiErrorClassifier
             return self::KIND_INSUFFICIENT_CREDITS;
         }
 
+        if ($e instanceof HttpExceptionInterface
+            && $e->getStatusCode() === 422
+            && str_contains(strtolower($e->getMessage()), 'ai provider')) {
+            return self::KIND_NO_PROVIDER;
+        }
+
+        if ($e instanceof ConnectionException) {
+            return self::KIND_CONNECTION_FAILED;
+        }
+
         if ($e instanceof RequestException) {
             return self::detectKindFromHttpResponse($e);
         }
@@ -93,6 +109,16 @@ final class AiErrorClassifier
         $message = strtolower($e->getMessage());
         if (str_contains($message, 'timed out') || str_contains($message, 'timeout')) {
             return self::KIND_TIMEOUT;
+        }
+
+        if (self::matchesAny($message, [
+            'connection refused',
+            'could not connect',
+            'could not resolve host',
+            'failed to connect',
+            'network is unreachable',
+        ])) {
+            return self::KIND_CONNECTION_FAILED;
         }
 
         return self::KIND_UNKNOWN;
@@ -197,6 +223,14 @@ final class AiErrorClassifier
 
         if ($e instanceof InsufficientCreditsException) {
             return 402;
+        }
+
+        if ($e instanceof HttpExceptionInterface) {
+            return $e->getStatusCode();
+        }
+
+        if ($e instanceof ConnectionException) {
+            return 503;
         }
 
         return 500;

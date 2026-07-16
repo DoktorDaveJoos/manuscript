@@ -1,10 +1,12 @@
 import { X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
 import {
     Command,
     CommandEmpty,
+    CommandGroup,
     CommandInput,
     CommandItem,
     CommandList,
@@ -44,12 +46,12 @@ export default function ChapterCombobox({
 
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
-                    <button
-                        type="button"
-                        className="flex w-full items-center gap-2 rounded-md border border-border bg-surface-card px-3 py-2 text-[13px] text-ink-faint transition-colors hover:border-ink-faint"
+                    <Button
+                        variant="secondary"
+                        className="w-full justify-start text-ink-faint"
                     >
                         <span>{t('field.searchChapters')}</span>
-                    </button>
+                    </Button>
                 </PopoverTrigger>
                 <PopoverContent className="max-h-[240px]">
                     <Command>
@@ -58,24 +60,28 @@ export default function ChapterCombobox({
                             <CommandEmpty>
                                 {t('field.noChaptersFound')}
                             </CommandEmpty>
-                            {safeChapters.map((ch) => {
-                                const checked = safeSelectedIds.includes(ch.id);
-                                return (
-                                    <CommandItem
-                                        key={ch.id}
-                                        value={`${ch.reader_order} ${ch.title}`}
-                                        onSelect={() => onToggle(ch.id)}
-                                    >
-                                        <Checkbox
-                                            checked={checked}
-                                            onChange={() => onToggle(ch.id)}
-                                        />
-                                        <span className="text-[13px] text-ink">
-                                            {ch.reader_order}. {ch.title}
-                                        </span>
-                                    </CommandItem>
-                                );
-                            })}
+                            <CommandGroup>
+                                {safeChapters.map((ch) => {
+                                    const checked = safeSelectedIds.includes(
+                                        ch.id,
+                                    );
+                                    return (
+                                        <CommandItem
+                                            key={ch.id}
+                                            value={`${ch.reader_order} ${ch.title}`}
+                                            onSelect={() => onToggle(ch.id)}
+                                        >
+                                            <Checkbox
+                                                checked={checked}
+                                                onChange={() => onToggle(ch.id)}
+                                            />
+                                            <span className="text-[13px] text-ink">
+                                                {ch.reader_order}. {ch.title}
+                                            </span>
+                                        </CommandItem>
+                                    );
+                                })}
+                            </CommandGroup>
                         </CommandList>
                     </Command>
                 </PopoverContent>
@@ -96,13 +102,18 @@ export default function ChapterCombobox({
                                 </span>{' '}
                                 {ch.title}
                             </span>
-                            <button
-                                type="button"
+                            <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => onToggle(ch.id)}
-                                className="text-ink-faint transition-colors hover:text-ink"
+                                aria-label={t('field.removeChapter', {
+                                    title: ch.title,
+                                    defaultValue: `Remove ${ch.title}`,
+                                })}
+                                className="size-6 text-ink-faint hover:text-ink"
                             >
                                 <X size={14} />
-                            </button>
+                            </Button>
                         </div>
                     ))}
                 </div>

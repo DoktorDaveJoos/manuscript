@@ -46,7 +46,7 @@ Read that file if you haven't in this conversation. This skill is the enforcemen
 
 7. **No bare `bg-white`** — use `bg-surface-sidebar` or `bg-white dark:bg-surface-card`.
 
-8. **Layout widths are fixed**: sidebar 232px, right panels 272px or 320px.
+8. **Right-panel widths are fixed**: 272px or 320px. The left sidebar is resizable from 200px to 400px (232px default).
 
 ## Color Quick Reference
 

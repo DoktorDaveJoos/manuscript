@@ -13,7 +13,7 @@
   <a href="https://github.com/DoktorDaveJoos/manuscript/releases/latest"><img src="https://img.shields.io/github/v/release/DoktorDaveJoos/manuscript?style=flat-square&color=0EA5E9" alt="Latest Release"></a>
   <a href="#ai-providers"><img src="https://img.shields.io/badge/AI_providers-10-8B5CF6?style=flat-square" alt="AI Providers"></a>
   <img src="https://img.shields.io/badge/platform-macOS_·_Windows_·_Linux-lightgrey?style=flat-square" alt="Platform">
-  <img src="https://img.shields.io/badge/license-MIT-22C55E?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/license-GPL--3.0--only-22C55E?style=flat-square" alt="License: GPL-3.0-only">
 </p>
 
 ---
@@ -441,6 +441,16 @@ Contributions are welcome. If you're fixing a bug or adding a feature:
 3. Write tests for your changes
 4. Make sure `php artisan test` and `vendor/bin/pint --test` pass
 5. Open a pull request
+
+---
+
+## License
+
+Manuscript is licensed under the [GNU General Public License version 3 only](LICENSE) (`GPL-3.0-only`). Distributed copies and derivative works must comply with the GPLv3 copyleft and source-availability requirements.
+
+GPLv3 permits commercial use and paid distribution when its terms are followed. No separate proprietary license is granted.
+
+Third-party components remain subject to their respective licenses.
 
 ---
 

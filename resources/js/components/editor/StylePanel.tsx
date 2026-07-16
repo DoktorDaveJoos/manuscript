@@ -98,7 +98,10 @@ export default function StylePanel({
         config.style_checks.rhythm && !mutedCategories.has('rhythm');
 
     return (
-        <div className="flex h-full flex-col bg-white dark:bg-surface-card">
+        <div
+            data-style-panel
+            className="flex h-full flex-col border-l border-border-light bg-white dark:bg-surface-card"
+        >
             <PanelHeader title={t('style.panelTitle')} onClose={onClose} />
             <div className="flex-1 overflow-y-auto px-4 py-4">
                 <SectionLabel>{t('style.categories')}</SectionLabel>

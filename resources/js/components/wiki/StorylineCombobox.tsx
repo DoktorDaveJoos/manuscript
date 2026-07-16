@@ -1,9 +1,15 @@
-import { X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
-import { Command, CommandItem, CommandList } from '@/components/ui/Command';
+import {
+    Command,
+    CommandGroup,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/Command';
 import {
     Popover,
     PopoverContent,
@@ -35,71 +41,78 @@ export default function StorylineCombobox({
 
     return (
         <div className="flex flex-col gap-1.5">
-            <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                    <button
-                        type="button"
-                        className="flex w-full flex-wrap items-center gap-1.5 rounded-md border border-border bg-surface-card px-3 py-2 text-left text-[13px] transition-colors hover:border-ink-faint"
+            <div className="flex w-full flex-wrap items-center gap-1.5 rounded-md border border-border bg-surface-card px-2 py-1.5">
+                {selectedStorylines.map((storyline) => (
+                    <Badge
+                        key={storyline.id}
+                        variant="secondary"
+                        className="gap-1"
                     >
-                        {hasSelected ? (
-                            selectedStorylines.map((s) => (
-                                <Badge
-                                    key={s.id}
-                                    variant="secondary"
-                                    className="gap-1"
-                                >
-                                    {s.name}
-                                    <span
-                                        role="button"
-                                        tabIndex={0}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onToggle(s.id);
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.stopPropagation();
-                                                onToggle(s.id);
-                                            }
-                                        }}
-                                        className="text-ink-faint transition-colors hover:text-ink"
-                                    >
-                                        <X size={10} />
-                                    </span>
-                                </Badge>
-                            ))
-                        ) : (
-                            <span className="text-ink-faint">
-                                {t('field.addStoryline')}
-                            </span>
-                        )}
-                    </button>
-                </PopoverTrigger>
-                <PopoverContent>
-                    <Command>
-                        <CommandList>
-                            {safeStorylines.map((s) => {
-                                const checked = safeSelectedIds.includes(s.id);
-                                return (
-                                    <CommandItem
-                                        key={s.id}
-                                        value={s.name}
-                                        onSelect={() => onToggle(s.id)}
-                                    >
-                                        <Checkbox
-                                            checked={checked}
-                                            onChange={() => onToggle(s.id)}
-                                        />
-                                        <span className="text-[13px] text-ink">
-                                            {s.name}
-                                        </span>
-                                    </CommandItem>
-                                );
+                        {storyline.name}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onToggle(storyline.id)}
+                            aria-label={t('field.removeStoryline', {
+                                name: storyline.name,
+                                defaultValue: `Remove ${storyline.name}`,
                             })}
-                        </CommandList>
-                    </Command>
-                </PopoverContent>
-            </Popover>
+                            className="size-4 text-ink-faint hover:text-ink"
+                        >
+                            <X size={12} />
+                        </Button>
+                    </Badge>
+                ))}
+                <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 min-w-0 flex-1 justify-start px-1 text-ink-faint"
+                            aria-label={t('field.addStoryline')}
+                        >
+                            {hasSelected ? (
+                                <Plus size={12} />
+                            ) : (
+                                t('field.addStoryline')
+                            )}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent>
+                        <Command>
+                            <CommandList>
+                                <CommandGroup>
+                                    {safeStorylines.map((storyline) => {
+                                        const checked =
+                                            safeSelectedIds.includes(
+                                                storyline.id,
+                                            );
+                                        return (
+                                            <CommandItem
+                                                key={storyline.id}
+                                                value={storyline.name}
+                                                onSelect={() =>
+                                                    onToggle(storyline.id)
+                                                }
+                                            >
+                                                <Checkbox
+                                                    checked={checked}
+                                                    onChange={() =>
+                                                        onToggle(storyline.id)
+                                                    }
+                                                />
+                                                <span className="text-[13px] text-ink">
+                                                    {storyline.name}
+                                                </span>
+                                            </CommandItem>
+                                        );
+                                    })}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
+            </div>
         </div>
     );
 }

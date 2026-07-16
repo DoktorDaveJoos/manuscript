@@ -14,7 +14,13 @@ const variantStyles = {
 
 export default function SectionLabel({ children, as: Tag = 'span', variant = 'default', className }: SectionLabelProps) {
     return (
-        <Tag className={cn('text-[11px] font-semibold tracking-[0.08em] uppercase', variantStyles[variant], className)}>
+        <Tag
+            className={cn(
+                'text-[11px] font-medium tracking-wide uppercase',
+                variantStyles[variant],
+                className,
+            )}
+        >
             {children}
         </Tag>
     );

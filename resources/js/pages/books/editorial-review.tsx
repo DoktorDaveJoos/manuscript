@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Sparkles, X } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,7 @@ import SlidePanel from '@/components/ui/SlidePanel';
 import { useEditorialReview } from '@/hooks/useEditorialReview';
 import { useSidebarStorylines } from '@/hooks/useSidebarStorylines';
 import { track } from '@/lib/analytics';
+import { index as settingsIndex } from '@/routes/settings';
 import type {
     Book,
     Chapter,
@@ -43,11 +44,21 @@ export default function EditorialReviewPage({
         isRunning,
         starting,
         error,
+        pollError,
         handleStart,
         handleResume,
         selectReview,
         updateResolved,
     } = useEditorialReview(book.id, latestReview);
+    const {
+        ai_configured: aiConfigured = false,
+        ai_key_recovery_needed: aiKeyRecoveryNeeded = false,
+        ai_provider_label: aiProviderLabel = null,
+    } = usePage<{
+        ai_configured?: boolean;
+        ai_key_recovery_needed?: boolean;
+        ai_provider_label?: string | null;
+    }>().props;
 
     const [alertDismissed, setAlertDismissed] = useState(false);
     const [chatContext, setChatContext] = useState<{
@@ -90,6 +101,70 @@ export default function EditorialReviewPage({
         () => reviews.filter((r) => r.status === 'completed'),
         [reviews],
     );
+    const hasFailure = error !== null || review?.status === 'failed';
+    const failureCode = error?.code ?? review?.error_code ?? 'unknown';
+    const settingsHref = settingsIndex({
+        query: { section: 'ai-features' },
+    });
+    const needsSettings =
+        !aiConfigured ||
+        [
+            'no_provider',
+            'invalid_key',
+            'insufficient_credits',
+            'model_unavailable',
+            'context_too_long',
+            'bad_request',
+        ].includes(failureCode);
+    const configurationTitle = aiKeyRecoveryNeeded
+        ? t('configuration.recovery.title')
+        : aiProviderLabel
+          ? t('configuration.credentials.title')
+          : t('configuration.missing.title');
+    const configurationDescription = aiKeyRecoveryNeeded
+        ? t('configuration.recovery.description', {
+              provider: aiProviderLabel ?? t('configuration.providerFallback'),
+          })
+        : aiProviderLabel
+          ? t('configuration.credentials.description', {
+                provider: aiProviderLabel,
+            })
+          : t('configuration.missing.description');
+
+    const failureLocation = (() => {
+        if (!review?.progress) {
+            return null;
+        }
+
+        if (
+            review.progress.phase === 'analyzing' &&
+            review.progress.current_chapter
+        ) {
+            return t('failed.location.analyzing', {
+                current: review.progress.current_chapter,
+                total: review.progress.total_chapters ?? '?',
+            });
+        }
+
+        if (
+            review.progress.phase === 'synthesizing' &&
+            review.progress.current_section
+        ) {
+            return t('failed.location.synthesizing', {
+                section: t(`section.${review.progress.current_section}`),
+            });
+        }
+
+        if (review.progress.phase === 'pending') {
+            return t('failed.location.pending');
+        }
+
+        if (review.progress.phase === 'summarizing') {
+            return t('failed.location.summarizing');
+        }
+
+        return null;
+    })();
 
     return (
         <>
@@ -127,7 +202,36 @@ export default function EditorialReviewPage({
                             </Alert>
                         )}
 
-                        {(error || review?.status === 'failed') && (
+                        {!aiConfigured && (
+                            <Alert
+                                variant="destructive"
+                                className="mb-4"
+                                data-testid="editorial-review-ai-configuration"
+                            >
+                                <AlertTitle>{configurationTitle}</AlertTitle>
+                                <AlertDescription>
+                                    {configurationDescription}
+                                </AlertDescription>
+                                <div className="mt-2">
+                                    <Button asChild variant="primary" size="sm">
+                                        <Link href={settingsHref}>
+                                            {t('configuration.openSettings')}
+                                        </Link>
+                                    </Button>
+                                </div>
+                            </Alert>
+                        )}
+
+                        {pollError && !hasFailure && (
+                            <Alert variant="info" className="mb-4">
+                                <AlertTitle>
+                                    {t('progress.connectionTitle')}
+                                </AlertTitle>
+                                <AlertDescription>{pollError}</AlertDescription>
+                            </Alert>
+                        )}
+
+                        {hasFailure && (
                             <div className="flex flex-1 flex-col items-center justify-center gap-4">
                                 <Alert
                                     variant="destructive"
@@ -135,67 +239,115 @@ export default function EditorialReviewPage({
                                 >
                                     <AlertTitle>{t('failed.title')}</AlertTitle>
                                     <AlertDescription>
-                                        {review?.status === 'failed'
-                                            ? t(
-                                                  `failed.reasons.${review.error_code ?? 'unknown'}`,
-                                                  {
-                                                      defaultValue: t(
-                                                          'failed.reasons.unknown',
-                                                      ),
-                                                  },
-                                              )
-                                            : error}
+                                        {t(`failed.reasons.${failureCode}`, {
+                                            defaultValue: t(
+                                                'failed.reasons.unknown',
+                                            ),
+                                        })}
                                     </AlertDescription>
                                 </Alert>
+                                {error && (
+                                    <p className="max-w-xl text-center text-[13px] text-ink-muted">
+                                        {error.message}
+                                    </p>
+                                )}
+                                {failureLocation && (
+                                    <p className="max-w-xl text-center text-[13px] text-ink-muted">
+                                        {failureLocation}
+                                    </p>
+                                )}
+                                {error && review?.status !== 'failed' && (
+                                    <div className="flex items-center gap-3">
+                                        {needsSettings && (
+                                            <Button asChild variant="primary">
+                                                <Link href={settingsHref}>
+                                                    {t(
+                                                        'configuration.openSettings',
+                                                    )}
+                                                </Link>
+                                            </Button>
+                                        )}
+                                        {aiConfigured && (
+                                            <Button
+                                                variant={
+                                                    needsSettings
+                                                        ? 'secondary'
+                                                        : 'primary'
+                                                }
+                                                onClick={handleStartReview}
+                                                disabled={starting}
+                                            >
+                                                {t('request.tryAgain')}
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
                                 {review?.status === 'failed' && (
                                     <>
                                         <p className="max-w-xl text-center text-[13px] text-ink-muted">
                                             {t('failed.progressKept')}
                                         </p>
-                                        {(!review.error_code ||
-                                            review.error_code === 'unknown') &&
-                                            review.error_message && (
-                                                <p className="max-w-xl text-center text-xs text-ink-faint">
-                                                    {review.error_message}
-                                                </p>
+                                        <div className="flex items-center gap-3">
+                                            {needsSettings && (
+                                                <Button
+                                                    asChild
+                                                    variant="primary"
+                                                >
+                                                    <Link href={settingsHref}>
+                                                        {t(
+                                                            'configuration.openSettings',
+                                                        )}
+                                                    </Link>
+                                                </Button>
                                             )}
-                                        <Button
-                                            variant="primary"
-                                            onClick={handleResumeReview}
-                                            disabled={starting}
-                                        >
-                                            {t('failed.continue')}
-                                        </Button>
+                                            {aiConfigured && (
+                                                <Button
+                                                    variant={
+                                                        needsSettings
+                                                            ? 'secondary'
+                                                            : 'primary'
+                                                    }
+                                                    onClick={handleResumeReview}
+                                                    disabled={starting}
+                                                >
+                                                    {t('failed.continue')}
+                                                </Button>
+                                            )}
+                                        </div>
                                     </>
                                 )}
                             </div>
                         )}
 
-                        {!review && (
+                        {!hasFailure && !review && (
                             <EditorialReviewEmptyState
                                 onStart={handleStartReview}
                                 starting={starting}
+                                canStart={aiConfigured}
                             />
                         )}
 
-                        {isRunning && review && (
+                        {!hasFailure && isRunning && review && (
                             <EditorialReviewProgress review={review} />
                         )}
 
-                        {review?.status === 'completed' && review && (
-                            <EditorialReviewReport
-                                key={review.id}
-                                review={review}
-                                reviews={completedReviews}
-                                chapters={chapters}
-                                editedChaptersCount={editedChaptersCount}
-                                onSelectReview={selectReview}
-                                onStartNew={handleStartReview}
-                                starting={starting}
-                                onDiscussFinding={handleDiscussFinding}
-                                onResolvedChange={updateResolved}
-                            />
-                        )}
+                        {!hasFailure &&
+                            review?.status === 'completed' &&
+                            review && (
+                                <EditorialReviewReport
+                                    key={review.id}
+                                    review={review}
+                                    reviews={completedReviews}
+                                    chapters={chapters}
+                                    editedChaptersCount={editedChaptersCount}
+                                    onSelectReview={selectReview}
+                                    onStartNew={handleStartReview}
+                                    starting={starting}
+                                    canStart={aiConfigured}
+                                    onDiscussFinding={handleDiscussFinding}
+                                    onResolvedChange={updateResolved}
+                                />
+                            )}
                     </div>
                 </main>
 

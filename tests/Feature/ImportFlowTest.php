@@ -325,6 +325,37 @@ test('confirm import creates multiple storylines', function () {
         ->and($storylines[0]->sort_order)->toBe(0)
         ->and($storylines[1]->name)->toBe('Parallel')
         ->and($storylines[1]->sort_order)->toBe(1);
+
+    expect(Chapter::query()
+        ->where('book_id', $book->id)
+        ->orderBy('reader_order')
+        ->pluck('reader_order')
+        ->all())->toBe([0, 1]);
+});
+
+test('confirm import appends storyline and chapter ordering to existing book content', function () {
+    $book = Book::factory()->create();
+    $existingStoryline = Storyline::factory()->for($book)->create(['sort_order' => 3]);
+    Chapter::factory()->for($book)->for($existingStoryline)->create(['reader_order' => 7]);
+
+    $this->post(route('books.import.confirm', $book), [
+        'storylines' => [[
+            'name' => 'Imported',
+            'type' => 'parallel',
+            'chapters' => [[
+                'title' => 'Imported chapter',
+                'content' => 'Imported prose.',
+                'word_count' => 2,
+                'included' => true,
+            ]],
+        ]],
+    ])->assertRedirect();
+
+    $importedStoryline = $book->storylines()->where('name', 'Imported')->firstOrFail();
+    $importedChapter = $book->chapters()->where('title', 'Imported chapter')->firstOrFail();
+
+    expect($importedStoryline->sort_order)->toBe(4)
+        ->and($importedChapter->reader_order)->toBe(8);
 });
 
 test('parse endpoint accepts odt files', function () {

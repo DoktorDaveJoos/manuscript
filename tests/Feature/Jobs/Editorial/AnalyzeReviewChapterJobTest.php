@@ -4,6 +4,7 @@ use App\Ai\Agents\ChapterAnalyzer;
 use App\Ai\Agents\EditorialNotesAgent;
 use App\Ai\Agents\ManuscriptAnalyzer;
 use App\Jobs\Editorial\AnalyzeReviewChapterJob;
+use App\Models\AiSetting;
 use App\Models\EditorialReview;
 
 test('AnalyzeReviewChapterJob creates a chapter note from the gap-fill agent', function () {
@@ -113,9 +114,9 @@ test('AnalyzeReviewChapterJob skips manuscript analyses for a fresh chapter', fu
     expect($review->chapterNotes()->count())->toBe(1);
 });
 
-test('AnalyzeReviewChapterJob skips gracefully when the notes agent throws', function () {
+test('AnalyzeReviewChapterJob interrupts the review when required notes fail', function () {
     EditorialNotesAgent::fake(function () {
-        throw new RuntimeException('API error on chapter');
+        throw new RuntimeException('secret request payload must not be shown');
     });
 
     [$book, $chapters] = createBookWithChaptersForEditorial(1);
@@ -124,7 +125,59 @@ test('AnalyzeReviewChapterJob skips gracefully when the notes agent throws', fun
     $job = new AnalyzeReviewChapterJob($book, $review, $chapters[0]->id, 1, 1);
 
     expect(fn () => $job->handle())->not->toThrow(Throwable::class);
-    expect($review->chapterNotes()->count())->toBe(0);
+    $review->refresh();
+
+    expect($review->chapterNotes()->count())->toBe(0)
+        ->and($review->status)->toBe('failed')
+        ->and($review->error_code)->toBe('unknown')
+        ->and($review->error_message)->toContain('chapter 1')
+        ->and($review->error_message)->not->toContain('secret request payload');
+});
+
+test('AnalyzeReviewChapterJob preserves timeout as the failure reason', function () {
+    EditorialNotesAgent::fake(function () {
+        throw new RuntimeException('Operation timed out after 180 seconds');
+    });
+
+    [$book, $chapters] = createBookWithChaptersForEditorial(1);
+    $review = EditorialReview::factory()->for($book)->create(['status' => 'analyzing']);
+
+    (new AnalyzeReviewChapterJob($book, $review, $chapters[0]->id, 1, 1))->handle();
+
+    $review->refresh();
+
+    expect($review->status)->toBe('failed')
+        ->and($review->error_code)->toBe('timeout')
+        ->and($review->error_message)->toContain('chapter 1');
+});
+
+test('AnalyzeReviewChapterJob fails clearly when the provider is removed mid-run', function () {
+    [$book, $chapters] = createBookWithChaptersForEditorial(1);
+    $review = EditorialReview::factory()->for($book)->create(['status' => 'analyzing']);
+    AiSetting::query()->delete();
+
+    (new AnalyzeReviewChapterJob($book, $review, $chapters[0]->id, 1, 1))->handle();
+
+    $review->refresh();
+
+    expect($review->status)->toBe('failed')
+        ->and($review->error_code)->toBe('no_provider')
+        ->and($review->error_message)->toContain('Chapter 1');
+});
+
+test('AnalyzeReviewChapterJob failed hook persists an interrupted state', function () {
+    [$book, $chapters] = createBookWithChaptersForEditorial(1);
+    $review = EditorialReview::factory()->for($book)->create(['status' => 'analyzing']);
+
+    (new AnalyzeReviewChapterJob($book, $review, $chapters[0]->id, 1, 1))
+        ->failed(new RuntimeException('worker crashed with sensitive diagnostics'));
+
+    $review->refresh();
+
+    expect($review->status)->toBe('failed')
+        ->and($review->error_code)->toBe('unknown')
+        ->and($review->error_message)->toContain('chapter 1')
+        ->and($review->error_message)->not->toContain('sensitive diagnostics');
 });
 
 test('AnalyzeReviewChapterJob reports its position in review progress', function () {

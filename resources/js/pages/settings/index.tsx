@@ -49,12 +49,20 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/RadioGroup';
 import SectionLabel from '@/components/ui/SectionLabel';
 import Toggle from '@/components/ui/Toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup';
-import { useAutoUpdater } from '@/hooks/useAutoUpdater';
+import {
+    announceAutomaticUpdatePreference,
+    useAutoUpdater,
+} from '@/hooks/useAutoUpdater';
 import { useTheme } from '@/hooks/useTheme';
 import { setAppLanguage } from '@/i18n';
 import { setAnalyticsEnabled } from '@/lib/analytics';
 import type { Theme } from '@/lib/theme';
-import { jsonFetchHeaders, saveAppSetting } from '@/lib/utils';
+import { settledUpdateStatus } from '@/lib/update-settings';
+import {
+    ensureSuccessfulResponse,
+    jsonFetchHeaders,
+    saveAppSetting,
+} from '@/lib/utils';
 import type {
     AppSettings,
     AiProvider,
@@ -534,12 +542,18 @@ type TestStatus =
     | { type: 'success'; message: string }
     | { type: 'error'; message: string };
 
+type SaveStatus =
+    | { type: 'idle' }
+    | { type: 'success'; message: string }
+    | { type: 'error'; message: string };
+
 function ProviderForm({ setting }: { setting: ProviderSetting }) {
     const { t } = useTranslation('settings');
     const [apiKey, setApiKey] = useState('');
     const [saving, setSaving] = useState(false);
+    const [activating, setActivating] = useState(false);
     const [testStatus, setTestStatus] = useState<TestStatus>({ type: 'idle' });
-    const [saveMessage, setSaveMessage] = useState('');
+    const [saveStatus, setSaveStatus] = useState<SaveStatus>({ type: 'idle' });
     const [guideOpen, setGuideOpen] = useState(false);
     const configured = setting.has_api_key;
 
@@ -547,8 +561,10 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
         (e: FormEvent) => {
             e.preventDefault();
             setSaving(true);
-            setSaveMessage('');
-            const data: Record<string, unknown> = { enabled: true };
+            setSaveStatus({ type: 'idle' });
+            const data: Record<string, unknown> = {
+                enabled: setting.enabled,
+            };
             if (apiKey) data.api_key = apiKey;
 
             fetch(updateAiProvider.url(setting.provider), {
@@ -557,18 +573,65 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                 body: JSON.stringify(data),
             })
                 .then(async (res) => {
-                    if (!res.ok) throw new Error('Save failed');
-                    const json = await res.json();
-                    setSaveMessage(json.message);
+                    await ensureSuccessfulResponse(
+                        res,
+                        t('aiProviders.saveFailed'),
+                    );
+                    const json = (await res.json()) as { message: string };
+                    setSaveStatus({
+                        type: 'success',
+                        message: json.message,
+                    });
                     setApiKey('');
                     router.reload({ only: ['ai_providers'] });
-                    setTimeout(() => setSaveMessage(''), 3000);
+                    setTimeout(() => setSaveStatus({ type: 'idle' }), 3000);
                 })
-                .catch(() => setSaveMessage(t('aiProviders.saveFailed')))
+                .catch((error: unknown) =>
+                    setSaveStatus({
+                        type: 'error',
+                        message:
+                            error instanceof Error
+                                ? error.message
+                                : t('aiProviders.saveFailed'),
+                    }),
+                )
                 .finally(() => setSaving(false));
         },
-        [apiKey, setting.provider, t],
+        [apiKey, setting.enabled, setting.provider, t],
     );
+
+    const handleActivate = useCallback(() => {
+        setActivating(true);
+        setSaveStatus({ type: 'idle' });
+
+        fetch(updateAiProvider.url(setting.provider), {
+            method: 'PUT',
+            headers: jsonFetchHeaders(),
+            body: JSON.stringify({ enabled: true }),
+        })
+            .then(async (res) => {
+                await ensureSuccessfulResponse(
+                    res,
+                    t('aiProviders.activationFailed'),
+                );
+                const json = (await res.json()) as { message: string };
+                setSaveStatus({
+                    type: 'success',
+                    message: json.message,
+                });
+                router.reload({ only: ['ai_providers'] });
+            })
+            .catch((error: unknown) =>
+                setSaveStatus({
+                    type: 'error',
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : t('aiProviders.activationFailed'),
+                }),
+            )
+            .finally(() => setActivating(false));
+    }, [setting.provider, t]);
 
     const handleTest = useCallback(() => {
         setTestStatus({ type: 'loading' });
@@ -577,9 +640,17 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
             headers: jsonFetchHeaders(),
         })
             .then(async (res) => {
-                const json = await res.json();
-                if (json.success) {
-                    setTestStatus({ type: 'success', message: json.message });
+                const json = (await res.json()) as {
+                    success?: boolean;
+                    kind?: unknown;
+                    message?: string;
+                };
+                if (res.ok && json.success) {
+                    setTestStatus({
+                        type: 'success',
+                        message:
+                            json.message ?? t('aiProviders.testConnection'),
+                    });
                     setTimeout(() => setTestStatus({ type: 'idle' }), 5000);
                     return;
                 }
@@ -602,7 +673,11 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
 
     return (
         <>
-            <form onSubmit={handleSave} className="pb-1">
+            <form
+                onSubmit={handleSave}
+                className="pb-1"
+                data-testid={`ai-provider-form-${setting.provider}`}
+            >
                 <div className="flex flex-col gap-5 pl-[30px]">
                     {setting.api_key_recovery_needed && (
                         <Alert variant="destructive">
@@ -638,19 +713,28 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                                             method: 'DELETE',
                                             headers: jsonFetchHeaders(),
                                         })
-                                            .then((res) => {
-                                                if (!res.ok) throw new Error();
+                                            .then(async (res) => {
+                                                await ensureSuccessfulResponse(
+                                                    res,
+                                                    t('aiProviders.saveFailed'),
+                                                );
                                                 router.reload({
                                                     only: ['ai_providers'],
                                                 });
                                             })
-                                            .catch(() =>
-                                                setSaveMessage(
-                                                    t('aiProviders.saveFailed'),
-                                                ),
+                                            .catch((error: unknown) =>
+                                                setSaveStatus({
+                                                    type: 'error',
+                                                    message:
+                                                        error instanceof Error
+                                                            ? error.message
+                                                            : t(
+                                                                  'aiProviders.saveFailed',
+                                                              ),
+                                                }),
                                             );
                                     }}
-                                    className="text-ink-muted transition-colors hover:text-danger"
+                                    className="text-ink-muted transition-colors hover:text-delete"
                                 >
                                     <Trash2 size={16} />
                                 </button>
@@ -671,11 +755,25 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                             size="lg"
                             type="submit"
                             disabled={saving}
+                            data-testid={`ai-provider-save-${setting.provider}`}
                         >
                             {saving
                                 ? t('aiProviders.saving')
                                 : t('aiProviders.save')}
                         </Button>
+                        {!setting.enabled && (
+                            <Button
+                                variant="secondary"
+                                size="lg"
+                                type="button"
+                                onClick={handleActivate}
+                                disabled={activating || !configured}
+                            >
+                                {activating
+                                    ? t('aiProviders.activating')
+                                    : t('aiProviders.useProvider')}
+                            </Button>
+                        )}
                         <Button
                             variant="secondary"
                             size="lg"
@@ -689,9 +787,13 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                                 ? t('aiProviders.testing')
                                 : t('aiProviders.testConnection')}
                         </Button>
-                        {saveMessage && (
-                            <span className="text-[12px] font-medium text-status-final">
-                                {saveMessage}
+                        {saveStatus.type !== 'idle' && (
+                            <span
+                                className={`text-xs font-medium ${saveStatus.type === 'error' ? 'text-delete' : 'text-status-final'}`}
+                                data-testid="ai-provider-save-status"
+                                data-status={saveStatus.type}
+                            >
+                                {saveStatus.message}
                             </span>
                         )}
                         {testStatus.type === 'success' && (
@@ -701,7 +803,7 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                         )}
                     </div>
                     {testStatus.type === 'error' && (
-                        <p className="text-[12px] leading-[1.5] font-medium text-danger">
+                        <p className="text-xs leading-[1.5] font-medium text-delete">
                             {testStatus.message}
                         </p>
                     )}
@@ -832,25 +934,6 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
     const { t } = useTranslation('settings');
     const enabledProvider = providers.find((p) => p.enabled)?.provider ?? null;
 
-    const handleSelect = useCallback((provider: string) => {
-        fetch(updateAiProvider.url(provider), {
-            method: 'PUT',
-            headers: jsonFetchHeaders(),
-            body: JSON.stringify({ enabled: true }),
-        }).then(() => {
-            router.reload({ only: ['ai_providers'] });
-        });
-    }, []);
-
-    const handleAccordionChange = useCallback(
-        (value: string) => {
-            if (value && value !== enabledProvider) {
-                handleSelect(value);
-            }
-        },
-        [enabledProvider, handleSelect],
-    );
-
     return (
         <div>
             <SectionLabel variant="section">
@@ -861,7 +944,6 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
                     type="single"
                     collapsible
                     defaultValue={enabledProvider ?? undefined}
-                    onValueChange={handleAccordionChange}
                 >
                     {providers.map((setting) => {
                         const isSelected = setting.enabled;
@@ -1139,7 +1221,7 @@ function UpdatesSection({
 }: {
     version: string;
     settings: AppSettings;
-    saveSetting: (key: string, value: boolean) => void;
+    saveSetting: (key: string, value: boolean) => Promise<boolean>;
 }) {
     const { t } = useTranslation('settings');
     const {
@@ -1147,9 +1229,8 @@ function UpdatesSection({
         checkForUpdates,
         installUpdate,
     } = useAutoUpdater();
-    const [autoUpdate, setAutoUpdate] = useState(
-        (settings as Record<string, unknown>).auto_update !== false,
-    );
+    const [autoUpdate, setAutoUpdate] = useState(settings.auto_update);
+    const settledStatus = settledUpdateStatus(updateState.status);
 
     return (
         <div>
@@ -1209,7 +1290,16 @@ function UpdatesSection({
                         onChange={() => {
                             const next = !autoUpdate;
                             setAutoUpdate(next);
-                            saveSetting('auto_update', next);
+                            void saveSetting('auto_update', next).then(
+                                (saved) => {
+                                    if (!saved) {
+                                        setAutoUpdate(!next);
+                                        return;
+                                    }
+
+                                    announceAutomaticUpdatePreference(next);
+                                },
+                            );
                         }}
                     />
                 </div>
@@ -1237,13 +1327,19 @@ function UpdatesSection({
                             })}
                         </span>
                     )}
+                    {settledStatus === 'available' && (
+                        <span className="text-xs font-medium text-accent">
+                            {t('updates.available', {
+                                version: updateState.version,
+                            })}
+                        </span>
+                    )}
                     {updateState.status === 'error' && (
                         <span className="text-[12px] text-delete">
                             {updateState.error}
                         </span>
                     )}
-                    {(updateState.status === 'idle' ||
-                        updateState.status === 'available') && (
+                    {settledStatus === 'up-to-date' && (
                         <>
                             <span className="text-[13px] font-semibold text-status-final">
                                 ✓
@@ -1827,14 +1923,25 @@ export default function Settings({
     }, []);
 
     const saveSetting = useCallback(
-        (key: string, value: boolean | string | number) => {
-            fetch(update.url(), {
-                method: 'PUT',
-                headers: jsonFetchHeaders(),
-                body: JSON.stringify({ key, value }),
-            }).then(() => {
+        async (
+            key: string,
+            value: boolean | string | number,
+        ): Promise<boolean> => {
+            try {
+                const response = await fetch(update.url(), {
+                    method: 'PUT',
+                    headers: jsonFetchHeaders(),
+                    body: JSON.stringify({ key, value }),
+                });
+
+                if (!response.ok) return false;
+
                 router.reload({ only: ['settings'] });
-            });
+
+                return true;
+            } catch {
+                return false;
+            }
         },
         [],
     );

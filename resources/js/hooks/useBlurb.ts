@@ -3,6 +3,88 @@ import { stream as blurbStream } from '@/actions/App/Http/Controllers/BlurbContr
 import { jsonFetchHeaders } from '@/lib/utils';
 import { useAiErrorToast } from './useAiErrorToast';
 
+type BlurbStreamError = {
+    error: string;
+    kind?: string;
+    provider?: string | null;
+};
+
+export async function readBlurbStream(
+    body: ReadableStream<Uint8Array>,
+    onText: (fullText: string) => void,
+    onError: (error: BlurbStreamError) => void,
+): Promise<string | null> {
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    let accumulated = '';
+    let buffer = '';
+
+    const processLine = (line: string): boolean => {
+        if (!line.startsWith('data: ')) {
+            return true;
+        }
+
+        const payload = line.slice(6);
+        if (payload === '[DONE]') {
+            return true;
+        }
+
+        let parsed: {
+            delta?: string;
+            error?: string;
+            kind?: string;
+            provider?: string | null;
+        };
+
+        try {
+            parsed = JSON.parse(payload);
+        } catch {
+            return true;
+        }
+
+        if (parsed.error) {
+            onError({
+                error: parsed.error,
+                kind: parsed.kind,
+                provider: parsed.provider,
+            });
+
+            return false;
+        }
+
+        if (parsed.delta) {
+            accumulated += parsed.delta;
+            onText(accumulated);
+        }
+
+        return true;
+    };
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+            break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+            if (!processLine(line)) {
+                return null;
+            }
+        }
+    }
+
+    buffer += decoder.decode();
+    if (buffer && !processLine(buffer)) {
+        return null;
+    }
+
+    return accumulated;
+}
+
 /**
  * Streams an AI-generated back-cover blurb (German UI: "Klappentext") for a book and
  * reports the accumulated text back on every delta, so the caller can render it live
@@ -15,13 +97,14 @@ export function useBlurb() {
     const controllerRef = useRef<AbortController | null>(null);
 
     const generate = useCallback(
-        async (bookId: number, onText: (fullText: string) => void) => {
+        async (
+            bookId: number,
+            onText: (fullText: string) => void,
+        ): Promise<string | null> => {
             controllerRef.current?.abort();
             const controller = new AbortController();
             controllerRef.current = controller;
             setIsGenerating(true);
-
-            let accumulated = '';
 
             try {
                 const response = await fetch(
@@ -38,64 +121,31 @@ export function useBlurb() {
 
                 if (!response.ok || !response.body) {
                     showAiErrorToast({ kind: 'unknown' });
-                    return;
+                    return null;
                 }
 
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop() ?? '';
-
-                    for (const line of lines) {
-                        if (!line.startsWith('data: ')) continue;
-                        const payload = line.slice(6);
-                        if (payload === '[DONE]') continue;
-
-                        let parsed: {
-                            delta?: string;
-                            error?: string;
-                            kind?: string;
-                            provider?: string | null;
-                        };
-                        try {
-                            parsed = JSON.parse(payload);
-                        } catch {
-                            continue;
-                        }
-
-                        if (parsed.error) {
-                            showAiErrorToast({
-                                kind: parsed.kind ?? 'unknown',
-                                message: parsed.error,
-                                provider: parsed.provider,
-                            });
-                            return;
-                        }
-
-                        if (parsed.delta) {
-                            accumulated += parsed.delta;
-                            onText(accumulated);
-                        }
-                    }
-                }
+                return await readBlurbStream(response.body, onText, (error) => {
+                    showAiErrorToast({
+                        kind: error.kind ?? 'unknown',
+                        message: error.error,
+                        provider: error.provider,
+                    });
+                });
             } catch (e) {
                 if (e instanceof DOMException && e.name === 'AbortError') {
-                    return;
+                    return null;
                 }
                 showAiErrorToast({
                     kind: 'unknown',
                     message: e instanceof Error ? e.message : undefined,
                 });
+
+                return null;
             } finally {
-                setIsGenerating(false);
-                controllerRef.current = null;
+                if (controllerRef.current === controller) {
+                    setIsGenerating(false);
+                    controllerRef.current = null;
+                }
             }
         },
         [showAiErrorToast],

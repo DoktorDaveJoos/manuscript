@@ -264,7 +264,7 @@ All icons use **Lucide React** (`lucide-react`). Default stroke width is 2; use 
 │ TopBar (h-12 / 48px)                                    │
 ├──────────┬──────────────────────────┬───────────────────┤
 │ Sidebar  │ Editor Content           │ Right Panel       │
-│ w-[232px]│ flex-1                   │ w-[272px]         │
+│ 200–400px│ flex-1                   │ w-[272px]         │
 │          │ max-w-prose centered     │ or w-[320px]      │
 │          │                          │ (slides in/out)   │
 ├──────────┴──────────────────────────┴───────────────────┤
@@ -276,7 +276,7 @@ All icons use **Lucide React** (`lucide-react`). Default stroke width is 2; use 
 
 | Element | Size | Notes |
 |---|---|---|
-| Sidebar | 232px wide | All screens, non-negotiable |
+| Sidebar | 200–400px wide (232px default) | User-resizable; persisted locally |
 | Right panel (notes/metrics) | 272px wide | Chapter notes, craft metrics |
 | Right panel (AI/detail) | 320px wide | AI chat, plot detail |
 | TopBar | 48px tall (`h-12`) | App navigation |
@@ -431,7 +431,7 @@ Before submitting any UI change:
 - [ ] **Font weights**: 400/500/600 only (700 only inside prose `<strong>`)
 - [ ] **Dark mode works**: uses tokens, no bare `bg-white` or hardcoded colors
 - [ ] **Reuses UI components**: no ad-hoc `<button>`, `<input>`, or modal markup
-- [ ] **Layout widths**: sidebar 232px, right panels 272/320px
+- [ ] **Layout widths**: sidebar remains resizable from 200–400px; right panels are 272/320px
 - [ ] **Accent restraint**: accent only on active states, CTAs, and focus rings
 
 ---

@@ -8,6 +8,7 @@ use App\Models\Act;
 use App\Models\Beat;
 use App\Models\Book;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 
 class ActController extends Controller
 {
@@ -35,9 +36,12 @@ class ActController extends Controller
     {
         abort_unless($act->book_id === $book->id, 404);
 
-        Beat::whereIn('plot_point_id', $act->plotPoints()->pluck('id'))->delete();
-        $act->plotPoints()->delete();
-        $act->delete();
+        DB::transaction(function () use ($act) {
+            $act->chapters()->withTrashed()->update(['act_id' => null]);
+            Beat::whereIn('plot_point_id', $act->plotPoints()->pluck('id'))->delete();
+            $act->plotPoints()->delete();
+            $act->delete();
+        });
 
         return back();
     }

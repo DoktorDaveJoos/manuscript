@@ -4,10 +4,13 @@ import {
     MessageSquare,
     Minus,
     SquareCheckBig,
+    Table2,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { BlockType } from '@/components/editor/NotesPanel';
+import Button from '@/components/ui/Button';
+import { matchesNoteSlashSearch } from '@/lib/notes';
 
 type SlashMenuItem = {
     icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -34,6 +37,12 @@ const ITEMS: SlashMenuItem[] = [
         labelKey: 'notes.slash.heading',
         descriptionKey: 'notes.slash.headingDescription',
         blockType: 'heading',
+    },
+    {
+        icon: Table2,
+        labelKey: 'notes.slash.table',
+        descriptionKey: 'notes.slash.tableDescription',
+        blockType: 'table',
     },
     {
         icon: Minus,
@@ -81,9 +90,13 @@ export default function NotesSlashMenu({
         activeIndexRef.current = activeIndex;
     }, [activeIndex]);
 
-    const filtered = query
-        ? ITEMS.filter((item) => item.blockType.includes(query.toLowerCase()))
-        : ITEMS;
+    const filtered = ITEMS.filter((item) =>
+        matchesNoteSlashSearch(query, [
+            item.blockType,
+            t(item.labelKey),
+            t(item.descriptionKey),
+        ]),
+    );
     const filteredRef = useRef(filtered);
     useEffect(() => {
         filteredRef.current = filtered;
@@ -147,6 +160,7 @@ export default function NotesSlashMenu({
 
     return (
         <div
+            data-notes-slash-menu
             ref={menuRef}
             className="absolute z-[9999] w-[220px] rounded-lg border border-border bg-surface-card p-1 shadow-lg"
             style={{
@@ -165,13 +179,12 @@ export default function NotesSlashMenu({
                     const Icon = item.icon;
                     const isActive = index === activeIndex;
                     return (
-                        <button
+                        <Button
+                            type="button"
                             key={item.blockType}
-                            className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left ${
-                                isActive
-                                    ? 'bg-neutral-bg'
-                                    : 'hover:bg-neutral-bg'
-                            }`}
+                            variant={isActive ? 'secondary' : 'ghost'}
+                            size="sm"
+                            className="h-auto w-full justify-start gap-2.5 px-2.5 py-1.5 text-left"
                             onMouseEnter={() => setActiveIndex(index)}
                             onClick={() => onSelect(item.blockType)}
                         >
@@ -191,7 +204,7 @@ export default function NotesSlashMenu({
                                     {t(item.descriptionKey)}
                                 </div>
                             </div>
-                        </button>
+                        </Button>
                     );
                 })
             )}

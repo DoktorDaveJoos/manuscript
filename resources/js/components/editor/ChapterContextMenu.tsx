@@ -1,12 +1,17 @@
 import { router } from '@inertiajs/react';
 import { ArrowRight, Circle, PanelLeft, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import {
     reorder,
     updateStatus,
 } from '@/actions/App/Http/Controllers/ChapterController';
 import ContextMenu from '@/components/ui/ContextMenu';
-import { broadcastChapterDataChanged, jsonFetchHeaders } from '@/lib/utils';
+import {
+    broadcastChapterDataChanged,
+    ensureSuccessfulResponse,
+    jsonFetchHeaders,
+} from '@/lib/utils';
 import type { Chapter, ChapterStatus, Storyline } from '@/types/models';
 import StatusDot from './StatusDot';
 
@@ -34,14 +39,24 @@ export default function ChapterContextMenu({
     const { t } = useTranslation('editor');
 
     const handleStatusChange = async (status: ChapterStatus) => {
-        await fetch(updateStatus.url({ book: bookId, chapter: chapter.id }), {
-            method: 'PATCH',
-            headers: jsonFetchHeaders(),
-            body: JSON.stringify({ status }),
-        });
-        broadcastChapterDataChanged(chapter.id);
-        router.reload({ only: ['book', 'sidebar_storylines'] });
-        onClose();
+        try {
+            const response = await fetch(
+                updateStatus.url({ book: bookId, chapter: chapter.id }),
+                {
+                    method: 'PATCH',
+                    headers: jsonFetchHeaders(),
+                    body: JSON.stringify({ status }),
+                },
+            );
+            await ensureSuccessfulResponse(response, t('request.failed'));
+            broadcastChapterDataChanged(chapter.id);
+            router.reload({ only: ['book', 'sidebar_storylines'] });
+            onClose();
+        } catch (error) {
+            toast.error(
+                error instanceof Error ? error.message : t('request.failed'),
+            );
+        }
     };
 
     const handleMove = async (storylineId: number) => {
@@ -56,13 +71,20 @@ export default function ChapterContextMenu({
             storyline_id: ch.id === chapter.id ? storylineId : ch.storyline_id,
         }));
 
-        await fetch(reorder.url(bookId), {
-            method: 'POST',
-            headers: jsonFetchHeaders(),
-            body: JSON.stringify({ order }),
-        });
-        router.reload({ only: ['book', 'sidebar_storylines'] });
-        onClose();
+        try {
+            const response = await fetch(reorder.url(bookId), {
+                method: 'POST',
+                headers: jsonFetchHeaders(),
+                body: JSON.stringify({ order }),
+            });
+            await ensureSuccessfulResponse(response, t('request.failed'));
+            router.reload({ only: ['book', 'sidebar_storylines'] });
+            onClose();
+        } catch (error) {
+            toast.error(
+                error instanceof Error ? error.message : t('request.failed'),
+            );
+        }
     };
 
     const otherStorylines = storylines.filter(

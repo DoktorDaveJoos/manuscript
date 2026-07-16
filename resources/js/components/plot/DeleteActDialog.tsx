@@ -29,6 +29,7 @@ export default function DeleteActDialog({
     return (
         <Dialog
             onClose={onClose}
+            title={t('deleteAct.title')}
             width={440}
             backdrop="light"
             className="gap-7"

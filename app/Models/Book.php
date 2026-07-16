@@ -14,6 +14,10 @@ class Book extends Model
 
     protected $guarded = [];
 
+    protected $attributes = [
+        'notes_version' => 0,
+    ];
+
     /**
      * @return array<string, string>
      */
@@ -40,6 +44,7 @@ class Book extends Model
             'cover_settings' => 'array',
             'proofreading_config' => 'array',
             'export_settings' => 'array',
+            'notes_version' => 'integer',
         ];
     }
 

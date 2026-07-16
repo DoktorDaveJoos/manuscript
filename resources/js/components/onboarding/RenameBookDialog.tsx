@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { update } from '@/actions/App/Http/Controllers/BookController';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
+import FormField from '@/components/ui/FormField';
 import Input from '@/components/ui/Input';
 import type { Book } from '@/types/models';
 
@@ -27,7 +28,12 @@ export default function RenameBookDialog({
     }
 
     return (
-        <Dialog onClose={onClose} backdrop="none" className="gap-8">
+        <Dialog
+            onClose={onClose}
+            title={t('renameBook.title')}
+            backdrop="none"
+            className="gap-8"
+        >
             <form onSubmit={handleSubmit} className="contents">
                 <div className="flex flex-col gap-2">
                     <h2 className="font-serif text-2xl leading-8 font-semibold tracking-[-0.01em] text-ink">
@@ -38,10 +44,11 @@ export default function RenameBookDialog({
                     </p>
                 </div>
 
-                <fieldset className="flex flex-col gap-1.5">
-                    <label className="text-xs leading-4 font-medium tracking-[0.08em] text-ink-muted uppercase">
-                        {t('renameBook.labelTitle')}
-                    </label>
+                <FormField
+                    label={t('renameBook.labelTitle')}
+                    error={form.errors.title}
+                    labelClassName="text-xs leading-4 tracking-wide text-ink-muted uppercase"
+                >
                     <Input
                         variant="dialog"
                         type="text"
@@ -50,12 +57,7 @@ export default function RenameBookDialog({
                         placeholder={t('renameBook.placeholderTitle')}
                         autoFocus
                     />
-                    {form.errors.title && (
-                        <span className="text-xs text-red-600">
-                            {form.errors.title}
-                        </span>
-                    )}
-                </fieldset>
+                </FormField>
 
                 <div className="flex items-center justify-end gap-3">
                     <Button

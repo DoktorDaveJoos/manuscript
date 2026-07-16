@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\AiProvider;
+use App\Models\AiSetting;
 use App\Models\License;
 
 it('renders settings page with all tabs', function () {
@@ -64,6 +66,70 @@ it('shows active license status when pro is enabled', function () {
     $page->assertNoJavaScriptErrors()
         ->assertSee('License active')
         ->assertSee('Deactivate');
+});
+
+it('does not switch AI providers when an accordion row is opened', function () {
+    AiSetting::factory()->create([
+        'provider' => AiProvider::Anthropic,
+        'enabled' => true,
+    ]);
+    AiSetting::factory()->create([
+        'provider' => AiProvider::Openai,
+        'enabled' => false,
+    ]);
+
+    $page = visit('/settings');
+
+    $page->assertNoJavaScriptErrors()
+        ->click('OpenAI')
+        ->assertSee('Use this provider')
+        ->assertNoJavaScriptErrors();
+
+    expect(AiSetting::query()->where('provider', AiProvider::Anthropic)->value('enabled'))->toBeTrue()
+        ->and(AiSetting::query()->where('provider', AiProvider::Openai)->value('enabled'))->toBeFalse();
+});
+
+it('shows a failed AI provider save with error styling', function () {
+    AiSetting::factory()->create([
+        'provider' => AiProvider::Anthropic,
+        'enabled' => true,
+    ]);
+    AiSetting::factory()->withoutKey()->create([
+        'provider' => AiProvider::Openai,
+        'enabled' => false,
+    ]);
+
+    $page = visit('/settings');
+
+    $page->assertNoJavaScriptErrors()->click('OpenAI');
+    $page->script(<<<'JS'
+        const originalFetch = window.fetch;
+        window.fetch = (input, init) => {
+            const url = typeof input === 'string' ? input : (input?.url ?? '');
+            if (url.includes('/settings/ai/openai') && init?.method === 'PUT') {
+                return Promise.resolve(new Response(
+                    JSON.stringify({ message: 'Provider settings were rejected.' }),
+                    { status: 500, headers: { 'Content-Type': 'application/json' } },
+                ));
+            }
+            return originalFetch(input, init);
+        };
+    JS);
+
+    $page->fill(
+        '[data-testid="ai-provider-form-openai"] input[type="password"]',
+        'sk-rejected',
+    )->click('[data-testid="ai-provider-save-openai"]')
+        ->assertSee('Provider settings were rejected.')
+        ->assertAttribute(
+            '[data-testid="ai-provider-save-status"]',
+            'data-status',
+            'error',
+        )
+        ->assertNoJavaScriptErrors();
+
+    expect(AiSetting::query()->where('provider', AiProvider::Anthropic)->value('enabled'))->toBeTrue()
+        ->and(AiSetting::query()->where('provider', AiProvider::Openai)->value('enabled'))->toBeFalse();
 });
 
 it('sends the backup import as plain multipart without a forced content type', function () {

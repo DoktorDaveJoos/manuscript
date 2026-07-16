@@ -3,8 +3,10 @@
 use App\Models\Act;
 use App\Models\Beat;
 use App\Models\Book;
+use App\Models\Chapter;
 use App\Models\License;
 use App\Models\PlotPoint;
+use App\Models\Storyline;
 
 beforeEach(fn () => License::factory()->create());
 
@@ -65,6 +67,17 @@ it('deletes an act', function () {
         ->assertRedirect();
 
     $this->assertSoftDeleted('acts', ['id' => $act->id]);
+});
+
+it('clears chapter act assignments before deleting an act', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $act = Act::factory()->create(['book_id' => $book->id]);
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create(['act_id' => $act->id]);
+
+    $this->deleteJson(route('acts.destroy', [$book, $act]))->assertRedirect();
+
+    expect($chapter->fresh()->act_id)->toBeNull();
 });
 
 it('cascade deletes plot points when act is deleted', function () {

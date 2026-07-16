@@ -35,6 +35,7 @@ export default function CreateBookDialog({ onClose }: { onClose: () => void }) {
     return (
         <Dialog
             onClose={onClose}
+            title={t('createBook.title')}
             backdrop="none"
             className="!p-0"
             closeOnOutsideClick={false}

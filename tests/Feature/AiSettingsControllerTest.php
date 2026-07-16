@@ -227,3 +227,42 @@ test('selecting a provider disables all others', function () {
     expect(AiSetting::query()->where('provider', 'openai')->first()->enabled)->toBeTrue();
     expect(AiSetting::query()->where('provider', 'anthropic')->first()->enabled)->toBeFalse();
 });
+
+test('saving credentials for an inactive provider preserves the active provider', function () {
+    AiSetting::factory()->create([
+        'provider' => AiProvider::Anthropic,
+        'enabled' => true,
+    ]);
+    AiSetting::factory()->withoutKey()->create([
+        'provider' => AiProvider::Openai,
+        'enabled' => false,
+    ]);
+
+    $this->putJson(route('ai-settings.update', 'openai'), [
+        'api_key' => 'sk-openai-key',
+        'enabled' => false,
+    ])->assertOk();
+
+    expect(AiSetting::query()->where('provider', 'anthropic')->first()->enabled)->toBeTrue()
+        ->and(AiSetting::query()->where('provider', 'openai')->first()->enabled)->toBeFalse()
+        ->and(AiSetting::query()->where('provider', 'openai')->first()->api_key)->toBe('sk-openai-key');
+});
+
+test('an unconfigured provider cannot replace the working provider', function () {
+    AiSetting::factory()->create([
+        'provider' => AiProvider::Anthropic,
+        'enabled' => true,
+    ]);
+    AiSetting::factory()->withoutKey()->create([
+        'provider' => AiProvider::Openai,
+        'enabled' => false,
+    ]);
+
+    $this->putJson(route('ai-settings.update', 'openai'), [
+        'enabled' => true,
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('enabled');
+
+    expect(AiSetting::query()->where('provider', 'anthropic')->first()->enabled)->toBeTrue()
+        ->and(AiSetting::query()->where('provider', 'openai')->first()->enabled)->toBeFalse();
+});

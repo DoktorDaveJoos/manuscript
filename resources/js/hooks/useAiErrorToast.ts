@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { index as settingsIndex } from '@/routes/settings';
@@ -36,33 +37,41 @@ const PROVIDER_LABELS: Record<string, string> = {
 export function useAiErrorToast(): (payload: AiErrorPayload) => void {
     const { t } = useTranslation('ai');
 
-    return (payload: AiErrorPayload) => {
-        const kind = isKnownKind(payload.kind) ? payload.kind : 'unknown';
-        const provider =
-            (payload.provider && PROVIDER_LABELS[payload.provider]) ||
-            t('error.toast.providerFallback');
+    return useCallback(
+        (payload: AiErrorPayload) => {
+            const kind = isKnownKind(payload.kind) ? payload.kind : 'unknown';
+            const provider =
+                (payload.provider && PROVIDER_LABELS[payload.provider]) ||
+                t('error.toast.providerFallback');
 
-        const detail = (payload.message ?? '').trim();
+            const detail = (payload.message ?? '').trim();
 
-        const title = t(`error.toast.${kind}.title`);
-        const description = t(`error.toast.${kind}.body`, {
-            provider,
-            detail: detail !== '' ? detail : title,
-        });
+            const title = t(`error.toast.${kind}.title`);
+            const description = t(`error.toast.${kind}.body`, {
+                provider,
+                detail: detail !== '' ? detail : title,
+            });
 
-        const action = needsSettingsAction(kind)
-            ? {
-                  label: t('error.toast.action.openSettings'),
-                  onClick: () => router.visit(settingsIndex.url()),
-              }
-            : undefined;
+            const action = needsSettingsAction(kind)
+                ? {
+                      label: t('error.toast.action.openSettings'),
+                      onClick: () =>
+                          router.visit(
+                              settingsIndex.url({
+                                  query: { section: 'ai-features' },
+                              }),
+                          ),
+                  }
+                : undefined;
 
-        toast.error(title, {
-            description,
-            action,
-            duration: persistent(kind) ? Infinity : 6000,
-        });
-    };
+            toast.error(title, {
+                description,
+                action,
+                duration: persistent(kind) ? Infinity : 6000,
+            });
+        },
+        [t],
+    );
 }
 
 const KNOWN_KINDS = [
@@ -73,6 +82,8 @@ const KNOWN_KINDS = [
     'model_unavailable',
     'context_too_long',
     'bad_request',
+    'connection_failed',
+    'no_provider',
     'timeout',
     'stale_version',
     'unknown',
@@ -89,7 +100,8 @@ function persistent(kind: string): boolean {
         kind === 'invalid_key' ||
         kind === 'insufficient_credits' ||
         kind === 'model_unavailable' ||
-        kind === 'context_too_long'
+        kind === 'context_too_long' ||
+        kind === 'no_provider'
     );
 }
 
@@ -97,6 +109,7 @@ function needsSettingsAction(kind: string): boolean {
     return (
         kind === 'invalid_key' ||
         kind === 'model_unavailable' ||
+        kind === 'no_provider' ||
         // Settings hosts the per-provider guide with the billing console
         // link, which is where an out-of-credits account gets fixed.
         kind === 'insufficient_credits'

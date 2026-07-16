@@ -134,7 +134,11 @@ export default function ArchiveDrawer({
 
     if (activeSessionId !== null) {
         return (
-            <Drawer onClose={onClose} className="w-[480px]">
+            <Drawer
+                onClose={onClose}
+                title={t('archive.title')}
+                className="w-[480px]"
+            >
                 <TranscriptView
                     bookId={bookId}
                     sessionId={activeSessionId}
@@ -151,7 +155,7 @@ export default function ArchiveDrawer({
     }
 
     return (
-        <Drawer onClose={onClose}>
+        <Drawer onClose={onClose} title={t('archive.title')}>
             <PanelHeader title={t('archive.title')} onClose={onClose} />
 
             <div className="flex-1 overflow-y-auto px-4 py-3">

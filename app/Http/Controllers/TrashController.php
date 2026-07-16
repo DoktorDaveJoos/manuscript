@@ -98,6 +98,7 @@ class TrashController extends Controller
 
         $chapters = Chapter::onlyTrashed()
             ->where('storyline_id', $storyline->id)
+            ->orderBy('reader_order')
             ->get();
 
         Chapter::onlyTrashed()

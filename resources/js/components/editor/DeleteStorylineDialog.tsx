@@ -36,9 +36,14 @@ export default function DeleteStorylineDialog({
     const chapterCount = storyline.chapters?.length ?? 0;
 
     return (
-        <Dialog onClose={onClose} backdrop="light" className="gap-6">
+        <Dialog
+            onClose={onClose}
+            title={t('deleteStoryline.title')}
+            backdrop="light"
+            className="gap-6"
+        >
             <div className="flex flex-col gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-delete-bg">
+                <div className="flex size-10 items-center justify-center rounded-lg bg-delete-bg">
                     <svg
                         className="h-5 w-5 text-delete"
                         fill="none"

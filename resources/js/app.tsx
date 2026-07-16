@@ -1,17 +1,21 @@
 import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Toaster } from 'sonner';
 import BootErrorScreen from '@/components/BootErrorScreen';
 import DatabaseRepairedDialog from '@/components/DatabaseRepairedDialog';
 import DebugOverlay from '@/components/ui/DebugOverlay';
 import UpdateDialog from '@/components/ui/UpdateDialog';
-import { checkForUpdates } from '@/hooks/useAutoUpdater';
+import {
+    AUTO_UPDATE_PREFERENCE_CHANGED,
+    checkForUpdates,
+} from '@/hooks/useAutoUpdater';
 import '../css/app.css';
 import { setAppLanguage } from './i18n';
 import { initAnalytics, screenNameFor, track } from './lib/analytics';
 import { getTheme, initTheme } from './lib/theme';
+import { automaticUpdateCheckInterval } from './lib/update-settings';
 import type { AppSettings, License } from './types/models';
 
 initTheme();
@@ -95,7 +99,9 @@ createInertiaApp({
                 <DebugOverlay>
                     <App {...props} />
                     <UpdateDialog currentVersion={appVersion} />
-                    <UpdateScheduler />
+                    <UpdateScheduler
+                        automaticUpdatesEnabled={settings?.auto_update ?? true}
+                    />
                     <AnalyticsTracker />
                     {databaseRepaired && <DatabaseRepairedDialog />}
                     <Toaster
@@ -115,11 +121,40 @@ createInertiaApp({
 // Polls for app updates every 4 hours. Lives inside the React tree so its
 // interval is cleaned up if the renderer ever full-reloads — module-level
 // setInterval would stack a new timer on each boot.
-function UpdateScheduler() {
+function UpdateScheduler({
+    automaticUpdatesEnabled: initialAutomaticUpdatesEnabled,
+}: {
+    automaticUpdatesEnabled: boolean;
+}) {
+    const [automaticUpdatesEnabled, setAutomaticUpdatesEnabled] = useState(
+        initialAutomaticUpdatesEnabled,
+    );
+
     useEffect(() => {
-        const id = window.setInterval(checkForUpdates, 4 * 60 * 60 * 1000);
-        return () => window.clearInterval(id);
+        const handlePreferenceChange = (event: Event) => {
+            setAutomaticUpdatesEnabled((event as CustomEvent<boolean>).detail);
+        };
+
+        window.addEventListener(
+            AUTO_UPDATE_PREFERENCE_CHANGED,
+            handlePreferenceChange,
+        );
+
+        return () =>
+            window.removeEventListener(
+                AUTO_UPDATE_PREFERENCE_CHANGED,
+                handlePreferenceChange,
+            );
     }, []);
+
+    useEffect(() => {
+        const interval = automaticUpdateCheckInterval(automaticUpdatesEnabled);
+        if (interval === null) return;
+
+        const id = window.setInterval(checkForUpdates, interval);
+        return () => window.clearInterval(id);
+    }, [automaticUpdatesEnabled]);
+
     return null;
 }
 

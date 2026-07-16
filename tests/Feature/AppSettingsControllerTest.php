@@ -9,6 +9,7 @@ test('unified settings page loads', function () {
             ->component('settings/index')
             ->has('settings')
             ->where('settings.send_analytics', true)
+            ->where('settings.auto_update', true)
             ->has('ai_providers')
             ->has('version')
         );
@@ -43,6 +44,29 @@ test('send_analytics defaults to true in shared inertia props', function () {
         ->assertInertia(fn ($page) => $page
             ->where('app_settings.send_analytics', true)
         );
+});
+
+test('automatic updates default to true and are shared with the frontend', function () {
+    AppSetting::clearCache();
+
+    $this->get(route('books.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('app_settings.auto_update', true)
+        );
+
+    expect(AppSetting::automaticUpdatesEnabled())->toBeTrue();
+});
+
+test('automatic updates preference is accepted and persisted', function () {
+    $this->putJson(route('settings.update'), [
+        'key' => 'auto_update',
+        'value' => false,
+    ])->assertOk();
+
+    AppSetting::clearCache();
+
+    expect(AppSetting::automaticUpdatesEnabled())->toBeFalse();
 });
 
 test('chapter list display settings are accepted and persisted', function (string $key) {

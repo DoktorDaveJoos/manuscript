@@ -26,9 +26,11 @@ const FEATURE_CARDS = [
 export default function EditorialReviewEmptyState({
     onStart,
     starting,
+    canStart,
 }: {
     onStart: () => void;
     starting: boolean;
+    canStart: boolean;
 }) {
     const { t } = useTranslation('editorial-review');
     const [showConfirm, setShowConfirm] = useState(false);
@@ -47,7 +49,7 @@ export default function EditorialReviewEmptyState({
                     <Button
                         variant="primary"
                         onClick={() => setShowConfirm(true)}
-                        disabled={starting}
+                        disabled={starting || !canStart}
                         className="mt-2 text-[13px]"
                     >
                         {starting
@@ -79,7 +81,11 @@ export default function EditorialReviewEmptyState({
             </div>
 
             {showConfirm && (
-                <Dialog onClose={() => setShowConfirm(false)} width={420}>
+                <Dialog
+                    onClose={() => setShowConfirm(false)}
+                    title={t('confirm.title')}
+                    width={420}
+                >
                     <div className="flex flex-col gap-6">
                         <div className="flex flex-col gap-2">
                             <h2 className="font-serif text-2xl leading-8 font-semibold tracking-[-0.01em] text-ink">
@@ -102,7 +108,7 @@ export default function EditorialReviewEmptyState({
                                     setShowConfirm(false);
                                     onStart();
                                 }}
-                                disabled={starting}
+                                disabled={starting || !canStart}
                             >
                                 {t('common:confirm')}
                             </Button>

@@ -1,6 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { HardDrive } from 'lucide-react';
 import { useState } from 'react';
+import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 
 interface RepairDetails {
@@ -29,11 +30,11 @@ export default function DatabaseRepairedDialog() {
             width={440}
             backdrop="dark"
             title="Database Repaired"
-            className="overflow-hidden rounded-2xl p-0 shadow-[0_16px_48px_-4px_rgba(0,0,0,0.15),0_4px_12px_rgba(0,0,0,0.05)]"
+            className="overflow-hidden p-0 shadow-xl"
         >
             {/* Header */}
             <div className="flex flex-col items-center gap-4 px-10 pt-8">
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-b from-accent-light to-surface-warm">
+                <div className="flex size-14 items-center justify-center rounded-xl bg-gradient-to-b from-accent-light to-surface-warm">
                     <HardDrive className="size-6 text-accent" />
                 </div>
                 <h2 className="text-xl font-semibold tracking-tight text-ink">
@@ -80,13 +81,14 @@ export default function DatabaseRepairedDialog() {
 
             {/* Footer */}
             <div className="flex flex-col items-center px-10 pt-6 pb-8">
-                <button
-                    type="button"
+                <Button
+                    variant="primary"
+                    size="lg"
                     onClick={() => setDismissed(true)}
-                    className="flex h-11 w-full items-center justify-center rounded-md bg-ink text-sm font-semibold text-surface shadow-[0_1px_3px_rgba(0,0,0,0.1)]"
+                    className="h-11 w-full"
                 >
                     Continue
-                </button>
+                </Button>
             </div>
         </Dialog>
     );

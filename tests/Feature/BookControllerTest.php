@@ -148,7 +148,10 @@ test('delete returns 404 for non-existent book', function () {
 });
 
 test('duplicates a book with all relationships', function () {
-    $book = Book::factory()->create(['title' => 'My Novel']);
+    $book = Book::factory()->create([
+        'title' => 'My Novel',
+        'notes' => 'Remember the hidden door.',
+    ]);
     $storyline = Storyline::factory()->for($book)->create();
     $act = Act::factory()->for($book)->create();
     $character = Character::factory()->for($book)->create();
@@ -163,6 +166,7 @@ test('duplicates a book with all relationships', function () {
 
     $copy = Book::query()->where('title', 'My Novel (Copy)')->first();
     expect($copy)->not->toBeNull()
+        ->and($copy->notes)->toBe('Remember the hidden door.')
         ->and($copy->storylines)->toHaveCount(1)
         ->and($copy->acts)->toHaveCount(1)
         ->and($copy->characters)->toHaveCount(1)

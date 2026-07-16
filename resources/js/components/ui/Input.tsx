@@ -1,5 +1,7 @@
-import { cva, type VariantProps } from 'class-variance-authority';
-import { forwardRef, type InputHTMLAttributes } from 'react';
+import { cva } from 'class-variance-authority';
+import type { VariantProps } from 'class-variance-authority';
+import { forwardRef } from 'react';
+import type { InputHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 const inputVariants = cva(
@@ -9,6 +11,7 @@ const inputVariants = cva(
             variant: {
                 default: 'px-3 py-2 text-[13px]',
                 dialog: 'px-4 py-3 text-sm',
+                table: 'rounded-none border-0 bg-transparent px-3 py-2 text-[13px] focus:ring-1 focus:ring-inset focus:ring-accent',
             },
         },
         defaultVariants: {

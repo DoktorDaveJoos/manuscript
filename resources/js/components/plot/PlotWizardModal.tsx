@@ -77,7 +77,12 @@ export default function PlotWizardModal({
     );
 
     return (
-        <Dialog onClose={onClose} width={640} className="max-h-[85vh] p-0">
+        <Dialog
+            onClose={onClose}
+            title={template.name}
+            width={640}
+            className="max-h-[85vh] p-0"
+        >
             {/* Header */}
             <div className="flex items-center justify-between px-8 py-6">
                 <div className="flex flex-col gap-1">

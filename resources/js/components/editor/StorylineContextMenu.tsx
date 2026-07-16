@@ -1,8 +1,9 @@
 import { router } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { update } from '@/actions/App/Http/Controllers/StorylineController';
 import ContextMenu from '@/components/ui/ContextMenu';
-import { jsonFetchHeaders } from '@/lib/utils';
+import { ensureSuccessfulResponse, jsonFetchHeaders } from '@/lib/utils';
 import type { Storyline } from '@/types/models';
 import ColorPicker from './ColorPicker';
 
@@ -26,13 +27,23 @@ export default function StorylineContextMenu({
     const { t } = useTranslation('editor');
 
     const handleColorChange = async (color: string) => {
-        await fetch(update.url({ book: bookId, storyline: storyline.id }), {
-            method: 'PATCH',
-            headers: jsonFetchHeaders(),
-            body: JSON.stringify({ name: storyline.name, color }),
-        });
-        router.reload({ only: ['book'] });
-        onClose();
+        try {
+            const response = await fetch(
+                update.url({ book: bookId, storyline: storyline.id }),
+                {
+                    method: 'PATCH',
+                    headers: jsonFetchHeaders(),
+                    body: JSON.stringify({ name: storyline.name, color }),
+                },
+            );
+            await ensureSuccessfulResponse(response, t('request.failed'));
+            router.reload({ only: ['book', 'sidebar_storylines'] });
+            onClose();
+        } catch (error) {
+            toast.error(
+                error instanceof Error ? error.message : t('request.failed'),
+            );
+        }
     };
 
     return (

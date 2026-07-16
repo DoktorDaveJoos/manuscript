@@ -291,7 +291,9 @@ class NativePHP {
                     url: publicUrl,
                 });
             }
-            autoUpdater.checkForUpdatesAndNotify();
+            if (config.updater.check_on_startup === true) {
+                autoUpdater.checkForUpdatesAndNotify();
+            }
         }
     }
     startElectronApi() {

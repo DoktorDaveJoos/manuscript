@@ -73,6 +73,7 @@
     "field.chaptersHint": "Select the chapters where this entry appears.",
     "field.noChapter": "None",
     "role.mainCharacter": "Main Character",
+    "dropdown.addEntry": "Add wiki entry",
     "dropdown.character": "Character",
     "dropdown.location": "Location",
     "dropdown.organization": "Organization",

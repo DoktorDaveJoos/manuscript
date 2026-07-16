@@ -7,7 +7,10 @@ use App\Models\EditorialReview;
 use App\Models\EditorialReviewSection;
 use App\Models\License;
 use App\Models\Scene;
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Support\Facades\Queue;
+
+use function Pest\Laravel\mock;
 
 beforeEach(function () {
     License::factory()->create();
@@ -38,7 +41,9 @@ test('store requires AI configured', function () {
     $book = Book::factory()->create();
 
     $this->postJson(route('books.ai.editorial-review.store', $book))
-        ->assertStatus(422);
+        ->assertUnprocessable()
+        ->assertJsonPath('error_code', 'no_provider')
+        ->assertJsonPath('message', fn (string $message) => str_contains($message, 'Open AI Settings'));
 });
 
 // --- Store tests ---
@@ -71,7 +76,8 @@ test('store prevents duplicate in-progress review', function () {
 
     $this->postJson(route('books.ai.editorial-review.store', $book))
         ->assertUnprocessable()
-        ->assertJsonPath('message', 'An editorial review is already in progress for this book.');
+        ->assertJsonPath('error_code', 'already_running')
+        ->assertJsonPath('review.id', fn (int $id) => $id > 0);
 });
 
 test('store prevents duplicate when review is pending', function () {
@@ -127,6 +133,28 @@ test('store allows new review when previous has failed', function () {
         ->assertOk();
 
     Queue::assertPushed(RunEditorialReviewJob::class);
+});
+
+test('store marks the review failed when queue dispatch is unavailable', function () {
+    $book = Book::factory()->withAi()->create();
+
+    mock(Dispatcher::class)
+        ->shouldReceive('dispatch')
+        ->once()
+        ->andThrow(new RuntimeException('queue connection contains sensitive diagnostics'));
+
+    $response = $this->postJson(route('books.ai.editorial-review.store', $book))
+        ->assertServiceUnavailable()
+        ->assertJsonPath('error_code', 'queue_unavailable')
+        ->assertJsonPath('review.status', 'failed');
+
+    expect($response->json('message'))
+        ->toContain('could not queue')
+        ->not->toContain('sensitive diagnostics');
+
+    $review = EditorialReview::where('book_id', $book->id)->sole();
+    expect($review->status)->toBe('failed')
+        ->and($review->error_code)->toBe('queue_unavailable');
 });
 
 // --- Index tests ---
@@ -279,7 +307,10 @@ test('chat requires AI configured', function () {
 
     $this->postJson(route('books.ai.editorial-review.chat', [$book, $review]), [
         'message' => 'Tell me about the plot issues.',
-    ])->assertStatus(422);
+    ])
+        ->assertUnprocessable()
+        ->assertJsonPath('kind', 'no_provider')
+        ->assertJsonPath('message', fn (string $message) => str_contains($message, 'Open AI Settings'));
 });
 
 test('chat returns 404 for review from different book', function () {
@@ -507,7 +538,9 @@ test('resume requires AI configured', function () {
     $review = EditorialReview::factory()->failed()->create(['book_id' => $book->id]);
 
     $this->postJson(route('books.ai.editorial-review.resume', [$book, $review]))
-        ->assertUnprocessable();
+        ->assertUnprocessable()
+        ->assertJsonPath('error_code', 'no_provider')
+        ->assertJsonPath('message', fn (string $message) => str_contains($message, 'Open AI Settings'));
 });
 
 test('resume returns 404 for review from different book', function () {
@@ -567,11 +600,72 @@ test('resume resets the failed review and re-dispatches the pipeline on the same
     $review->refresh();
 
     expect($review->status)->toBe('pending')
+        ->and($review->progress)->toBe(['phase' => 'pending'])
         ->and($review->error_message)->toBeNull()
         ->and($review->error_code)->toBeNull()
+        ->and($review->batch_id)->toBeNull()
+        ->and($review->completed_at)->toBeNull()
         ->and(EditorialReview::where('book_id', $book->id)->count())->toBe(1);
 
     Queue::assertPushed(RunEditorialReviewJob::class, fn ($job) => $job->review->is($review));
+});
+
+test('resume invalidates synthesized results when chapter content changed after failure', function () {
+    Queue::fake();
+
+    [$book, $chapters] = createBookWithChapters(1);
+    $chapter = $chapters[0];
+    $review = EditorialReview::factory()->for($book)->failed()->create([
+        'executive_summary' => 'Stale summary.',
+        'overall_score' => 91,
+        'resolved_findings' => ['old-finding'],
+    ]);
+    $review->chapterNotes()->create([
+        'chapter_id' => $chapter->id,
+        'content_hash' => 'hash-before-edit',
+        'notes' => ['chapter_note' => 'Stale note'],
+    ]);
+    $review->sections()->create([
+        'type' => EditorialSectionType::Plot,
+        'score' => 91,
+        'summary' => 'Stale plot section.',
+        'strengths' => [],
+        'findings' => [],
+        'recommendations' => [],
+    ]);
+
+    $this->postJson(route('books.ai.editorial-review.resume', [$book, $review]))
+        ->assertSuccessful();
+
+    $review->refresh();
+
+    expect($review->sections()->count())->toBe(0)
+        ->and($review->executive_summary)->toBeNull()
+        ->and($review->overall_score)->toBeNull()
+        ->and($review->resolved_findings)->toBe([]);
+});
+
+test('resume restores failed state when queue dispatch is unavailable', function () {
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->for($book)->failed()->create([
+        'error_code' => 'timeout',
+    ]);
+
+    mock(Dispatcher::class)
+        ->shouldReceive('dispatch')
+        ->once()
+        ->andThrow(new RuntimeException('queue credentials should stay private'));
+
+    $this->postJson(route('books.ai.editorial-review.resume', [$book, $review]))
+        ->assertServiceUnavailable()
+        ->assertJsonPath('error_code', 'queue_unavailable')
+        ->assertJsonPath('review.status', 'failed');
+
+    $review->refresh();
+
+    expect($review->status)->toBe('failed')
+        ->and($review->error_code)->toBe('queue_unavailable')
+        ->and($review->error_message)->not->toContain('queue credentials');
 });
 
 test('progress includes the error code for failed reviews', function () {
@@ -585,6 +679,35 @@ test('progress includes the error code for failed reviews', function () {
         ->assertSuccessful()
         ->assertJsonPath('status', 'failed')
         ->assertJsonPath('error_code', 'rate_limited');
+});
+
+test('index immediately fails a stale review so reopening cannot spin forever', function () {
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->for($book)->create([
+        'status' => 'analyzing',
+        'updated_at' => now()->subHour(),
+    ]);
+
+    $this->get(route('books.ai.editorial-review.index', $book))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->where('latestReview.id', $review->id)
+            ->where('latestReview.status', 'failed')
+            ->where('latestReview.error_code', 'timeout')
+        );
+});
+
+test('progress immediately reports a stale review as failed', function () {
+    $book = Book::factory()->withAi()->create();
+    $review = EditorialReview::factory()->for($book)->create([
+        'status' => 'synthesizing',
+        'updated_at' => now()->subHour(),
+    ]);
+
+    $this->getJson(route('books.ai.editorial-review.progress', [$book, $review]))
+        ->assertSuccessful()
+        ->assertJsonPath('status', 'failed')
+        ->assertJsonPath('error_code', 'timeout');
 });
 
 test('store leaves stale reviews of other books to the scheduled cleanup', function () {

@@ -1,7 +1,14 @@
 import { Check, ChevronDown } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/lib/utils';
+import Button from '@/components/ui/Button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/DropdownMenu';
 
 export const FONT_SIZES = [14, 16, 18, 20, 22, 24] as const;
 
@@ -16,72 +23,38 @@ export default function FontSizeSelector({
 }) {
     const { t } = useTranslation('editor');
     const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!open) return;
-
-        function handleClickOutside(e: MouseEvent) {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                setOpen(false);
-            }
-        }
-
-        function handleEscape(e: KeyboardEvent) {
-            if (e.key === 'Escape') {
-                setOpen(false);
-            }
-        }
-
-        document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('keydown', handleEscape);
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('keydown', handleEscape);
-        };
-    }, [open]);
 
     return (
-        <div ref={ref} className="relative">
-            <button
-                type="button"
-                onClick={() => setOpen(!open)}
-                title={t('toolbar.fontSize')}
-                className="flex h-7 items-center gap-0.5 rounded px-1.5 py-1 text-xs text-ink-muted transition-colors hover:bg-neutral-bg hover:text-ink"
-            >
-                <span>{value}</span>
-                <ChevronDown size={12} />
-            </button>
-
-            {open && (
-                <div className="absolute top-full left-0 z-50 mt-1 w-[120px] overflow-hidden rounded-lg border border-border bg-surface-card shadow-[0_4px_6px_#1414140F,0_12px_32px_#1414141A]">
-                    <div className="px-1 py-1">
-                        {FONT_SIZES.map((size) => (
-                            <button
-                                key={size}
-                                type="button"
-                                onClick={() => {
-                                    onChange(size);
-                                    setOpen(false);
-                                }}
-                                className={cn(
-                                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] leading-4 hover:bg-neutral-bg',
+        <DropdownMenu open={open} onOpenChange={setOpen}>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    title={t('toolbar.fontSize')}
+                    className="h-7 gap-0.5 px-1.5 text-ink-muted"
+                >
+                    <span>{value}</span>
+                    <ChevronDown size={12} />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[120px]">
+                <DropdownMenuGroup>
+                    {FONT_SIZES.map((size) => (
+                        <DropdownMenuItem
+                            key={size}
+                            onSelect={() => onChange(size)}
+                            className="gap-2 px-2 py-1.5"
+                        >
+                            <span className="flex size-3.5 shrink-0 items-center justify-center text-ink-muted">
+                                {size === value && (
+                                    <Check size={14} strokeWidth={2.5} />
                                 )}
-                            >
-                                <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center text-ink-muted">
-                                    {size === value && (
-                                        <Check size={14} strokeWidth={2.5} />
-                                    )}
-                                </span>
-                                <span className="flex-1 text-ink">
-                                    {size}px
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
+                            </span>
+                            <span className="flex-1 text-ink">{size}px</span>
+                        </DropdownMenuItem>
+                    ))}
+                </DropdownMenuGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }

@@ -5,6 +5,7 @@ import {
     BookType,
     LayoutGrid,
     LibraryBig,
+    NotebookTabs,
     PanelLeftClose,
     PanelLeftOpen,
     Settings,
@@ -16,6 +17,7 @@ import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { index } from '@/actions/App/Http/Controllers/BookController';
 import { show as showDesign } from '@/actions/App/Http/Controllers/BookDesignController';
+import { index as indexNotes } from '@/actions/App/Http/Controllers/BookNotesController';
 import {
     exportMethod,
     index as bookSettingsIndex,
@@ -26,6 +28,7 @@ import { index as indexPlot } from '@/actions/App/Http/Controllers/PlotControlle
 import { index as settingsIndex } from '@/actions/App/Http/Controllers/SettingsController';
 import { store as storeStoryline } from '@/actions/App/Http/Controllers/StorylineController';
 import { index as indexWiki } from '@/actions/App/Http/Controllers/WikiController';
+import Button from '@/components/ui/Button';
 import NavGroup from '@/components/ui/NavGroup';
 import NavItem from '@/components/ui/NavItem';
 import { useResizablePanel } from '@/hooks/useResizablePanel';
@@ -55,7 +58,7 @@ export default function Sidebar({
     onChapterNavigate,
     onOpenInNewPane,
 }: {
-    book: Pick<Book, 'id'>;
+    book: Pick<Book, 'id' | 'title'>;
     storylines: Storyline[];
     activeChapterId?: number;
     activeChapterTitle?: string;
@@ -74,6 +77,7 @@ export default function Sidebar({
     onOpenInNewPane?: (chapterId: number) => void;
 }) {
     const { t } = useTranslation();
+    const { t: tEditor } = useTranslation('editor');
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const {
@@ -109,6 +113,7 @@ export default function Sidebar({
     const isDashboard =
         currentUrl.endsWith('/dashboard') && !currentUrl.includes('/ai/');
     const isWiki = currentUrl.includes('/wiki');
+    const isNotes = currentUrl.endsWith('/notes');
     const isPlot = currentUrl.endsWith('/plot');
     const isAi = currentUrl.includes('/ai/');
     const isExport = currentUrl.includes('/settings/export');
@@ -117,6 +122,12 @@ export default function Sidebar({
         /\/books\/\d+\/settings/.test(currentUrl) && !isExport;
 
     const storyItems = [
+        {
+            label: t('nav.notesResearch'),
+            href: indexNotes.url(book),
+            isActive: isNotes,
+            Icon: NotebookTabs,
+        },
         {
             label: t('nav.wiki'),
             href: indexWiki.url(book),
@@ -183,13 +194,15 @@ export default function Sidebar({
 
     const handleAddChapter = async (storylineId: number) => {
         await onBeforeNavigate?.();
-        createChapter(book.id, storylineId, storylines);
+        createChapter(book.id, storylineId, storylines, tEditor);
     };
 
     const handleAddStoryline = async () => {
         await onBeforeNavigate?.();
         router.post(storeStoryline.url({ book: book.id }), {
-            name: `Storyline ${storylines.length + 1}`,
+            name: tEditor('chapterList.storylineDefault', {
+                number: storylines.length + 1,
+            }),
         });
     };
 
@@ -203,31 +216,44 @@ export default function Sidebar({
             {/* Header */}
             {isCollapsed ? (
                 <div className="flex items-center justify-center py-[18px]">
-                    <button
+                    <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={toggleCollapsed}
-                        title={t('sidebar.expand')}
-                        className="text-ink-faint transition-colors hover:text-ink"
+                        title={`${book.title} — ${t('sidebar.expand')}`}
+                        className="size-6 text-ink-faint transition-colors hover:text-ink"
                     >
                         <PanelLeftOpen size={16} />
-                    </button>
+                    </Button>
                 </div>
             ) : (
-                <div className="flex items-center justify-between px-5 py-[18px]">
-                    <Link
-                        href={index.url()}
-                        className="text-[13px] font-semibold tracking-[0.06em] text-ink uppercase"
-                    >
-                        Manuscript
-                    </Link>
-                    <button
+                <div className="flex items-start justify-between gap-3 px-5 py-[18px]">
+                    <div className="min-w-0">
+                        <Link
+                            href={index.url()}
+                            className="block text-[13px] font-semibold tracking-[0.06em] text-ink uppercase"
+                        >
+                            Manuscript
+                        </Link>
+                        <p
+                            data-sidebar-book-title
+                            title={book.title}
+                            className="mt-0.5 truncate text-xs text-ink-muted italic"
+                        >
+                            {book.title}
+                        </p>
+                    </div>
+                    <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={toggleCollapsed}
                         title={t('sidebar.collapse')}
-                        className="text-ink-faint transition-colors hover:text-ink"
+                        className="size-6 text-ink-faint transition-colors hover:text-ink"
                     >
                         <PanelLeftClose size={16} />
-                    </button>
+                    </Button>
                 </div>
             )}
 
@@ -248,7 +274,7 @@ export default function Sidebar({
                     }
                 >
                     {!isCollapsed && (
-                        <span className="px-2 pb-0.5 text-[10px] font-medium tracking-widest text-ink-faint uppercase">
+                        <span className="px-2 pb-0.5 text-[11px] font-medium tracking-widest text-ink-faint uppercase">
                             {t('nav.general')}
                         </span>
                     )}
@@ -287,7 +313,7 @@ export default function Sidebar({
                     }
                 >
                     {!isCollapsed && (
-                        <span className="px-2 pb-0.5 text-[10px] font-medium tracking-widest text-ink-faint uppercase">
+                        <span className="px-2 pb-0.5 text-[11px] font-medium tracking-widest text-ink-faint uppercase">
                             {t('nav.book')}
                         </span>
                     )}
@@ -326,7 +352,9 @@ export default function Sidebar({
                                 label={t('nav.story')}
                                 storageKey="manuscript:nav-group-story"
                                 defaultOpen
-                                containsActive={isWiki || isPlot || isAi}
+                                containsActive={
+                                    isNotes || isWiki || isPlot || isAi
+                                }
                                 testId="nav-group-story"
                             >
                                 {renderNavItems(storyItems)}

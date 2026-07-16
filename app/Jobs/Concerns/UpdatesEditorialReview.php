@@ -4,6 +4,7 @@ namespace App\Jobs\Concerns;
 
 use App\Enums\EditorialReviewErrorCode;
 use App\Models\EditorialReview;
+use Throwable;
 
 trait UpdatesEditorialReview
 {
@@ -44,5 +45,22 @@ trait UpdatesEditorialReview
             'error_message' => $message,
             'error_code' => $code->value,
         ]);
+    }
+
+    /**
+     * Persist a safe user-facing failure while retaining the throwable only in
+     * the exception report. Provider messages may contain request details and
+     * must never be copied directly into a review shown to the user.
+     */
+    protected function markReviewFailedFromThrowable(
+        EditorialReview $review,
+        Throwable $exception,
+        string $message,
+    ): void {
+        $this->markReviewFailed(
+            $review,
+            $message,
+            EditorialReviewErrorCode::fromThrowable($exception),
+        );
     }
 }

@@ -1,3 +1,4 @@
+import { router } from '@inertiajs/react';
 import { useCallback, useRef, useState } from 'react';
 import { editor } from '@/actions/App/Http/Controllers/ChapterController';
 
@@ -32,7 +33,11 @@ function syncUrl(bookId: number, panes: Pane[]) {
         ? { panes: panes.map((p) => p.chapterId).join(',') }
         : {};
     const url = editor.url({ book: bookId }, { query });
-    window.history.replaceState({}, '', url);
+    router.replace({
+        url,
+        preserveScroll: true,
+        preserveState: true,
+    });
 }
 
 export default function usePaneManager(
