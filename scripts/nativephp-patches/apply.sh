@@ -68,6 +68,11 @@ apply "resources/electron/electron-plugin/dist/server/api/system.js"
 # so the package's src/*.ts is never recompiled — only dist/ is loaded at runtime.
 apply "resources/electron/electron-plugin/dist/index.js"
 apply "resources/electron/electron-plugin/dist/server/api.js"
+# Child-process API responses must exclude Electron's UtilityProcess instance.
+# Express cannot JSON-serialize that internal object, so Laravel otherwise
+# receives null and crashes while starting the production queue worker.
+apply "resources/electron/electron-plugin/src/server/api/childProcess.ts"
+apply "resources/electron/electron-plugin/dist/server/api/childProcess.js"
 # Launch speed: version-guard the per-launch `artisan optimize` (server/php.js)
 # so it only runs on the first launch after an install/update, like migrate.
 # The per-launch config values it used to refresh are healed at request time

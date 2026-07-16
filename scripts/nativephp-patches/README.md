@@ -28,6 +28,8 @@ Current patches:
 | `resources/electron/electron-plugin/dist/server/api/system.js` | Fixes `printToPDF` to wait for `did-finish-load` before grabbing the PDF, instead of awaiting `loadURL` (which races on data URLs). |
 | `resources/electron/electron-plugin/dist/index.js` | Startup resilience: an all-platforms single-instance lock + second-instance focus, and a visible startup-failure dialog. |
 | `resources/electron/electron-plugin/dist/server/api.js` | Startup resilience: retries the Electron API server on a fresh port when the chosen port is already bound (`EADDRINUSE`). |
+| `resources/electron/electron-plugin/src/server/api/childProcess.ts` | Keeps source parity for child-process API responses that omit Electron's non-serializable `UtilityProcess` object. |
+| `resources/electron/electron-plugin/dist/server/api/childProcess.js` | Prevents production startup from crashing when Laravel starts its queue worker and the Electron API serializes the process response. |
 | `src/Drivers/Electron/ElectronServiceProvider.php` | `electronPath()` detects the published project by its root `package.json`, so sub-paths no longer force an incorrect vendor fallback. |
 
 ### Why the startup-resilience patches target `dist/`, not `src/`

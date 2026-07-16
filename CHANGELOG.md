@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.10.1 (2026-07-16)
+
+### Fixes
+
+- **Desktop startup** — packaged builds now serialize child-process metadata without Electron's internal `UtilityProcess` object, allowing the queue worker to start instead of crashing the app during launch (b169900).
+
+
 ## v0.10.0 (2026-07-16)
 
 ### Features

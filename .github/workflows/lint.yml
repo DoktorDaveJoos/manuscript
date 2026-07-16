@@ -57,6 +57,11 @@ jobs:
           composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
           npm ci
 
+      - name: Generate Wayfinder routes
+        run: |
+          php artisan package:discover --ansi
+          php artisan wayfinder:generate --no-interaction
+
       # Check-only variants: the mutating ones (pint, prettier --write,
       # eslint --fix) silently pass on fixable drift because nothing
       # commits the fixes back.
