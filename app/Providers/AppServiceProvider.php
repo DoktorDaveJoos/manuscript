@@ -97,13 +97,15 @@ class AppServiceProvider extends ServiceProvider
             fn ($app) => new DatabaseStartupService($app, $app->runningInConsole()),
         );
 
-        // After all service providers boot (including NativePHP's database
-        // rewrite), run pending migrations and attempt data recovery if a
-        // corruption repair is pending — this process's connector may have
-        // detected it, or a previous launch-time CLI migrate left a marker.
-        $this->app->booted(function () {
-            $this->app->make(DatabaseStartupService::class)->ensureSchema();
-        });
+        // In browser development there is no NativePHP background-service
+        // orchestrator, so retain the ordinary booted schema guard. The
+        // patched NativeServiceProvider owns this ordering in desktop mode:
+        // database readiness first, then queue workers.
+        if (! config('nativephp-internal.running')) {
+            $this->app->booted(function () {
+                $this->app->make(DatabaseStartupService::class)->ensureSchema();
+            });
+        }
     }
 
     /**
@@ -128,42 +130,52 @@ class AppServiceProvider extends ServiceProvider
      * Reconcile per-launch NativePHP config values from the runtime env.
      *
      * Electron generates a fresh `NATIVEPHP_SECRET` and control-API port
-     * (`NATIVEPHP_API_URL`) per launch and hands them to PHP via the process
-     * env. The cached config holds the values from whichever launch last ran
-     * `artisan optimize` — and since our php.js patch version-guards optimize
-     * (it only runs on the first launch after an install/update; see
-     * tests/Unit/OptimizePatchTest.php), the cache is stale on every
-     * subsequent launch. A stale secret makes `PreventRegularBrowserAccess`
-     * 403 every `/_native/api/events` call (Sentry issue 113317190); a stale
-     * api_url sends Window/Menu/etc. facade calls to a dead port. Reading
-     * env() directly sidesteps the cache.
+     * (`NATIVEPHP_API_URL`) per launch, along with the live storage/database
+     * paths. The cached config holds values from whichever launch last rebuilt
+     * it. The patched NativePHP provider atomically reconciles the full tuple
+     * before it configures the desktop runtime; this remains a request-time
+     * defense in depth. Reading env() directly sidesteps the config cache.
      */
     protected function healStaleNativePhpConfig(): void
     {
-        if (! config('nativephp-internal.running')) {
+        $isRunning = filter_var(
+            env('NATIVEPHP_RUNNING'),
+            FILTER_VALIDATE_BOOL,
+            FILTER_NULL_ON_FAILURE,
+        );
+
+        if ($isRunning !== true) {
             return;
         }
 
-        $this->healConfigKeyFromEnv('nativephp-internal.secret', 'NATIVEPHP_SECRET');
-        $this->healConfigKeyFromEnv('nativephp-internal.api_url', 'NATIVEPHP_API_URL');
-    }
+        $requiredRuntimeValues = [
+            'nativephp-internal.storage_path' => 'NATIVEPHP_STORAGE_PATH',
+            'nativephp-internal.database_path' => 'NATIVEPHP_DATABASE_PATH',
+            'nativephp-internal.secret' => 'NATIVEPHP_SECRET',
+            'nativephp-internal.api_url' => 'NATIVEPHP_API_URL',
+        ];
+        $runtimeConfig = ['nativephp-internal.running' => true];
+        $missingRuntimeValues = [];
 
-    /**
-     * Overwrite a cached config value with the live env value when they differ.
-     */
-    private function healConfigKeyFromEnv(string $configKey, string $envVar): void
-    {
-        $runtimeValue = env($envVar);
+        foreach ($requiredRuntimeValues as $configKey => $environmentVariable) {
+            $runtimeValue = env($environmentVariable);
 
-        if ($runtimeValue === null || $runtimeValue === '') {
-            return;
+            if (! is_string($runtimeValue) || trim($runtimeValue) === '') {
+                $missingRuntimeValues[] = $environmentVariable;
+
+                continue;
+            }
+
+            $runtimeConfig[$configKey] = $runtimeValue;
         }
 
-        if (config($configKey) === $runtimeValue) {
-            return;
+        if ($missingRuntimeValues !== []) {
+            throw new \RuntimeException(
+                'Missing required NativePHP runtime values: '.implode(', ', $missingRuntimeValues),
+            );
         }
 
-        config()->set($configKey, $runtimeValue);
+        config()->set($runtimeConfig);
     }
 
     /**

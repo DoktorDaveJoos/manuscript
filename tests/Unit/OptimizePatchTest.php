@@ -15,7 +15,8 @@ uses(TestCase::class);
  * version-guards it exactly like shouldMigrateDatabase(), so optimize only
  * runs on the first launch after an install/update. The per-launch values
  * baked into the cached config (NATIVEPHP_SECRET, NATIVEPHP_API_URL) are
- * reconciled at request time by AppServiceProvider::healStaleNativePhpConfig.
+ * reconciled during NativeServiceProvider registration before queue workers
+ * consume them, with AppServiceProvider retaining a request-time backstop.
  *
  * Like the startup-resilience patches, this targets the COMPILED dist/ —
  * the publish build never recompiles the package's src/*.ts.
@@ -28,9 +29,41 @@ it('version-guards shouldOptimize in the shipped dist patch file', function (): 
     $php = (string) file_get_contents(base_path(OPTIMIZE_PATCH_FILE));
 
     expect($php)->toContain("store.get('optimized_version') !== app.getVersion()")
+        ->toContain('isRecoveryLaunch()')
         // The migrate guard and the store writes must survive the whole-file copy.
         ->toContain("store.get('migrated_version') !== app.getVersion()")
         ->toContain("store.set('optimized_version', app.getVersion())");
+});
+
+it('clears only disposable caches before a recovery bootstrap', function (): void {
+    $php = (string) file_get_contents(base_path(OPTIMIZE_PATCH_FILE));
+    $recoveryStart = strpos($php, 'function prepareRecoveryLaunch()');
+    $optimizeStart = strpos($php, 'function hasNightwatchInstalled');
+    $recoveryMethod = substr($php, $recoveryStart, $optimizeStart - $recoveryStart);
+
+    expect($recoveryStart)->toBeInt()
+        ->and($optimizeStart)->toBeInt()
+        ->and($php)->toContain("const RECOVERY_ARG = '--nativephp-recovery';")
+        ->and($recoveryMethod)->toContain('isRecoveryLaunch()')
+        ->toContain('emptyDirSync(bootstrapCache)')
+        ->toContain('emptyDirSync')
+        ->toContain("join(storagePath, 'framework', 'views')")
+        ->toContain("join(storagePath, 'framework', 'cache', 'opcache')")
+        ->toContain("store.delete('optimized_version')")
+        ->not->toContain('databaseFile')
+        ->not->toContain('database.sqlite');
+});
+
+it('gives every bootstrap PHP command the complete live runtime tuple', function (): void {
+    $php = (string) file_get_contents(base_path(OPTIMIZE_PATCH_FILE));
+
+    expect($php)
+        ->toContain('getDefaultEnvironmentVariables(state.randomSecret, state.electronApiPort)')
+        ->toContain("NATIVEPHP_RUNNING: 'true'")
+        ->toContain('NATIVEPHP_STORAGE_PATH: storagePath')
+        ->toContain('NATIVEPHP_DATABASE_PATH: databaseFile')
+        ->toContain('variables.NATIVEPHP_API_URL')
+        ->toContain('variables.NATIVEPHP_SECRET');
 });
 
 it('wires the php.js dist patch file through apply.sh', function (): void {

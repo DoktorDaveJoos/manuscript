@@ -30,51 +30,56 @@ class DatabaseStartupService
     /**
      * Run pending migrations and attempt data recovery after corruption repair.
      *
-     * Fires from AppServiceProvider's booted() callback — by this point
-     * NativePHP has already rewritten the default connection to `nativephp`,
-     * so the guard must key off the DRIVER, never the connection name.
+     * In NativePHP this is the first step of the background-service startup
+     * orchestrator. Browser development calls it from AppServiceProvider's
+     * booted callback. In both cases the guard must key off the DRIVER, never
+     * the connection name.
      */
-    public function ensureSchema(): void
+    public function ensureSchema(): bool
     {
         $default = config('database.default');
 
         if (config("database.connections.{$default}.driver") !== 'sqlite') {
-            return;
+            return true;
         }
 
         // NativePHP's bundled PHP serves requests via cli-server, where
         // runningInConsole() is false; real CLI contexts (artisan, tinker,
         // the launch-time migrate) must not trigger boot migrations here.
         if ($this->runningInConsole) {
-            return;
+            return true;
         }
 
         $repairInfo = $this->pendingRepairInfo();
 
-        // Under NativePHP the Electron main process runs `migrate --force`
-        // once per launch, so the request path only migrates when finishing a
-        // repair (a web-detected repair leaves a schemaless fresh DB behind).
-        // Outside NativePHP (browser dev) this is the only migration path —
-        // but a full migrator boot costs ~150ms, so requests where the cheap
-        // schema-currency probe confirms nothing is pending skip it entirely.
-        if (! config('nativephp-internal.running') || $repairInfo !== null) {
-            if ($repairInfo === null && $this->schemaIsCurrent()) {
-                return;
-            }
-
+        // Electron normally migrates before starting the PHP server. The
+        // readiness barrier still verifies that result so an interrupted or
+        // failed launch migration cannot let queue workers consume a stale
+        // schema. Browser development has no launch migration and uses this as
+        // its primary path. The cheap currency probe avoids a full migrator
+        // boot when the schema is already current.
+        if ($repairInfo !== null || ! $this->schemaIsCurrent()) {
             try {
-                Artisan::call('migrate', ['--force' => true, '--no-interaction' => true]);
+                $exitCode = Artisan::call('migrate', ['--force' => true, '--no-interaction' => true]);
+
+                if ($exitCode !== 0) {
+                    Log::error('DatabaseIntegrity: migration returned a non-zero exit code during boot.', [
+                        'exit_code' => $exitCode,
+                    ]);
+
+                    return false;
+                }
             } catch (\Throwable $e) {
                 Log::error('DatabaseIntegrity: migration failed during boot.', [
                     'error' => $e->getMessage(),
                 ]);
 
-                return;
+                return false;
             }
         }
 
         if ($repairInfo === null) {
-            return;
+            return true;
         }
 
         $backupPath = $repairInfo['backup'] ?? null;
@@ -91,6 +96,8 @@ class DatabaseStartupService
         @unlink(SqliteVecConnector::markerPath());
 
         $this->reportRepairToSentry($repairInfo);
+
+        return true;
     }
 
     /**
