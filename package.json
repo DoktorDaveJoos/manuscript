@@ -1,7 +1,7 @@
 {
     "$schema": "https://www.schemastore.org/package.json",
     "private": true,
-    "license": "GPL-3.0-only",
+    "license": "PolyForm-Noncommercial-1.0.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/DoktorDaveJoos/manuscript.git"

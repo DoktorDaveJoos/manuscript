@@ -7,7 +7,7 @@
         "laravel",
         "framework"
     ],
-    "license": "GPL-3.0-only",
+    "license": "PolyForm-Noncommercial-1.0.0",
     "require": {
         "php": "^8.3",
         "inertiajs/inertia-laravel": "^2.0",
