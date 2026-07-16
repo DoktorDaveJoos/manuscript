@@ -389,8 +389,11 @@ it('rejects an Electron child-process startup error so queue retries can observe
 
 it('ships the runtime hardening through the vendor patch pipeline', function (): void {
     $apply = (string) file_get_contents(base_path('scripts/nativephp-patches/apply.sh'));
+    $testWorkflow = (string) file_get_contents(base_path('.github/workflows/tests.yml'));
 
     expect($apply)->toContain('apply "src/NativeServiceProvider.php"')
         ->toContain('apply "src/ChildProcess.php"')
-        ->and(base_path(NATIVE_SERVICE_PROVIDER_VENDOR_FILE))->toBeReadableFile();
+        ->and(base_path(NATIVE_SERVICE_PROVIDER_VENDOR_FILE))->toBeReadableFile()
+        ->and($testWorkflow)->toContain('- name: Apply NativePHP vendor patches')
+        ->toContain('run: bash scripts/nativephp-patches/apply.sh');
 });
