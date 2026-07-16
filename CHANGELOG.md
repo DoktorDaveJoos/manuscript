@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.10.2 (2026-07-16)
+
+### Fixes
+
+- **Desktop startup** — packaged builds now reconcile every per-launch NativePHP runtime value before services start, gate queue workers behind database readiness, verify real child-process startup, and attempt a one-shot cache recovery if the main window fails to open (b7e96d5).
+
+
 ## v0.10.1 (2026-07-16)
 
 ### Fixes
