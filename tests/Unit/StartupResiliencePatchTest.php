@@ -197,6 +197,7 @@ it('verifies the recovery code inside packaged macOS app bundles', function (): 
     expect($workflow)
         ->toContain('- name: Verify packaged startup recovery')
         ->toContain('node "$ASAR_BIN" extract')
+        ->toContain('ASAR_BIN="vendor/nativephp/desktop/resources/electron/node_modules/@electron/asar/bin/asar.js"')
         ->toContain('nativephp-recovery prepareRecoveryLaunch notifyLaravelOrThrow waitForMainWindow getWindowLoadPromise nativephp-child-process-ready before-quit-for-update isQuitting bootstrapPromise serializeProcess EADDRINUSE')
         ->toContain("grep -Fq 'reconcileRuntimeConfig'")
         ->toContain("grep -Fq 'NATIVEPHP_DATABASE_PATH'")
