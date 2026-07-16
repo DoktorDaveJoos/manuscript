@@ -177,6 +177,9 @@ jobs:
           [ -d "$DIST" ] || DIST=vendor/nativephp/desktop/resources/electron/dist
           ELECTRON_ROOT="${DIST%/dist}"
           ASAR_BIN="$ELECTRON_ROOT/node_modules/@electron/asar/bin/asar.js"
+          if [ ! -f "$ASAR_BIN" ]; then
+            ASAR_BIN="vendor/nativephp/desktop/resources/electron/node_modules/@electron/asar/bin/asar.js"
+          fi
 
           if [ ! -f "$ASAR_BIN" ]; then
             echo "::error::Cannot inspect packaged app.asar; @electron/asar is missing."
