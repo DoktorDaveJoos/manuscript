@@ -221,7 +221,7 @@ it('applies staged backup swaps before rewriteDatabase opens a connection', func
         ->and($connectPosition)->toBeInt()
         ->and($swapPosition)->toBeLessThan($migratePosition)
         ->and($swapPosition)->toBeLessThan($connectPosition)
-        ->and($patch)->toContain("\$this->app->runningConsoleCommand(['native:config', 'native:php-ini'])");
+        ->and($patch)->toContain("in_array(\$this->consoleCommandName(), ['native:config', 'native:php-ini'], true)");
 });
 
 it('keeps the browser fallback schema guard separate from the native background orchestrator', function (): void {

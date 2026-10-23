@@ -2,7 +2,11 @@
 
 use App\Services\BackupEncryptionService;
 use App\Services\BackupService;
+use Illuminate\Container\Container;
+use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Foundation\Application;
 use Illuminate\Process\InvokedProcess;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
@@ -116,16 +120,18 @@ function crashWithUncheckpointedRows(string $path, array $titles): void
 }
 
 /**
- * Boot the patched NativeServiceProvider's database rewrite the way the given
- * artisan command does inside a live desktop launch.
+ * Boot the patched NativeServiceProvider's database rewrite the way the PHP
+ * process started with the given argv does inside a live desktop launch.
+ *
+ * @param  list<string>  $argv
  */
-function rewriteNativeDatabaseAs(string $command, string $databasePath, ?Closure $whileConnected = null): void
+function rewriteNativeDatabaseAs(array $argv, string $databasePath, ?Closure $whileConnected = null): void
 {
     $originalArgv = $_SERVER['argv'] ?? null;
     $originalDefault = config('database.default');
 
     try {
-        $_SERVER['argv'] = ['artisan', $command];
+        $_SERVER['argv'] = $argv;
         config([
             'app.debug' => false,
             'nativephp-internal.database_path' => $databasePath,
@@ -178,10 +184,27 @@ function waitForBackupSwapFiles(array $paths): void
     throw new RuntimeException('Timed out waiting for child processes to start.');
 }
 
-it('applies a staged import in the launch bootstrap command before that command opens the database', function (string $command) {
+/**
+ * The .discarded-<ts> database files next to $live, without their sidecars.
+ *
+ * @return Collection<int, string>
+ */
+function backupSwapDiscardedFiles(string $live): Collection
+{
+    return collect(glob($live.BackupService::DISCARDED_PREFIX.'*') ?: [])
+        ->reject(fn (string $path) => str_ends_with($path, '-wal') || str_ends_with($path, '-shm'))
+        ->values();
+}
+
+/**
+ * A secure build runs every artisan command through its app bundle.
+ */
+const SECURE_BUILD_BUNDLE = '/Applications/Manuscript.app/Contents/Resources/app/build/__nativephp_app_bundle';
+
+it('applies a staged import in the launch bootstrap command before that command opens the database', function (array $argv) {
     stageBackupSwapImport($this->backups, $this->workDir, ['imported']);
 
-    rewriteNativeDatabaseAs($command, $this->live, function () {
+    rewriteNativeDatabaseAs($argv, $this->live, function () {
         expect(DB::connection('nativephp')->table('books')->pluck('title')->all())->toBe(['imported']);
     });
 
@@ -191,17 +214,27 @@ it('applies a staged import in the launch bootstrap command before that command 
             'pending_import' => false,
             'has_rollback' => true,
         ]);
-})->with(['native:config', 'native:php-ini']);
+})->with([
+    'native:config' => [['artisan', 'native:config']],
+    'native:php-ini' => [['artisan', 'native:php-ini']],
+    'native:config in a secure build' => [[SECURE_BUILD_BUNDLE, 'artisan', 'native:config']],
+    'native:config with a leading option' => [['artisan', '--no-ansi', 'native:config']],
+]);
 
-it('never swaps the database under a process that runs while the app is open', function (string $command) {
+it('never swaps the database under a process that runs while the app is open', function (array $argv) {
     stageBackupSwapImport($this->backups, $this->workDir, ['imported']);
 
-    rewriteNativeDatabaseAs($command, $this->live);
+    rewriteNativeDatabaseAs($argv, $this->live);
 
     expect(file_exists($this->backups->pendingImportPath()))->toBeTrue()
         ->and(backupSwapTitles($this->live))->toBe(['original'])
         ->and($this->backups->state()['pending_import'])->toBeTrue();
-})->with(['queue:work', 'schedule:run', 'migrate']);
+})->with([
+    'queue:work' => [['artisan', 'queue:work']],
+    'schedule:run' => [['artisan', 'schedule:run']],
+    'migrate' => [['artisan', 'migrate', '--force']],
+    'queue:work in a secure build' => [[SECURE_BUILD_BUNDLE, 'artisan', 'queue:work']],
+]);
 
 it('keeps the live database usable until the next launch after an import is staged', function () {
     stageBackupSwapImport($this->backups, $this->workDir, ['imported']);
@@ -235,9 +268,7 @@ it('moves a killed session\'s WAL away with the discarded database on revert', f
     $this->backups->stageRevert();
     $this->backups->applyPending();
 
-    $discarded = collect(glob($this->live.BackupService::DISCARDED_PREFIX.'*') ?: [])
-        ->reject(fn (string $path) => str_ends_with($path, '-wal') || str_ends_with($path, '-shm'))
-        ->values();
+    $discarded = backupSwapDiscardedFiles($this->live);
 
     expect(file_exists($this->live.'-wal'))->toBeFalse()
         ->and(file_exists($this->live.'-shm'))->toBeFalse()
@@ -342,4 +373,133 @@ it('drops a staged import when a revert is staged after it', function () {
     $this->backups->applyPending();
 
     expect(backupSwapTitles($this->live))->toBe(['original']);
+});
+
+it('keeps the discarded copy when the parallel bootstrap command runs after a revert', function () {
+    stageBackupSwapImport($this->backups, $this->workDir, ['imported']);
+    $this->backups->applyPending();
+    $this->backups->stageRevert();
+
+    // native:config reverts; native:php-ini takes the lock right after it.
+    $this->backups->applyPending();
+    $this->backups->applyPending();
+
+    $discarded = backupSwapDiscardedFiles($this->live);
+
+    expect($discarded)->toHaveCount(1)
+        ->and(backupSwapTitles($discarded->first()))->toBe(['imported']);
+});
+
+it('prunes discarded copies left behind by earlier launches', function () {
+    $stale = $this->live.BackupService::DISCARDED_PREFIX.(time() - 3600);
+    copy($this->live, $stale);
+    touch($stale.'-wal');
+    file_put_contents($this->backups->sidecarPath(), json_encode([
+        'pending_import' => false,
+        'pending_revert' => false,
+    ]));
+
+    $this->backups->applyPending();
+
+    expect(file_exists($stale))->toBeFalse()
+        ->and(file_exists($stale.'-wal'))->toBeFalse();
+});
+
+it('leaves the swap pending while another process still has the database open', function () {
+    // A queue worker that outlived the previous app: Electron sends SIGTERM
+    // and quits, the worker finishes its current job with the file open.
+    $survivingWorker = new PDO('sqlite:'.$this->live);
+    $survivingWorker->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $survivingWorker->exec('PRAGMA journal_mode = WAL');
+    $survivingWorker->query('SELECT count(*) FROM books')->fetchAll();
+
+    stageBackupSwapImport($this->backups, $this->workDir, ['imported']);
+    $this->backups->applyPending();
+
+    expect(file_exists($this->backups->pendingImportPath()))->toBeTrue()
+        ->and(file_exists($this->backups->rollbackPath()))->toBeFalse()
+        ->and(backupSwapTitles($this->live))->toBe(['original'])
+        ->and($this->backups->state()['pending_import'])->toBeTrue();
+
+    // The next launch, once the worker has exited, applies it.
+    $survivingWorker = null;
+    $this->backups->applyPending();
+
+    expect(backupSwapTitles($this->live))->toBe(['imported'])
+        ->and(backupSwapTitles($this->backups->rollbackPath()))->toBe(['original']);
+});
+
+it('reports a failed swap only once the launch has booted and Sentry is wired up', function () {
+    // A revert whose sidecar cannot be rewritten fails after moving files.
+    copy($this->live, $this->backups->rollbackPath());
+    file_put_contents($this->backups->sidecarPath(), json_encode([
+        'pending_import' => false,
+        'pending_revert' => true,
+    ]));
+    chmod($this->backups->sidecarPath(), 0444);
+
+    // The swap runs while the bootstrap command's providers are still
+    // booting — before AppServiceProvider::boot() registers Sentry.
+    $handler = Mockery::spy(ExceptionHandler::class);
+    $launch = new Application(base_path());
+    $launch->instance(ExceptionHandler::class, $handler);
+
+    try {
+        $this->backups->applyPending();
+
+        $handler->shouldNotHaveReceived('report');
+
+        $launch->boot();
+
+        $handler->shouldHaveReceived('report')->once();
+    } finally {
+        chmod($this->backups->sidecarPath(), 0644);
+        Container::setInstance($this->app);
+    }
+});
+
+it('keeps the import pending and the user\'s data intact when the import cannot be moved into place', function () {
+    stageBackupSwapImport($this->backups, $this->workDir, ['first']);
+    $this->backups->applyPending();
+    stageBackupSwapImport($this->backups, $this->workDir, ['second']);
+
+    $failingBackups = new class(new BackupEncryptionService, $this->live) extends BackupService
+    {
+        protected function renameFile(string $from, string $to): bool
+        {
+            if (str_ends_with($from, BackupService::PENDING_IMPORT_SUFFIX)) {
+                return false;
+            }
+
+            return parent::renameFile($from, $to);
+        }
+    };
+
+    $failingBackups->applyPending();
+
+    expect(backupSwapTitles($this->live))->toBe(['first'])
+        ->and(backupSwapTitles($this->backups->rollbackPath()))->toBe(['original'])
+        ->and(file_exists($this->backups->pendingImportPath()))->toBeTrue()
+        ->and($this->backups->state()['pending_import'])->toBeTrue();
+
+    // The next launch retries the import.
+    $this->backups->applyPending();
+
+    expect(backupSwapTitles($this->live))->toBe(['second'])
+        ->and(backupSwapTitles($this->backups->rollbackPath()))->toBe(['first']);
+});
+
+it('derives has_rollback from the rollback file', function () {
+    copy($this->live, $this->backups->rollbackPath());
+    file_put_contents($this->backups->sidecarPath(), json_encode([
+        'pending_import' => false,
+        'pending_revert' => false,
+        'has_rollback' => false,
+    ]));
+
+    expect($this->backups->state()['has_rollback'])->toBeTrue();
+
+    unlink($this->backups->rollbackPath());
+
+    expect($this->backups->state()['has_rollback'])->toBeFalse();
 });
