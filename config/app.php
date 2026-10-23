@@ -121,7 +121,6 @@ return [
     */
 
     'polar' => [
-        'access_token' => env('POLAR_ACCESS_TOKEN', ''),
         'organization_id' => env('POLAR_ORGANIZATION_ID', ''),
     ],
 

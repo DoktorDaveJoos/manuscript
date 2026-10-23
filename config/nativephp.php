@@ -67,6 +67,7 @@ return [
         'DO_SPACES_*',
         '*_SECRET',
         'BIFROST_*',
+        'POLAR_ACCESS_TOKEN',
         'NATIVEPHP_UPDATER_PATH',
         'NATIVEPHP_APPLE_ID',
         'NATIVEPHP_APPLE_ID_PASS',
