@@ -27,19 +27,6 @@ fail() { echo -e "${cross_mark} $1"; }
 warn() { echo -e "${YELLOW}⚠ $1${RESET}"; }
 divider() { echo -e "${DIM}──────────────────────────────────────────${RESET}"; }
 
-# --- Required artifacts ---
-# These names are produced by electron-builder *after* the version-stripping
-# sed in .github/workflows/publish.yml. If you change the strip rules, change
-# this list too. The .yml manifests are used by the auto-updater — without
-# them, existing users' updaters can't find the new release.
-REQUIRED_ARTIFACTS=(
-    "Manuscript-arm64.dmg"
-    "Manuscript-x64.dmg"
-    "Manuscript-setup.exe"
-    "latest-mac.yml"
-    "latest.yml"
-)
-
 TAG=""
 DRY_RUN=0
 
@@ -155,50 +142,15 @@ resolve_tag() {
 }
 
 # --- Artifact sanity check ---
+# The same check as the publish workflow's verify-release job: exactly one
+# release for the tag, every artifact fully uploaded, and update manifests
+# that cover both macOS arches and Windows.
 check_artifacts() {
-    info "Verify draft artifacts"
-    divider
-
-    local assets_json
-    assets_json=$(gh release view "$TAG" --json assets)
-
-    local missing=()
-    for required in "${REQUIRED_ARTIFACTS[@]}"; do
-        local size
-        size=$(echo "$assets_json" | jq -r --arg n "$required" \
-            '.assets[] | select(.name == $n) | .size')
-
-        if [ -z "$size" ]; then
-            fail "Missing: ${required}"
-            missing+=("$required")
-            continue
-        fi
-
-        if [ "$size" -eq 0 ]; then
-            fail "Zero-byte: ${required}"
-            missing+=("$required")
-            continue
-        fi
-
-        # Human-readable size: bytes → MiB for anything over a meg, else bytes.
-        local human
-        if [ "$size" -ge 1048576 ]; then
-            human=$(awk "BEGIN {printf \"%.1f MiB\", ${size}/1048576}")
-        else
-            human="${size} B"
-        fi
-        success "${required}  ${DIM}(${human})${RESET}"
-    done
-
-    if [ "${#missing[@]}" -gt 0 ]; then
-        echo ""
-        fail "${#missing[@]} required artifact(s) missing or empty"
+    if ! bash "$(dirname "${BASH_SOURCE[0]}")/release-draft.sh" verify "$TAG"; then
         echo "  The publish workflow may still be running, or it may have failed."
         echo "  Check: gh run list --workflow=publish.yml"
         exit 1
     fi
-
-    echo ""
 }
 
 # --- Verification checklist ---

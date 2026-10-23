@@ -46,13 +46,31 @@ The tag push triggers `publish.yml` in GitHub Actions.
 
 ### 2. `publish.yml` in CI
 
-Three parallel build steps run on the tag push:
+The tag push runs four jobs:
 
-- **macOS arm64** — `php artisan native:publish mac arm64` produces a signed,
-  notarized DMG and uploads it to a **draft** release
-- **macOS x64** — same for Intel Macs
-- **Windows x64** — `php artisan native:publish win x64` produces an installer
-  and uploads it to the same draft
+- **prepare-release** — `scripts/release-draft.sh prepare` creates the one
+  **draft** release for the tag (or reuses it on a re-run) before anything is
+  built. It refuses to continue if the tag already has a published release or
+  more than one release.
+- **build-macos** — `php artisan native:publish mac arm64`, then `mac x64`,
+  each producing a signed, notarized DMG + zip uploaded to that draft. The
+  job then checks the packaged apps (startup patches, whisper-cli signature, a
+  stapled notarization ticket — `build/notarize.js` swallows notarization
+  errors). Each run writes a `latest-mac.yml` for its own arch only, so the job
+  then rebuilds
+  one manifest covering both arches (`release-draft.sh mac-manifest`) and
+  replaces the draft's copy with it.
+- **build-windows** — `php artisan native:publish win x64` produces the
+  installer and `latest.yml`, in parallel with macOS, into the same draft
+- **verify-release** — `release-draft.sh verify`: exactly one release for the
+  tag, every artifact fully uploaded, and both update manifests listing every
+  arch at the uploaded sizes
+
+Why the draft is created up front: left alone, electron-builder creates the
+release itself, and its publisher cache races — artifacts that finish at the
+same moment each get their own publisher, each sees no release, and each
+creates a draft. That is how every release up to v0.10.2 ended up split across
+two drafts with single-arch `latest-mac.yml` files.
 
 `GITHUB_RELEASE_TYPE=draft` is set on every `native:publish` invocation, so
 nothing about this step is destructive — the draft is invisible to users.
@@ -61,6 +79,14 @@ There is **no auto-publish job**. The release stays a draft until you
 explicitly promote it.
 
 Monitor with `gh run watch`.
+
+Pull requests that touch `publish.yml`, `scripts/release-draft.sh`,
+`scripts/nativephp-patches/` or `composer.lock` run the same workflow as a
+**dry run**: `native:build` instead of `native:publish`, every packaged-app
+check, the manifest merge, and no GitHub token or Sentry upload. Pipeline
+breakage shows up on the PR instead of on the tag. Once this version of the
+workflow is on `main`, run it by hand with
+`gh workflow run publish.yml --ref <branch>`.
 
 ### 3. Install + verify the draft
 
@@ -103,7 +129,9 @@ composer release:promote
 The script:
 1. Verifies the gh CLI is authenticated
 2. Resolves the target tag (auto-detects the only draft, or uses your arg)
-3. Sanity-checks all required artifacts are present and non-empty
+3. Runs `scripts/release-draft.sh verify` — the same gate as CI's
+   verify-release job (one draft, artifacts fully uploaded, manifests cover
+   every arch)
 4. Prints the verification checklist
 5. Requires you to type `promote` to confirm
 6. Runs `gh release edit <tag> --draft=false --title "Manuscript <tag>"`
@@ -154,7 +182,8 @@ git tag -d v<version>
 - App won't launch on either OS (signing, notarization, native deps, vendor patches)
 - App opens but core flows broken (DB schema, sqlite-vec missing, baked-wrong config)
 - The auto-updater is misconfigured (no manifest, wrong repo)
-- Truncated / zero-byte uploads (artifact sanity check in the promote script)
+- Truncated / zero-byte / half-finished uploads, artifacts split across
+  drafts, and update manifests missing an arch (`release-draft.sh verify`)
 
 **Does NOT catch:**
 - Silent regressions in features you didn't test in the 2-minute click-through

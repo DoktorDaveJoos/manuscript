@@ -31,7 +31,8 @@ case "$*" in
         cat "$state/assets.json"
         ;;
     "api -H Accept: application/octet-stream repos/{owner}/{repo}/releases/assets/"*)
-        cat "$state/asset-${*##*/}"
+        endpoint="${!#}"
+        cat "$state/asset-${endpoint##*/}"
         ;;
     *)
         echo "unexpected gh call: $*" >&2

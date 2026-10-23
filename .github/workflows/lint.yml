@@ -76,3 +76,8 @@ jobs:
 
       - name: Typecheck Frontend
         run: npm run types:check
+
+      # tests.yml skips the asset build, so without this a broken vite build
+      # first fails in `composer release` or the publish workflow.
+      - name: Build Frontend
+        run: npm run build

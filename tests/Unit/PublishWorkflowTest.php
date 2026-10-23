@@ -51,6 +51,14 @@ it('publishes one macOS update manifest that covers both arches', function (): v
         ->toContain('gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/latest-mac.yml" --clobber');
 });
 
+it('fails the build when notarization silently failed', function (): void {
+    $steps = workflowStepsByName(workflowDefinition('publish.yml')['jobs']['build-macos']);
+
+    expect($steps['Verify the apps are notarized']['run'])
+        ->toContain('for APP in "$DIST/mac-arm64/Manuscript.app" "$DIST/mac/Manuscript.app"; do')
+        ->toContain('xcrun stapler validate "$APP"');
+});
+
 it('verifies the finished draft before it can be promoted', function (): void {
     $jobs = workflowDefinition('publish.yml')['jobs'];
 
@@ -87,6 +95,12 @@ it('dry-runs the release build on pipeline pull requests without publishing', fu
             ->and($step['env']['GH_TOKEN'])->toBe($noTokenUnlessTagPush)
             ->and($step['env']['GITHUB_TOKEN'])->toBe($noTokenUnlessTagPush)
             ->and($step['env']['SENTRY_AUTH_TOKEN'])->toBe("\${{ github.event_name == 'push' && secrets.SENTRY_AUTH_TOKEN || '' }}");
+    }
+
+    // electron-builder skips signing whenever GITHUB_BASE_REF is set, which
+    // would fail the codesign checks of every pull request dry run.
+    foreach (['Build and publish (arm64)', 'Build and publish (x64)'] as $macStep) {
+        expect(workflowStepsByName($workflow['jobs']['build-macos'])[$macStep]['env']['CSC_FOR_PULL_REQUEST'])->toBe('true');
     }
 });
 
