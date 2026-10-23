@@ -277,11 +277,34 @@ class NativeServiceProvider extends PackageServiceProvider
      */
     protected function applyPendingBackupSwap(string $databasePath): void
     {
-        if (! $this->app->runningConsoleCommand(['native:config', 'native:php-ini'])) {
+        if (! in_array($this->consoleCommandName(), ['native:config', 'native:php-ini'], true)) {
             return;
         }
 
         (new BackupService(new BackupEncryptionService, $databasePath))->applyPending();
+    }
+
+    /**
+     * Manuscript patch: the artisan command this process runs, or null outside
+     * the console. runningConsoleCommand() only reads argv[1], which is
+     * 'artisan' when a secure build runs `php __nativephp_app_bundle artisan
+     * native:config`, and an option when one precedes the command name.
+     */
+    protected function consoleCommandName(): ?string
+    {
+        if (! $this->app->runningInConsole()) {
+            return null;
+        }
+
+        foreach (array_slice($_SERVER['argv'] ?? [], 1) as $argument) {
+            if (str_starts_with($argument, '-') || basename($argument) === 'artisan') {
+                continue;
+            }
+
+            return $argument;
+        }
+
+        return null;
     }
 
     public function removeDatabase()

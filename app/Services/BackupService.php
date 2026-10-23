@@ -33,6 +33,13 @@ class BackupService
 
     public const DISCARDED_PREFIX = '.discarded-';
 
+    /**
+     * How long a .discarded-<ts> copy survives. Both bootstrap commands of a
+     * launch run applyPending() within seconds of each other, so the copy a
+     * swap sets aside must outlive the second one; any later launch prunes it.
+     */
+    public const DISCARDED_RETENTION_SECONDS = 600;
+
     public const LAST_EXPORT_AT_KEY = 'backup.last_export_at';
 
     public const SNAPSHOT_EXTENSION = '.sqlite';
@@ -193,7 +200,8 @@ class BackupService
      * the others wait and find nothing left to do.
      *
      * Best-effort: an exception here would fail a bootstrap command and stall
-     * the launch, so failures are reported, never thrown.
+     * the launch, so failures are reported, never thrown. A swap that cannot
+     * complete keeps its flag and is retried on the next launch.
      */
     public function applyPending(): void
     {
@@ -226,29 +234,27 @@ class BackupService
                 fclose($lock);
             }
         } catch (\Throwable $e) {
-            report($e);
+            // The swap runs while the bootstrap command's providers are still
+            // booting; Sentry's reportable is registered in
+            // AppServiceProvider::boot(). booted() reports right away once the
+            // app is up, and after every provider has booted otherwise.
+            app()->booted(fn () => report($e));
         }
     }
 
     /**
-     * Sidecar shape used by the UI. The sidecar file is the single source
-     * of truth — read by the controller index() to decide whether to show
-     * the Revert subsection.
+     * Backup state used by the UI — read by the controller index() to decide
+     * whether to show the Revert subsection. The pending flags come from the
+     * sidecar; has_rollback comes from the rollback file itself.
      *
      * @return array{pending_import:bool, pending_revert:bool, has_rollback:bool}
      */
     public function state(): array
     {
-        $state = $this->readSidecar();
-
-        // Self-heal: if has_rollback is set but the rollback file is gone,
-        // clear the flag so the UI doesn't promise an action it can't do.
-        if (! empty($state['has_rollback']) && ! file_exists($this->rollbackPath())) {
-            $state['has_rollback'] = false;
-            $this->writeSidecar($state);
-        }
-
-        return $state;
+        return [
+            ...$this->readSidecar(),
+            'has_rollback' => file_exists($this->rollbackPath()),
+        ];
     }
 
     public function databasePath(): string
@@ -277,14 +283,13 @@ class BackupService
     }
 
     /**
-     * @return array{pending_import:bool, pending_revert:bool, has_rollback:bool}
+     * @return array{pending_import:bool, pending_revert:bool}
      */
     private function readSidecar(): array
     {
         $default = [
             'pending_import' => false,
             'pending_revert' => false,
-            'has_rollback' => false,
         ];
 
         $path = $this->sidecarPath();
@@ -306,7 +311,7 @@ class BackupService
     }
 
     /**
-     * @param  array{pending_import:bool, pending_revert:bool, has_rollback:bool}  $state
+     * @param  array{pending_import:bool, pending_revert:bool}  $state
      */
     private function writeSidecar(array $state): void
     {
@@ -321,6 +326,9 @@ class BackupService
         }
     }
 
+    /**
+     * @param  array{pending_import:bool, pending_revert:bool}  $state
+     */
     private function doImport(array $state): void
     {
         $pending = $this->pendingImportPath();
@@ -336,20 +344,33 @@ class BackupService
 
         $live = $this->databasePath;
         $rollback = $this->rollbackPath();
+        $previousRollback = null;
 
         if (file_exists($live)) {
-            // The live DB becomes the rollback, replacing any previous one.
-            $this->checkpoint($live);
-
-            if (! $this->moveDatabaseFiles($live, $rollback)) {
-                Log::error('BackupService: could not move live DB aside; clearing flag.', [
-                    'live' => $live,
-                    'rollback' => $rollback,
+            if (! $this->releaseDatabase($live)) {
+                Log::warning('BackupService: database still open in another process; the import stays pending.', [
+                    'path' => $live,
                 ]);
-                $state['pending_import'] = false;
-                $this->writeSidecar($state);
 
                 return;
+            }
+
+            // Set the previous rollback aside rather than deleting it, so a
+            // failed swap can put everything back.
+            if (file_exists($rollback)) {
+                $previousRollback = $this->discardedPath();
+
+                if (! $this->moveDatabaseFiles($rollback, $previousRollback)) {
+                    throw new RuntimeException('Could not set the previous rollback aside; the import stays pending.');
+                }
+            }
+
+            if (! $this->moveDatabaseFiles($live, $rollback)) {
+                if ($previousRollback !== null) {
+                    $this->moveDatabaseFiles($previousRollback, $rollback);
+                }
+
+                throw new RuntimeException('Could not move the live database aside; the import stays pending.');
             }
         } else {
             // An older build's stageImport already moved the live DB aside.
@@ -357,31 +378,33 @@ class BackupService
         }
 
         if (! $this->moveDatabaseFiles($pending, $live)) {
-            Log::error('BackupService: could not move pending-import into place; restoring live DB and clearing flag.', [
-                'pending' => $pending,
-                'live' => $live,
-            ]);
-
-            // Put the user's data back so they are not stranded on an empty DB.
+            // Put the user's data back where it was.
             if (! file_exists($live) && file_exists($rollback)) {
                 $this->moveDatabaseFiles($rollback, $live);
             }
+
+            if ($previousRollback !== null) {
+                $this->moveDatabaseFiles($previousRollback, $rollback);
+            }
+
+            throw new RuntimeException('Could not move the imported database into place; the import stays pending.');
         }
 
         $state['pending_import'] = false;
-        $state['has_rollback'] = file_exists($rollback);
         $this->writeSidecar($state);
     }
 
+    /**
+     * @param  array{pending_import:bool, pending_revert:bool}  $state
+     */
     private function doRevert(array $state): void
     {
         $rollback = $this->rollbackPath();
         if (! file_exists($rollback)) {
-            Log::warning('BackupService: pending_revert flag set but rollback file missing; clearing flags.', [
+            Log::warning('BackupService: pending_revert flag set but rollback file missing; clearing flag.', [
                 'path' => $rollback,
             ]);
             $state['pending_revert'] = false;
-            $state['has_rollback'] = false;
             $this->writeSidecar($state);
 
             return;
@@ -391,43 +414,34 @@ class BackupService
         $discarded = null;
 
         // Move the current live DB aside as .discarded-<ts> — small safety
-        // net in case the rollback turns out to be unwanted. Pruned next launch.
+        // net in case the rollback turns out to be unwanted.
         if (file_exists($live)) {
-            $this->checkpoint($live);
-            $discarded = $live.self::DISCARDED_PREFIX.time();
-
-            if (! $this->moveDatabaseFiles($live, $discarded)) {
-                Log::error('BackupService: could not move live DB aside; clearing flag.', [
-                    'live' => $live,
-                    'discarded' => $discarded,
+            if (! $this->releaseDatabase($live)) {
+                Log::warning('BackupService: database still open in another process; the revert stays pending.', [
+                    'path' => $live,
                 ]);
-                $state['pending_revert'] = false;
-                $this->writeSidecar($state);
 
                 return;
+            }
+
+            $discarded = $this->discardedPath();
+
+            if (! $this->moveDatabaseFiles($live, $discarded)) {
+                throw new RuntimeException('Could not move the live database aside; the revert stays pending.');
             }
         } else {
             $this->adoptOrphanedSidecars($live, $rollback);
         }
 
         if (! $this->moveDatabaseFiles($rollback, $live)) {
-            Log::error('BackupService: could not move rollback into place.', [
-                'rollback' => $rollback,
-                'live' => $live,
-            ]);
-
             if ($discarded !== null) {
                 $this->moveDatabaseFiles($discarded, $live);
             }
 
-            $state['pending_revert'] = false;
-            $this->writeSidecar($state);
-
-            return;
+            throw new RuntimeException('Could not move the rollback into place; the revert stays pending.');
         }
 
         $state['pending_revert'] = false;
-        $state['has_rollback'] = false;
         $this->writeSidecar($state);
     }
 
@@ -450,25 +464,42 @@ class BackupService
     }
 
     /**
-     * Fold committed WAL frames — including those a killed process never
-     * checkpointed — into the main file so it stands on its own. Closing the
-     * last connection also removes the -wal and -shm. A file SQLite cannot
-     * checkpoint is still moved together with its sidecars, which keeps it
-     * paired with its WAL.
+     * Checkpoint the database and close it, folding committed WAL frames —
+     * including those a killed process never checkpointed — into the main
+     * file. Returns false while another process still has the database open:
+     * the last connection to close deletes the -wal, so a -wal that outlives
+     * ours belongs to a live process, which would later unlink it by name
+     * from under whatever database then sits at this path.
+     *
+     * A file SQLite cannot checkpoint (e.g. a corrupt one) counts as released
+     * and is moved together with its sidecars, which keeps it paired with
+     * its WAL.
      */
-    private function checkpoint(string $path): void
+    private function releaseDatabase(string $path): bool
     {
         try {
-            $pdo = new PDO('sqlite:'.$path);
+            // A peer holding a lock is still using the file: don't wait it out.
+            $pdo = new PDO('sqlite:'.$path, options: [PDO::ATTR_TIMEOUT => 1]);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $pdo->query('PRAGMA wal_checkpoint(TRUNCATE)')?->fetchAll();
             $pdo = null;
         } catch (PDOException $e) {
+            // SQLITE_BUSY / SQLITE_LOCKED: another process holds the file.
+            if (in_array($e->errorInfo[1] ?? null, [5, 6], true)) {
+                return false;
+            }
+
             Log::warning('BackupService: could not checkpoint database; moving it with its WAL.', [
                 'path' => $path,
                 'error' => $e->getMessage(),
             ]);
+
+            return true;
         }
+
+        clearstatcache(true, $path.'-wal');
+
+        return ! file_exists($path.'-wal');
     }
 
     /**
@@ -480,18 +511,27 @@ class BackupService
     {
         $this->deleteDatabaseFiles($to);
 
-        if (! @rename($from, $to)) {
+        if (! $this->renameFile($from, $to)) {
             return false;
         }
 
         foreach (self::SQLITE_SIDECAR_SUFFIXES as $suffix) {
-            if (file_exists($from.$suffix) && ! @rename($from.$suffix, $to.$suffix)) {
+            if (file_exists($from.$suffix) && ! $this->renameFile($from.$suffix, $to.$suffix)) {
                 // Never leave a sidecar where the next database would adopt it.
                 @unlink($from.$suffix);
             }
         }
 
         return true;
+    }
+
+    /**
+     * Every rename the swap performs goes through here, so tests can
+     * simulate one failing (a full disk, a file locked on Windows).
+     */
+    protected function renameFile(string $from, string $to): bool
+    {
+        return @rename($from, $to);
     }
 
     private function deleteDatabaseFiles(string $path): void
@@ -517,19 +557,33 @@ class BackupService
 
             $adoptable = file_exists($rollback) && ! file_exists($rollback.$suffix);
 
-            if (! $adoptable || ! @rename($live.$suffix, $rollback.$suffix)) {
+            if (! $adoptable || ! $this->renameFile($live.$suffix, $rollback.$suffix)) {
                 @unlink($live.$suffix);
             }
         }
     }
 
+    private function discardedPath(): string
+    {
+        return $this->databasePath.self::DISCARDED_PREFIX.time();
+    }
+
+    /**
+     * Delete .discarded-<ts> copies, with their sidecars, once they are older
+     * than DISCARDED_RETENTION_SECONDS. A younger copy belongs to this launch:
+     * the other bootstrap command may have set it aside seconds ago.
+     */
     private function pruneDiscardedFiles(): void
     {
         $dir = dirname($this->databasePath);
         $base = basename($this->databasePath).self::DISCARDED_PREFIX;
         $files = @glob($dir.DIRECTORY_SEPARATOR.$base.'*') ?: [];
         foreach ($files as $file) {
-            @unlink($file);
+            $discardedAt = (int) substr(basename($file), strlen($base));
+
+            if (time() - $discardedAt >= self::DISCARDED_RETENTION_SECONDS) {
+                @unlink($file);
+            }
         }
     }
 
