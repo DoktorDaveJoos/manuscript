@@ -9,14 +9,16 @@ use Illuminate\Support\Facades\Process;
 use Native\Desktop\NativeServiceProvider;
 
 /**
- * Runs BackupService::applyPending() in a separate PHP process, the way each
- * launch bootstrap command (native:config, native:php-ini) does. The child
- * reports ready, then waits for the start signal so several children hit the
- * swap at the same moment.
+ * Runs BackupService::applyPending() in a separate, booted Laravel process,
+ * the way each launch bootstrap command (native:config, native:php-ini) does.
+ * The child reports ready, then waits for the start signal so several
+ * children hit the swap at the same moment.
  */
 const BACKUP_APPLY_PENDING_CHILD = <<<'PHP'
-[, $autoload, $databasePath, $readyPath, $startSignal] = $argv;
-require $autoload;
+[, $basePath, $databasePath, $readyPath, $startSignal] = $argv;
+require $basePath.'/vendor/autoload.php';
+$app = require $basePath.'/bootstrap/app.php';
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 touch($readyPath);
 $deadline = microtime(true) + 15;
 while (! file_exists($startSignal) && microtime(true) < $deadline) {
@@ -152,7 +154,7 @@ function startBackupApplyPendingChild(string $databasePath, string $workDir, str
         PHP_BINARY,
         '-r',
         BACKUP_APPLY_PENDING_CHILD,
-        base_path('vendor/autoload.php'),
+        base_path(),
         $databasePath,
         $ready,
         $startSignal,

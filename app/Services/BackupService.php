@@ -10,16 +10,22 @@ use PDOException;
 use RuntimeException;
 
 /**
- * Owns the local backup workflow: export the live SQLite DB, stage an import
- * (with rollback creation), stage a revert, and apply pending swaps at boot.
+ * Owns the local backup workflow: export the live SQLite DB, stage an import,
+ * stage a revert, and apply pending swaps at the next launch.
  *
  * The "pending swap" state lives in a JSON sidecar next to the DB file —
  * NOT in the DB itself. Reading the DB to decide whether to replace the DB
  * is a chicken-and-egg problem.
+ *
+ * Staging never touches the live DB: the running app keeps using it until
+ * quit. The swap happens in the next launch's bootstrap commands, before any
+ * process has the database open (see the patched NativeServiceProvider).
  */
 class BackupService
 {
     public const SIDECAR_FILE = '.backup-state.json';
+
+    public const LOCK_FILE = '.backup-state.lock';
 
     public const ROLLBACK_SUFFIX = '.rollback';
 
@@ -32,6 +38,13 @@ class BackupService
     public const SNAPSHOT_EXTENSION = '.sqlite';
 
     public const ENCRYPTED_EXTENSION = '.msbk';
+
+    /**
+     * SQLite's per-database sidecar files. SQLite pairs them with their
+     * database by file name, so they move with it: a -wal left behind at the
+     * live path is replayed into whatever file lands there next.
+     */
+    private const SQLITE_SIDECAR_SUFFIXES = ['-wal', '-shm', '-journal'];
 
     public function __construct(
         private BackupEncryptionService $encryption,
@@ -105,10 +118,9 @@ class BackupService
     }
 
     /**
-     * Validate the uploaded file, then atomically:
-     *   1. rename live DB → .rollback (overwriting any previous rollback)
-     *   2. move validated file → .pending-import
-     *   3. flip sidecar flags
+     * Validate the uploaded file, move it to .pending-import and flag the
+     * import. The live DB is left alone — the next launch moves it aside as
+     * the rollback once no process has it open.
      *
      * Throws on validation failure WITHOUT touching the live DB or rollback.
      */
@@ -120,7 +132,7 @@ class BackupService
 
         // 1. Decrypt if necessary, into a separate validation-staging file.
         $validationPath = $this->databasePath.'.staging-validate';
-        @unlink($validationPath);
+        $this->deleteDatabaseFiles($validationPath);
 
         if ($this->encryption->isEncryptedBackup($uploadedTempPath)) {
             $this->encryption->decryptFile($uploadedTempPath, $validationPath, $passphrase);
@@ -138,35 +150,22 @@ class BackupService
             throw $e;
         }
 
-        // 3. Atomic-ish swap: move live → rollback, validated → pending-import.
-        // @unlink is silent on missing files, so no pre-check needed.
-        $rollbackPath = $this->rollbackPath();
-        $pendingPath = $this->pendingImportPath();
-
-        @unlink($rollbackPath);
-        @unlink($pendingPath);
-
-        if (! @rename($this->databasePath, $rollbackPath)) {
-            @unlink($validationPath);
-            throw new RuntimeException('Could not move live database aside.');
-        }
-
-        if (! @rename($validationPath, $pendingPath)) {
-            // Try to put the live DB back so the user is not stranded.
-            @rename($rollbackPath, $this->databasePath);
+        // 3. Stage the validated file, replacing any earlier staged import.
+        if (! $this->moveDatabaseFiles($validationPath, $this->pendingImportPath())) {
+            $this->deleteDatabaseFiles($validationPath);
             throw new RuntimeException('Could not stage imported database.');
         }
 
-        $this->writeSidecar([
-            'pending_import' => true,
-            'pending_revert' => false,
-            'has_rollback' => true,
-        ]);
+        $state = $this->readSidecar();
+        $state['pending_import'] = true;
+        $state['pending_revert'] = false;
+        $this->writeSidecar($state);
     }
 
     /**
      * Mark a revert as pending. Verifies the rollback file exists before
-     * setting the flag.
+     * setting the flag. A revert supersedes an import staged after the last
+     * applied one: the rollback is what the user asked to go back to.
      */
     public function stageRevert(): void
     {
@@ -176,41 +175,55 @@ class BackupService
 
         $state = $this->readSidecar();
         $state['pending_revert'] = true;
+        $state['pending_import'] = false;
         $this->writeSidecar($state);
+
+        $this->deleteDatabaseFiles($this->pendingImportPath());
     }
 
     /**
-     * Apply any pending file-swap operation. MUST be called before Laravel
-     * opens any connection to the database file. Idempotent: if no flags
-     * are set or files are missing, returns silently.
+     * Apply any pending file-swap operation. MUST run before any process
+     * opens the database file: the patched NativeServiceProvider calls it at
+     * the start of the launch bootstrap commands (native:config and
+     * native:php-ini), before the web server and queue worker exist.
+     * Idempotent: if no flags are set or files are missing, returns silently.
      *
-     * Best-effort: this runs in NativeAppServiceProvider::boot() BEFORE the
-     * window opens, and NativePHP invokes that boot with no try/catch — an
-     * exception here would 500 the boot request and the app would never open.
-     * A failed swap keeps its sidecar flags and is retried on the next launch.
+     * Those bootstrap commands run in parallel, so the swap holds an
+     * exclusive lock and re-reads the flags under it: the first caller swaps,
+     * the others wait and find nothing left to do.
+     *
+     * Best-effort: an exception here would fail a bootstrap command and stall
+     * the launch, so failures are reported, never thrown.
      */
     public function applyPending(): void
     {
-        // Hot path: the vast majority of boots have nothing to do. Skip the
-        // sidecar-read + glob entirely when there's no sidecar — that's the
-        // signal "no backup operation has ever been started."
+        // Hot path: the vast majority of launches have nothing to do. Skip
+        // the lock + sidecar read entirely when there's no sidecar — that's
+        // the signal "no backup operation has ever been started."
         if (! file_exists($this->sidecarPath())) {
             return;
         }
 
         try {
-            $state = $this->readSidecar();
+            $lock = $this->acquireLock();
 
-            $this->pruneDiscardedFiles();
+            try {
+                $state = $this->readSidecar();
 
-            if (! empty($state['pending_revert'])) {
-                $this->doRevert($state);
+                $this->pruneDiscardedFiles();
 
-                return;
-            }
+                if (! empty($state['pending_revert'])) {
+                    $this->doRevert($state);
 
-            if (! empty($state['pending_import'])) {
-                $this->doImport($state);
+                    return;
+                }
+
+                if (! empty($state['pending_import'])) {
+                    $this->doImport($state);
+                }
+            } finally {
+                flock($lock, LOCK_UN);
+                fclose($lock);
             }
         } catch (\Throwable $e) {
             report($e);
@@ -256,6 +269,11 @@ class BackupService
     public function sidecarPath(): string
     {
         return dirname($this->databasePath).DIRECTORY_SEPARATOR.self::SIDECAR_FILE;
+    }
+
+    public function lockPath(): string
+    {
+        return dirname($this->databasePath).DIRECTORY_SEPARATOR.self::LOCK_FILE;
     }
 
     /**
@@ -316,27 +334,42 @@ class BackupService
             return;
         }
 
-        if (file_exists($this->databasePath)) {
-            // Should not happen — stageImport renamed the live DB to .rollback
-            // before flipping the flag — but guard anyway.
-            Log::warning('BackupService: live DB still exists at apply-pending time; replacing.', [
-                'path' => $this->databasePath,
-            ]);
-            @unlink($this->databasePath);
+        $live = $this->databasePath;
+        $rollback = $this->rollbackPath();
+
+        if (file_exists($live)) {
+            // The live DB becomes the rollback, replacing any previous one.
+            $this->checkpoint($live);
+
+            if (! $this->moveDatabaseFiles($live, $rollback)) {
+                Log::error('BackupService: could not move live DB aside; clearing flag.', [
+                    'live' => $live,
+                    'rollback' => $rollback,
+                ]);
+                $state['pending_import'] = false;
+                $this->writeSidecar($state);
+
+                return;
+            }
+        } else {
+            // An older build's stageImport already moved the live DB aside.
+            $this->adoptOrphanedSidecars($live, $rollback);
         }
 
-        if (! @rename($pending, $this->databasePath)) {
-            Log::error('BackupService: could not move pending-import into place; clearing flag.', [
+        if (! $this->moveDatabaseFiles($pending, $live)) {
+            Log::error('BackupService: could not move pending-import into place; restoring live DB and clearing flag.', [
                 'pending' => $pending,
-                'live' => $this->databasePath,
+                'live' => $live,
             ]);
-            $state['pending_import'] = false;
-            $this->writeSidecar($state);
 
-            return;
+            // Put the user's data back so they are not stranded on an empty DB.
+            if (! file_exists($live) && file_exists($rollback)) {
+                $this->moveDatabaseFiles($rollback, $live);
+            }
         }
 
         $state['pending_import'] = false;
+        $state['has_rollback'] = file_exists($rollback);
         $this->writeSidecar($state);
     }
 
@@ -354,18 +387,39 @@ class BackupService
             return;
         }
 
+        $live = $this->databasePath;
+        $discarded = null;
+
         // Move the current live DB aside as .discarded-<ts> — small safety
-        // net in case the rollback turns out to be unwanted. Pruned next boot.
-        if (file_exists($this->databasePath)) {
-            $discarded = $this->databasePath.self::DISCARDED_PREFIX.time();
-            @rename($this->databasePath, $discarded);
+        // net in case the rollback turns out to be unwanted. Pruned next launch.
+        if (file_exists($live)) {
+            $this->checkpoint($live);
+            $discarded = $live.self::DISCARDED_PREFIX.time();
+
+            if (! $this->moveDatabaseFiles($live, $discarded)) {
+                Log::error('BackupService: could not move live DB aside; clearing flag.', [
+                    'live' => $live,
+                    'discarded' => $discarded,
+                ]);
+                $state['pending_revert'] = false;
+                $this->writeSidecar($state);
+
+                return;
+            }
+        } else {
+            $this->adoptOrphanedSidecars($live, $rollback);
         }
 
-        if (! @rename($rollback, $this->databasePath)) {
+        if (! $this->moveDatabaseFiles($rollback, $live)) {
             Log::error('BackupService: could not move rollback into place.', [
                 'rollback' => $rollback,
-                'live' => $this->databasePath,
+                'live' => $live,
             ]);
+
+            if ($discarded !== null) {
+                $this->moveDatabaseFiles($discarded, $live);
+            }
+
             $state['pending_revert'] = false;
             $this->writeSidecar($state);
 
@@ -375,6 +429,98 @@ class BackupService
         $state['pending_revert'] = false;
         $state['has_rollback'] = false;
         $this->writeSidecar($state);
+    }
+
+    /**
+     * @return resource
+     */
+    private function acquireLock()
+    {
+        $lock = @fopen($this->lockPath(), 'c');
+        if ($lock === false) {
+            throw new RuntimeException("Could not open backup lock at {$this->lockPath()}.");
+        }
+
+        if (! flock($lock, LOCK_EX)) {
+            fclose($lock);
+            throw new RuntimeException("Could not lock {$this->lockPath()}.");
+        }
+
+        return $lock;
+    }
+
+    /**
+     * Fold committed WAL frames — including those a killed process never
+     * checkpointed — into the main file so it stands on its own. Closing the
+     * last connection also removes the -wal and -shm. A file SQLite cannot
+     * checkpoint is still moved together with its sidecars, which keeps it
+     * paired with its WAL.
+     */
+    private function checkpoint(string $path): void
+    {
+        try {
+            $pdo = new PDO('sqlite:'.$path);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo->query('PRAGMA wal_checkpoint(TRUNCATE)')?->fetchAll();
+            $pdo = null;
+        } catch (PDOException $e) {
+            Log::warning('BackupService: could not checkpoint database; moving it with its WAL.', [
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Move a database file together with its SQLite sidecars, replacing the
+     * database set at the destination. Returns false if the main file could
+     * not be moved, in which case nothing was moved.
+     */
+    private function moveDatabaseFiles(string $from, string $to): bool
+    {
+        $this->deleteDatabaseFiles($to);
+
+        if (! @rename($from, $to)) {
+            return false;
+        }
+
+        foreach (self::SQLITE_SIDECAR_SUFFIXES as $suffix) {
+            if (file_exists($from.$suffix) && ! @rename($from.$suffix, $to.$suffix)) {
+                // Never leave a sidecar where the next database would adopt it.
+                @unlink($from.$suffix);
+            }
+        }
+
+        return true;
+    }
+
+    private function deleteDatabaseFiles(string $path): void
+    {
+        @unlink($path);
+
+        foreach (self::SQLITE_SIDECAR_SUFFIXES as $suffix) {
+            @unlink($path.$suffix);
+        }
+    }
+
+    /**
+     * Builds before the launch-time swap moved only the main file to the
+     * rollback when staging an import, leaving its -wal/-shm at the live
+     * path. Hand them back to the rollback they belong to, or drop them.
+     */
+    private function adoptOrphanedSidecars(string $live, string $rollback): void
+    {
+        foreach (self::SQLITE_SIDECAR_SUFFIXES as $suffix) {
+            if (! file_exists($live.$suffix)) {
+                continue;
+            }
+
+            $adoptable = file_exists($rollback) && ! file_exists($rollback.$suffix);
+
+            if (! $adoptable || ! @rename($live.$suffix, $rollback.$suffix)) {
+                @unlink($live.$suffix);
+            }
+        }
     }
 
     private function pruneDiscardedFiles(): void

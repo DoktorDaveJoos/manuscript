@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\Models\AppSetting;
-use App\Services\BackupService;
 use App\Services\StaleUpdateGuard;
 use Illuminate\Support\Facades\File;
 use Native\Desktop\Contracts\ProvidesPhpIni;
@@ -18,10 +17,11 @@ class NativeAppServiceProvider implements ProvidesPhpIni
      */
     public function boot(): void
     {
-        // Apply any pending backup import / revert BEFORE the rest of boot
-        // touches the DB. The swap renames files on disk and is safe to run
-        // unconditionally — when there is nothing pending it returns silently.
-        app(BackupService::class)->applyPending();
+        // Pending backup imports / reverts are NOT applied here: by this
+        // request the database is already open (this request, the queue
+        // worker), and boot() re-runs on every macOS Dock reopen. The patched
+        // NativeServiceProvider applies them in the launch bootstrap commands
+        // — see BackupService::applyPending().
 
         // In the bundled release the framework boot + first JS bundle parse
         // costs a few hundred ms, so we open at a tiny static loading page

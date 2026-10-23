@@ -96,8 +96,10 @@ apply "resources/electron/build/entitlements.mac.plist"
 # electronPath() published-project detection (PHP, ships as-is — not compiled).
 apply "src/Drivers/Electron/ElectronServiceProvider.php"
 # Atomically replace every cached per-launch NativePHP value (running flag,
-# storage/database paths, API URL, and secret), then gate queue workers behind
-# database readiness with bounded retries that never abort the window boot.
+# storage/database paths, API URL, and secret), apply staged backup swaps in
+# the launch bootstrap commands before anything opens the database, then gate
+# queue workers behind database readiness with bounded retries that never
+# abort the window boot.
 apply "src/NativeServiceProvider.php"
 # Surface Electron child-process startup errors to PHP instead of hydrating a
 # false-success object that prevents the queue retry policy from running.
