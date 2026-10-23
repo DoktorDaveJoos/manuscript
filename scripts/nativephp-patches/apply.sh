@@ -90,6 +90,11 @@ apply "resources/electron/electron-plugin/dist/server/php.js"
 # can loop against a reopened instance ("App Still Running" / ShipIt respawn
 # storm). Updates apply only via the explicit Install action, which relaunches.
 apply "resources/electron/electron-plugin/dist/server/api/autoUpdater.js"
+# Launch speed: skip fix-path's synchronous `$SHELL -ilc env` probe in packaged
+# builds (~0.5s per launch; a blocking shell config hung startup entirely).
+# Unlike the plugin, the app's main entry IS compiled at publish (electron-vite
+# build), so the source file is the one to patch.
+apply "resources/electron/src/main/index.js"
 # Speech input: microphone entitlement for getUserMedia under hardened runtime
 # (NSMicrophoneUsageDescription already ships in NativePHP's builder config).
 apply "resources/electron/build/entitlements.mac.plist"
