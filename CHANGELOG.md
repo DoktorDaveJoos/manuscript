@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.10.3 (2026-10-24)
+
+### Fixes
+
+- keep build secrets out of the cached bundle config (d3b000a)
+- publish every release into one draft with a merged mac manifest (81b9464)
+- harden the launch swap per PR review (0b5b1a7)
+- swap the database before any launch process opens it (e4d4894)
+- stop shipping the Polar org access token (2fb0d58)
+- unblock startup and speed up launch (83f8e02)
+
+### Other Changes
+
+- Merge pull request #145 from DoktorDaveJoos/claude/sleepy-hopper-7ec40d (30fe646)
+- Merge branch 'dev' into claude/sleepy-hopper-7ec40d (67ebdb1)
+- Merge pull request #144 from DoktorDaveJoos/claude/release-single-draft (f2bcce3)
+- Merge pull request #143 from DoktorDaveJoos/claude/hopeful-herschel-4e8863 (bbb1c34)
+- Merge pull request #142 from DoktorDaveJoos/claude/hopeful-gauss-be4d97 (f3411c1)
+- expect build secrets to stay out of the bundled app (4377881)
+- reproduce split draft releases and single-arch mac manifests (dc42153)
+- reproduce review findings on the launch swap (59fa498)
+- reproduce backup swap racing open database connections (fa2cbd1)
+- expect token-free Polar customer-portal endpoints (e4c31bc)
+
+
 ## v0.10.2 (2026-07-16)
 
 ### Fixes
