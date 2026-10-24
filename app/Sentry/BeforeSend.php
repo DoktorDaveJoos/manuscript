@@ -10,9 +10,9 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * Sentry `before_send` filter. Implemented as a static method so the
- * Laravel `config:cache` command (run during the NativePHP packaged build)
- * can serialize `config/sentry.php` — a Closure at this position breaks
- * serialization and halts the publish pipeline.
+ * Laravel `config:cache` command (run by the desktop app's first-launch
+ * `optimize`) can serialize `config/sentry.php` — a Closure at this position
+ * breaks serialization and fails that cache step.
  */
 class BeforeSend
 {

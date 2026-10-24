@@ -67,6 +67,7 @@ return [
         'DO_SPACES_*',
         '*_SECRET',
         'BIFROST_*',
+        'POLAR_ACCESS_TOKEN',
         'NATIVEPHP_UPDATER_PATH',
         'NATIVEPHP_APPLE_ID',
         'NATIVEPHP_APPLE_ID_PASS',
@@ -88,6 +89,9 @@ return [
         'content',
         'node_modules',
         '*/tests',
+        // A cached config holds every env value present when it was written,
+        // build secrets included. The app caches its own on first launch.
+        'bootstrap/cache/config.php',
     ],
 
     /**
@@ -168,9 +172,11 @@ return [
 
     /**
      * Define your own scripts to run before and after the build process.
+     *
+     * Never cache config here: prebuild runs with the notarization and release
+     * secrets in its environment (see .github/workflows/publish.yml).
      */
     'prebuild' => [
-        'php artisan config:cache',
         'php artisan view:cache',
         'npm run build',
     ],

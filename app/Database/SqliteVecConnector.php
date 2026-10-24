@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\Log;
 
 class SqliteVecConnector extends SQLiteConnector
 {
+    private const INTEGRITY_CHECK_SKIPPED_COMMANDS = [
+        'native:php-ini',
+        'queue:work',
+        'queue:listen',
+        'schedule:run',
+        'schedule:work',
+    ];
+
     private static bool $integrityChecked = false;
 
     public function __construct(
@@ -28,15 +36,13 @@ class SqliteVecConnector extends SQLiteConnector
         $database = $config['database'] ?? '';
 
         // Run integrity check on the first real (non-memory) connection of a
-        // CONSOLE process only — in production that's the launch-time
-        // `migrate --force`, giving one check per launch. NativePHP serves
-        // web requests via PHP's cli-server, which resets statics per
-        // request: checking there would re-pay a full O(database size)
-        // quick_check on every request. Mid-session corruption surfaces
-        // organically as SQLITE_CORRUPT query errors and is repaired (with
-        // data recovery) on the next launch.
+        // CONSOLE process only. NativePHP serves web requests via PHP's
+        // cli-server, which resets statics per request: checking there would
+        // re-pay a full O(database size) quick_check on every request.
+        // Mid-session corruption surfaces organically as SQLITE_CORRUPT query
+        // errors and is repaired (with data recovery) on the next launch.
         // Must run BEFORE PRAGMAs — PRAGMAs themselves throw on corrupt files.
-        if (! self::$integrityChecked && $this->app->runningInConsole() && $database !== ':memory:' && $database !== '') {
+        if (! self::$integrityChecked && $this->shouldCheckIntegrity() && $database !== ':memory:' && $database !== '') {
             self::$integrityChecked = true;
 
             try {
@@ -83,6 +89,23 @@ class SqliteVecConnector extends SQLiteConnector
         }
 
         return $pdo;
+    }
+
+    /**
+     * Whether this process owns the launch-time integrity check.
+     *
+     * Every NativePHP process connects at boot (NativeServiceProvider sets
+     * WAL pragmas), so a plain console gate checked in `native:config` AND
+     * `native:php-ini` on every launch, in every queue-worker (re)start, and
+     * in `schedule:run` once a minute — the background ones while the web
+     * server is live, where a repair would rename the database out from
+     * under in-flight requests. `native:config` is the first PHP process of
+     * every launch, so it keeps the check; these commands skip it.
+     */
+    private function shouldCheckIntegrity(): bool
+    {
+        return $this->app->runningInConsole()
+            && ! $this->app->runningConsoleCommand(self::INTEGRITY_CHECK_SKIPPED_COMMANDS);
     }
 
     /**

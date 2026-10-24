@@ -68,6 +68,7 @@ class NativePHP {
         this.processes = [];
         this.mainWindow = null;
         this.schedulerInterval = undefined;
+        this.schedulerStartTimeout = null;
         this.bootstrapPromise = null;
         this.reopenPromise = null;
         this.isBootstrapping = true;
@@ -354,12 +355,19 @@ class NativePHP {
             yield app.whenReady();
             prepareRecoveryLaunch();
             yield this.startElectronApi();
-            const config = yield this.loadConfig();
+            // native:config and native:php-ini are independent full Laravel
+            // boots (~110ms each, before OPcache settings exist), so run them
+            // side by side instead of back to back. Both resolve to {} on
+            // failure, exactly as they did sequentially.
+            const [config, phpIni] = yield Promise.all([
+                this.loadConfig(),
+                this.loadPhpIni(),
+            ]);
             this.setDockIcon();
             this.setAppUserModelId(config);
             this.setDeepLinkHandler(config);
             this.startAutoUpdater(config);
-            state.phpIni = yield this.loadPhpIni();
+            state.phpIni = phpIni;
             yield this.startPhpApp();
             this.startScheduler();
             powerMonitor.on('suspend', () => {
@@ -525,6 +533,14 @@ class NativePHP {
         });
     }
     stopScheduler() {
+        // The first run is a minute-aligned timeout that only then creates the
+        // interval. Clearing just the interval let a suspend/resume inside that
+        // first minute leak an untracked interval — one extra schedule:run PHP
+        // process every minute per wake.
+        if (this.schedulerStartTimeout) {
+            clearTimeout(this.schedulerStartTimeout);
+            this.schedulerStartTimeout = null;
+        }
         if (this.schedulerInterval) {
             clearInterval(this.schedulerInterval);
             this.schedulerInterval = null;
@@ -535,7 +551,8 @@ class NativePHP {
         const now = new Date();
         const delay =
             (60 - now.getSeconds()) * 1000 + (1000 - now.getMilliseconds());
-        setTimeout(() => {
+        this.schedulerStartTimeout = setTimeout(() => {
+            this.schedulerStartTimeout = null;
             console.log('Running scheduler...');
             runScheduler();
             this.schedulerInterval = setInterval(() => {

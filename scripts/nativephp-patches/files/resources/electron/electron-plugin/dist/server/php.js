@@ -23,6 +23,12 @@ const databasePath = join(app.getPath('userData'), 'database');
 const databaseFile = join(databasePath, 'database.sqlite');
 const bootstrapCache = join(app.getPath('userData'), 'bootstrap', 'cache');
 const RECOVERY_ARG = '--nativephp-recovery';
+// Manuscript patch: bound every launch-critical PHP call so a hung or dead
+// process fails into the recovery path instead of leaving the app resident
+// with no window. `php -S` prints its banner right after binding, before any
+// Laravel boot, so 30s is generous.
+const BOOTSTRAP_COMMAND_TIMEOUT = 120000;
+const PHP_SERVER_START_TIMEOUT = 30000;
 const argumentEnv = getArgumentEnv();
 mkdirpSync(bootstrapCache);
 mkdirpSync(join(storagePath, 'logs'));
@@ -146,7 +152,8 @@ function retrievePhpIniSettings() {
         const appPath = getAppPath();
         const phpOptions = {
             cwd: appPath,
-            env
+            env,
+            timeout: BOOTSTRAP_COMMAND_TIMEOUT
         };
         let command = ['artisan', 'native:php-ini'];
         if (runningSecureBuild()) {
@@ -161,7 +168,8 @@ function retrieveNativePHPConfig() {
         const appPath = getAppPath();
         const phpOptions = {
             cwd: appPath,
-            env
+            env,
+            timeout: BOOTSTRAP_COMMAND_TIMEOUT
         };
         let command = ['artisan', 'native:config'];
         if (runningSecureBuild()) {
@@ -294,6 +302,9 @@ function getDefaultPhpIniSettings() {
     };
 }
 function serveApp(secret, apiPort, phpIniSettings) {
+    // Manuscript patch: `.catch(reject)` below — an exception inside this async
+    // executor (folders, Store, port search) used to leave the promise pending
+    // forever, hanging bootstrap with no window, recovery, or error dialog.
     return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
         const appPath = getAppPath();
         console.log('Starting PHP server...', `${state.php} artisan serve`, appPath, phpIniSettings);
@@ -366,6 +377,25 @@ function serveApp(secret, apiPort, phpIniSettings) {
             env
         }, phpIniSettings);
         const portRegex = /Development Server \(.*:([0-9]+)\) started/gm;
+        let serverStarted = false;
+        let lastStderr = '';
+        // Settle exactly once: a server that never prints its banner, or exits
+        // first (port taken between getPhpPort() and the bind, a crash, a
+        // SIGKILL), now rejects so bootstrap can relaunch into recovery.
+        const failStartup = (error) => {
+            if (serverStarted) {
+                return;
+            }
+            serverStarted = true;
+            clearTimeout(startupTimer);
+            reject(error);
+        };
+        const startupTimer = setTimeout(() => {
+            if (!serverStarted) {
+                phpServer.kill();
+            }
+            failStartup(new Error(`PHP server did not start within ${PHP_SERVER_START_TIMEOUT}ms. ${lastStderr}`.trim()));
+        }, PHP_SERVER_START_TIMEOUT);
         phpServer.stdout.on('data', (data) => {
             if (parseInt(process.env.SHELL_VERBOSITY) > 0) {
                 console.log(data.toString().trim());
@@ -377,12 +407,19 @@ function serveApp(secret, apiPort, phpIniSettings) {
             if (match) {
                 const port = parseInt(match[1]);
                 console.log("PHP Server started on port: ", port);
+                if (!serverStarted) {
+                    serverStarted = true;
+                    clearTimeout(startupTimer);
+                }
                 resolve({
                     port,
                     process: phpServer,
                 });
             }
             else {
+                if (!serverStarted) {
+                    lastStderr = error.trim().slice(-500);
+                }
                 if (error.includes('[NATIVE_EXCEPTION]:')) {
                     let logFile = join(storagePath, 'logs');
                     console.log();
@@ -395,11 +432,12 @@ function serveApp(secret, apiPort, phpIniSettings) {
             }
         });
         phpServer.on('error', (error) => {
-            reject(error);
+            failStartup(error);
         });
-        phpServer.on('close', (code) => {
+        phpServer.on('close', (code, signal) => {
             console.log(`PHP server exited with code ${code}`);
+            failStartup(new Error(`PHP server exited (code ${code}, signal ${signal}) before it started. ${lastStderr}`.trim()));
         });
-    }));
+    }).catch(reject));
 }
 export { startScheduler, serveApp, getAppPath, prepareRecoveryLaunch, retrieveNativePHPConfig, retrievePhpIniSettings, getDefaultEnvironmentVariables, getDefaultPhpIniSettings, runningSecureBuild };
