@@ -4,13 +4,19 @@ namespace App\Services;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
+/**
+ * Talks to Polar's public customer-portal license-key endpoints. They are
+ * scoped by organization_id + key and need no access token, so nothing
+ * secret has to ship inside the packaged app.
+ */
 class PolarService
 {
-    private const BASE_URL = 'https://api.polar.sh/v1/license-keys';
+    private const BASE_URL = 'https://api.polar.sh/v1/customer-portal/license-keys';
 
-    private const SANDBOX_BASE_URL = 'https://sandbox-api.polar.sh/v1/license-keys';
+    private const SANDBOX_BASE_URL = 'https://sandbox-api.polar.sh/v1/customer-portal/license-keys';
 
     private function request(): PendingRequest
     {
@@ -18,8 +24,7 @@ class PolarService
 
         return Http::asJson()
             ->timeout(10)
-            ->baseUrl($baseUrl)
-            ->withToken(config('app.polar.access_token'));
+            ->baseUrl($baseUrl);
     }
 
     /**
@@ -35,15 +40,7 @@ class PolarService
             'label' => $label,
         ]);
 
-        $data = $response->json() ?? [];
-
-        if ($response->status() === 401) {
-            return [
-                'success' => false,
-                'data' => ['detail' => __('License server authentication failed. Please contact support.')],
-            ];
-        }
-
+        $data = $this->responseData($response);
         $licenseKey = $data['license_key'] ?? [];
 
         return [
@@ -65,7 +62,7 @@ class PolarService
             'activation_id' => $activationId,
         ]);
 
-        $data = $response->json() ?? [];
+        $data = $this->responseData($response);
 
         return [
             'success' => $response->successful() && ($data['status'] ?? null) === 'granted',
@@ -90,5 +87,26 @@ class PolarService
             'success' => $response->status() === 204,
             'data' => [],
         ];
+    }
+
+    /**
+     * Polar sends `detail` as a message for 403/404 errors but as a list of
+     * field errors for 422 — keep only a message callers can show as-is.
+     *
+     * @return array<string, mixed>
+     */
+    private function responseData(Response $response): array
+    {
+        $data = $response->json();
+
+        if (! is_array($data)) {
+            return [];
+        }
+
+        if (array_key_exists('detail', $data) && ! is_string($data['detail'])) {
+            unset($data['detail']);
+        }
+
+        return $data;
     }
 }

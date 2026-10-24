@@ -47,7 +47,7 @@ test('activate with valid key stores license', function () {
     $key = 'MANU-AAAA-BBBB-CCCC';
 
     Http::fake([
-        'api.polar.sh/v1/license-keys/activate' => Http::response(fakePolarActivation($key)),
+        'api.polar.sh/v1/customer-portal/license-keys/activate' => Http::response(fakePolarActivation($key)),
     ]);
 
     $this->postJson(route('license.activate'), ['license_key' => $key])
@@ -68,7 +68,7 @@ test('activate with invalid key returns 422', function () {
     $key = 'INVALID-KEY';
 
     Http::fake([
-        'api.polar.sh/v1/license-keys/activate' => Http::response([
+        'api.polar.sh/v1/customer-portal/license-keys/activate' => Http::response([
             'detail' => 'License key not found.',
         ], 404),
     ]);
@@ -84,7 +84,7 @@ test('activate with revoked key returns 422', function () {
     $key = 'MANU-AAAA-BBBB-CCCC';
 
     Http::fake([
-        'api.polar.sh/v1/license-keys/activate' => Http::response(
+        'api.polar.sh/v1/customer-portal/license-keys/activate' => Http::response(
             fakePolarActivation($key, [
                 'license_key' => [
                     'status' => 'revoked',
@@ -97,6 +97,38 @@ test('activate with revoked key returns 422', function () {
         ->assertStatus(422);
 
     expect(License::query()->count())->toBe(0);
+});
+
+test('activate surfaces the activation limit message from Polar', function () {
+    clearLicense();
+
+    Http::fake([
+        'api.polar.sh/v1/customer-portal/license-keys/activate' => Http::response([
+            'error' => 'NotPermitted',
+            'detail' => 'License key activation limit reached.',
+        ], 403),
+    ]);
+
+    $this->postJson(route('license.activate'), ['license_key' => 'MANU-AAAA-BBBB-CCCC'])
+        ->assertStatus(422)
+        ->assertJsonPath('message', 'License key activation limit reached.');
+
+    expect(License::query()->count())->toBe(0);
+});
+
+test('activate falls back to a plain message when Polar rejects the request shape', function () {
+    clearLicense();
+
+    Http::fake([
+        'api.polar.sh/v1/customer-portal/license-keys/activate' => Http::response([
+            'error' => 'RequestValidationError',
+            'detail' => [['type' => 'uuid_parsing', 'loc' => ['body', 'organization_id'], 'msg' => 'Input should be a valid UUID']],
+        ], 422),
+    ]);
+
+    $this->postJson(route('license.activate'), ['license_key' => 'MANU-AAAA-BBBB-CCCC'])
+        ->assertStatus(422)
+        ->assertJsonPath('message', 'Invalid license key.');
 });
 
 test('activate with missing key returns validation error', function () {
@@ -116,7 +148,7 @@ test('activate returns 503 when offline', function () {
 
 test('deactivate calls Polar API and removes license', function () {
     Http::fake([
-        'api.polar.sh/v1/license-keys/deactivate' => Http::response(null, 204),
+        'api.polar.sh/v1/customer-portal/license-keys/deactivate' => Http::response(null, 204),
     ]);
 
     expect(License::isActive())->toBeTrue();
@@ -143,7 +175,7 @@ test('revalidate updates last_validated_at on success', function () {
     $license = License::factory()->stale()->create();
 
     Http::fake([
-        'api.polar.sh/v1/license-keys/validate' => Http::response([
+        'api.polar.sh/v1/customer-portal/license-keys/validate' => Http::response([
             'id' => $license->license_key_id,
             'status' => 'granted',
             'key' => $license->license_key,
@@ -156,6 +188,25 @@ test('revalidate updates last_validated_at on success', function () {
 
     $license->refresh();
     expect($license->last_validated_at->isToday())->toBeTrue();
+});
+
+test('revalidate keeps the license when Polar rejects the key', function () {
+    clearLicense();
+    $license = License::factory()->stale()->create();
+
+    Http::fake([
+        'api.polar.sh/v1/customer-portal/license-keys/validate' => Http::response([
+            'error' => 'ResourceNotFound',
+            'detail' => 'Not found',
+        ], 404),
+    ]);
+
+    $this->postJson(route('license.revalidate'))
+        ->assertOk()
+        ->assertJsonPath('revalidated', false);
+
+    expect(License::isActive())->toBeTrue();
+    expect($license->refresh()->last_validated_at->isToday())->toBeFalse();
 });
 
 test('revalidate silently skips when offline', function () {
