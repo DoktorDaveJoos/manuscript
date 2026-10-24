@@ -137,6 +137,46 @@ test('integrity check is skipped for web requests', function () {
     expect(file_exists($this->tempDir.'/.repairing'))->toBeFalse();
 });
 
+test('integrity check is skipped by redundant and background console commands', function (string $command) {
+    $dbPath = $this->tempDir.'/background.sqlite';
+    file_put_contents($dbPath, random_bytes(4096));
+
+    // native:config already checked this launch; queue workers and the
+    // per-minute scheduler run while the web server is live, where a repair
+    // would rename the database out from under in-flight requests.
+    $originalArgv = $_SERVER['argv'];
+    $_SERVER['argv'] = ['artisan', $command];
+
+    try {
+        app(SqliteVecConnector::class)->connect(['database' => $dbPath]);
+    } catch (Throwable) {
+        // Corrupt file may fail during PRAGMA setup — the repair must not run.
+    } finally {
+        $_SERVER['argv'] = $originalArgv;
+    }
+
+    expect(glob($this->tempDir.'/*.corrupt.*'))->toBeEmpty();
+    expect(app()->bound('database.repaired'))->toBeFalse();
+    expect(file_exists($this->tempDir.'/.repairing'))->toBeFalse();
+})->with(['native:php-ini', 'queue:work', 'schedule:run']);
+
+test('launch bootstrap commands still own the integrity check', function (string $command) {
+    $dbPath = $this->tempDir.'/launch.sqlite';
+    file_put_contents($dbPath, random_bytes(4096));
+
+    $originalArgv = $_SERVER['argv'];
+    $_SERVER['argv'] = ['artisan', $command];
+
+    try {
+        app(SqliteVecConnector::class)->connect(['database' => $dbPath]);
+    } finally {
+        $_SERVER['argv'] = $originalArgv;
+    }
+
+    expect(glob($this->tempDir.'/launch.sqlite.corrupt.*'))->not->toBeEmpty();
+    expect(app()->bound('database.repaired'))->toBeTrue();
+})->with(['native:config', 'migrate']);
+
 test('memory databases skip integrity check', function () {
     $connector = app(SqliteVecConnector::class);
     $pdo = $connector->connect(['database' => ':memory:']);

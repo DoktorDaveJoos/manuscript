@@ -31,7 +31,6 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
-        <env name="POLAR_ACCESS_TOKEN" value="test-polar-token"/>
         <env name="POLAR_ORGANIZATION_ID" value="test-org-id"/>
     </php>
 </phpunit>

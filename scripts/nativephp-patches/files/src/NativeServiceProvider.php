@@ -2,6 +2,8 @@
 
 namespace Native\Desktop;
 
+use App\Services\BackupEncryptionService;
+use App\Services\BackupService;
 use App\Services\DatabaseStartupService;
 use Illuminate\Console\Application;
 use Illuminate\Foundation\Application as Foundation;
@@ -229,17 +231,17 @@ class NativeServiceProvider extends PackageServiceProvider
 
     public function rewriteDatabase()
     {
-        $databasePath = config('nativephp-internal.database_path');
+        $databasePath = config('app.debug')
+            ? database_path('nativephp.sqlite')
+            : config('nativephp-internal.database_path');
+
+        $this->applyPendingBackupSwap($databasePath);
 
         // Automatically create the database in development mode
-        if (config('app.debug')) {
-            $databasePath = database_path('nativephp.sqlite');
+        if (config('app.debug') && ! file_exists($databasePath)) {
+            touch($databasePath);
 
-            if (! file_exists($databasePath)) {
-                touch($databasePath);
-
-                Artisan::call('native:migrate');
-            }
+            Artisan::call('native:migrate');
         }
 
         config([
@@ -261,6 +263,48 @@ class NativeServiceProvider extends PackageServiceProvider
             DB::statement('PRAGMA journal_mode=WAL;');
             DB::statement('PRAGMA busy_timeout=5000;');
         }
+    }
+
+    /**
+     * Manuscript patch: apply a staged backup import/revert while nothing in
+     * this launch has the database open. native:config and native:php-ini are
+     * the first PHP processes of every launch: they run before Electron
+     * creates a missing database file, before `migrate`, the web server, and
+     * the queue worker, and they connect only below this call. BackupService
+     * serializes the two, which run in parallel. Every later process (web
+     * requests, queue workers, the scheduler) runs while the app is open and
+     * must never swap the file under its peers.
+     */
+    protected function applyPendingBackupSwap(string $databasePath): void
+    {
+        if (! in_array($this->consoleCommandName(), ['native:config', 'native:php-ini'], true)) {
+            return;
+        }
+
+        (new BackupService(new BackupEncryptionService, $databasePath))->applyPending();
+    }
+
+    /**
+     * Manuscript patch: the artisan command this process runs, or null outside
+     * the console. runningConsoleCommand() only reads argv[1], which is
+     * 'artisan' when a secure build runs `php __nativephp_app_bundle artisan
+     * native:config`, and an option when one precedes the command name.
+     */
+    protected function consoleCommandName(): ?string
+    {
+        if (! $this->app->runningInConsole()) {
+            return null;
+        }
+
+        foreach (array_slice($_SERVER['argv'] ?? [], 1) as $argument) {
+            if (str_starts_with($argument, '-') || basename($argument) === 'artisan') {
+                continue;
+            }
+
+            return $argument;
+        }
+
+        return null;
     }
 
     public function removeDatabase()

@@ -4,12 +4,56 @@ on:
   push:
     tags:
       - 'v*'
+  # Dry run: build and verify every artifact without publishing anything, so a
+  # broken release pipeline fails on its pull request instead of at release time.
+  pull_request:
+    branches:
+      - dev
+      - main
+    paths:
+      - '.github/workflows/publish.yml'
+      - 'scripts/release-draft.sh'
+      - 'scripts/nativephp-patches/**'
+      - 'composer.lock'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+# Two runs for one tag would upload into the same draft at once.
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Only a tag push publishes; dry runs build with `native:build` (-p never)
+  # under a throwaway all-numeric version, as CFBundleShortVersionString wants.
+  NATIVE_COMMAND: ${{ github.event_name == 'push' && 'publish' || 'build' }}
+  RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || format('v0.0.{0}', github.run_number) }}
+
 jobs:
+  # electron-builder creates the GitHub release itself whenever its lookup
+  # misses, and its publisher cache races: artifacts that finish together each
+  # get a publisher, each misses, each creates a draft. With the one draft
+  # created up front every publisher finds it. See scripts/release-draft.sh.
+  prepare-release:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/release-draft.sh prepare "$GITHUB_REF_NAME"
+
   build-macos:
+    needs: prepare-release
+    # Also runs when prepare-release is skipped (dry run). Fork PRs get no
+    # signing secrets, so they can't dry-run.
+    if: ${{ !cancelled() && (needs.prepare-release.result == 'success' || needs.prepare-release.result == 'skipped') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: macos-latest
 
     steps:
@@ -74,10 +118,9 @@ jobs:
           SENTRY_LARAVEL_DSN: ${{ secrets.SENTRY_LARAVEL_DSN }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           VITE_APTABASE_KEY: A-EU-5078183699
-          POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
           POLAR_ORGANIZATION_ID: ${{ secrets.POLAR_ORGANIZATION_ID }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${RELEASE_VERSION#v}"
           sed -i '' "s/APP_ENV=.*/APP_ENV=production/" .env
           sed -i '' "s/APP_DEBUG=.*/APP_DEBUG=false/" .env
           sed -i '' "s/LOG_LEVEL=.*/LOG_LEVEL=error/" .env
@@ -86,7 +129,6 @@ jobs:
           sed -i '' "s|SENTRY_LARAVEL_DSN=.*|SENTRY_LARAVEL_DSN=${SENTRY_LARAVEL_DSN}|" .env
           sed -i '' "s|VITE_SENTRY_DSN=.*|VITE_SENTRY_DSN=${VITE_SENTRY_DSN}|" .env
           sed -i '' "s|VITE_APTABASE_KEY=.*|VITE_APTABASE_KEY=${VITE_APTABASE_KEY}|" .env
-          sed -i '' "s|POLAR_ACCESS_TOKEN=.*|POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN}|" .env
           sed -i '' "s|POLAR_ORGANIZATION_ID=.*|POLAR_ORGANIZATION_ID=${POLAR_ORGANIZATION_ID}|" .env
 
       - name: Verify release secrets are configured
@@ -134,41 +176,57 @@ jobs:
 
       - name: Build and publish (arm64)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.event_name == 'push' && secrets.GITHUB_TOKEN || '' }}
           NATIVEPHP_UPDATER_PROVIDER: github
           GITHUB_REPO: manuscript
           GITHUB_OWNER: DoktorDaveJoos
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.event_name == 'push' && secrets.GITHUB_TOKEN || '' }}
           GITHUB_RELEASE_TYPE: draft
           NATIVEPHP_APPLE_ID: ${{ secrets.NATIVEPHP_APPLE_ID }}
           NATIVEPHP_APPLE_ID_PASS: ${{ secrets.NATIVEPHP_APPLE_ID_PASS }}
           NATIVEPHP_APPLE_TEAM_ID: ${{ secrets.NATIVEPHP_APPLE_TEAM_ID }}
+          # electron-builder skips signing on pull_request runs unless told
+          # otherwise; dry runs must sign so the codesign checks below hold.
+          CSC_FOR_PULL_REQUEST: 'true'
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           VITE_APTABASE_KEY: A-EU-5078183699
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ github.event_name == 'push' && secrets.SENTRY_AUTH_TOKEN || '' }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
           SENTRY_RELEASE: ${{ github.ref_name }}
-        run: php artisan native:publish mac arm64 --no-interaction
+        run: php artisan native:${{ env.NATIVE_COMMAND }} mac arm64 --no-interaction
+
+      # Each run writes a latest-mac.yml listing only its own arch, and the x64
+      # run overwrites this one (locally and on the draft). Keep it so both
+      # arches can be merged back into one manifest after the x64 build.
+      - name: Keep the arm64 update manifest
+        shell: bash
+        run: |
+          DIST=nativephp/electron/dist
+          [ -d "$DIST" ] || DIST=vendor/nativephp/desktop/resources/electron/dist
+          cp "$DIST/latest-mac.yml" "$RUNNER_TEMP/latest-mac-arm64.yml"
 
       - name: Build and publish (x64)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.event_name == 'push' && secrets.GITHUB_TOKEN || '' }}
           NATIVEPHP_UPDATER_PROVIDER: github
           GITHUB_REPO: manuscript
           GITHUB_OWNER: DoktorDaveJoos
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.event_name == 'push' && secrets.GITHUB_TOKEN || '' }}
           GITHUB_RELEASE_TYPE: draft
           NATIVEPHP_APPLE_ID: ${{ secrets.NATIVEPHP_APPLE_ID }}
           NATIVEPHP_APPLE_ID_PASS: ${{ secrets.NATIVEPHP_APPLE_ID_PASS }}
           NATIVEPHP_APPLE_TEAM_ID: ${{ secrets.NATIVEPHP_APPLE_TEAM_ID }}
+          # electron-builder skips signing on pull_request runs unless told
+          # otherwise; dry runs must sign so the codesign checks below hold.
+          CSC_FOR_PULL_REQUEST: 'true'
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           VITE_APTABASE_KEY: A-EU-5078183699
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ github.event_name == 'push' && secrets.SENTRY_AUTH_TOKEN || '' }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
           SENTRY_RELEASE: ${{ github.ref_name }}
-        run: php artisan native:publish mac x64 --no-interaction
+        run: php artisan native:${{ env.NATIVE_COMMAND }} mac x64 --no-interaction
 
       - name: Verify packaged startup recovery
         shell: bash
@@ -321,8 +379,46 @@ jobs:
             exit 1
           fi
 
+      # NativePHP's build/notarize.js logs a notarization failure and carries
+      # on, so the build stays green while shipping apps Gatekeeper rejects.
+      # @electron/notarize staples the ticket on success; demand it.
+      - name: Verify the apps are notarized
+        shell: bash
+        run: |
+          DIST=nativephp/electron/dist
+          [ -d "$DIST" ] || DIST=vendor/nativephp/desktop/resources/electron/dist
+          for APP in "$DIST/mac-arm64/Manuscript.app" "$DIST/mac/Manuscript.app"; do
+            if ! xcrun stapler validate "$APP"; then
+              echo "::error::$APP has no stapled notarization ticket — notarization failed or was skipped."
+              exit 1
+            fi
+          done
+
+      # Rebuilds latest-mac.yml from the four built files and checks it against
+      # electron-builder's two per-arch manifests. Runs in dry runs too, so the
+      # merge is exercised before a real tag depends on it.
+      - name: Merge the macOS update manifest
+        shell: bash
+        run: |
+          DIST=nativephp/electron/dist
+          [ -d "$DIST" ] || DIST=vendor/nativephp/desktop/resources/electron/dist
+          bash scripts/release-draft.sh mac-manifest "$DIST" "${RELEASE_VERSION#v}" "$RUNNER_TEMP/latest-mac.yml" \
+            "$RUNNER_TEMP/latest-mac-arm64.yml" "$DIST/latest-mac.yml"
+          cat "$RUNNER_TEMP/latest-mac.yml"
+
+      # Last, so the draft only gets the merged manifest once every check passed.
+      - name: Publish the merged macOS update manifest
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/latest-mac.yml" --clobber
+
+  # Uploads to the same pre-created draft as macOS, so the two no longer need
+  # to run one after the other.
   build-windows:
-    needs: build-macos
+    needs: prepare-release
+    if: ${{ !cancelled() && (needs.prepare-release.result == 'success' || needs.prepare-release.result == 'skipped') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: windows-latest
 
     steps:
@@ -390,11 +486,10 @@ jobs:
           SENTRY_LARAVEL_DSN: ${{ secrets.SENTRY_LARAVEL_DSN }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           VITE_APTABASE_KEY: A-EU-5078183699
-          POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
           POLAR_ORGANIZATION_ID: ${{ secrets.POLAR_ORGANIZATION_ID }}
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${RELEASE_VERSION#v}"
           sed -i "s/APP_ENV=.*/APP_ENV=production/" .env
           sed -i "s/APP_DEBUG=.*/APP_DEBUG=false/" .env
           sed -i "s/LOG_LEVEL=.*/LOG_LEVEL=error/" .env
@@ -403,7 +498,6 @@ jobs:
           sed -i "s|SENTRY_LARAVEL_DSN=.*|SENTRY_LARAVEL_DSN=${SENTRY_LARAVEL_DSN}|" .env
           sed -i "s|VITE_SENTRY_DSN=.*|VITE_SENTRY_DSN=${VITE_SENTRY_DSN}|" .env
           sed -i "s|VITE_APTABASE_KEY=.*|VITE_APTABASE_KEY=${VITE_APTABASE_KEY}|" .env
-          sed -i "s|POLAR_ACCESS_TOKEN=.*|POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN}|" .env
           sed -i "s|POLAR_ORGANIZATION_ID=.*|POLAR_ORGANIZATION_ID=${POLAR_ORGANIZATION_ID}|" .env
 
       - name: Verify release secrets are configured
@@ -436,19 +530,19 @@ jobs:
 
       - name: Build and publish (x64)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.event_name == 'push' && secrets.GITHUB_TOKEN || '' }}
           NATIVEPHP_UPDATER_PROVIDER: github
           GITHUB_REPO: manuscript
           GITHUB_OWNER: DoktorDaveJoos
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.event_name == 'push' && secrets.GITHUB_TOKEN || '' }}
           GITHUB_RELEASE_TYPE: draft
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           VITE_APTABASE_KEY: A-EU-5078183699
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ github.event_name == 'push' && secrets.SENTRY_AUTH_TOKEN || '' }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
           SENTRY_RELEASE: ${{ github.ref_name }}
-        run: php artisan native:publish win x64 --no-interaction
+        run: php artisan native:${{ env.NATIVE_COMMAND }} win x64 --no-interaction
 
       # native:publish can silently exit 0 if its internal npm steps fail
       # (e.g. cross-env missing because npm ci errored). Without this guard
@@ -467,3 +561,19 @@ jobs:
           fi
           echo "Windows installers produced:"
           find "$DIST" -maxdepth 2 -type f \( -name '*.exe' -o -name '*.msi' \)
+
+  # The gate release:promote relies on: one draft for the tag, every artifact
+  # fully uploaded, and update manifests that cover every arch and platform.
+  verify-release:
+    needs: [build-macos, build-windows]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Verify the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/release-draft.sh verify "$GITHUB_REF_NAME"

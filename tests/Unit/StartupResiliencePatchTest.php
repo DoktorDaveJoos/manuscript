@@ -97,13 +97,28 @@ it('prepares recovery and starts the control API before any Laravel bootstrap co
     $bootstrapMethod = substr($index, $bootstrapStart, $configStart - $bootstrapStart);
     $recoveryPosition = strpos($bootstrapMethod, 'prepareRecoveryLaunch();');
     $apiPosition = strpos($bootstrapMethod, 'yield this.startElectronApi();');
-    $configPosition = strpos($bootstrapMethod, 'const config = yield this.loadConfig();');
+    $configPosition = strpos($bootstrapMethod, 'const [config, phpIni] = yield Promise.all([');
+    $phpServerPosition = strpos($bootstrapMethod, 'yield this.startPhpApp();');
 
     expect($recoveryPosition)->toBeInt()
         ->and($apiPosition)->toBeInt()
         ->and($configPosition)->toBeInt()
+        ->and($phpServerPosition)->toBeInt()
         ->and($recoveryPosition)->toBeLessThan($apiPosition)
-        ->and($apiPosition)->toBeLessThan($configPosition);
+        ->and($apiPosition)->toBeLessThan($configPosition)
+        ->and($configPosition)->toBeLessThan($phpServerPosition);
+});
+
+it('loads the NativePHP config and PHP ini in parallel before starting the PHP server', function (): void {
+    $index = (string) file_get_contents(base_path(STARTUP_PATCH_FILES.'/dist/index.js'));
+    $parallelStart = strpos($index, 'const [config, phpIni] = yield Promise.all([');
+    $parallelBlock = substr($index, (int) $parallelStart, 400);
+
+    expect($parallelStart)->toBeInt()
+        ->and($parallelBlock)->toContain('this.loadConfig(),')
+        ->toContain('this.loadPhpIni(),')
+        ->toContain('state.phpIni = phpIni;')
+        ->and($index)->not->toContain('state.phpIni = yield this.loadPhpIni();');
 });
 
 it('serializes reopen requests behind initial bootstrap', function (): void {
@@ -167,6 +182,53 @@ it('keeps startup-critical Laravel requests observable', function (): void {
         ->and($strictEnd)->toBeInt()
         ->and($strictNotifier)->toContain('yield postToLaravel(endpoint, payload, timeout);')
         ->not->toContain('catch');
+});
+
+it('rejects PHP server startup instead of hanging bootstrap forever', function (): void {
+    $php = (string) file_get_contents(base_path(STARTUP_PATCH_FILES.'/dist/server/php.js'));
+    $serveStart = strpos($php, 'function serveApp(');
+    $serveApp = substr($php, (int) $serveStart, strpos($php, 'export {') - (int) $serveStart);
+
+    expect($serveStart)->toBeInt()
+        ->and($php)->toContain('const PHP_SERVER_START_TIMEOUT = 30000;')
+        // Exceptions inside the async executor reach the outer promise.
+        ->and($serveApp)->toContain('}).catch(reject));')
+        // Early exit (port race, crash, SIGKILL) and a missing banner reject.
+        ->toContain("phpServer.on('close', (code, signal) => {")
+        ->toContain('before it started.')
+        ->toContain('setTimeout(() => {')
+        ->toContain('phpServer.kill();')
+        ->toContain('clearTimeout(startupTimer);')
+        ->toContain("phpServer.on('error', (error) => {\n            failStartup(error);");
+});
+
+it('bounds the launch-time native:config and native:php-ini commands', function (): void {
+    $php = (string) file_get_contents(base_path(STARTUP_PATCH_FILES.'/dist/server/php.js'));
+
+    expect($php)->toContain('const BOOTSTRAP_COMMAND_TIMEOUT = 120000;')
+        ->and(substr_count($php, 'timeout: BOOTSTRAP_COMMAND_TIMEOUT'))->toBe(2);
+});
+
+it('clears the pending first scheduler run when the scheduler stops', function (): void {
+    $index = (string) file_get_contents(base_path(STARTUP_PATCH_FILES.'/dist/index.js'));
+    $stopStart = strpos($index, "\n    stopScheduler() {");
+    $stopScheduler = substr($index, (int) $stopStart, strpos($index, "\n    startScheduler() {") - (int) $stopStart);
+
+    expect($stopStart)->toBeInt()
+        ->and($index)->toContain('this.schedulerStartTimeout = setTimeout(() => {')
+        ->and($stopScheduler)->toContain('clearTimeout(this.schedulerStartTimeout);')
+        ->toContain('clearInterval(this.schedulerInterval);');
+});
+
+it('skips the synchronous login-shell PATH probe in packaged builds', function (): void {
+    $main = (string) file_get_contents(base_path('scripts/nativephp-patches/files/resources/electron/src/main/index.js'));
+    $apply = (string) file_get_contents(base_path('scripts/nativephp-patches/apply.sh'));
+
+    expect($main)->toContain("if (!app.isPackaged) {\n    fixPath();\n}")
+        ->and(substr_count($main, 'fixPath();'))->toBe(1)
+        ->and($main)->toContain('NativePHP.bootstrap(')
+        ->and($apply)->toContain('apply "resources/electron/src/main/index.js"')
+        ->and(base_path('vendor/nativephp/desktop/resources/electron/src/main/index.js'))->toBeReadableFile();
 });
 
 it('wires all startup dist patch files through apply.sh', function (): void {

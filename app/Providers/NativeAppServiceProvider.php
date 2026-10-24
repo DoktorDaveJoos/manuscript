@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\Models\AppSetting;
-use App\Services\BackupService;
 use App\Services\StaleUpdateGuard;
 use Illuminate\Support\Facades\File;
 use Native\Desktop\Contracts\ProvidesPhpIni;
@@ -18,10 +17,11 @@ class NativeAppServiceProvider implements ProvidesPhpIni
      */
     public function boot(): void
     {
-        // Apply any pending backup import / revert BEFORE the rest of boot
-        // touches the DB. The swap renames files on disk and is safe to run
-        // unconditionally — when there is nothing pending it returns silently.
-        app(BackupService::class)->applyPending();
+        // Pending backup imports / reverts are NOT applied here: by this
+        // request the database is already open (this request, the queue
+        // worker), and boot() re-runs on every macOS Dock reopen. The patched
+        // NativeServiceProvider applies them in the launch bootstrap commands
+        // — see BackupService::applyPending().
 
         // In the bundled release the framework boot + first JS bundle parse
         // costs a few hundred ms, so we open at a tiny static loading page
@@ -65,7 +65,7 @@ class NativeAppServiceProvider implements ProvidesPhpIni
      *
      * Critical: NativePHP runs PHP in CLI mode, where OPcache is disabled
      * by default. Without `opcache.enable_cli=1` every other opcache.* tuning
-     * below (JIT, memory, interned strings) is silently ignored and every
+     * below (memory, interned strings, file cache) is silently ignored and every
      * request re-parses every PHP file from disk.
      */
     public function phpIni(): array
@@ -84,8 +84,13 @@ class NativeAppServiceProvider implements ProvidesPhpIni
             'opcache.memory_consumption' => '256',
             'opcache.interned_strings_buffer' => '32',
             'opcache.max_accelerated_files' => '20000',
-            'opcache.jit' => 'tracing',
-            'opcache.jit_buffer_size' => '128M',
+            // JIT stays off: PHP 8.4 silently skips opcache.file_cache while
+            // JIT is enabled, so every short-lived launch process recompiled
+            // the framework (~265ms per process vs ~90ms with a warm file
+            // cache). Laravel requests are I/O-bound — tracing JIT measured
+            // slower per request (18ms vs 10ms), not faster.
+            'opcache.jit' => 'disable',
+            'opcache.jit_buffer_size' => '0',
             'opcache.save_comments' => '1',
             'opcache.enable_file_override' => '1',
             'realpath_cache_size' => '4096K',

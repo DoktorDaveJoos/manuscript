@@ -16,6 +16,13 @@ it('does not cap PHP execution time so queue daemons are bounded by Laravel time
     expect($ini)->toHaveKey('max_execution_time', '0');
 });
 
+it('keeps the JIT disabled because it silently disables the opcache file cache', function () {
+    $ini = (new NativeAppServiceProvider)->phpIni();
+
+    expect($ini)->toHaveKey('opcache.jit', 'disable')
+        ->and($ini)->toHaveKey('opcache.jit_buffer_size', '0');
+});
+
 it('adds a version-keyed opcache file cache in production', function () {
     app()['env'] = 'production';
     config()->set('nativephp.version', '9.9.9');

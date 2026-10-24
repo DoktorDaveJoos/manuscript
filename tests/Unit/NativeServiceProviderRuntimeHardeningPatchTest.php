@@ -207,6 +207,23 @@ it('runs the database readiness barrier before starting queue workers', function
         ->not->toContain("if (! \$this->app->runningInConsole()) {\n            \$this->fireUpQueueWorkers();");
 });
 
+it('applies staged backup swaps before rewriteDatabase opens a connection', function (): void {
+    $patch = (string) file_get_contents(base_path(NATIVE_SERVICE_PROVIDER_RUNTIME_PATCH));
+    $rewritePosition = strpos($patch, 'public function rewriteDatabase()');
+    $rewrite = substr($patch, $rewritePosition);
+    $swapPosition = strpos($rewrite, '$this->applyPendingBackupSwap($databasePath);');
+    $migratePosition = strpos($rewrite, "Artisan::call('native:migrate');");
+    $connectPosition = strpos($rewrite, "DB::statement('PRAGMA journal_mode=WAL;');");
+
+    expect($rewritePosition)->toBeInt()
+        ->and($swapPosition)->toBeInt()
+        ->and($migratePosition)->toBeInt()
+        ->and($connectPosition)->toBeInt()
+        ->and($swapPosition)->toBeLessThan($migratePosition)
+        ->and($swapPosition)->toBeLessThan($connectPosition)
+        ->and($patch)->toContain("in_array(\$this->consoleCommandName(), ['native:config', 'native:php-ini'], true)");
+});
+
 it('keeps the browser fallback schema guard separate from the native background orchestrator', function (): void {
     $provider = (string) file_get_contents(base_path('app/Providers/AppServiceProvider.php'));
 
