@@ -16,10 +16,11 @@ use Illuminate\Foundation\Console\OptimizeCommand as FrameworkOptimizeCommand;
  * Translocation runs an un-moved .app from a randomized read-only mount, and a
  * non-secure build doesn't redirect APP_CONFIG_CACHE to the writable userData
  * path, so the write lands inside the read-only bundle (Sentry issue 123582591).
- * Installed macOS bundles are not writable either. No build-time config cache
- * survives into the bundle (NativePHP's `composer install --no-dev` in the build
- * copy runs ComposerScripts::clearCompiled), so such launches boot from the
- * config files; views still compile on demand into the writable storage path.
+ * Installed macOS bundles are not writable either. The bundle ships no config
+ * cache (one written at build time would hold the build's secrets, and
+ * NativePHP's `composer install --no-dev` in the build copy runs
+ * ComposerScripts::clearCompiled anyway), so such launches load config from
+ * source; views still compile on demand into the writable storage path.
  * We skip every cache task when the bootstrap cache directory can't be written
  * rather than letting the launch crash.
  */

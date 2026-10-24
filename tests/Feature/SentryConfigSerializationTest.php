@@ -5,11 +5,11 @@
 | Sentry config serialization
 |--------------------------------------------------------------------------
 |
-| Laravel's `config:cache` (run during the NativePHP packaged build) does
-| `eval("return " . var_export($config, true) . ";")` on the entire config
-| array. Any Closure in config crashes the eval with
-| "Call to undefined method Closure::__set_state()" and breaks the publish
-| pipeline. These tests guard the known landmines.
+| Laravel's `config:cache` (run by the desktop app's first-launch optimize)
+| does `eval("return " . var_export($config, true) . ";")` on the entire
+| config array. Any Closure in config crashes the eval with
+| "Call to undefined method Closure::__set_state()" and fails that cache
+| step. These tests guard the known landmines.
 |
 */
 

@@ -13,8 +13,8 @@ return [
     'dsn' => env('SENTRY_LARAVEL_DSN', env('SENTRY_DSN')),
 
     // Static-method callable (var_export-serializable) so `config:cache`
-    // succeeds in the NativePHP packaged build. A Closure here would crash
-    // the publish pipeline with "value at 'sentry.before_send' is non-serializable".
+    // succeeds in the desktop app's first-launch optimize. A Closure here would
+    // fail it with "value at 'sentry.before_send' is non-serializable".
     'before_send' => [BeforeSend::class, 'handle'],
 
     // @see https://spotlightjs.com/

@@ -279,6 +279,56 @@ jobs:
             echo "Startup recovery verified in $APP"
           done
 
+      # native:publish runs prebuild with these secrets in its environment, so
+      # anything cached then would carry them into the app. Up to v0.10.2 only
+      # the vendor prune's composer install kept bootstrap/cache/config.php out.
+      # Values are matched as fixed strings and never printed.
+      - name: Verify no build secrets were bundled
+        shell: bash
+        env:
+          NATIVEPHP_APPLE_ID_PASS: ${{ secrets.NATIVEPHP_APPLE_ID_PASS }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DIST=nativephp/electron/dist
+          [ -d "$DIST" ] || DIST=vendor/nativephp/desktop/resources/electron/dist
+
+          # An unset secret would become an empty pattern that matches every file.
+          PATTERNS=()
+          for NAME in NATIVEPHP_APPLE_ID_PASS SENTRY_AUTH_TOKEN GITHUB_TOKEN; do
+            if [ -n "${!NAME}" ]; then
+              PATTERNS+=(-e "${!NAME}")
+            fi
+          done
+
+          for APP in "$DIST/mac-arm64/Manuscript.app" "$DIST/mac/Manuscript.app"; do
+            if [ ! -d "$APP" ]; then
+              echo "::error::Expected packaged app is missing: $APP"
+              exit 1
+            fi
+
+            CACHED_CONFIG="$APP/Contents/Resources/build/app/bootstrap/cache/config.php"
+            if [ -f "$CACHED_CONFIG" ]; then
+              echo "::error::$CACHED_CONFIG was bundled; a build-time config cache holds the build's secrets."
+              exit 1
+            fi
+
+            if [ "${#PATTERNS[@]}" -gt 0 ]; then
+              STATUS=0
+              LEAKS=$(grep -rlF "${PATTERNS[@]}" "$APP") || STATUS=$?
+              if [ "$STATUS" -eq 0 ]; then
+                echo "::error::A build secret was bundled into $APP, in:"
+                echo "$LEAKS"
+                exit 1
+              elif [ "$STATUS" -ne 1 ]; then
+                echo "::error::Could not scan $APP for build secrets (grep exit $STATUS)."
+                exit 1
+              fi
+            fi
+
+            echo "No build secrets bundled in $APP"
+          done
+
       # native:publish can silently exit 0 if its internal npm steps fail
       # (e.g. cross-env missing because npm ci errored). Without this guard
       # the workflow goes green with no DMG uploaded.
