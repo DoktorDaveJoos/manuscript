@@ -15,7 +15,7 @@ The risky surface lives precisely in that gap:
 - The runtime `database/nativephp.sqlite` and its sqlite-vec extension
 - `opcache.enable_cli=1` / JIT settings inside the bundled CLI PHP
 - Vendored NativePHP electron patches (`scripts/nativephp-patches/`)
-- `config:cache` / `route:cache` baked at build time
+- The config cache the app writes on first launch (none ships in the bundle)
 - Code signing, notarization, native binary inclusion
 - The auto-updater pointing at the right repo + channel
 
@@ -119,7 +119,7 @@ a follow-up tag.
 | Check | What it actually tests |
 |---|---|
 | **App launches** — window appears within ~5s, no crash dialog | Binary integrity, code signing, notarization, PHP CLI startup, vendor patches |
-| **Loading screen completes** — does not get stuck on `/loading` | `config:cache` was baked with the right env, route cache is consistent with the bundled JS |
+| **Loading screen completes** — does not get stuck on `/loading` | The first-launch config cache was written with the right env |
 | **Open or create a book** — dashboard opens (no 500, no blank screen) | Laravel boot, `database/nativephp.sqlite` reachable, `sqlite-vec` extension loaded, schema present |
 | **Edit a chapter** — type, autosave settles, reload, content survives | Runtime DB write path works, schema matches what the app expects |
 | **Settings → AI provider** — existing config intact, API key still works | `APP_KEY` in the bundle still decrypts the user's stored credentials, nativephp.sqlite migrations ran cleanly on upgrade |

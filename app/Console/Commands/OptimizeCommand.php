@@ -16,9 +16,10 @@ use Illuminate\Foundation\Console\OptimizeCommand as FrameworkOptimizeCommand;
  * Translocation runs an un-moved .app from a randomized read-only mount, and a
  * non-secure build doesn't redirect APP_CONFIG_CACHE to the writable userData
  * path, so the write lands inside the read-only bundle (Sentry issue 123582591).
- * The bundle already ships a build-time config cache and views compile on demand
- * into the writable storage path, so we skip every cache task when the bootstrap
- * cache directory can't be written rather than letting the launch crash.
+ * The bundle ships no config cache (one written at build time would hold the
+ * build's secrets), so config loads from source there, and views compile on
+ * demand into the writable storage path. We skip every cache task when the
+ * bootstrap cache directory can't be written rather than letting the launch crash.
  */
 class OptimizeCommand extends FrameworkOptimizeCommand
 {
