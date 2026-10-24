@@ -100,9 +100,12 @@ test('import endpoint stages a valid plain sqlite backup', function () {
     ])->assertOk()
         ->assertJsonPath('requires_restart', true);
 
+    // The live DB stays in place for the rest of this session; the next
+    // launch moves it aside as the rollback.
     $service = app(BackupService::class);
     expect(file_exists($service->pendingImportPath()))->toBeTrue();
-    expect(file_exists($service->rollbackPath()))->toBeTrue();
+    expect(file_exists($this->backupDb))->toBeTrue();
+    expect(file_exists($service->rollbackPath()))->toBeFalse();
 });
 
 test('import endpoint rejects a corrupt file with 422', function () {

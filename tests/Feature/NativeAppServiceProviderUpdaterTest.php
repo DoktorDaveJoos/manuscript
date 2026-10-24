@@ -10,9 +10,12 @@ use Native\Desktop\Facades\Window;
 beforeEach(function () {
     config(['nativephp.updater.enabled' => true]);
 
+    // Backup swaps run in the launch bootstrap commands, before any process
+    // opens the database — never in the booted window request, which also
+    // re-runs on every macOS Dock reopen.
     $this->mock(BackupService::class)
         ->shouldReceive('applyPending')
-        ->once();
+        ->never();
     $this->mock(StaleUpdateGuard::class)
         ->shouldReceive('reconcile')
         ->once();

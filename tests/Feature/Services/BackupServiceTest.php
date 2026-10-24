@@ -100,7 +100,7 @@ test('export captures rows still sitting in the WAL sidecar (the bug we shipped:
     @unlink($exportPath);
 });
 
-test('stageImport renames live DB to rollback and stages pending import', function () {
+test('stageImport stages the pending import and leaves the live DB in place until the next launch', function () {
     [$service, $workDir, $dbPath] = makeIsolatedBackupService();
     $this->workDir = $workDir;
 
@@ -113,12 +113,14 @@ test('stageImport renames live DB to rollback and stages pending import', functi
 
     $service->stageImport($importSource);
 
-    expect(file_exists($service->rollbackPath()))->toBeTrue();
     expect(file_exists($service->pendingImportPath()))->toBeTrue();
-    expect(file_exists($dbPath))->toBeFalse();
+    expect(file_exists($service->rollbackPath()))->toBeFalse();
+
+    $pdo = new PDO('sqlite:'.$dbPath);
+    expect($pdo->query('SELECT title FROM books')->fetchColumn())->toBe('original');
 
     $state = $service->state();
-    expect($state['has_rollback'])->toBeTrue();
+    expect($state['has_rollback'])->toBeFalse();
     expect($state['pending_import'])->toBeTrue();
 });
 
@@ -263,9 +265,9 @@ test('applyPending is a no-op when no flags are set', function () {
 });
 
 test('applyPending never throws when the sidecar cannot be rewritten — a backup-swap failure must not block app launch', function () {
-    // NativeAppServiceProvider::boot() calls applyPending() BEFORE Window::open();
-    // NativePHP's NativeAppBootedController invokes boot() with no try/catch, so
-    // any exception here 500s the boot request and the window never opens.
+    // The patched NativeServiceProvider calls applyPending() while booting the
+    // launch bootstrap commands (native:config, native:php-ini); an exception
+    // there would fail the command and stall the launch.
     [$service, $workDir, $dbPath] = makeIsolatedBackupService();
     $this->workDir = $workDir;
 
