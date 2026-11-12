@@ -150,6 +150,12 @@ test('classifies timeout errors by message', function () {
     expect(AiErrorClassifier::classify($e)['kind'])->toBe(AiErrorClassifier::KIND_TIMEOUT);
 });
 
+test('classifies a cURL timeout wrapped in a ConnectionException as a timeout', function () {
+    $e = new ConnectionException('cURL error 28: Operation timed out after 180002 milliseconds with 121 bytes received');
+
+    expect(AiErrorClassifier::classify($e)['kind'])->toBe(AiErrorClassifier::KIND_TIMEOUT);
+});
+
 test('classifies connection failures and missing provider errors', function () {
     expect(AiErrorClassifier::classify(new ConnectionException('Connection refused'))['kind'])
         ->toBe(AiErrorClassifier::KIND_CONNECTION_FAILED);
