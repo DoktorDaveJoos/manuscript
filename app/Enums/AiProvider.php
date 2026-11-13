@@ -14,6 +14,7 @@ enum AiProvider: string
     case DeepSeek = 'deepseek';
     case Mistral = 'mistral';
     case Ollama = 'ollama';
+    case OpenAiCompatible = 'openai-compatible';
     case Azure = 'azure';
     case OpenRouter = 'openrouter';
 
@@ -28,6 +29,7 @@ enum AiProvider: string
             self::DeepSeek => Lab::DeepSeek,
             self::Mistral => Lab::Mistral,
             self::Ollama => Lab::Ollama,
+            self::OpenAiCompatible => Lab::OpenAICompatible,
             self::Azure => Lab::Azure,
             self::OpenRouter => Lab::OpenRouter,
         };
@@ -52,6 +54,7 @@ enum AiProvider: string
             self::DeepSeek => 'DeepSeek',
             self::Mistral => 'Mistral',
             self::Ollama => 'Ollama',
+            self::OpenAiCompatible => 'OpenAI Compatible',
             self::Azure => 'Azure OpenAI',
             self::OpenRouter => 'OpenRouter',
         };
@@ -59,20 +62,25 @@ enum AiProvider: string
 
     public function requiresApiKey(): bool
     {
-        return $this !== self::Ollama;
+        return ! in_array($this, [self::Ollama, self::OpenAiCompatible], true);
     }
 
     public function requiresBaseUrl(): bool
     {
         return match ($this) {
-            self::Azure, self::Ollama => true,
+            self::Azure, self::Ollama, self::OpenAiCompatible => true,
             default => false,
         };
     }
 
+    public function requiresTextModel(): bool
+    {
+        return in_array($this, [self::Ollama, self::OpenAiCompatible], true);
+    }
+
     /**
      * Providers configurable with just an API key.
-     * Azure (needs endpoint URL + deployment) and Ollama (local, no key) are excluded.
+     * Azure is excluded because it needs deployment-specific settings.
      *
      * @return list<self>
      */
@@ -86,6 +94,8 @@ enum AiProvider: string
             self::Xai,
             self::DeepSeek,
             self::Mistral,
+            self::Ollama,
+            self::OpenAiCompatible,
             self::OpenRouter,
         ];
     }

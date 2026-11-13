@@ -142,6 +142,7 @@ export type AiProvider =
     | 'deepseek'
     | 'mistral'
     | 'ollama'
+    | 'openai-compatible'
     | 'azure'
     | 'openrouter';
 
@@ -566,6 +567,12 @@ export type AiSetting = {
     masked_api_key: string | null;
     enabled: boolean;
     api_key_recovery_needed: boolean;
+    base_url?: string | null;
+    text_model?: string | null;
+    requires_api_key: boolean;
+    requires_base_url: boolean;
+    requires_text_model: boolean;
+    is_configured: boolean;
     created_at: string;
     updated_at: string;
 };

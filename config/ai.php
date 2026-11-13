@@ -103,11 +103,31 @@ return [
             'driver' => 'ollama',
             'key' => env('OLLAMA_API_KEY', ''),
             'url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),
+            'models' => [
+                'text' => [
+                    'default' => env('OLLAMA_MODEL'),
+                    'cheapest' => env('OLLAMA_MODEL'),
+                    'smartest' => env('OLLAMA_MODEL'),
+                ],
+            ],
         ],
 
         'openai' => [
             'driver' => 'openai',
             'key' => env('OPENAI_API_KEY'),
+        ],
+
+        'openai-compatible' => [
+            'driver' => 'openai-compatible',
+            'key' => env('OPENAI_COMPATIBLE_API_KEY'),
+            'url' => env('OPENAI_COMPATIBLE_URL'),
+            'models' => [
+                'text' => [
+                    'default' => env('OPENAI_COMPATIBLE_MODEL'),
+                    'cheapest' => env('OPENAI_COMPATIBLE_MODEL'),
+                    'smartest' => env('OPENAI_COMPATIBLE_MODEL'),
+                ],
+            ],
         ],
 
         'openrouter' => [

@@ -44,6 +44,18 @@ class AiSettingFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'provider' => AiProvider::Ollama,
             'base_url' => 'http://localhost:11434',
+            'text_model' => 'llama3.1:8b',
+            'api_key' => null,
+        ]);
+    }
+
+    public function openAiCompatible(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'provider' => AiProvider::OpenAiCompatible,
+            'base_url' => 'http://localhost:1234/v1',
+            'text_model' => 'local-model',
+            'api_key' => null,
         ]);
     }
 
