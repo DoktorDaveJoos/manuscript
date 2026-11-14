@@ -107,7 +107,7 @@
         "lucide-react": "^0.577.0",
         "markdown-it": "^14.3.0",
         "pdfjs-dist": "^5.5.207",
-        "playwright": "^1.58.2",
+        "playwright": "^1.59.1",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
         "react-i18next": "^16.5.8",
