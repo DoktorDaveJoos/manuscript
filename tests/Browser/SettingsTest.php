@@ -89,6 +89,33 @@ it('does not switch AI providers when an accordion row is opened', function () {
         ->and(AiSetting::query()->where('provider', AiProvider::Openai)->value('enabled'))->toBeFalse();
 });
 
+it('configures an OpenAI-compatible local provider', function () {
+    $page = visit('/settings');
+
+    $page->assertNoJavaScriptErrors()
+        ->click('OpenAI Compatible')
+        ->assertSee('Base URL')
+        ->assertSee('Text Model')
+        ->assertSee('API Key (optional)')
+        ->fill(
+            '[data-testid="ai-provider-base-url-openai-compatible"]',
+            'http://localhost:1234/v1',
+        )
+        ->fill(
+            '[data-testid="ai-provider-text-model-openai-compatible"]',
+            'local-model',
+        )
+        ->click('[data-testid="ai-provider-save-openai-compatible"]')
+        ->assertSee('OpenAI Compatible settings updated.')
+        ->assertNoJavaScriptErrors();
+
+    $setting = AiSetting::query()->where('provider', AiProvider::OpenAiCompatible)->first();
+
+    expect($setting->base_url)->toBe('http://localhost:1234/v1')
+        ->and($setting->text_model)->toBe('local-model')
+        ->and($setting->hasApiKey())->toBeFalse();
+});
+
 it('shows a failed AI provider save with error styling', function () {
     AiSetting::factory()->create([
         'provider' => AiProvider::Anthropic,

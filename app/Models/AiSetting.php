@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Laravel\Ai\Ai;
 use Sentry\State\Scope;
 
 class AiSetting extends Model
@@ -154,11 +155,9 @@ class AiSetting extends Model
      */
     public function isConfigured(): bool
     {
-        if ($this->provider->requiresApiKey()) {
-            return $this->hasApiKey();
-        }
-
-        return filled($this->base_url);
+        return (! $this->provider->requiresApiKey() || $this->hasApiKey())
+            && (! $this->provider->requiresBaseUrl() || filled($this->base_url))
+            && (! $this->provider->requiresTextModel() || filled($this->text_model));
     }
 
     /**
@@ -179,6 +178,14 @@ class AiSetting extends Model
             config(["ai.providers.{$key}.url" => $this->base_url]);
         }
 
+        if ($this->text_model) {
+            config(["ai.providers.{$key}.models.text" => [
+                'default' => $this->text_model,
+                'cheapest' => $this->text_model,
+                'smartest' => $this->text_model,
+            ]]);
+        }
+
         if ($this->provider === AiProvider::Azure) {
             if ($this->api_version) {
                 config(["ai.providers.{$key}.api_version" => $this->api_version]);
@@ -192,6 +199,8 @@ class AiSetting extends Model
                 config(["ai.providers.{$key}.embedding_deployment" => $this->embedding_model]);
             }
         }
+
+        Ai::forgetInstance($key);
     }
 
     /**
@@ -239,6 +248,12 @@ class AiSetting extends Model
             'masked_api_key' => $this->maskedApiKey(),
             'enabled' => $this->enabled,
             'api_key_recovery_needed' => (bool) $this->api_key_recovery_needed,
+            'requires_api_key' => $this->provider->requiresApiKey(),
+            'requires_base_url' => $this->provider->requiresBaseUrl(),
+            'requires_text_model' => $this->provider->requiresTextModel(),
+            'is_configured' => $this->isConfigured(),
+            ...($this->provider->requiresBaseUrl() ? ['base_url' => $this->base_url] : []),
+            ...($this->provider->requiresTextModel() ? ['text_model' => $this->text_model] : []),
         ];
     }
 }

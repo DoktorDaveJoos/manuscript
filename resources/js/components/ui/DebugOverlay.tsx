@@ -11,6 +11,15 @@ type CapturedError = {
 
 const MAX_ERRORS = 50;
 
+const IGNORED_BROWSER_ERRORS = new Set([
+    'ResizeObserver loop completed with undelivered notifications.',
+    'ResizeObserver loop limit exceeded',
+]);
+
+export function isIgnoredBrowserError(message: string): boolean {
+    return IGNORED_BROWSER_ERRORS.has(message);
+}
+
 let pushError: ((error: CapturedError) => void) | null = null;
 
 function captureError(
@@ -148,6 +157,10 @@ function DebugOverlayInner({ children }: { children: ReactNode }) {
         };
 
         const handleError = (event: ErrorEvent) => {
+            if (isIgnoredBrowserError(event.message)) {
+                return;
+            }
+
             captureError(
                 event.message || 'Unknown error',
                 event.error?.stack ||

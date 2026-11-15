@@ -96,18 +96,22 @@ final class AiErrorClassifier
             return self::KIND_NO_PROVIDER;
         }
 
+        // CURLE_OPERATION_TIMEDOUT (28) is what Guzzle exposes; PHP also
+        // surfaces the word "timed out" in fopen errors etc. Checked before
+        // ConnectionException, because Laravel's HTTP client wraps cURL 28
+        // in one — a slow provider is not a lost connection.
+        $message = strtolower($e->getMessage());
+        $isTimeout = str_contains($message, 'timed out') || str_contains($message, 'timeout');
+
         if ($e instanceof ConnectionException) {
-            return self::KIND_CONNECTION_FAILED;
+            return $isTimeout ? self::KIND_TIMEOUT : self::KIND_CONNECTION_FAILED;
         }
 
         if ($e instanceof RequestException) {
             return self::detectKindFromHttpResponse($e);
         }
 
-        // CURLE_OPERATION_TIMEDOUT (28) is what Guzzle exposes; PHP also
-        // surfaces the word "timed out" in fopen errors etc.
-        $message = strtolower($e->getMessage());
-        if (str_contains($message, 'timed out') || str_contains($message, 'timeout')) {
+        if ($isTimeout) {
             return self::KIND_TIMEOUT;
         }
 

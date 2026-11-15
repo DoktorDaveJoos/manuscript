@@ -550,12 +550,14 @@ type SaveStatus =
 function ProviderForm({ setting }: { setting: ProviderSetting }) {
     const { t } = useTranslation('settings');
     const [apiKey, setApiKey] = useState('');
+    const [baseUrl, setBaseUrl] = useState(setting.base_url ?? '');
+    const [textModel, setTextModel] = useState(setting.text_model ?? '');
     const [saving, setSaving] = useState(false);
     const [activating, setActivating] = useState(false);
     const [testStatus, setTestStatus] = useState<TestStatus>({ type: 'idle' });
     const [saveStatus, setSaveStatus] = useState<SaveStatus>({ type: 'idle' });
     const [guideOpen, setGuideOpen] = useState(false);
-    const configured = setting.has_api_key;
+    const configured = setting.is_configured;
 
     const handleSave = useCallback(
         (e: FormEvent) => {
@@ -566,6 +568,8 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                 enabled: setting.enabled,
             };
             if (apiKey) data.api_key = apiKey;
+            if (setting.requires_base_url) data.base_url = baseUrl.trim();
+            if (setting.requires_text_model) data.text_model = textModel.trim();
 
             fetch(updateAiProvider.url(setting.provider), {
                 method: 'PUT',
@@ -597,7 +601,16 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                 )
                 .finally(() => setSaving(false));
         },
-        [apiKey, setting.enabled, setting.provider, t],
+        [
+            apiKey,
+            baseUrl,
+            setting.enabled,
+            setting.provider,
+            setting.requires_base_url,
+            setting.requires_text_model,
+            t,
+            textModel,
+        ],
     );
 
     const handleActivate = useCallback(() => {
@@ -689,16 +702,53 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                             </AlertDescription>
                         </Alert>
                     )}
+                    {setting.requires_base_url && (
+                        <FormField label={t('aiProviders.baseUrl')}>
+                            <Input
+                                type="url"
+                                value={baseUrl}
+                                onChange={(e) => setBaseUrl(e.target.value)}
+                                placeholder={
+                                    setting.provider === 'ollama'
+                                        ? 'http://localhost:11434'
+                                        : 'http://localhost:1234/v1'
+                                }
+                                data-testid={`ai-provider-base-url-${setting.provider}`}
+                            />
+                        </FormField>
+                    )}
+                    {setting.requires_text_model && (
+                        <FormField label={t('aiProviders.textModel')}>
+                            <Input
+                                type="text"
+                                value={textModel}
+                                onChange={(e) => setTextModel(e.target.value)}
+                                placeholder={t(
+                                    setting.provider === 'ollama'
+                                        ? 'aiProviders.textModelPlaceholder.ollama'
+                                        : 'aiProviders.textModelPlaceholder.openAiCompatible',
+                                )}
+                                data-testid={`ai-provider-text-model-${setting.provider}`}
+                            />
+                        </FormField>
+                    )}
                     <FormField
-                        label={t('aiProviders.apiKey')}
+                        label={t(
+                            setting.requires_api_key
+                                ? 'aiProviders.apiKey'
+                                : 'aiProviders.apiKeyOptional',
+                        )}
                         action={
-                            <button
-                                type="button"
-                                onClick={() => setGuideOpen(true)}
-                                className="text-[12px] font-medium text-ink-muted transition-colors hover:text-ink"
-                            >
-                                {t('aiProviders.howToGetKey.trigger')}
-                            </button>
+                            setting.requires_api_key ? (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setGuideOpen(true)}
+                                >
+                                    {t('aiProviders.howToGetKey.trigger')}
+                                </Button>
+                            ) : undefined
                         }
                     >
                         {setting.has_api_key && !apiKey ? (
@@ -706,8 +756,10 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                                 <span className="font-mono text-[13px] leading-[1.43] text-ink-muted">
                                     {setting.masked_api_key}
                                 </span>
-                                <button
+                                <Button
                                     type="button"
+                                    variant="ghost"
+                                    size="icon"
                                     onClick={() => {
                                         fetch(deleteKey.url(setting.provider), {
                                             method: 'DELETE',
@@ -734,10 +786,11 @@ function ProviderForm({ setting }: { setting: ProviderSetting }) {
                                                 }),
                                             );
                                     }}
-                                    className="text-ink-muted transition-colors hover:text-delete"
+                                    className="text-ink-muted hover:text-delete"
+                                    aria-label={t('aiProviders.deleteApiKey')}
                                 >
-                                    <Trash2 size={16} />
-                                </button>
+                                    <Trash2 className="size-4" />
+                                </Button>
                             </div>
                         ) : (
                             <Input
@@ -947,7 +1000,7 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
                 >
                     {providers.map((setting) => {
                         const isSelected = setting.enabled;
-                        const configured = setting.has_api_key;
+                        const configured = setting.is_configured;
 
                         return (
                             <AccordionItem
@@ -957,10 +1010,10 @@ function AiProvidersSection({ providers }: { providers: ProviderSetting[] }) {
                                 <AccordionTrigger className="px-0 py-4">
                                     <div className="flex flex-1 items-center gap-3">
                                         <span
-                                            className={`flex size-[18px] items-center justify-center rounded-full border-2 transition-colors ${isSelected ? 'border-ink' : 'border-border'}`}
+                                            className={`flex size-5 items-center justify-center rounded-full border-2 transition-colors ${isSelected ? 'border-ink' : 'border-border'}`}
                                         >
                                             {isSelected && (
-                                                <span className="size-[10px] rounded-full bg-ink" />
+                                                <span className="size-3 rounded-full bg-ink" />
                                             )}
                                         </span>
                                         <span

@@ -79,7 +79,7 @@ class AiSettingsController extends Controller
         try {
             agent(
                 instructions: 'You are a connection tester. Respond with exactly: ok',
-            )->prompt('Test connection.', provider: $provider->toLab()->value);
+            )->prompt('Test connection.', provider: $provider->value);
 
             return response()->json([
                 'success' => true,
