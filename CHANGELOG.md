@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.11.0 (2026-11-15)
+
+### Features
+
+- **Local AI providers** — Ollama is available in Settings again, and a new OpenAI Compatible provider works with local servers such as LM Studio. Both take a base URL and a model name; the API key is optional (7f52580).
+
+### Fixes
+
+- **AI timeouts** — a provider that stops responding is now reported as a timeout instead of a lost internet connection, in editorial reviews and chat (1fec819).
+- **Debug overlay** — harmless ResizeObserver browser warnings no longer show up as errors (a03cf61).
+
+### Other Changes
+
+- Update composer dependencies, including laravel/ai v0.9.1 (30ba4b2).
+- Bump Playwright to 1.59.1 for the browser test suite (6889636).
+
+
 ## v0.10.3 (2026-10-24)
 
 ### Fixes
