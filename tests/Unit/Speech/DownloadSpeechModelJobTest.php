@@ -55,3 +55,68 @@ it('records an error when the download request fails', function (): void {
     expect($this->manager->isReady())->toBeFalse()
         ->and($this->manager->status()['state'])->toBe('error');
 });
+
+it('bounds uniqueFor and cleans up .download on failed()', function (): void {
+    $token = $this->manager->beginDownload();
+    $job = new DownloadSpeechModelJob($token);
+
+    expect($job->uniqueFor)->toBeGreaterThan(0)
+        ->and($job->timeout)->toBeLessThanOrEqual(1800);
+
+    File::ensureDirectoryExists($this->modelDir);
+    $tempPath = $this->manager->temporaryDownloadPath($token);
+    File::put($tempPath, 'partial-bytes');
+
+    $job->failed(new RuntimeException('Worker killed'));
+
+    expect(File::exists($tempPath))->toBeFalse()
+        ->and($this->manager->status()['state'])->toBe('error');
+});
+
+it('treats stale downloading state without heartbeat as interrupted error but spares queued jobs', function (): void {
+    Cache::put('speech.model_download', [
+        'token' => 'stale-token',
+        'phase' => 'downloading',
+        'progress' => 37,
+        'updated_at' => time() - 300,
+        'cancelled' => false,
+    ], now()->addHours(2));
+
+    expect($this->manager->status()['state'])->toBe('error')
+        ->and($this->manager->isActivelyDownloading())->toBeFalse();
+
+    // A queued download waiting >90s behind another single-worker job stays active.
+    Cache::put('speech.model_download', [
+        'token' => 'queued-token',
+        'phase' => 'queued',
+        'progress' => 0,
+        'updated_at' => time() - 300,
+        'cancelled' => false,
+    ], now()->addHours(2));
+
+    expect($this->manager->status()['state'])->toBe('downloading')
+        ->and($this->manager->isActivelyDownloading())->toBeTrue();
+});
+
+it('isolates cancelled job cleanup from a restarted download attempt', function (): void {
+    $tokenA = $this->manager->beginDownload();
+    $jobA = new DownloadSpeechModelJob($tokenA);
+
+    $this->manager->delete();
+    $tokenB = $this->manager->beginDownload();
+    $this->manager->markDownloading(25, $tokenB);
+
+    File::ensureDirectoryExists($this->modelDir);
+    $pathA = $this->manager->temporaryDownloadPath($tokenA);
+    $pathB = $this->manager->temporaryDownloadPath($tokenB);
+    File::put($pathA, 'old-bytes');
+    File::put($pathB, 'new-bytes');
+
+    // Old cancelled job failing must NOT delete the new download's file or overwrite state.
+    $jobA->failed(new RuntimeException('Old download timed out'));
+
+    expect(File::exists($pathA))->toBeFalse()
+        ->and(File::exists($pathB))->toBeTrue()
+        ->and($this->manager->status()['state'])->toBe('downloading')
+        ->and($this->manager->status()['progress'])->toBe(25);
+});

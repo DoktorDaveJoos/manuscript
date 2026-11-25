@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Concerns\ProviderSafeTemperature;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Models\Book;
@@ -9,7 +10,6 @@ use App\Models\Chapter;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Attributes\MaxTokens;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
@@ -18,11 +18,15 @@ use Laravel\Ai\Promptable;
 use Stringable;
 
 #[MaxTokens(4096)]
-#[Temperature(0.2)]
 #[Timeout(120)]
 class SceneStructurer implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput
 {
-    use Promptable;
+    use Promptable, ProviderSafeTemperature;
+
+    protected function defaultTemperature(): float
+    {
+        return 0.2;
+    }
 
     public function __construct(
         protected Book $book,

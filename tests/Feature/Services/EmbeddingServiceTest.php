@@ -141,3 +141,35 @@ test('embed query returns vector for text', function () {
 
     Embeddings::assertGenerated(fn ($prompt) => true);
 });
+
+test('Mistral is excluded from embeddings and Gemini requests 1536 storage dimensions', function () {
+    expect(AiProvider::Mistral->supportsEmbeddings())->toBeFalse()
+        ->and(AiProvider::Gemini->supportsEmbeddings())->toBeTrue();
+
+    Embeddings::fake();
+
+    $book = Book::factory()->withAi(AiProvider::Gemini)->create();
+
+    app(EmbeddingService::class)->embedQuery('gemini test', $book);
+
+    Embeddings::assertGenerated(fn ($prompt) => $prompt->dimensions === 1536);
+});
+
+test('embed chunks degrades gracefully on unexpected vector dimensions', function () {
+    Exceptions::fake();
+
+    Embeddings::fake([
+        [array_fill(0, 1024, 0.1)],
+    ]);
+
+    $book = Book::factory()->withAi(AiProvider::Openai)->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    $version = ChapterVersion::factory()->for($chapter)->create(['is_current' => true]);
+    $chunk = Chunk::factory()->for($version)->create(['content' => 'Some prose.']);
+
+    app(EmbeddingService::class)->embedChunks(collect([$chunk]), $book);
+
+    expect($chunk->hasEmbedding())->toBeFalse();
+    Exceptions::assertReported(RuntimeException::class);
+});

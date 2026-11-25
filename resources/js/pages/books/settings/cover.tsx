@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { Download, ImagePlus, Sparkles, Trash2, Upload } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     deleteCover,
@@ -8,7 +8,6 @@ import {
     uploadCover,
 } from '@/actions/App/Http/Controllers/PublishController';
 import type { TrimSizeOption } from '@/components/export/types';
-import CoverCreatorDialog from '@/components/publish/CoverCreatorDialog';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import PageHeader from '@/components/ui/PageHeader';
@@ -17,6 +16,10 @@ import type { SaveStatus } from '@/components/ui/SaveStatusIndicator';
 import { Spinner } from '@/components/ui/spinner';
 import BookSettingsLayout from '@/layouts/BookSettingsLayout';
 import type { CoverSettings } from '@/types/models';
+
+const CoverCreatorDialog = lazy(
+    () => import('@/components/publish/CoverCreatorDialog'),
+);
 
 type BookData = {
     id: number;
@@ -216,24 +219,30 @@ export default function CoverSettingsPage({ book, trimSizes }: Props) {
             </Card>
 
             {coverCreatorOpen && (
-                <CoverCreatorDialog
-                    bookId={book.id}
-                    trimSizes={trimSizes}
-                    initialTitle={
-                        book.cover_settings?.title ?? book.title ?? ''
-                    }
-                    initialSubtitle={
-                        book.cover_settings?.subtitle ?? book.cover_genre ?? ''
-                    }
-                    initialAuthor={
-                        book.cover_settings?.author ?? book.author ?? ''
-                    }
-                    initialTrimSize={book.cover_settings?.trim_size ?? ''}
-                    initialSpineWidth={book.cover_settings?.spine_width ?? 0}
-                    klappentext={book.klappentext ?? ''}
-                    onClose={() => setCoverCreatorOpen(false)}
-                    onSaved={() => setCoverCreatorOpen(false)}
-                />
+                <Suspense fallback={null}>
+                    <CoverCreatorDialog
+                        bookId={book.id}
+                        trimSizes={trimSizes}
+                        initialTitle={
+                            book.cover_settings?.title ?? book.title ?? ''
+                        }
+                        initialSubtitle={
+                            book.cover_settings?.subtitle ??
+                            book.cover_genre ??
+                            ''
+                        }
+                        initialAuthor={
+                            book.cover_settings?.author ?? book.author ?? ''
+                        }
+                        initialTrimSize={book.cover_settings?.trim_size ?? ''}
+                        initialSpineWidth={
+                            book.cover_settings?.spine_width ?? 0
+                        }
+                        klappentext={book.klappentext ?? ''}
+                        onClose={() => setCoverCreatorOpen(false)}
+                        onSaved={() => setCoverCreatorOpen(false)}
+                    />
+                </Suspense>
             )}
         </BookSettingsLayout>
     );

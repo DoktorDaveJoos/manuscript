@@ -23,28 +23,55 @@ use Throwable;
  */
 class DownloadSpeechModelJob implements ShouldBeUnique, ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, ReportsJobFailures;
+    use Dispatchable, InteractsWithQueue, Queueable, ReportsJobFailures {
+        ReportsJobFailures::failed as reportJobFailure;
+    }
 
     public int $tries = 1;
 
-    public int $timeout = 3600;
+    /**
+     * Keep timeout below NativePHP's 1800s worker timeout so PHP cleans up
+     * cleanly rather than being SIGKILL'd with a dangling lock and .download file.
+     */
+    public int $timeout = 1500;
+
+    /**
+     * Bound the ShouldBeUnique lock lifetime so a crashed worker or app quit
+     * can never permanently brick future downloads on the file cache store.
+     */
+    public int $uniqueFor = 1800;
+
+    public function __construct(public readonly ?string $downloadToken = null) {}
 
     public function handle(SpeechModelManager $manager): void
     {
         $definition = $manager->definition();
-        $temporaryPath = $manager->path().'.download';
+        $token = $this->downloadToken ?? $manager->beginDownload();
+        $temporaryPath = $manager->temporaryDownloadPath($token);
+
+        if ($manager->isCancelled($token)) {
+            File::delete($temporaryPath);
+
+            return;
+        }
 
         File::ensureDirectoryExists($manager->modelDir());
-        $manager->markDownloading(0);
+        $manager->markDownloading(0, $token);
 
         try {
             $response = Http::timeout($this->timeout)
                 ->connectTimeout(30)
                 ->withOptions([
                     'sink' => $temporaryPath,
-                    'progress' => $this->reportProgress($manager),
+                    'progress' => $this->reportProgress($manager, $token),
                 ])
                 ->get($definition['url']);
+
+            if ($manager->isCancelled($token)) {
+                File::delete($temporaryPath);
+
+                return;
+            }
 
             if (! $response->successful()) {
                 throw new RuntimeException("Model download failed (HTTP {$response->status()}).");
@@ -60,10 +87,21 @@ class DownloadSpeechModelJob implements ShouldBeUnique, ShouldQueue
                 throw new RuntimeException('Model download failed checksum verification.');
             }
 
+            if ($manager->isCancelled($token)) {
+                File::delete($temporaryPath);
+
+                return;
+            }
+
             File::move($temporaryPath, $manager->path());
             $manager->clearDownloadState();
         } catch (Throwable $e) {
             File::delete($temporaryPath);
+
+            if ($manager->isCancelled($token)) {
+                return;
+            }
+
             $manager->markError($e instanceof RuntimeException
                 ? $e->getMessage()
                 : 'Model download failed. Check your connection and try again.');
@@ -72,24 +110,45 @@ class DownloadSpeechModelJob implements ShouldBeUnique, ShouldQueue
         }
     }
 
-    /**
-     * Throttled Guzzle progress hook: only touches the cache when the visible
-     * percentage actually changes.
-     */
-    private function reportProgress(SpeechModelManager $manager): callable
+    public function failed(?Throwable $exception): void
     {
-        $lastPercent = -1;
+        $manager = app(SpeechModelManager::class);
+        File::delete($manager->temporaryDownloadPath($this->downloadToken));
 
-        return function (int $total, int $downloaded) use ($manager, &$lastPercent): void {
-            if ($total <= 0) {
-                return;
+        // Only mutate shared error state and release the unique lock if this
+        // job has not been superseded/cancelled by a newer download attempt.
+        if (! $manager->isCancelled($this->downloadToken)) {
+            $manager->markError('Model download timed out or failed unexpectedly. Please try again.');
+            $manager->releaseUniqueLock();
+        }
+
+        $this->reportJobFailure($exception);
+    }
+
+    /**
+     * Throttled Guzzle progress hook: updates cache whenever the visible
+     * percentage changes, or every 5 seconds as a liveness heartbeat (even on
+     * chunked responses without Content-Length).
+     */
+    private function reportProgress(SpeechModelManager $manager, string $token): callable
+    {
+        $lastPercent = 0;
+        $lastHeartbeat = time();
+
+        return function (int $total, int $downloaded) use ($manager, $token, &$lastPercent, &$lastHeartbeat): void {
+            if ($manager->isCancelled($token)) {
+                throw new RuntimeException('Model download cancelled.');
             }
 
-            $percent = (int) floor($downloaded / $total * 100);
+            $now = time();
+            $percent = $total > 0
+                ? min(99, (int) floor($downloaded / $total * 100))
+                : $lastPercent;
 
-            if ($percent !== $lastPercent) {
+            if ($percent !== $lastPercent || ($now - $lastHeartbeat) >= 5) {
                 $lastPercent = $percent;
-                $manager->markDownloading($percent);
+                $lastHeartbeat = $now;
+                $manager->markDownloading($percent, $token);
             }
         };
     }

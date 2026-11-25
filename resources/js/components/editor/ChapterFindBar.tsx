@@ -278,13 +278,22 @@ export default function ChapterFindBar({
 
         const match = allMatches[activeMatchIndex];
         const editor = registry.get(match.sceneId);
-        if (!editor) return;
+        if (!editor || editor.isDestroyed) return;
 
-        editor
-            .chain()
-            .setTextSelection({ from: match.from, to: match.to })
-            .insertContent(replaceText)
-            .run();
+        const docSize = editor.state.doc.content.size;
+        if (match.from < 0 || match.to > docSize || match.from > match.to) {
+            return;
+        }
+
+        const tr =
+            replaceText === ''
+                ? editor.state.tr.delete(match.from, match.to)
+                : editor.state.tr.replaceWith(
+                      match.from,
+                      match.to,
+                      editor.schema.text(replaceText),
+                  );
+        editor.view.dispatch(tr);
 
         // Re-collect and advance to the next match position
         if (collectTimerRef.current) clearTimeout(collectTimerRef.current);

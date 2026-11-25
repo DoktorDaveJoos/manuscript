@@ -17,7 +17,9 @@ use App\Services\BackupService;
 use App\Services\DatabaseStartupService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\SQLiteConnection;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -38,6 +40,16 @@ class AppServiceProvider extends ServiceProvider
         // performance pragmas on every PDO connect, so it covers both the
         // default 'sqlite' connection and NativePHP's runtime 'nativephp' one.
         $this->app->bind('db.connector.sqlite', SqliteVecConnector::class);
+
+        // Default all SQLite connections (including NativePHP's dynamically
+        // constructed `nativephp` connection, which omits `transaction_mode`)
+        // to IMMEDIATE so write transactions honor `busy_timeout` instead of
+        // throwing immediate SQLITE_BUSY on deferred read-to-write upgrades.
+        Connection::resolverFor('sqlite', function ($connection, $database, $prefix, $config) {
+            $config['transaction_mode'] ??= 'IMMEDIATE';
+
+            return new SQLiteConnection($connection, $database, $prefix, $config);
+        });
 
         // Override Laravel's OptimizeCommand so `php artisan optimize` (invoked
         // on every production launch by NativePHP's Electron main process) does

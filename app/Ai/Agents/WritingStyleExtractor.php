@@ -2,12 +2,12 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Concerns\ProviderSafeTemperature;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Attributes\UseCheapestModel;
 use Laravel\Ai\Contracts\Agent;
@@ -21,12 +21,16 @@ use Laravel\Ai\Promptable;
  * revise), so the output must be terse, reproducible directives — every
  * extra word here is paid again on each downstream call.
  */
-#[Temperature(0.2)]
 #[Timeout(150)]
 #[UseCheapestModel]
 class WritingStyleExtractor implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput
 {
-    use Promptable;
+    use Promptable, ProviderSafeTemperature;
+
+    protected function defaultTemperature(): float
+    {
+        return 0.2;
+    }
 
     public function __construct(protected Book $book) {}
 

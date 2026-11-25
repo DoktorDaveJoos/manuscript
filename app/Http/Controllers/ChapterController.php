@@ -337,9 +337,10 @@ class ChapterController extends Controller
     {
         $version = DB::transaction(function () use ($request, $chapter) {
             $content = $chapter->syncCurrentVersionContent();
+            $sceneMap = $chapter->captureSceneMap();
 
             $chapter->versions()->update(['is_current' => false]);
-            $latestVersionNumber = $chapter->versions()->max('version_number');
+            $latestVersionNumber = $chapter->versions()->max('version_number') ?? 0;
 
             return $chapter->versions()->create([
                 'version_number' => $latestVersionNumber + 1,
@@ -347,6 +348,7 @@ class ChapterController extends Controller
                 'source' => VersionSource::Snapshot,
                 'change_summary' => $request->validated('change_summary'),
                 'is_current' => true,
+                'scene_map' => $sceneMap !== [] ? $sceneMap : null,
             ]);
         });
 
@@ -419,9 +421,10 @@ class ChapterController extends Controller
         $content = $request->input('content');
 
         DB::transaction(function () use ($chapter, $content) {
+            $chapter->syncCurrentVersionContent();
             $current = $chapter->currentVersion;
-            $nextNumber = ($current?->version_number ?? 0) + 1;
-            $sceneMap = $current?->scene_map;
+            $nextNumber = ($chapter->versions()->max('version_number') ?? 0) + 1;
+            $sceneMap = $current?->scene_map ?? $chapter->captureSceneMap();
 
             $chapter->versions()
                 ->where('is_current', true)
@@ -434,10 +437,10 @@ class ChapterController extends Controller
                 'change_summary' => __('Refined AI revision'),
                 'is_current' => true,
                 'status' => VersionStatus::Accepted,
-                'scene_map' => $sceneMap,
+                'scene_map' => $sceneMap !== [] ? $sceneMap : null,
             ]);
 
-            $chapter->replaceSceneContents($content, $sceneMap);
+            $chapter->replaceSceneContents($content, $sceneMap !== [] ? $sceneMap : null);
         });
 
         return response()->json(['success' => true]);

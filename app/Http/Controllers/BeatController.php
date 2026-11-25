@@ -63,7 +63,7 @@ class BeatController extends Controller
 
     public function move(Request $request, Book $book, Beat $beat): RedirectResponse
     {
-        abort_unless($beat->plotPoint->book_id === $book->id, 404);
+        abort_unless($beat->plotPoint?->book_id === $book->id, 404);
 
         $validated = $request->validate([
             'plot_point_id' => ['required', 'integer', 'exists:plot_points,id'],
@@ -73,10 +73,46 @@ class BeatController extends Controller
         $targetPlotPoint = PlotPoint::findOrFail($validated['plot_point_id']);
         abort_unless($targetPlotPoint->book_id === $book->id, 403);
 
-        $beat->update([
-            'plot_point_id' => $validated['plot_point_id'],
-            'sort_order' => $validated['sort_order'],
-        ]);
+        DB::transaction(function () use ($beat, $targetPlotPoint, $validated) {
+            $sourcePlotPointId = $beat->plot_point_id;
+            $targetPlotPointId = $targetPlotPoint->id;
+
+            $targetSiblings = Beat::query()
+                ->where('plot_point_id', $targetPlotPointId)
+                ->where('id', '!=', $beat->id)
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get()
+                ->values();
+
+            $insertAt = min((int) $validated['sort_order'], $targetSiblings->count());
+            $targetSiblings->splice($insertAt, 0, [$beat]);
+
+            foreach ($targetSiblings as $index => $item) {
+                $updates = ['sort_order' => $index];
+
+                if ($item->id === $beat->id && $sourcePlotPointId !== $targetPlotPointId) {
+                    $updates['plot_point_id'] = $targetPlotPointId;
+                }
+
+                $item->update($updates);
+            }
+
+            if ($sourcePlotPointId !== $targetPlotPointId) {
+                $sourceSiblings = Beat::query()
+                    ->where('plot_point_id', $sourcePlotPointId)
+                    ->orderBy('sort_order')
+                    ->orderBy('id')
+                    ->get()
+                    ->values();
+
+                foreach ($sourceSiblings as $index => $item) {
+                    if ($item->sort_order !== $index) {
+                        $item->update(['sort_order' => $index]);
+                    }
+                }
+            }
+        });
 
         return back();
     }

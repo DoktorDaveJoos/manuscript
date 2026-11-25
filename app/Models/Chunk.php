@@ -197,6 +197,8 @@ class Chunk extends Model
             JOIN chapters ch ON ch.id = cv.chapter_id
             WHERE chunks_fts MATCH ?
             AND ch.book_id = ?
+            AND cv.is_current = 1
+            AND ch.deleted_at IS NULL
             ORDER BY rank
             LIMIT ?
         SQL, [$sanitizedQuery, $bookId, $limit]);

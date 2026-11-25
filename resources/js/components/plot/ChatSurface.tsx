@@ -320,12 +320,24 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
         const inputRef = useRef<AiChatInputHandle>(null);
         const abortRef = useRef<AbortController | null>(null);
         const lastSentMessageRef = useRef<string | null>(null);
+        const justCreatedSessionIdRef = useRef<number | null>(null);
 
         // Hydrate history for an existing session. Abort on unmount / id change.
         useEffect(() => {
             if (sessionId === null || sessionId === undefined) {
+                abortRef.current?.abort();
+                abortRef.current = null;
                 setMessages([]);
                 setPendingBoardChanges(0);
+                setProposalStates({});
+                setStreamError(null);
+                return;
+            }
+
+            // Skip immediate re-hydration when this ChatSurface instance just
+            // created the session on turn 1 so live turn-2 messages aren't wiped.
+            if (justCreatedSessionIdRef.current === sessionId) {
+                justCreatedSessionIdRef.current = null;
                 return;
             }
 
@@ -354,7 +366,11 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
                     if (err?.name === 'AbortError') return;
                     setMessages([]);
                 })
-                .finally(() => setIsLoadingHistory(false));
+                .finally(() => {
+                    if (!controller.signal.aborted) {
+                        setIsLoadingHistory(false);
+                    }
+                });
 
             return () => controller.abort();
         }, [bookId, sessionId]);
@@ -380,15 +396,25 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
             if (sessionId === null || sessionId === undefined) return;
             if (isStreaming) return;
 
+            let activePollController: AbortController | null = null;
+
             const interval = window.setInterval(() => {
+                if (document.visibilityState === 'hidden') return;
+                activePollController?.abort();
+                const controller = new AbortController();
+                activePollController = controller;
+
                 const url = sessionShow.url({
                     book: bookId,
                     session: sessionId,
                 });
-                fetch(url, { headers: jsonFetchHeaders() })
+                fetch(url, {
+                    headers: jsonFetchHeaders(),
+                    signal: controller.signal,
+                })
                     .then((res) => (res.ok ? res.json() : null))
                     .then((data: CoachSessionShowResponse | null) => {
-                        if (!data) return;
+                        if (!data || controller.signal.aborted) return;
                         const count = Array.isArray(data.pending_board_changes)
                             ? data.pending_board_changes.length
                             : 0;
@@ -403,11 +429,14 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
                         }
                     })
                     .catch(() => {
-                        // non-fatal
+                        // non-fatal (includes AbortError)
                     });
             }, 10_000);
 
-            return () => window.clearInterval(interval);
+            return () => {
+                window.clearInterval(interval);
+                activePollController?.abort();
+            };
         }, [bookId, sessionId, isStreaming]);
 
         const clearToolStatusTimer = useCallback(() => {
@@ -727,6 +756,7 @@ const ChatSurface = forwardRef<ChatSurfaceHandle, ChatSurfaceProps>(
                                         ),
                                     )[0];
                                 if (newest) {
+                                    justCreatedSessionIdRef.current = newest.id;
                                     onSessionCreated(newest.id);
                                 }
                             }

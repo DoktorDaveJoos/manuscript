@@ -661,7 +661,7 @@ class MarketingSeeder extends Seeder
 
             WritingSession::create([
                 'book_id' => $book->id,
-                'date' => Carbon::today()->subDays(count($wordCounts) - 1 - $i),
+                'date' => Carbon::today()->subDays(count($wordCounts) - 1 - $i)->toDateString(),
                 'words_written' => $words,
                 'goal_met' => $words >= $dailyGoal,
             ]);

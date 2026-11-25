@@ -75,7 +75,8 @@ class RunEditorialReviewJob implements ShouldQueue
         $this->updateReviewProgress($this->review, 'analyzing', current_chapter: 0, total_chapters: $total);
 
         $staleChapters = $chapters->filter(
-            fn ($chapter) => $chapter->needsAiPreparation() && $chapter->currentVersion?->content
+            fn ($chapter) => $chapter->needsAiPreparation()
+                && ($chapter->getFullContent() !== '' || (bool) $chapter->currentVersion?->content)
         );
 
         // Shared AI context refreshes run before analysis (single-worker FIFO):

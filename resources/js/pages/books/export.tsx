@@ -180,13 +180,11 @@ export default function Export({
                 id: 'acknowledgments',
                 label: t('backMatter.acknowledgments'),
                 checked: false,
-                settingsSection: 'acknowledgment',
             },
             {
                 id: 'about-author',
                 label: t('backMatter.aboutTheAuthor'),
                 checked: false,
-                settingsSection: 'about-author',
             },
             {
                 id: 'also-by',
@@ -299,22 +297,33 @@ export default function Export({
     }, []);
 
     const handleReorder = useCallback(
-        (reordered: ChapterRow[]) => {
-            setOrderedChapters(reordered);
+        (reorderedVisible: ChapterRow[]) => {
+            // Merge reordered visible chapters back into full orderedChapters so
+            // hidden prologue/epilogue chapters stay in place and aren't dropped
+            // from export or given colliding reader_order values.
+            const reorderedIds = new Set(reorderedVisible.map((ch) => ch.id));
+            let visibleCursor = 0;
+            const merged = orderedChapters.map((ch) =>
+                reorderedIds.has(ch.id)
+                    ? reorderedVisible[visibleCursor++]!
+                    : ch,
+            );
 
-            // Persist to backend
+            setOrderedChapters(merged);
+
+            // Persist full ordered list to backend
             fetch(reorderChapters.url(book.id), {
                 method: 'POST',
                 headers: jsonFetchHeaders(),
                 body: JSON.stringify({
-                    order: reordered.map((ch) => ({
+                    order: merged.map((ch) => ({
                         id: ch.id,
                         storyline_id: ch.storyline_id,
                     })),
                 }),
             });
         },
-        [book.id],
+        [book.id, orderedChapters],
     );
 
     const handleToggleFrontMatter = useCallback((id: string) => {

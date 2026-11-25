@@ -63,7 +63,7 @@ class SqliteVecConnector extends SQLiteConnector
                     throw $e;
                 }
 
-                $pdo = $this->repairDatabase($config, $e);
+                $pdo = $this->repairDatabase($config, $e, $pdo);
             }
         }
 
@@ -139,7 +139,7 @@ class SqliteVecConnector extends SQLiteConnector
      * use on Windows, permission denied, etc.) we MUST NOT create a fresh file
      * on top of the user's data. We raise, boot fails, user's data is preserved.
      */
-    private function repairDatabase(array $config, \Throwable $cause): \PDO
+    private function repairDatabase(array $config, \Throwable $cause, ?\PDO &$corruptPdo = null): \PDO
     {
         $path = $config['database'];
         $timestamp = date('Y-m-d_His');
@@ -162,6 +162,14 @@ class SqliteVecConnector extends SQLiteConnector
             'backup' => $backupPath,
         ]));
 
+        // Snapshot WAL/SHM before releasing the PDO handle (SQLite deletes
+        // sidecar files on sqlite3_close()), then close the handle before
+        // renaming the main file so Windows mandatory locks never block repair.
+        $copiedWal = file_exists("{$path}-wal") && @copy("{$path}-wal", "{$backupPath}-wal");
+        $copiedShm = file_exists("{$path}-shm") && @copy("{$path}-shm", "{$backupPath}-shm");
+
+        $corruptPdo = null;
+
         $renamed = @rename($path, $backupPath);
 
         if (! $renamed) {
@@ -173,6 +181,12 @@ class SqliteVecConnector extends SQLiteConnector
                 'rename_error' => $lastError,
             ]);
 
+            if ($copiedWal) {
+                @unlink("{$backupPath}-wal");
+            }
+            if ($copiedShm) {
+                @unlink("{$backupPath}-shm");
+            }
             @unlink(self::markerPath($path));
 
             throw new \RuntimeException(
@@ -183,9 +197,13 @@ class SqliteVecConnector extends SQLiteConnector
             );
         }
 
-        // Best-effort: WAL/SHM are recreated automatically on next open.
-        @rename("{$path}-wal", "{$backupPath}-wal");
-        @rename("{$path}-shm", "{$backupPath}-shm");
+        // Best-effort: move or clean up any remaining WAL/SHM sidecars.
+        if (file_exists("{$path}-wal")) {
+            $copiedWal ? @unlink("{$path}-wal") : @rename("{$path}-wal", "{$backupPath}-wal");
+        }
+        if (file_exists("{$path}-shm")) {
+            $copiedShm ? @unlink("{$path}-shm") : @rename("{$path}-shm", "{$backupPath}-shm");
+        }
 
         // Create a fresh empty database file.
         touch($path);

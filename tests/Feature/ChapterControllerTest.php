@@ -883,19 +883,63 @@ test('createSnapshot validates change_summary max length', function () {
     ])->assertUnprocessable();
 });
 
-test('createSnapshot uses scene content for version content', function () {
+test('createSnapshot preserves multi-scene content and scene_map across restore', function () {
     $book = Book::factory()->create();
     $storyline = Storyline::factory()->for($book)->create();
     $chapter = Chapter::factory()->for($book)->for($storyline)->create();
     ChapterVersion::factory()->for($chapter)->create(['is_current' => true, 'version_number' => 1]);
-    Scene::factory()->for($chapter)->create(['content' => '<p>First scene</p>', 'sort_order' => 0]);
-    Scene::factory()->for($chapter)->create(['content' => '<p>Second scene</p>', 'sort_order' => 1]);
+    Scene::factory()->for($chapter)->create(['title' => 'Opening', 'content' => '<p>First scene</p>', 'sort_order' => 0]);
+    Scene::factory()->for($chapter)->create(['title' => 'Twist', 'content' => '<p>Second scene</p>', 'sort_order' => 1]);
 
     $this->postJson(route('chapters.createSnapshot', [$book, $chapter]))
         ->assertOk();
 
-    $latest = $chapter->versions()->orderByDesc('version_number')->first();
-    expect($latest->content)->toBe("<p>First scene</p>\n<p>Second scene</p>");
+    $snapshot = $chapter->versions()->orderByDesc('version_number')->first();
+    expect($snapshot->content)->toBe('<p>First scene</p><hr><p>Second scene</p>')
+        ->and($snapshot->scene_map)->toBe([
+            ['title' => 'Opening', 'sort_order' => 0],
+            ['title' => 'Twist', 'sort_order' => 1],
+        ]);
+
+    // Mutate scenes after snapshot, then restore the snapshot
+    $chapter->scenes()->orderBy('sort_order')->first()->update(['content' => '<p>Edited</p>']);
+    $this->post(route('chapters.restoreVersion', [$book, $chapter, $snapshot]))
+        ->assertRedirect();
+
+    $restoredScenes = $chapter->scenes()->orderBy('sort_order')->get();
+    expect($restoredScenes)->toHaveCount(2)
+        ->and($restoredScenes[0]->title)->toBe('Opening')
+        ->and($restoredScenes[0]->content)->toBe('<p>First scene</p>')
+        ->and($restoredScenes[1]->title)->toBe('Twist')
+        ->and($restoredScenes[1]->content)->toBe('<p>Second scene</p>');
+});
+
+test('createSnapshot aligns scene_map with non-empty scenes so empty placeholders do not shift titles on restore', function () {
+    $book = Book::factory()->create();
+    $storyline = Storyline::factory()->for($book)->create();
+    $chapter = Chapter::factory()->for($book)->for($storyline)->create();
+    ChapterVersion::factory()->for($chapter)->create(['is_current' => true, 'version_number' => 1]);
+    Scene::factory()->for($chapter)->create(['title' => 'Opening', 'content' => '<p>One</p>', 'sort_order' => 0]);
+    Scene::factory()->for($chapter)->create(['title' => 'Empty Placeholder', 'content' => '', 'sort_order' => 1]);
+    Scene::factory()->for($chapter)->create(['title' => 'Climax', 'content' => '<p>Three</p>', 'sort_order' => 2]);
+
+    $this->postJson(route('chapters.createSnapshot', [$book, $chapter]))
+        ->assertOk();
+
+    $snapshot = $chapter->versions()->orderByDesc('version_number')->first();
+    expect($snapshot->scene_map)->toBe([
+        ['title' => 'Opening', 'sort_order' => 0],
+        ['title' => 'Climax', 'sort_order' => 1],
+    ]);
+
+    $this->post(route('chapters.restoreVersion', [$book, $chapter, $snapshot]))
+        ->assertRedirect();
+
+    $restored = $chapter->scenes()->orderBy('sort_order')->get();
+    expect($restored)->toHaveCount(2)
+        ->and($restored[0]->title)->toBe('Opening')
+        ->and($restored[1]->title)->toBe('Climax')
+        ->and($restored[1]->content)->toBe('<p>Three</p>');
 });
 
 test('destroyVersion deletes non-current version', function () {

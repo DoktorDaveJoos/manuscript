@@ -82,8 +82,8 @@ export default function useChapterEditor({
                     getScrollContainer: () => scrollContainerRef.current,
                 }),
                 SceneBridgeExtension.configure({
-                    onExitUp: onExitUpRef,
-                    onExitDown: onExitDownRef,
+                    getOnExitUp: () => onExitUpRef.current,
+                    getOnExitDown: () => onExitDownRef.current,
                 }),
                 SearchHighlightExtension,
                 SpellcheckExtension.configure({
@@ -120,7 +120,7 @@ export default function useChapterEditor({
                 onUpdateRef.current(html, words);
             },
         },
-        [content],
+        [],
     );
 
     // Toggle spellcheck decorations without recreating the editor.

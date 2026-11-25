@@ -43,11 +43,20 @@ export function useSpeechInput(onTranscript: (text: string) => void) {
         }
     }, []);
 
+    const transcribeAbortRef = useRef<AbortController | null>(null);
+    const startingRef = useRef(false);
+    const mountedRef = useRef(true);
+
     const transcribeRecording = useCallback(
         async (recorded: Blob) => {
             setState('transcribing');
+            const controller = new AbortController();
+            transcribeAbortRef.current = controller;
+
             try {
                 const wav = await blobToWav16kMono(recorded);
+                if (controller.signal.aborted || !mountedRef.current) return;
+
                 const form = new FormData();
                 form.append(
                     'audio',
@@ -56,6 +65,7 @@ export function useSpeechInput(onTranscript: (text: string) => void) {
 
                 const response = await fetch(transcribe.url(), {
                     method: 'POST',
+                    signal: controller.signal,
                     headers: { Accept: 'application/json' },
                     body: form,
                 });
@@ -67,28 +77,56 @@ export function useSpeechInput(onTranscript: (text: string) => void) {
                 }
 
                 const { text } = (await response.json()) as { text: string };
-                if (text.trim() !== '') {
+                if (
+                    !controller.signal.aborted &&
+                    mountedRef.current &&
+                    text.trim() !== ''
+                ) {
                     onTranscriptRef.current(text.trim());
                 }
-            } catch {
+            } catch (e) {
+                if ((e as Error).name === 'AbortError' || !mountedRef.current) {
+                    return;
+                }
                 toast.error(t('speech.failed.title'), {
                     description: t('speech.failed.body'),
                 });
             } finally {
-                setState('idle');
+                if (transcribeAbortRef.current === controller) {
+                    transcribeAbortRef.current = null;
+                }
+                if (mountedRef.current) {
+                    setState('idle');
+                }
             }
         },
         [t],
     );
 
     const start = useCallback(async () => {
+        if (startingRef.current || recorderRef.current?.state === 'recording') {
+            return;
+        }
+        startingRef.current = true;
+        discardRef.current = false;
+
         let stream: MediaStream;
         try {
             stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         } catch {
-            toast.error(t('speech.micDenied.title'), {
-                description: t('speech.micDenied.body'),
-            });
+            startingRef.current = false;
+            if (mountedRef.current) {
+                toast.error(t('speech.micDenied.title'), {
+                    description: t('speech.micDenied.body'),
+                });
+            }
+            return;
+        }
+
+        startingRef.current = false;
+
+        if (!mountedRef.current || discardRef.current) {
+            stream.getTracks().forEach((track) => track.stop());
             return;
         }
 
@@ -102,8 +140,8 @@ export function useSpeechInput(onTranscript: (text: string) => void) {
         };
         recorder.onstop = () => {
             finishStream();
-            if (discardRef.current) {
-                setState('idle');
+            if (discardRef.current || !mountedRef.current) {
+                if (mountedRef.current) setState('idle');
                 return;
             }
             void transcribeRecording(
@@ -123,28 +161,36 @@ export function useSpeechInput(onTranscript: (text: string) => void) {
     const toggle = useCallback(() => {
         if (state === 'recording') {
             recorderRef.current?.stop();
-        } else if (state === 'idle') {
+        } else if (state === 'idle' && !startingRef.current) {
             void start();
         }
     }, [start, state]);
 
     const cancel = useCallback(() => {
+        discardRef.current = true;
         if (state === 'recording') {
-            discardRef.current = true;
             recorderRef.current?.stop();
+        } else if (state === 'transcribing') {
+            transcribeAbortRef.current?.abort();
+            transcribeAbortRef.current = null;
+            setState('idle');
         }
     }, [state]);
 
-    // Discard any in-flight recording when the consuming surface unmounts.
-    useEffect(
-        () => () => {
+    // Discard any in-flight recording or transcription when unmounting.
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
             discardRef.current = true;
+            transcribeAbortRef.current?.abort();
+            transcribeAbortRef.current = null;
             if (recorderRef.current?.state === 'recording') {
                 recorderRef.current.stop();
             }
-        },
-        [],
-    );
+            finishStream();
+        };
+    }, [finishStream]);
 
     return {
         available: speech_ready,

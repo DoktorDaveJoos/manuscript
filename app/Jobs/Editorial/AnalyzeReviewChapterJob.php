@@ -52,6 +52,11 @@ class AnalyzeReviewChapterJob implements ShouldQueue
             return;
         }
 
+        $latestBatchId = $this->review->refresh()->batch_id;
+        if ($this->batchId !== null && $latestBatchId !== null && $latestBatchId !== $this->batchId) {
+            return;
+        }
+
         $setting = AiSetting::activeProvider();
 
         if (! $setting || ! $setting->isConfigured()) {
@@ -133,6 +138,10 @@ class AnalyzeReviewChapterJob implements ShouldQueue
             $chapter->update([
                 'prepared_content_hash' => $chapter->content_hash,
             ]);
+
+            // Reload freshly persisted manuscript analyses so gapFillChapter()
+            // passes them to EditorialNotesAgent instead of pre-refresh rows.
+            $chapter->load('analyses');
         } catch (Throwable $e) {
             report($e);
 
@@ -345,18 +354,23 @@ class AnalyzeReviewChapterJob implements ShouldQueue
     }
 
     /**
-     * Build character/entity data string from wiki entries.
+     * Build character data string from the book's characters table.
      */
     private function buildCharacterData(): string
     {
-        $entries = $this->book->wikiEntries()
-            ->where('kind', 'character')
-            ->get(['name', 'description']);
+        $characters = $this->book->characters()
+            ->get(['name', 'description', 'ai_description']);
 
-        if ($entries->isEmpty()) {
+        if ($characters->isEmpty()) {
             return '';
         }
 
-        return $entries->map(fn ($entry) => "{$entry->name}: {$entry->description}")->implode("\n");
+        return $characters
+            ->map(function ($character) {
+                $desc = $character->fullDescription();
+
+                return $desc !== '' ? "{$character->name}: {$desc}" : $character->name;
+            })
+            ->implode("\n");
     }
 }

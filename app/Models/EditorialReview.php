@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Bus;
 
 class EditorialReview extends Model
 {
@@ -22,20 +23,35 @@ class EditorialReview extends Model
 
     /**
      * Fail running reviews whose workers stopped writing progress, optionally
-     * scoped to one book. Returns the number of reviews marked failed.
+     * scoped to one book. Cancels associated Bus batches so zombie jobs cannot
+     * continue writing concurrently with a resumed review. Returns the number
+     * of reviews marked failed.
      */
     public static function failStale(?Book $book = null): int
     {
-        return static::query()
+        $staleQuery = static::query()
             ->when($book, fn ($query) => $query->where('book_id', $book->id))
             ->whereIn('status', ['pending', 'analyzing', 'synthesizing'])
-            ->where('updated_at', '<', now()->subMinutes(self::STALE_AFTER_MINUTES))
-            ->update([
-                'status' => 'failed',
-                'error_message' => __('Review timed out. Please try again.'),
-                'error_code' => EditorialReviewErrorCode::Timeout->value,
-                'updated_at' => now(),
-            ]);
+            ->where('updated_at', '<', now()->subMinutes(self::STALE_AFTER_MINUTES));
+
+        $batchIds = (clone $staleQuery)
+            ->whereNotNull('batch_id')
+            ->pluck('batch_id')
+            ->unique()
+            ->all();
+
+        $affected = $staleQuery->update([
+            'status' => 'failed',
+            'error_message' => __('Review timed out. Please try again.'),
+            'error_code' => EditorialReviewErrorCode::Timeout->value,
+            'updated_at' => now(),
+        ]);
+
+        foreach ($batchIds as $batchId) {
+            Bus::findBatch($batchId)?->cancel();
+        }
+
+        return $affected;
     }
 
     /**

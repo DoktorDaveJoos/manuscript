@@ -3,6 +3,7 @@
 namespace App\Ai\Agents;
 
 use App\Ai\Concerns\CachesSystemPrompt;
+use App\Ai\Concerns\ProviderSafeTemperature;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
@@ -12,7 +13,6 @@ use App\Enums\EditorialPersona;
 use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
@@ -22,11 +22,15 @@ use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-#[Temperature(0.3)]
 #[Timeout(120)]
 class ManuscriptAnalyzer implements Agent, BelongsToBook, HasMiddleware, HasProviderOptions, HasStructuredOutput, HasTools
 {
-    use CachesSystemPrompt, Promptable;
+    use CachesSystemPrompt, Promptable, ProviderSafeTemperature;
+
+    protected function defaultTemperature(): float
+    {
+        return 0.3;
+    }
 
     /**
      * When $inlineContext is provided the agent runs single-shot: the manuscript

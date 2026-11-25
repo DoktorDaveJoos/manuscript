@@ -790,3 +790,33 @@ test('sessionShow strips [system: ...] notes containing brackets in their body',
         ->assertOk()
         ->assertJsonPath('messages.0.content', 'okay, rename her to Mara');
 });
+
+test('streaming to an archived session returns 409', function () {
+    PlotCoachAgent::fake(['Nope']);
+
+    $book = Book::factory()->withAi()->create();
+    $archived = PlotCoachSession::factory()->for($book, 'book')->archived()->create();
+
+    $this->post(route('books.plotCoach.stream', $book), [
+        'message' => 'Hello?',
+        'session_id' => $archived->id,
+    ])->assertStatus(409);
+});
+
+test('new plot coach sessions initialize token counters to zero rather than null', function () {
+    PlotCoachAgent::fake(['Welcome!']);
+
+    $book = Book::factory()->withAi()->create();
+
+    $response = $this->post(route('books.plotCoach.stream', $book), [
+        'message' => 'Let us plan a fantasy novel.',
+    ]);
+
+    $response->assertOk();
+    $response->streamedContent();
+
+    $session = PlotCoachSession::query()->where('book_id', $book->id)->first();
+    expect($session)->not->toBeNull()
+        ->and($session->input_tokens)->toBeInt()->toBeGreaterThanOrEqual(0)
+        ->and($session->output_tokens)->toBeInt()->toBeGreaterThanOrEqual(0);
+});

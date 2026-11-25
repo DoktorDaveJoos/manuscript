@@ -164,6 +164,16 @@ class ExportService
             ->first();
     }
 
+    public static function resolveDesignTemplate(DesignTemplate $row): ExportTemplate
+    {
+        return new CustomTemplate(
+            self::resolveTemplate($row->based_on),
+            $row->settings ?? [],
+            $row->name,
+            $row->id,
+        );
+    }
+
     public static function resolveTemplate(string $slug): ExportTemplate
     {
         if (str_starts_with($slug, 'custom:')) {
@@ -173,12 +183,7 @@ class ExportService
                 return new ClassicTemplate;
             }
 
-            return new CustomTemplate(
-                self::resolveTemplate($row->based_on),
-                $row->settings ?? [],
-                $row->name,
-                $row->id,
-            );
+            return self::resolveDesignTemplate($row);
         }
 
         return match ($slug) {

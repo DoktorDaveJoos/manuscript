@@ -378,12 +378,17 @@ class BackupService
         }
 
         if (! $this->moveDatabaseFiles($pending, $live)) {
-            // Put the user's data back where it was.
+            // Put the user's data back where it was. Only restore the older
+            // rollback copy if the user's live DB was actually restored —
+            // otherwise $rollback still holds the live DB and overwriting it
+            // would permanently destroy the user's data.
+            $restoredLive = true;
+
             if (! file_exists($live) && file_exists($rollback)) {
-                $this->moveDatabaseFiles($rollback, $live);
+                $restoredLive = $this->moveDatabaseFiles($rollback, $live);
             }
 
-            if ($previousRollback !== null) {
+            if ($restoredLive && $previousRollback !== null) {
                 $this->moveDatabaseFiles($previousRollback, $rollback);
             }
 

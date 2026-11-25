@@ -7,9 +7,9 @@ use function Pest\Laravel\mock;
 
 test('RefreshWritingStyleJob extracts and stores the writing style on the book', function () {
     [$book, $chapters] = createBookWithChaptersForEditorial(1);
-    $chapters[0]->currentVersion()->update([
-        'content' => '<p>'.trim(str_repeat('prose ', 400)).'</p>',
-    ]);
+    $content = '<p>'.trim(str_repeat('prose ', 400)).'</p>';
+    $chapters[0]->scenes()->update(['content' => $content]);
+    $chapters[0]->currentVersion()->update(['content' => $content]);
 
     mock(WritingStyleService::class)
         ->shouldReceive('extract')
@@ -23,9 +23,9 @@ test('RefreshWritingStyleJob extracts and stores the writing style on the book',
 
 test('RefreshWritingStyleJob skips extraction below the minimum sample size', function () {
     [$book, $chapters] = createBookWithChaptersForEditorial(1);
-    $chapters[0]->currentVersion()->update([
-        'content' => '<p>'.trim(str_repeat('thin ', 100)).'</p>',
-    ]);
+    $content = '<p>'.trim(str_repeat('thin ', 100)).'</p>';
+    $chapters[0]->scenes()->update(['content' => $content]);
+    $chapters[0]->currentVersion()->update(['content' => $content]);
 
     mock(WritingStyleService::class)->shouldNotReceive('extract');
 
@@ -34,6 +34,7 @@ test('RefreshWritingStyleJob skips extraction below the minimum sample size', fu
 
 test('RefreshWritingStyleJob skips extraction when the book has no prose', function () {
     [$book, $chapters] = createBookWithChaptersForEditorial(1);
+    $chapters[0]->scenes()->update(['content' => '']);
     $chapters[0]->currentVersion()->update(['content' => null]);
 
     $styleBefore = $book->writing_style;

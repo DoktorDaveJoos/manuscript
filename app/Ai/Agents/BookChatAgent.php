@@ -2,13 +2,13 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Concerns\ProviderSafeTemperature;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
 use App\Ai\Tools\SearchSimilarChunks;
 use App\Models\Book;
 use App\Models\Chapter;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
@@ -18,11 +18,15 @@ use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-#[Temperature(0.5)]
 #[Timeout(120)]
 class BookChatAgent implements Agent, BelongsToBook, Conversational, HasMiddleware, HasTools
 {
-    use Promptable, RemembersConversations;
+    use Promptable, ProviderSafeTemperature, RemembersConversations;
+
+    protected function defaultTemperature(): float
+    {
+        return 0.5;
+    }
 
     public function __construct(
         protected Book $book,

@@ -74,7 +74,7 @@ class RetrieveManuscriptContext implements Tool
         }
 
         $chapters = $book->chapters()
-            ->with('currentVersion')
+            ->select(['id', 'reader_order', 'title', 'word_count', 'status', 'tension_score', 'hook_score', 'hook_type', 'summary'])
             ->orderBy('reader_order')
             ->get();
 
@@ -92,6 +92,7 @@ class RetrieveManuscriptContext implements Tool
         if ($chapterId) {
             $chapter = $book->chapters()
                 ->with([
+                    'scenes',
                     'currentVersion',
                     'beats.plotPoint',
                     'wikiEntries',
@@ -105,9 +106,11 @@ class RetrieveManuscriptContext implements Tool
                     ...$this->buildChapterWikiSection($chapter),
                 ];
 
-                if ($chapter->currentVersion?->content) {
+                // Prefer live scenes over currentVersion (editor writes to scenes).
+                $activeContent = $chapter->getFullContent() ?: $chapter->currentVersion?->content;
+                if ($activeContent) {
                     $sections[] = "\n## Active Chapter Text: {$chapter->title}";
-                    $sections[] = TextPrep::plainTextCapped($chapter->currentVersion->content);
+                    $sections[] = TextPrep::plainTextCapped($activeContent);
                 }
             }
         }
@@ -131,6 +134,9 @@ class RetrieveManuscriptContext implements Tool
 
         foreach ($chapter->beats->groupBy(fn ($beat) => $beat->plot_point_id) as $beatGroup) {
             $plotPoint = $beatGroup->first()->plotPoint;
+            if (! $plotPoint) {
+                continue;
+            }
             $description = $plotPoint->description ? ": {$plotPoint->description}" : '';
             $type = $plotPoint->type?->value ?? '—';
             $lines[] = "- Plot Point [{$type}/{$plotPoint->status->value}] {$plotPoint->title}{$description}";

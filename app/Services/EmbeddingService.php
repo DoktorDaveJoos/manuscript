@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\AiProvider;
 use App\Models\AiSetting;
 use App\Models\Book;
 use App\Models\Chunk;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Collection;
@@ -14,6 +16,8 @@ use Laravel\Ai\Responses\EmbeddingsResponse;
 
 class EmbeddingService
 {
+    private const STORAGE_DIMENSIONS = 1536;
+
     public function __construct(private AiUsageService $usageService) {}
 
     /**
@@ -34,21 +38,33 @@ class EmbeddingService
 
             try {
                 $response = $this->generate($texts, $config);
-            } catch (RequestException|ConnectionException|AiException $e) {
+
+                foreach ($batch->values() as $index => $chunk) {
+                    $vector = $response->embeddings[$index] ?? null;
+
+                    if (! is_array($vector) || count($vector) !== self::STORAGE_DIMENSIONS) {
+                        report(new \RuntimeException(sprintf(
+                            'Embedding dimension mismatch for provider %s: expected %d, got %d.',
+                            $config->provider,
+                            self::STORAGE_DIMENSIONS,
+                            is_array($vector) ? count($vector) : 0,
+                        )));
+
+                        return false;
+                    }
+
+                    $chunk->storeEmbedding($vector, $book->id);
+                }
+            } catch (RequestException|ConnectionException|AiException|QueryException $e) {
                 // Bulk indexing is best-effort: a provider rejection (oversized or
                 // proxy-mangled payload — e.g. a 431, an exhausted failover, or a
-                // network blip) degrades retrieval quality but must never crash the
-                // queue worker driving an editorial review. Report once for
-                // visibility and stop — the same systemic fault would reject every
-                // remaining batch identically. Embeddings already stored for earlier
-                // batches are preserved.
+                // network blip) or vector-storage mismatch degrades retrieval quality
+                // but must never crash the queue worker driving an editorial review.
+                // Report once for visibility and stop — the same systemic fault would
+                // reject every remaining batch identically.
                 report($e);
 
                 return false;
-            }
-
-            foreach ($batch->values() as $index => $chunk) {
-                $chunk->storeEmbedding($response->embeddings[$index], $book->id);
             }
 
             $this->recordEmbeddingUsage($book, $response);
@@ -81,10 +97,15 @@ class EmbeddingService
 
         $setting->injectConfig();
 
+        // Gemini defaults to 3072-dim embeddings; request MRL-truncated 1536 dims
+        // to match the float[1536] chunk_embeddings virtual table schema.
+        $dimensions = $setting->embedding_dimensions
+            ?? ($setting->provider === AiProvider::Gemini ? self::STORAGE_DIMENSIONS : null);
+
         return (object) [
             'provider' => $setting->provider->toLab()->value,
             'model' => $setting->embedding_model,
-            'dimensions' => $setting->embedding_dimensions,
+            'dimensions' => $dimensions,
         ];
     }
 

@@ -20,13 +20,13 @@ class SpeechModelController extends Controller
 
     public function store(SpeechModelManager $manager): JsonResponse
     {
-        if (! $manager->isReady()) {
-            // Mark before dispatching so the response (and any poll racing the
-            // queue worker) already reads as downloading, and a stale error
-            // state from a previous attempt is cleared.
-            $manager->markDownloading(0);
+        if (! $manager->isReady() && ! $manager->isActivelyDownloading()) {
+            // Release any stale lock from a crashed/interrupted previous job
+            // before minting a fresh download token and dispatching.
+            $manager->releaseUniqueLock();
+            $token = $manager->beginDownload();
 
-            DownloadSpeechModelJob::dispatch();
+            DownloadSpeechModelJob::dispatch($token);
         }
 
         return response()->json($manager->status());
