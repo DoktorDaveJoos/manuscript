@@ -47,13 +47,23 @@ class EmbedReviewChapterJob implements ShouldQueue
             ->with(['currentVersion', 'scenes'])
             ->find($this->chapterId);
 
-        if (! $chapter || ! $chapter->currentVersion?->content) {
+        if (! $chapter) {
             return;
         }
 
-        $existingChunkIds = $chapter->currentVersion->chunks()->pluck('id')->all();
-        if (! empty($existingChunkIds)) {
-            Chunk::deleteEmbeddingsForChunks($existingChunkIds);
+        $hasContent = $chapter->getFullContent() !== '' || (bool) $chapter->currentVersion?->content;
+        if (! $hasContent || ! $chapter->currentVersion) {
+            return;
+        }
+
+        // Remove embeddings for all versions of this chapter (including stale
+        // superseded versions) so vec0 retrieval never returns outdated drafts.
+        $allChapterChunkIds = Chunk::query()
+            ->whereIn('chapter_version_id', $chapter->versions()->select('id'))
+            ->pluck('id')
+            ->all();
+        if (! empty($allChapterChunkIds)) {
+            Chunk::deleteEmbeddingsForChunks($allChapterChunkIds);
         }
 
         $chunks = $chunking->chunkVersion($chapter->currentVersion, $chapter);

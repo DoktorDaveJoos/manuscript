@@ -3,6 +3,7 @@
 namespace App\Ai\Agents;
 
 use App\Ai\Concerns\CachesSystemPrompt;
+use App\Ai\Concerns\ProviderSafeTemperature;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Enums\EditorialPersona;
@@ -10,7 +11,6 @@ use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Attributes\MaxTokens;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
@@ -19,12 +19,16 @@ use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-#[Temperature(0.3)]
 #[MaxTokens(4096)]
 #[Timeout(180)]
 class EditorialNotesAgent implements Agent, BelongsToBook, HasMiddleware, HasProviderOptions, HasStructuredOutput
 {
-    use CachesSystemPrompt, Promptable;
+    use CachesSystemPrompt, Promptable, ProviderSafeTemperature;
+
+    protected function defaultTemperature(): float
+    {
+        return 0.3;
+    }
 
     public function __construct(
         public Book $book,

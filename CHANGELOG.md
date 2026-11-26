@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.11.1 (2026-11-26)
+
+### Fixes
+
+- **Editor & multi-scene safety** — snapshots, version restores, chapter normalization, and AI diff merges now preserve multi-scene breaks and titles; closing panes or switching chapters no longer drops in-flight edits; pane refocusing keeps undo history intact; rewrite/continue AI flows no longer delete text before streaming begins; and find/replace inserts plain text safely (d2f6f6a).
+- **Backups & database recovery** — failed backup swaps can no longer overwrite the live rollback copy, and Windows database auto-repair now releases the corrupt SQLite handle before backing it up (d2f6f6a).
+- **AI providers & cost tracking** — fixed prompt-cache cost calculations (no longer producing negative spend), omitted `temperature` on OpenAI GPT-5 models across all agents, and fixed Gemini/Mistral embedding dimension compatibility (d2f6f6a).
+- **Editorial Review & Plot Coach** — stale review timeouts now cancel queued batches, synthesis prompts pass true chapter IDs, live scene edits are used consistently for analysis and writing-style extraction, archived Plot Coach sessions reject stray streams, and turn-1 hydration no longer races with turn 2 (d2f6f6a).
+- **Export, Plot & Speech** — reordering chapters on Export no longer drops prologue/epilogue chapters, cross-plot-point beat drags re-index without collisions, PDF.js previews cancel overlapping renders without leaking workers, and Whisper model downloads recover cleanly from interruptions or cancellations (d2f6f6a).
+
+### Performance
+
+- **SQLite & editor responsiveness** — added missing foreign-key and lookup indexes across all manuscript tables, enabled `IMMEDIATE` transaction mode for SQLite (including NativePHP's runtime connection), debounced editor autosave, eliminated per-keystroke root re-renders, removed redundant Plot/Export payloads, and lazy-loaded the Cover Creator PDF bundle (d2f6f6a).
+
+
 ## v0.11.0 (2026-11-15)
 
 ### Features

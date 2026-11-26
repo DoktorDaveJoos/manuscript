@@ -64,19 +64,33 @@ function PdfPageCanvas({
     pageHeight: number;
 }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const renderingRef = useRef(false);
+    const activeTaskRef = useRef<ReturnType<
+        Awaited<ReturnType<PDFDocumentProxy['getPage']>>['render']
+    > | null>(null);
 
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas || renderingRef.current) {
+        if (!canvas) {
             return;
         }
 
-        renderingRef.current = true;
-
         let cancelled = false;
+        const previousTask = activeTaskRef.current;
 
         (async () => {
+            if (previousTask) {
+                previousTask.cancel();
+                try {
+                    await previousTask.promise;
+                } catch {
+                    // Expected RenderingCancelledException
+                }
+            }
+            if (cancelled) return;
+
+            let renderTask: ReturnType<
+                Awaited<ReturnType<PDFDocumentProxy['getPage']>>['render']
+            > | null = null;
             try {
                 const page = await pdfDoc.getPage(pageNum);
                 if (cancelled) {
@@ -96,20 +110,26 @@ function PdfPageCanvas({
                 ctx.fillStyle = '#FFFEFA';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                await page.render({
+                renderTask = page.render({
                     canvas: null,
                     canvasContext: ctx,
                     viewport,
-                }).promise;
+                });
+                activeTaskRef.current = renderTask;
+
+                await renderTask.promise;
             } catch {
                 // Render cancelled or failed
             } finally {
-                renderingRef.current = false;
+                if (renderTask && activeTaskRef.current === renderTask) {
+                    activeTaskRef.current = null;
+                }
             }
         })();
 
         return () => {
             cancelled = true;
+            activeTaskRef.current?.cancel();
         };
     }, [pdfDoc, pageNum, scaleFactor]);
 
@@ -200,8 +220,13 @@ export default function ExportPreview({
 
     useEffect(() => {
         if (!hasSelectedChapters || !hasVisualPreview) {
-            setPdfDoc(null);
+            abortControllerRef.current?.abort();
+            setPdfDoc((prev) => {
+                prev?.destroy();
+                return null;
+            });
             setPageCount(0);
+            setLoading(false);
             return;
         }
 
@@ -298,11 +323,13 @@ export default function ExportPreview({
         checkedBackMatter,
     ]);
 
+    const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
+    pdfDocRef.current = pdfDoc;
+
     useEffect(() => {
         return () => {
-            pdfDoc?.destroy();
+            pdfDocRef.current?.destroy();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const pageIndices = useMemo(

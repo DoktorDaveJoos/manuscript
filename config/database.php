@@ -41,7 +41,7 @@ return [
             'busy_timeout' => 5000,
             'journal_mode' => 'wal',
             'synchronous' => 'normal',
-            'transaction_mode' => 'DEFERRED',
+            'transaction_mode' => 'IMMEDIATE',
             'pragmas' => [
                 'cache_size' => -64000,
                 'mmap_size' => 268435456,

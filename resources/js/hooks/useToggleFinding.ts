@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { toggleFinding } from '@/actions/App/Http/Controllers/EditorialReviewController';
@@ -11,14 +11,18 @@ export function useToggleFinding(
     onUpdate: (resolved: string[]) => void,
 ) {
     const { t } = useTranslation('editorial-review');
+    const latestResolvedRef = useRef(resolvedFindings);
+    latestResolvedRef.current = resolvedFindings;
 
     return useCallback(
         async (key: string) => {
-            const newResolved = resolvedFindings.includes(key)
-                ? resolvedFindings.filter((k) => k !== key)
-                : [...resolvedFindings, key];
+            const wasResolved = latestResolvedRef.current.includes(key);
+            const nextResolved = wasResolved
+                ? latestResolvedRef.current.filter((k) => k !== key)
+                : [...latestResolvedRef.current, key];
 
-            onUpdate(newResolved);
+            latestResolvedRef.current = nextResolved;
+            onUpdate(nextResolved);
 
             try {
                 const res = await fetch(
@@ -35,12 +39,20 @@ export function useToggleFinding(
                     t('finding.saveFailed.description'),
                 );
             } catch {
-                onUpdate(resolvedFindings);
+                // Roll back only this key against the latest state so
+                // concurrent toggles on other findings are never clobbered.
+                const rolledBack = wasResolved
+                    ? latestResolvedRef.current.includes(key)
+                        ? latestResolvedRef.current
+                        : [...latestResolvedRef.current, key]
+                    : latestResolvedRef.current.filter((k) => k !== key);
+                latestResolvedRef.current = rolledBack;
+                onUpdate(rolledBack);
                 toast.error(t('finding.saveFailed.title'), {
                     description: t('finding.saveFailed.description'),
                 });
             }
         },
-        [bookId, reviewId, resolvedFindings, onUpdate, t],
+        [bookId, reviewId, onUpdate, t],
     );
 }

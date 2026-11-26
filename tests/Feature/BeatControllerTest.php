@@ -202,17 +202,44 @@ it('move rejects a plot point from another book', function () {
     ])->assertForbidden();
 });
 
-it('move updates sort_order within the same plot point', function () {
+it('move updates sort_order within the same plot point and re-indexes siblings', function () {
     $book = Book::factory()->create();
     $pp = PlotPoint::factory()->create(['book_id' => $book->id]);
     $beat = Beat::factory()->create(['plot_point_id' => $pp->id, 'sort_order' => 0]);
+    $b1 = Beat::factory()->create(['plot_point_id' => $pp->id, 'sort_order' => 1]);
+    $b2 = Beat::factory()->create(['plot_point_id' => $pp->id, 'sort_order' => 2]);
+    $b3 = Beat::factory()->create(['plot_point_id' => $pp->id, 'sort_order' => 3]);
 
     $this->patch(route('beats.move', [$book, $beat]), [
         'plot_point_id' => $pp->id,
         'sort_order' => 3,
     ])->assertRedirect();
 
-    expect($beat->fresh()->sort_order)->toBe(3);
+    expect($b1->fresh()->sort_order)->toBe(0)
+        ->and($b2->fresh()->sort_order)->toBe(1)
+        ->and($b3->fresh()->sort_order)->toBe(2)
+        ->and($beat->fresh()->sort_order)->toBe(3);
+});
+
+it('move across plot points re-indexes both target and source without sort_order collisions', function () {
+    $book = Book::factory()->create();
+    $sourcePp = PlotPoint::factory()->create(['book_id' => $book->id]);
+    $targetPp = PlotPoint::factory()->create(['book_id' => $book->id]);
+    $moving = Beat::factory()->create(['plot_point_id' => $sourcePp->id, 'sort_order' => 0]);
+    $remaining = Beat::factory()->create(['plot_point_id' => $sourcePp->id, 'sort_order' => 1]);
+    $t0 = Beat::factory()->create(['plot_point_id' => $targetPp->id, 'sort_order' => 0]);
+    $t1 = Beat::factory()->create(['plot_point_id' => $targetPp->id, 'sort_order' => 1]);
+
+    $this->patch(route('beats.move', [$book, $moving]), [
+        'plot_point_id' => $targetPp->id,
+        'sort_order' => 1,
+    ])->assertRedirect();
+
+    expect($t0->fresh()->sort_order)->toBe(0)
+        ->and($moving->fresh()->plot_point_id)->toBe($targetPp->id)
+        ->and($moving->fresh()->sort_order)->toBe(1)
+        ->and($t1->fresh()->sort_order)->toBe(2)
+        ->and($remaining->fresh()->sort_order)->toBe(0);
 });
 
 it('cascade deletes beats when plot point is deleted', function () {

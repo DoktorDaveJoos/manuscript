@@ -1,5 +1,5 @@
 import type { Editor } from '@tiptap/react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     commit as continueWritingCommit,
@@ -169,6 +169,14 @@ export function useContinueWriting() {
         isWorkingRef.current = false;
     }, []);
 
+    useEffect(() => {
+        return () => {
+            abortRef.current?.abort();
+            abortRef.current = null;
+            isWorkingRef.current = false;
+        };
+    }, []);
+
     const dismissReview = useCallback(() => setReview(null), []);
 
     const start = useCallback(
@@ -211,39 +219,58 @@ export function useContinueWriting() {
             const { before, after, afterTruncated, sceneFollows } =
                 splitChapterAtCursor(liveEditor, chapterId, activeSceneId);
             const isInline = after.trim() !== '';
+            // Snapshot cursor coordinates before the async fetch so clicking
+            // elsewhere during TTFT cannot drift the insertion point.
+            const initialFrom = liveEditor.state.selection.from;
+            const initialAfter =
+                liveEditor.state.selection.$head.depth > 0
+                    ? liveEditor.state.selection.$head.after()
+                    : liveEditor.state.doc.content.size;
 
-            if (isInline) {
-                // Inline mode: stream straight at the cursor — no new paragraph.
-                // Collapse any range selection to its start so the AI inserts
-                // at the cursor instead of replacing the user's selection.
-                liveEditor
-                    .chain()
-                    .focus()
-                    .setTextSelection(liveEditor.state.selection.from)
-                    .run();
-            } else {
-                // Append mode: open a fresh paragraph after the cursor block.
-                const insertPos = liveEditor.state.selection.$head.after();
-                liveEditor
-                    .chain()
-                    .focus()
-                    .insertContentAt(insertPos, '<p></p>')
-                    .setTextSelection(insertPos + 1)
-                    .run();
-            }
+            // Defer mutating the document until the first valid non-error SSE
+            // delta arrives so HTTP errors/409s/cancellations don't leave empty
+            // paragraphs behind.
+            let prepared = false;
+            const ensurePrepared = () => {
+                if (
+                    prepared ||
+                    liveEditor.isDestroyed ||
+                    controller.signal.aborted
+                ) {
+                    return;
+                }
+                prepared = true;
+                const docSize = liveEditor.state.doc.content.size;
+                if (isInline) {
+                    liveEditor
+                        .chain()
+                        .focus()
+                        .setTextSelection(Math.min(initialFrom, docSize))
+                        .run();
+                } else {
+                    const insertPos = Math.min(initialAfter, docSize);
+                    liveEditor
+                        .chain()
+                        .focus()
+                        .insertContentAt(insertPos, '<p></p>')
+                        .setTextSelection(insertPos + 1)
+                        .run();
+                }
+            };
 
-            // Coalesce SSE deltas onto rAF so we run one Tiptap transaction
-            // per frame instead of one per token — token-rate inserts trigger
-            // the autosave debounce on every event and wedge the editor.
-            //
-            // insertContent() parses strings as HTML, where newlines are mere
-            // whitespace — newline runs must become real paragraph splits.
-            // Trailing newlines are held back for the next flush, since the
-            // paragraph break may continue in the next delta (the final flush
-            // drops them instead).
             let pendingDelta = '';
-            let flushScheduled = false;
+            let rafId: number | null = null;
+            const cancelScheduledFlush = () => {
+                if (rafId !== null) {
+                    cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
+            };
             const flushDelta = (final = false) => {
+                if (liveEditor.isDestroyed || controller.signal.aborted) {
+                    pendingDelta = '';
+                    return;
+                }
                 let text = pendingDelta;
                 pendingDelta = '';
                 if (final) {
@@ -256,13 +283,13 @@ export function useContinueWriting() {
                     }
                 }
                 if (text === '') return;
+                ensurePrepared();
                 insertStreamedParagraphs(liveEditor, text);
             };
             const scheduleFlush = () => {
-                if (flushScheduled) return;
-                flushScheduled = true;
-                requestAnimationFrame(() => {
-                    flushScheduled = false;
+                if (rafId !== null) return;
+                rafId = requestAnimationFrame(() => {
+                    rafId = null;
                     flushDelta();
                 });
             };
@@ -361,13 +388,18 @@ export function useContinueWriting() {
                     }
                 }
 
+                cancelScheduledFlush();
                 flushDelta(true);
 
-                if (streamErrored) return;
+                if (streamErrored || controller.signal.aborted || !prepared) {
+                    return;
+                }
 
                 // Pane autosave must complete before commit — commit reads
                 // scene rows, not the in-memory editor.
                 await flushPaneByChapter(chapterId);
+
+                if (controller.signal.aborted) return;
 
                 const commitResponse = await fetch(
                     continueWritingCommit.url({
@@ -376,6 +408,7 @@ export function useContinueWriting() {
                     }),
                     {
                         method: 'POST',
+                        signal: controller.signal,
                         headers: jsonFetchHeaders(),
                         body: JSON.stringify({
                             expected_current_version_id:
@@ -432,8 +465,11 @@ export function useContinueWriting() {
                               }),
                 });
             } finally {
-                abortRef.current = null;
-                isWorkingRef.current = false;
+                cancelScheduledFlush();
+                if (abortRef.current === controller) {
+                    abortRef.current = null;
+                    isWorkingRef.current = false;
+                }
             }
         },
         [showAiErrorToast, t],

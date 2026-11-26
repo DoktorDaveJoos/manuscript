@@ -368,10 +368,11 @@ export default function EditorPage({
         (chapterId: number) => setProseRunningChapterId(chapterId),
         [],
     );
-    const handleProseEnd = useCallback(
-        () => setProseRunningChapterId(null),
-        [],
-    );
+    const handleProseEnd = useCallback((chapterId?: number) => {
+        setProseRunningChapterId((current) =>
+            chapterId === undefined || current === chapterId ? null : current,
+        );
+    }, []);
 
     // Continue writing / rewrite selection stream INTO the editor, so they
     // must stay visible (no blur overlay) — but user input still has to be
@@ -465,13 +466,10 @@ export default function EditorPage({
         return removeListener;
     }, []);
 
-    // Flush on beforeunload — fire keepalive fetches as a last-resort safety net
-    // (the browser may kill the page before async flushAllPanes completes)
+    // Flush on beforeunload — fire keepalive fetches only (avoiding duplicate
+    // racing non-keepalive PUTs with the same expected_content_version).
     useEffect(() => {
         const handler = () => {
-            // Best-effort async flush (may not complete before unload)
-            flushAllPanes();
-
             // Keepalive fetches survive page teardown (64KB body limit per request)
             const paneEls = document.querySelectorAll('[data-pane-chapter]');
             paneEls.forEach((el) => {
@@ -712,6 +710,7 @@ export default function EditorPage({
 
     useEffect(() => {
         setRewriteDraft(defaultRewriteSelectionDraft);
+        setRewriteRange(null);
     }, [focusedChapterId]);
 
     const reviewForChapter = useCallback(
@@ -723,10 +722,12 @@ export default function EditorPage({
         },
         [rewriteSelection.review, continueWriting.review],
     );
+    const { dismissReview: dismissContinueReview } = continueWriting;
+    const { dismissReview: dismissRewriteReview } = rewriteSelection;
     const dismissAllReviews = useCallback(() => {
-        continueWriting.dismissReview();
-        rewriteSelection.dismissReview();
-    }, [continueWriting, rewriteSelection]);
+        dismissContinueReview();
+        dismissRewriteReview();
+    }, [dismissContinueReview, dismissRewriteReview]);
 
     // Dismiss per-chapter review banners once the diff window applied.
     useEffect(() => {
@@ -1408,41 +1409,51 @@ export default function EditorPage({
                 />
             )}
 
-            {rewriteRange && activeEditor && focusedChapter && (
-                <RewriteSelectionDialog
-                    selectionPreview={activeEditor.state.doc.textBetween(
-                        rewriteRange.from,
-                        rewriteRange.to,
-                        ' ',
-                    )}
-                    draft={rewriteDraft}
-                    onDraftChange={setRewriteDraft}
-                    onReset={() =>
-                        setRewriteDraft(defaultRewriteSelectionDraft)
-                    }
-                    onClose={() => setRewriteRange(null)}
-                    onSubmit={({ hint }) => {
-                        const chapterId = focusedChapter.id;
-                        setStreamingChapterId(chapterId);
-                        rewriteSelection
-                            .start({
-                                editor: activeEditor,
-                                bookId: book.id,
-                                chapterId,
-                                expectedCurrentVersionId:
-                                    focusedChapter.current_version?.id ?? null,
-                                hint,
-                                selection: rewriteRange,
-                            })
-                            .finally(() =>
-                                setStreamingChapterId((current) =>
-                                    current === chapterId ? null : current,
-                                ),
-                            );
-                        setRewriteDraft(defaultRewriteSelectionDraft);
-                    }}
-                />
-            )}
+            {rewriteRange &&
+                activeEditor &&
+                !activeEditor.isDestroyed &&
+                focusedChapter && (
+                    <RewriteSelectionDialog
+                        selectionPreview={activeEditor.state.doc.textBetween(
+                            Math.min(
+                                rewriteRange.from,
+                                activeEditor.state.doc.content.size,
+                            ),
+                            Math.min(
+                                rewriteRange.to,
+                                activeEditor.state.doc.content.size,
+                            ),
+                            ' ',
+                        )}
+                        draft={rewriteDraft}
+                        onDraftChange={setRewriteDraft}
+                        onReset={() =>
+                            setRewriteDraft(defaultRewriteSelectionDraft)
+                        }
+                        onClose={() => setRewriteRange(null)}
+                        onSubmit={({ hint }) => {
+                            const chapterId = focusedChapter.id;
+                            setStreamingChapterId(chapterId);
+                            rewriteSelection
+                                .start({
+                                    editor: activeEditor,
+                                    bookId: book.id,
+                                    chapterId,
+                                    expectedCurrentVersionId:
+                                        focusedChapter.current_version?.id ??
+                                        null,
+                                    hint,
+                                    selection: rewriteRange,
+                                })
+                                .finally(() =>
+                                    setStreamingChapterId((current) =>
+                                        current === chapterId ? null : current,
+                                    ),
+                                );
+                            setRewriteDraft(defaultRewriteSelectionDraft);
+                        }}
+                    />
+                )}
 
             {/* Focus mode whisper chrome */}
             {isFocusMode && focusedChapter && (

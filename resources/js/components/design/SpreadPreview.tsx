@@ -28,14 +28,31 @@ function SpreadPageCanvas({
     height: number;
 }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const activeTaskRef = useRef<ReturnType<
+        Awaited<ReturnType<PDFDocumentProxy['getPage']>>['render']
+    > | null>(null);
 
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
         let cancelled = false;
+        const previousTask = activeTaskRef.current;
 
         (async () => {
+            if (previousTask) {
+                previousTask.cancel();
+                try {
+                    await previousTask.promise;
+                } catch {
+                    // Expected RenderingCancelledException
+                }
+            }
+            if (cancelled) return;
+
+            let renderTask: ReturnType<
+                Awaited<ReturnType<PDFDocumentProxy['getPage']>>['render']
+            > | null = null;
             try {
                 const page = await pdfDoc.getPage(pageNum);
                 if (cancelled) return;
@@ -53,18 +70,26 @@ function SpreadPageCanvas({
                 ctx.fillStyle = '#FFFEFA';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                await page.render({
+                renderTask = page.render({
                     canvas: null,
                     canvasContext: ctx,
                     viewport,
-                }).promise;
+                });
+                activeTaskRef.current = renderTask;
+
+                await renderTask.promise;
             } catch {
                 // Render cancelled or failed
+            } finally {
+                if (renderTask && activeTaskRef.current === renderTask) {
+                    activeTaskRef.current = null;
+                }
             }
         })();
 
         return () => {
             cancelled = true;
+            activeTaskRef.current?.cancel();
         };
     }, [pdfDoc, pageNum, width]);
 
@@ -185,11 +210,13 @@ export default function SpreadPreview({
         };
     }, [bookId, templateSlug, version, t]);
 
+    const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
+    pdfDocRef.current = pdfDoc;
+
     useEffect(() => {
         return () => {
-            pdfDoc?.destroy();
+            pdfDocRef.current?.destroy();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Facing pages the way a bound book opens: page 1 is a recto standing

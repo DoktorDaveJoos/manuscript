@@ -88,9 +88,10 @@ export function useEditorialReview(
         }
 
         pollFailuresRef.current = 0;
+        const controller = new AbortController();
 
         pollRef.current = setInterval(async () => {
-            if (pollingRef.current) {
+            if (pollingRef.current || controller.signal.aborted) {
                 return;
             }
 
@@ -99,7 +100,10 @@ export function useEditorialReview(
             try {
                 const res = await fetch(
                     progress.url({ book: bookId, review: reviewId }),
-                    { headers: { Accept: 'application/json' } },
+                    {
+                        headers: { Accept: 'application/json' },
+                        signal: controller.signal,
+                    },
                 );
                 if (!res.ok) {
                     throw new Error();
@@ -107,6 +111,9 @@ export function useEditorialReview(
 
                 const data =
                     (await res.json()) as EditorialReviewProgressResponse;
+                if (controller.signal.aborted) {
+                    return;
+                }
                 pollFailuresRef.current = 0;
                 setPollError(null);
 
@@ -127,7 +134,9 @@ export function useEditorialReview(
                         clearInterval(pollRef.current);
                         pollRef.current = null;
                     }
-                    router.reload();
+                    router.visit(show.url({ book: bookId, review: reviewId }), {
+                        replace: true,
+                    });
                     return;
                 }
 
@@ -136,7 +145,9 @@ export function useEditorialReview(
                         clearInterval(pollRef.current);
                         pollRef.current = null;
                     }
-                    router.reload();
+                    router.visit(show.url({ book: bookId, review: reviewId }), {
+                        replace: true,
+                    });
                     return;
                 }
 
@@ -158,7 +169,13 @@ export function useEditorialReview(
                         error_code: data.error_code,
                     };
                 });
-            } catch {
+            } catch (err) {
+                if (
+                    (err as Error).name === 'AbortError' ||
+                    controller.signal.aborted
+                ) {
+                    return;
+                }
                 pollFailuresRef.current += 1;
                 if (pollFailuresRef.current >= 3) {
                     setPollError(t('progress.connectionLost'));
@@ -169,7 +186,12 @@ export function useEditorialReview(
         }, 2000);
 
         return () => {
-            if (pollRef.current) clearInterval(pollRef.current);
+            controller.abort();
+            if (pollRef.current) {
+                clearInterval(pollRef.current);
+                pollRef.current = null;
+            }
+            pollingRef.current = false;
         };
     }, [bookId, isRunning, reviewId, t]);
 

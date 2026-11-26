@@ -9,7 +9,6 @@ use App\Http\Requests\ParseImportRequest;
 use App\Http\Requests\StoreBookRequest;
 use App\Http\Requests\UpdateBookRequest;
 use App\Models\Book;
-use App\Models\Chunk;
 use App\Services\Normalization\NormalizationService;
 use App\Services\Parsers\DocumentParserFactory;
 use App\Support\WordCount;
@@ -138,20 +137,12 @@ class BookController extends Controller
 
     public function destroy(Book $book): RedirectResponse
     {
-        // Clean up chunk_embeddings (vec0 virtual table doesn't cascade)
-        $chunkIds = Chunk::query()
-            ->whereIn(
-                'chapter_version_id',
-                $book->chapters()
-                    ->join('chapter_versions', 'chapters.id', '=', 'chapter_versions.chapter_id')
-                    ->select('chapter_versions.id')
-            )
-            ->pluck('id');
-
-        if ($chunkIds->isNotEmpty()) {
-            DB::delete(
-                'DELETE FROM chunk_embeddings WHERE chunk_id IN ('.implode(',', $chunkIds->all()).')'
-            );
+        // Clean up chunk_embeddings using the book_id partition key so even
+        // soft-deleted chapters' vectors are purged (vec0 doesn't cascade).
+        try {
+            DB::delete('DELETE FROM chunk_embeddings WHERE book_id = ?', [$book->id]);
+        } catch (\Throwable) {
+            // Virtual table unavailable when sqlite-vec failed to load.
         }
 
         $book->delete();

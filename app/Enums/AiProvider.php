@@ -38,7 +38,9 @@ enum AiProvider: string
     public function supportsEmbeddings(): bool
     {
         return match ($this) {
-            self::Openai, self::Gemini, self::Mistral, self::Azure => true,
+            // Mistral's mistral-embed emits fixed 1024-dim vectors, incompatible
+            // with our float[1536] chunk_embeddings sqlite-vec schema.
+            self::Openai, self::Gemini, self::Azure => true,
             default => false,
         };
     }

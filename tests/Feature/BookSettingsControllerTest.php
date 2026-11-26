@@ -123,9 +123,9 @@ test('writing style regeneration extracts from the unified sample and persists',
     [$book, $chapters] = createBookWithChapters(4);
     foreach ($chapters as $i => $chapter) {
         $marker = ['firstmarker', 'secondmarker', 'thirdmarker', 'fourthmarker'][$i];
-        $chapter->currentVersion()->update([
-            'content' => '<p>'.trim(str_repeat("{$marker} ", 150)).'</p>',
-        ]);
+        $content = '<p>'.trim(str_repeat("{$marker} ", 150)).'</p>';
+        $chapter->scenes()->update(['content' => $content]);
+        $chapter->currentVersion()->update(['content' => $content]);
     }
 
     mock(WritingStyleService::class)

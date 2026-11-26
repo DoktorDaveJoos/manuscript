@@ -48,6 +48,11 @@ class FinalizeEditorialReviewJob implements ShouldQueue
             return;
         }
 
+        $latestBatchId = $this->review->refresh()->batch_id;
+        if ($this->batchId !== null && $latestBatchId !== null && $latestBatchId !== $this->batchId) {
+            return;
+        }
+
         $setting = AiSetting::activeProvider();
 
         if (! $setting || ! $setting->isConfigured()) {
@@ -244,7 +249,7 @@ class FinalizeEditorialReviewJob implements ShouldQueue
     private function appendPacingData(array &$parts, Collection $chapters, Collection $chapterNotes): void
     {
         $pacingData = $chapters->map(function (Chapter $chapter) {
-            $line = "Ch{$chapter->reader_order} ({$chapter->title}):";
+            $line = "Ch{$chapter->reader_order} [chapter_id={$chapter->id}] ({$chapter->title}):";
             $line .= " tension={$chapter->tension_score}";
             $line .= " pacing={$chapter->pacing_feel}";
             $line .= " micro_tension={$chapter->micro_tension_score}";
@@ -313,7 +318,9 @@ class FinalizeEditorialReviewJob implements ShouldQueue
     {
         $chapter = $note->chapter;
 
-        return $chapter ? "Ch{$chapter->reader_order} ({$chapter->title})" : "Chapter {$note->chapter_id}";
+        return $chapter
+            ? "Ch{$chapter->reader_order} [chapter_id={$chapter->id}] ({$chapter->title})"
+            : "Chapter [chapter_id={$note->chapter_id}]";
     }
 
     /**
@@ -325,7 +332,7 @@ class FinalizeEditorialReviewJob implements ShouldQueue
     private function appendChapterSummaries(array &$parts, Collection $chapters): void
     {
         $summaries = $chapters->filter(fn (Chapter $ch) => $ch->summary)
-            ->map(fn (Chapter $ch) => "Ch{$ch->reader_order} ({$ch->title}): {$ch->summary}")
+            ->map(fn (Chapter $ch) => "Ch{$ch->reader_order} [chapter_id={$ch->id}] ({$ch->title}): {$ch->summary}")
             ->implode("\n");
 
         if ($summaries) {
@@ -335,6 +342,7 @@ class FinalizeEditorialReviewJob implements ShouldQueue
 
     private function safeSynthesisFailureMessage(): string
     {
+        $this->review->refresh();
         $section = $this->review->progress['current_section'] ?? null;
 
         if (is_string($section) && $section !== '') {

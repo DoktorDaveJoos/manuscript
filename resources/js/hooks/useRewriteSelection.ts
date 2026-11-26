@@ -1,5 +1,5 @@
 import type { Editor } from '@tiptap/react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     commit as rewriteSelectionCommit,
@@ -136,6 +136,14 @@ export function useRewriteSelection() {
         isWorkingRef.current = false;
     }, []);
 
+    useEffect(() => {
+        return () => {
+            abortRef.current?.abort();
+            abortRef.current = null;
+            isWorkingRef.current = false;
+        };
+    }, []);
+
     const dismissReview = useCallback(() => setReview(null), []);
 
     const start = useCallback(
@@ -147,7 +155,7 @@ export function useRewriteSelection() {
             hint,
             selection,
         }: StartArgs) => {
-            if (isWorkingRef.current) return;
+            if (isWorkingRef.current || editor.isDestroyed) return;
 
             isWorkingRef.current = true;
             setReview(null);
@@ -162,24 +170,45 @@ export function useRewriteSelection() {
                 afterTruncated,
             } = splitChapterAtSelection(editor, chapterId, selection);
 
-            editor
-                .chain()
-                .focus()
-                .setTextSelection(selection)
-                .deleteSelection()
-                .run();
+            // Defer deleting the selected text until the first valid non-error
+            // SSE delta arrives so HTTP errors, 409s, or cancellations never
+            // permanently erase the author's prose.
+            let prepared = false;
+            const ensurePrepared = () => {
+                if (
+                    prepared ||
+                    editor.isDestroyed ||
+                    controller.signal.aborted
+                ) {
+                    return;
+                }
+                prepared = true;
+                const maxPos = editor.state.doc.content.size;
+                const clamped = {
+                    from: Math.min(selection.from, maxPos),
+                    to: Math.min(selection.to, maxPos),
+                };
+                editor
+                    .chain()
+                    .focus()
+                    .setTextSelection(clamped)
+                    .deleteSelection()
+                    .run();
+            };
 
-            // Coalesce SSE deltas onto rAF so we run one Tiptap transaction
-            // per frame instead of one per token.
-            //
-            // insertContent() parses strings as HTML, where newlines are mere
-            // whitespace — newline runs must become real paragraph splits.
-            // Trailing newlines are held back for the next flush, since the
-            // paragraph break may continue in the next delta (the final flush
-            // drops them instead).
             let pendingDelta = '';
-            let flushScheduled = false;
+            let rafId: number | null = null;
+            const cancelScheduledFlush = () => {
+                if (rafId !== null) {
+                    cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
+            };
             const flushDelta = (final = false) => {
+                if (editor.isDestroyed || controller.signal.aborted) {
+                    pendingDelta = '';
+                    return;
+                }
                 let text = pendingDelta;
                 pendingDelta = '';
                 if (final) {
@@ -192,13 +221,13 @@ export function useRewriteSelection() {
                     }
                 }
                 if (text === '') return;
+                ensurePrepared();
                 insertStreamedParagraphs(editor, text);
             };
             const scheduleFlush = () => {
-                if (flushScheduled) return;
-                flushScheduled = true;
-                requestAnimationFrame(() => {
-                    flushScheduled = false;
+                if (rafId !== null) return;
+                rafId = requestAnimationFrame(() => {
+                    rafId = null;
                     flushDelta();
                 });
             };
@@ -296,13 +325,18 @@ export function useRewriteSelection() {
                     }
                 }
 
+                cancelScheduledFlush();
                 flushDelta(true);
 
-                if (streamErrored) return;
+                if (streamErrored || controller.signal.aborted || !prepared) {
+                    return;
+                }
 
                 // Pane autosave must complete before commit — commit reads
                 // scene rows, not the in-memory editor.
                 await flushPaneByChapter(chapterId);
+
+                if (controller.signal.aborted) return;
 
                 const commitResponse = await fetch(
                     rewriteSelectionCommit.url({
@@ -311,6 +345,7 @@ export function useRewriteSelection() {
                     }),
                     {
                         method: 'POST',
+                        signal: controller.signal,
                         headers: jsonFetchHeaders(),
                         body: JSON.stringify({
                             expected_current_version_id:
@@ -360,8 +395,11 @@ export function useRewriteSelection() {
                               }),
                 });
             } finally {
-                abortRef.current = null;
-                isWorkingRef.current = false;
+                cancelScheduledFlush();
+                if (abortRef.current === controller) {
+                    abortRef.current = null;
+                    isWorkingRef.current = false;
+                }
             }
         },
         [showAiErrorToast, t],

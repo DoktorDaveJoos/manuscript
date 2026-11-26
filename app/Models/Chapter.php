@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Chapter extends Model
 {
@@ -206,6 +207,28 @@ class Chapter extends Model
     }
 
     /**
+     * Capture ordered scene titles and positions for non-empty scenes so
+     * scene_map indices stay aligned 1:1 with getContentWithSceneBreaks()
+     * segments during snapshot restoration and version merges.
+     *
+     * @return array<int, array{title: string, sort_order: int}>
+     */
+    public function captureSceneMap(): array
+    {
+        $this->loadMissing('scenes');
+
+        return $this->scenes
+            ->sortBy('sort_order')
+            ->filter(fn (Scene $scene) => trim((string) $scene->content) !== '')
+            ->values()
+            ->map(fn (Scene $scene, int $index) => [
+                'title' => $scene->title,
+                'sort_order' => $index,
+            ])
+            ->all();
+    }
+
+    /**
      * Sync the current version's content with the latest scene content.
      * Call this before creating a new version so the outgoing version
      * captures the editor state (edits are saved to scenes, not versions).
@@ -213,9 +236,13 @@ class Chapter extends Model
     public function syncCurrentVersionContent(): string
     {
         $this->loadMissing(['scenes', 'currentVersion']);
-        $content = $this->getFullContent();
+        $content = $this->getContentWithSceneBreaks();
+        $sceneMap = $this->captureSceneMap();
 
-        $this->currentVersion?->update(['content' => $content]);
+        $this->currentVersion?->update([
+            'content' => $content,
+            'scene_map' => $sceneMap !== [] ? $sceneMap : null,
+        ]);
 
         return $content;
     }
@@ -227,7 +254,11 @@ class Chapter extends Model
 
     public function getContentWithSceneBreaks(): string
     {
-        return $this->scenes->pluck('content')->filter()->implode('<hr>');
+        return $this->scenes
+            ->sortBy('sort_order')
+            ->filter(fn (Scene $scene) => trim((string) $scene->content) !== '')
+            ->pluck('content')
+            ->implode('<hr>');
     }
 
     public function recalculateWordCount(): void
@@ -241,17 +272,19 @@ class Chapter extends Model
 
     public function replaceScenesWithContent(?string $content): void
     {
-        $this->scenes()->forceDelete();
-        $wordCount = WordCount::count($content ?? '');
-        $this->scenes()->create([
-            'title' => 'Scene 1',
-            'content' => $content,
-            'sort_order' => 0,
-            'word_count' => $wordCount,
-        ]);
-        $this->update(['word_count' => $wordCount]);
+        DB::transaction(function () use ($content) {
+            $this->scenes()->forceDelete();
+            $wordCount = WordCount::count($content ?? '');
+            $this->scenes()->create([
+                'title' => 'Scene 1',
+                'content' => $content,
+                'sort_order' => 0,
+                'word_count' => $wordCount,
+            ]);
+            $this->update(['word_count' => $wordCount]);
 
-        $this->refreshContentHash();
+            $this->refreshContentHash();
+        });
     }
 
     /**
@@ -266,46 +299,48 @@ class Chapter extends Model
             return;
         }
 
-        $existingScenes = $this->scenes()->orderBy('sort_order')->get();
-        $totalWordCount = 0;
+        DB::transaction(function () use ($segments, $sceneMap) {
+            $existingScenes = $this->scenes()->orderBy('sort_order')->get();
+            $totalWordCount = 0;
 
-        foreach ($segments as $index => $segment) {
-            $segment = trim($segment);
-            $wordCount = WordCount::count($segment);
-            $totalWordCount += $wordCount;
+            foreach ($segments as $index => $segment) {
+                $segment = trim($segment);
+                $wordCount = WordCount::count($segment);
+                $totalWordCount += $wordCount;
 
-            // Title preference: sceneMap (captured at request start) →
-            // live scene title (still there if sceneMap is incomplete) →
-            // synthesized default for genuinely new scenes.
-            $title = $sceneMap[$index]['title']
-                ?? $existingScenes[$index]?->title
-                ?? 'Scene '.($index + 1);
+                // Title preference: sceneMap (captured at request start) →
+                // live scene title (still there if sceneMap is incomplete) →
+                // synthesized default for genuinely new scenes.
+                $title = $sceneMap[$index]['title']
+                    ?? $existingScenes[$index]?->title
+                    ?? 'Scene '.($index + 1);
 
-            if ($index < $existingScenes->count()) {
-                $existingScenes[$index]->update([
-                    'title' => $title,
-                    'content' => $segment,
-                    'sort_order' => $index,
-                    'word_count' => $wordCount,
-                    'content_version' => $existingScenes[$index]->content_version + 1,
-                ]);
-            } else {
-                $this->scenes()->create([
-                    'title' => $title,
-                    'content' => $segment,
-                    'sort_order' => $index,
-                    'word_count' => $wordCount,
-                ]);
+                if ($index < $existingScenes->count()) {
+                    $existingScenes[$index]->update([
+                        'title' => $title,
+                        'content' => $segment,
+                        'sort_order' => $index,
+                        'word_count' => $wordCount,
+                        'content_version' => $existingScenes[$index]->content_version + 1,
+                    ]);
+                } else {
+                    $this->scenes()->create([
+                        'title' => $title,
+                        'content' => $segment,
+                        'sort_order' => $index,
+                        'word_count' => $wordCount,
+                    ]);
+                }
             }
-        }
 
-        if (count($segments) < $existingScenes->count()) {
-            $excessIds = $existingScenes->slice(count($segments))->pluck('id');
-            $this->scenes()->whereIn('id', $excessIds)->forceDelete();
-        }
+            if (count($segments) < $existingScenes->count()) {
+                $excessIds = $existingScenes->slice(count($segments))->pluck('id');
+                $this->scenes()->whereIn('id', $excessIds)->forceDelete();
+            }
 
-        $this->update(['word_count' => $totalWordCount]);
+            $this->update(['word_count' => $totalWordCount]);
 
-        $this->refreshContentHash();
+            $this->refreshContentHash();
+        });
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Concerns\ProviderSafeTemperature;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Enums\EditorialPersona;
@@ -9,7 +10,6 @@ use App\Models\Book;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Attributes\MaxTokens;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Attributes\UseCheapestModel;
 use Laravel\Ai\Contracts\Agent;
@@ -18,13 +18,17 @@ use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-#[Temperature(0.3)]
 #[MaxTokens(2048)]
 #[Timeout(120)]
 #[UseCheapestModel]
 class EditorialSummaryAgent implements Agent, BelongsToBook, HasMiddleware, HasStructuredOutput
 {
-    use Promptable;
+    use Promptable, ProviderSafeTemperature;
+
+    protected function defaultTemperature(): float
+    {
+        return 0.3;
+    }
 
     public function __construct(
         public Book $book,

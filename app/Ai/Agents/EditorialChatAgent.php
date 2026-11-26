@@ -3,6 +3,7 @@
 namespace App\Ai\Agents;
 
 use App\Ai\Concerns\CachesSystemPrompt;
+use App\Ai\Concerns\ProviderSafeTemperature;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Ai\Tools\RetrieveManuscriptContext;
@@ -10,7 +11,6 @@ use App\Ai\Tools\SearchSimilarChunks;
 use App\Enums\EditorialPersona;
 use App\Models\Book;
 use Laravel\Ai\Attributes\MaxTokens;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
@@ -21,7 +21,6 @@ use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-#[Temperature(0.5)]
 #[MaxTokens(4096)]
 #[Timeout(120)]
 class EditorialChatAgent implements Agent, BelongsToBook, Conversational, HasMiddleware, HasProviderOptions, HasTools
@@ -29,7 +28,12 @@ class EditorialChatAgent implements Agent, BelongsToBook, Conversational, HasMid
     // The editorial context is fixed for the life of a conversation, so the
     // whole system prompt is cached (no breakpoint) and every follow-up turn
     // reads it from cache instead of re-sending it at full price.
-    use CachesSystemPrompt, Promptable, RemembersConversations;
+    use CachesSystemPrompt, Promptable, ProviderSafeTemperature, RemembersConversations;
+
+    protected function defaultTemperature(): float
+    {
+        return 0.5;
+    }
 
     public function __construct(
         protected Book $book,

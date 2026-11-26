@@ -249,7 +249,7 @@ class BookSettingsController extends Controller
                         ->orderBy('name')
                         ->get()
                         ->map(fn (DesignTemplate $row) => $this->exportTemplateDef(
-                            ExportService::resolveTemplate($row->slug()),
+                            ExportService::resolveDesignTemplate($row),
                             'custom',
                         )),
                 )

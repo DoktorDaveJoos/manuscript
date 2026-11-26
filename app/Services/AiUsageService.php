@@ -20,27 +20,29 @@ class AiUsageService
         $pricing = $models[$normalizedModel] ?? config('ai-costs.default');
 
         $inputRate = $pricing['input'] / 1_000_000;
+        // Laravel AI reports uncached input, cache read, and cache write tokens
+        // as disjoint buckets across both Anthropic and OpenAI gateways.
         $inputCost = $inputTokens * $inputRate;
         $outputCost = $outputTokens * $pricing['output'] / 1_000_000;
 
-        $cacheDiscount = 0;
-        $cacheSurcharge = 0;
+        $cacheReadCost = 0.0;
+        $cacheWriteCost = 0.0;
 
         if ($cacheReadTokens > 0) {
-            $discountFactor = match ($provider) {
-                'anthropic' => 0.90,
+            $cacheReadMultiplier = match ($provider) {
+                'anthropic' => 0.10,
                 'openai' => 0.50,
                 default => 0.50,
             };
 
-            $cacheDiscount = $cacheReadTokens * $inputRate * $discountFactor;
+            $cacheReadCost = $cacheReadTokens * $inputRate * $cacheReadMultiplier;
         }
 
         if ($cacheWriteTokens > 0 && $provider === 'anthropic') {
-            $cacheSurcharge = $cacheWriteTokens * $inputRate * 0.25;
+            $cacheWriteCost = $cacheWriteTokens * $inputRate * 1.25;
         }
 
-        return (int) round($inputCost + $outputCost - $cacheDiscount + $cacheSurcharge);
+        return max(0, (int) round($inputCost + $cacheReadCost + $cacheWriteCost + $outputCost));
     }
 
     /**
@@ -49,10 +51,10 @@ class AiUsageService
     public function calculateEmbeddingCost(int $tokens, string $model): int
     {
         $models = config('ai-costs.embedding_models', []);
-        $normalizedModel = $this->normalizeModelName($model, config('ai-costs.models', []));
+        $normalizedModel = $this->normalizeModelName($model, $models);
         $pricePerMillion = $models[$normalizedModel] ?? config('ai-costs.embedding_default');
 
-        return (int) round($tokens * $pricePerMillion / 1_000_000);
+        return max(0, (int) round($tokens * $pricePerMillion / 1_000_000));
     }
 
     /**

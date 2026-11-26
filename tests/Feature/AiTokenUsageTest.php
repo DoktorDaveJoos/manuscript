@@ -110,42 +110,48 @@ test('AiUsageService resolves preview-suffixed model names', function () {
     expect($cost)->toBe(10500);
 });
 
-test('AiUsageService applies OpenAI cache read discount at 50%', function () {
+test('AiUsageService bills OpenAI cache read tokens at 50% of input rate', function () {
     $service = new AiUsageService;
 
+    // 1000 total input tokens: uncached (1000) vs 400 uncached + 600 cache reads
     $fullCost = $service->calculateCost(1000, 500, 'gpt-4o');
-    $cachedCost = $service->calculateCost(1000, 500, 'gpt-4o', cacheReadTokens: 600, provider: 'openai');
+    $cachedCost = $service->calculateCost(400, 500, 'gpt-4o', cacheReadTokens: 600, provider: 'openai');
 
     // Full cost: input 2500 + output 5000 = 7500
-    // Cache discount: 600 * 2_500_000 / 1_000_000 * 0.50 = 750
-    // Cached cost: 7500 - 750 = 6750
+    // Cached cost: uncached 1000 + cache read (600 * 2.5 * 0.50 = 750) + output 5000 = 6750
     expect($fullCost)->toBe(7500)
         ->and($cachedCost)->toBe(6750)
         ->and($cachedCost)->toBeLessThan($fullCost);
 });
 
-test('AiUsageService applies Anthropic cache read discount at 90%', function () {
+test('AiUsageService bills Anthropic cache read tokens at 10% and never produces negative cost', function () {
     $service = new AiUsageService;
 
+    // 1000 total input tokens: uncached (1000) vs 400 uncached + 600 cache reads
     $fullCost = $service->calculateCost(1000, 500, 'claude-sonnet-4-20250514');
-    $cachedCost = $service->calculateCost(1000, 500, 'claude-sonnet-4-20250514', cacheReadTokens: 600, provider: 'anthropic');
+    $cachedCost = $service->calculateCost(400, 500, 'claude-sonnet-4-20250514', cacheReadTokens: 600, provider: 'anthropic');
 
     // Full cost: input 3000 + output 7500 = 10500
-    // Cache discount: 600 * 3_000_000 / 1_000_000 * 0.90 = 1620
-    // Cached cost: 10500 - 1620 = 8880
+    // Cached cost: uncached 1200 + cache read (600 * 3 * 0.10 = 180) + output 7500 = 8880
     expect($fullCost)->toBe(10500)
         ->and($cachedCost)->toBe(8880)
         ->and($cachedCost)->toBeLessThan($fullCost);
+
+    // Real prompt-cached call where cache reads vastly exceed uncached input tokens
+    $heavyCacheCost = $service->calculateCost(100, 200, 'claude-sonnet-4-20250514', cacheReadTokens: 10_000, provider: 'anthropic');
+    // uncached 300 + cache read (10000 * 3 * 0.10 = 3000) + output 3000 = 6300
+    expect($heavyCacheCost)->toBe(6300);
 });
 
-test('AiUsageService applies Anthropic cache write surcharge at 25%', function () {
+test('AiUsageService bills Anthropic cache write tokens at 125% of input rate', function () {
     $service = new AiUsageService;
 
-    $costWithWrite = $service->calculateCost(1000, 500, 'claude-sonnet-4-20250514', cacheWriteTokens: 400, provider: 'anthropic');
+    $costWithWrite = $service->calculateCost(600, 500, 'claude-sonnet-4-20250514', cacheWriteTokens: 400, provider: 'anthropic');
 
-    // Base cost: input 3000 + output 7500 = 10500
-    // Write surcharge: 400 * 3_000_000 / 1_000_000 * 0.25 = 300
-    // Total: 10500 + 300 = 10800
+    // Uncached input: 600 * 3 = 1800
+    // Cache write: 400 * 3 * 1.25 = 1500
+    // Output: 500 * 15 = 7500
+    // Total: 10800
     expect($costWithWrite)->toBe(10800);
 });
 
@@ -170,13 +176,17 @@ test('AiUsageService falls back to default pricing for unknown models', function
     expect($cost)->toBe(10500);
 });
 
-test('AiUsageService calculates embedding cost', function () {
+test('AiUsageService calculates embedding cost including date-suffixed embedding models', function () {
     $service = new AiUsageService;
 
     $cost = $service->calculateEmbeddingCost(10000, 'text-embedding-3-small');
 
     // 20_000/1M => 10000 * 20_000 / 1_000_000 = 200
     expect($cost)->toBe(200);
+
+    // Date-suffixed text-embedding-3-large should normalize against embedding_models (130_000/1M)
+    $largeCost = $service->calculateEmbeddingCost(10000, 'text-embedding-3-large-2025-01-01');
+    expect($largeCost)->toBe(1300);
 });
 
 test('reset-usage endpoint zeros counters', function () {
@@ -267,8 +277,8 @@ test('event listener records lower cost when cache tokens are present', function
     // Reset for second call
     $book->resetAiUsage();
 
-    // Second call: same tokens but 800 are cache reads
-    $cachedUsage = new Usage(promptTokens: 1000, completionTokens: 500, cacheReadInputTokens: 800);
+    // Second call: same 1000 total input tokens, with 200 uncached + 800 cache reads
+    $cachedUsage = new Usage(promptTokens: 200, completionTokens: 500, cacheReadInputTokens: 800);
     $cachedResponse = new AgentResponse('inv-2', 'Hello', $cachedUsage, $meta);
     $cachedPrompt = new AgentPrompt($agent, 'test', [], $provider, 'gpt-4o');
     $cachedEvent = new AgentPrompted('inv-2', $cachedPrompt, $cachedResponse);

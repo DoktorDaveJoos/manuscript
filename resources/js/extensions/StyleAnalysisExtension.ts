@@ -198,6 +198,8 @@ class StyleAnalysisView {
         const options = this.optionsRef?.current ?? {};
         void this.client.analyzeStyle(flat, options).then((analysis) => {
             if (this.destroyed) return;
+            const current = styleAnalysisPluginKey.getState(this.view.state);
+            if (!current?.active || current.version !== version) return;
             const docFindings: DocFinding[] = [];
             const toDoc = (offset: number): number | null => {
                 const block = blocks.findLast((b) => offset >= b.flatFrom);

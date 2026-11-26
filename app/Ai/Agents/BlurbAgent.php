@@ -2,13 +2,13 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Concerns\ProviderSafeTemperature;
 use App\Ai\Contracts\BelongsToBook;
 use App\Ai\Middleware\InjectProviderCredentials;
 use App\Models\Book;
 use App\Models\PlotPoint;
 use Illuminate\Support\Collection;
 use Laravel\Ai\Attributes\MaxTokens;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
@@ -23,11 +23,15 @@ use Stringable;
  * so the model analyses the planned story and writes selling copy rather than a recap.
  */
 #[MaxTokens(800)]
-#[Temperature(0.85)]
 #[Timeout(120)]
 class BlurbAgent implements Agent, BelongsToBook, HasMiddleware
 {
-    use Promptable;
+    use Promptable, ProviderSafeTemperature;
+
+    protected function defaultTemperature(): float
+    {
+        return 0.85;
+    }
 
     public function __construct(protected Book $book) {}
 

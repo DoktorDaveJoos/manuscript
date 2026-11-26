@@ -72,29 +72,37 @@ export default function SceneEditor({
     }, [onExitUp, onExitDown]);
 
     // Content auto-save
+    const AUTOSAVE_DEBOUNCE_MS = 500;
     const contentAbortRef = useRef<AbortController | null>(null);
     const saveInFlightRef = useRef(false);
     const saveCompletionRef = useRef<Promise<void>>(Promise.resolve());
     const pendingContentRef = useRef<string | null>(null);
+    const saveDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+        null,
+    );
     const retryCountRef = useRef(0);
     const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const mountedRef = useRef(true);
+    const drainingOnUnmountRef = useRef(false);
     // Declared before flushContentSave so scheduleRetry can re-invoke it via
     // the ref without referencing the const before its initializer completes.
-    const flushSelfRef = useRef<() => void | Promise<void>>(() => {});
+    const flushSelfRef = useRef<
+        (opts?: { keepalive?: boolean }) => Promise<void>
+    >(async () => {});
 
     // Read at flush time so retries carry the freshest version id.
     const currentVersionIdRef = useRef(currentVersionId);
     currentVersionIdRef.current = currentVersionId;
     const contentVersionRef = useRef(scene.content_version ?? 0);
-
-    useEffect(() => {
-        contentVersionRef.current = scene.content_version ?? 0;
-    }, [scene.id, scene.content_version]);
+    const editorInstanceRef = useRef<Editor | null>(null);
 
     const dropPendingSave = useCallback(() => {
         pendingContentRef.current = null;
         retryCountRef.current = 0;
+        if (saveDebounceTimerRef.current) {
+            clearTimeout(saveDebounceTimerRef.current);
+            saveDebounceTimerRef.current = null;
+        }
         if (retryTimerRef.current) {
             clearTimeout(retryTimerRef.current);
             retryTimerRef.current = null;
@@ -102,152 +110,186 @@ export default function SceneEditor({
         contentAbortRef.current?.abort();
     }, []);
 
-    // The server replaced this scene's content out from under the editor
-    // (AI revision applied, version restored/accepted). Any buffered or
-    // retrying save was composed against the old content — flushing it would
-    // resurrect pre-revision text over the newer server state.
-    const prevServerContentRef = useRef(scene.content);
+    // Only treat server prop updates as authoritative external replacements
+    // (AI revision applied, version restored/accepted, global replaceAll) when
+    // the server's content_version is strictly newer than what this editor has
+    // already persisted. Ignoring <= versions prevents softRefresh() on pane
+    // refocus from wiping undo history or dropping in-flight keystrokes.
     useEffect(() => {
-        if (scene.content === prevServerContentRef.current) return;
-        prevServerContentRef.current = scene.content;
-        dropPendingSave();
-        onSaveStatusChange?.('saved');
-    }, [scene.content, dropPendingSave, onSaveStatusChange]);
-
-    const flushContentSave = useCallback(async () => {
-        const content = pendingContentRef.current;
-        if (content === null) return;
-
-        if (saveInFlightRef.current) {
-            await saveCompletionRef.current;
-            if (mountedRef.current && pendingContentRef.current !== null) {
-                await flushSelfRef.current();
-            }
-
+        const incomingVersion = scene.content_version ?? 0;
+        if (incomingVersion <= contentVersionRef.current) {
             return;
         }
+        contentVersionRef.current = incomingVersion;
+        dropPendingSave();
+        const nextContent = scene.content ?? '';
+        const ed = editorInstanceRef.current;
+        if (ed && !ed.isDestroyed && ed.getHTML() !== nextContent) {
+            ed.commands.setContent(nextContent, { emitUpdate: false });
+        }
+        onSaveStatusChange?.('saved');
+    }, [
+        scene.id,
+        scene.content,
+        scene.content_version,
+        dropPendingSave,
+        onSaveStatusChange,
+    ]);
 
-        let resolveSaveCompletion: () => void = () => {};
-        saveCompletionRef.current = new Promise<void>((resolve) => {
-            resolveSaveCompletion = resolve;
-        });
+    const flushContentSave = useCallback(
+        async (opts?: { keepalive?: boolean }) => {
+            if (saveDebounceTimerRef.current) {
+                clearTimeout(saveDebounceTimerRef.current);
+                saveDebounceTimerRef.current = null;
+            }
 
-        const controller = new AbortController();
-        contentAbortRef.current = controller;
-        saveInFlightRef.current = true;
-        let shouldFlushNewestContent = false;
+            const useKeepalive =
+                opts?.keepalive === true || drainingOnUnmountRef.current;
 
-        onSaveStatusChange?.('saving');
+            if (pendingContentRef.current === null) {
+                if (saveInFlightRef.current) {
+                    await saveCompletionRef.current;
+                }
+                return;
+            }
 
-        try {
-            const response = await fetch(
-                updateContent.url({
-                    book: bookId,
-                    chapter: chapterId,
-                    scene: scene.id,
-                }),
-                {
-                    method: 'PUT',
-                    headers: jsonFetchHeaders(),
-                    body: JSON.stringify({
+            // Coalesce concurrent callers onto the active drain loop rather
+            // than spawning recursive waiters per keystroke.
+            if (saveInFlightRef.current) {
+                await saveCompletionRef.current;
+                if (pendingContentRef.current !== null) {
+                    await flushSelfRef.current({ keepalive: useKeepalive });
+                }
+                return;
+            }
+
+            let resolveSaveCompletion: () => void = () => {};
+            saveCompletionRef.current = new Promise<void>((resolve) => {
+                resolveSaveCompletion = resolve;
+            });
+
+            saveInFlightRef.current = true;
+
+            try {
+                while (pendingContentRef.current !== null) {
+                    const content: string = pendingContentRef.current;
+                    const isUnmounting =
+                        useKeepalive || drainingOnUnmountRef.current;
+                    const body = JSON.stringify({
                         content,
                         expected_current_version_id:
                             currentVersionIdRef.current,
                         expected_content_version: contentVersionRef.current,
-                    }),
-                    signal: controller.signal,
-                },
-            );
+                    });
+                    // Fetch enforces a 64 KiB ceiling on keepalive payloads;
+                    // fall back to a regular un-aborted fetch for large scenes
+                    // so SPA unmounts (chapter switch, pane close) never drop edits.
+                    const keepalive =
+                        isUnmounting && new Blob([body]).size <= 60_000;
+                    const controller = new AbortController();
+                    contentAbortRef.current = controller;
 
-            if (response.status === 409) {
-                const payload = (await response.json()) as {
-                    conflict?: string;
-                };
-                if (payload.conflict === 'content_version') {
-                    // Retrying the buffered full-scene HTML against the new
-                    // version would resurrect stale text over a book-wide
-                    // replacement (or any other authoritative server edit).
-                    dropPendingSave();
-                    onSaveStatusChange?.('saved');
-                    onContentConflict?.();
-                    return;
-                }
+                    if (mountedRef.current) {
+                        onSaveStatusChange?.('saving');
+                    }
 
-                // The chapter moved to a new version while this save was
-                // buffered — the content is superseded, retrying would only
-                // overwrite newer server state. The version-change broadcast
-                // refreshes the pane with the authoritative content.
-                dropPendingSave();
-                onSaveStatusChange?.('saved');
-                return;
-            }
+                    const response = await fetch(
+                        updateContent.url({
+                            book: bookId,
+                            chapter: chapterId,
+                            scene: scene.id,
+                        }),
+                        {
+                            method: 'PUT',
+                            headers: jsonFetchHeaders(),
+                            body,
+                            signal: isUnmounting
+                                ? undefined
+                                : controller.signal,
+                            keepalive,
+                        },
+                    );
 
-            if (response.ok) {
-                const payload = (await response.json()) as {
-                    content_version?: number;
-                };
-                if (typeof payload.content_version === 'number') {
-                    contentVersionRef.current = payload.content_version;
-                }
+                    if (contentAbortRef.current === controller) {
+                        contentAbortRef.current = null;
+                    }
 
-                // Only clear if content hasn't changed during the in-flight save
-                if (pendingContentRef.current === content) {
-                    pendingContentRef.current = null;
-                    onSaveStatusChange?.('saved');
-                } else {
-                    shouldFlushNewestContent = true;
+                    if (response.status === 409) {
+                        const payload = (await response.json()) as {
+                            conflict?: string;
+                        };
+                        dropPendingSave();
+                        if (mountedRef.current) {
+                            onSaveStatusChange?.('saved');
+                            if (payload.conflict === 'content_version') {
+                                onContentConflict?.();
+                            }
+                        }
+                        return;
+                    }
+
+                    if (response.ok) {
+                        const payload = (await response.json()) as {
+                            content_version?: number;
+                        };
+                        if (typeof payload.content_version === 'number') {
+                            contentVersionRef.current = payload.content_version;
+                        }
+
+                        retryCountRef.current = 0;
+                        if (retryTimerRef.current) {
+                            clearTimeout(retryTimerRef.current);
+                            retryTimerRef.current = null;
+                        }
+
+                        if (pendingContentRef.current === content) {
+                            pendingContentRef.current = null;
+                            if (mountedRef.current) {
+                                onSaveStatusChange?.('saved');
+                            }
+                        }
+                        // Otherwise newer edits arrived during the PUT; the
+                        // while-loop drains the latest snapshot immediately.
+                    } else {
+                        scheduleRetry();
+                        return;
+                    }
                 }
-                retryCountRef.current = 0;
-                if (retryTimerRef.current) {
-                    clearTimeout(retryTimerRef.current);
-                    retryTimerRef.current = null;
+            } catch (e) {
+                if ((e as Error).name !== 'AbortError') {
+                    scheduleRetry();
                 }
-            } else {
-                scheduleRetry();
-            }
-        } catch (e) {
-            if ((e as Error).name !== 'AbortError') {
-                scheduleRetry();
-            }
-        } finally {
-            if (contentAbortRef.current === controller) {
+            } finally {
                 contentAbortRef.current = null;
+                saveInFlightRef.current = false;
+                resolveSaveCompletion();
             }
-            saveInFlightRef.current = false;
-            resolveSaveCompletion();
 
-            if (
-                shouldFlushNewestContent &&
-                mountedRef.current &&
-                pendingContentRef.current !== null
-            ) {
-                queueMicrotask(() => flushSelfRef.current());
+            function scheduleRetry() {
+                if (!mountedRef.current) return;
+                if (retryCountRef.current < SAVE_RETRY_DELAYS.length) {
+                    const delay = SAVE_RETRY_DELAYS[retryCountRef.current]!;
+                    retryCountRef.current += 1;
+                    onSaveStatusChange?.('saving');
+                    retryTimerRef.current = setTimeout(() => {
+                        retryTimerRef.current = null;
+                        void flushSelfRef.current();
+                    }, delay);
+                } else {
+                    retryCountRef.current = 0;
+                    onSaveStatusChange?.('error');
+                }
             }
-        }
-
-        function scheduleRetry() {
-            if (!mountedRef.current) return;
-            if (retryCountRef.current < SAVE_RETRY_DELAYS.length) {
-                const delay = SAVE_RETRY_DELAYS[retryCountRef.current]!;
-                retryCountRef.current += 1;
-                onSaveStatusChange?.('saving');
-                retryTimerRef.current = setTimeout(() => {
-                    retryTimerRef.current = null;
-                    flushSelfRef.current();
-                }, delay);
-            } else {
-                retryCountRef.current = 0;
-                onSaveStatusChange?.('error');
-            }
-        }
-    }, [
-        bookId,
-        chapterId,
-        scene.id,
-        onSaveStatusChange,
-        onContentConflict,
-        dropPendingSave,
-    ]);
+        },
+        [
+            bookId,
+            chapterId,
+            scene.id,
+            onSaveStatusChange,
+            onContentConflict,
+            dropPendingSave,
+        ],
+    );
 
     // Expose flush for parent + keep flushSelfRef pointed at the latest closure.
     const flushRef = useRef({ flushContentSave });
@@ -267,6 +309,9 @@ export default function SceneEditor({
     saveUrlRef.current = saveUrl;
 
     useEffect(() => {
+        mountedRef.current = true;
+        drainingOnUnmountRef.current = false;
+
         const el = containerRef.current;
         if (el) {
             (el as unknown as Record<string, unknown>).__flush = () =>
@@ -283,11 +328,20 @@ export default function SceneEditor({
             };
         }
 
-        // Flush pending saves on unmount
+        // Flush pending saves on unmount (including edits typed while a prior
+        // PUT was still in-flight) using keepalive when within the 64 KiB cap.
         return () => {
             mountedRef.current = false;
-            if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-            flushRef.current.flushContentSave();
+            drainingOnUnmountRef.current = true;
+            if (saveDebounceTimerRef.current) {
+                clearTimeout(saveDebounceTimerRef.current);
+                saveDebounceTimerRef.current = null;
+            }
+            if (retryTimerRef.current) {
+                clearTimeout(retryTimerRef.current);
+                retryTimerRef.current = null;
+            }
+            void flushRef.current.flushContentSave({ keepalive: true });
         };
     }, []);
 
@@ -306,9 +360,15 @@ export default function SceneEditor({
                 retryTimerRef.current = null;
             }
 
-            flushContentSave();
+            if (saveDebounceTimerRef.current) {
+                clearTimeout(saveDebounceTimerRef.current);
+            }
+            saveDebounceTimerRef.current = setTimeout(() => {
+                saveDebounceTimerRef.current = null;
+                void flushSelfRef.current();
+            }, AUTOSAVE_DEBOUNCE_MS);
         },
-        [scene.id, onWordCountChange, onSaveStatusChange, flushContentSave],
+        [scene.id, onWordCountChange, onSaveStatusChange],
     );
 
     // The extension captures these callbacks at editor creation — keep the
@@ -343,6 +403,7 @@ export default function SceneEditor({
         onStyleAnalysis: handleStyleAnalysis,
         onIgnoreStyleWord: handleIgnoreStyleWord,
     });
+    editorInstanceRef.current = editor;
 
     // setEditable blocks keyboard/DOM input only — AI streams insert via
     // commands, which still dispatch. Re-applied after every editor

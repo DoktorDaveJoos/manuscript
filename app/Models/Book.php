@@ -272,18 +272,25 @@ class Book extends Model
     public function writingStyleSample(): ?string
     {
         $sampleTexts = $this->chapters()
-            ->with('currentVersion')
+            ->with([
+                'scenes' => fn ($q) => $q->select('id', 'chapter_id', 'content', 'sort_order')->orderBy('sort_order'),
+                'currentVersion:id,chapter_id,content',
+            ])
             ->orderBy('reader_order')
-            ->get()
-            ->map(fn (Chapter $chapter) => $chapter->currentVersion?->content)
+            ->get(['id', 'book_id', 'reader_order'])
+            ->map(function (Chapter $chapter) {
+                $live = $chapter->getFullContent();
+
+                return trim(strip_tags($live)) !== '' ? $live : $chapter->currentVersion?->content;
+            })
             ->filter()
-            ->take(self::STYLE_SAMPLE_CHAPTERS)
             ->map(function (string $content) {
                 $withBreaks = preg_replace('#</(p|h[1-6]|li|blockquote|div)>#i', "$0\n\n", $content);
 
                 return trim(strip_tags($withBreaks));
             })
             ->filter()
+            ->take(self::STYLE_SAMPLE_CHAPTERS)
             ->values()
             ->all();
 

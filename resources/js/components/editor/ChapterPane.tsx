@@ -193,16 +193,21 @@ export default function ChapterPane({
     }, [chapter.id]);
 
     // Report aggregated analyses upward for the Style panel, pruning scenes
-    // that were removed since their last analysis arrived.
+    // that were removed since their last analysis arrived. Key on the scene ID
+    // signature rather than the scenes array reference so word-count updates
+    // don't force EditorPage to re-render on every keystroke.
+    const sceneIdsKey = scenes.map((scene) => scene.id).join(',');
     useEffect(() => {
         if (!onStyleAnalysesChange || !isFocused) return;
-        const sceneIds = new Set(scenes.map((scene) => scene.id));
+        const sceneIds = new Set(
+            sceneIdsKey ? sceneIdsKey.split(',').map(Number) : [],
+        );
         onStyleAnalysesChange(
             [...sceneStyleAnalyses.entries()]
                 .filter(([sceneId]) => sceneIds.has(sceneId))
                 .map(([, analysis]) => analysis),
         );
-    }, [sceneStyleAnalyses, isFocused, scenes, onStyleAnalysesChange]);
+    }, [sceneStyleAnalyses, isFocused, sceneIdsKey, onStyleAnalysesChange]);
 
     const showReview = review !== null && review.previous !== null;
     const handleApplied = useCallback(() => {
@@ -334,11 +339,13 @@ export default function ChapterPane({
 
     const handleSceneWordCountChange = useCallback(
         (sceneId: number, count: number) => {
-            setScenes((prev) =>
-                prev.map((s) =>
+            setScenes((prev) => {
+                const target = prev.find((s) => s.id === sceneId);
+                if (!target || target.word_count === count) return prev;
+                return prev.map((s) =>
                     s.id === sceneId ? { ...s, word_count: count } : s,
-                ),
-            );
+                );
+            });
         },
         [],
     );

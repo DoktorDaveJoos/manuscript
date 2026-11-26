@@ -29,11 +29,19 @@ import { getFontFamily } from './FontSelector';
 
 export type DiffMode = 'pending' | 'refine' | 'review' | 'history';
 
+const SCENE_BREAK_SENTINEL = '\u200B__SCENE_BREAK__\u200B';
+
+function isSceneBreakBlock(html: string): boolean {
+    return /^<hr\s*\/?>$/i.test(html.trim());
+}
+
 function splitParagraphs(html: string | null): string[] {
     if (!html) return [];
+    // Preserve <hr> scene breaks as explicit entries so partial/refine merges
+    // never collapse multi-scene chapters into a single scene.
     return html
-        .replace(/<hr\s*\/?>/gi, '\n')
-        .replace(/<\/p>\s*<p>/gi, '</p>\n<p>')
+        .replace(/<hr\s*\/?>/gi, '\n<hr>\n')
+        .replace(/<\/(p|h[1-6]|blockquote|ul|ol|div)>\s*(?=<)/gi, '</$1>\n')
         .split(/\n/)
         .map((p) => p.trim())
         .filter(Boolean);
@@ -44,6 +52,9 @@ type DiffSegment = { text: string; type: 'equal' | 'added' | 'removed' };
 type AlignedParagraph = {
     left: { segments: DiffSegment[] } | null;
     right: { segments: DiffSegment[] } | null;
+    origIndex: number | null;
+    revIndex: number | null;
+    isSceneBreak: boolean;
     hasChanges: boolean;
     index: number;
 };
@@ -54,7 +65,15 @@ function htmlDecode(text: string): string {
     return el.value;
 }
 
+function escapeHtml(text: string): string {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 function normalizeForComparison(text: string): string {
+    if (text === SCENE_BREAK_SENTINEL) return SCENE_BREAK_SENTINEL;
     return text
         .replace(/\u00a0/g, ' ')
         .replace(/\s+/g, ' ')
@@ -104,8 +123,12 @@ function computeDiff(
     const origParagraphs = splitParagraphs(originalHtml);
     const revParagraphs = splitParagraphs(revisedHtml);
 
-    const origTexts = origParagraphs.map((p) => htmlDecode(stripTags(p)));
-    const revTexts = revParagraphs.map((p) => htmlDecode(stripTags(p)));
+    const origTexts = origParagraphs.map((p) =>
+        isSceneBreakBlock(p) ? SCENE_BREAK_SENTINEL : htmlDecode(stripTags(p)),
+    );
+    const revTexts = revParagraphs.map((p) =>
+        isSceneBreakBlock(p) ? SCENE_BREAK_SENTINEL : htmlDecode(stripTags(p)),
+    );
 
     // Pre-compute normalized texts for paragraph alignment
     const origNormalized = origTexts.map(normalizeForComparison);
@@ -120,13 +143,45 @@ function computeDiff(
     const changedIndices: number[] = [];
 
     function pushWordDiff(): void {
-        const result = wordDiffParagraph(origTexts[origIdx], revTexts[revIdx]);
-        changeCount += result.changeCount;
+        const curOrig = origIdx;
+        const curRev = revIdx;
+        const origIsBreak = origTexts[curOrig] === SCENE_BREAK_SENTINEL;
+        const revIsBreak = revTexts[curRev] === SCENE_BREAK_SENTINEL;
+
+        if (origIsBreak && revIsBreak) {
+            const idx = aligned.length;
+            aligned.push({
+                left: { segments: [{ text: '***', type: 'equal' }] },
+                right: { segments: [{ text: '***', type: 'equal' }] },
+                origIndex: curOrig,
+                revIndex: curRev,
+                isSceneBreak: true,
+                hasChanges: false,
+                index: idx,
+            });
+            origIdx++;
+            revIdx++;
+            return;
+        }
+
+        // Never word-diff a scene break sentinel against regular prose;
+        // emit them as separate removed/added rows instead.
+        if (origIsBreak !== revIsBreak) {
+            pushOneSided('left');
+            pushOneSided('right');
+            return;
+        }
+
         const idx = aligned.length;
+        const result = wordDiffParagraph(origTexts[curOrig], revTexts[curRev]);
+        changeCount += result.changeCount;
         if (result.hasChanges) changedIndices.push(idx);
         aligned.push({
             left: { segments: result.leftSegs },
             right: { segments: result.rightSegs },
+            origIndex: curOrig,
+            revIndex: curRev,
+            isSceneBreak: false,
             hasChanges: result.hasChanges,
             index: idx,
         });
@@ -136,6 +191,10 @@ function computeDiff(
 
     function pushOneSided(side: 'left' | 'right'): void {
         const idx = aligned.length;
+        const isBreak =
+            side === 'left'
+                ? origTexts[origIdx] === SCENE_BREAK_SENTINEL
+                : revTexts[revIdx] === SCENE_BREAK_SENTINEL;
         changedIndices.push(idx);
         changeCount++;
         aligned.push({
@@ -143,14 +202,27 @@ function computeDiff(
                 side === 'left'
                     ? {
                           segments: [
-                              { text: origTexts[origIdx], type: 'removed' },
+                              {
+                                  text: isBreak ? '***' : origTexts[origIdx],
+                                  type: 'removed',
+                              },
                           ],
                       }
                     : null,
             right:
                 side === 'right'
-                    ? { segments: [{ text: revTexts[revIdx], type: 'added' }] }
+                    ? {
+                          segments: [
+                              {
+                                  text: isBreak ? '***' : revTexts[revIdx],
+                                  type: 'added',
+                              },
+                          ],
+                      }
                     : null,
+            origIndex: side === 'left' ? origIdx : null,
+            revIndex: side === 'right' ? revIdx : null,
+            isSceneBreak: isBreak,
             hasChanges: true,
             index: idx,
         });
@@ -201,62 +273,44 @@ function mergeParagraphs(
     const origParagraphs = splitParagraphs(originalHtml);
     const revParagraphs = splitParagraphs(revisedHtml);
 
-    const origTexts = origParagraphs.map((p) => htmlDecode(stripTags(p)));
-    const revTexts = revParagraphs.map((p) => htmlDecode(stripTags(p)));
-
-    // Build lookup maps from text to original HTML paragraph
-    const origMap = new Map<string, string[]>();
-    origTexts.forEach((t, i) => {
-        if (!origMap.has(t)) origMap.set(t, []);
-        origMap.get(t)!.push(origParagraphs[i]);
-    });
-    const revMap = new Map<string, string[]>();
-    revTexts.forEach((t, i) => {
-        if (!revMap.has(t)) revMap.set(t, []);
-        revMap.get(t)!.push(revParagraphs[i]);
-    });
-
-    const origUsed = new Map<string, number>();
-    const revUsed = new Map<string, number>();
-
-    function makeHtmlLookup(
-        map: Map<string, string[]>,
-        used: Map<string, number>,
-    ) {
-        return (text: string): string => {
-            const idx = used.get(text) ?? 0;
-            const arr = map.get(text);
-            used.set(text, idx + 1);
-            return arr?.[idx] ?? `<p>${text}</p>`;
-        };
-    }
-
-    const getOrigHtml = makeHtmlLookup(origMap, origUsed);
-    const getRevHtml = makeHtmlLookup(revMap, revUsed);
-
     const result: string[] = [];
 
     for (const para of aligned) {
         const useRevised = selectedIndices.has(para.index);
 
         if (!para.hasChanges) {
-            // Unchanged paragraph — include from original
-            const text = para.left?.segments.map((s) => s.text).join('') ?? '';
-            result.push(getOrigHtml(text));
-        } else if (useRevised) {
-            // Changed paragraph, user selected revised
-            if (para.right) {
-                const text = para.right.segments.map((s) => s.text).join('');
-                result.push(getRevHtml(text));
-            }
-            // If right is null (deleted paragraph), omit it
-        } else {
-            // Changed paragraph, user kept original
-            if (para.left) {
+            if (para.origIndex !== null && origParagraphs[para.origIndex]) {
+                result.push(origParagraphs[para.origIndex]);
+            } else if (para.isSceneBreak) {
+                result.push('<hr>');
+            } else if (para.left) {
                 const text = para.left.segments.map((s) => s.text).join('');
-                result.push(getOrigHtml(text));
+                result.push(`<p>${escapeHtml(text)}</p>`);
             }
-            // If left is null (added paragraph), omit it
+        } else if (useRevised) {
+            if (para.right) {
+                if (para.revIndex !== null && revParagraphs[para.revIndex]) {
+                    result.push(revParagraphs[para.revIndex]);
+                } else if (para.isSceneBreak) {
+                    result.push('<hr>');
+                } else {
+                    const text = para.right.segments
+                        .map((s) => s.text)
+                        .join('');
+                    result.push(`<p>${escapeHtml(text)}</p>`);
+                }
+            }
+        } else {
+            if (para.left) {
+                if (para.origIndex !== null && origParagraphs[para.origIndex]) {
+                    result.push(origParagraphs[para.origIndex]);
+                } else if (para.isSceneBreak) {
+                    result.push('<hr>');
+                } else {
+                    const text = para.left.segments.map((s) => s.text).join('');
+                    result.push(`<p>${escapeHtml(text)}</p>`);
+                }
+            }
         }
     }
 
@@ -489,7 +543,7 @@ export default function DiffView({
     ]);
 
     const handleReject = useCallback(async () => {
-        if (mode === 'refine' || mode === 'history') {
+        if (mode === 'refine' || mode === 'history' || mode === 'review') {
             onClose?.();
             return;
         }

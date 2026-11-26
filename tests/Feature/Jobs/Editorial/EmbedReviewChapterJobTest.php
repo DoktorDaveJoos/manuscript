@@ -64,6 +64,7 @@ test('EmbedReviewChapterJob completes when the embeddings provider rejects the r
 test('EmbedReviewChapterJob does nothing for a chapter without content', function () {
     [$book, $chapters] = createBookWithChaptersForEditorial(1);
     $chapter = $chapters[0];
+    $chapter->scenes()->update(['content' => '']);
     $chapter->currentVersion()->update(['content' => null]);
 
     (new EmbedReviewChapterJob($book, $chapter->id))

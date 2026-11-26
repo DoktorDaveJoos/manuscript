@@ -36,7 +36,7 @@ class PlotController extends Controller
             ->value('id');
 
         return Inertia::render('plot/index', [
-            'book' => $book,
+            'book' => $book->withoutRelations(),
             'storylines' => $book->storylines,
             'acts' => $book->acts,
             'plotPoints' => $book->plotPoints,

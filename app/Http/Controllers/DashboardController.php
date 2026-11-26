@@ -32,11 +32,17 @@ class DashboardController extends Controller
             'final' => $chapters->where('status', ChapterStatus::Final)->count(),
         ];
 
+        $today = now()->toDateString();
+        $tomorrow = now()->addDay()->toDateString();
+
+        // Range predicate uses the (book_id, date) index while matching both
+        // 'YYYY-MM-DD' and legacy 'YYYY-MM-DD 00:00:00' strings in SQLite.
         $todaySession = $book->writingSessions()
-            ->whereDate('date', now()->toDateString())
+            ->where('date', '>=', $today)
+            ->where('date', '<', $tomorrow)
             ->first();
 
-        $streak = $this->calculateStreak($book, $todaySession);
+        $streak = $this->calculateStreak($book, $todaySession, $today);
 
         // Auto-detect milestone
         if ($book->target_word_count && $totalWords >= $book->target_word_count && ! $book->milestone_reached_at) {
@@ -71,7 +77,7 @@ class DashboardController extends Controller
         return response()->json(['dismissed' => true]);
     }
 
-    private function calculateStreak(Book $book, ?WritingSession $todaySession): int
+    private function calculateStreak(Book $book, ?WritingSession $todaySession, string $today): int
     {
         $streak = 0;
 
@@ -81,7 +87,7 @@ class DashboardController extends Controller
 
         $sessions = $book->writingSessions()
             ->where('goal_met', true)
-            ->whereDate('date', '<', now()->toDateString())
+            ->where('date', '<', $today)
             ->orderByDesc('date')
             ->limit(365)
             ->pluck('date');
@@ -146,7 +152,7 @@ class DashboardController extends Controller
     private function buildWritingHeatmap(Book $book): array
     {
         return $book->writingSessions()
-            ->where('date', '>=', now()->subDays(364))
+            ->where('date', '>=', now()->subDays(364)->toDateString())
             ->get(['date', 'words_written', 'goal_met'])
             ->map(fn ($session) => [
                 'date' => $session->date instanceof Carbon

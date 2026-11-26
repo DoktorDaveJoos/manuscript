@@ -40,13 +40,18 @@ class PlotCoachController extends Controller
 
             $session = $this->resolveSession($request, $book);
 
-            $agent = new PlotCoachAgent($book, $session);
-            $agent->continue($session->agent_conversation_id, $request->user() ?? (object) ['id' => 0]);
-
             $rawMessage = (string) $request->input('message');
 
             [$message, $requiresSmartModel] = $this->handleApprovalSignals($session, $rawMessage);
 
+            // Refresh book state after approval signals in case a book_update
+            // batch just mutated title, genre, or synopsis.
+            $book->refresh();
+
+            $agent = new PlotCoachAgent($book, $session);
+            $agent->continue($session->agent_conversation_id, $request->user() ?? (object) ['id' => 0]);
+
+            $consumedBoardChangeCount = count($session->pending_board_changes ?? []);
             $message = $this->prependBoardChangesNote($session, $message);
 
             // Pick the cheapest provider model for trivial turns (wire-signal
@@ -60,10 +65,9 @@ class PlotCoachController extends Controller
 
             $stream = $agent->stream($message, model: $model);
 
-            // Clear queued board changes + accrue per-session token usage only
-            // after the stream completes successfully. On failure, pending
-            // changes stay queued for the next turn.
-            $this->attachPostStreamHooks($stream, $session);
+            // Clear only the queued board changes included in this prompt +
+            // accrue per-session token usage only after the stream completes.
+            $this->attachPostStreamHooks($stream, $session, $consumedBoardChangeCount);
 
             return $this->streamWithConversationId(
                 $stream,
@@ -217,6 +221,7 @@ class PlotCoachController extends Controller
                 ->find($sessionId);
 
             abort_unless($session, 404);
+            abort_if($session->status !== PlotCoachSessionStatus::Active, 409, 'This Plot Coach session has been archived.');
 
             return $session;
         }
@@ -249,6 +254,8 @@ class PlotCoachController extends Controller
             'coaching_mode' => null,
             'decisions' => [],
             'pending_board_changes' => [],
+            'input_tokens' => 0,
+            'output_tokens' => 0,
             'parent_session_id' => $parentSessionId,
         ]);
     }
@@ -433,27 +440,39 @@ class PlotCoachController extends Controller
      * usage counters are updated and the board-change queue is flushed only
      * after the stream iterates to completion. On error, both remain intact.
      */
-    private function attachPostStreamHooks(StreamableAgentResponse $stream, PlotCoachSession $session): void
+    private function attachPostStreamHooks(StreamableAgentResponse $stream, PlotCoachSession $session, int $consumedBoardChangeCount = 0): void
     {
         $sessionId = $session->id;
 
-        $stream->then(function ($response) use ($sessionId) {
-            /** @var PlotCoachSession|null $fresh */
-            $fresh = PlotCoachSession::query()->find($sessionId);
+        $stream->then(function ($response) use ($sessionId, $consumedBoardChangeCount) {
+            DB::transaction(function () use ($sessionId, $response, $consumedBoardChangeCount) {
+                /** @var PlotCoachSession|null $fresh */
+                $fresh = PlotCoachSession::query()->find($sessionId);
 
-            if (! $fresh) {
-                return;
-            }
+                if (! $fresh) {
+                    return;
+                }
 
-            $usage = $response->usage ?? null;
+                $usage = $response->usage ?? null;
+                $inputDelta = $usage ? (int) ($usage->promptTokens ?? 0) : 0;
+                $outputDelta = $usage ? (int) ($usage->completionTokens ?? 0) : 0;
 
-            if ($usage) {
-                $fresh->increment('input_tokens', (int) ($usage->promptTokens ?? 0));
-                $fresh->increment('output_tokens', (int) ($usage->completionTokens ?? 0));
-            }
+                // Preserve any board changes queued while the stream was in flight;
+                // only discard the entries already injected into this turn's prompt.
+                $currentChanges = is_array($fresh->pending_board_changes) ? $fresh->pending_board_changes : [];
+                $remainingChanges = $consumedBoardChangeCount > 0
+                    ? array_values(array_slice($currentChanges, $consumedBoardChangeCount))
+                    : $currentChanges;
 
-            $fresh->update(['pending_board_changes' => []]);
-            $fresh->increment('user_turn_count');
+                // Use PHP null-coalescing instead of SQL `col = col + ?` because
+                // SQLite evaluates `NULL + N` as `NULL` on pre-existing rows.
+                $fresh->update([
+                    'input_tokens' => ($fresh->input_tokens ?? 0) + $inputDelta,
+                    'output_tokens' => ($fresh->output_tokens ?? 0) + $outputDelta,
+                    'pending_board_changes' => $remainingChanges,
+                    'user_turn_count' => ($fresh->user_turn_count ?? 0) + 1,
+                ]);
+            });
         });
     }
 
