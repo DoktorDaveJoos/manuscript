@@ -86,9 +86,9 @@ export default function SceneEditor({
     const drainingOnUnmountRef = useRef(false);
     // Declared before flushContentSave so scheduleRetry can re-invoke it via
     // the ref without referencing the const before its initializer completes.
-    const flushSelfRef = useRef<(opts?: { keepalive?: boolean }) => Promise<void>>(
-        async () => {},
-    );
+    const flushSelfRef = useRef<
+        (opts?: { keepalive?: boolean }) => Promise<void>
+    >(async () => {});
 
     // Read at flush time so retries carry the freshest version id.
     const currentVersionIdRef = useRef(currentVersionId);

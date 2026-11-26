@@ -170,7 +170,10 @@ export function useEditorialReview(
                     };
                 });
             } catch (err) {
-                if ((err as Error).name === 'AbortError' || controller.signal.aborted) {
+                if (
+                    (err as Error).name === 'AbortError' ||
+                    controller.signal.aborted
+                ) {
                     return;
                 }
                 pollFailuresRef.current += 1;

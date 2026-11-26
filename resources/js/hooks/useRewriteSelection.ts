@@ -175,7 +175,11 @@ export function useRewriteSelection() {
             // permanently erase the author's prose.
             let prepared = false;
             const ensurePrepared = () => {
-                if (prepared || editor.isDestroyed || controller.signal.aborted) {
+                if (
+                    prepared ||
+                    editor.isDestroyed ||
+                    controller.signal.aborted
+                ) {
                     return;
                 }
                 prepared = true;

@@ -307,9 +307,7 @@ function mergeParagraphs(
                 } else if (para.isSceneBreak) {
                     result.push('<hr>');
                 } else {
-                    const text = para.left.segments
-                        .map((s) => s.text)
-                        .join('');
+                    const text = para.left.segments.map((s) => s.text).join('');
                     result.push(`<p>${escapeHtml(text)}</p>`);
                 }
             }

@@ -1425,34 +1425,35 @@ export default function EditorPage({
                             ),
                             ' ',
                         )}
-                    draft={rewriteDraft}
-                    onDraftChange={setRewriteDraft}
-                    onReset={() =>
-                        setRewriteDraft(defaultRewriteSelectionDraft)
-                    }
-                    onClose={() => setRewriteRange(null)}
-                    onSubmit={({ hint }) => {
-                        const chapterId = focusedChapter.id;
-                        setStreamingChapterId(chapterId);
-                        rewriteSelection
-                            .start({
-                                editor: activeEditor,
-                                bookId: book.id,
-                                chapterId,
-                                expectedCurrentVersionId:
-                                    focusedChapter.current_version?.id ?? null,
-                                hint,
-                                selection: rewriteRange,
-                            })
-                            .finally(() =>
-                                setStreamingChapterId((current) =>
-                                    current === chapterId ? null : current,
-                                ),
-                            );
-                        setRewriteDraft(defaultRewriteSelectionDraft);
-                    }}
-                />
-            )}
+                        draft={rewriteDraft}
+                        onDraftChange={setRewriteDraft}
+                        onReset={() =>
+                            setRewriteDraft(defaultRewriteSelectionDraft)
+                        }
+                        onClose={() => setRewriteRange(null)}
+                        onSubmit={({ hint }) => {
+                            const chapterId = focusedChapter.id;
+                            setStreamingChapterId(chapterId);
+                            rewriteSelection
+                                .start({
+                                    editor: activeEditor,
+                                    bookId: book.id,
+                                    chapterId,
+                                    expectedCurrentVersionId:
+                                        focusedChapter.current_version?.id ??
+                                        null,
+                                    hint,
+                                    selection: rewriteRange,
+                                })
+                                .finally(() =>
+                                    setStreamingChapterId((current) =>
+                                        current === chapterId ? null : current,
+                                    ),
+                                );
+                            setRewriteDraft(defaultRewriteSelectionDraft);
+                        }}
+                    />
+                )}
 
             {/* Focus mode whisper chrome */}
             {isFocusMode && focusedChapter && (
